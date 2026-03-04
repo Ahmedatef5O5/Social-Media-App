@@ -6,6 +6,6 @@ class AppGradients {
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
     colors: [AppColors.bgColor, AppColors.white, AppColors.bgColor],
-    stops: [0.0, 0.5, 1.0],
+    stops: [0.1, 0.5, 0.9],
   );
 }
