@@ -1,4 +1,5 @@
 import 'package:device_preview/device_preview.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:social_media_app/core/router/app_router.dart';
@@ -14,11 +15,21 @@ void main() async {
     url: AppSecrets.supabaseUrl,
     anonKey: AppSecrets.supabaseAnonKey,
   );
-  runApp(DevicePreview(builder: (BuildContext context) => const MyApp()));
+  final session = Supabase.instance.client.auth.currentSession;
+  String initialRoute =
+      session != null ? AppRoutes.homeRoute : AppRoutes.authRoute;
+
+  runApp(
+    DevicePreview(
+      enabled: !kReleaseMode,
+      builder: (BuildContext context) => MyApp(initialRoute: initialRoute),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final String initialRoute;
+  const MyApp({super.key, required this.initialRoute});
 
   @override
   Widget build(BuildContext context) {
@@ -29,8 +40,8 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Social Media App',
       theme: AppThemes.lightTheme,
-
-      initialRoute: AppRoutes.authRoute,
+      initialRoute: initialRoute,
+      // initialRoute: AppRoutes.authRoute,
       onGenerateRoute: AppRouter.generateRoute,
     );
   }

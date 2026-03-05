@@ -31,7 +31,7 @@ class CustomElevatedButton extends StatelessWidget {
         maximumSize: maximumSize ?? const Size(double.infinity, 55),
         backgroundColor: bgColor ?? Theme.of(context).primaryColor,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        side: BorderSide(color: Theme.of(context).primaryColor, width: 1),
+        // side: BorderSide(color: Theme.of(context).primaryColor, width: 1),
       ),
 
       onPressed: onPressed,
