@@ -21,52 +21,41 @@ class AuthView extends StatelessWidget {
     final List<Widget> tabViews = [LoginViewWidget(), RegisterViewWidget()];
     return BlocProvider(
       create: (context) => AuthCubit()..checkAuthStatus(),
-      child: BlocListener<AuthCubit, AuthState>(
-        listener: (context, state) {
-          if (state is AuthSuccess) {
-            Navigator.of(
-              context,
-              rootNavigator: true,
-            ).pushNamedAndRemoveUntil(AppRoutes.homeRoute, (route) => false);
-          }
-        },
-        child: DefaultTabController(
-          length: tabs.length,
-          child: GestureDetector(
-            onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
-            child: Scaffold(
-              resizeToAvoidBottomInset: false,
-              body: BackgroundThemeWidget(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Gap(35),
-                      Image.asset(AppImages.logo, width: 350),
-                      Gap(40),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 26),
-                        child: CustomTabBar(tabs: tabs),
-                      ),
-                      Gap(30),
-                      Expanded(
-                        child: NotificationListener<ScrollNotification>(
-                          onNotification: (notification) {
-                            if (notification is ScrollStartNotification) {
-                              if (notification.metrics.axis ==
-                                  Axis.horizontal) {
-                                FocusManager.instance.primaryFocus?.unfocus();
-                              }
+      child: DefaultTabController(
+        length: tabs.length,
+        child: GestureDetector(
+          onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+          child: Scaffold(
+            resizeToAvoidBottomInset: false,
+            body: BackgroundThemeWidget(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Gap(35),
+                    Image.asset(AppImages.logo, width: 350),
+                    Gap(40),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 26),
+                      child: CustomTabBar(tabs: tabs),
+                    ),
+                    Gap(30),
+                    Expanded(
+                      child: NotificationListener<ScrollNotification>(
+                        onNotification: (notification) {
+                          if (notification is ScrollStartNotification) {
+                            if (notification.metrics.axis == Axis.horizontal) {
+                              FocusManager.instance.primaryFocus?.unfocus();
                             }
-                            return false;
-                          },
-                          child: TabBarView(children: tabViews),
-                        ),
+                          }
+                          return false;
+                        },
+                        child: TabBarView(children: tabViews),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
             ),
