@@ -4,6 +4,7 @@ import 'package:social_media_app/features/discover/views/discover_view.dart';
 import 'package:social_media_app/features/profile/views/profile_view.dart';
 import 'package:social_media_app/features/settings/views/settings_view.dart';
 import '../../features/home/views/home_view.dart';
+import 'nav_bar_icon_widget.dart';
 
 class CustomBottomNavBar extends StatefulWidget {
   const CustomBottomNavBar({super.key});
@@ -21,64 +22,47 @@ class _CustomBottomNavBarState extends State<CustomBottomNavBar> {
         PersistentTabConfig(
           screen: HomeView(),
           item: ItemConfig(
-            icon: ActiveNavBarIcon(icon: Icons.home_outlined),
-            inactiveIcon: InActiveNavBarIcon(icon: Icons.home_outlined),
+            icon: NavBarIcon(icon: Icons.home_outlined, isActive: true),
+            inactiveIcon: NavBarIcon(
+              icon: Icons.home_outlined,
+              isActive: false,
+            ),
           ),
         ),
         PersistentTabConfig(
           screen: DiscoverView(),
           item: ItemConfig(
-            icon: ActiveNavBarIcon(icon: Icons.add_box_outlined),
-            inactiveIcon: InActiveNavBarIcon(icon: Icons.add_box_outlined),
+            icon: NavBarIcon(icon: Icons.add_box_outlined, isActive: true),
+            inactiveIcon: NavBarIcon(
+              icon: Icons.add_box_outlined,
+              isActive: false,
+            ),
           ),
         ),
         PersistentTabConfig(
           screen: ProfileView(),
           item: ItemConfig(
-            icon: ActiveNavBarIcon(icon: Icons.person_outline),
-            inactiveIcon: InActiveNavBarIcon(icon: Icons.person_outline),
+            icon: NavBarIcon(icon: Icons.person_outline, isActive: true),
+            inactiveIcon: NavBarIcon(
+              icon: Icons.person_outline,
+              isActive: false,
+            ),
           ),
         ),
         PersistentTabConfig(
           screen: SettingsView(),
           item: ItemConfig(
-            icon: ActiveNavBarIcon(icon: Icons.settings_outlined),
-            inactiveIcon: InActiveNavBarIcon(icon: Icons.settings_outlined),
+            icon: NavBarIcon(icon: Icons.settings_outlined, isActive: true),
+            inactiveIcon: NavBarIcon(
+              icon: Icons.settings_outlined,
+              isActive: false,
+            ),
           ),
         ),
       ],
 
       navBarBuilder:
           (navBarConfig) => Style9BottomNavBar(navBarConfig: navBarConfig),
-    );
-  }
-}
-
-class InActiveNavBarIcon extends StatelessWidget {
-  const InActiveNavBarIcon({super.key, this.icon});
-  final IconData? icon;
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(8),
-      decoration: const BoxDecoration(color: Colors.transparent),
-      child: Icon(icon, color: Colors.grey),
-    );
-  }
-}
-
-class ActiveNavBarIcon extends StatelessWidget {
-  const ActiveNavBarIcon({super.key, this.icon});
-  final IconData? icon;
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(8),
-      decoration: BoxDecoration(
-        color: Colors.blue.withValues(alpha: .2),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Icon(icon),
     );
   }
 }
