@@ -277,6 +277,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.0.1"
+  go_router:
+    dependency: transitive
+    description:
+      name: go_router
+      sha256: c92d18e1fe994cb06d48aa786c46b142a5633067e8297cff6b5a3ac742620104
+      url: "https://pub.dev"
+    source: hosted
+    version: "17.0.0"
   gotrue:
     dependency: transitive
     description:
@@ -477,6 +485,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.3.0"
+  persistent_bottom_nav_bar_v2:
+    dependency: "direct main"
+    description:
+      name: persistent_bottom_nav_bar_v2
+      sha256: f07f414a33b6f9fcd11f9c29e9dfdd898a1b03d1e36d3d6bfd470d99a4350bc6
+      url: "https://pub.dev"
+    source: hosted
+    version: "6.3.1"
   platform:
     dependency: transitive
     description:
