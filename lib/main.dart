@@ -1,8 +1,10 @@
+import 'package:device_preview/device_preview.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:social_media_app/core/router/app_router.dart';
+import 'package:social_media_app/core/router/app_routes.dart';
 import 'package:social_media_app/core/secrets/app_secrets.dart';
 import 'package:social_media_app/core/themes/app_themes.dart';
-import 'package:social_media_app/features/auth/views/auth_view.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 void main() async {
@@ -12,15 +14,7 @@ void main() async {
     url: AppSecrets.supabaseUrl,
     anonKey: AppSecrets.supabaseAnonKey,
   );
-
-  // try {
-  //   debugPrint(
-  //     'Supabase is ready! Session: ${Supabase.instance.client.auth.currentSession}}',
-  //   );
-  // } catch (e) {
-  //   debugPrint('Supabase initialization failed: $e');
-  // }
-  runApp(const MyApp());
+  runApp(DevicePreview(builder: (BuildContext context) => const MyApp()));
 }
 
 class MyApp extends StatelessWidget {
@@ -29,10 +23,15 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      // useInheritedMediaQuery: true,  /// deprecated
+      locale: DevicePreview.locale(context),
+      builder: DevicePreview.appBuilder,
       debugShowCheckedModeBanner: false,
       title: 'Social Media App',
       theme: AppThemes.lightTheme,
-      home: AuthView(),
+
+      initialRoute: AppRoutes.authRoute,
+      onGenerateRoute: AppRouter.generateRoute,
     );
   }
 }
