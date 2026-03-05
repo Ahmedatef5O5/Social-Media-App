@@ -20,13 +20,19 @@ class SupabaseAuthServices implements AuthRepository {
   }
 
   @override
-  Future<void> signUpWithEmail(String email, String password) async {
+  Future<void> signUpWithEmail(
+    String name,
+    String email,
+    String password,
+  ) async {
     try {
       final response = await _supabase.auth.signUp(
         email: email,
         password: password,
+        data: {'full_name': name},
       );
       if (response.user == null) throw Exception('User not found');
+      await _setUserData(name, email, response.user!.id);
     } catch (e) {
       rethrow;
     }
@@ -65,5 +71,23 @@ class SupabaseAuthServices implements AuthRepository {
     } catch (e) {
       rethrow;
     }
+  }
+
+  Future<void> _setUserData(String name, String email, String userId) async {
+    try {
+      await _supabase.from('users').insert({
+        'name': name,
+        'email': email,
+        'id': userId,
+      });
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  User? fetchRawUser() {
+    final user = _supabase.auth.currentUser;
+    if (user == null) return null;
+    return user;
   }
 }
