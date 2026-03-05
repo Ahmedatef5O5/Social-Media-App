@@ -3,9 +3,9 @@ import 'package:gap/gap.dart';
 import '../../../core/constants/app_images.dart';
 import '../../../core/widgets/custom_grey_container.dart';
 
-class SocialSignInSection extends StatelessWidget {
-  const SocialSignInSection({super.key});
-
+class SocialSignSection extends StatelessWidget {
+  const SocialSignSection({super.key, required this.label});
+  final String label;
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -15,7 +15,7 @@ class SocialSignInSection extends StatelessWidget {
             Expanded(child: Divider()),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8),
-              child: Text('Or Sign in with'),
+              child: Text(label),
             ),
             Expanded(child: Divider()),
           ],
