@@ -11,48 +11,60 @@ class HomeView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) => AuthCubit(),
-      child: BlocListener<AuthCubit, AuthState>(
-        listener: (context, state) {
-          if (state is AuthSignedOut) {
-            Navigator.of(
-              context,
-              rootNavigator: true,
-            ).pushNamedAndRemoveUntil(AppRoutes.authRoute, (route) => false);
-          } else if (state is AuthFailure) {
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(SnackBar(content: Text(state.errMsg)));
-          }
-        },
-        child: PopScope(
-          canPop: false,
-          child: Scaffold(
-            body: BackgroundThemeWidget(
-              child: Center(
-                child: Builder(
-                  builder: (context) {
-                    return Column(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Gap(30),
-                        Text('Home View'),
-                        Gap(140),
-                        CustomElevatedButton(
-                          maximumSize: Size(150, 50),
-                          minimumSize: Size(150, 50),
-                          txtBtn: 'log out',
-                          onPressed: () {
-                            context.read<AuthCubit>().signOut();
-                          },
-                        ),
-                      ],
+    return PopScope(
+      canPop: false,
+      child: Scaffold(
+        body: BackgroundThemeWidget(
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Gap(30),
+                Text('Home View'),
+                Gap(140),
+                BlocConsumer<AuthCubit, AuthState>(
+                  listener: (context, state) {
+                    if (state is AuthSignedOut) {
+                      Navigator.of(
+                        context,
+                        rootNavigator: true,
+                      ).pushNamedAndRemoveUntil(
+                        AppRoutes.authRoute,
+                        (route) => false,
+                      );
+                    } else if (state is AuthFailure) {
+                      ScaffoldMessenger.of(
+                        context,
+                      ).showSnackBar(SnackBar(content: Text(state.errMsg)));
+                    }
+                  },
+                  buildWhen:
+                      (previous, current) =>
+                          current is AuthSignedOut ||
+                          current is AuthFailure ||
+                          current is AuthLoading,
+                  builder: (context, state) {
+                    if (state is AuthLoading) {
+                      return CustomElevatedButton(
+                        maximumSize: Size(150, 50),
+                        minimumSize: Size(150, 50),
+                        txtBtn: 'log out',
+                        onPressed: null,
+                        isLoading: true,
+                      );
+                    }
+                    return CustomElevatedButton(
+                      maximumSize: Size(150, 50),
+                      minimumSize: Size(150, 50),
+                      txtBtn: 'log out',
+                      onPressed: () {
+                        context.read<AuthCubit>().signOut();
+                      },
                     );
                   },
                 ),
-              ),
+              ],
             ),
           ),
         ),

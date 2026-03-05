@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 import 'package:social_media_app/core/constants/app_images.dart';
-import 'package:social_media_app/features/auth/logic/auth_cubit/auth_cubit.dart';
 import 'package:social_media_app/features/auth/widgets/login_view_widget.dart';
 import 'package:social_media_app/features/auth/widgets/register_view_widget.dart';
 import '../../../core/themes/background_theme_widget.dart';
@@ -18,44 +16,41 @@ class AuthView extends StatelessWidget {
       const Tab(text: 'Sign up'),
     ];
     final List<Widget> tabViews = [LoginViewWidget(), RegisterViewWidget()];
-    return BlocProvider(
-      create: (context) => AuthCubit()..checkAuthStatus(),
-      child: DefaultTabController(
-        length: tabs.length,
-        child: GestureDetector(
-          onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
-          child: Scaffold(
-            resizeToAvoidBottomInset: false,
-            body: BackgroundThemeWidget(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Gap(35),
-                    Image.asset(AppImages.logo, width: 350),
-                    Gap(40),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 26),
-                      child: CustomTabBar(tabs: tabs),
-                    ),
-                    Gap(30),
-                    Expanded(
-                      child: NotificationListener<ScrollNotification>(
-                        onNotification: (notification) {
-                          if (notification is ScrollStartNotification) {
-                            if (notification.metrics.axis == Axis.horizontal) {
-                              FocusManager.instance.primaryFocus?.unfocus();
-                            }
+    return DefaultTabController(
+      length: tabs.length,
+      child: GestureDetector(
+        onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+        child: Scaffold(
+          resizeToAvoidBottomInset: false,
+          body: BackgroundThemeWidget(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Gap(35),
+                  Image.asset(AppImages.logo, width: 350),
+                  Gap(40),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 26),
+                    child: CustomTabBar(tabs: tabs),
+                  ),
+                  Gap(30),
+                  Expanded(
+                    child: NotificationListener<ScrollNotification>(
+                      onNotification: (notification) {
+                        if (notification is ScrollStartNotification) {
+                          if (notification.metrics.axis == Axis.horizontal) {
+                            FocusManager.instance.primaryFocus?.unfocus();
                           }
-                          return false;
-                        },
-                        child: TabBarView(children: tabViews),
-                      ),
+                        }
+                        return false;
+                      },
+                      child: TabBarView(children: tabViews),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
           ),
