@@ -37,7 +37,19 @@ class AuthView extends StatelessWidget {
                     child: CustomTabBar(tabs: tabs),
                   ),
                   Gap(30),
-                  Expanded(child: TabBarView(children: tabViews)),
+                  Expanded(
+                    child: NotificationListener<ScrollNotification>(
+                      onNotification: (notification) {
+                        if (notification is ScrollStartNotification) {
+                          if (notification.metrics.axis == Axis.horizontal) {
+                            FocusManager.instance.primaryFocus?.unfocus();
+                          }
+                        }
+                        return false;
+                      },
+                      child: TabBarView(children: tabViews),
+                    ),
+                  ),
                 ],
               ),
             ),
