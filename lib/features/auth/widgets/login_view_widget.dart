@@ -10,6 +10,7 @@ class LoginViewWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 22),
       child: SingleChildScrollView(
@@ -41,6 +42,7 @@ class LoginViewWidget extends StatelessWidget {
               clickableText: '\t\tSign up',
             ),
             Gap(18),
+            Gap(bottomInset > 0 ? bottomInset : 18),
           ],
         ),
       ),

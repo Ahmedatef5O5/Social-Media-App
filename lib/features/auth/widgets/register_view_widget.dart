@@ -10,6 +10,7 @@ class RegisterViewWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 22),
       child: SingleChildScrollView(
@@ -46,6 +47,7 @@ class RegisterViewWidget extends StatelessWidget {
               staticText: 'By Using this app you agree with the\n',
               clickableText: 'Terms of Service',
             ),
+            Gap(bottomInset > 0 ? bottomInset : 18),
             Gap(18),
           ],
         ),
