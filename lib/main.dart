@@ -12,6 +12,14 @@ void main() async {
     url: AppSecrets.supabaseUrl,
     anonKey: AppSecrets.supabaseAnonKey,
   );
+
+  // try {
+  //   debugPrint(
+  //     'Supabase is ready! Session: ${Supabase.instance.client.auth.currentSession}}',
+  //   );
+  // } catch (e) {
+  //   debugPrint('Supabase initialization failed: $e');
+  // }
   runApp(const MyApp());
 }
 
@@ -22,7 +30,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Flutter Demo',
+      title: 'Social Media App',
       theme: AppThemes.lightTheme,
       home: AuthView(),
     );

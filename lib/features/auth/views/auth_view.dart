@@ -18,21 +18,25 @@ class AuthView extends StatelessWidget {
     final List<Widget> tabViews = [LoginViewWidget(), RegisterViewWidget()];
     return DefaultTabController(
       length: tabs.length,
-      child: Scaffold(
-        body: BackgroundThemeWidget(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 55),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.start,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Gap(35),
-                Image.asset(AppImages.logo, width: 300),
-                Gap(30),
-                CustomTabBar(tabs: tabs),
-                Gap(30),
-                Expanded(child: TabBarView(children: tabViews)),
-              ],
+      child: GestureDetector(
+        onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+        child: Scaffold(
+          resizeToAvoidBottomInset: false,
+          body: BackgroundThemeWidget(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 55),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Gap(35),
+                  Image.asset(AppImages.logo, width: 300),
+                  Gap(30),
+                  CustomTabBar(tabs: tabs),
+                  Gap(30),
+                  Expanded(child: TabBarView(children: tabViews)),
+                ],
+              ),
             ),
           ),
         ),

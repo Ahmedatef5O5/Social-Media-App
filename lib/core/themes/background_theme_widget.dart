@@ -9,7 +9,8 @@ class BackgroundThemeWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      height: double.infinity,
+      // height: double.infinity,
+      height: MediaQuery.of(context).size.height,
       decoration: const BoxDecoration(color: Colors.white),
       child: Stack(
         children: [

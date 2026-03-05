@@ -19,6 +19,30 @@ class AppColors {
   static const Color white60 = Colors.white60;
   static const Color white70 = Colors.white70;
 
+  // grey colors
+  static const Color gey = Colors.grey;
+  static Color gey1 = Colors.grey.shade100;
+  static Color gey2 = Colors.grey.shade200;
+  static Color gey3 = Colors.grey.shade300;
+  static Color gey4 = Colors.grey.shade400;
+  static Color gey5 = Colors.grey.shade500;
+  static Color gey6 = Colors.grey.shade600;
+  static Color gey7 = Colors.grey.shade700;
+  static Color gey8 = Colors.grey.shade800;
+  static Color gey9 = Colors.grey.shade900;
+
+  // grey colors
+  static const Color blueGey = Colors.blueGrey;
+  static Color blueGrey1 = Colors.blueGrey.shade100;
+  static Color blueGrey2 = Colors.blueGrey.shade200;
+  static Color blueGrey3 = Colors.blueGrey.shade300;
+  static Color blueGrey4 = Colors.blueGrey.shade400;
+  static Color blueGrey5 = Colors.blueGrey.shade500;
+  static Color blueGrey6 = Colors.blueGrey.shade600;
+  static Color blueGrey7 = Colors.blueGrey.shade700;
+  static Color blueGrey8 = Colors.blueGrey.shade800;
+  static Color blueGrey9 = Colors.blueGrey.shade900;
+
   // black colors
   static const Color black = Colors.black;
   static const Color black12 = Colors.black12;

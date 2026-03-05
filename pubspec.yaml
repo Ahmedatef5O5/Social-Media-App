@@ -8,6 +8,7 @@ environment:
   sdk: ^3.7.2
 
 dependencies:
+  cached_network_image: ^3.4.1
   cupertino_icons: ^1.0.8
   flutter:
     sdk: flutter
@@ -25,6 +26,8 @@ flutter:
 
   uses-material-design: true
   assets:
+    - assets/images/
+    - assets/icons/
     - .env
   #   - images/a_dot_ham.jpeg
   # fonts:

@@ -13,8 +13,9 @@ class CustomTextFormField extends StatefulWidget {
     this.keyboardType,
     this.suffixIcon,
     this.prefixIcon,
+    this.labelText,
   });
-  final String? hintText, headerText;
+  final String? hintText, labelText, headerText;
   final TextEditingController? controller;
   final String? Function(String?)? validator;
   final bool isPassword;
@@ -70,7 +71,7 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
             // filled: true,
             // fillColor: Colors.grey.shade300,
             floatingLabelBehavior: FloatingLabelBehavior.always,
-            labelText: widget.hintText,
+            labelText: widget.labelText,
             labelStyle: Theme.of(context).textTheme.titleSmall!.copyWith(
               color: AppColors.black87,
               fontSize: 15,

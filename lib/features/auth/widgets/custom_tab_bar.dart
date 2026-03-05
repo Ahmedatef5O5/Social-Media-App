@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
-
 import '../../../core/themes/app_colors.dart';
 
 class CustomTabBar extends StatelessWidget {
   const CustomTabBar({super.key, required this.tabs});
-
   final List<Tab> tabs;
 
   @override
