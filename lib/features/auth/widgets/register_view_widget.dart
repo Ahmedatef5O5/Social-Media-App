@@ -11,7 +11,7 @@ class RegisterViewWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 22),
       child: SingleChildScrollView(
         scrollDirection: Axis.vertical,
         child: Column(
@@ -19,7 +19,7 @@ class RegisterViewWidget extends StatelessWidget {
           children: [
             Gap(4),
             CustomTextFormField(
-              labelText: 'Full Nmae',
+              labelText: 'Full Name',
               hintText: 'Your Full Name',
             ),
             Gap(18),

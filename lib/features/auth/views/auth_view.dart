@@ -24,15 +24,18 @@ class AuthView extends StatelessWidget {
           resizeToAvoidBottomInset: false,
           body: BackgroundThemeWidget(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 55),
+              padding: const EdgeInsets.symmetric(horizontal: 12),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.start,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Gap(35),
-                  Image.asset(AppImages.logo, width: 300),
-                  Gap(30),
-                  CustomTabBar(tabs: tabs),
+                  Image.asset(AppImages.logo, width: 350),
+                  Gap(40),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 26),
+                    child: CustomTabBar(tabs: tabs),
+                  ),
                   Gap(30),
                   Expanded(child: TabBarView(children: tabViews)),
                 ],
