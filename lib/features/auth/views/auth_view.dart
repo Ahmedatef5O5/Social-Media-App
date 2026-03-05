@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 import 'package:social_media_app/core/constants/app_images.dart';
-import 'package:social_media_app/core/router/app_routes.dart';
 import 'package:social_media_app/features/auth/logic/auth_cubit/auth_cubit.dart';
 import 'package:social_media_app/features/auth/widgets/login_view_widget.dart';
 import 'package:social_media_app/features/auth/widgets/register_view_widget.dart';
