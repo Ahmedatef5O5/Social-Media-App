@@ -3,11 +3,14 @@ import 'package:flutter/material.dart';
 class AppColors {
   // app color
   static const Color bgColor = Color(0xffD8F1FE);
+  static const Color bgColor2 = Color.fromARGB(123, 7, 122, 184);
+
   static const Color primaryColor = Color(0xff007AFF);
   static const Color secondaryColor = Color(0xffC4C4C4);
 
   static const Color greyColor = Color(0xff8C8F90);
 
+  static const Color transparent = Colors.transparent;
   // white colors
   static const Color white = Colors.white;
   static const Color white10 = Colors.white10;
@@ -20,16 +23,16 @@ class AppColors {
   static const Color white70 = Colors.white70;
 
   // grey colors
-  static const Color gey = Colors.grey;
-  static Color gey1 = Colors.grey.shade100;
-  static Color gey2 = Colors.grey.shade200;
-  static Color gey3 = Colors.grey.shade300;
-  static Color gey4 = Colors.grey.shade400;
-  static Color gey5 = Colors.grey.shade500;
-  static Color gey6 = Colors.grey.shade600;
-  static Color gey7 = Colors.grey.shade700;
-  static Color gey8 = Colors.grey.shade800;
-  static Color gey9 = Colors.grey.shade900;
+  static const Color grey = Colors.grey;
+  static Color grey1 = Colors.grey.shade100;
+  static Color grey2 = Colors.grey.shade200;
+  static Color grey3 = Colors.grey.shade300;
+  static Color grey4 = Colors.grey.shade400;
+  static Color grey5 = Colors.grey.shade500;
+  static Color grey6 = Colors.grey.shade600;
+  static Color grey7 = Colors.grey.shade700;
+  static Color grey8 = Colors.grey.shade800;
+  static Color grey9 = Colors.grey.shade900;
 
   // grey colors
   static const Color blueGey = Colors.blueGrey;

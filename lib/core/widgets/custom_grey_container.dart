@@ -20,7 +20,7 @@ class CustomGreyContainer extends StatelessWidget {
       width: width ?? 40,
       height: height ?? 40,
       decoration: BoxDecoration(
-        color: AppColors.gey2,
+        color: AppColors.grey2,
         borderRadius: BorderRadius.circular(radius ?? 16),
       ),
       child: Padding(
