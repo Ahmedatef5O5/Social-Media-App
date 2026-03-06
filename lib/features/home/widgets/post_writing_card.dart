@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
+import 'package:social_media_app/core/router/app_routes.dart';
 import 'package:social_media_app/core/themes/app_colors.dart';
 import '../../../core/constants/app_images.dart';
 
@@ -23,7 +24,11 @@ class PostWritingCard extends StatelessWidget {
                   CircleAvatar(radius: 18, child: Icon(Icons.person)),
                   Gap(12),
                   InkWell(
-                    onTap: () {},
+                    onTap:
+                        () => Navigator.of(
+                          context,
+                          rootNavigator: true,
+                        ).pushNamed(AppRoutes.createPostRoute),
                     child: Text(
                       'What\'s on your head?',
                       style: Theme.of(context).textTheme.titleMedium!.copyWith(
@@ -49,7 +54,12 @@ class PostWritingCard extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         InkWell(
-                          onTap: () {},
+                          onTap:
+                              () => Navigator.of(
+                                context,
+                                rootNavigator: true,
+                              ).pushNamed(AppRoutes.createPostRoute),
+
                           child: Image.asset(AppImages.imageIcon, width: 62),
                         ),
                         SizedBox(
@@ -58,7 +68,12 @@ class PostWritingCard extends StatelessWidget {
                         ),
 
                         InkWell(
-                          onTap: () {},
+                          onTap:
+                              () => Navigator.of(
+                                context,
+                                rootNavigator: true,
+                              ).pushNamed(AppRoutes.createPostRoute),
+
                           child: Image.asset(AppImages.videosIcon, width: 62),
                         ),
                         SizedBox(
@@ -67,7 +82,12 @@ class PostWritingCard extends StatelessWidget {
                         ),
 
                         InkWell(
-                          onTap: () {},
+                          onTap:
+                              () => Navigator.of(
+                                context,
+                                rootNavigator: true,
+                              ).pushNamed(AppRoutes.createPostRoute),
+
                           child: Image.asset(AppImages.attachIcon, width: 62),
                         ),
                       ],
