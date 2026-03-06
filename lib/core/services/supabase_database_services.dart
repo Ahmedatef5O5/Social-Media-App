@@ -230,9 +230,9 @@ class SupabaseDatabaseServices {
         // Apply any additional filters
         finalQuery = filter(query as PostgrestFilterBuilder);
       }
-      final rows = await finalQuery;
-      final list =
-          rows.map((e) {
+      final List<dynamic> rows = await finalQuery;
+      final List<T> list =
+          rows.map<T>((e) {
             final row = e as Map<String, dynamic>;
             final id =
                 primaryKey != null ? row[primaryKey]?.toString() ?? '' : '';

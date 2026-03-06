@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
+import 'package:social_media_app/features/home/models/story_model.dart';
 import '../../../core/themes/app_colors.dart';
 
 class StoryItemWidget extends StatelessWidget {
-  final bool isFirstItem;
-  const StoryItemWidget({super.key, this.isFirstItem = false});
+  final StoryModel? story;
+  const StoryItemWidget({super.key, this.story});
 
   @override
   Widget build(BuildContext context) {
     return InkWell(
       onTap: () {
-        if (isFirstItem) {
+        if (story == null) {
           // Navigate to share story page
         } else {
           // Navigate to view story page
@@ -31,9 +32,12 @@ class StoryItemWidget extends StatelessWidget {
               radius: 8,
 
               backgroundColor:
-                  isFirstItem ? AppColors.bgColor2 : AppColors.transparent,
+                  story == null ? AppColors.bgColor2 : AppColors.transparent,
+              backgroundImage:
+                  story == null ? null : NetworkImage(story!.imageUrl),
+
               child:
-                  isFirstItem
+                  story == null
                       ? const Icon(
                         Icons.add_outlined,
                         size: 22,
@@ -43,7 +47,7 @@ class StoryItemWidget extends StatelessWidget {
             ),
           ),
           Gap(6),
-          isFirstItem
+          story == null
               ? Text(
                 'Share Story',
                 textAlign: TextAlign.start,
@@ -54,7 +58,8 @@ class StoryItemWidget extends StatelessWidget {
                 ),
               )
               : Text(
-                'User',
+                story!.authorId,
+                // 'User',
                 textAlign: TextAlign.start,
                 style: Theme.of(context).textTheme.titleSmall!.copyWith(
                   fontWeight: FontWeight.w400,
