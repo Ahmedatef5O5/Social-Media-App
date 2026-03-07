@@ -58,8 +58,9 @@ class StoryItemWidget extends StatelessWidget {
                 ),
               )
               : Text(
-                story!.authorId,
-                // 'User',
+                story!.authorName.split(' ').first,
+
+                // story!.authorId,
                 textAlign: TextAlign.start,
                 style: Theme.of(context).textTheme.titleSmall!.copyWith(
                   fontWeight: FontWeight.w400,

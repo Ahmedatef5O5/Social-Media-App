@@ -1,13 +1,19 @@
+import 'package:social_media_app/core/utilities/app_tables_names.dart';
+
 class StoryModel {
   final String id;
   final String imageUrl;
   final String authorId;
+  final String authorName;
+  final String? authorImageUrl;
   final String createdAt;
 
   const StoryModel({
     required this.id,
     required this.imageUrl,
     required this.authorId,
+    required this.authorName,
+    this.authorImageUrl,
     required this.createdAt,
   });
 
@@ -21,11 +27,14 @@ class StoryModel {
   }
 
   factory StoryModel.fromMap(Map<String, dynamic> map) {
+    final userData = map[AppTablesNames.users] as Map<String, dynamic>?;
     return StoryModel(
-      id: map['id'] as String,
-      imageUrl: map['image_url'] as String? ?? '',
-      authorId: map['author_id'] as String? ?? '',
-      createdAt: map['created_at'] as String? ?? '',
+      id: map[StoryColumns.id] as String,
+      imageUrl: map[StoryColumns.imageUrl] as String? ?? '',
+      authorId: map[StoryColumns.authorId] as String? ?? '',
+      authorName: userData?[UserColumns.name] as String? ?? 'Unknown User',
+      authorImageUrl: userData?['image_url'] as String?,
+      createdAt: map[StoryColumns.createdAt] as String? ?? '',
     );
   }
 
