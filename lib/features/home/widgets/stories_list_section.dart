@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:social_media_app/features/home/cubit/home_cubit.dart';
 import 'package:social_media_app/features/home/widgets/story_item_widget.dart';
-
 import '../../../core/themes/app_colors.dart';
 
 class StoriesListSection extends StatelessWidget {
@@ -14,7 +13,7 @@ class StoriesListSection extends StatelessWidget {
     final size = MediaQuery.sizeOf(context);
     final homeCubit = BlocProvider.of<HomeCubit>(context);
     return SizedBox(
-      height: size.height * 0.14,
+      height: size.height * 0.12,
       child: BlocConsumer<HomeCubit, HomeState>(
         bloc: homeCubit,
         listenWhen: (previous, current) => current is StoriesError,

@@ -39,9 +39,7 @@ class HomeView extends StatelessWidget {
                     StoriesListSection(),
                     Gap(4),
                     PostsSection(),
-                    Gap(35),
-
-                    /// TODO:
+                    Gap(25),
                   ],
                 ),
               ),

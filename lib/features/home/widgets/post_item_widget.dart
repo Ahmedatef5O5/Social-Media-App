@@ -11,7 +11,6 @@ class PostItemWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // return Card(child: Text(post.text));
     return Container(
       decoration: BoxDecoration(
         color: AppColors.white,

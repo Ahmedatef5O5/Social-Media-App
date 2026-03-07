@@ -1,8 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:gap/gap.dart';
 import 'package:social_media_app/core/themes/app_colors.dart';
 import 'package:social_media_app/features/home/cubit/home_cubit.dart';
-
 import 'post_item_widget.dart';
 
 class PostsSection extends StatelessWidget {
@@ -28,7 +28,7 @@ class PostsSection extends StatelessWidget {
           if (posts.isEmpty) {
             return const Center(child: Text('No posts available.'));
           }
-          return ListView.builder(
+          return ListView.separated(
             itemCount: posts.length,
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
@@ -37,6 +37,7 @@ class PostsSection extends StatelessWidget {
 
               return PostItemWidget(post: post);
             },
+            separatorBuilder: (BuildContext context, int index) => Gap(14),
           );
         } else if (state is PostsError) {
           return Center(child: Text(state.message));
