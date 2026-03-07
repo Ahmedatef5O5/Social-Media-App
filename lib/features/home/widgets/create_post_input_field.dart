@@ -1,0 +1,41 @@
+import 'package:flutter/material.dart';
+import '../../../core/themes/app_colors.dart';
+
+class CreatePostInputField extends StatelessWidget {
+  const CreatePostInputField({
+    super.key,
+    required TextEditingController textEditingController,
+    required bool hasText,
+  }) : _textEditingController = textEditingController,
+       _hasText = hasText;
+
+  final TextEditingController _textEditingController;
+  final bool _hasText;
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      controller: _textEditingController,
+      maxLines: null,
+      maxLength: 140,
+      style: TextStyle(fontSize: 18),
+      decoration: InputDecoration(
+        hintText: "What's on your head?",
+        counterText: _hasText ? null : '',
+        counterStyle: TextStyle(
+          color: _textEditingController.text.length >= 140 ? Colors.red : null,
+          fontWeight:
+              _textEditingController.text.length >= 140
+                  ? FontWeight.bold
+                  : null,
+        ),
+        border: InputBorder.none,
+        hintStyle: Theme.of(context).textTheme.titleSmall!.copyWith(
+          color: AppColors.black54,
+          fontSize: 19,
+          fontWeight: FontWeight.w400,
+        ),
+      ),
+    );
+  }
+}
