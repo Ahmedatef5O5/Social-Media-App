@@ -17,6 +17,7 @@ dependencies:
   flutter_dotenv: ^6.0.0
   flutter_svg: 2.2.2
   gap: ^3.0.1
+  intl: 0.19.0
   persistent_bottom_nav_bar_v2: ^6.3.1
   supabase_flutter: ^2.12.0
 
