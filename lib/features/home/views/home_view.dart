@@ -5,6 +5,7 @@ import 'package:social_media_app/core/themes/background_theme_widget.dart';
 import 'package:social_media_app/features/home/cubit/home_cubit.dart';
 import '../widgets/home_view_header_section.dart';
 import '../widgets/post_writing_card.dart';
+import '../widgets/posts_section.dart';
 import '../widgets/stories_list_section.dart';
 
 class HomeView extends StatelessWidget {
@@ -17,25 +18,32 @@ class HomeView extends StatelessWidget {
       child: BlocProvider(
         create: (context) {
           final cubit = HomeCubit();
-          cubit.fetchStories();
+          cubit.getHomeData();
           return cubit;
         },
         child: BackgroundThemeWidget(
           child: Center(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.start,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Gap(30),
-                  HomeViewHeaderSection(),
-                  Gap(35),
-                  PostWritingCard(),
-                  Gap(20),
-                  StoriesListSection(),
-                  Gap(20),
-                ],
+              child: SingleChildScrollView(
+                scrollDirection: Axis.vertical,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Gap(30),
+                    HomeViewHeaderSection(),
+                    Gap(35),
+                    PostWritingCard(),
+                    Gap(20),
+                    StoriesListSection(),
+                    Gap(4),
+                    PostsSection(),
+                    Gap(35),
+
+                    /// TODO:
+                  ],
+                ),
               ),
             ),
           ),
