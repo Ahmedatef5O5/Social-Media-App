@@ -33,3 +33,14 @@ final class PostsError extends HomeState {
 
   const PostsError(this.message);
 }
+
+final class PostCreating extends HomeState {}
+
+final class PostCreated extends HomeState {
+  const PostCreated();
+}
+
+final class PostCreateError extends HomeState {
+  final String message;
+  PostCreateError(this.message);
+}
