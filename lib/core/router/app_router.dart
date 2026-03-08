@@ -1,9 +1,11 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:social_media_app/core/router/app_routes.dart';
 import 'package:social_media_app/core/themes/app_colors.dart';
 import 'package:social_media_app/core/widgets/custom_bottom_nav_bar.dart';
 import 'package:social_media_app/features/auth/views/auth_view.dart';
+import 'package:social_media_app/features/home/cubit/home_cubit.dart';
 import 'package:social_media_app/features/home/views/create_post_view.dart';
 
 class AppRouter {
@@ -17,13 +19,21 @@ class AppRouter {
 
       case AppRoutes.homeRoute:
         return CupertinoPageRoute(
-          builder: (_) => const CustomBottomNavBar(),
+          builder:
+              (_) => BlocProvider(
+                create: (context) => HomeCubit()..getHomeData(),
+                child: const CustomBottomNavBar(),
+              ),
           settings: settings,
         );
 
       case AppRoutes.createPostRoute:
         return CupertinoPageRoute(
-          builder: (_) => const CreatePostView(),
+          builder:
+              (_) => BlocProvider.value(
+                value: settings.arguments as HomeCubit,
+                child: const CreatePostView(),
+              ),
           settings: settings,
         );
 
