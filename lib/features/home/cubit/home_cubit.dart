@@ -1,5 +1,7 @@
 import 'dart:io';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:social_media_app/features/auth/data/models/user_data.dart';
 import 'package:social_media_app/features/home/services/home_services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -11,9 +13,20 @@ part 'home_state.dart';
 class HomeCubit extends Cubit<HomeState> {
   HomeCubit() : super(HomeInitial());
   final homeServices = HomeServices();
-
+  UserData? currentUserData;
   Future<void> getHomeData() async {
-    await Future.wait([fetchStories(), fetchPosts()]);
+    final userId = Supabase.instance.client.auth.currentUser!.id;
+    ([_getCurrentUser(userId), fetchStories(), fetchPosts()]);
+  }
+
+  Future<void> _getCurrentUser(String userId) async {
+    try {
+      currentUserData = await homeServices.fetchCurrentUser(userId);
+      emit(UserDataLoaded(currentUserData!));
+    } catch (e) {
+      debugPrint("Error fetching user: $e");
+      emit(UserDataLoadError(e.toString()));
+    }
   }
 
   Future<void> fetchStories() async {

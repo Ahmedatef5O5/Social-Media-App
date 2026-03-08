@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
@@ -61,9 +62,28 @@ class _CreatePostViewState extends State<CreatePostView> {
         }
       },
       builder: (context, state) {
-        final currentUser = Supabase.instance.client.auth.currentUser;
+        final userFromDb = context.read<HomeCubit>().currentUserData;
+
+        if (userFromDb != null) {
+          debugPrint("✅ Data loaded from Database: ${userFromDb.name}");
+        } else {
+          debugPrint("⚠️ Using Auth Metadata (Backup)");
+        }
+        final homeCubit = context.read<HomeCubit>();
+        final user = homeCubit.currentUserData;
+        final authUser = Supabase.instance.client.auth.currentUser;
+
+        final displayName =
+            user?.name ?? authUser?.userMetadata?['full_name'] ?? 'User';
+        final displayImage =
+            user?.imageUrl ?? authUser?.userMetadata?['avatar_url'];
+        // final currentUser = Supabase.instance.client.auth.currentUser;
         // debugPrint("User Metadata: ${currentUser?.userMetadata}");
-        if (currentUser == null) return const SizedBox();
+        // if (user == null) {
+        //   return CupertinoActivityIndicator(
+        //     color: Theme.of(context).primaryColor,
+        //   );
+        // }
         return GestureDetector(
           onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
           child: Scaffold(
@@ -82,16 +102,17 @@ class _CreatePostViewState extends State<CreatePostView> {
                           isLoading: state is PostCreating,
                           hasText: _hasText,
                           onTap: () {
-                            context.read<HomeCubit>().createPost(
+                            homeCubit.createPost(
                               text: _textEditingController.text.trim(),
                             );
                           },
                         ),
                         Gap(12),
                         CreatePostUserInfo(
-                          userName:
-                              currentUser.userMetadata?['full_name'] ?? 'User',
-                          userImageUrl: currentUser.userMetadata?['avatar_url'],
+                          userName: displayName,
+                          // currentUser.userMetadata?['full_name'] ?? 'User',
+                          userImageUrl: displayImage,
+                          // userImageUrl: currentUser.userMetadata?['avatar_url'],
                         ),
                         Gap(12),
                         CreatePostInputField(
