@@ -76,11 +76,16 @@ class HomeServices {
     }
   }
 
-  Future<String?> uploadFile(File file, String bucket) async {
+  Future<String?> uploadFile(
+    File file,
+    String bucket,
+    String folderName,
+  ) async {
     try {
-      final fileName =
-          '${DateTime.now().millisecondsSinceEpoch}_${file.path.split('/').last}';
-      final path = 'posts/$fileName';
+      final extension = file.path.split('.').last;
+
+      final fileName = '${DateTime.now().millisecondsSinceEpoch}.$extension';
+      final path = '$folderName/$fileName';
       //
       await Supabase.instance.client.storage.from(bucket).upload(path, file);
       //

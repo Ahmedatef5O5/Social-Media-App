@@ -35,6 +35,21 @@ class FilePickerServices {
     }
   }
 
+  Future<XFile?> pickVideoFromGallery() async {
+    try {
+      final XFile? image = await _imagePicker.pickVideo(
+        source: ImageSource.gallery,
+      );
+      if (image != null) {
+        return image;
+      }
+      return null;
+    } catch (e) {
+      debugPrint('Error picking video from gallery: $e');
+      rethrow;
+    }
+  }
+
   Future<XFile?> pickFile() async {
     try {
       final FilePickerResult? file = await FilePicker.platform.pickFiles(

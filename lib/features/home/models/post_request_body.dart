@@ -2,12 +2,14 @@ class PostRequestBody {
   final String text;
   final String authorId;
   final String? imageUrl;
+  final String? videoUrl;
   final String? fileUrl;
 
   const PostRequestBody({
     required this.text,
     required this.authorId,
     this.imageUrl,
+    this.videoUrl,
     this.fileUrl,
   });
 
@@ -16,6 +18,7 @@ class PostRequestBody {
       'text': text,
       'author_id': authorId,
       'image_url': imageUrl,
+      'video_url': videoUrl,
       'file_url': fileUrl,
     };
   }
@@ -25,6 +28,7 @@ class PostRequestBody {
       text: map['text'] as String,
       authorId: map['author_id'] as String,
       imageUrl: map['image_url'] as String?,
+      videoUrl: map['video_url'] as String?,
       fileUrl: map['file_url'] as String?,
       // image:
       //     map['image'] != null

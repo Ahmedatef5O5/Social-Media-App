@@ -59,14 +59,14 @@ final class PostCreateError extends HomeState {
   PostCreateError(this.message);
 }
 
-final class ImagePicking extends HomeState {}
+final class MediaPicking extends HomeState {}
 
-final class ImagePicked extends HomeState {
+final class MediaPicked extends HomeState {
   final XFile? image;
-  ImagePicked(this.image);
+  MediaPicked(this.image);
 }
 
-final class ImagePickingError extends HomeState {
+final class MediaPickingError extends HomeState {
   final String message;
-  ImagePickingError(this.message);
+  MediaPickingError(this.message);
 }

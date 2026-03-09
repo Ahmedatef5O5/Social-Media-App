@@ -8,6 +8,7 @@ class PostModel {
   final String? authorName;
   final String? authorImageUrl;
   final String? videoUrl;
+  final String? fileUrl;
   final String? imageUrl;
   final List<String>? likes;
   final List<String>? comments;
@@ -21,6 +22,7 @@ class PostModel {
     this.authorName,
     this.authorImageUrl,
     this.videoUrl,
+    this.fileUrl,
     this.imageUrl,
     this.likes,
     this.comments,
@@ -36,6 +38,7 @@ class PostModel {
       'authorName': authorName,
       'authorImageUrl': authorImageUrl,
       'videoUrl': videoUrl,
+      'fileUrl': fileUrl,
       'imageUrl': imageUrl,
       'likes': likes,
       'comments': comments,
@@ -59,8 +62,9 @@ class PostModel {
       //         ? map['authorImageUrl'] as String? ?? ''
       //         : null,
       videoUrl:
-          map['videoUrl'] != null ? map['videoUrl'] as String? ?? '' : null,
+          map['video_url'] != null ? map['video_url'] as String? ?? '' : null,
       imageUrl: map['image_url'] != null ? map['image_url'] as String : null,
+      fileUrl: map['file_url'] != null ? map['file_url'] as String : null,
       likes:
           map[PostColumns.likes] != null
               ? List<String>.from(map[PostColumns.likes])
