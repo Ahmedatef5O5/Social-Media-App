@@ -1,26 +1,22 @@
-// ignore_for_file: public_member_api_docs, sort_constructors_first
-import 'dart:convert';
-import 'dart:io';
-
 class PostRequestBody {
   final String text;
   final String authorId;
-  final File? image;
-  final File? file;
+  final String? imageUrl;
+  final String? fileUrl;
 
   const PostRequestBody({
     required this.text,
     required this.authorId,
-    this.image,
-    this.file,
+    this.imageUrl,
+    this.fileUrl,
   });
 
   Map<String, dynamic> toMap() {
     return <String, dynamic>{
       'text': text,
       'author_id': authorId,
-      // 'image': image?.toMap(),
-      // 'file': file?.toMap(),
+      'image_url': imageUrl,
+      'file_url': fileUrl,
     };
   }
 
@@ -28,6 +24,8 @@ class PostRequestBody {
     return PostRequestBody(
       text: map['text'] as String,
       authorId: map['author_id'] as String,
+      imageUrl: map['image_url'] as String?,
+      fileUrl: map['file_url'] as String?,
       // image:
       //     map['image'] != null
       //         ? File.fromMap(map['image'] as Map<String, dynamic>)
