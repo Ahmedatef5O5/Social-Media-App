@@ -10,6 +10,7 @@ import 'package:social_media_app/features/home/cubit/home_cubit.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../widgets/add_post_options_bottom_sheet.dart';
 import '../widgets/create_post_header_section.dart';
+import '../widgets/create_post_image_preview.dart';
 import '../widgets/create_post_input_field.dart';
 import '../widgets/create_post_user_info.dart';
 
@@ -127,49 +128,13 @@ class _CreatePostViewState extends State<CreatePostView> {
                           BlocBuilder<HomeCubit, HomeState>(
                             builder: (context, state) {
                               if (homeCubit.selectedImage != null) {
-                                return Stack(
-                                  children: [
-                                    Container(
-                                      height: 200,
-                                      width: double.infinity,
-                                      margin: const EdgeInsets.symmetric(
-                                        vertical: 10,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(10),
-                                        image: DecorationImage(
-                                          image: FileImage(
-                                            File(homeCubit.selectedImage!.path),
-                                          ),
-                                          fit: BoxFit.cover,
-                                        ),
-                                      ),
-                                    ),
-
-                                    Positioned(
-                                      right: 5,
-                                      top: 5,
-                                      child: IconButton(
-                                        onPressed:
-                                            () => setState(() {
-                                              homeCubit.selectedImage = null;
-                                            }),
-                                        icon: DecoratedBox(
-                                          decoration: BoxDecoration(
-                                            color: AppColors.grey1,
-                                            shape: BoxShape.circle,
-                                          ),
-                                          child: Padding(
-                                            padding: const EdgeInsets.all(2.0),
-                                            child: Icon(
-                                              Icons.close_outlined,
-                                              color: Colors.black,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
+                                return CreatePostImagePreview(
+                                  imagePath: homeCubit.selectedImage!.path,
+                                  onRemove: () {
+                                    setState(() {
+                                      homeCubit.selectedImage = null;
+                                    });
+                                  },
                                 );
                               } else if (state is ImagePicking) {
                                 return SizedBox(
