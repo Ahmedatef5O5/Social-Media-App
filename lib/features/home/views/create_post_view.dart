@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -9,6 +7,7 @@ import 'package:social_media_app/core/themes/background_theme_widget.dart';
 import 'package:social_media_app/features/home/cubit/home_cubit.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../widgets/add_post_options_bottom_sheet.dart';
+import '../widgets/create_post_file_preview.dart';
 import '../widgets/create_post_header_section.dart';
 import '../widgets/create_post_image_preview.dart';
 import '../widgets/create_post_input_field.dart';
@@ -49,7 +48,7 @@ class _CreatePostViewState extends State<CreatePostView> {
   Widget build(BuildContext context) {
     return BlocConsumer<HomeCubit, HomeState>(
       listener: (context, state) {
-        if (state is ImagePicking || state is ImagePicked) {
+        if (state is MediaPicking || state is MediaPicked) {
           if (_sheetController.isAttached) {
             _sheetController.animateTo(
               0.15,
@@ -136,7 +135,28 @@ class _CreatePostViewState extends State<CreatePostView> {
                                     });
                                   },
                                 );
-                              } else if (state is ImagePicking) {
+                              } else if (homeCubit.selectedVideo != null) {
+                                return CreatePostFilePreview(
+                                  fileName: homeCubit.selectedVideo!.path,
+                                  onRemove: () {
+                                    setState(() {
+                                      homeCubit.selectedVideo = null;
+                                    });
+                                  },
+                                );
+                              } else if (homeCubit.selectedDocument != null) {
+                                return CreatePostFilePreview(
+                                  fileName:
+                                      homeCubit.selectedDocument!.path
+                                          .split('/')
+                                          .last,
+                                  onRemove: () {
+                                    setState(() {
+                                      homeCubit.selectedDocument = null;
+                                    });
+                                  },
+                                );
+                              } else if (state is MediaPicking) {
                                 return SizedBox(
                                   height:
                                       MediaQuery.of(context).size.height * 0.25,

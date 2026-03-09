@@ -58,11 +58,13 @@ class AddPostOptionsBottomSheet extends StatelessWidget {
                       Icons.videocam_outlined,
                       'Add Video',
                       AppColors.primaryColor,
+                      onTap: () => homeCubit.pickVideo(),
                     ),
                     BuildOptionItem(
                       Icons.file_upload_outlined,
                       'Add A Document',
                       AppColors.primaryColor,
+                      onTap: () => homeCubit.pickDocument(),
                     ),
                     BuildOptionItem(
                       Icons.color_lens_outlined,
