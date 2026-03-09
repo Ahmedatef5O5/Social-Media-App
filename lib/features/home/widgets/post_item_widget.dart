@@ -80,9 +80,9 @@ class PostItemWidget extends StatelessWidget {
                         ? CachedNetworkImage(
                           imageUrl: post.imageUrl!,
                           // 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQeJQeJyzgAzTEVqXiGe90RGBFhfp_4RcJJMQ&s',
-                          width: 340,
-                          // height: 120,
-                          fit: BoxFit.cover,
+                          width: 350,
+                          height: 220,
+                          fit: BoxFit.fill,
                           placeholder:
                               (context, url) => const Center(
                                 child: CircularProgressIndicator(),

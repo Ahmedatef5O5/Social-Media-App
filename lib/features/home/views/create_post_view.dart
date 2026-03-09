@@ -22,6 +22,8 @@ class CreatePostView extends StatefulWidget {
 
 class _CreatePostViewState extends State<CreatePostView> {
   final TextEditingController _textEditingController = TextEditingController();
+  final DraggableScrollableController _sheetController =
+      DraggableScrollableController();
   bool _hasText = false;
 
   @override
@@ -38,6 +40,7 @@ class _CreatePostViewState extends State<CreatePostView> {
   void dispose() {
     _textEditingController.removeListener(() {});
     _textEditingController.dispose();
+    _sheetController.dispose();
     super.dispose();
   }
 
@@ -45,6 +48,15 @@ class _CreatePostViewState extends State<CreatePostView> {
   Widget build(BuildContext context) {
     return BlocConsumer<HomeCubit, HomeState>(
       listener: (context, state) {
+        if (state is ImagePicking || state is ImagePicked) {
+          if (_sheetController.isAttached) {
+            _sheetController.animateTo(
+              0.15,
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeInOut,
+            );
+          }
+        }
         if (state is PostCreated) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -65,12 +77,6 @@ class _CreatePostViewState extends State<CreatePostView> {
         }
       },
       builder: (context, state) {
-        // final userFromDb = context.read<HomeCubit>().currentUserData;
-        // if (userFromDb != null) {
-        //   debugPrint("✅ Data loaded from Database: ${userFromDb.name}");
-        // } else {
-        //   debugPrint("⚠️ Using Auth Metadata (Backup)");
-        // }
         final homeCubit = context.read<HomeCubit>();
         final user = homeCubit.currentUserData;
         final authUser = Supabase.instance.client.auth.currentUser;
@@ -89,100 +95,104 @@ class _CreatePostViewState extends State<CreatePostView> {
                 BackgroundThemeWidget(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Gap(12),
-                        CreatePostHeaderSection(
-                          isLoading: state is PostCreating,
-                          hasText: _hasText,
-                          onTap: () {
-                            homeCubit.createPost(
-                              text: _textEditingController.text.trim(),
-                            );
-                          },
-                        ),
-                        Gap(12),
-                        CreatePostUserInfo(
-                          userName: displayName,
-                          // currentUser.userMetadata?['full_name'] ?? 'User',
-                          userImageUrl: displayImage,
-                          // userImageUrl: currentUser.userMetadata?['avatar_url'],
-                        ),
-                        Gap(12),
-                        CreatePostInputField(
-                          textEditingController: _textEditingController,
-                          hasText: _hasText,
-                        ),
-                        Gap(12),
-                        BlocBuilder<HomeCubit, HomeState>(
-                          builder: (context, state) {
-                            if (homeCubit.selectedImage != null) {
-                              return Stack(
-                                children: [
-                                  Container(
-                                    height: 200,
-                                    width: double.infinity,
-                                    margin: const EdgeInsets.symmetric(
-                                      vertical: 10,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(10),
-                                      image: DecorationImage(
-                                        image: FileImage(
-                                          File(homeCubit.selectedImage!.path),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.vertical,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Gap(12),
+                          CreatePostHeaderSection(
+                            isLoading: state is PostCreating,
+                            hasText: _hasText,
+                            onTap: () {
+                              homeCubit.createPost(
+                                text: _textEditingController.text.trim(),
+                              );
+                            },
+                          ),
+                          Gap(12),
+                          CreatePostUserInfo(
+                            userName: displayName,
+                            // currentUser.userMetadata?['full_name'] ?? 'User',
+                            userImageUrl: displayImage,
+                            // userImageUrl: currentUser.userMetadata?['avatar_url'],
+                          ),
+                          Gap(12),
+                          CreatePostInputField(
+                            textEditingController: _textEditingController,
+                            hasText: _hasText,
+                          ),
+                          Gap(8),
+                          BlocBuilder<HomeCubit, HomeState>(
+                            builder: (context, state) {
+                              if (homeCubit.selectedImage != null) {
+                                return Stack(
+                                  children: [
+                                    Container(
+                                      height: 200,
+                                      width: double.infinity,
+                                      margin: const EdgeInsets.symmetric(
+                                        vertical: 10,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(10),
+                                        image: DecorationImage(
+                                          image: FileImage(
+                                            File(homeCubit.selectedImage!.path),
+                                          ),
+                                          fit: BoxFit.cover,
                                         ),
-                                        fit: BoxFit.cover,
                                       ),
                                     ),
-                                  ),
 
-                                  Positioned(
-                                    right: 5,
-                                    top: 5,
-                                    child: IconButton(
-                                      onPressed:
-                                          () => setState(() {
-                                            homeCubit.selectedImage = null;
-                                          }),
-                                      icon: DecoratedBox(
-                                        decoration: BoxDecoration(
-                                          color: AppColors.grey1,
-                                          shape: BoxShape.circle,
-                                        ),
-                                        child: Padding(
-                                          padding: const EdgeInsets.all(2.0),
-                                          child: Icon(
-                                            Icons.cancel_rounded,
-                                            color: Colors.black,
+                                    Positioned(
+                                      right: 5,
+                                      top: 5,
+                                      child: IconButton(
+                                        onPressed:
+                                            () => setState(() {
+                                              homeCubit.selectedImage = null;
+                                            }),
+                                        icon: DecoratedBox(
+                                          decoration: BoxDecoration(
+                                            color: AppColors.grey1,
+                                            shape: BoxShape.circle,
+                                          ),
+                                          child: Padding(
+                                            padding: const EdgeInsets.all(2.0),
+                                            child: Icon(
+                                              Icons.close_outlined,
+                                              color: Colors.black,
+                                            ),
                                           ),
                                         ),
                                       ),
                                     ),
+                                  ],
+                                );
+                              } else if (state is ImagePicking) {
+                                return SizedBox(
+                                  height:
+                                      MediaQuery.of(context).size.height * 0.25,
+                                  child: Center(
+                                    child: CupertinoActivityIndicator(
+                                      color: AppColors.black12,
+                                    ),
                                   ),
-                                ],
-                              );
-                            } else if (state is ImagePicking) {
-                              return SizedBox(
-                                height:
-                                    MediaQuery.of(context).size.height * 0.25,
-                                child: Center(
-                                  child: CupertinoActivityIndicator(
-                                    color: AppColors.black12,
-                                  ),
-                                ),
-                              );
-                            } else {
-                              return const SizedBox.shrink();
-                            }
-                          },
-                        ),
-                      ],
+                                );
+                              } else {
+                                return const SizedBox.shrink();
+                              }
+                            },
+                          ),
+                          Gap(120),
+                        ],
+                      ),
                     ),
                   ),
                 ),
-                AddPostOptionsBottomSheet(),
+                AddPostOptionsBottomSheet(controller: _sheetController),
               ],
             ),
           ),

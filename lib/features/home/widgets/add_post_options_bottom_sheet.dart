@@ -6,11 +6,13 @@ import '../../../core/themes/app_colors.dart';
 import '../cubit/home_cubit.dart';
 
 class AddPostOptionsBottomSheet extends StatelessWidget {
-  const AddPostOptionsBottomSheet({super.key});
+  final DraggableScrollableController controller;
+  const AddPostOptionsBottomSheet({super.key, required this.controller});
   @override
   Widget build(BuildContext context) {
     final homeCubit = context.read<HomeCubit>();
     return DraggableScrollableSheet(
+      controller: controller,
       initialChildSize: 0.2,
       minChildSize: 0.15,
       maxChildSize: 0.68,
