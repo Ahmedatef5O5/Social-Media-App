@@ -4,11 +4,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:social_media_app/core/services/file_picker_services.dart';
 import 'package:social_media_app/features/auth/data/models/user_data.dart';
-import 'package:social_media_app/features/home/services/home_services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/post_model.dart';
 import '../models/post_request_body.dart';
 import '../models/story_model.dart';
+import '../services/home_services.dart';
 part 'home_state.dart';
 
 class HomeCubit extends Cubit<HomeState> {
@@ -22,7 +22,7 @@ class HomeCubit extends Cubit<HomeState> {
 
   Future<void> getHomeData() async {
     final userId = Supabase.instance.client.auth.currentUser!.id;
-    ([_getCurrentUser(userId), fetchStories(), fetchPosts()]);
+    await Future.wait([_getCurrentUser(userId), fetchStories(), fetchPosts()]);
   }
 
   Future<void> _getCurrentUser(String userId) async {
@@ -163,5 +163,72 @@ class HomeCubit extends Cubit<HomeState> {
       debugPrint('Error picking file: $e');
       emit(MediaPickingError(e.toString()));
     }
+  }
+
+  Future<void> toggleLike(PostModel post) async {
+    final userId = Supabase.instance.client.auth.currentUser!.id;
+    final oldPosts = (state as PostsLoaded).posts;
+    final List<PostModel> newPosts =
+        oldPosts.map((p) {
+          if (p.id == post.id) {
+            final updatedLikes = List<String>.from(p.likes ?? []);
+            updatedLikes.contains(userId)
+                ? updatedLikes.remove(userId)
+                : updatedLikes.add(userId);
+            return p.copyWith(likes: updatedLikes);
+          }
+          return p;
+        }).toList();
+    emit(PostsLoaded(newPosts));
+
+    // final List<String> updateLikes = List<String>.from(post.likes ?? []);
+    // final bool isLiked = updateLikes.contains(userId);
+    // if (isLiked) {
+    //   updateLikes.remove(userId);
+    // } else {
+    //   updateLikes.add(userId);
+    // }
+    // final int newLikesCount = updateLikes.length;
+    // final bool newIsLiked = !isLiked;
+    // final updatedPost = post.copyWith(likes: updateLikes);
+
+    try {
+      await homeServices.likePost(
+        post.id,
+        newPosts.firstWhere((p) => p.id == post.id).likes!,
+      );
+    } catch (e) {
+      emit(PostsLoaded(oldPosts));
+      debugPrint('Error liking post: $e');
+    }
+    // if (state is PostsLoaded) {
+    //   final posts = List<PostModel>.from((state as PostsLoaded).posts);
+    //   final index = posts.indexWhere((p) => p.id == post.id);
+    //   if (index != -1) {
+    //     posts[index] = updatedPost;
+    //     emit(PostsLoaded(posts));
+    //   }
+    // }
+    // emit(
+    //   PostLiked(
+    //     postId: post.id,
+    //     likesCount: newLikesCount,
+    //     isLiked: newIsLiked,
+    //   ),
+    // );
+    // try {
+    //   await homeServices.likePost(post.id, updateLikes);
+    // } catch (e) {
+    //   debugPrint('Error liking post: $e');
+    //   // if (state is PostsLoaded) {
+    //   //   final posts = List<PostModel>.from((state as PostsLoaded).posts);
+    //   //   final index = posts.indexWhere((p) => p.id == post.id);
+    //   //   if (index != -1) {
+    //   //     posts[index] = post;
+    //   //     emit(PostsLoaded(posts));
+    //   //     // emit(PostLikeError(e.toString()));
+    //   //   }
+    //   // }
+    // }
   }
 }

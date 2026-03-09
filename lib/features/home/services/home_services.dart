@@ -34,12 +34,14 @@ class HomeServices {
       return await supabaseServices.fetchRows(
         table: AppTablesNames.posts,
         filter:
-            (query) => query.select(''' 
+            (query) => query
+                .select(''' 
         *,
          ${AppTablesNames.users}
         (${UserColumns.name}, ${UserColumns.imageUrl})
         
-        '''),
+        ''')
+                .order(PostColumns.createdAt, ascending: false),
         builder:
             (Map<String, dynamic> data, String id) => PostModel.fromMap(data),
         primaryKey: PostColumns.id,
@@ -95,6 +97,20 @@ class HomeServices {
       return publicUrl;
     } catch (e) {
       debugPrint('Error uploading file: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> likePost(String postId, List<String> updateLikes) async {
+    try {
+      await supabaseServices.updateRow(
+        table: AppTablesNames.posts,
+        column: 'id',
+        value: postId,
+        values: {'likes': updateLikes},
+      );
+    } catch (e) {
+      debugPrint("Error updating likes in DB: $e");
       rethrow;
     }
   }
