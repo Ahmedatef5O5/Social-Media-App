@@ -3,7 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 import 'package:intl/intl.dart';
+import 'package:social_media_app/core/constants/app_images.dart';
 import 'package:social_media_app/core/themes/app_colors.dart';
+import 'package:social_media_app/features/home/widgets/file_attachment_preview.dart';
+import 'package:social_media_app/features/home/widgets/post_video_player.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../cubit/home_cubit.dart';
 import '../models/post_model.dart';
@@ -14,6 +17,7 @@ class PostItemWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // debugPrint("Post ID: ${post.id} | Video URL: ${post.videoUrl}");
     final user = context.read<HomeCubit>().currentUserData;
     final authUser = Supabase.instance.client.auth.currentUser;
     return Container(
@@ -34,12 +38,15 @@ class PostItemWidget extends StatelessWidget {
                 backgroundColor: AppColors.bgColor2,
                 backgroundImage:
                     user?.imageUrl != null
-                        ? user!.imageUrl
-                        : authUser!.userMetadata?['avatar_url'],
-                // backgroundImage:
-                // post.imageUrl != null
-                //     ? CachedNetworkImageProvider(post.imageUrl!)
-                //     : null,
+                        ? CachedNetworkImageProvider(user!.imageUrl!)
+                        : (authUser?.userMetadata?['avatar_url'] != null)
+                        ? CachedNetworkImageProvider(
+                          authUser!.userMetadata!['avatar_url'],
+                        )
+                        : const CachedNetworkImageProvider(
+                              AppImages.defaultUserImg,
+                            )
+                            as ImageProvider, // backgroundImage:
               ),
               title: Text(
                 post.authorName ?? 'Unknown',
@@ -72,27 +79,35 @@ class PostItemWidget extends StatelessWidget {
               ),
             ),
             Gap(8),
-            Center(
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(14),
-                child:
-                    post.imageUrl != null
-                        ? CachedNetworkImage(
-                          imageUrl: post.imageUrl!,
-                          // 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQeJQeJyzgAzTEVqXiGe90RGBFhfp_4RcJJMQ&s',
-                          width: 350,
-                          height: 220,
-                          fit: BoxFit.fill,
-                          placeholder:
-                              (context, url) => const Center(
-                                child: CircularProgressIndicator(),
-                              ),
-                          errorWidget:
-                              (context, url, error) => const Icon(Icons.error),
-                        )
-                        : null,
+            if (post.imageUrl != null && post.imageUrl!.isNotEmpty)
+              Center(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(14),
+                  child:
+                      post.imageUrl != null
+                          ? CachedNetworkImage(
+                            imageUrl: post.imageUrl!,
+                            // 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQeJQeJyzgAzTEVqXiGe90RGBFhfp_4RcJJMQ&s',
+                            width: 350,
+                            height: 220,
+                            fit: BoxFit.fill,
+                            placeholder:
+                                (context, url) => const Center(
+                                  child: CircularProgressIndicator(),
+                                ),
+                            errorWidget:
+                                (context, url, error) =>
+                                    const Icon(Icons.error),
+                          )
+                          : null,
+                ),
               ),
-            ),
+            if (post.videoUrl != null && post.videoUrl!.isNotEmpty)
+              PostVideoPlayer(videoUrl: post.videoUrl!),
+
+            // _buildVideoPlayer(post.videoUrl!),
+            if (post.fileUrl != null && post.fileUrl!.isNotEmpty)
+              FileAttachmentPreview(url: post.fileUrl!, onTap: () {}),
             Gap(12),
             Row(
               children: [
