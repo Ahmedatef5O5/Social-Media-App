@@ -1,7 +1,10 @@
+import 'dart:io';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
+import 'package:social_media_app/core/themes/app_colors.dart';
 import 'package:social_media_app/core/themes/background_theme_widget.dart';
 import 'package:social_media_app/features/home/cubit/home_cubit.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -62,13 +65,12 @@ class _CreatePostViewState extends State<CreatePostView> {
         }
       },
       builder: (context, state) {
-        final userFromDb = context.read<HomeCubit>().currentUserData;
-
-        if (userFromDb != null) {
-          debugPrint("✅ Data loaded from Database: ${userFromDb.name}");
-        } else {
-          debugPrint("⚠️ Using Auth Metadata (Backup)");
-        }
+        // final userFromDb = context.read<HomeCubit>().currentUserData;
+        // if (userFromDb != null) {
+        //   debugPrint("✅ Data loaded from Database: ${userFromDb.name}");
+        // } else {
+        //   debugPrint("⚠️ Using Auth Metadata (Backup)");
+        // }
         final homeCubit = context.read<HomeCubit>();
         final user = homeCubit.currentUserData;
         final authUser = Supabase.instance.client.auth.currentUser;
@@ -77,13 +79,7 @@ class _CreatePostViewState extends State<CreatePostView> {
             user?.name ?? authUser?.userMetadata?['full_name'] ?? 'User';
         final displayImage =
             user?.imageUrl ?? authUser?.userMetadata?['avatar_url'];
-        // final currentUser = Supabase.instance.client.auth.currentUser;
-        // debugPrint("User Metadata: ${currentUser?.userMetadata}");
-        // if (user == null) {
-        //   return CupertinoActivityIndicator(
-        //     color: Theme.of(context).primaryColor,
-        //   );
-        // }
+
         return GestureDetector(
           onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
           child: Scaffold(
@@ -118,6 +114,69 @@ class _CreatePostViewState extends State<CreatePostView> {
                         CreatePostInputField(
                           textEditingController: _textEditingController,
                           hasText: _hasText,
+                        ),
+                        Gap(12),
+                        BlocBuilder<HomeCubit, HomeState>(
+                          builder: (context, state) {
+                            if (homeCubit.selectedImage != null) {
+                              return Stack(
+                                children: [
+                                  Container(
+                                    height: 200,
+                                    width: double.infinity,
+                                    margin: const EdgeInsets.symmetric(
+                                      vertical: 10,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(10),
+                                      image: DecorationImage(
+                                        image: FileImage(
+                                          File(homeCubit.selectedImage!.path),
+                                        ),
+                                        fit: BoxFit.cover,
+                                      ),
+                                    ),
+                                  ),
+
+                                  Positioned(
+                                    right: 5,
+                                    top: 5,
+                                    child: IconButton(
+                                      onPressed:
+                                          () => setState(() {
+                                            homeCubit.selectedImage = null;
+                                          }),
+                                      icon: DecoratedBox(
+                                        decoration: BoxDecoration(
+                                          color: AppColors.grey1,
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: Padding(
+                                          padding: const EdgeInsets.all(2.0),
+                                          child: Icon(
+                                            Icons.cancel_rounded,
+                                            color: Colors.black,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              );
+                            } else if (state is ImagePicking) {
+                              return SizedBox(
+                                height:
+                                    MediaQuery.of(context).size.height * 0.25,
+                                child: Center(
+                                  child: CupertinoActivityIndicator(
+                                    color: AppColors.black12,
+                                  ),
+                                ),
+                              );
+                            } else {
+                              return const SizedBox.shrink();
+                            }
+                          },
                         ),
                       ],
                     ),

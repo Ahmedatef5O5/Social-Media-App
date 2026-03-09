@@ -1,8 +1,11 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 import 'package:intl/intl.dart';
 import 'package:social_media_app/core/themes/app_colors.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../cubit/home_cubit.dart';
 import '../models/post_model.dart';
 
 class PostItemWidget extends StatelessWidget {
@@ -11,6 +14,8 @@ class PostItemWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final user = context.read<HomeCubit>().currentUserData;
+    final authUser = Supabase.instance.client.auth.currentUser;
     return Container(
       decoration: BoxDecoration(
         color: AppColors.white,
@@ -28,9 +33,13 @@ class PostItemWidget extends StatelessWidget {
                 radius: 22,
                 backgroundColor: AppColors.bgColor2,
                 backgroundImage:
-                    post.imageUrl != null
-                        ? CachedNetworkImageProvider(post.imageUrl!)
-                        : null,
+                    user?.imageUrl != null
+                        ? user!.imageUrl
+                        : authUser!.userMetadata?['avatar_url'],
+                // backgroundImage:
+                // post.imageUrl != null
+                //     ? CachedNetworkImageProvider(post.imageUrl!)
+                //     : null,
               ),
               title: Text(
                 post.authorName ?? 'Unknown',
@@ -66,18 +75,22 @@ class PostItemWidget extends StatelessWidget {
             Center(
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(14),
-                child: CachedNetworkImage(
-                  imageUrl:
-                      post.imageUrl ??
-                      'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQeJQeJyzgAzTEVqXiGe90RGBFhfp_4RcJJMQ&s',
-                  width: 340,
-                  // height: 120,
-                  fit: BoxFit.cover,
-                  placeholder:
-                      (context, url) =>
-                          const Center(child: CircularProgressIndicator()),
-                  errorWidget: (context, url, error) => const Icon(Icons.error),
-                ),
+                child:
+                    post.imageUrl != null
+                        ? CachedNetworkImage(
+                          imageUrl: post.imageUrl!,
+                          // 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQeJQeJyzgAzTEVqXiGe90RGBFhfp_4RcJJMQ&s',
+                          width: 340,
+                          // height: 120,
+                          fit: BoxFit.cover,
+                          placeholder:
+                              (context, url) => const Center(
+                                child: CircularProgressIndicator(),
+                              ),
+                          errorWidget:
+                              (context, url, error) => const Icon(Icons.error),
+                        )
+                        : null,
               ),
             ),
             Gap(12),

@@ -5,7 +5,14 @@ class BuildOptionItem extends StatelessWidget {
   final IconData icon;
   final String title;
   final Color color;
-  const BuildOptionItem(this.icon, this.title, this.color, {super.key});
+  final void Function()? onTap;
+  const BuildOptionItem(
+    this.icon,
+    this.title,
+    this.color, {
+    super.key,
+    this.onTap,
+  });
   @override
   Widget build(BuildContext context) {
     return ListTile(
@@ -18,7 +25,7 @@ class BuildOptionItem extends StatelessWidget {
           color: AppColors.black87,
         ),
       ),
-      onTap: () {},
+      onTap: onTap,
     );
   }
 }

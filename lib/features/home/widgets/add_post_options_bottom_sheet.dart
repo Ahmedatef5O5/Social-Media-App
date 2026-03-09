@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 import 'package:social_media_app/features/home/widgets/build_option_item.dart';
 import '../../../core/themes/app_colors.dart';
+import '../cubit/home_cubit.dart';
 
 class AddPostOptionsBottomSheet extends StatelessWidget {
   const AddPostOptionsBottomSheet({super.key});
   @override
   Widget build(BuildContext context) {
+    final homeCubit = context.read<HomeCubit>();
     return DraggableScrollableSheet(
       initialChildSize: 0.2,
       minChildSize: 0.15,
@@ -47,6 +50,7 @@ class AddPostOptionsBottomSheet extends StatelessWidget {
                       Icons.image_outlined,
                       'Add Photo',
                       AppColors.primaryColor,
+                      onTap: () => homeCubit.pickImageFromGallery(),
                     ),
                     BuildOptionItem(
                       Icons.videocam_outlined,
@@ -77,6 +81,7 @@ class AddPostOptionsBottomSheet extends StatelessWidget {
                       Icons.camera_alt_outlined,
                       'Camera',
                       AppColors.primaryColor,
+                      onTap: () => homeCubit.takePhotoByCamera(),
                     ),
                   ],
                 ),
