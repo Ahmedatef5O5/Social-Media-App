@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:social_media_app/core/services/supabase_database_services.dart';
 import 'package:social_media_app/core/utilities/app_tables_names.dart';
@@ -66,16 +68,28 @@ class HomeServices {
               .select()
               .eq(UserColumns.id, userId)
               .maybeSingle();
-      // fetchRows(
-      //   table: AppTablesNames.users,
-      //   filter: (query) => query.eq(UserColumns.id, userId).maybeSingle(),
-      //   builder: (data, id) => UserData.fromMap(data),
-      //   primaryKey: UserColumns.id,
-      // );
       if (data == null) throw 'User not found';
       return UserData.fromMap(data);
     } catch (e) {
       debugPrint("Error in fetchCurrentUser: $e");
+      rethrow;
+    }
+  }
+
+  Future<String?> uploadFile(File file, String bucket) async {
+    try {
+      final fileName =
+          '${DateTime.now().millisecondsSinceEpoch}_${file.path.split('/').last}';
+      final path = 'posts/$fileName';
+      //
+      await Supabase.instance.client.storage.from(bucket).upload(path, file);
+      //
+      final String publicUrl = Supabase.instance.client.storage
+          .from(bucket)
+          .getPublicUrl(path);
+      return publicUrl;
+    } catch (e) {
+      debugPrint('Error uploading file: $e');
       rethrow;
     }
   }
