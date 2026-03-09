@@ -18,8 +18,22 @@ class PostItemWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // debugPrint("Post ID: ${post.id} | Video URL: ${post.videoUrl}");
+    final homeCubit = context.read<HomeCubit>();
     final user = context.read<HomeCubit>().currentUserData;
     final authUser = Supabase.instance.client.auth.currentUser;
+
+    // update curr post
+    final currentPost = context.select<HomeCubit, PostModel>(
+      (cubit) =>
+          (cubit.state is PostsLoaded)
+              ? (cubit.state as PostsLoaded).posts.firstWhere(
+                (p) => p.id == post.id,
+                orElse: () => post,
+              )
+              : post,
+    );
+    final userId = Supabase.instance.client.auth.currentUser!.id;
+
     return Container(
       decoration: BoxDecoration(
         color: AppColors.white,
@@ -109,22 +123,37 @@ class PostItemWidget extends StatelessWidget {
             if (post.fileUrl != null && post.fileUrl!.isNotEmpty)
               FileAttachmentPreview(url: post.fileUrl!, onTap: () {}),
             Gap(12),
+
             Row(
               children: [
                 Gap(12),
-                InkWell(
-                  onTap: () {},
-                  child: Row(
-                    children: [
-                      Icon(Icons.thumb_up_alt_outlined),
-                      Gap(4),
-                      Text(
-                        post.likes?.length.toString() ?? '0',
-                        style: Theme.of(context).textTheme.bodyLarge,
+                Row(
+                  children: [
+                    IconButton(
+                      onPressed: () => homeCubit.toggleLike(currentPost),
+                      icon: AnimatedSwitcher(
+                        key: ValueKey<bool>(currentPost.isLikedBy(userId)),
+                        duration: const Duration(milliseconds: 300),
+                        child: Icon(
+                          currentPost.isLikedBy(userId)
+                              ? Icons.thumb_up_alt
+                              : Icons.thumb_up_alt_outlined,
+                          color:
+                              currentPost.isLikedBy(userId)
+                                  ? AppColors.primaryColor
+                                  : null,
+                        ),
                       ),
-                    ],
-                  ),
+                    ),
+                    Gap(4),
+                    Text(
+                      '${currentPost.likesCount}',
+                      //  post.likes?.length.toString() ?? '0',
+                      style: Theme.of(context).textTheme.bodyLarge,
+                    ),
+                  ],
                 ),
+
                 Gap(12),
                 InkWell(
                   onTap: () {},
@@ -146,6 +175,7 @@ class PostItemWidget extends StatelessWidget {
                 Gap(8),
               ],
             ),
+
             Gap(8),
           ],
         ),
