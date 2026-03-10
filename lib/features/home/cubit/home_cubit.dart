@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:social_media_app/core/services/file_picker_services.dart';
 import 'package:social_media_app/features/auth/data/models/user_data.dart';
+import 'package:social_media_app/features/home/models/comment_model.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/post_model.dart';
 import '../models/post_request_body.dart';
@@ -190,6 +191,50 @@ class HomeCubit extends Cubit<HomeState> {
     } catch (e) {
       emit(PostsLoaded(oldPosts));
       debugPrint('Error liking post: $e');
+    }
+  }
+
+  Future<void> addComment(String postId, String commentText) async {
+    if (state is! PostsLoaded) return;
+    final oldState = state as PostsLoaded;
+    emit(AddingCommentLoading(oldState.posts));
+
+    try {
+      final userId = Supabase.instance.client.auth.currentUser!.id;
+      final userName = currentUserData?.name ?? 'User';
+      final oldPosts = oldState.posts;
+
+      final newComment = CommentModel(
+        id: DateTime.now().toString(),
+        createdAt: DateTime.now().toIso8601String(),
+        authorId: userId,
+        authorName: userName,
+        text: commentText,
+        postId: postId,
+      );
+
+      final List<PostModel> updatedPosts =
+          oldPosts.map((p) {
+            if (p.id == postId) {
+              final updatedComments = List<CommentModel>.from(p.comments ?? []);
+              updatedComments.add(newComment);
+              return p.copyWith(comments: updatedComments);
+            }
+            return p;
+          }).toList();
+
+      emit(PostsLoaded(updatedPosts));
+      emit(AddCommentSuccess());
+      emit(PostsLoaded(updatedPosts));
+      await homeServices.addComment(
+        postId: postId,
+        authorId: userId,
+        commentText: commentText,
+      );
+    } catch (e) {
+      debugPrint('Error adding comment: $e');
+      emit(AddCommentError(e.toString()));
+      emit(oldState);
     }
   }
 }

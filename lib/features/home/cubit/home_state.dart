@@ -70,3 +70,16 @@ final class MediaPickingError extends HomeState {
   final String message;
   MediaPickingError(this.message);
 }
+
+final class AddingCommentLoading extends HomeState {
+  final List<PostModel> oldPosts;
+
+  AddingCommentLoading(this.oldPosts);
+}
+
+final class AddCommentSuccess extends HomeState {}
+
+final class AddCommentError extends HomeState {
+  final String message;
+  AddCommentError(this.message);
+}
