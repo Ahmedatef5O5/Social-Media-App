@@ -166,6 +166,7 @@ class HomeCubit extends Cubit<HomeState> {
   }
 
   Future<void> toggleLike(PostModel post) async {
+    if (state is! PostsLoaded) return;
     final userId = Supabase.instance.client.auth.currentUser!.id;
     final oldPosts = (state as PostsLoaded).posts;
     final List<PostModel> newPosts =
@@ -181,17 +182,6 @@ class HomeCubit extends Cubit<HomeState> {
         }).toList();
     emit(PostsLoaded(newPosts));
 
-    // final List<String> updateLikes = List<String>.from(post.likes ?? []);
-    // final bool isLiked = updateLikes.contains(userId);
-    // if (isLiked) {
-    //   updateLikes.remove(userId);
-    // } else {
-    //   updateLikes.add(userId);
-    // }
-    // final int newLikesCount = updateLikes.length;
-    // final bool newIsLiked = !isLiked;
-    // final updatedPost = post.copyWith(likes: updateLikes);
-
     try {
       await homeServices.likePost(
         post.id,
@@ -201,34 +191,5 @@ class HomeCubit extends Cubit<HomeState> {
       emit(PostsLoaded(oldPosts));
       debugPrint('Error liking post: $e');
     }
-    // if (state is PostsLoaded) {
-    //   final posts = List<PostModel>.from((state as PostsLoaded).posts);
-    //   final index = posts.indexWhere((p) => p.id == post.id);
-    //   if (index != -1) {
-    //     posts[index] = updatedPost;
-    //     emit(PostsLoaded(posts));
-    //   }
-    // }
-    // emit(
-    //   PostLiked(
-    //     postId: post.id,
-    //     likesCount: newLikesCount,
-    //     isLiked: newIsLiked,
-    //   ),
-    // );
-    // try {
-    //   await homeServices.likePost(post.id, updateLikes);
-    // } catch (e) {
-    //   debugPrint('Error liking post: $e');
-    //   // if (state is PostsLoaded) {
-    //   //   final posts = List<PostModel>.from((state as PostsLoaded).posts);
-    //   //   final index = posts.indexWhere((p) => p.id == post.id);
-    //   //   if (index != -1) {
-    //   //     posts[index] = post;
-    //   //     emit(PostsLoaded(posts));
-    //   //     // emit(PostLikeError(e.toString()));
-    //   //   }
-    //   // }
-    // }
   }
 }
