@@ -2,6 +2,7 @@ abstract class AppTablesNames {
   static const String users = 'users';
   static const String stories = 'stories';
   static const String posts = 'posts';
+  static const String comments = 'comments';
 }
 
 // subClass for users column table
@@ -32,4 +33,17 @@ abstract class PostColumns {
   static const String likes = 'likes';
   static const String comments = 'comments';
   static const String shares = 'shares';
+}
+
+// subClass for comments column table
+abstract class CommentColumns {
+  static const String id = 'id';
+  static const String text = 'text';
+  static const String postId = 'post_id';
+  static const String authorId = 'author_id';
+  static const String createdAt = 'created_at';
+  static const String imageUrl = 'image_url';
+  static const String videoUrl = 'video_url';
+  static const String likes = 'likes';
+  static const String replays = 'replays';
 }
