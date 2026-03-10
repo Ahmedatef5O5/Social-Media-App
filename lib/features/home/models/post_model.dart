@@ -1,6 +1,9 @@
 import 'package:social_media_app/core/utilities/app_tables_names.dart';
 
 class PostModel {
+  bool isLikedBy(String userId) => likes?.contains(userId) ?? false;
+  int get likesCount => likes?.length ?? 0;
+
   final String id;
   final String text;
   final String authorId;
@@ -80,7 +83,33 @@ class PostModel {
     );
   }
 
-  // String toJson() => json.encode(toMap());
-
-  // factory PostModel.fromJson(String source) => PostModel.fromMap(json.decode(source) as Map<String, dynamic>);
+  PostModel copyWith({
+    String? id,
+    String? text,
+    String? authorId,
+    String? createdAt,
+    String? authorName,
+    String? authorImageUrl,
+    String? videoUrl,
+    String? fileUrl,
+    String? imageUrl,
+    List<String>? likes,
+    List<String>? comments,
+    List<String>? shares,
+  }) {
+    return PostModel(
+      id: id ?? this.id,
+      text: text ?? this.text,
+      authorId: authorId ?? this.authorId,
+      createdAt: createdAt ?? this.createdAt,
+      authorName: authorName ?? this.authorName,
+      authorImageUrl: authorImageUrl ?? this.authorImageUrl,
+      videoUrl: videoUrl ?? this.videoUrl,
+      fileUrl: fileUrl ?? this.fileUrl,
+      imageUrl: imageUrl ?? this.imageUrl,
+      likes: likes ?? this.likes,
+      comments: comments ?? this.comments,
+      shares: shares ?? this.shares,
+    );
+  }
 }
