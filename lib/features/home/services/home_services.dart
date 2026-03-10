@@ -38,8 +38,12 @@ class HomeServices {
                 .select(''' 
         *,
          ${AppTablesNames.users}
-        (${UserColumns.name}, ${UserColumns.imageUrl})
-        
+        (${UserColumns.name}, 
+        ${UserColumns.imageUrl}
+        ),
+        ${AppTablesNames.comments}(
+          *
+        )        
         ''')
                 .order(PostColumns.createdAt, ascending: false),
         builder:
@@ -107,10 +111,30 @@ class HomeServices {
         table: AppTablesNames.posts,
         column: 'id',
         value: postId,
-        values: {'likes': updateLikes},
+        values: {PostColumns.likes: updateLikes},
       );
     } catch (e) {
       debugPrint("Error updating likes in DB: $e");
+      rethrow;
+    }
+  }
+
+  Future<void> addComment({
+    required String postId,
+    required String authorId,
+    required String commentText,
+  }) async {
+    try {
+      await supabaseServices.insertRow(
+        table: AppTablesNames.comments,
+        values: {
+          CommentColumns.postId: postId,
+          CommentColumns.authorId: authorId,
+          CommentColumns.text: commentText,
+          CommentColumns.createdAt: DateTime.now().toIso8601String(),
+        },
+      );
+    } catch (e) {
       rethrow;
     }
   }
