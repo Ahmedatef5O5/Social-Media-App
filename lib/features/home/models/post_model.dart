@@ -1,5 +1,7 @@
 import 'package:social_media_app/core/utilities/app_tables_names.dart';
 
+import 'comment_model.dart';
+
 class PostModel {
   bool isLikedBy(String userId) => likes?.contains(userId) ?? false;
   int get likesCount => likes?.length ?? 0;
@@ -14,7 +16,7 @@ class PostModel {
   final String? fileUrl;
   final String? imageUrl;
   final List<String>? likes;
-  final List<String>? comments;
+  final List<CommentModel>? comments;
   final List<String>? shares;
 
   const PostModel({
@@ -51,6 +53,7 @@ class PostModel {
 
   factory PostModel.fromMap(Map<String, dynamic> map) {
     final userData = map[AppTablesNames.users] as Map<String, dynamic>?;
+    final commentsData = map[AppTablesNames.comments] as List<dynamic>?;
     return PostModel(
       id: map['id'] as String? ?? '',
       text: map[PostColumns.text] as String? ?? '',
@@ -73,8 +76,8 @@ class PostModel {
               ? List<String>.from(map[PostColumns.likes])
               : [],
       comments:
-          map[PostColumns.comments] != null
-              ? List<String>.from(map[PostColumns.comments])
+          commentsData != null
+              ? commentsData.map((c) => CommentModel.fromMap(c)).toList()
               : [],
       shares:
           map[PostColumns.shares] != null
@@ -94,7 +97,7 @@ class PostModel {
     String? fileUrl,
     String? imageUrl,
     List<String>? likes,
-    List<String>? comments,
+    List<CommentModel>? comments,
     List<String>? shares,
   }) {
     return PostModel(
