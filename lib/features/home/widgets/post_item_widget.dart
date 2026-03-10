@@ -5,6 +5,7 @@ import 'package:gap/gap.dart';
 import 'package:intl/intl.dart';
 import 'package:social_media_app/core/constants/app_images.dart';
 import 'package:social_media_app/core/themes/app_colors.dart';
+import 'package:social_media_app/features/home/widgets/comments_sheet_section.dart';
 import 'package:social_media_app/features/home/widgets/file_attachment_preview.dart';
 import 'package:social_media_app/features/home/widgets/post_video_player.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -156,13 +157,33 @@ class PostItemWidget extends StatelessWidget {
 
                 Gap(12),
                 InkWell(
-                  onTap: () {},
+                  onTap: () {
+                    final homeCubit = context.read<HomeCubit>();
+                    showModalBottomSheet(
+                      context: context,
+                      useRootNavigator: true,
+                      isScrollControlled: true,
+                      backgroundColor: AppColors.white,
+                      useSafeArea: false,
+                      shape: const RoundedRectangleBorder(
+                        borderRadius: BorderRadius.vertical(
+                          top: Radius.circular(20),
+                        ),
+                      ),
+                      builder:
+                          (BuildContext context) => BlocProvider.value(
+                            value: homeCubit,
+                            child: CommentsSheetSection(postId: post.id),
+                          ),
+                    );
+                  },
                   child: Row(
                     children: [
                       Icon(Icons.mode_comment_outlined),
                       Gap(4),
                       Text(
-                        post.comments?.length.toString() ?? '0',
+                        '${currentPost.comments?.length ?? 0}',
+                        // post.comments?.length.toString() ?? '0',
                         style: Theme.of(context).textTheme.bodyLarge,
                       ),
                     ],
