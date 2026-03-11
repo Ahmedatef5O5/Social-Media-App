@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:social_media_app/features/home/cubit/home_cubit.dart';
 import 'package:social_media_app/features/home/models/post_model.dart';
 import 'package:social_media_app/features/home/widgets/comment_section.dart';
+import '../../../core/themes/app_colors.dart';
 import 'send_comment_section.dart';
 
 class CommentsSheetSection extends StatefulWidget {
@@ -19,7 +20,26 @@ class _CommentsSheetSectionState extends State<CommentsSheetSection> {
     super.initState();
   }
 
+  final ScrollController _scrollController = ScrollController();
+
+  void _scrollToBottom() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scrollController.hasClients) {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
+  }
+
   @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     final post = context.select<HomeCubit, PostModel?>((cubit) {
@@ -46,58 +66,109 @@ class _CommentsSheetSectionState extends State<CommentsSheetSection> {
         child: Center(child: CircularProgressIndicator()),
       );
     }
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: () {
-        FocusScopeNode currentFocus = FocusScope.of(context);
-        if (!currentFocus.hasPrimaryFocus &&
-            currentFocus.focusedChild != null) {
-          FocusManager.instance.primaryFocus?.unfocus();
+    return BlocListener<HomeCubit, HomeState>(
+      listener: (context, state) {
+        if (state is PostsLoaded || state is AddCommentSuccess) {
+          _scrollToBottom();
         }
       },
-      child: Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom,
-        ),
-        child: Container(
-          constraints: BoxConstraints(
-            maxHeight: MediaQuery.of(context).size.height * 0.85,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () {
+          FocusScopeNode currentFocus = FocusScope.of(context);
+          if (!currentFocus.hasPrimaryFocus &&
+              currentFocus.focusedChild != null) {
+            FocusManager.instance.primaryFocus?.unfocus();
+          }
+        },
+        child: Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Handle/Divider
-              const Divider(thickness: 4, indent: 150, endIndent: 150),
-              const SizedBox(height: 10),
+          child: Container(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.85,
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Handle/Divider
+                const Divider(thickness: 4, indent: 150, endIndent: 150),
+                const SizedBox(height: 10),
 
-              Flexible(
-                child: SingleChildScrollView(
-                  keyboardDismissBehavior:
-                      ScrollViewKeyboardDismissBehavior.manual,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Likes',
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Comments',
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                      const SizedBox(height: 16),
-                      CommentsSection(post: post),
-                    ],
+                Flexible(
+                  child: SingleChildScrollView(
+                    controller: _scrollController,
+                    keyboardDismissBehavior:
+                        ScrollViewKeyboardDismissBehavior.manual,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Likes ${post.likes?.length ?? 0}',
+                          style: Theme.of(context).textTheme.titleMedium!
+                              .copyWith(color: AppColors.grey7),
+                        ),
+                        const SizedBox(height: 16),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              'Comments ${post.comments?.length ?? 0}',
+                              style: Theme.of(context).textTheme.titleMedium!
+                                  .copyWith(color: AppColors.grey7),
+                            ),
+                            Spacer(),
+                            Text(
+                              'Most Recent',
+                              style: Theme.of(
+                                context,
+                              ).textTheme.titleMedium!.copyWith(
+                                color: AppColors.grey6,
+                                fontWeight: FontWeight.w500,
+                                fontSize: 14,
+                              ),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 22.0),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  SizedBox(
+                                    height: 12,
+                                    child: Icon(
+                                      Icons.arrow_drop_up_rounded,
+                                      size: 35,
+                                      color: AppColors.grey7,
+                                    ),
+                                  ),
+                                  SizedBox(
+                                    height: 12,
+                                    child: Icon(
+                                      Icons.arrow_drop_down_rounded,
+                                      size: 35,
+                                      color: AppColors.grey7,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        CommentsSection(post: post),
+                      ],
+                    ),
                   ),
                 ),
-              ),
 
-              const Divider(),
-              SendCommentSection(post: post),
-              const SizedBox(height: 8),
-            ],
+                const Divider(),
+                SendCommentSection(post: post),
+                const SizedBox(height: 8),
+              ],
+            ),
           ),
         ),
       ),
