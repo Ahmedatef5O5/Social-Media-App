@@ -17,6 +17,7 @@ class _CustomBottomNavBarState extends State<CustomBottomNavBar> {
   @override
   Widget build(BuildContext context) {
     return PersistentTabView(
+      // resizeToAvoidBottomInset: false,
       gestureNavigationEnabled: true,
       tabs: [
         PersistentTabConfig(
