@@ -1,3 +1,5 @@
+import 'package:social_media_app/core/utilities/app_tables_names.dart';
+
 class CommentModel {
   final String id;
   final String createdAt;
@@ -39,17 +41,18 @@ class CommentModel {
   }
 
   factory CommentModel.fromMap(Map<String, dynamic> map) {
+    final userData = map[AppTablesNames.users] as Map<String, dynamic>?;
+
     return CommentModel(
       id: map['id'] as String,
       createdAt: map['created_at'] as String,
       authorId: map['author_id'] as String,
       text: map['text'] as String,
       authorName:
-          map['authorName'] != null ? map['authorName'] as String : null,
+          userData != null ? userData[UserColumns.name] as String? : null,
+      // map['authorName'] != null ? map['authorName'] as String : null,
       authorImageUrl:
-          map['authorImageUrl'] != null
-              ? map['authorImageUrl'] as String
-              : null,
+          userData != null ? userData[UserColumns.imageUrl] as String? : null,
       postId: map['post_id'] as String,
       imageUrl: map['image_url'] != null ? map['image_url'] as String : null,
 

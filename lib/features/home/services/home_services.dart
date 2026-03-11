@@ -42,7 +42,13 @@ class HomeServices {
         ${UserColumns.imageUrl}
         ),
         ${AppTablesNames.comments}(
-          *
+          *,
+          ${AppTablesNames.users}(
+             ${UserColumns.name}, 
+             ${UserColumns.imageUrl}
+          )
+        )
+        }
         )        
         ''')
                 .order(PostColumns.createdAt, ascending: false),
