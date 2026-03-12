@@ -3,7 +3,13 @@ import 'app_colors.dart';
 
 class BackgroundThemeWidget extends StatelessWidget {
   final Widget child;
-  const BackgroundThemeWidget({super.key, required this.child});
+  final bool top, bottom;
+  const BackgroundThemeWidget({
+    super.key,
+    required this.child,
+    this.top = true,
+    this.bottom = true,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -50,7 +56,7 @@ class BackgroundThemeWidget extends StatelessWidget {
               ),
             ),
           ),
-          SafeArea(child: child),
+          SafeArea(top: top, bottom: bottom, child: child),
         ],
       ),
     );
