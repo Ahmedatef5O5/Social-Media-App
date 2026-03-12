@@ -1,6 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:gap/gap.dart';
+import 'package:social_media_app/core/constants/app_images.dart';
 import 'package:social_media_app/features/home/cubit/home_cubit.dart';
 import '../../../core/themes/app_colors.dart';
 import '../models/post_model.dart';
@@ -50,6 +52,26 @@ class _SendCommentSectionState extends State<SendCommentSection> {
           padding: const EdgeInsets.symmetric(vertical: 4),
           child: Row(
             children: [
+              InkWell(
+                onTap: () {},
+                child: Image.asset(
+                  AppImages.attachmentIcon,
+                  width: 32,
+                  height: 32,
+                  fit: BoxFit.cover,
+                ),
+              ),
+
+              // InkWell(
+              //   onTap: () {},
+              //   child: Image.asset(
+              //     AppImages.selectEmojisIcon,
+              //     width: 28,
+              //     height: 28,
+              //     fit: BoxFit.cover,
+              //   ),
+              // ),
+              const Gap(5),
               Expanded(
                 child: TextField(
                   controller: _commentController,
@@ -57,6 +79,20 @@ class _SendCommentSectionState extends State<SendCommentSection> {
                   onSubmitted: (_) => _submitComment(),
                   decoration: InputDecoration(
                     hintText: 'Write a comment...',
+                    hintStyle: Theme.of(context).textTheme.labelSmall!.copyWith(
+                      color: AppColors.grey5,
+                      fontWeight: FontWeight.w400,
+                      fontSize: 15,
+                    ),
+                    suffixIcon: InkWell(
+                      splashColor: AppColors.transparent,
+                      onTap: () {},
+                      child: Icon(
+                        Icons.camera_alt_outlined,
+                        color: AppColors.primaryColor,
+                        size: 24,
+                      ),
+                    ),
                     filled: true,
                     fillColor: Colors.grey[100],
                     contentPadding: const EdgeInsets.symmetric(
@@ -67,24 +103,35 @@ class _SendCommentSectionState extends State<SendCommentSection> {
                       borderRadius: BorderRadius.circular(25),
                       borderSide: BorderSide.none,
                     ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(25),
+                      borderSide: BorderSide(
+                        color: AppColors.primaryColor,
+                        width: 1.6,
+                      ),
+                    ),
                   ),
                 ),
               ),
-              const SizedBox(width: 8),
-
+              const Gap(8),
               isLoading
                   ? SizedBox(
                     height: 24,
                     width: 24,
                     child: CupertinoActivityIndicator(color: AppColors.black12),
                   )
-                  : IconButton(
-                    onPressed: () {
+                  : InkWell(
+                    onTap: () {
                       _submitComment();
-                      // logic
                     },
-                    icon: const Icon(Icons.send, color: AppColors.primaryColor),
+                    child: Image.asset(
+                      AppImages.sendIcon,
+                      width: 24,
+                      height: 24,
+                      color: AppColors.primaryColor,
+                    ),
                   ),
+              const Gap(2),
             ],
           ),
         );
