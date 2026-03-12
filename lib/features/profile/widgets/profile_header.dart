@@ -1,15 +1,16 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
+import 'package:social_media_app/features/auth/data/models/user_data.dart';
 import '../../../core/constants/app_images.dart';
 import '../../../core/themes/app_colors.dart';
 import '../../../core/widgets/custom_elevated_button.dart';
 
 class ProfileHeader extends StatelessWidget {
-  const ProfileHeader({super.key, required this.size});
-
+  const ProfileHeader({super.key, required this.size, required this.user});
   final Size size;
-
+  final UserData user;
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -34,10 +35,8 @@ class ProfileHeader extends StatelessWidget {
                   ),
                 ),
               ),
-              Positioned(
-                bottom: 0,
-                left: size.width * 0.22,
-                right: size.width * 0.2,
+              Align(
+                alignment: Alignment.bottomCenter,
                 child: SizedBox(
                   height: 112,
                   width: 112,
@@ -50,7 +49,7 @@ class ProfileHeader extends StatelessWidget {
                       shape: BoxShape.circle,
                       image: DecorationImage(
                         image: CachedNetworkImageProvider(
-                          AppImages.defaultUserImg,
+                          user.imageUrl ?? AppImages.defaultUserImg,
                         ),
                         fit: BoxFit.contain,
                       ),
@@ -62,21 +61,53 @@ class ProfileHeader extends StatelessWidget {
           ),
         ),
         Gap(16),
-        Text('user name'),
-        Gap(8),
-        Text('Not Provided'),
-        Gap(16),
-        CustomElevatedButton(
-          maximumSize: Size(220, 90),
-          minimumSize: Size(120, 50),
-          txtBtn: 'EDIT PROFILE',
+        Text(
+          user.name,
+          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+        ),
 
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-          side: BorderSide(color: AppColors.grey3, width: 1.6),
-          elevation: 0,
-          bgColor: AppColors.white,
-          txtColor: AppColors.black54,
-          onPressed: () {},
+        const Gap(4),
+        Text(
+          "@${user.name.toLowerCase().replaceAll(' ', '_')}",
+          style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
+        ),
+        Gap(8),
+        const Text('Mobile Developer', style: TextStyle(fontSize: 16)),
+        Gap(16),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 40),
+          child: Row(
+            children: [
+              Expanded(
+                child: CustomElevatedButton(
+                  maximumSize: Size(220, 90),
+                  minimumSize: Size(120, 50),
+                  txtBtn: 'EDIT PROFILE',
+
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  side: BorderSide(color: AppColors.grey3, width: 1.6),
+                  elevation: 0,
+                  bgColor: AppColors.white,
+                  txtColor: AppColors.black54,
+                  onPressed: () {},
+                ),
+              ),
+              const Gap(12),
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  border: Border.all(color: AppColors.grey3, width: 1.6),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: const Icon(
+                  CupertinoIcons.settings,
+                  color: AppColors.black54,
+                ),
+              ),
+            ],
+          ),
         ),
       ],
     );
