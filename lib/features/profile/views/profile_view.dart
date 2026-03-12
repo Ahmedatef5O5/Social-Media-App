@@ -36,30 +36,43 @@ class ProfileView extends StatelessWidget {
                   removeTop: true,
                   child: DefaultTabController(
                     length: 2,
-                    child: SingleChildScrollView(
-                      padding: EdgeInsets.zero,
-                      child: Column(
-                        children: [
-                          ProfileHeader(size: size, user: state.user),
-                          Gap(20),
-                          ProfileStatsWidget(stats: state.stats),
-                          Gap(20),
-                          TabBar(
-                            labelColor: Theme.of(context).primaryColor,
-                            unselectedLabelColor: AppColors.grey,
-                            indicatorColor: Theme.of(context).primaryColor,
-                            indicatorSize: TabBarIndicatorSize.label,
-                            tabs: [Tab(text: 'Posts'), Tab(text: 'Details')],
-                          ),
-                          SizedBox(
-                            height: size.height * 4.08,
-                            child: TabBarView(
+                    child: NestedScrollView(
+                      headerSliverBuilder: (
+                        BuildContext context,
+                        bool innerBoxIsScrolled,
+                      ) {
+                        return [
+                          SliverToBoxAdapter(
+                            child: Column(
                               children: [
-                                ProfilePostsList(userId: state.user.id),
-                                ProfileDetailsWidget(user: state.user),
+                                ProfileHeader(size: size, user: state.user),
+                                Gap(20),
+                                ProfileStatsWidget(stats: state.stats),
+                                Gap(20),
                               ],
                             ),
                           ),
+                          SliverPersistentHeader(
+                            pinned: true,
+                            delegate: _SliverTabBarDelegate(
+                              TabBar(
+                                labelColor: Theme.of(context).primaryColor,
+                                unselectedLabelColor: AppColors.grey,
+                                indicatorColor: Theme.of(context).primaryColor,
+                                indicatorSize: TabBarIndicatorSize.label,
+                                tabs: [
+                                  Tab(text: 'Posts'),
+                                  Tab(text: 'Details'),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ];
+                      },
+                      body: TabBarView(
+                        children: [
+                          ProfilePostsList(userId: state.user.id),
+                          ProfileDetailsWidget(user: state.user),
                         ],
                       ),
                     ),
@@ -76,6 +89,28 @@ class ProfileView extends StatelessWidget {
       ),
     );
   }
+}
+
+class _SliverTabBarDelegate extends SliverPersistentHeaderDelegate {
+  _SliverTabBarDelegate(this.tabBar);
+  final TabBar tabBar;
+
+  @override
+  double get minExtent => tabBar.preferredSize.height;
+  @override
+  double get maxExtent => tabBar.preferredSize.height;
+
+  @override
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
+    return Container(color: Colors.white, child: tabBar);
+  }
+
+  @override
+  bool shouldRebuild(_SliverTabBarDelegate oldDelegate) => false;
 }
 
 class ProfileDetailsWidget extends StatelessWidget {
@@ -140,8 +175,8 @@ class ProfilePostsList extends StatelessWidget {
 
           return ListView.separated(
             padding: const EdgeInsets.all(16),
-            physics: const NeverScrollableScrollPhysics(),
-            shrinkWrap: true,
+            // physics: const NeverScrollableScrollPhysics(),
+            // shrinkWrap: true,
             itemCount: userPosts.length,
             itemBuilder:
                 (context, index) => PostItemWidget(post: userPosts[index]),
