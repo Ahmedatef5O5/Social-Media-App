@@ -5,6 +5,8 @@ class AppImages {
   // default user img
   static const String defaultUserImg =
       'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQrG7jflKc55fiGvQPpKVJpVWIq3ycW6fk31A&s';
+  static const String defaultBackgroundImg =
+      'https://i0.wp.com/picjumbo.com/wp-content/uploads/green-natural-background-with-wooden-surface-free-image.jpeg?w=2210&quality=70';
   // home view
   static const String headerLogo = 'assets/images/header_logo.png';
   static const String searchIcon = 'assets/icons/MagnifyingGlass.png';

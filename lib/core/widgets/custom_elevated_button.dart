@@ -14,6 +14,9 @@ class CustomElevatedButton extends StatelessWidget {
     this.minimumSize,
     this.suffixIcon,
     this.maximumSize,
+    this.side,
+    this.elevation,
+    this.shape,
   });
   final String txtBtn;
   final Widget? suffixIcon;
@@ -21,6 +24,9 @@ class CustomElevatedButton extends StatelessWidget {
   final Color? bgColor;
   final Color? txtColor;
   final Size? minimumSize, maximumSize;
+  final OutlinedBorder? shape;
+  final BorderSide? side;
+  final double? elevation;
   final bool isLoading;
 
   @override
@@ -30,8 +36,11 @@ class CustomElevatedButton extends StatelessWidget {
         minimumSize: minimumSize ?? const Size(double.infinity, 55),
         maximumSize: maximumSize ?? const Size(double.infinity, 55),
         backgroundColor: bgColor ?? Theme.of(context).primaryColor,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        // side: BorderSide(color: Theme.of(context).primaryColor, width: 1),
+        shape:
+            shape ??
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        side: side,
+        elevation: elevation,
       ),
 
       onPressed: onPressed,

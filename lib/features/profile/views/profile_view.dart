@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:gap/gap.dart';
+import '../widgets/profile_header.dart';
 
 class ProfileView extends StatelessWidget {
   const ProfileView({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Center(child: Column(children: [Gap(20), Text('Profile View')]));
+    final size = MediaQuery.sizeOf(context);
+    return Center(child: Column(children: [ProfileHeader(size: size)]));
   }
 }
