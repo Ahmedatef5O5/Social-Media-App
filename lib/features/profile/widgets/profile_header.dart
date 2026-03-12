@@ -101,9 +101,13 @@ class ProfileHeader extends StatelessWidget {
                   border: Border.all(color: AppColors.grey3, width: 1.6),
                   borderRadius: BorderRadius.circular(6),
                 ),
-                child: const Icon(
-                  CupertinoIcons.settings,
-                  color: AppColors.black54,
+                child: InkWell(
+                  onTap: () {},
+                  child: Image.asset(
+                    AppImages.settingsIcon,
+                    width: 26,
+                    height: 26,
+                  ),
                 ),
               ),
             ],

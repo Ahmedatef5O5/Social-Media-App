@@ -18,12 +18,10 @@ class PostItemWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // debugPrint("Post ID: ${post.id} | Video URL: ${post.videoUrl}");
     final homeCubit = context.read<HomeCubit>();
     final user = context.read<HomeCubit>().currentUserData;
     final authUser = Supabase.instance.client.auth.currentUser;
 
-    // update curr post
     final currentPost = context.select<HomeCubit, PostModel>(
       (cubit) =>
           (cubit.state is PostsLoaded)
@@ -102,7 +100,6 @@ class PostItemWidget extends StatelessWidget {
                       post.imageUrl != null
                           ? CachedNetworkImage(
                             imageUrl: post.imageUrl!,
-                            // 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQeJQeJyzgAzTEVqXiGe90RGBFhfp_4RcJJMQ&s',
                             width: 350,
                             height: 220,
                             fit: BoxFit.fill,
@@ -142,14 +139,13 @@ class PostItemWidget extends StatelessWidget {
                           color:
                               currentPost.isLikedBy(userId)
                                   ? AppColors.primaryColor
-                                  : null,
+                                  : AppColors.grey6,
                         ),
                       ),
                     ),
                     Gap(4),
                     Text(
                       '${currentPost.likesCount}',
-                      //  post.likes?.length.toString() ?? '0',
                       style: Theme.of(context).textTheme.bodyLarge,
                     ),
                   ],
@@ -179,7 +175,12 @@ class PostItemWidget extends StatelessWidget {
                   },
                   child: Row(
                     children: [
-                      Icon(Icons.mode_comment_outlined),
+                      Image.asset(
+                        AppImages.commentAtPostIcon,
+                        width: 24,
+                        height: 24,
+                      ),
+                      // Icon(Icons.mode_comment_outlined),
                       Gap(4),
                       Text(
                         '${currentPost.comments?.length ?? 0}',
@@ -190,9 +191,11 @@ class PostItemWidget extends StatelessWidget {
                   ),
                 ),
                 Gap(12),
-                Icon(Icons.share_outlined),
+                Image.asset(AppImages.sharePostIcon, width: 24, height: 24),
+                // Icon(Icons.share_outlined),
                 Spacer(),
-                Icon(Icons.save_outlined),
+                Image.asset(AppImages.savePostIcon, width: 24, height: 24),
+                // Icon(Icons.save_outlined),
                 Gap(8),
               ],
             ),

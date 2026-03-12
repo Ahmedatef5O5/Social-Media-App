@@ -20,6 +20,12 @@ class AppImages {
   static const String videosIcon = 'assets/images/Videos.png';
   static const String attachIcon = 'assets/images/Attach.png';
 
+  //
+  static const String settingsIcon = 'assets/icons/settings.png';
+  static const String savePostIcon = 'assets/icons/savePost.png';
+  static const String sharePostIcon = 'assets/icons/SharePost.png';
+  static const String commentAtPostIcon = 'assets/icons/comment.png';
+
   //  social media icons
   static const String google = 'assets/icons/google.png';
   static const String facebook = 'assets/icons/facebook.png';
