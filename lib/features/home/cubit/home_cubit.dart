@@ -168,16 +168,34 @@ class HomeCubit extends Cubit<HomeState> {
 
   Future<void> toggleLike(PostModel post) async {
     if (state is! PostsLoaded) return;
+    final user = Supabase.instance.client.auth.currentUser;
     final userId = Supabase.instance.client.auth.currentUser!.id;
+
+    //
+    final currentUserImageUrl = user?.userMetadata?['image_url'] ?? '';
+
     final oldPosts = (state as PostsLoaded).posts;
     final List<PostModel> newPosts =
         oldPosts.map((p) {
           if (p.id == post.id) {
             final updatedLikes = List<String>.from(p.likes ?? []);
-            updatedLikes.contains(userId)
-                ? updatedLikes.remove(userId)
-                : updatedLikes.add(userId);
-            return p.copyWith(likes: updatedLikes);
+            final updatedImages = List<String>.from(p.likersImages ?? []);
+            if (updatedLikes.contains(userId)) {
+              updatedLikes.remove(userId);
+              // updatedImages.remove(currentUserImageUrl);
+              updatedImages.removeWhere((img) => img == currentUserImageUrl);
+            } else {
+              updatedLikes.add(userId);
+              if (currentUserImageUrl.isNotEmpty) {
+                updatedImages.insert(0, currentUserImageUrl);
+              }
+            }
+            final uniqueImages = updatedImages.toSet().toList();
+            return p.copyWith(
+              likes: updatedLikes,
+              likersImages: List<String>.from(uniqueImages),
+            );
+            // return p.copyWith(likes: updatedLikes, likersImages: uniqueImages);
           }
           return p;
         }).toList();

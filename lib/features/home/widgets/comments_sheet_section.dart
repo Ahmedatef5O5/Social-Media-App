@@ -1,5 +1,8 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:gap/gap.dart';
+import 'package:social_media_app/core/constants/app_images.dart';
 import 'package:social_media_app/features/home/cubit/home_cubit.dart';
 import 'package:social_media_app/features/home/models/post_model.dart';
 import 'package:social_media_app/features/home/widgets/comment_section.dart';
@@ -110,6 +113,38 @@ class _CommentsSheetSectionState extends State<CommentsSheetSection> {
                           style: Theme.of(context).textTheme.titleMedium!
                               .copyWith(color: AppColors.grey7),
                         ),
+                        Gap(2),
+                        if (post.likersImages != null &&
+                            post.likersImages!.isNotEmpty &&
+                            post.likes!.isNotEmpty)
+                          SizedBox(
+                            height: 25,
+                            width: 50,
+                            child: Stack(
+                              children: List.generate(
+                                post.likersImages!.take(3).length,
+                                (index) => Positioned(
+                                  left: index * 15.0,
+                                  child: CircleAvatar(
+                                    radius: 13,
+                                    backgroundColor: AppColors.bgColor,
+                                    child: CircleAvatar(
+                                      radius: 11,
+                                      backgroundImage:
+                                          CachedNetworkImageProvider(
+                                            post.likersImages![index],
+                                          ),
+                                      onBackgroundImageError:
+                                          (_, __) => CachedNetworkImageProvider(
+                                            AppImages.defaultUserImg,
+                                          ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+
                         const SizedBox(height: 16),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,

@@ -47,9 +47,8 @@ class HomeServices {
              ${UserColumns.name}, 
              ${UserColumns.imageUrl}
           )
-        )
-        }
-        )        
+        ),
+        liked_users: ${AppTablesNames.users} (${UserColumns.imageUrl})  
         ''')
                 .order(PostColumns.createdAt, ascending: false),
         builder:

@@ -16,6 +16,7 @@ class PostModel {
   final String? fileUrl;
   final String? imageUrl;
   final List<String>? likes;
+  final List<String>? likersImages;
   final List<CommentModel>? comments;
   final List<String>? shares;
 
@@ -30,6 +31,7 @@ class PostModel {
     this.fileUrl,
     this.imageUrl,
     this.likes,
+    this.likersImages,
     this.comments,
     this.shares,
   });
@@ -46,6 +48,7 @@ class PostModel {
       'fileUrl': fileUrl,
       'imageUrl': imageUrl,
       'likes': likes,
+      'likers_images': likersImages,
       'comments': comments,
       'shares': shares,
     };
@@ -54,6 +57,22 @@ class PostModel {
   factory PostModel.fromMap(Map<String, dynamic> map) {
     final userData = map[AppTablesNames.users] as Map<String, dynamic>?;
     final commentsData = map[AppTablesNames.comments] as List<dynamic>?;
+    // final likedUsersData = map['liked_users'] as List<dynamic>?;
+    List<String> images = [];
+    if (map['liked_users'] != null) {
+      if (map['liked_users'] is List) {
+        images =
+            (map['liked_users'] as List)
+                .map((user) => user[UserColumns.imageUrl]?.toString() ?? '')
+                .where((url) => url.isNotEmpty)
+                .toList();
+      } else if (map['liked_users'] is Map) {
+        final imageUrl = map['liked_users'][UserColumns.imageUrl]?.toString();
+        if (imageUrl != null) {
+          images = [imageUrl];
+        }
+      }
+    }
     return PostModel(
       id: map['id'] as String? ?? '',
       text: map[PostColumns.text] as String? ?? '',
@@ -63,10 +82,6 @@ class PostModel {
           userData != null
               ? userData[UserColumns.name] as String? ?? 'Unknown User'
               : null,
-      // authorImageUrl:
-      //     map['authorImageUrl'] != null
-      //         ? map['authorImageUrl'] as String? ?? ''
-      //         : null,
       videoUrl:
           map['video_url'] != null ? map['video_url'] as String? ?? '' : null,
       imageUrl: map['image_url'] != null ? map['image_url'] as String : null,
@@ -75,6 +90,7 @@ class PostModel {
           map[PostColumns.likes] != null
               ? List<String>.from(map[PostColumns.likes])
               : [],
+      likersImages: images,
       comments:
           commentsData != null
               ? commentsData.map((c) => CommentModel.fromMap(c)).toList()
@@ -97,6 +113,7 @@ class PostModel {
     String? fileUrl,
     String? imageUrl,
     List<String>? likes,
+    List<String>? likersImages,
     List<CommentModel>? comments,
     List<String>? shares,
   }) {
@@ -111,6 +128,7 @@ class PostModel {
       fileUrl: fileUrl ?? this.fileUrl,
       imageUrl: imageUrl ?? this.imageUrl,
       likes: likes ?? this.likes,
+      likersImages: likes ?? this.likersImages,
       comments: comments ?? this.comments,
       shares: shares ?? this.shares,
     );
