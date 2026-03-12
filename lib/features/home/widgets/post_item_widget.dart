@@ -117,7 +117,6 @@ class PostItemWidget extends StatelessWidget {
             if (post.videoUrl != null && post.videoUrl!.isNotEmpty)
               PostVideoPlayer(videoUrl: post.videoUrl!),
 
-            // _buildVideoPlayer(post.videoUrl!),
             if (post.fileUrl != null && post.fileUrl!.isNotEmpty)
               FileAttachmentPreview(url: post.fileUrl!, onTap: () {}),
             Gap(12),
@@ -180,11 +179,11 @@ class PostItemWidget extends StatelessWidget {
                         width: 24,
                         height: 24,
                       ),
-                      // Icon(Icons.mode_comment_outlined),
+
                       Gap(4),
                       Text(
                         '${currentPost.comments?.length ?? 0}',
-                        // post.comments?.length.toString() ?? '0',
+
                         style: Theme.of(context).textTheme.bodyLarge,
                       ),
                     ],
@@ -192,10 +191,10 @@ class PostItemWidget extends StatelessWidget {
                 ),
                 Gap(12),
                 Image.asset(AppImages.sharePostIcon, width: 24, height: 24),
-                // Icon(Icons.share_outlined),
+
                 Spacer(),
                 Image.asset(AppImages.savePostIcon, width: 24, height: 24),
-                // Icon(Icons.save_outlined),
+
                 Gap(8),
               ],
             ),

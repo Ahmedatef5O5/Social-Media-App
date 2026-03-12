@@ -1,8 +1,7 @@
-import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
-import 'package:social_media_app/core/constants/app_images.dart';
 import 'package:social_media_app/features/home/cubit/home_cubit.dart';
 import 'package:social_media_app/features/home/models/post_model.dart';
 import 'package:social_media_app/features/home/widgets/comment_section.dart';
@@ -66,7 +65,9 @@ class _CommentsSheetSectionState extends State<CommentsSheetSection> {
     if (post == null) {
       return const SizedBox(
         height: 300,
-        child: Center(child: CircularProgressIndicator()),
+        child: Center(
+          child: CupertinoActivityIndicator(color: AppColors.black12),
+        ),
       );
     }
     return BlocListener<HomeCubit, HomeState>(
@@ -119,25 +120,30 @@ class _CommentsSheetSectionState extends State<CommentsSheetSection> {
                             post.likes!.isNotEmpty)
                           SizedBox(
                             height: 25,
-                            width: 50,
+                            width: 65,
                             child: Stack(
                               children: List.generate(
                                 post.likersImages!.take(3).length,
                                 (index) => Positioned(
-                                  left: index * 15.0,
+                                  left: index * 18.0,
                                   child: CircleAvatar(
                                     radius: 13,
                                     backgroundColor: AppColors.bgColor,
                                     child: CircleAvatar(
                                       radius: 11,
-                                      backgroundImage:
-                                          CachedNetworkImageProvider(
-                                            post.likersImages![index],
-                                          ),
-                                      onBackgroundImageError:
-                                          (_, __) => CachedNetworkImageProvider(
-                                            AppImages.defaultUserImg,
-                                          ),
+                                      child: Icon(
+                                        Icons.person,
+                                        size: 18,
+                                        color: AppColors.grey7,
+                                      ),
+                                      // backgroundImage:
+                                      //     CachedNetworkImageProvider(
+                                      //       post.likersImages![index],
+                                      //     ),
+                                      // onBackgroundImageError:
+                                      //     (_, __) => CachedNetworkImageProvider(
+                                      //       AppImages.defaultUserImg,
+                                      //     ),
                                     ),
                                   ),
                                 ),
