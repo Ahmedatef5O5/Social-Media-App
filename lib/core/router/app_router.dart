@@ -7,6 +7,7 @@ import 'package:social_media_app/core/widgets/custom_bottom_nav_bar.dart';
 import 'package:social_media_app/features/auth/views/auth_view.dart';
 import 'package:social_media_app/features/home/cubit/home_cubit.dart';
 import 'package:social_media_app/features/home/views/create_post_view.dart';
+import 'package:social_media_app/features/profile/views/edit_profile_view.dart';
 
 class AppRouter {
   static Route<dynamic> generateRoute(RouteSettings settings) {
@@ -34,6 +35,11 @@ class AppRouter {
                 value: settings.arguments as HomeCubit,
                 child: const CreatePostView(),
               ),
+          settings: settings,
+        );
+      case AppRoutes.editProfileViewRoute:
+        return CupertinoPageRoute(
+          builder: (_) => const EditProfileView(),
           settings: settings,
         );
 

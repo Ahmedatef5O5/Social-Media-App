@@ -1,7 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
+import 'package:social_media_app/core/router/app_routes.dart';
 import 'package:social_media_app/features/auth/data/models/user_data.dart';
 import '../../../core/constants/app_images.dart';
 import '../../../core/themes/app_colors.dart';
@@ -91,7 +91,12 @@ class ProfileHeader extends StatelessWidget {
                   elevation: 0,
                   bgColor: AppColors.white,
                   txtColor: AppColors.black54,
-                  onPressed: () {},
+                  onPressed: () {
+                    Navigator.of(
+                      context,
+                      rootNavigator: true,
+                    ).pushNamed(AppRoutes.editProfileViewRoute);
+                  },
                 ),
               ),
               const Gap(12),
