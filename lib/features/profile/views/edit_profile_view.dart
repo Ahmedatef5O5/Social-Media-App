@@ -6,9 +6,41 @@ import 'package:social_media_app/core/themes/app_colors.dart';
 import 'package:social_media_app/core/themes/background_theme_widget.dart';
 import 'package:social_media_app/core/widgets/custom_elevated_button.dart';
 import 'package:social_media_app/core/widgets/custom_text_form_field.dart';
+import 'package:social_media_app/features/auth/data/models/user_data.dart';
 
-class EditProfileView extends StatelessWidget {
-  const EditProfileView({super.key});
+class EditProfileView extends StatefulWidget {
+  const EditProfileView({super.key, this.userData});
+  final UserData? userData;
+
+  @override
+  State<EditProfileView> createState() => _EditProfileViewState();
+}
+
+class _EditProfileViewState extends State<EditProfileView> {
+  late TextEditingController _nameController;
+  late TextEditingController _userNameController;
+  late TextEditingController _titleController;
+  late TextEditingController _bioController;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController = TextEditingController(text: widget.userData?.name);
+    _userNameController = TextEditingController(
+      text: widget.userData?.userName,
+    );
+    _titleController = TextEditingController(text: widget.userData?.title);
+    _bioController = TextEditingController(text: widget.userData?.bio);
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    _nameController.dispose();
+    _userNameController.dispose();
+    _titleController.dispose();
+    _bioController.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -21,7 +53,10 @@ class EditProfileView extends StatelessWidget {
           extendBodyBehindAppBar: true,
           appBar: AppBar(
             backgroundColor: AppColors.transparent,
-            leading: Icon(Icons.arrow_back_ios_new, color: AppColors.black54),
+            leading: InkWell(
+              onTap: () => Navigator.of(context).pop(),
+              child: Icon(Icons.arrow_back_ios_new, color: AppColors.black54),
+            ),
             title: Text(
               'Edit Profile',
               style: Theme.of(context).textTheme.titleMedium!.copyWith(
@@ -58,7 +93,8 @@ class EditProfileView extends StatelessWidget {
                                   ),
                                   image: DecorationImage(
                                     image: CachedNetworkImageProvider(
-                                      AppImages.defaultBackgroundImg,
+                                      widget.userData?.backgroundImageUrl ??
+                                          AppImages.defaultBackgroundImg,
                                     ),
                                     fit: BoxFit.cover,
                                   ),
@@ -105,7 +141,8 @@ class EditProfileView extends StatelessWidget {
                                       radius: 50,
                                       backgroundImage:
                                           CachedNetworkImageProvider(
-                                            AppImages.defaultUserImg,
+                                            widget.userData?.imageUrl ??
+                                                AppImages.defaultUserImg,
                                           ),
                                     ),
                                   ),
@@ -129,21 +166,25 @@ class EditProfileView extends StatelessWidget {
                     ),
                     Gap(12),
                     CustomTextFormField(
+                      controller: _nameController,
                       labelText: 'Name',
                       hintText: 'Enter New Name',
                     ),
                     Gap(16),
                     CustomTextFormField(
+                      controller: _userNameController,
                       labelText: 'UserName',
                       hintText: 'Enter New UserName',
                     ),
                     Gap(16),
                     CustomTextFormField(
+                      controller: _titleController,
                       labelText: 'Title',
                       hintText: 'Enter New Title',
                     ),
                     Gap(16),
                     CustomTextFormField(
+                      controller: _bioController,
                       labelText: 'Bio',
                       hintText: 'Enter New Bio',
                     ),

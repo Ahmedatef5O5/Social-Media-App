@@ -9,6 +9,8 @@ import 'package:social_media_app/features/home/cubit/home_cubit.dart';
 import 'package:social_media_app/features/home/views/create_post_view.dart';
 import 'package:social_media_app/features/profile/views/edit_profile_view.dart';
 
+import '../../features/auth/data/models/user_data.dart';
+
 class AppRouter {
   static Route<dynamic> generateRoute(RouteSettings settings) {
     switch (settings.name) {
@@ -38,8 +40,9 @@ class AppRouter {
           settings: settings,
         );
       case AppRoutes.editProfileViewRoute:
+        final user = settings.arguments as UserData;
         return CupertinoPageRoute(
-          builder: (_) => const EditProfileView(),
+          builder: (_) => EditProfileView(userData: user),
           settings: settings,
         );
 
