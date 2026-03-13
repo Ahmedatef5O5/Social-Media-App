@@ -43,7 +43,7 @@ class PostModel {
       'authorId': authorId,
       'createdAt': createdAt,
       'authorName': authorName,
-      'authorImageUrl': authorImageUrl,
+      'author_image_url': authorImageUrl,
       'videoUrl': videoUrl,
       'fileUrl': fileUrl,
       'imageUrl': imageUrl,
@@ -82,6 +82,8 @@ class PostModel {
           userData != null
               ? userData[UserColumns.name] as String? ?? 'Unknown User'
               : null,
+      authorImageUrl:
+          userData != null ? userData[UserColumns.imageUrl] as String? : null,
       videoUrl:
           map['video_url'] != null ? map['video_url'] as String? ?? '' : null,
       imageUrl: map['image_url'] != null ? map['image_url'] as String : null,

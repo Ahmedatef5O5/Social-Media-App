@@ -19,8 +19,6 @@ class PostItemWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final homeCubit = context.read<HomeCubit>();
-    final user = context.read<HomeCubit>().currentUserData;
-    final authUser = Supabase.instance.client.auth.currentUser;
 
     final currentPost = context.select<HomeCubit, PostModel>(
       (cubit) =>
@@ -50,12 +48,9 @@ class PostItemWidget extends StatelessWidget {
                 radius: 22,
                 backgroundColor: AppColors.bgColor2,
                 backgroundImage:
-                    user?.imageUrl != null
-                        ? CachedNetworkImageProvider(user!.imageUrl!)
-                        : (authUser?.userMetadata?['avatar_url'] != null)
-                        ? CachedNetworkImageProvider(
-                          authUser!.userMetadata!['avatar_url'],
-                        )
+                    post.authorImageUrl != null &&
+                            post.authorImageUrl!.isNotEmpty
+                        ? CachedNetworkImageProvider(post.authorImageUrl!)
                         : const CachedNetworkImageProvider(
                               AppImages.defaultUserImg,
                             )

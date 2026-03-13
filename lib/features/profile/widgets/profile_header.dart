@@ -29,7 +29,7 @@ class ProfileHeader extends StatelessWidget {
                   ),
                   image: DecorationImage(
                     image: CachedNetworkImageProvider(
-                      AppImages.defaultBackgroundImg,
+                      user.backgroundImageUrl ?? AppImages.defaultBackgroundImg,
                     ),
                     fit: BoxFit.cover,
                   ),
@@ -81,7 +81,7 @@ class ProfileHeader extends StatelessWidget {
               Expanded(
                 child: CustomElevatedButton(
                   maximumSize: Size(220, 90),
-                  minimumSize: Size(120, 50),
+                  minimumSize: Size(220, 50),
                   txtBtn: 'EDIT PROFILE',
 
                   shape: RoundedRectangleBorder(
@@ -92,10 +92,10 @@ class ProfileHeader extends StatelessWidget {
                   bgColor: AppColors.white,
                   txtColor: AppColors.black54,
                   onPressed: () {
-                    Navigator.of(
-                      context,
-                      rootNavigator: true,
-                    ).pushNamed(AppRoutes.editProfileViewRoute);
+                    Navigator.of(context, rootNavigator: true).pushNamed(
+                      AppRoutes.editProfileViewRoute,
+                      arguments: user,
+                    );
                   },
                 ),
               ),
