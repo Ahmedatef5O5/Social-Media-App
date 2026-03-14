@@ -8,7 +8,9 @@ import 'package:social_media_app/features/auth/views/auth_view.dart';
 import 'package:social_media_app/features/discover/cubit/discover_people_cubit.dart';
 import 'package:social_media_app/features/discover/services/discover_people_services.dart';
 import 'package:social_media_app/features/home/cubit/home_cubit.dart';
+import 'package:social_media_app/features/home/models/story_model.dart';
 import 'package:social_media_app/features/home/views/create_post_view.dart';
+import 'package:social_media_app/features/home/views/story_display_view.dart';
 import 'package:social_media_app/features/profile/cubits/edit_profile_cubit/edit_profile_cubit.dart';
 import 'package:social_media_app/features/profile/services/edit_profile_services.dart';
 import 'package:social_media_app/features/profile/views/edit_profile_view.dart';
@@ -41,6 +43,13 @@ class AppRouter {
           settings: settings,
         );
 
+      case AppRoutes.storyDisplayViewRoute:
+        final story = settings.arguments as StoryModel;
+        return CupertinoPageRoute(
+          builder: (_) => StoryDisplayView(story: story),
+          settings: settings,
+        );
+
       case AppRoutes.createPostRoute:
         return CupertinoPageRoute(
           builder:
@@ -50,6 +59,7 @@ class AppRouter {
               ),
           settings: settings,
         );
+
       case AppRoutes.editProfileViewRoute:
         final user = settings.arguments as UserData;
         return CupertinoPageRoute(

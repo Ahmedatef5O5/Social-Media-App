@@ -27,8 +27,7 @@ class StoriesListSection extends StatelessWidget {
         buildWhen:
             (previous, current) =>
                 current is StoriesLoaded ||
-                current is StoriesLoading ||
-                current is StoriesError,
+                (current is StoriesLoading && previous is! StoriesLoaded),
         builder: (context, state) {
           if (state is StoriesLoading) {
             return const Center(

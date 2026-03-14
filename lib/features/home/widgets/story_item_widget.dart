@@ -1,6 +1,8 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
+import 'package:social_media_app/core/router/app_routes.dart';
 import 'package:social_media_app/features/home/cubit/home_cubit.dart';
 import 'package:social_media_app/features/home/models/story_model.dart';
 import 'package:social_media_app/features/home/widgets/story_image_picker_sheet.dart';
@@ -34,6 +36,10 @@ class StoryItemWidget extends StatelessWidget {
           // Navigate to share story page
         } else {
           // Navigate to view story page
+          Navigator.of(
+            context,
+            rootNavigator: true,
+          ).pushNamed(AppRoutes.storyDisplayViewRoute, arguments: story);
         }
       },
 
@@ -58,10 +64,22 @@ class StoryItemWidget extends StatelessWidget {
 
               child:
                   story == null
-                      ? const Icon(
-                        Icons.add_outlined,
-                        size: 22,
-                        color: AppColors.white,
+                      ? BlocBuilder<HomeCubit, HomeState>(
+                        builder: (context, state) {
+                          if (state is AddStoryLoading && story == null) {
+                            return const Center(
+                              child: CupertinoActivityIndicator(
+                                radius: 10,
+                                color: AppColors.black12,
+                              ),
+                            );
+                          }
+                          return const Icon(
+                            Icons.add_outlined,
+                            size: 22,
+                            color: AppColors.white,
+                          );
+                        },
                       )
                       : null,
             ),
