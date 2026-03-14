@@ -1,8 +1,10 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 import 'package:social_media_app/core/router/app_routes.dart';
 import 'package:social_media_app/features/auth/data/models/user_data.dart';
+import 'package:social_media_app/features/profile/cubits/profile_cubit/profile_cubit.dart';
 import '../../../core/constants/app_images.dart';
 import '../../../core/themes/app_colors.dart';
 import '../../../core/widgets/custom_elevated_button.dart';
@@ -30,6 +32,7 @@ class ProfileHeader extends StatelessWidget {
                   image: DecorationImage(
                     image: CachedNetworkImageProvider(
                       user.backgroundImageUrl ?? AppImages.defaultBackgroundImg,
+                      cacheKey: user.backgroundImageUrl,
                     ),
                     fit: BoxFit.cover,
                   ),
@@ -50,8 +53,9 @@ class ProfileHeader extends StatelessWidget {
                       image: DecorationImage(
                         image: CachedNetworkImageProvider(
                           user.imageUrl ?? AppImages.defaultUserImg,
+                          cacheKey: user.imageUrl,
                         ),
-                        fit: BoxFit.contain,
+                        fit: BoxFit.cover,
                       ),
                     ),
                   ),
@@ -72,7 +76,9 @@ class ProfileHeader extends StatelessWidget {
           style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
         ),
         Gap(8),
-        const Text('Mobile Developer', style: TextStyle(fontSize: 16)),
+        Text(user.title.toString(), style: const TextStyle(fontSize: 16)),
+        // Gap(8),
+        // Text(user.bio.toString(), style: const TextStyle(fontSize: 16)),
         Gap(16),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 40),
@@ -91,11 +97,16 @@ class ProfileHeader extends StatelessWidget {
                   elevation: 0,
                   bgColor: AppColors.white,
                   txtColor: AppColors.black54,
-                  onPressed: () {
-                    Navigator.of(context, rootNavigator: true).pushNamed(
+                  onPressed: () async {
+                    final profileCubit = context.read<ProfileCubit>();
+                    await Navigator.of(context, rootNavigator: true).pushNamed(
                       AppRoutes.editProfileViewRoute,
                       arguments: user,
                     );
+
+                    if (context.mounted) {
+                      profileCubit.getProfileData(user.id);
+                    }
                   },
                 ),
               ),
