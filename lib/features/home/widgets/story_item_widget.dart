@@ -5,6 +5,7 @@ import 'package:gap/gap.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:social_media_app/features/home/cubit/home_cubit.dart';
 import 'package:social_media_app/features/home/models/story_model.dart';
+import 'package:social_media_app/features/home/widgets/story_image_picker_sheet.dart';
 import '../../../core/themes/app_colors.dart';
 
 class StoryItemWidget extends StatelessWidget {
@@ -18,41 +19,11 @@ class StoryItemWidget extends StatelessWidget {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder:
-          (context) => Container(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'Add to Story',
-                  style: Theme.of(context).textTheme.titleLarge!.copyWith(),
-                ),
-                const Gap(20),
-                ListTile(
-                  leading: const Icon(
-                    Icons.photo_library,
-                    color: AppColors.primaryColor,
-                  ),
-                  title: const Text('Gallery'),
-                  onTap:
-                      () => _pickAndUpload(
-                        context,
-                        ImageSource.gallery,
-                        homeCubit,
-                      ),
-                ),
-                ListTile(
-                  leading: const Icon(Icons.camera_alt, color: Colors.green),
-                  title: const Text('Take a Photo'),
-                  onTap:
-                      () => _pickAndUpload(
-                        context,
-                        ImageSource.camera,
-                        homeCubit,
-                      ),
-                ),
-              ],
-            ),
+          (context) => StoryImagePickerSheet(
+            onSourceSelected: (source) {
+              Navigator.pop(context);
+              _pickAndUpload(context, source, homeCubit);
+            },
           ),
     );
   }
