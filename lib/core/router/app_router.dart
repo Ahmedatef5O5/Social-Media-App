@@ -7,8 +7,9 @@ import 'package:social_media_app/core/widgets/custom_bottom_nav_bar.dart';
 import 'package:social_media_app/features/auth/views/auth_view.dart';
 import 'package:social_media_app/features/home/cubit/home_cubit.dart';
 import 'package:social_media_app/features/home/views/create_post_view.dart';
+import 'package:social_media_app/features/profile/cubits/edit_profile_cubit/edit_profile_cubit.dart';
+import 'package:social_media_app/features/profile/services/edit_profile_services.dart';
 import 'package:social_media_app/features/profile/views/edit_profile_view.dart';
-
 import '../../features/auth/data/models/user_data.dart';
 
 class AppRouter {
@@ -42,7 +43,11 @@ class AppRouter {
       case AppRoutes.editProfileViewRoute:
         final user = settings.arguments as UserData;
         return CupertinoPageRoute(
-          builder: (_) => EditProfileView(userData: user),
+          builder:
+              (_) => BlocProvider(
+                create: (context) => EditProfileCubit(EditProfileServices()),
+                child: EditProfileView(userData: user),
+              ),
           settings: settings,
         );
 
