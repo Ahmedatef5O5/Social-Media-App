@@ -61,7 +61,12 @@ class HomeServices {
              ${UserColumns.imageUrl}
           )
         ),
-        liked_users: ${AppTablesNames.users} (${UserColumns.imageUrl})  
+          ${AppTablesNames.likes}(
+            ${LikeColumns.userId},
+            ${AppTablesNames.users} (
+              ${UserColumns.imageUrl}
+            )
+        )  
         ''')
                 .order(PostColumns.createdAt, ascending: false),
         builder:
@@ -123,16 +128,25 @@ class HomeServices {
     }
   }
 
-  Future<void> likePost(String postId, List<String> updateLikes) async {
+  Future<void> toggleLike({
+    required String postId,
+    required String userId,
+    required bool isLiked,
+  }) async {
     try {
-      await supabaseServices.updateRow(
-        table: AppTablesNames.posts,
-        column: 'id',
-        value: postId,
-        values: {PostColumns.likes: updateLikes},
-      );
+      if (isLiked) {
+        await _supabase.from(AppTablesNames.likes).delete().match({
+          LikeColumns.postId: postId,
+          LikeColumns.userId: userId,
+        });
+      } else {
+        await _supabase.from(AppTablesNames.likes).insert({
+          LikeColumns.postId: postId,
+          LikeColumns.userId: userId,
+        });
+      }
     } catch (e) {
-      debugPrint("Error updating likes in DB: $e");
+      debugPrint("Error toggling like in DB: $e");
       rethrow;
     }
   }
