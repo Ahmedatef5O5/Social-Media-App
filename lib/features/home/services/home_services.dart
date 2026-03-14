@@ -1,5 +1,4 @@
 import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:social_media_app/core/services/supabase_database_services.dart';
 import 'package:social_media_app/core/utilities/app_tables_names.dart';
@@ -11,6 +10,19 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 class HomeServices {
   final supabaseServices = SupabaseDatabaseServices.instance;
+  final _supabase = Supabase.instance.client;
+
+  Future<String> uploadStoryFile(File file, String userId) async {
+    final fileName =
+        '${DateTime.now().millisecondsSinceEpoch}_${file.path.split('/').last}';
+    final path = '$userId/$fileName';
+    await _supabase.storage.from(AppTablesNames.stories).upload(path, file);
+    return _supabase.storage.from(AppTablesNames.stories).getPublicUrl(path);
+  }
+
+  Future<void> createStory(StoryModel story) async {
+    await _supabase.from(AppTablesNames.stories).insert(story.toMap());
+  }
 
   Future<List<StoryModel>> fetchStories() async {
     try {
