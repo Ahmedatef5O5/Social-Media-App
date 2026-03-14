@@ -9,7 +9,7 @@ class StoryModel {
   final String createdAt;
 
   const StoryModel({
-    required this.id,
+    this.id = '',
     required this.imageUrl,
     required this.authorId,
     required this.authorName,
@@ -19,7 +19,7 @@ class StoryModel {
 
   Map<String, dynamic> toMap() {
     return <String, dynamic>{
-      'id': id,
+      if (id.isNotEmpty) 'id': id,
       'image_url': imageUrl,
       'author_id': authorId,
       'created_at': createdAt,
@@ -33,7 +33,7 @@ class StoryModel {
       imageUrl: map[StoryColumns.imageUrl] as String? ?? '',
       authorId: map[StoryColumns.authorId] as String? ?? '',
       authorName: userData?[UserColumns.name] as String? ?? 'Unknown User',
-      authorImageUrl: userData?['image_url'] as String?,
+      authorImageUrl: userData?[UserColumns.imageUrl] as String?,
       createdAt: map[StoryColumns.createdAt] as String? ?? '',
     );
   }

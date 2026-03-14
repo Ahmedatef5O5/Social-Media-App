@@ -36,12 +36,32 @@ class HomeCubit extends Cubit<HomeState> {
     }
   }
 
+  Future<void> addStory({required File file, required UserData user}) async {
+    emit(AddStoryLoading());
+    try {
+      final fileUrl = await homeServices.uploadStoryFile(file, user.id);
+      final newStory = StoryModel(
+        // id: '',
+        imageUrl: fileUrl,
+        authorId: user.id,
+        authorName: user.name,
+        createdAt: DateTime.now().toIso8601String(),
+      );
+      await homeServices.createStory(newStory);
+      await fetchStories();
+    } catch (e) {
+      debugPrint('Error adding story: $e');
+      emit(AddStoryError(e.toString()));
+    }
+  }
+
   Future<void> fetchStories() async {
     emit(StoriesLoading());
     try {
       final stories = await homeServices.fetchStories();
       emit(StoriesLoaded(stories));
     } catch (e) {
+      debugPrint('Error fetching stories: $e');
       emit(StoriesError(e.toString()));
     }
   }

@@ -34,6 +34,14 @@ final class StoriesError extends HomeState {
   const StoriesError(this.message);
 }
 
+final class AddStoryLoading extends HomeState {}
+
+final class AddStoryError extends HomeState {
+  final String message;
+
+  const AddStoryError(this.message);
+}
+
 final class PostsLoading extends HomeState {}
 
 final class PostsLoaded extends HomeState {
