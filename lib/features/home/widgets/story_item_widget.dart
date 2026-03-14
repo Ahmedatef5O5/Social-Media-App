@@ -1,8 +1,6 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:social_media_app/features/home/cubit/home_cubit.dart';
 import 'package:social_media_app/features/home/models/story_model.dart';
 import 'package:social_media_app/features/home/widgets/story_image_picker_sheet.dart';
@@ -12,7 +10,6 @@ class StoryItemWidget extends StatelessWidget {
   final StoryModel? story;
   const StoryItemWidget({super.key, this.story});
   void _showAddStoryOptions(BuildContext context) {
-    final homeCubit = context.read<HomeCubit>();
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -22,29 +19,10 @@ class StoryItemWidget extends StatelessWidget {
           (context) => StoryImagePickerSheet(
             onSourceSelected: (source) {
               Navigator.pop(context);
-              _pickAndUpload(context, source, homeCubit);
+              context.read<HomeCubit>().pickAndAddStory(source: source);
             },
           ),
     );
-  }
-
-  Future<void> _pickAndUpload(
-    BuildContext context,
-    ImageSource source,
-    HomeCubit homeCubit,
-  ) async {
-    Navigator.pop(context);
-    final picker = ImagePicker();
-    final pickedFile = await picker.pickImage(source: source);
-    if (pickedFile != null) {
-      final file = File(pickedFile.path);
-      final userData = homeCubit.currentUserData;
-      if (userData != null) {
-        homeCubit.addStory(file: file, user: userData);
-      } else {
-        debugPrint('User data is null , cannot add story');
-      }
-    }
   }
 
   @override

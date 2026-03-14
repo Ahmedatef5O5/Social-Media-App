@@ -55,6 +55,26 @@ class HomeCubit extends Cubit<HomeState> {
     }
   }
 
+  Future<void> pickAndAddStory({required ImageSource source}) async {
+    try {
+      final XFile? pickedFile =
+          source == ImageSource.camera
+              ? await filePickerServices.takePhotoByCamera()
+              : await filePickerServices.pickImageFromGallery();
+      if (pickedFile != null) {
+        final file = File(pickedFile.path);
+        if (currentUserData != null) {
+          await addStory(file: file, user: currentUserData!);
+        } else {
+          debugPrint('User data is not loaded yet, cannot add story');
+        }
+      }
+    } catch (e) {
+      debugPrint('Error in pickAndAddStory: $e');
+      emit(AddStoryError(e.toString()));
+    }
+  }
+
   Future<void> fetchStories() async {
     emit(StoriesLoading());
     try {
