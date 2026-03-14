@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -5,6 +6,7 @@ import 'package:gap/gap.dart';
 import 'package:social_media_app/features/home/cubit/home_cubit.dart';
 import 'package:social_media_app/features/home/models/post_model.dart';
 import 'package:social_media_app/features/home/widgets/comment_section.dart';
+import '../../../core/constants/app_images.dart';
 import '../../../core/themes/app_colors.dart';
 import 'send_comment_section.dart';
 
@@ -128,22 +130,34 @@ class _CommentsSheetSectionState extends State<CommentsSheetSection> {
                                   left: index * 18.0,
                                   child: CircleAvatar(
                                     radius: 13,
-                                    backgroundColor: AppColors.bgColor,
+                                    backgroundColor: AppColors.white,
                                     child: CircleAvatar(
                                       radius: 11,
-                                      child: Icon(
-                                        Icons.person,
-                                        size: 18,
-                                        color: AppColors.grey7,
-                                      ),
-                                      // backgroundImage:
-                                      //     CachedNetworkImageProvider(
-                                      //       post.likersImages![index],
-                                      //     ),
-                                      // onBackgroundImageError:
-                                      //     (_, __) => CachedNetworkImageProvider(
-                                      //       AppImages.defaultUserImg,
-                                      //     ),
+                                      backgroundImage:
+                                          CachedNetworkImageProvider(
+                                            post.likersImages![index].isNotEmpty
+                                                ? post.likersImages![index]
+                                                : AppImages.defaultUserImg,
+                                          ),
+                                      onBackgroundImageError: (
+                                        exception,
+                                        stackTrace,
+                                      ) {
+                                        CachedNetworkImageProvider(
+                                          AppImages.defaultUserImg,
+                                        );
+                                        debugPrint(
+                                          'Error loading imageLikers : $exception',
+                                        );
+                                      },
+                                      child:
+                                          post.likersImages![index].isEmpty
+                                              ? Icon(
+                                                Icons.person,
+                                                size: 18,
+                                                color: AppColors.grey7,
+                                              )
+                                              : null,
                                     ),
                                   ),
                                 ),

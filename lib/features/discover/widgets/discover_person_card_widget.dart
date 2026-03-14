@@ -29,7 +29,7 @@ class DiscoverPersonCardWidget extends StatelessWidget {
           ),
         ),
         subtitle: Text(
-          userData.userName ?? 'num of Followers',
+          userData.userName ?? '1K Followers',
           style: Theme.of(context).textTheme.labelMedium!.copyWith(
             fontWeight: FontWeight.w400,
             fontSize: 14,

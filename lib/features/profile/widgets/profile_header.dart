@@ -75,10 +75,15 @@ class ProfileHeader extends StatelessWidget {
           "@${user.name.toLowerCase().replaceAll(' ', '_')}",
           style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
         ),
-        Gap(8),
-        Text(user.title.toString(), style: const TextStyle(fontSize: 16)),
-        // Gap(8),
-        // Text(user.bio.toString(), style: const TextStyle(fontSize: 16)),
+        if (user.title != null) ...[
+          Gap(8),
+          Text(user.title.toString(), style: const TextStyle(fontSize: 16)),
+        ],
+        if (user.bio != null) ...[
+          Gap(8),
+          Text(user.bio.toString(), style: const TextStyle(fontSize: 16)),
+        ],
+
         Gap(16),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 40),
