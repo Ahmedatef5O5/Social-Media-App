@@ -14,7 +14,30 @@ class ProfileDetailsWidgetTab extends StatelessWidget {
       children: [
         _buildInfoRow(CupertinoIcons.mail, 'Email', user.email),
         const Gap(15),
-        _buildInfoRow(CupertinoIcons.info, 'Bio', 'No bio provided yet.'),
+        _buildInfoRow(
+          CupertinoIcons.person_fill,
+          'Name',
+          user.name,
+          //  ?? 'No name provided yet.',
+        ),
+        const Gap(15),
+        _buildInfoRow(
+          CupertinoIcons.person_circle,
+          'username',
+          user.userName ?? 'No userName provided yet.',
+        ),
+        const Gap(15),
+        _buildInfoRow(
+          CupertinoIcons.info,
+          'title',
+          user.title ?? 'No title provided yet.',
+        ),
+        const Gap(15),
+        _buildInfoRow(
+          CupertinoIcons.info,
+          'Bio',
+          user.bio ?? 'No bio provided yet.',
+        ),
         const Gap(15),
         _buildInfoRow(CupertinoIcons.calendar, 'Joined', 'March 2024'),
         const Gap(50),
