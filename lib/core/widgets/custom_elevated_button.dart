@@ -17,6 +17,7 @@ class CustomElevatedButton extends StatelessWidget {
     this.side,
     this.elevation,
     this.shape,
+    this.txtBtnStyle,
   });
   final String txtBtn;
   final Widget? suffixIcon;
@@ -27,6 +28,7 @@ class CustomElevatedButton extends StatelessWidget {
   final OutlinedBorder? shape;
   final BorderSide? side;
   final double? elevation;
+  final TextStyle? txtBtnStyle;
   final bool isLoading;
 
   @override
@@ -50,9 +52,11 @@ class CustomElevatedButton extends StatelessWidget {
               ? CupertinoActivityIndicator(color: AppColors.black12)
               : Text(
                 txtBtn,
-                style: Theme.of(context).textTheme.titleMedium!.copyWith(
-                  color: txtColor ?? AppColors.white,
-                ),
+                style:
+                    txtBtnStyle ??
+                    Theme.of(context).textTheme.titleMedium!.copyWith(
+                      color: txtColor ?? AppColors.white,
+                    ),
               )),
     );
   }

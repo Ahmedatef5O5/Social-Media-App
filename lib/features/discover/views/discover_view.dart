@@ -1,26 +1,58 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
+import 'package:social_media_app/core/themes/app_colors.dart';
+import 'package:social_media_app/core/themes/background_theme_widget.dart';
+import 'package:social_media_app/features/discover/cubit/discover_people_cubit.dart';
+import '../widgets/discover_people_header_section.dart';
+import '../widgets/discover_person_card_widget.dart';
 
 class DiscoverView extends StatelessWidget {
   const DiscoverView({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Center(
+    return BackgroundThemeWidget(
+      top: true,
       child: Column(
         children: [
-          Gap(20),
-          const Text(
-            'Welcome to the Discover Page',
-            style: TextStyle(fontSize: 24),
+          const Gap(20),
+          DiscoverPeopleHeaderSection(),
+          Gap(16),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12.0),
+              child: BlocBuilder<DiscoverPeopleCubit, DiscoverPeopleState>(
+                builder: (context, state) {
+                  if (state is DiscoverPeopleLoading) {
+                    return const Center(
+                      child: CupertinoActivityIndicator(
+                        color: AppColors.black12,
+                      ),
+                    );
+                  }
+                  if (state is DiscoverPeopleSuccess) {
+                    return ListView.separated(
+                      itemCount: state.users.length,
+                      separatorBuilder:
+                          (BuildContext context, int index) => const Gap(15),
+
+                      itemBuilder: (BuildContext context, int index) {
+                        return DiscoverPersonCardWidget(
+                          userData: state.users[index],
+                        );
+                      },
+                    );
+                  } else if (state is DiscoverPeopleFailure) {
+                    return Center(child: Text(state.message));
+                  } else {
+                    return const SizedBox.shrink();
+                  }
+                },
+              ),
+            ),
           ),
-          const SizedBox(height: 20),
-          ElevatedButton(
-            onPressed: () {
-              // Add your discover logic here
-            },
-            child: const Text('Discover'),
-          ),
+          const Gap(20),
         ],
       ),
     );

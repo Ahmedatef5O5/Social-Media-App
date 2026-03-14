@@ -36,7 +36,7 @@ class UserData {
     return UserData(
       id: map['id'] as String? ?? '',
       name: map['name'] as String? ?? '',
-      email: map['email'] as String,
+      email: map['email'] as String? ?? '',
       userName:
           map['username'] != null ? map['username'] as String? ?? '' : null,
       title: map['title'] != null ? map['title'] as String? ?? '' : null,

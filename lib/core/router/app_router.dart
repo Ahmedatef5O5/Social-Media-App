@@ -5,6 +5,8 @@ import 'package:social_media_app/core/router/app_routes.dart';
 import 'package:social_media_app/core/themes/app_colors.dart';
 import 'package:social_media_app/core/widgets/custom_bottom_nav_bar.dart';
 import 'package:social_media_app/features/auth/views/auth_view.dart';
+import 'package:social_media_app/features/discover/cubit/discover_people_cubit.dart';
+import 'package:social_media_app/features/discover/services/discover_people_services.dart';
 import 'package:social_media_app/features/home/cubit/home_cubit.dart';
 import 'package:social_media_app/features/home/views/create_post_view.dart';
 import 'package:social_media_app/features/profile/cubits/edit_profile_cubit/edit_profile_cubit.dart';
@@ -24,8 +26,16 @@ class AppRouter {
       case AppRoutes.homeRoute:
         return CupertinoPageRoute(
           builder:
-              (_) => BlocProvider(
-                create: (context) => HomeCubit()..getHomeData(),
+              (_) => MultiBlocProvider(
+                providers: [
+                  BlocProvider(create: (context) => HomeCubit()..getHomeData()),
+                  BlocProvider(
+                    create:
+                        (context) =>
+                            DiscoverPeopleCubit(DiscoverPeopleServices())
+                              ..getDiscoverPeople(),
+                  ),
+                ],
                 child: const CustomBottomNavBar(),
               ),
           settings: settings,
