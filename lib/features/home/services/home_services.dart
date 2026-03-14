@@ -29,10 +29,11 @@ class HomeServices {
       return await supabaseServices.fetchRows(
         table: AppTablesNames.stories,
         filter:
-            (query) =>
-                query.select('''*,${AppTablesNames.users}(${UserColumns.name}, 
+            (query) => query
+                .select('''*,${AppTablesNames.users}(${UserColumns.name}, 
         ${UserColumns.imageUrl})}
-        )'''),
+        )''')
+                .order(StoryColumns.createdAt, ascending: false),
         builder: (data, id) => StoryModel.fromMap(data),
         primaryKey: StoryColumns.id,
       );
