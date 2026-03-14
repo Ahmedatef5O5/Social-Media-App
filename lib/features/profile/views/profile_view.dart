@@ -4,7 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 import 'package:social_media_app/core/themes/app_colors.dart';
 import 'package:social_media_app/core/themes/background_theme_widget.dart';
-import 'package:social_media_app/features/profile/cubit/profile_cubit.dart';
+import 'package:social_media_app/features/profile/cubits/profile_cubit/profile_cubit.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../widgets/profile_details_widget_tab.dart';
 import '../widgets/profile_header.dart';
