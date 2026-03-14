@@ -1,5 +1,4 @@
 import 'package:social_media_app/core/utilities/app_tables_names.dart';
-
 import 'comment_model.dart';
 
 class PostModel {
@@ -57,19 +56,14 @@ class PostModel {
   factory PostModel.fromMap(Map<String, dynamic> map) {
     final userData = map[AppTablesNames.users] as Map<String, dynamic>?;
     final commentsData = map[AppTablesNames.comments] as List<dynamic>?;
-    // final likedUsersData = map['liked_users'] as List<dynamic>?;
-    List<String> images = [];
-    if (map['liked_users'] != null) {
-      if (map['liked_users'] is List) {
-        images =
-            (map['liked_users'] as List)
-                .map((user) => user[UserColumns.imageUrl]?.toString() ?? '')
-                .where((url) => url.isNotEmpty)
-                .toList();
-      } else if (map['liked_users'] is Map) {
-        final imageUrl = map['liked_users'][UserColumns.imageUrl]?.toString();
-        if (imageUrl != null) {
-          images = [imageUrl];
+    List<String> likesList = [];
+    List<String> imagesList = [];
+    if (map[AppTablesNames.likes] != null) {
+      final likesData = map[AppTablesNames.likes] as List<dynamic>;
+      for (var item in likesData) {
+        likesList.add(item['user_id'].toString());
+        if (item['users'] != null && item['users']['image_url'] != null) {
+          imagesList.add(item['users']['image_url'].toString());
         }
       }
     }
@@ -88,11 +82,9 @@ class PostModel {
           map['video_url'] != null ? map['video_url'] as String? ?? '' : null,
       imageUrl: map['image_url'] != null ? map['image_url'] as String : null,
       fileUrl: map['file_url'] != null ? map['file_url'] as String : null,
-      likes:
-          map[PostColumns.likes] != null
-              ? List<String>.from(map[PostColumns.likes])
-              : [],
-      likersImages: images,
+
+      likes: likesList,
+      likersImages: imagesList,
       comments:
           commentsData != null
               ? commentsData.map((c) => CommentModel.fromMap(c)).toList()
@@ -130,7 +122,7 @@ class PostModel {
       fileUrl: fileUrl ?? this.fileUrl,
       imageUrl: imageUrl ?? this.imageUrl,
       likes: likes ?? this.likes,
-      likersImages: likes ?? this.likersImages,
+      likersImages: likersImages ?? this.likersImages,
       comments: comments ?? this.comments,
       shares: shares ?? this.shares,
     );

@@ -90,7 +90,7 @@ class HomeCubit extends Cubit<HomeState> {
     emit(PostsLoading());
     try {
       final posts = await homeServices.fetchPosts();
-      emit(PostsLoaded(posts));
+      emit(PostsLoaded(posts, DateTime.now()));
     } catch (e) {
       emit(PostsError(e.toString()));
     }
@@ -209,46 +209,57 @@ class HomeCubit extends Cubit<HomeState> {
   Future<void> toggleLike(PostModel post) async {
     if (state is! PostsLoaded) return;
     final user = Supabase.instance.client.auth.currentUser;
-    final userId = Supabase.instance.client.auth.currentUser!.id;
+    final userId = user?.id;
+    if (userId == null) return;
+    final String currentUserImageUrl =
+        user?.userMetadata?['image_url'] ?? currentUserData?.imageUrl ?? '';
 
     //
-    final currentUserImageUrl = user?.userMetadata?['image_url'] ?? '';
+    final oldState = state as PostsLoaded;
 
-    final oldPosts = (state as PostsLoaded).posts;
-    final List<PostModel> newPosts =
-        oldPosts.map((p) {
+    final bool isCurrentlyLiked = post.isLikedBy(userId);
+
+    final List<PostModel> updatedPosts =
+        oldState.posts.map((p) {
           if (p.id == post.id) {
             final updatedLikes = List<String>.from(p.likes ?? []);
             final updatedImages = List<String>.from(p.likersImages ?? []);
-            if (updatedLikes.contains(userId)) {
+
+            if (isCurrentlyLiked) {
               updatedLikes.remove(userId);
-              // updatedImages.remove(currentUserImageUrl);
-              updatedImages.removeWhere((img) => img == currentUserImageUrl);
+              if (updatedImages.contains(currentUserImageUrl)) {
+                updatedImages.remove(currentUserImageUrl);
+              } else {
+                updatedImages.removeWhere(
+                  (img) => img.trim() == currentUserImageUrl.trim(),
+                );
+              }
             } else {
               updatedLikes.add(userId);
               if (currentUserImageUrl.isNotEmpty) {
                 updatedImages.insert(0, currentUserImageUrl);
               }
             }
-            final uniqueImages = updatedImages.toSet().toList();
+
             return p.copyWith(
               likes: updatedLikes,
-              likersImages: List<String>.from(uniqueImages),
+              likersImages:
+                  updatedImages.where((img) => img.isNotEmpty).toSet().toList(),
             );
-            // return p.copyWith(likes: updatedLikes, likersImages: uniqueImages);
           }
           return p;
         }).toList();
-    emit(PostsLoaded(newPosts));
+    emit(PostsLoaded(updatedPosts, DateTime.now()));
 
     try {
-      await homeServices.likePost(
-        post.id,
-        newPosts.firstWhere((p) => p.id == post.id).likes!,
+      await homeServices.toggleLike(
+        postId: post.id,
+        userId: userId,
+        isLiked: isCurrentlyLiked,
       );
     } catch (e) {
-      emit(PostsLoaded(oldPosts));
-      debugPrint('Error liking post: $e');
+      emit(PostsLoaded(oldState.posts, DateTime.now()));
+      debugPrint('Error toggling like: $e');
     }
   }
 
@@ -281,9 +292,9 @@ class HomeCubit extends Cubit<HomeState> {
             return p;
           }).toList();
 
-      emit(PostsLoaded(updatedPosts));
-      emit(AddCommentSuccess());
-      emit(PostsLoaded(updatedPosts));
+      emit(PostsLoaded(updatedPosts, DateTime.now()));
+      // emit(AddCommentSuccess());
+      // emit(PostsLoaded(updatedPosts, DateTime.now()));
       await homeServices.addComment(
         postId: postId,
         authorId: userId,

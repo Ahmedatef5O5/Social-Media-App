@@ -46,8 +46,9 @@ final class PostsLoading extends HomeState {}
 
 final class PostsLoaded extends HomeState {
   final List<PostModel> posts;
-
-  const PostsLoaded(this.posts);
+  final DateTime timeStamp;
+  const PostsLoaded(this.posts, this.timeStamp);
+  List<Object?> get props => [posts, timeStamp];
 }
 
 final class PostsError extends HomeState {
