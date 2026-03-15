@@ -82,7 +82,7 @@ class SupabaseAuthServices implements AuthRepository {
             user.email!,
             user.id,
           );
-          debugPrint("New user added to 'users' table successfully.");
+          // debugPrint("New user added to 'users' table successfully.");
         }
       }
       return response;

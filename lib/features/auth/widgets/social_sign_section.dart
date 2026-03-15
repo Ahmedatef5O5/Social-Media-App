@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 import '../../../core/constants/app_images.dart';
 import '../../../core/widgets/custom_grey_container.dart';
+import '../logic/auth_cubit/auth_cubit.dart';
 
 class SocialSignSection extends StatelessWidget {
   const SocialSignSection({super.key, required this.label});
@@ -24,9 +26,12 @@ class SocialSignSection extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
-            CustomGreyContainer(img: AppImages.google),
-            CustomGreyContainer(img: AppImages.facebook),
-            CustomGreyContainer(img: AppImages.apple),
+            CustomGreyContainer(
+              img: AppImages.google,
+              onTap: () => context.read<AuthCubit>().signInWithGoogle(),
+            ),
+            CustomGreyContainer(img: AppImages.facebook, onTap: () {}),
+            CustomGreyContainer(img: AppImages.apple, onTap: () {}),
           ],
         ),
       ],
