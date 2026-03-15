@@ -6,7 +6,6 @@ import 'package:social_media_app/core/widgets/custom_text_form_field.dart';
 import 'package:social_media_app/features/auth/logic/auth_cubit/auth_cubit.dart';
 import 'package:social_media_app/features/auth/widgets/sign_text_section.dart';
 import 'package:social_media_app/features/auth/widgets/social_sign_section.dart';
-
 import '../../../core/router/app_routes.dart';
 
 class LoginViewWidget extends StatefulWidget {
