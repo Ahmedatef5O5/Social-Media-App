@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:persistent_bottom_nav_bar_v2/persistent_bottom_nav_bar_v2.dart';
+import 'package:social_media_app/core/widgets/main_user_avatar_nav_bar.dart';
 import 'package:social_media_app/features/discover/views/discover_view.dart';
 import 'package:social_media_app/features/profile/views/profile_view.dart';
-import 'package:social_media_app/features/settings/views/settings_view.dart';
 import 'package:social_media_app/features/settings/widgets/profile_drawer.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../features/home/views/home_view.dart';
+import '../../features/profile/cubits/profile_cubit/profile_cubit.dart';
 import 'nav_bar_icon_widget.dart';
 
 class CustomBottomNavBar extends StatefulWidget {
@@ -17,62 +20,99 @@ class CustomBottomNavBar extends StatefulWidget {
 class _CustomBottomNavBarState extends State<CustomBottomNavBar> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
+  late PersistentTabController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = PersistentTabController(initialIndex: 0);
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      key: _scaffoldKey,
-      endDrawer: const ProfileDrawer(),
-      body: PersistentTabView(
-        // resizeToAvoidBottomInset: false,
-        gestureNavigationEnabled: true,
-        tabs: [
-          PersistentTabConfig(
-            screen: HomeView(),
-            item: ItemConfig(
-              icon: NavBarIcon(icon: Icons.home_outlined, isActive: true),
-              inactiveIcon: NavBarIcon(
-                icon: Icons.home_outlined,
-                isActive: false,
+    final userId = Supabase.instance.client.auth.currentUser!.id;
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(
+          create: (context) => ProfileCubit()..getProfileData(userId),
+        ),
+      ],
+      child: Scaffold(
+        key: _scaffoldKey,
+        endDrawer: ProfileDrawer(navController: _controller),
+        body: PersistentTabView(
+          controller: _controller,
+          // resizeToAvoidBottomInset: false,
+          gestureNavigationEnabled: true,
+          tabs: [
+            PersistentTabConfig(
+              screen: HomeView(),
+              item: ItemConfig(
+                icon: NavBarIcon(icon: Icons.home_outlined, isActive: true),
+                inactiveIcon: NavBarIcon(
+                  icon: Icons.home_outlined,
+                  isActive: false,
+                ),
               ),
             ),
-          ),
-          PersistentTabConfig(
-            screen: DiscoverView(),
-            item: ItemConfig(
-              icon: NavBarIcon(icon: Icons.add_box_outlined, isActive: true),
-              inactiveIcon: NavBarIcon(
-                icon: Icons.add_box_outlined,
-                isActive: false,
+            PersistentTabConfig(
+              screen: DiscoverView(),
+              item: ItemConfig(
+                icon: NavBarIcon(icon: Icons.add_box_outlined, isActive: true),
+                inactiveIcon: NavBarIcon(
+                  icon: Icons.add_box_outlined,
+                  isActive: false,
+                ),
               ),
             ),
-          ),
-          PersistentTabConfig(
-            screen: ProfileView(),
-            item: ItemConfig(
-              icon: NavBarIcon(icon: Icons.person_outline, isActive: true),
-              inactiveIcon: NavBarIcon(
-                icon: Icons.person_outline,
-                isActive: false,
+            PersistentTabConfig(
+              screen: ProfileView(),
+              item: ItemConfig(
+                icon: NavBarIcon(icon: Icons.person_outline, isActive: true),
+                inactiveIcon: NavBarIcon(
+                  icon: Icons.person_outline,
+                  isActive: false,
+                ),
               ),
             ),
-          ),
-          PersistentTabConfig.noScreen(
-            // screen: SettingsView(),
-            onPressed: (value) {
-              _scaffoldKey.currentState!.openEndDrawer();
-            },
-            item: ItemConfig(
-              icon: NavBarIcon(icon: Icons.settings_outlined, isActive: true),
-              inactiveIcon: NavBarIcon(
-                icon: Icons.settings_outlined,
-                isActive: false,
-              ),
-            ),
-          ),
-        ],
+            PersistentTabConfig.noScreen(
+              // screen: SettingsView(),
+              onPressed: (value) {
+                _scaffoldKey.currentState!.openEndDrawer();
+              },
+              item: ItemConfig(
+                icon: BlocBuilder<ProfileCubit, ProfileState>(
+                  builder: (context, state) {
+                    String? imageUrl;
+                    if (state is ProfileLoaded) {
+                      imageUrl = state.user.imageUrl;
+                    }
+                    return NavBarIcon(
+                      isActive: true,
+                      child: MainUserAvatarNavBar(imageUrl: imageUrl),
+                    );
+                  },
+                ),
+                inactiveIcon: BlocBuilder<ProfileCubit, ProfileState>(
+                  builder: (context, state) {
+                    String? imageUrl;
+                    if (state is ProfileLoaded) {
+                      imageUrl = state.user.imageUrl;
+                    }
+                    return NavBarIcon(
+                      isActive: false,
 
-        navBarBuilder:
-            (navBarConfig) => Style9BottomNavBar(navBarConfig: navBarConfig),
+                      child: MainUserAvatarNavBar(imageUrl: imageUrl),
+                    );
+                  },
+                ),
+              ),
+            ),
+          ],
+
+          navBarBuilder:
+              (navBarConfig) => Style9BottomNavBar(navBarConfig: navBarConfig),
+        ),
       ),
     );
   }
