@@ -86,7 +86,7 @@ class _EditProfileViewState extends State<EditProfileView> {
     return BlocListener<EditProfileCubit, EditProfileState>(
       listener: (context, state) {
         if (state is EditProfileSuccess) {
-          if (context.mounted) return;
+          if (!context.mounted) return;
           Navigator.of(context).pop();
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -174,5 +174,6 @@ class _EditProfileViewState extends State<EditProfileView> {
       profileImage: selectedProfileImage,
       backgroundImage: selectedBackgroundImage,
     );
+    // Navigator.of(context).pop();
   }
 }

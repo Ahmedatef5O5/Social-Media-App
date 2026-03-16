@@ -30,7 +30,10 @@ class SocialSignSection extends StatelessWidget {
               img: AppImages.google,
               onTap: () => context.read<AuthCubit>().signInWithGoogle(),
             ),
-            CustomGreyContainer(img: AppImages.facebook, onTap: () {}),
+            CustomGreyContainer(
+              img: AppImages.facebook,
+              onTap: () => context.read<AuthCubit>().signInWithFacebook(),
+            ),
             CustomGreyContainer(img: AppImages.apple, onTap: () {}),
           ],
         ),
