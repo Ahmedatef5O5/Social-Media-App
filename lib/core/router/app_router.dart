@@ -1,8 +1,8 @@
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:social_media_app/core/router/app_routes.dart';
-import 'package:social_media_app/core/themes/app_colors.dart';
+import 'package:social_media_app/core/views/loading_screen.dart';
+import 'package:social_media_app/core/views/no_route_screen.dart';
 import 'package:social_media_app/core/widgets/custom_bottom_nav_bar.dart';
 import 'package:social_media_app/features/auth/views/auth_view.dart';
 import 'package:social_media_app/features/discover/cubit/discover_people_cubit.dart';
@@ -17,83 +17,67 @@ import 'package:social_media_app/features/profile/views/edit_profile_view.dart';
 import '../../features/auth/data/models/user_data.dart';
 
 class AppRouter {
+  static bool _isAuthCallback(String? routeName) {
+    if (routeName == null) return false;
+    return routeName.startsWith('/?') ||
+        routeName.contains('code=') ||
+        routeName.contains('#_=_') ||
+        routeName.contains(AppRoutes.loginCallback);
+  }
+
+  static Route<dynamic> _buildRoute(Widget child, {RouteSettings? settings}) =>
+      CupertinoPageRoute(builder: (_) => child, settings: settings);
+
   static Route<dynamic> generateRoute(RouteSettings settings) {
+    if (_isAuthCallback(settings.name)) {
+      return _buildRoute(const LoadingScreen());
+    }
     switch (settings.name) {
       case AppRoutes.authRoute:
-        return CupertinoPageRoute(
-          builder: (_) => const AuthView(),
-          settings: settings,
-        );
+        return _buildRoute(const AuthView(), settings: settings);
 
       case AppRoutes.homeRoute:
-        return CupertinoPageRoute(
-          builder:
-              (_) => MultiBlocProvider(
-                providers: [
-                  BlocProvider(create: (context) => HomeCubit()..getHomeData()),
-                  BlocProvider(
-                    create:
-                        (context) =>
-                            DiscoverPeopleCubit(DiscoverPeopleServices())
-                              ..getDiscoverPeople(),
-                  ),
-                ],
-                child: const CustomBottomNavBar(),
+        return _buildRoute(
+          MultiBlocProvider(
+            providers: [
+              BlocProvider(create: (context) => HomeCubit()..getHomeData()),
+              BlocProvider(
+                create:
+                    (context) =>
+                        DiscoverPeopleCubit(DiscoverPeopleServices())
+                          ..getDiscoverPeople(),
               ),
+            ],
+            child: const CustomBottomNavBar(),
+          ),
           settings: settings,
         );
 
       case AppRoutes.storyDisplayViewRoute:
         final story = settings.arguments as StoryModel;
-        return CupertinoPageRoute(
-          builder: (_) => StoryDisplayView(story: story),
-          settings: settings,
-        );
+        return _buildRoute(StoryDisplayView(story: story), settings: settings);
 
       case AppRoutes.createPostRoute:
-        return CupertinoPageRoute(
-          builder:
-              (_) => BlocProvider.value(
-                value: settings.arguments as HomeCubit,
-                child: const CreatePostView(),
-              ),
+        return _buildRoute(
+          BlocProvider.value(
+            value: settings.arguments as HomeCubit,
+            child: const CreatePostView(),
+          ),
           settings: settings,
         );
 
       case AppRoutes.editProfileViewRoute:
         final user = settings.arguments as UserData;
-        return CupertinoPageRoute(
-          builder:
-              (_) => BlocProvider(
-                create: (context) => EditProfileCubit(EditProfileServices()),
-                child: EditProfileView(userData: user),
-              ),
+        return _buildRoute(
+          BlocProvider(
+            create: (context) => EditProfileCubit(EditProfileServices()),
+            child: EditProfileView(userData: user),
+          ),
           settings: settings,
         );
 
       default:
-        return CupertinoPageRoute(
-          builder:
-              (_) => Scaffold(
-                body: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Text(
-                        'No route found ${settings.name}',
-                        style: TextStyle(
-                          color: AppColors.black,
-                          fontSize: 22,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-          settings: settings,
-        );
+        return _buildRoute(NoRouteScreen(routeName: settings.name));
     }
   }
 }

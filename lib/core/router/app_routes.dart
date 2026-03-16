@@ -5,4 +5,7 @@ class AppRoutes {
   static const String createPostRoute = '/home-create-post';
   static const String profileViewRoute = '/profile-view';
   static const String editProfileViewRoute = '/edit-profile-view';
+
+  // callBack from Supabase
+  static const String loginCallback = 'callback';
 }
