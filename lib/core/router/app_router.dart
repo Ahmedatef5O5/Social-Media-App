@@ -10,6 +10,7 @@ import 'package:social_media_app/features/discover/services/discover_people_serv
 import 'package:social_media_app/features/home/cubit/home_cubit.dart';
 import 'package:social_media_app/features/home/models/story_model.dart';
 import 'package:social_media_app/features/home/views/create_post_view.dart';
+import 'package:social_media_app/features/home/views/post_themes_view.dart';
 import 'package:social_media_app/features/home/views/story_display_view.dart';
 import 'package:social_media_app/features/profile/cubits/edit_profile_cubit/edit_profile_cubit.dart';
 import 'package:social_media_app/features/profile/services/edit_profile_services.dart';
@@ -58,7 +59,7 @@ class AppRouter {
         final story = settings.arguments as StoryModel;
         return _buildRoute(StoryDisplayView(story: story), settings: settings);
 
-      case AppRoutes.createPostRoute:
+      case AppRoutes.createPostViewRoute:
         return _buildRoute(
           BlocProvider.value(
             value: settings.arguments as HomeCubit,
@@ -66,6 +67,9 @@ class AppRouter {
           ),
           settings: settings,
         );
+
+      case AppRoutes.postThemesViewRoute:
+        return _buildRoute(const PostThemesView(), settings: settings);
 
       case AppRoutes.editProfileViewRoute:
         final user = settings.arguments as UserData;

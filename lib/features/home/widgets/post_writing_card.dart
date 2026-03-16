@@ -12,7 +12,7 @@ class PostWritingCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     navigatorToPost() => Navigator.of(context, rootNavigator: true).pushNamed(
-      AppRoutes.createPostRoute,
+      AppRoutes.createPostViewRoute,
       arguments: context.read<HomeCubit>(),
     );
     return Stack(

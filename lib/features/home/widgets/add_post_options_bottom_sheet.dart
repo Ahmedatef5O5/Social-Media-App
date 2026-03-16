@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
+import 'package:social_media_app/core/router/app_routes.dart';
 import 'package:social_media_app/features/home/widgets/build_option_item.dart';
 import '../../../core/themes/app_colors.dart';
 import '../cubit/home_cubit.dart';
@@ -70,6 +71,10 @@ class AddPostOptionsBottomSheet extends StatelessWidget {
                       Icons.color_lens_outlined,
                       'Background Color',
                       AppColors.primaryColor,
+                      onTap:
+                          () => Navigator.of(
+                            context,
+                          ).pushNamed(AppRoutes.postThemesViewRoute),
                     ),
                     BuildOptionItem(
                       Icons.gif_box_outlined,

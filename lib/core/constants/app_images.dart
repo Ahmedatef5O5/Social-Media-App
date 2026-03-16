@@ -41,6 +41,12 @@ class AppImages {
   static const String apple = 'assets/icons/apple.png';
 
   // create post themes images
+  static const String textStoryIcon = 'assets/icons/textstory.png';
+  static const String musicIcon = 'assets/icons/music.png';
+
+  //icons
+
+  // themes
   static const String postTheme1 = 'assets/images/PostThemeImgs/unsplash_1.png';
   static const String postTheme2 = 'assets/images/PostThemeImgs/unsplash_2.png';
   static const String postTheme3 = 'assets/images/PostThemeImgs/unsplash_3.png';
@@ -56,4 +62,18 @@ class AppImages {
       'assets/images/PostThemeImgs/unsplash_11.png';
   static const String postTheme12 =
       'assets/images/PostThemeImgs/unsplash_12.png';
+  static final List<String> postThemes = [
+    AppImages.postTheme1,
+    AppImages.postTheme2,
+    AppImages.postTheme3,
+    AppImages.postTheme4,
+    AppImages.postTheme5,
+    AppImages.postTheme6,
+    AppImages.postTheme7,
+    AppImages.postTheme8,
+    AppImages.postTheme9,
+    AppImages.postTheme10,
+    AppImages.postTheme11,
+    AppImages.postTheme12,
+  ];
 }
