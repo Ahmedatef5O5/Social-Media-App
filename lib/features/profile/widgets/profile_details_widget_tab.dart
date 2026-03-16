@@ -14,38 +14,21 @@ class ProfileDetailsWidgetTab extends StatelessWidget {
       children: [
         _buildInfoRow(CupertinoIcons.mail, 'Email', user.email),
         const Gap(15),
-        _buildInfoRow(
-          CupertinoIcons.person_fill,
-          'Name',
-          user.name,
-          //  ?? 'No name provided yet.',
-        ),
+        _buildInfoRow(CupertinoIcons.person_fill, 'Name', user.name),
         const Gap(15),
-        _buildInfoRow(
-          CupertinoIcons.person_circle,
-          'username',
-          user.userName ?? 'No userName provided yet.',
-        ),
+        _buildInfoRow(CupertinoIcons.person_circle, 'username', user.userName),
         const Gap(15),
-        _buildInfoRow(
-          CupertinoIcons.info,
-          'title',
-          user.title ?? 'No title provided yet.',
-        ),
+        _buildInfoRow(CupertinoIcons.info, 'title', user.title),
         const Gap(15),
-        _buildInfoRow(
-          CupertinoIcons.info,
-          'Bio',
-          user.bio ?? 'No bio provided yet.',
-        ),
+        _buildInfoRow(CupertinoIcons.info, 'Bio', user.bio),
         const Gap(15),
-        _buildInfoRow(CupertinoIcons.calendar, 'Joined', 'March 2024'),
+        _buildInfoRow(CupertinoIcons.calendar, 'Joined', 'March 2026'),
         const Gap(50),
       ],
     );
   }
 
-  Widget _buildInfoRow(IconData icon, String title, String value) {
+  Widget _buildInfoRow(IconData icon, String title, String? value) {
     return Row(
       children: [
         Icon(icon, size: 20, color: AppColors.primaryColor),
@@ -59,7 +42,9 @@ class ProfileDetailsWidgetTab extends StatelessWidget {
                 style: const TextStyle(color: AppColors.grey, fontSize: 12),
               ),
               Text(
-                value,
+                (value == null || value.isEmpty)
+                    ? 'No $title provided yet.'
+                    : value,
                 style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w500,
