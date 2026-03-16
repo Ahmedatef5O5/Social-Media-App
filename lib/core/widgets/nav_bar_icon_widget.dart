@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:social_media_app/core/themes/app_colors.dart';
 
 class NavBarIcon extends StatelessWidget {
-  const NavBarIcon({super.key, this.icon, required this.isActive});
+  const NavBarIcon({super.key, this.icon, required this.isActive, this.child});
+  final Widget? child;
   final IconData? icon;
   final bool isActive;
   @override
@@ -10,13 +12,17 @@ class NavBarIcon extends StatelessWidget {
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
         color:
-            isActive ? Colors.blue.withValues(alpha: .175) : Colors.transparent,
+            isActive
+                ? Colors.blue.withValues(alpha: .175)
+                : AppColors.transparent,
         borderRadius: BorderRadius.circular(12),
       ),
-      child: Icon(
-        icon,
-        color: isActive ? Theme.of(context).primaryColor : Colors.grey,
-      ),
+      child:
+          child ??
+          Icon(
+            icon,
+            color: isActive ? Theme.of(context).primaryColor : AppColors.grey,
+          ),
     );
   }
 }
