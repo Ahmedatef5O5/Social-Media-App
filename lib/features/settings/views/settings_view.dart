@@ -13,9 +13,7 @@ class SettingsView extends StatelessWidget {
     return Center(
       child: Column(
         children: [
-          Gap(20),
-          Text('Settings View'),
-          Gap(220),
+          Gap(440),
           BlocConsumer<AuthCubit, AuthState>(
             listener: (context, state) {
               if (state is AuthSignedOut) {
