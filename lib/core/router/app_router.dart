@@ -14,6 +14,7 @@ import 'package:social_media_app/features/home/views/story_display_view.dart';
 import 'package:social_media_app/features/profile/cubits/edit_profile_cubit/edit_profile_cubit.dart';
 import 'package:social_media_app/features/profile/services/edit_profile_services.dart';
 import 'package:social_media_app/features/profile/views/edit_profile_view.dart';
+import 'package:social_media_app/features/settings/views/settings_view.dart';
 import '../../features/auth/data/models/user_data.dart';
 
 class AppRouter {
@@ -75,6 +76,8 @@ class AppRouter {
           ),
           settings: settings,
         );
+      case AppRoutes.settingsViewRoute:
+        return _buildRoute(SettingsView(), settings: settings);
 
       default:
         return _buildRoute(NoRouteScreen(routeName: settings.name));
