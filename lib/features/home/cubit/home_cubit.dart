@@ -156,7 +156,7 @@ class HomeCubit extends Cubit<HomeState> {
         selectedImage = image;
         emit(MediaPicked(image));
       } else {
-        emit(MediaPickingError('No image selected'));
+        _emitPreviousState();
       }
     } catch (e) {
       debugPrint('Error picking image from gallery: $e');
@@ -171,6 +171,8 @@ class HomeCubit extends Cubit<HomeState> {
       if (image != null) {
         selectedImage = image;
         emit(MediaPicked(image));
+      } else {
+        _emitPreviousState();
       }
     } catch (e) {
       debugPrint('Error taking image by camera: $e');
@@ -185,6 +187,8 @@ class HomeCubit extends Cubit<HomeState> {
       if (video != null) {
         selectedVideo = video;
         emit(MediaPicked(video));
+      } else {
+        _emitPreviousState();
       }
     } catch (e) {
       debugPrint('Error picking video: $e');
@@ -199,6 +203,8 @@ class HomeCubit extends Cubit<HomeState> {
       if (doc != null) {
         selectedDocument = doc;
         emit(MediaPicked(doc));
+      } else {
+        _emitPreviousState();
       }
     } catch (e) {
       debugPrint('Error picking file: $e');
@@ -305,5 +311,9 @@ class HomeCubit extends Cubit<HomeState> {
       emit(AddCommentError(e.toString()));
       emit(oldState);
     }
+  }
+
+  void _emitPreviousState() {
+    emit(MediaPickingError('Selected Cancelled'));
   }
 }

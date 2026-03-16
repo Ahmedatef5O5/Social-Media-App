@@ -75,6 +75,15 @@ class _CreatePostViewState extends State<CreatePostView> {
             ),
           );
         }
+        if (state is MediaPickingError) {
+          if (_sheetController.isAttached) {
+            _sheetController.animateTo(
+              0.7,
+              duration: const Duration(milliseconds: 400),
+              curve: Curves.easeInOut,
+            );
+          }
+        }
       },
       builder: (context, state) {
         final homeCubit = context.read<HomeCubit>();
