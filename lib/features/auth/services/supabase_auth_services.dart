@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:social_media_app/core/utilities/app_tables_names.dart';
 import 'package:social_media_app/features/auth/data/repository/auth_repository.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../data/models/user_data.dart';
@@ -34,7 +34,7 @@ class SupabaseAuthServices implements AuthRepository {
         data: {'full_name': name},
       );
       if (response.user == null) throw Exception('User not found');
-      await _setUserData(name, email, response.user!.id);
+      await setUserData(name, email, response.user!.id);
     } catch (e) {
       rethrow;
     }
@@ -68,23 +68,7 @@ class SupabaseAuthServices implements AuthRepository {
         idToken: idToken,
         accessToken: accessToken,
       );
-      final user = response.user;
-      if (user != null) {
-        final existingUser =
-            await _supabase
-                .from(AppTablesNames.users)
-                .select()
-                .eq(UserColumns.id, user.id)
-                .maybeSingle();
-        if (existingUser == null) {
-          await _setUserData(
-            user.userMetadata?[UserColumns.name] ?? 'Google User',
-            user.email!,
-            user.id,
-          );
-          // debugPrint("New user added to 'users' table successfully.");
-        }
-      }
+
       return response;
     } catch (e) {
       debugPrint('Google Sign-In Error: $e');
@@ -93,11 +77,25 @@ class SupabaseAuthServices implements AuthRepository {
   }
 
   @override
+  Future<void> signInWithFacebook() async {
+    try {
+      await _supabase.auth.signInWithOAuth(
+        OAuthProvider.facebook,
+        redirectTo: 'socialapp://login-callback',
+        // authScreenLaunchMode: LaunchMode.externalApplication,
+      );
+    } catch (e) {
+      debugPrint('Facebook Sign-In Error: $e');
+      rethrow;
+    }
+  }
+
+  @override
   Future<void> signOut() async {
     try {
       await _supabase.auth.signOut();
-      final GoogleSignIn googleSignIn = GoogleSignIn();
-      await googleSignIn.signOut();
+      await FacebookAuth.instance.logOut();
+      await GoogleSignIn().signOut();
     } catch (e) {
       rethrow;
     }
@@ -129,14 +127,15 @@ class SupabaseAuthServices implements AuthRepository {
     }
   }
 
-  Future<void> _setUserData(String name, String email, String userId) async {
+  Future<void> setUserData(String name, String email, String userId) async {
     try {
-      await _supabase.from('users').insert({
+      await _supabase.from('users').upsert({
         'name': name,
         'email': email,
         'id': userId,
       });
     } catch (e) {
+      debugPrint('Error setting user data: $e');
       rethrow;
     }
   }
