@@ -5,7 +5,6 @@ import 'package:gap/gap.dart';
 import 'package:social_media_app/core/themes/app_colors.dart';
 import 'package:social_media_app/core/themes/background_theme_widget.dart';
 import 'package:social_media_app/features/profile/cubits/profile_cubit/profile_cubit.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../widgets/profile_details_widget_tab.dart';
 import '../widgets/profile_header.dart';
 import '../widgets/profile_posts_list_tab.dart';
@@ -18,84 +17,75 @@ class ProfileView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
-    final userId = Supabase.instance.client.auth.currentUser!.id;
     return BackgroundThemeWidget(
       top: false,
-      child: BlocProvider(
-        create: (context) => ProfileCubit()..getProfileData(userId),
-        child: Center(
-          child: BlocBuilder<ProfileCubit, ProfileState>(
-            builder: (context, state) {
-              if (state is ProfileLoading) {
-                return Center(
-                  child: CupertinoActivityIndicator(color: AppColors.black12),
-                );
-              } else if (state is ProfileLoaded) {
-                return MediaQuery.removePadding(
-                  context: context,
-                  removeTop: true,
-                  child: DefaultTabController(
-                    length: 2,
-                    child: NestedScrollView(
-                      headerSliverBuilder: (
-                        BuildContext context,
-                        bool innerBoxIsScrolled,
-                      ) {
-                        return [
-                          SliverToBoxAdapter(
-                            child: Column(
-                              children: [
-                                ProfileHeader(size: size, user: state.user),
-                                Gap(20),
-                                ProfileStatsWidget(stats: state.stats),
-                                Gap(20),
-                              ],
-                            ),
+      child: Center(
+        child: BlocBuilder<ProfileCubit, ProfileState>(
+          builder: (context, state) {
+            if (state is ProfileLoading) {
+              return Center(
+                child: CupertinoActivityIndicator(color: AppColors.black12),
+              );
+            } else if (state is ProfileLoaded) {
+              return MediaQuery.removePadding(
+                context: context,
+                removeTop: true,
+                child: DefaultTabController(
+                  length: 2,
+                  child: NestedScrollView(
+                    headerSliverBuilder: (
+                      BuildContext context,
+                      bool innerBoxIsScrolled,
+                    ) {
+                      return [
+                        SliverToBoxAdapter(
+                          child: Column(
+                            children: [
+                              ProfileHeader(size: size, user: state.user),
+                              Gap(20),
+                              ProfileStatsWidget(stats: state.stats),
+                              Gap(20),
+                            ],
                           ),
-                          SliverPersistentHeader(
-                            // pinned: true,
-                            delegate: SliverTabBarDelegate(
-                              TabBar(
-                                labelColor: Theme.of(context).primaryColor,
-                                unselectedLabelColor: AppColors.grey4,
-                                dividerColor: AppColors.grey3,
-                                indicatorColor: Theme.of(context).primaryColor,
-                                indicatorSize: TabBarIndicatorSize.tab,
-                                indicatorWeight: 3,
-                                padding: EdgeInsets.symmetric(horizontal: 30),
-                                indicator: BoxDecoration(
-                                  color: Theme.of(context).primaryColor,
-                                  borderRadius: BorderRadius.circular(60),
-                                ),
-                                indicatorPadding: const EdgeInsets.only(
-                                  top: 45,
-                                ),
-
-                                tabs: [
-                                  Tab(text: 'Posts'),
-                                  Tab(text: 'Details'),
-                                ],
+                        ),
+                        SliverPersistentHeader(
+                          // pinned: true,
+                          delegate: SliverTabBarDelegate(
+                            TabBar(
+                              labelColor: Theme.of(context).primaryColor,
+                              unselectedLabelColor: AppColors.grey4,
+                              dividerColor: AppColors.grey3,
+                              indicatorColor: Theme.of(context).primaryColor,
+                              indicatorSize: TabBarIndicatorSize.tab,
+                              indicatorWeight: 3,
+                              padding: EdgeInsets.symmetric(horizontal: 30),
+                              indicator: BoxDecoration(
+                                color: Theme.of(context).primaryColor,
+                                borderRadius: BorderRadius.circular(60),
                               ),
+                              indicatorPadding: const EdgeInsets.only(top: 45),
+
+                              tabs: [Tab(text: 'Posts'), Tab(text: 'Details')],
                             ),
                           ),
-                        ];
-                      },
-                      body: TabBarView(
-                        children: [
-                          ProfilePostsListTab(userId: state.user.id),
-                          ProfileDetailsWidgetTab(user: state.user),
-                        ],
-                      ),
+                        ),
+                      ];
+                    },
+                    body: TabBarView(
+                      children: [
+                        ProfilePostsListTab(userId: state.user.id),
+                        ProfileDetailsWidgetTab(user: state.user),
+                      ],
                     ),
                   ),
-                );
-              } else if (state is ProfileError) {
-                return Center(child: Text(state.message));
-              } else {
-                return SizedBox.shrink();
-              }
-            },
-          ),
+                ),
+              );
+            } else if (state is ProfileError) {
+              return Center(child: Text(state.message));
+            } else {
+              return SizedBox.shrink();
+            }
+          },
         ),
       ),
     );
