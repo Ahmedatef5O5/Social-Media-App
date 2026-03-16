@@ -8,6 +8,7 @@ import 'package:social_media_app/core/router/app_routes.dart';
 import 'package:social_media_app/core/secrets/app_secrets.dart';
 import 'package:social_media_app/core/themes/app_themes.dart';
 import 'package:social_media_app/features/auth/logic/auth_cubit/auth_cubit.dart';
+import 'package:social_media_app/features/auth/services/supabase_auth_services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 void main() async {
@@ -17,13 +18,21 @@ void main() async {
     url: AppSecrets.supabaseUrl,
     anonKey: AppSecrets.supabaseAnonKey,
   );
+
+  Supabase.instance.client.auth.onAuthStateChange.listen((data) {
+    final session = data.session;
+    if (session != null) {
+      debugPrint('✅ Logged in successfully: ${session.user.email}');
+    }
+  });
+
   final session = Supabase.instance.client.auth.currentSession;
   String initialRoute =
       session != null ? AppRoutes.homeRoute : AppRoutes.authRoute;
 
   runApp(
     BlocProvider(
-      create: (context) => AuthCubit()..checkAuthStatus(),
+      create: (context) => AuthCubit(SupabaseAuthServices())..checkAuthStatus(),
       child: DevicePreview(
         enabled: !kReleaseMode,
         builder: (BuildContext context) => MyApp(initialRoute: initialRoute),
@@ -39,15 +48,14 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      // useInheritedMediaQuery: true,  /// deprecated
       locale: DevicePreview.locale(context),
       builder: DevicePreview.appBuilder,
       debugShowCheckedModeBanner: false,
       title: 'Social Media App',
       theme: AppThemes.lightTheme,
       initialRoute: initialRoute,
-      // initialRoute: AppRoutes.authRoute,
       onGenerateRoute: AppRouter.generateRoute,
+      onUnknownRoute: (settings) => AppRouter.generateRoute(settings),
     );
   }
 }
