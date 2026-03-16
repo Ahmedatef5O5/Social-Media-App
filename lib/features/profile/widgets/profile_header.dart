@@ -1,8 +1,8 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 import 'package:social_media_app/core/router/app_routes.dart';
+import 'package:social_media_app/core/widgets/custom_user_profile_image_section.dart';
 import 'package:social_media_app/features/auth/data/models/user_data.dart';
 import 'package:social_media_app/features/profile/cubits/profile_cubit/profile_cubit.dart';
 import '../../../core/constants/app_images.dart';
@@ -16,85 +16,50 @@ class ProfileHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
+      mainAxisAlignment: MainAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        SizedBox(
-          height: size.height * 0.36,
-
-          child: Stack(
-            children: [
-              Container(
-                height: size.height * 0.3,
-                width: size.width,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.vertical(
-                    bottom: Radius.circular(20),
-                  ),
-                  image: DecorationImage(
-                    image: CachedNetworkImageProvider(
-                      user.backgroundImageUrl ?? AppImages.defaultBackgroundImg,
-                      cacheKey: user.backgroundImageUrl,
-                    ),
-                    fit: BoxFit.cover,
-                  ),
-                ),
-              ),
-              Align(
-                alignment: Alignment.bottomCenter,
-                child: SizedBox(
-                  height: 112,
-                  width: 112,
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      border: Border.all(
-                        color: AppColors.primaryColor,
-                        width: 4,
-                      ),
-                      shape: BoxShape.circle,
-                      image: DecorationImage(
-                        image: CachedNetworkImageProvider(
-                          user.imageUrl ?? AppImages.defaultUserImg,
-                          cacheKey: user.imageUrl,
-                        ),
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
+        CustomUserProfileImagesSection(
+          totalHeight: size.height * 0.36,
+          backgroundHeight: size.height * 0.3,
+          avatarSize: 112,
+          backgroundUrl:
+              user.backgroundImageUrl ?? AppImages.defaultBackgroundImg,
+          avatarUrl: user.imageUrl ?? AppImages.defaultUserImg,
+          isProfileHeader: true,
         ),
+
         Gap(16),
         Text(
           user.name,
           style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
         ),
+        if (user.userName != null && user.userName!.isNotEmpty) ...[
+          const Gap(4),
+          Text(
+            "@${user.userName?.toLowerCase().replaceAll(' ', '_')}",
 
-        const Gap(4),
-        Text(
-          "@${user.name.toLowerCase().replaceAll(' ', '_')}",
-          style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
-        ),
-        if (user.title != null) ...[
-          Gap(8),
+            style: TextStyle(color: AppColors.grey, fontSize: 14),
+          ),
+        ],
+        if (user.title != null && user.title!.isNotEmpty) ...[
+          const Gap(4),
           Text(user.title.toString(), style: const TextStyle(fontSize: 16)),
         ],
-        if (user.bio != null) ...[
-          Gap(8),
+        if (user.bio != null && user.bio!.isNotEmpty) ...[
+          const Gap(4),
           Text(user.bio.toString(), style: const TextStyle(fontSize: 16)),
         ],
-
         Gap(16),
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 40),
+          padding: const EdgeInsets.symmetric(horizontal: 20),
           child: Row(
             children: [
               Expanded(
                 child: CustomElevatedButton(
-                  maximumSize: Size(220, 90),
-                  minimumSize: Size(220, 50),
+                  maximumSize: Size(260, 50),
+                  minimumSize: Size(260, 50),
                   txtBtn: 'EDIT PROFILE',
-
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(6),
                   ),
@@ -113,22 +78,6 @@ class ProfileHeader extends StatelessWidget {
                       profileCubit.getProfileData(user.id);
                     }
                   },
-                ),
-              ),
-              const Gap(12),
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  border: Border.all(color: AppColors.grey3, width: 1.6),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: InkWell(
-                  onTap: () {},
-                  child: Image.asset(
-                    AppImages.settingsIcon,
-                    width: 26,
-                    height: 26,
-                  ),
                 ),
               ),
             ],
