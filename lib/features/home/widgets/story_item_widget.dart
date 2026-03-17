@@ -13,15 +13,23 @@ class StoryItemWidget extends StatelessWidget {
   const StoryItemWidget({super.key, this.story});
   void _showAddStoryOptions(BuildContext context) {
     showModalBottomSheet(
+      backgroundColor: AppColors.white,
       context: context,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder:
           (context) => StoryImagePickerSheet(
-            onSourceSelected: (source) {
+            onSelected: (source, type) {
               Navigator.pop(context);
-              context.read<HomeCubit>().pickAndAddStory(source: source);
+              if (type == StoryType.text) {
+                Navigator.of(context, rootNavigator: true).pushNamed(
+                  AppRoutes.createTextStoryViewRoute,
+                  arguments: context.read<HomeCubit>(),
+                );
+              } else {
+                context.read<HomeCubit>().pickAndAddStory(source: source!);
+              }
             },
           ),
     );
@@ -58,15 +66,22 @@ class StoryItemWidget extends StatelessWidget {
               radius: 8,
 
               backgroundColor:
-                  story == null ? AppColors.bgColor2 : AppColors.transparent,
+                  story == null
+                      ? AppColors.bgColor2
+                      : (story!.imageUrl == null &&
+                          story!.backgroundColor != null)
+                      ? Color(int.parse(story!.backgroundColor!, radix: 16))
+                      : AppColors.transparent,
               backgroundImage:
-                  story == null ? null : NetworkImage(story!.imageUrl),
+                  story?.imageUrl == null
+                      ? null
+                      : NetworkImage(story!.imageUrl!),
 
               child:
                   story == null
                       ? BlocBuilder<HomeCubit, HomeState>(
                         builder: (context, state) {
-                          if (state is AddStoryLoading && story == null) {
+                          if (state is AddStoryLoading) {
                             return const Center(
                               child: CupertinoActivityIndicator(
                                 radius: 10,
@@ -80,6 +95,15 @@ class StoryItemWidget extends StatelessWidget {
                             color: AppColors.white,
                           );
                         },
+                      )
+                      : (story!.imageUrl == null && story!.contentText != null)
+                      ? Text(
+                        story!.authorName[0].toUpperCase(),
+                        style: Theme.of(context).textTheme.titleSmall!.copyWith(
+                          color: AppColors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
                       )
                       : null,
             ),

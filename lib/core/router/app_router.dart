@@ -17,6 +17,7 @@ import 'package:social_media_app/features/profile/services/edit_profile_services
 import 'package:social_media_app/features/profile/views/edit_profile_view.dart';
 import 'package:social_media_app/features/settings/views/settings_view.dart';
 import '../../features/auth/data/models/user_data.dart';
+import '../../features/home/views/creat_text_story_view.dart';
 
 class AppRouter {
   static bool _isAuthCallback(String? routeName) {
@@ -59,6 +60,12 @@ class AppRouter {
         final story = settings.arguments as StoryModel;
         return _buildRoute(StoryDisplayView(story: story), settings: settings);
 
+      case AppRoutes.createTextStoryViewRoute:
+        final cubit = settings.arguments as HomeCubit;
+        return _buildRoute(
+          BlocProvider.value(value: cubit, child: const CreateTextStoryView()),
+          settings: settings,
+        );
       case AppRoutes.createPostViewRoute:
         return _buildRoute(
           BlocProvider.value(
