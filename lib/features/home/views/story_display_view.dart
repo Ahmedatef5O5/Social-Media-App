@@ -31,10 +31,31 @@ class _StoryDisplayViewState extends State<StoryDisplayView> {
       body: Stack(
         children: [
           Center(
-            child: CachedNetworkImage(
-              imageUrl: widget.story.imageUrl,
-              fit: BoxFit.cover,
-            ),
+            child:
+                (widget.story.imageUrl != null &&
+                        widget.story.imageUrl!.isNotEmpty)
+                    ? CachedNetworkImage(
+                      imageUrl: widget.story.imageUrl!,
+                      fit: BoxFit.cover,
+                    )
+                    : Container(
+                      padding: EdgeInsets.symmetric(horizontal: 12),
+                      color: Color(
+                        int.parse(
+                          widget.story.backgroundColor ?? 'ff9c27b0',
+                          radix: 16,
+                        ),
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(
+                        widget.story.contentText ?? '',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontSize: 28,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
           ),
           Positioned(
             top: 55,
