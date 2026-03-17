@@ -36,6 +36,31 @@ class HomeCubit extends Cubit<HomeState> {
     }
   }
 
+  Future<void> addTextStory({
+    required String text,
+    required Color bgColor,
+  }) async {
+    if (currentUserData == null) return;
+    emit(AddStoryLoading());
+
+    try {
+      final newStory = StoryModel(
+        contentText: text,
+        backgroundColor: bgColor.toARGB32().toRadixString(16),
+        authorId: currentUserData!.id,
+        authorName: currentUserData!.name,
+        createdAt: DateTime.now().toIso8601String(),
+        imageUrl: null,
+      );
+      await homeServices.createStory(newStory);
+      await fetchStories();
+      emit(AddStorySuccess());
+    } catch (e) {
+      debugPrint('Error adding text story: $e');
+      emit(AddStoryError(e.toString()));
+    }
+  }
+
   Future<void> addStory({required File file, required UserData user}) async {
     emit(AddStoryLoading());
     try {

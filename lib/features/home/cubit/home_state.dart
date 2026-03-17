@@ -36,6 +36,8 @@ final class StoriesError extends HomeState {
 
 final class AddStoryLoading extends HomeState {}
 
+final class AddStorySuccess extends HomeState {}
+
 final class AddStoryError extends HomeState {
   final String message;
 
