@@ -75,7 +75,7 @@ class _LoginViewWidgetState extends State<LoginViewWidget> {
                         content: Text('Login Successfully'),
                         backgroundColor: Colors.green,
                         behavior: SnackBarBehavior.floating,
-                        duration: const Duration(seconds: 2),
+                        duration: const Duration(seconds: 1),
                       ),
                     );
 
@@ -94,7 +94,7 @@ class _LoginViewWidgetState extends State<LoginViewWidget> {
                         content: Text(state.errMsg),
                         backgroundColor: Colors.red,
                         behavior: SnackBarBehavior.floating,
-                        duration: const Duration(seconds: 2),
+                        duration: const Duration(seconds: 1),
                       ),
                     );
                   }

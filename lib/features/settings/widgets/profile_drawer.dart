@@ -123,7 +123,7 @@ class ProfileDrawer extends StatelessWidget {
                     content: Text('LogOut Successfully'),
                     backgroundColor: Colors.redAccent,
                     behavior: SnackBarBehavior.floating,
-                    duration: const Duration(seconds: 2),
+                    duration: const Duration(seconds: 1),
                   ),
                 );
                 Navigator.of(

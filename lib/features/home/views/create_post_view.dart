@@ -123,9 +123,7 @@ class _CreatePostViewState extends State<CreatePostView> {
                           Gap(12),
                           CreatePostUserInfo(
                             userName: displayName,
-                            // currentUser.userMetadata?['full_name'] ?? 'User',
                             userImageUrl: displayImage,
-                            // userImageUrl: currentUser.userMetadata?['avatar_url'],
                           ),
                           Gap(12),
                           CreatePostInputField(

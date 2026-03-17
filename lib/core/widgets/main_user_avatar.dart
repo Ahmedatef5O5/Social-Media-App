@@ -1,26 +1,34 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-
 import '../constants/app_images.dart';
 import '../themes/app_colors.dart';
 
-class MainUserAvatarNavBar extends StatelessWidget {
+class MainUserAvatar extends StatelessWidget {
   final String? imageUrl;
-
-  const MainUserAvatarNavBar({super.key, this.imageUrl});
+  final double? size;
+  final bool showBorder;
+  const MainUserAvatar({
+    super.key,
+    this.imageUrl,
+    this.size = 36,
+    this.showBorder = false,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 31,
-      height: 31,
+      width: size ?? 31,
+      height: size ?? 31,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        border: Border.all(
-          color: AppColors.primaryColor.withValues(alpha: .5),
-          width: 2.2,
-        ),
+        border:
+            showBorder
+                ? Border.all(
+                  color: AppColors.primaryColor.withValues(alpha: .5),
+                  width: 2.2,
+                )
+                : null,
       ),
       child: ClipOval(
         child: CachedNetworkImage(
@@ -28,10 +36,12 @@ class MainUserAvatarNavBar extends StatelessWidget {
           fit: BoxFit.cover,
           placeholder:
               (context, url) => CupertinoActivityIndicator(
+                radius: size != null ? size! / 4 : 10,
                 color: Theme.of(context).primaryColor,
               ),
           errorWidget:
-              (context, url, error) => Image.network(AppImages.defaultUserImg),
+              (context, url, error) =>
+                  Image.network(AppImages.defaultUserImg, fit: BoxFit.cover),
         ),
       ),
     );

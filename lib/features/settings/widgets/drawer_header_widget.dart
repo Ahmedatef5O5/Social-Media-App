@@ -51,7 +51,7 @@ class DrawerHeaderWidget extends StatelessWidget {
             user.name,
             style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
           ),
-          if (user.userName != null) ...[
+          if (user.userName != null && user.userName!.isNotEmpty) ...[
             const Gap(2),
             Text(
               "@${user.userName?.toLowerCase().replaceAll(' ', '_')}",

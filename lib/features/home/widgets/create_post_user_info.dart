@@ -1,6 +1,6 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
+import 'package:social_media_app/core/widgets/main_user_avatar.dart';
 import '../../../core/themes/app_colors.dart';
 
 class CreatePostUserInfo extends StatelessWidget {
@@ -16,14 +16,7 @@ class CreatePostUserInfo extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.start,
       children: [
-        CircleAvatar(
-          radius: 18,
-          backgroundImage:
-              userImageUrl != null
-                  ? CachedNetworkImageProvider(userImageUrl!)
-                  : null,
-          child: userImageUrl == null ? Icon(Icons.person) : null,
-        ),
+        MainUserAvatar(imageUrl: userImageUrl, size: 36, showBorder: true),
 
         Gap(12),
         Text(

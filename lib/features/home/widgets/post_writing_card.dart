@@ -3,7 +3,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 import 'package:social_media_app/core/router/app_routes.dart';
 import 'package:social_media_app/core/themes/app_colors.dart';
+import 'package:social_media_app/core/widgets/main_user_avatar.dart';
 import 'package:social_media_app/features/home/cubit/home_cubit.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/constants/app_images.dart';
 
 class PostWritingCard extends StatelessWidget {
@@ -11,13 +13,20 @@ class PostWritingCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final homeCubit = context.read<HomeCubit>();
+    final user = homeCubit.currentUserData;
+    final authUser = Supabase.instance.client.auth.currentUser;
+
+    //
+    final displayImage =
+        user?.imageUrl ?? authUser?.userMetadata?['avatar_url'];
+
     navigatorToPost() => Navigator.of(context, rootNavigator: true).pushNamed(
       AppRoutes.createPostViewRoute,
       arguments: context.read<HomeCubit>(),
     );
     return Stack(
       children: [
-        // SvgPicture.asset(AppImages.backgroundShapeSvg, width: 370),
         Image.asset(AppImages.backgroundShape, width: 370),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4),
@@ -27,7 +36,11 @@ class PostWritingCard extends StatelessWidget {
               Gap(4),
               Row(
                 children: [
-                  CircleAvatar(radius: 18, child: Icon(Icons.person)),
+                  MainUserAvatar(
+                    imageUrl: displayImage,
+                    size: 36,
+                    showBorder: true,
+                  ),
                   Gap(12),
                   InkWell(
                     onTap: navigatorToPost,
