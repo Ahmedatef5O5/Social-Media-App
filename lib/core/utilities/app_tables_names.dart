@@ -20,6 +20,8 @@ abstract class StoryColumns {
   static const String id = 'id';
   static const String createdAt = 'created_at';
   static const String imageUrl = 'image_url';
+  static const String contentText = 'content_text';
+  static const String backgroundColor = 'background_color';
   static const String authorId = 'author_id';
 }
 
