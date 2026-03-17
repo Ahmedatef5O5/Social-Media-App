@@ -20,8 +20,11 @@ class PostsSection extends StatelessWidget {
               current is PostsError,
       builder: (context, state) {
         if (state is PostsLoading) {
-          return const Center(
-            child: CupertinoActivityIndicator(color: AppColors.black12),
+          return SizedBox(
+            height: MediaQuery.sizeOf(context).height * 0.4,
+            child: const Center(
+              child: CupertinoActivityIndicator(color: AppColors.primaryColor),
+            ),
           );
         } else if (state is PostsLoaded) {
           final posts = state.posts;

@@ -26,24 +26,19 @@ void main() async {
     }
   });
 
-  final session = Supabase.instance.client.auth.currentSession;
-  String initialRoute =
-      session != null ? AppRoutes.homeRoute : AppRoutes.authRoute;
-
   runApp(
     BlocProvider(
       create: (context) => AuthCubit(SupabaseAuthServices())..checkAuthStatus(),
       child: DevicePreview(
         enabled: !kReleaseMode,
-        builder: (BuildContext context) => MyApp(initialRoute: initialRoute),
+        builder: (BuildContext context) => MyApp(),
       ),
     ),
   );
 }
 
 class MyApp extends StatelessWidget {
-  final String initialRoute;
-  const MyApp({super.key, required this.initialRoute});
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -53,7 +48,7 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Social Media App',
       theme: AppThemes.lightTheme,
-      initialRoute: initialRoute,
+      initialRoute: AppRoutes.splashViewRoute,
       onGenerateRoute: AppRouter.generateRoute,
       onUnknownRoute: (settings) => AppRouter.generateRoute(settings),
     );

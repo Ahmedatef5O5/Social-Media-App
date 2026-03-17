@@ -30,7 +30,7 @@ class AuthView extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Gap(35),
-                  Image.asset(AppImages.logo, width: 350),
+                  Image.asset(AppImages.secondaryLogoApp, width: 350),
                   Gap(40),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 26),

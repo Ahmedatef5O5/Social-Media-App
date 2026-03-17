@@ -16,6 +16,8 @@ import 'package:social_media_app/features/profile/cubits/edit_profile_cubit/edit
 import 'package:social_media_app/features/profile/services/edit_profile_services.dart';
 import 'package:social_media_app/features/profile/views/edit_profile_view.dart';
 import 'package:social_media_app/features/settings/views/settings_view.dart';
+import 'package:social_media_app/features/splash/views/on_boarding_view.dart';
+import 'package:social_media_app/features/splash/views/splash_view.dart';
 import '../../features/auth/data/models/user_data.dart';
 import '../../features/home/views/creat_text_story_view.dart';
 
@@ -36,6 +38,12 @@ class AppRouter {
       return _buildRoute(const LoadingScreen());
     }
     switch (settings.name) {
+      case AppRoutes.splashViewRoute:
+        return _buildRoute(const SplashView(), settings: settings);
+
+      case AppRoutes.onBoardingViewRoute:
+        return _buildRoute(const OnBoardingView(), settings: settings);
+
       case AppRoutes.authRoute:
         return _buildRoute(const AuthView(), settings: settings);
 

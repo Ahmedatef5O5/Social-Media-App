@@ -1,6 +1,8 @@
 class AppRoutes {
-  static const String authRoute = '/auth';
-  static const String homeRoute = '/home';
+  static const String splashViewRoute = '/splash-view';
+  static const String onBoardingViewRoute = '/on-boarding-view';
+  static const String authRoute = '/auth-view';
+  static const String homeRoute = '/home-view';
   static const String createTextStoryViewRoute = '/create-text-story-view';
   static const String storyDisplayViewRoute = '/story-display-view';
   static const String createPostViewRoute = '/home-create-post-view';
