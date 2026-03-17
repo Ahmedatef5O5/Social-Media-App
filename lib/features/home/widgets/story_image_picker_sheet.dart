@@ -3,10 +3,12 @@ import 'package:gap/gap.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../core/themes/app_colors.dart';
 
-class StoryImagePickerSheet extends StatelessWidget {
-  final Function(ImageSource source) onSourceSelected;
+enum StoryType { text, image }
 
-  const StoryImagePickerSheet({super.key, required this.onSourceSelected});
+class StoryImagePickerSheet extends StatelessWidget {
+  final Function(ImageSource? source, StoryType type) onSelected;
+
+  const StoryImagePickerSheet({super.key, required this.onSelected});
 
   @override
   Widget build(BuildContext context) {
@@ -22,17 +24,25 @@ class StoryImagePickerSheet extends StatelessWidget {
           const Gap(20),
           _buildBottomSheetOption(
             context,
+            icon: Icons.text_fields,
+            color: AppColors.primaryColor,
+            title: 'Text Story',
+            onTap: () => onSelected(null, StoryType.text),
+          ),
+
+          _buildBottomSheetOption(
+            context,
             icon: Icons.photo_library,
             color: AppColors.primaryColor,
             title: 'Gallery',
-            onTap: () => onSourceSelected(ImageSource.gallery),
+            onTap: () => onSelected(ImageSource.gallery, StoryType.image),
           ),
           _buildBottomSheetOption(
             context,
             icon: Icons.camera_alt,
             color: Colors.green,
             title: 'Take a Photo',
-            onTap: () => onSourceSelected(ImageSource.camera),
+            onTap: () => onSelected(ImageSource.camera, StoryType.image),
           ),
         ],
       ),
