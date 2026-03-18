@@ -5,6 +5,7 @@ import 'package:social_media_app/core/helpers/formatted_date.dart';
 import 'package:social_media_app/features/home/models/story_model.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/themes/app_colors.dart';
+import '../../../core/widgets/custom_loading_indicator.dart';
 
 class StoryDisplayView extends StatefulWidget {
   final StoryModel story;
@@ -37,6 +38,8 @@ class _StoryDisplayViewState extends State<StoryDisplayView> {
                     ? CachedNetworkImage(
                       imageUrl: widget.story.imageUrl!,
                       fit: BoxFit.cover,
+                      placeholder:
+                          (context, url) => const CustomLoadingIndicator(),
                     )
                     : Container(
                       padding: EdgeInsets.symmetric(horizontal: 12),
@@ -76,6 +79,7 @@ class _StoryDisplayViewState extends State<StoryDisplayView> {
                 CircleAvatar(
                   backgroundImage: CachedNetworkImageProvider(
                     widget.story.authorImageUrl ?? '',
+                    errorListener: (_) => const CustomLoadingIndicator(),
                   ),
                 ),
                 const Gap(10),

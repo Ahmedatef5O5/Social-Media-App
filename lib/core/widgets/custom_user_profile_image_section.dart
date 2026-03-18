@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:social_media_app/core/widgets/custom_loading_indicator.dart';
 import '../../../core/constants/app_images.dart';
 import '../../../core/themes/app_colors.dart';
 
@@ -128,11 +129,16 @@ class CustomUserProfileImagesSection extends StatelessWidget {
     }
     return CachedNetworkImageProvider(
       backgroundUrl ?? AppImages.defaultBackgroundImg,
+      errorListener:
+          (p0) => const CustomLoadingIndicator(color: AppColors.black12),
     );
   }
 
   ImageProvider _getAvatarImage() {
     if (selectedAvatarFile != null) return FileImage(selectedAvatarFile!);
-    return CachedNetworkImageProvider(avatarUrl ?? AppImages.defaultUserImg);
+    return CachedNetworkImageProvider(
+      avatarUrl ?? AppImages.defaultUserImg,
+      errorListener: (p0) => const CustomLoadingIndicator(),
+    );
   }
 }

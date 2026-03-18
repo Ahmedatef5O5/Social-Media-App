@@ -4,6 +4,7 @@ import 'package:social_media_app/core/constants/app_images.dart';
 import 'package:social_media_app/features/auth/data/models/user_data.dart';
 import '../../../core/themes/app_colors.dart';
 import '../../../core/widgets/custom_elevated_button.dart';
+import '../../../core/widgets/custom_loading_indicator.dart';
 
 class DiscoverPersonCardWidget extends StatelessWidget {
   final UserData userData;
@@ -19,6 +20,7 @@ class DiscoverPersonCardWidget extends StatelessWidget {
           // radius: 22,
           backgroundImage: CachedNetworkImageProvider(
             userData.imageUrl ?? AppImages.defaultUserImg,
+            errorListener: (_) => const CustomLoadingIndicator(),
           ),
         ),
         title: Text(

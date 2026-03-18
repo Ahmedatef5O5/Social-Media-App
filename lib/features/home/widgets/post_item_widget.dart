@@ -3,8 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 import 'package:intl/intl.dart';
+import 'package:like_button/like_button.dart';
 import 'package:social_media_app/core/constants/app_images.dart';
 import 'package:social_media_app/core/themes/app_colors.dart';
+import 'package:social_media_app/core/widgets/custom_loading_indicator.dart';
 import 'package:social_media_app/features/home/widgets/comments_sheet_section.dart';
 import 'package:social_media_app/features/home/widgets/file_attachment_preview.dart';
 import 'package:social_media_app/features/home/widgets/post_video_player.dart';
@@ -61,9 +63,16 @@ class PostItemWidget extends StatelessWidget {
                     backgroundImage:
                         post.authorImageUrl != null &&
                                 post.authorImageUrl!.isNotEmpty
-                            ? CachedNetworkImageProvider(post.authorImageUrl!)
-                            : const CachedNetworkImageProvider(
+                            ? CachedNetworkImageProvider(
+                              post.authorImageUrl!,
+
+                              errorListener:
+                                  (_) => const CustomLoadingIndicator(),
+                            )
+                            : CachedNetworkImageProvider(
                                   AppImages.defaultUserImg,
+                                  errorListener:
+                                      (_) => const CustomLoadingIndicator(),
                                 )
                                 as ImageProvider, // backgroundImage:
                   ),
@@ -84,7 +93,7 @@ class PostItemWidget extends StatelessWidget {
                     ),
                   ),
                 ),
-                Gap(4),
+                const Gap(4),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 10),
                   child: Text(
@@ -97,7 +106,7 @@ class PostItemWidget extends StatelessWidget {
                     ),
                   ),
                 ),
-                Gap(8),
+                const Gap(8),
                 if (post.imageUrl != null && post.imageUrl!.isNotEmpty)
                   Center(
                     child: ClipRRect(
@@ -110,9 +119,8 @@ class PostItemWidget extends StatelessWidget {
                                 height: 220,
                                 fit: BoxFit.fill,
                                 placeholder:
-                                    (context, url) => const Center(
-                                      child: CircularProgressIndicator(),
-                                    ),
+                                    (context, url) =>
+                                        const CustomLoadingIndicator(),
                                 errorWidget:
                                     (context, url, error) =>
                                         const Icon(Icons.error),
@@ -125,34 +133,53 @@ class PostItemWidget extends StatelessWidget {
 
                 if (post.fileUrl != null && post.fileUrl!.isNotEmpty)
                   FileAttachmentPreview(url: post.fileUrl!, onTap: () {}),
-                Gap(12),
+                const Gap(12),
 
                 Row(
                   children: [
-                    Gap(12),
+                    const Gap(12),
                     Row(
                       children: [
-                        IconButton(
-                          onPressed: () => homeCubit.toggleLike(currentPost),
-                          icon: AnimatedSwitcher(
-                            key: ValueKey<bool>(currentPost.isLikedBy(userId)),
-                            duration: const Duration(milliseconds: 300),
-                            child: Icon(
-                              currentPost.isLikedBy(userId)
+                        LikeButton(
+                          size: 24,
+                          circleColor: CircleColor(
+                            start: AppColors.primaryColor,
+                            end: AppColors.primaryColor.withValues(alpha: 0.5),
+                          ),
+                          bubblesColor: BubblesColor(
+                            dotPrimaryColor: AppColors.primaryColor,
+                            dotSecondaryColor: AppColors.bgColor,
+                          ),
+                          isLiked: currentPost.isLikedBy(userId),
+                          likeCount: currentPost.likesCount,
+                          countPostion: CountPostion.right,
+                          likeBuilder: (bool isLiked) {
+                            return Icon(
+                              isLiked
                                   ? Icons.thumb_up_alt
                                   : Icons.thumb_up_alt_outlined,
                               color:
-                                  currentPost.isLikedBy(userId)
+                                  isLiked
                                       ? AppColors.primaryColor
                                       : AppColors.grey6,
-                            ),
-                          ),
+                              size: 24,
+                            );
+                          },
+                          countBuilder:
+                              (likeCount, isLiked, text) => Padding(
+                                padding: const EdgeInsets.only(left: 4.0),
+                                child: Text(
+                                  '${currentPost.likesCount}',
+                                  style: Theme.of(context).textTheme.bodyLarge,
+                                ),
+                              ),
+                          onTap: (isLiked) async {
+                            await homeCubit.toggleLike(currentPost);
+                            return !isLiked;
+                          },
                         ),
-                        Gap(4),
-                        Text(
-                          '${currentPost.likesCount}',
-                          style: Theme.of(context).textTheme.bodyLarge,
-                        ),
+
+                        // Gap(4),
                       ],
                     ),
 
@@ -186,7 +213,7 @@ class PostItemWidget extends StatelessWidget {
                             height: 24,
                           ),
 
-                          Gap(4),
+                          const Gap(4),
                           Text(
                             '${currentPost.comments?.length ?? 0}',
 
@@ -195,17 +222,17 @@ class PostItemWidget extends StatelessWidget {
                         ],
                       ),
                     ),
-                    Gap(12),
+                    const Gap(12),
                     Image.asset(AppImages.sharePostIcon, width: 24, height: 24),
 
                     Spacer(),
                     Image.asset(AppImages.savePostIcon, width: 24, height: 24),
 
-                    Gap(8),
+                    const Gap(8),
                   ],
                 ),
 
-                Gap(8),
+                const Gap(8),
               ],
             ),
           ),

@@ -128,18 +128,23 @@ class _CommentsSheetSectionState extends State<CommentsSheetSection> {
                                     backgroundColor: AppColors.white,
                                     child: CircleAvatar(
                                       radius: 11,
-                                      backgroundImage:
-                                          CachedNetworkImageProvider(
-                                            post.likersImages![index].isNotEmpty
-                                                ? post.likersImages![index]
-                                                : AppImages.defaultUserImg,
-                                          ),
+                                      backgroundImage: CachedNetworkImageProvider(
+                                        post.likersImages![index].isNotEmpty
+                                            ? post.likersImages![index]
+                                            : AppImages.defaultUserImg,
+                                        errorListener:
+                                            (_) =>
+                                                const CustomLoadingIndicator(),
+                                      ),
                                       onBackgroundImageError: (
                                         exception,
                                         stackTrace,
                                       ) {
                                         CachedNetworkImageProvider(
                                           AppImages.defaultUserImg,
+                                          errorListener:
+                                              (p0) =>
+                                                  const CustomLoadingIndicator(),
                                         );
                                         debugPrint(
                                           'Error loading imageLikers : $exception',

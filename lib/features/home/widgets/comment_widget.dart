@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:social_media_app/core/constants/app_images.dart';
 import 'package:social_media_app/features/home/models/comment_model.dart';
 import '../../../core/themes/app_colors.dart';
+import '../../../core/widgets/custom_loading_indicator.dart';
 
 class CommentWidget extends StatelessWidget {
   final CommentModel comment;
@@ -22,7 +23,10 @@ class CommentWidget extends StatelessWidget {
               backgroundImage:
                   comment.authorImageUrl != null
                       ? NetworkImage(comment.authorImageUrl!)
-                      : CachedNetworkImageProvider(AppImages.defaultUserImg),
+                      : CachedNetworkImageProvider(
+                        AppImages.defaultUserImg,
+                        errorListener: (_) => const CustomLoadingIndicator(),
+                      ),
               // : null,
             ),
             const SizedBox(width: 8),
