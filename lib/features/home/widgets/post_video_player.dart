@@ -2,6 +2,7 @@ import 'package:chewie/chewie.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:social_media_app/core/themes/app_colors.dart';
 import 'package:video_player/video_player.dart';
+import '../../../core/widgets/custom_loading_indicator.dart';
 
 class PostVideoPlayer extends StatefulWidget {
   final String videoUrl;
@@ -70,9 +71,7 @@ class _PostVideoPlayerState extends State<PostVideoPlayer> {
                 borderRadius: BorderRadius.circular(14),
                 child: Chewie(controller: _chewieController!),
               )
-              : const Center(
-                child: CupertinoActivityIndicator(color: AppColors.black12),
-              ),
+              : const CustomLoadingIndicator(),
     );
   }
 }

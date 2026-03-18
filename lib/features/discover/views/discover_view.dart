@@ -1,8 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
-import 'package:social_media_app/core/themes/app_colors.dart';
 import 'package:social_media_app/core/themes/background_theme_widget.dart';
+import 'package:social_media_app/core/widgets/custom_loading_indicator.dart';
 import 'package:social_media_app/features/discover/cubit/discover_people_cubit.dart';
 import '../widgets/discover_people_header_section.dart';
 import '../widgets/discover_person_card_widget.dart';
@@ -25,11 +25,7 @@ class DiscoverView extends StatelessWidget {
               child: BlocBuilder<DiscoverPeopleCubit, DiscoverPeopleState>(
                 builder: (context, state) {
                   if (state is DiscoverPeopleLoading) {
-                    return const Center(
-                      child: CupertinoActivityIndicator(
-                        color: AppColors.black12,
-                      ),
-                    );
+                    return const CustomLoadingIndicator();
                   }
                   if (state is DiscoverPeopleSuccess) {
                     return ListView.separated(

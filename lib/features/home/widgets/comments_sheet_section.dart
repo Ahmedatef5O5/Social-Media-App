@@ -1,8 +1,8 @@
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
+import 'package:social_media_app/core/widgets/custom_loading_indicator.dart';
 import 'package:social_media_app/features/home/cubit/home_cubit.dart';
 import 'package:social_media_app/features/home/models/post_model.dart';
 import 'package:social_media_app/features/home/widgets/comment_section.dart';
@@ -65,12 +65,7 @@ class _CommentsSheetSectionState extends State<CommentsSheetSection> {
       return null;
     });
     if (post == null) {
-      return const SizedBox(
-        height: 300,
-        child: Center(
-          child: CupertinoActivityIndicator(color: AppColors.black12),
-        ),
-      );
+      return const SizedBox(height: 300, child: CustomLoadingIndicator());
     }
     return BlocListener<HomeCubit, HomeState>(
       listener: (context, state) {

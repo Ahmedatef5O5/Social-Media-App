@@ -1,10 +1,10 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 import 'package:social_media_app/core/themes/app_colors.dart';
 import 'package:social_media_app/core/themes/background_theme_widget.dart';
 import 'package:social_media_app/features/profile/cubits/profile_cubit/profile_cubit.dart';
+import '../../../core/widgets/custom_loading_indicator.dart';
 import '../widgets/profile_details_widget_tab.dart';
 import '../widgets/profile_header.dart';
 import '../widgets/profile_posts_list_tab.dart';
@@ -23,9 +23,7 @@ class ProfileView extends StatelessWidget {
         child: BlocBuilder<ProfileCubit, ProfileState>(
           builder: (context, state) {
             if (state is ProfileLoading) {
-              return Center(
-                child: CupertinoActivityIndicator(color: AppColors.black12),
-              );
+              return CustomLoadingIndicator();
             } else if (state is ProfileLoaded) {
               return MediaQuery.removePadding(
                 context: context,

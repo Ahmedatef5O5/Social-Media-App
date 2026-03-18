@@ -1,9 +1,8 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:social_media_app/features/home/cubit/home_cubit.dart';
 import 'package:social_media_app/features/home/widgets/story_item_widget.dart';
-import '../../../core/themes/app_colors.dart';
+import '../../../core/widgets/custom_loading_indicator.dart';
 
 class StoriesListSection extends StatelessWidget {
   const StoriesListSection({super.key});
@@ -30,9 +29,7 @@ class StoriesListSection extends StatelessWidget {
                 (current is StoriesLoading && previous is! StoriesLoaded),
         builder: (context, state) {
           if (state is StoriesLoading) {
-            return const Center(
-              child: CupertinoActivityIndicator(color: AppColors.black12),
-            );
+            return const CustomLoadingIndicator();
           } else if (state is StoriesLoaded) {
             final stories = state.stories;
             return ListView.builder(

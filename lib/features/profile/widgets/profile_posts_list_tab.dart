@@ -1,8 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
-import 'package:social_media_app/core/themes/app_colors.dart';
-
+import '../../../core/widgets/custom_loading_indicator.dart';
 import '../../home/cubit/home_cubit.dart';
 import '../../home/widgets/post_item_widget.dart';
 
@@ -32,9 +31,7 @@ class ProfilePostsListTab extends StatelessWidget {
             separatorBuilder: (BuildContext context, int index) => Gap(20),
           );
         }
-        return const Center(
-          child: CupertinoActivityIndicator(color: AppColors.black12),
-        );
+        return const CustomLoadingIndicator();
       },
     );
   }

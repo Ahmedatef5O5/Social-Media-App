@@ -1,9 +1,9 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 import 'package:social_media_app/core/widgets/custom_elevated_button.dart';
 import '../../../core/themes/app_colors.dart';
+import '../../../core/widgets/custom_loading_indicator.dart';
 import '../cubit/home_cubit.dart';
 
 class CreateTextStoryView extends StatefulWidget {
@@ -103,7 +103,7 @@ class _CreateTextStoryViewState extends State<CreateTextStoryView> {
                           : () => _onShareTextStory(context),
                   child:
                       state is AddStoryLoading
-                          ? CupertinoActivityIndicator(
+                          ? const CustomLoadingIndicator(
                             radius: 10,
                             color: AppColors.white,
                           )

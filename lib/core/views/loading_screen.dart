@@ -1,7 +1,6 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import '../themes/app_colors.dart';
 import '../themes/background_theme_widget.dart';
+import '../widgets/custom_loading_indicator.dart';
 
 class LoadingScreen extends StatelessWidget {
   const LoadingScreen({super.key});
@@ -13,9 +12,7 @@ class LoadingScreen extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Center(child: CupertinoActivityIndicator(color: AppColors.black12)),
-          ],
+          children: [CustomLoadingIndicator()],
         ),
       ),
     );

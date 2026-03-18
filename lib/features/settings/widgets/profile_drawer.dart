@@ -8,6 +8,7 @@ import 'package:social_media_app/features/auth/logic/auth_cubit/auth_cubit.dart'
 import 'package:social_media_app/features/profile/cubits/profile_cubit/profile_cubit.dart';
 import 'package:social_media_app/features/settings/widgets/drawer_item_widget.dart';
 import '../../../core/router/app_routes.dart';
+import '../../../core/widgets/custom_loading_indicator.dart';
 import 'drawer_header_widget.dart';
 
 class ProfileDrawer extends StatelessWidget {
@@ -33,7 +34,7 @@ class ProfileDrawer extends StatelessWidget {
               } else {
                 return SizedBox(
                   height: MediaQuery.of(context).size.height * 0.3,
-                  child: CupertinoActivityIndicator(color: AppColors.black12),
+                  child: CustomLoadingIndicator(),
                 );
               }
             },

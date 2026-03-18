@@ -1,7 +1,7 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import '../../../core/themes/app_colors.dart';
+import '../../../core/widgets/custom_loading_indicator.dart';
 
 class CreatePostHeaderSection extends StatelessWidget {
   const CreatePostHeaderSection({
@@ -35,9 +35,7 @@ class CreatePostHeaderSection extends StatelessWidget {
           onTap: _hasText ? onTap : null,
           child:
               isLoading
-                  ? CupertinoActivityIndicator(
-                    color: Theme.of(context).primaryColor,
-                  )
+                  ? CustomLoadingIndicator()
                   : Text(
                     'Post',
                     style: Theme.of(context).textTheme.titleMedium!.copyWith(

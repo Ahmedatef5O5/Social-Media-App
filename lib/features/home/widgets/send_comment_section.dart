@@ -1,10 +1,10 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 import 'package:social_media_app/core/constants/app_images.dart';
 import 'package:social_media_app/features/home/cubit/home_cubit.dart';
 import '../../../core/themes/app_colors.dart';
+import '../../../core/widgets/custom_loading_indicator.dart';
 import '../models/post_model.dart';
 
 class SendCommentSection extends StatefulWidget {
@@ -118,7 +118,7 @@ class _SendCommentSectionState extends State<SendCommentSection> {
                   ? SizedBox(
                     height: 24,
                     width: 24,
-                    child: CupertinoActivityIndicator(color: AppColors.black12),
+                    child: CustomLoadingIndicator(),
                   )
                   : InkWell(
                     onTap: () {

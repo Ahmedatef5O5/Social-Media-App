@@ -1,8 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
-import 'package:social_media_app/core/themes/app_colors.dart';
 import 'package:social_media_app/features/home/cubit/home_cubit.dart';
+import '../../../core/widgets/custom_loading_indicator.dart';
 import 'post_item_widget.dart';
 
 class PostsSection extends StatelessWidget {
@@ -21,10 +21,8 @@ class PostsSection extends StatelessWidget {
       builder: (context, state) {
         if (state is PostsLoading) {
           return SizedBox(
-            height: MediaQuery.sizeOf(context).height * 0.4,
-            child: const Center(
-              child: CupertinoActivityIndicator(color: AppColors.primaryColor),
-            ),
+            height: MediaQuery.sizeOf(context).height * 0.36,
+            child: const CustomLoadingIndicator(radius: 11),
           );
         } else if (state is PostsLoaded) {
           final posts = state.posts;
