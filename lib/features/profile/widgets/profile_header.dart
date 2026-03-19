@@ -27,6 +27,7 @@ class ProfileHeader extends StatelessWidget {
               user.backgroundImageUrl ?? AppImages.defaultBackgroundImg,
           avatarUrl: user.imageUrl ?? AppImages.defaultUserImg,
           isProfileHeader: true,
+          heroTag: 'edit-profile-avatar',
         ),
         Gap(16),
         Text(

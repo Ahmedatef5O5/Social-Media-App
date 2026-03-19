@@ -34,6 +34,7 @@ class EditProfileImagesSection extends StatelessWidget {
       selectedAvatarFile: selectedProfileImage,
       onEditBackground: onEditBackground,
       onEditAvatar: onEditProfile,
+      heroTag: 'edit-profile-avatar',
     );
   }
 }

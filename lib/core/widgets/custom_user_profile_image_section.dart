@@ -17,6 +17,7 @@ class CustomUserProfileImagesSection extends StatelessWidget {
   final VoidCallback? onEditBackground;
   final VoidCallback? onEditAvatar;
   final Alignment avatarAlignment;
+  final String? heroTag;
 
   const CustomUserProfileImagesSection({
     super.key,
@@ -32,6 +33,7 @@ class CustomUserProfileImagesSection extends StatelessWidget {
     this.onEditBackground,
     this.onEditAvatar,
     this.avatarAlignment = Alignment.bottomCenter,
+    this.heroTag,
   });
 
   @override
@@ -84,36 +86,39 @@ class CustomUserProfileImagesSection extends StatelessWidget {
             alignment: avatarAlignment,
             child: GestureDetector(
               onTap: isEditMode ? onEditAvatar : null,
-              child: SizedBox(
-                height: avatarSize,
-                width: avatarSize,
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    Container(
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border:
-                            !isEditMode
-                                ? Border.all(
-                                  color: AppColors.primaryColor,
-                                  width: isProfileHeader ? 4 : 2,
-                                )
-                                : null,
-                        image: DecorationImage(
-                          image: _getAvatarImage(),
-                          fit: BoxFit.cover,
+              child: Hero(
+                tag: heroTag ?? 'default-avatar-tag-${avatarUrl ?? "none"}',
+                child: SizedBox(
+                  height: avatarSize,
+                  width: avatarSize,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      Container(
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border:
+                              !isEditMode
+                                  ? Border.all(
+                                    color: AppColors.primaryColor,
+                                    width: isProfileHeader ? 4 : 2,
+                                  )
+                                  : null,
+                          image: DecorationImage(
+                            image: _getAvatarImage(),
+                            fit: BoxFit.cover,
+                          ),
                         ),
                       ),
-                    ),
 
-                    if (isEditMode)
-                      CircleAvatar(
-                        radius: 50,
-                        backgroundColor: AppColors.black38,
-                        child: Icon(Icons.edit, color: AppColors.white),
-                      ),
-                  ],
+                      if (isEditMode)
+                        CircleAvatar(
+                          radius: 50,
+                          backgroundColor: AppColors.black38,
+                          child: Icon(Icons.edit, color: AppColors.white),
+                        ),
+                    ],
+                  ),
                 ),
               ),
             ),
