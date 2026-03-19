@@ -9,8 +9,8 @@ class DiscoverPeopleCubit extends Cubit<DiscoverPeopleState> {
   DiscoverPeopleCubit(this._discoverPeopleServices)
     : super(DiscoverPeopleInitial());
 
-  Future<void> getDiscoverPeople() async {
-    emit(DiscoverPeopleLoading());
+  Future<void> getDiscoverPeople({bool isRefresh = false}) async {
+    if (!isRefresh) emit(DiscoverPeopleLoading());
     try {
       final users = await _discoverPeopleServices.getAllUsers();
       emit(DiscoverPeopleSuccess(users));

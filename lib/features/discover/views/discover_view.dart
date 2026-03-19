@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 import 'package:social_media_app/core/themes/background_theme_widget.dart';
 import 'package:social_media_app/core/widgets/custom_loading_indicator.dart';
+import 'package:social_media_app/core/widgets/custom_pull_to_refresh.dart';
 import 'package:social_media_app/features/discover/cubit/discover_people_cubit.dart';
 import '../widgets/discover_people_header_section.dart';
 import '../widgets/discover_person_card_widget.dart';
@@ -14,42 +15,48 @@ class DiscoverView extends StatelessWidget {
   Widget build(BuildContext context) {
     return BackgroundThemeWidget(
       top: true,
-      child: Column(
-        children: [
-          const Gap(20),
-          DiscoverPeopleHeaderSection(),
-          Gap(16),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12.0),
-              child: BlocBuilder<DiscoverPeopleCubit, DiscoverPeopleState>(
-                builder: (context, state) {
-                  if (state is DiscoverPeopleLoading) {
-                    return const CustomLoadingIndicator();
-                  }
-                  if (state is DiscoverPeopleSuccess) {
-                    return ListView.separated(
-                      itemCount: state.users.length,
-                      separatorBuilder:
-                          (BuildContext context, int index) => const Gap(15),
+      child: CustomPullToRefresh(
+        onRefresh:
+            () async => await context
+                .read<DiscoverPeopleCubit>()
+                .getDiscoverPeople(isRefresh: true),
+        child: Column(
+          children: [
+            const Gap(20),
+            DiscoverPeopleHeaderSection(),
+            Gap(16),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                child: BlocBuilder<DiscoverPeopleCubit, DiscoverPeopleState>(
+                  builder: (context, state) {
+                    if (state is DiscoverPeopleLoading) {
+                      return const CustomLoadingIndicator();
+                    }
+                    if (state is DiscoverPeopleSuccess) {
+                      return ListView.separated(
+                        itemCount: state.users.length,
+                        separatorBuilder:
+                            (BuildContext context, int index) => const Gap(15),
 
-                      itemBuilder: (BuildContext context, int index) {
-                        return DiscoverPersonCardWidget(
-                          userData: state.users[index],
-                        );
-                      },
-                    );
-                  } else if (state is DiscoverPeopleFailure) {
-                    return Center(child: Text(state.message));
-                  } else {
-                    return const SizedBox.shrink();
-                  }
-                },
+                        itemBuilder: (BuildContext context, int index) {
+                          return DiscoverPersonCardWidget(
+                            userData: state.users[index],
+                          );
+                        },
+                      );
+                    } else if (state is DiscoverPeopleFailure) {
+                      return Center(child: Text(state.message));
+                    } else {
+                      return const SizedBox.shrink();
+                    }
+                  },
+                ),
               ),
             ),
-          ),
-          const Gap(20),
-        ],
+            const Gap(20),
+          ],
+        ),
       ),
     );
   }
