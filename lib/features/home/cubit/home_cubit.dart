@@ -21,15 +21,28 @@ class HomeCubit extends Cubit<HomeState> {
   XFile? selectedVideo;
   XFile? selectedDocument;
 
-  Future<void> getHomeData() async {
-    final userId = Supabase.instance.client.auth.currentUser!.id;
-    await Future.wait([_getCurrentUser(userId), fetchStories(), fetchPosts()]);
+  // Refresh Screen
+  Future<void> refreshHomeData({bool isRefresh = false}) async {
+    try {
+      await getHomeData(isRefresh: isRefresh);
+    } catch (e) {
+      debugPrint('Error refreshing home data: $e');
+    }
   }
 
-  Future<void> _getCurrentUser(String userId) async {
+  Future<void> getHomeData({bool isRefresh = false}) async {
+    final userId = Supabase.instance.client.auth.currentUser!.id;
+    await Future.wait([
+      _getCurrentUser(userId),
+      fetchStories(isRefresh: isRefresh),
+      fetchPosts(isRefresh: isRefresh),
+    ]);
+  }
+
+  Future<void> _getCurrentUser(String userId, {bool isRefresh = false}) async {
     try {
       currentUserData = await homeServices.fetchCurrentUser(userId);
-      emit(UserDataLoaded(currentUserData!));
+      if (!isRefresh) emit(UserDataLoaded(currentUserData!));
     } catch (e) {
       debugPrint("Error fetching user: $e");
       emit(UserDataLoadError(e.toString()));
@@ -100,8 +113,8 @@ class HomeCubit extends Cubit<HomeState> {
     }
   }
 
-  Future<void> fetchStories() async {
-    emit(StoriesLoading());
+  Future<void> fetchStories({bool isRefresh = false}) async {
+    if (!isRefresh) emit(StoriesLoading());
     try {
       final stories = await homeServices.fetchStories();
       emit(StoriesLoaded(stories));
@@ -111,8 +124,8 @@ class HomeCubit extends Cubit<HomeState> {
     }
   }
 
-  Future<void> fetchPosts() async {
-    emit(PostsLoading());
+  Future<void> fetchPosts({bool isRefresh = false}) async {
+    if (!isRefresh) emit(PostsLoading());
     try {
       final posts = await homeServices.fetchPosts();
       emit(PostsLoaded(posts, DateTime.now()));

@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 import 'package:social_media_app/core/themes/background_theme_widget.dart';
+import 'package:social_media_app/core/widgets/custom_pull_to_refresh.dart';
+import 'package:social_media_app/features/home/cubit/home_cubit.dart';
 import '../widgets/home_view_header_section.dart';
 import '../widgets/post_writing_card.dart';
 import '../widgets/posts_section.dart';
@@ -17,22 +20,29 @@ class HomeView extends StatelessWidget {
         child: Center(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0),
-            child: SingleChildScrollView(
-              scrollDirection: Axis.vertical,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.start,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Gap(30),
-                  HomeViewHeaderSection(),
-                  Gap(35),
-                  PostWritingCard(),
-                  Gap(20),
-                  StoriesListSection(),
-                  Gap(4),
-                  PostsSection(),
-                  Gap(25),
-                ],
+            child: CustomPullToRefresh(
+              onRefresh:
+                  () async => await context.read<HomeCubit>().refreshHomeData(
+                    isRefresh: true,
+                  ),
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                scrollDirection: Axis.vertical,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Gap(30),
+                    HomeViewHeaderSection(),
+                    Gap(35),
+                    PostWritingCard(),
+                    Gap(20),
+                    StoriesListSection(),
+                    Gap(4),
+                    PostsSection(),
+                    Gap(25),
+                  ],
+                ),
               ),
             ),
           ),
