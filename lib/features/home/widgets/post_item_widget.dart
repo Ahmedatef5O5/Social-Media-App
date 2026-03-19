@@ -2,9 +2,9 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
-import 'package:intl/intl.dart';
 import 'package:like_button/like_button.dart';
 import 'package:social_media_app/core/constants/app_images.dart';
+import 'package:social_media_app/core/helpers/formatted_date.dart';
 import 'package:social_media_app/core/themes/app_colors.dart';
 import 'package:social_media_app/core/widgets/custom_loading_indicator.dart';
 import 'package:social_media_app/features/home/widgets/comments_sheet_section.dart';
@@ -57,24 +57,30 @@ class PostItemWidget extends StatelessWidget {
               children: [
                 ListTile(
                   contentPadding: EdgeInsets.zero,
-                  leading: CircleAvatar(
-                    radius: 22,
-                    backgroundColor: AppColors.bgColor2,
-                    backgroundImage:
-                        post.authorImageUrl != null &&
-                                post.authorImageUrl!.isNotEmpty
-                            ? CachedNetworkImageProvider(
-                              post.authorImageUrl!,
+                  leading: Container(
+                    height: 44,
+                    width: 44,
+                    decoration: BoxDecoration(
+                      color: AppColors.bgColor2,
+                      shape: BoxShape.circle,
+                    ),
+                    child: ClipOval(
+                      child: CachedNetworkImage(
+                        imageUrl:
+                            (post.authorImageUrl != null &&
+                                    post.authorImageUrl!.isNotEmpty)
+                                ? post.authorImageUrl!
+                                : AppImages.defaultUserImg,
 
-                              errorListener:
-                                  (_) => const CustomLoadingIndicator(),
-                            )
-                            : CachedNetworkImageProvider(
-                                  AppImages.defaultUserImg,
-                                  errorListener:
-                                      (_) => const CustomLoadingIndicator(),
-                                )
-                                as ImageProvider, // backgroundImage:
+                        fit: BoxFit.cover,
+                        placeholder:
+                            (context, url) => const CustomLoadingIndicator(),
+                        errorWidget:
+                            (context, url, error) => const Icon(Icons.person),
+                        maxWidthDiskCache: 200,
+                        maxHeightDiskCache: 200,
+                      ),
+                    ),
                   ),
                   title: Text(
                     post.authorName ?? 'Unknown',
@@ -84,8 +90,11 @@ class PostItemWidget extends StatelessWidget {
                     ),
                   ),
                   subtitle: Text(
-                    DateFormat('h:mm a').format(DateTime.parse(post.createdAt)),
-
+                    FormattedDate.getFormattedDate(
+                      DateTime.parse(
+                        post.createdAt,
+                      ).toLocal().toIso8601String(),
+                    ),
                     style: Theme.of(context).textTheme.titleSmall!.copyWith(
                       fontWeight: FontWeight.w400,
                       fontSize: 13,
@@ -115,15 +124,18 @@ class PostItemWidget extends StatelessWidget {
                           post.imageUrl != null
                               ? CachedNetworkImage(
                                 imageUrl: post.imageUrl!,
-                                width: 350,
-                                height: 220,
-                                fit: BoxFit.fill,
+                                width: double.infinity,
+
+                                fit: BoxFit.cover,
                                 placeholder:
                                     (context, url) =>
                                         const CustomLoadingIndicator(),
                                 errorWidget:
                                     (context, url, error) =>
                                         const Icon(Icons.error),
+                                filterQuality: FilterQuality.high,
+
+                                memCacheWidth: 800,
                               )
                               : null,
                     ),

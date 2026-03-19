@@ -5,7 +5,6 @@ import 'package:social_media_app/core/router/app_routes.dart';
 import 'package:social_media_app/core/themes/app_colors.dart';
 import 'package:social_media_app/core/widgets/main_user_avatar.dart';
 import 'package:social_media_app/features/home/cubit/home_cubit.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/constants/app_images.dart';
 
 class PostWritingCard extends StatelessWidget {
@@ -15,11 +14,9 @@ class PostWritingCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final homeCubit = context.read<HomeCubit>();
     final user = homeCubit.currentUserData;
-    final authUser = Supabase.instance.client.auth.currentUser;
 
     //
-    final displayImage =
-        user?.imageUrl ?? authUser?.userMetadata?['avatar_url'];
+    final displayImage = user?.imageUrl;
 
     navigatorToPost() => Navigator.of(context, rootNavigator: true).pushNamed(
       AppRoutes.createPostViewRoute,

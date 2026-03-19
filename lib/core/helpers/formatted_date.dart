@@ -3,6 +3,9 @@ import 'package:intl/intl.dart';
 class FormattedDate {
   static String getFormattedDate(String dateString) {
     DateTime date = DateTime.parse(dateString);
+    if (date.isUtc) {
+      date.toLocal().toIso8601String();
+    }
     date = DateTime(
       date.year,
       date.month,
