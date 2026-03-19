@@ -25,24 +25,20 @@ class HomeView extends StatelessWidget {
                   () async => await context.read<HomeCubit>().refreshHomeData(
                     isRefresh: true,
                   ),
-              child: SingleChildScrollView(
+              child: CustomScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
                 scrollDirection: Axis.vertical,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Gap(30),
-                    HomeViewHeaderSection(),
-                    Gap(35),
-                    PostWritingCard(),
-                    Gap(20),
-                    StoriesListSection(),
-                    Gap(4),
-                    PostsSection(),
-                    Gap(25),
-                  ],
-                ),
+                slivers: [
+                  const SliverGap(30),
+                  SliverToBoxAdapter(child: HomeViewHeaderSection()),
+                  const SliverGap(35),
+                  SliverToBoxAdapter(child: PostWritingCard()),
+                  const SliverGap(20),
+                  SliverToBoxAdapter(child: StoriesListSection()),
+                  const SliverGap(4),
+                  PostsSection(),
+                  const SliverGap(25),
+                ],
               ),
             ),
           ),

@@ -20,30 +20,34 @@ class PostsSection extends StatelessWidget {
               current is PostsError,
       builder: (context, state) {
         if (state is PostsLoading) {
-          return SizedBox(
-            height: MediaQuery.sizeOf(context).height * 0.36,
-            child: const CustomLoadingIndicator(radius: 11),
+          return SliverToBoxAdapter(
+            child: SizedBox(
+              height: MediaQuery.sizeOf(context).height * 0.36,
+              child: const CustomLoadingIndicator(radius: 11),
+            ),
           );
         } else if (state is PostsLoaded) {
           final posts = state.posts;
           if (posts.isEmpty) {
-            return const Center(child: Text('No posts available.'));
+            return SliverToBoxAdapter(
+              child: const Center(child: Text('No posts available.')),
+            );
           }
-          return ListView.separated(
+          return SliverList.separated(
             itemCount: posts.length,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
+
             itemBuilder: (context, index) {
               final post = posts[index];
 
               return PostItemWidget(post: post);
             },
-            separatorBuilder: (BuildContext context, int index) => Gap(14),
+            separatorBuilder:
+                (BuildContext context, int index) => const Gap(14),
           );
         } else if (state is PostsError) {
-          return Center(child: Text(state.message));
+          return SliverToBoxAdapter(child: Center(child: Text(state.message)));
         }
-        return const SizedBox.shrink();
+        return SliverToBoxAdapter(child: const SizedBox.shrink());
       },
     );
   }
