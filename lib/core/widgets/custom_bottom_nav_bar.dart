@@ -42,8 +42,8 @@ class _CustomBottomNavBarState extends State<CustomBottomNavBar> {
         endDrawer: ProfileDrawer(navController: _controller),
         body: PersistentTabView(
           controller: _controller,
-          // resizeToAvoidBottomInset: false,
           gestureNavigationEnabled: true,
+
           tabs: [
             PersistentTabConfig(
               screen: HomeView(),
@@ -66,20 +66,19 @@ class _CustomBottomNavBarState extends State<CustomBottomNavBar> {
               ),
             ),
             PersistentTabConfig(
-              screen: ProfileView(),
+              screen: const Center(child: Text("New Content Section")),
               item: ItemConfig(
-                icon: NavBarIcon(icon: Icons.person_outline, isActive: true),
-                inactiveIcon: NavBarIcon(
-                  icon: Icons.person_outline,
+                icon: const NavBarIcon(icon: Icons.chat_bubble, isActive: true),
+                inactiveIcon: const NavBarIcon(
+                  icon: Icons.chat_bubble_outline,
                   isActive: false,
                 ),
               ),
             ),
-            PersistentTabConfig.noScreen(
-              // screen: SettingsView(),
-              onPressed: (value) {
-                _scaffoldKey.currentState!.openEndDrawer();
-              },
+
+            PersistentTabConfig(
+              screen: ProfileView(),
+
               item: ItemConfig(
                 icon: BlocBuilder<ProfileCubit, ProfileState>(
                   builder: (context, state) {
@@ -119,7 +118,16 @@ class _CustomBottomNavBarState extends State<CustomBottomNavBar> {
           ],
 
           navBarBuilder:
-              (navBarConfig) => Style9BottomNavBar(navBarConfig: navBarConfig),
+              (navBarConfig) => Style9BottomNavBar(
+                navBarConfig: navBarConfig.copyWith(
+                  onItemSelected: (index) {
+                    if (index == 3) {
+                      _scaffoldKey.currentState!.openEndDrawer();
+                    }
+                    navBarConfig.onItemSelected(index);
+                  },
+                ),
+              ),
         ),
       ),
     );
