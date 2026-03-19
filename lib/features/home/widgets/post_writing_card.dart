@@ -25,26 +25,29 @@ class PostWritingCard extends StatelessWidget {
       AppRoutes.createPostViewRoute,
       arguments: context.read<HomeCubit>(),
     );
-    return Stack(
-      children: [
-        Image.asset(AppImages.backgroundShape, width: 370),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.start,
-            children: [
-              Gap(4),
-              Row(
-                children: [
-                  MainUserAvatar(
-                    imageUrl: displayImage,
-                    size: 36,
-                    showBorder: true,
-                  ),
-                  Gap(12),
-                  InkWell(
-                    onTap: navigatorToPost,
-                    child: Text(
+    return InkWell(
+      onTap: navigatorToPost,
+      child: Stack(
+        children: [
+          Image.asset(AppImages.backgroundShape, width: 370),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                Gap(4),
+                Row(
+                  children: [
+                    Hero(
+                      tag: 'user-avatar-hero',
+                      child: MainUserAvatar(
+                        imageUrl: displayImage,
+                        size: 36,
+                        showBorder: true,
+                      ),
+                    ),
+                    Gap(12),
+                    Text(
                       'What\'s on your head?',
                       style: Theme.of(context).textTheme.titleMedium!.copyWith(
                         color: AppColors.black45,
@@ -52,53 +55,44 @@ class PostWritingCard extends StatelessWidget {
                         fontSize: 18,
                       ),
                     ),
-                  ),
-                ],
-              ),
-              Gap(38),
-              SizedBox(
-                width: 250,
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    border: Border.all(width: 1.8, color: AppColors.bgColor),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 6),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        InkWell(
-                          onTap: navigatorToPost,
-                          child: Image.asset(AppImages.imageIcon, width: 62),
-                        ),
-                        SizedBox(
-                          height: 16,
-                          child: VerticalDivider(color: AppColors.black26),
-                        ),
+                  ],
+                ),
+                Gap(38),
+                SizedBox(
+                  width: 250,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      border: Border.all(width: 1.8, color: AppColors.bgColor),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 6),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Image.asset(AppImages.imageIcon, width: 62),
+                          SizedBox(
+                            height: 16,
+                            child: VerticalDivider(color: AppColors.black26),
+                          ),
 
-                        InkWell(
-                          onTap: navigatorToPost,
-                          child: Image.asset(AppImages.videosIcon, width: 62),
-                        ),
-                        SizedBox(
-                          height: 16,
-                          child: VerticalDivider(color: AppColors.black26),
-                        ),
+                          Image.asset(AppImages.videosIcon, width: 62),
+                          SizedBox(
+                            height: 16,
+                            child: VerticalDivider(color: AppColors.black26),
+                          ),
 
-                        InkWell(
-                          onTap: navigatorToPost,
-                          child: Image.asset(AppImages.attachIcon, width: 62),
-                        ),
-                      ],
+                          Image.asset(AppImages.attachIcon, width: 62),
+                        ],
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

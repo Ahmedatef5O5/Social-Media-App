@@ -16,7 +16,14 @@ class CreatePostUserInfo extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.start,
       children: [
-        MainUserAvatar(imageUrl: userImageUrl, size: 36, showBorder: true),
+        Hero(
+          tag: 'user-avatar-hero',
+          child: MainUserAvatar(
+            imageUrl: userImageUrl,
+            size: 48,
+            showBorder: true,
+          ),
+        ),
 
         Gap(12),
         Text(
