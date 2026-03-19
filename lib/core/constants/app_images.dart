@@ -7,11 +7,19 @@ class AppImages {
   static const String onBoardingTwo = 'assets/images/onBoarding_two.png';
   static const String onBoardingThree = 'assets/images/onBoarding_three.png';
 
+  // Lottie animations
+  static const String handwrittenWelcomeLot =
+      'assets/lotties/HandwrittenWelcome.json';
+  static const String trailLoadingLot = 'assets/lotties/Trailloading.json';
+  static const String loadingDotsLot = 'assets/lotties/LoadingDotsBlue.json';
+  static const String error404Lot = 'assets/lotties/Error404.json';
+
   // default user img
   static const String defaultUserImg =
       'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQrG7jflKc55fiGvQPpKVJpVWIq3ycW6fk31A&s';
   static const String defaultBackgroundImg =
       'https://i0.wp.com/picjumbo.com/wp-content/uploads/green-natural-background-with-wooden-surface-free-image.jpeg?w=2210&quality=70';
+
   // home view
   static const String headerLogo = 'assets/images/header_logo.png';
   static const String searchIcon = 'assets/icons/MagnifyingGlass.png';
