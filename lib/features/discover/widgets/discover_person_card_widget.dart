@@ -16,13 +16,28 @@ class DiscoverPersonCardWidget extends StatelessWidget {
       elevation: 0.5,
       color: AppColors.white,
       child: ListTile(
-        leading: CircleAvatar(
-          // radius: 22,
-          backgroundImage: CachedNetworkImageProvider(
-            userData.imageUrl ?? AppImages.defaultUserImg,
-            errorListener: (_) => const CustomLoadingIndicator(),
+        leading: Container(
+          height: 44,
+          width: 44,
+          decoration: BoxDecoration(
+            color: AppColors.bgColor2,
+            shape: BoxShape.circle,
+          ),
+          child: ClipOval(
+            child: CachedNetworkImage(
+              imageUrl:
+                  (userData.imageUrl != null && userData.imageUrl!.isNotEmpty)
+                      ? userData.imageUrl!
+                      : AppImages.defaultUserImg,
+              fit: BoxFit.cover,
+              placeholder: (context, url) => const CustomLoadingIndicator(),
+              errorWidget: (context, url, error) => const Icon(Icons.person),
+              maxWidthDiskCache: 200,
+              maxHeightDiskCache: 200,
+            ),
           ),
         ),
+
         title: Text(
           userData.name,
           style: Theme.of(context).textTheme.labelLarge!.copyWith(
@@ -31,7 +46,9 @@ class DiscoverPersonCardWidget extends StatelessWidget {
           ),
         ),
         subtitle: Text(
-          userData.userName ?? '1K Followers',
+          (userData.userName != null && userData.userName!.isNotEmpty)
+              ? userData.userName!
+              : '1K Followers',
           style: Theme.of(context).textTheme.labelMedium!.copyWith(
             fontWeight: FontWeight.w400,
             fontSize: 14,

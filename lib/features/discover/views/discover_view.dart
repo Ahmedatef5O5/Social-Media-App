@@ -24,7 +24,7 @@ class DiscoverView extends StatelessWidget {
           children: [
             const Gap(20),
             DiscoverPeopleHeaderSection(),
-            Gap(16),
+            const Gap(8),
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 12.0),
@@ -35,9 +35,10 @@ class DiscoverView extends StatelessWidget {
                     }
                     if (state is DiscoverPeopleSuccess) {
                       return ListView.separated(
+                        padding: EdgeInsets.only(top: 14),
                         itemCount: state.users.length,
                         separatorBuilder:
-                            (BuildContext context, int index) => const Gap(15),
+                            (BuildContext context, int index) => const Gap(16),
 
                         itemBuilder: (BuildContext context, int index) {
                           return DiscoverPersonCardWidget(

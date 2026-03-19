@@ -1,9 +1,9 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
-import 'package:intl/intl.dart';
 import 'package:social_media_app/core/constants/app_images.dart';
 import 'package:social_media_app/features/home/models/comment_model.dart';
+import '../../../core/helpers/formatted_date.dart';
 import '../../../core/themes/app_colors.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
 
@@ -92,11 +92,13 @@ class CommentWidget extends StatelessWidget {
         Align(
           alignment: Alignment.centerRight * 0.75,
           child: Text(
-            DateFormat('h:mm a').format(DateTime.parse(comment.createdAt)),
+            FormattedDate.getFormattedDate((comment.createdAt), isShort: true),
+
+            // DateFormat('h:mm a').format(DateTime.parse(comment.createdAt)),
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.w400,
-              color: AppColors.grey6,
-              fontSize: 10,
+              color: AppColors.grey8,
+              fontSize: 11,
             ),
           ),
         ),
