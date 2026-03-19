@@ -28,7 +28,6 @@ class ProfileHeader extends StatelessWidget {
           avatarUrl: user.imageUrl ?? AppImages.defaultUserImg,
           isProfileHeader: true,
         ),
-
         Gap(16),
         Text(
           user.name,

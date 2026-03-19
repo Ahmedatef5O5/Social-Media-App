@@ -8,8 +8,8 @@ part 'profile_state.dart';
 class ProfileCubit extends Cubit<ProfileState> {
   ProfileCubit() : super(ProfileInitial());
   final homeServices = HomeServices();
-  Future<void> getProfileData(String userId) async {
-    emit(ProfileLoading());
+  Future<void> getProfileData(String userId, {bool isRefresh = false}) async {
+    if (!isRefresh) emit(ProfileLoading());
     try {
       final user = await homeServices.fetchCurrentUser(userId);
       final allPosts = await homeServices.fetchPosts();

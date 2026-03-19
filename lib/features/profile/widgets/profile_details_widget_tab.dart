@@ -10,6 +10,8 @@ class ProfileDetailsWidgetTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView(
+      primary: false,
+      physics: const NeverScrollableScrollPhysics(),
       padding: const EdgeInsets.all(20),
       children: [
         _buildInfoRow(CupertinoIcons.mail, 'Email', user.email),
