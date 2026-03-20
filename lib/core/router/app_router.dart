@@ -5,6 +5,8 @@ import 'package:social_media_app/core/views/loading_screen.dart';
 import 'package:social_media_app/core/views/no_route_screen.dart';
 import 'package:social_media_app/core/widgets/custom_bottom_nav_bar.dart';
 import 'package:social_media_app/features/auth/views/auth_view.dart';
+import 'package:social_media_app/features/chats/models/chat_user_model.dart';
+import 'package:social_media_app/features/chats/views/chat_details_view.dart';
 import 'package:social_media_app/features/chats/views/chats_view.dart';
 import 'package:social_media_app/features/discover/cubit/discover_people_cubit.dart';
 import 'package:social_media_app/features/discover/services/discover_people_services.dart';
@@ -20,6 +22,7 @@ import 'package:social_media_app/features/settings/views/settings_view.dart';
 import 'package:social_media_app/features/splash/views/on_boarding_view.dart';
 import 'package:social_media_app/features/splash/views/splash_view.dart';
 import '../../features/auth/data/models/user_data.dart';
+import '../../features/chats/cubit/chats_cubit.dart';
 import '../../features/home/views/creat_text_story_view.dart';
 
 class AppRouter {
@@ -59,6 +62,7 @@ class AppRouter {
                         DiscoverPeopleCubit(DiscoverPeopleServices())
                           ..getDiscoverPeople(),
               ),
+              BlocProvider(create: (context) => ChatsCubit()..getChats()),
             ],
             child: const CustomBottomNavBar(),
           ),
@@ -66,6 +70,13 @@ class AppRouter {
         );
       case AppRoutes.chatsViewRoute:
         return _buildRoute(const ChatsView(), settings: settings);
+
+      case AppRoutes.chatDetailsViewRoute:
+        final user = settings.arguments as ChatUserModel;
+        return _buildRoute(
+          ChatDetailsView(receiverUser: user),
+          settings: settings,
+        );
 
       case AppRoutes.storyDisplayViewRoute:
         final story = settings.arguments as StoryModel;

@@ -4,6 +4,7 @@ class AppRoutes {
   static const String authRoute = '/auth-view';
   static const String homeRoute = '/home-view';
   static const String chatsViewRoute = '/chats-view';
+  static const String chatDetailsViewRoute = '/chatDetailsView';
   static const String createTextStoryViewRoute = '/create-text-story-view';
   static const String storyDisplayViewRoute = '/story-display-view';
   static const String createPostViewRoute = '/home-create-post-view';
