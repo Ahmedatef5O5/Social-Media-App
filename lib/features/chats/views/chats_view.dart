@@ -8,7 +8,7 @@ import 'package:social_media_app/core/themes/app_colors.dart';
 import 'package:social_media_app/core/themes/background_theme_widget.dart';
 import 'package:social_media_app/core/widgets/custom_loading_indicator.dart';
 import 'package:social_media_app/core/widgets/custom_pull_to_refresh.dart';
-import 'package:social_media_app/features/chats/cubit/chats_cubit.dart';
+import 'package:social_media_app/features/chats/cubit/chats_cubit/chats_cubit.dart';
 import '../widgets/chats_header_section.dart';
 
 class ChatsView extends StatelessWidget {
@@ -102,15 +102,23 @@ class ChatsView extends StatelessWidget {
                                   height: 1.8,
                                 ),
                               ),
-                              onTap: () {
-                                Navigator.of(
-                                  context,
-                                  rootNavigator: true,
-                                ).pushNamed(
-                                  AppRoutes.chatDetailsViewRoute,
-                                  arguments: user,
-                                );
-                              },
+                              trailing: Image.asset(
+                                AppImages.sendIcon,
+                                width: 20,
+                                height: 20,
+                                color: AppColors.primaryColor.withValues(
+                                  alpha: 0.75,
+                                ),
+                              ),
+
+                              onTap:
+                                  () => Navigator.of(
+                                    context,
+                                    rootNavigator: true,
+                                  ).pushNamed(
+                                    AppRoutes.chatDetailsViewRoute,
+                                    arguments: user,
+                                  ),
                             );
                           },
                           separatorBuilder:
