@@ -11,8 +11,8 @@ class ChatsCubit extends Cubit<ChatsState> {
   final _dbServices = SupabaseDatabaseServices.instance;
   final _currentUserId = Supabase.instance.client.auth.currentUser!.id;
 
-  Future<void> getChats() async {
-    emit(ChatsLoading());
+  Future<void> getChats({bool isRefresh = false}) async {
+    if (!isRefresh) emit(ChatsLoading());
     try {
       final List<ChatUserModel> users = await _dbServices.fetchRows(
         table: AppTablesNames.users,
