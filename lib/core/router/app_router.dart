@@ -5,6 +5,7 @@ import 'package:social_media_app/core/views/loading_screen.dart';
 import 'package:social_media_app/core/views/no_route_screen.dart';
 import 'package:social_media_app/core/widgets/custom_bottom_nav_bar.dart';
 import 'package:social_media_app/features/auth/views/auth_view.dart';
+import 'package:social_media_app/features/chats/views/chats_view.dart';
 import 'package:social_media_app/features/discover/cubit/discover_people_cubit.dart';
 import 'package:social_media_app/features/discover/services/discover_people_services.dart';
 import 'package:social_media_app/features/home/cubit/home_cubit.dart';
@@ -63,6 +64,8 @@ class AppRouter {
           ),
           settings: settings,
         );
+      case AppRoutes.chatsViewRoute:
+        return _buildRoute(const ChatsView(), settings: settings);
 
       case AppRoutes.storyDisplayViewRoute:
         final story = settings.arguments as StoryModel;

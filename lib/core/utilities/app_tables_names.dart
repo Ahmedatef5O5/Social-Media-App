@@ -4,6 +4,7 @@ abstract class AppTablesNames {
   static const String posts = 'posts';
   static const String likes = 'post_likes';
   static const String comments = 'comments';
+  static const String messages = 'messages';
 }
 
 // subClass for users column table
@@ -57,4 +58,14 @@ abstract class CommentColumns {
   static const String videoUrl = 'video_url';
   static const String likes = 'likes';
   static const String replays = 'replays';
+}
+
+// subClass for Messages column table
+abstract class MessagesColumns {
+  static const String id = 'id';
+  static const String messageText = 'message_text';
+  static const String senderId = 'sender_id';
+  static const String receiverId = 'receiver_id';
+  static const String createdAt = 'created_at';
+  static const String isRead = 'is_read';
 }
