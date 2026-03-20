@@ -8,6 +8,8 @@ class AppImages {
   static const String onBoardingThree = 'assets/images/onBoarding_three.png';
 
   // Lottie animations
+  static const String smileFaceLot = 'assets/lotties/smile.json';
+  static const String blueSmileFaceLot = 'assets/lotties/blueSmile.json';
   static const String handwrittenWelcomeLot =
       'assets/lotties/HandwrittenWelcome.json';
   static const String trailLoadingLot = 'assets/lotties/Trailloading.json';
