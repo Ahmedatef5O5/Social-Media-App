@@ -7,6 +7,7 @@ import 'package:social_media_app/core/themes/app_colors.dart';
 import 'package:social_media_app/core/themes/background_theme_widget.dart';
 import 'package:social_media_app/core/widgets/custom_loading_indicator.dart';
 import 'package:social_media_app/features/chats/cubit/chats_cubit.dart';
+import '../widgets/chats_header_section.dart';
 
 class ChatsView extends StatelessWidget {
   const ChatsView({super.key});
@@ -20,14 +21,7 @@ class ChatsView extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 20.0),
             child: Column(
               children: [
-                CustomHeader(
-                  title: 'Chats',
-                  actions: const Icon(
-                    Icons.more_vert_outlined,
-                    color: AppColors.black54,
-                    size: 26,
-                  ),
-                ),
+                ChatsHeaderSection(),
                 const Gap(20),
                 Expanded(
                   child: BlocBuilder<ChatsCubit, ChatsState>(
@@ -103,30 +97,6 @@ class ChatsView extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
-}
-
-class CustomHeader extends StatelessWidget {
-  final String title;
-  final Widget actions;
-  const CustomHeader({super.key, required this.title, required this.actions});
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Text(
-          title,
-          style: Theme.of(context).textTheme.titleLarge!.copyWith(
-            fontWeight: FontWeight.w400,
-            fontSize: 22,
-            color: AppColors.black54,
-          ),
-        ),
-        const Spacer(),
-        actions,
-      ],
     );
   }
 }
