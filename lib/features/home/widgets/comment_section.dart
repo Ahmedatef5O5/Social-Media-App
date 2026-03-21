@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:social_media_app/core/themes/app_colors.dart';
 import 'package:social_media_app/features/home/models/post_model.dart';
 import 'package:social_media_app/features/home/widgets/comment_widget.dart';
+import '../../../core/constants/app_images.dart';
+import '../../chats/widgets/empty_placeholder_state.dart';
 
 class CommentsSection extends StatelessWidget {
   const CommentsSection({super.key, required this.post});
@@ -10,11 +13,10 @@ class CommentsSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (post.comments == null || post.comments!.isEmpty) {
-      return const Center(
-        child: Padding(
-          padding: EdgeInsets.all(20.0),
-          child: Text("No comments yet. Be the first to comment!"),
-        ),
+      return EmptyPlaceholderState(
+        img: AppImages.smileFaceLot,
+        title: 'No comments yet.',
+        color: AppColors.grey7,
       );
     }
     return ListView.separated(

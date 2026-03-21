@@ -15,6 +15,7 @@ class AppImages {
   static const String trailLoadingLot = 'assets/lotties/Trailloading.json';
   static const String loadingDotsLot = 'assets/lotties/LoadingDotsBlue.json';
   static const String error404Lot = 'assets/lotties/Error404.json';
+  static const String exitAnimationLot = 'assets/lotties/exitAnimation.json';
 
   // default user img
   static const String defaultUserImg =
