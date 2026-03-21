@@ -4,12 +4,16 @@ import 'package:gap/gap.dart';
 import 'package:social_media_app/core/themes/app_colors.dart';
 
 class FullScreenImageViewer extends StatelessWidget {
-  final String imageUrl;
-
-  const FullScreenImageViewer({super.key, required this.imageUrl});
+  const FullScreenImageViewer({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final args =
+        ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
+
+    final String imageUrl = args['url'];
+    final String heroTag = args['tag'];
+
     return Scaffold(
       backgroundColor: AppColors.black.withValues(alpha: 1),
       body: SafeArea(
@@ -45,7 +49,7 @@ class FullScreenImageViewer extends StatelessWidget {
                 child: InteractiveViewer(
                   clipBehavior: Clip.none,
                   child: Hero(
-                    tag: imageUrl,
+                    tag: heroTag,
                     child: CachedNetworkImage(
                       imageUrl: imageUrl,
                       fit: BoxFit.contain,

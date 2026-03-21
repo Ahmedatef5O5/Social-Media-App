@@ -118,9 +118,8 @@ class AppRouter {
         return _buildRoute(const PostThemesView(), settings: settings);
 
       case AppRoutes.fullScreenImageViewRoute:
-        final imageUrl = settings.arguments as String;
         return _buildRoute(
-          FullScreenImageViewer(imageUrl: imageUrl),
+          FullScreenImageViewer(),
           typeOfRoute: TypeOfRoute.fade,
           settings: settings,
         );
