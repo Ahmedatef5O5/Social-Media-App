@@ -1,4 +1,4 @@
-import 'package:social_media_app/core/utilities/app_tables_names.dart';
+import 'package:social_media_app/core/utilities/supabase_constants.dart';
 
 class MessageModel {
   final String id;

@@ -1,4 +1,4 @@
-import 'package:social_media_app/core/utilities/app_tables_names.dart';
+import 'package:social_media_app/core/utilities/supabase_constants.dart';
 
 class CommentModel {
   final String id;
@@ -41,7 +41,7 @@ class CommentModel {
   }
 
   factory CommentModel.fromMap(Map<String, dynamic> map) {
-    final userData = map[AppTablesNames.users] as Map<String, dynamic>?;
+    final userData = map[SupabaseConstants.users] as Map<String, dynamic>?;
 
     return CommentModel(
       id: map['id'] as String,

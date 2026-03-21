@@ -41,9 +41,7 @@ class StoryItemWidget extends StatelessWidget {
       onTap: () {
         if (story == null) {
           _showAddStoryOptions(context);
-          // Navigate to share story page
         } else {
-          // Navigate to view story page
           Navigator.of(
             context,
             rootNavigator: true,
@@ -56,18 +54,22 @@ class StoryItemWidget extends StatelessWidget {
           Container(
             height: 50,
             width: 50,
-            // margin: const EdgeInsets.only(right: 10),
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: AppColors.bgColor2,
-              border: Border.all(color: AppColors.bgColor2, width: 2),
+              border:
+                  story == null
+                      ? null
+                      : Border.all(
+                        color: AppColors.primaryColor.withValues(alpha: 0.5),
+                        width: 2,
+                      ),
             ),
             child: CircleAvatar(
               radius: 8,
-
               backgroundColor:
                   story == null
-                      ? AppColors.bgColor2
+                      ? AppColors.primaryColor.withValues(alpha: 0.2)
                       : (story!.imageUrl == null &&
                           story!.backgroundColor != null)
                       ? Color(int.parse(story!.backgroundColor!, radix: 16))

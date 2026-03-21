@@ -1,4 +1,4 @@
-import 'package:social_media_app/core/utilities/app_tables_names.dart';
+import 'package:social_media_app/core/utilities/supabase_constants.dart';
 import 'comment_model.dart';
 
 class PostModel {
@@ -54,12 +54,12 @@ class PostModel {
   }
 
   factory PostModel.fromMap(Map<String, dynamic> map) {
-    final userData = map[AppTablesNames.users] as Map<String, dynamic>?;
-    final commentsData = map[AppTablesNames.comments] as List<dynamic>?;
+    final userData = map[SupabaseConstants.users] as Map<String, dynamic>?;
+    final commentsData = map[SupabaseConstants.comments] as List<dynamic>?;
     List<String> likesList = [];
     List<String> imagesList = [];
-    if (map[AppTablesNames.likes] != null) {
-      final likesData = map[AppTablesNames.likes] as List<dynamic>;
+    if (map[SupabaseConstants.likes] != null) {
+      final likesData = map[SupabaseConstants.likes] as List<dynamic>;
       for (var item in likesData) {
         likesList.add(item['user_id'].toString());
         if (item['users'] != null && item['users']['image_url'] != null) {

@@ -1,10 +1,13 @@
-abstract class AppTablesNames {
+abstract class SupabaseConstants {
   static const String users = 'users';
   static const String stories = 'stories';
   static const String posts = 'posts';
   static const String likes = 'post_likes';
   static const String comments = 'comments';
   static const String messages = 'messages';
+
+  //  RPC (Functions)
+  static const String getChatsWithLastMessage = 'get_chats_with_last_message';
 }
 
 // subClass for users column table

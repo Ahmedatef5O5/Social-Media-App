@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:social_media_app/core/services/supabase_database_services.dart';
-import 'package:social_media_app/core/utilities/app_tables_names.dart';
+import 'package:social_media_app/core/utilities/supabase_constants.dart';
 import 'package:social_media_app/features/auth/data/models/user_data.dart';
 import 'package:social_media_app/features/home/models/post_model.dart';
 import 'package:social_media_app/features/home/models/post_request_body.dart';
@@ -16,21 +16,21 @@ class HomeServices {
     final fileName =
         '${DateTime.now().millisecondsSinceEpoch}_${file.path.split('/').last}';
     final path = '$userId/$fileName';
-    await _supabase.storage.from(AppTablesNames.stories).upload(path, file);
-    return _supabase.storage.from(AppTablesNames.stories).getPublicUrl(path);
+    await _supabase.storage.from(SupabaseConstants.stories).upload(path, file);
+    return _supabase.storage.from(SupabaseConstants.stories).getPublicUrl(path);
   }
 
   Future<void> createStory(StoryModel story) async {
-    await _supabase.from(AppTablesNames.stories).insert(story.toMap());
+    await _supabase.from(SupabaseConstants.stories).insert(story.toMap());
   }
 
   Future<List<StoryModel>> fetchStories() async {
     try {
       return await supabaseServices.fetchRows(
-        table: AppTablesNames.stories,
+        table: SupabaseConstants.stories,
         filter:
             (query) => query
-                .select('''*,${AppTablesNames.users}(${UserColumns.name}, 
+                .select('''*,${SupabaseConstants.users}(${UserColumns.name}, 
         ${UserColumns.imageUrl})}
         )''')
                 .order(StoryColumns.createdAt, ascending: false),
@@ -45,25 +45,25 @@ class HomeServices {
   Future<List<PostModel>> fetchPosts() async {
     try {
       return await supabaseServices.fetchRows(
-        table: AppTablesNames.posts,
+        table: SupabaseConstants.posts,
         filter:
             (query) => query
                 .select(''' 
         *,
-         ${AppTablesNames.users}
+         ${SupabaseConstants.users}
         (${UserColumns.name}, 
         ${UserColumns.imageUrl}
         ),
-        ${AppTablesNames.comments}(
+        ${SupabaseConstants.comments}(
           *,
-          ${AppTablesNames.users}(
+          ${SupabaseConstants.users}(
              ${UserColumns.name}, 
              ${UserColumns.imageUrl}
           )
         ),
-          ${AppTablesNames.likes}(
+          ${SupabaseConstants.likes}(
             ${LikeColumns.userId},
-            ${AppTablesNames.users} (
+            ${SupabaseConstants.users} (
               ${UserColumns.imageUrl}
             )
         )  
@@ -81,7 +81,7 @@ class HomeServices {
   Future<void> addPost(PostRequestBody post) async {
     try {
       await supabaseServices.insertRow(
-        table: AppTablesNames.posts,
+        table: SupabaseConstants.posts,
         values: post.toMap(),
       );
     } catch (e) {
@@ -93,7 +93,7 @@ class HomeServices {
     try {
       final data =
           await Supabase.instance.client
-              .from(AppTablesNames.users)
+              .from(SupabaseConstants.users)
               .select()
               .eq(UserColumns.id, userId)
               .maybeSingle();
@@ -135,12 +135,12 @@ class HomeServices {
   }) async {
     try {
       if (isLiked) {
-        await _supabase.from(AppTablesNames.likes).delete().match({
+        await _supabase.from(SupabaseConstants.likes).delete().match({
           LikeColumns.postId: postId,
           LikeColumns.userId: userId,
         });
       } else {
-        await _supabase.from(AppTablesNames.likes).insert({
+        await _supabase.from(SupabaseConstants.likes).insert({
           LikeColumns.postId: postId,
           LikeColumns.userId: userId,
         });
@@ -158,7 +158,7 @@ class HomeServices {
   }) async {
     try {
       await supabaseServices.insertRow(
-        table: AppTablesNames.comments,
+        table: SupabaseConstants.comments,
         values: {
           CommentColumns.postId: postId,
           CommentColumns.authorId: authorId,

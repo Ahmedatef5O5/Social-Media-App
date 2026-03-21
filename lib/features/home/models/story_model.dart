@@ -1,4 +1,4 @@
-import 'package:social_media_app/core/utilities/app_tables_names.dart';
+import 'package:social_media_app/core/utilities/supabase_constants.dart';
 
 class StoryModel {
   final String id;
@@ -33,7 +33,7 @@ class StoryModel {
   }
 
   factory StoryModel.fromMap(Map<String, dynamic> map) {
-    final userData = map[AppTablesNames.users] as Map<String, dynamic>?;
+    final userData = map[SupabaseConstants.users] as Map<String, dynamic>?;
     return StoryModel(
       id: map[StoryColumns.id] as String,
       imageUrl: map[StoryColumns.imageUrl] as String?,

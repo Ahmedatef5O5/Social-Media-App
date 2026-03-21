@@ -28,8 +28,8 @@ class ReceiverDetailsHeaderSection extends StatelessWidget {
                   child: Container(
                     height: 42,
                     width: 42,
-                    decoration: const BoxDecoration(
-                      color: AppColors.bgColor2,
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryColor.withValues(alpha: 0.2),
                       shape: BoxShape.circle,
                     ),
                     child: ClipOval(

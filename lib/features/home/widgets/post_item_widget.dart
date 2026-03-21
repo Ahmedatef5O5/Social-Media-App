@@ -61,7 +61,7 @@ class PostItemWidget extends StatelessWidget {
                     height: 44,
                     width: 44,
                     decoration: BoxDecoration(
-                      color: AppColors.bgColor2,
+                      color: AppColors.primaryColor.withValues(alpha: 0.2),
                       shape: BoxShape.circle,
                     ),
                     child: ClipOval(

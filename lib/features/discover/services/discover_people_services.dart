@@ -1,5 +1,5 @@
 import 'package:flutter/cupertino.dart';
-import 'package:social_media_app/core/utilities/app_tables_names.dart';
+import 'package:social_media_app/core/utilities/supabase_constants.dart';
 import 'package:social_media_app/features/auth/data/models/user_data.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -10,7 +10,7 @@ class DiscoverPeopleServices {
     final currUserId = _supabase.auth.currentUser!.id;
     try {
       final List<dynamic> data = await _supabase
-          .from(AppTablesNames.users)
+          .from(SupabaseConstants.users)
           .select()
           .neq(UserColumns.id, currUserId);
       return data

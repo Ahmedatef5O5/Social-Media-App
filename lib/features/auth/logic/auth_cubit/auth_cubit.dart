@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:social_media_app/features/auth/services/supabase_auth_services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../../../core/utilities/app_tables_names.dart';
+import '../../../../core/utilities/supabase_constants.dart';
 part 'auth_state.dart';
 
 class AuthCubit extends Cubit<AuthState> {
@@ -36,7 +36,7 @@ class AuthCubit extends Cubit<AuthState> {
   Future<void> _ensureUserExistsInDb(User user) async {
     final existingUser =
         await Supabase.instance.client
-            .from(AppTablesNames.users)
+            .from(SupabaseConstants.users)
             .select()
             .eq(UserColumns.id, user.id)
             .maybeSingle();
