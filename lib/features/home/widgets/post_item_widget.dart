@@ -5,6 +5,7 @@ import 'package:gap/gap.dart';
 import 'package:like_button/like_button.dart';
 import 'package:social_media_app/core/constants/app_images.dart';
 import 'package:social_media_app/core/helpers/formatted_date.dart';
+import 'package:social_media_app/core/router/app_routes.dart';
 import 'package:social_media_app/core/themes/app_colors.dart';
 import 'package:social_media_app/core/widgets/custom_loading_indicator.dart';
 import 'package:social_media_app/features/home/widgets/comments_sheet_section.dart';
@@ -117,37 +118,50 @@ class PostItemWidget extends StatelessWidget {
                 ),
                 const Gap(8),
                 if (post.imageUrl != null && post.imageUrl!.isNotEmpty)
-                  Center(
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(14),
-                      child:
-                          post.imageUrl != null
-                              ? CachedNetworkImage(
-                                imageUrl: post.imageUrl!,
-                                width: double.infinity,
+                  GestureDetector(
+                    onTap:
+                        () => Navigator.of(
+                          context,
+                          rootNavigator: true,
+                        ).pushNamed(
+                          AppRoutes.fullScreenImageViewRoute,
+                          arguments: post.imageUrl,
+                        ),
+                    child: Hero(
+                      tag: post.imageUrl!,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(14),
+                        child:
+                            post.imageUrl != null
+                                ? CachedNetworkImage(
+                                  imageUrl: post.imageUrl!,
+                                  width: double.infinity,
 
-                                fit: BoxFit.cover,
-                                placeholder:
-                                    (context, url) => Container(
-                                      height:
-                                          MediaQuery.sizeOf(context).height *
-                                          0.3,
-                                      decoration: BoxDecoration(
-                                        color: AppColors.grey7.withValues(
-                                          alpha: 0.2,
+                                  fit: BoxFit.cover,
+                                  placeholder:
+                                      (context, url) => Container(
+                                        height:
+                                            MediaQuery.sizeOf(context).height *
+                                            0.3,
+                                        decoration: BoxDecoration(
+                                          color: AppColors.grey7.withValues(
+                                            alpha: 0.2,
+                                          ),
+                                          borderRadius: BorderRadius.circular(
+                                            15,
+                                          ),
                                         ),
-                                        borderRadius: BorderRadius.circular(15),
+                                        child: const CustomLoadingIndicator(),
                                       ),
-                                      child: const CustomLoadingIndicator(),
-                                    ),
-                                errorWidget:
-                                    (context, url, error) =>
-                                        const Icon(Icons.error),
-                                filterQuality: FilterQuality.high,
+                                  errorWidget:
+                                      (context, url, error) =>
+                                          const Icon(Icons.error),
+                                  filterQuality: FilterQuality.high,
 
-                                memCacheWidth: 800,
-                              )
-                              : null,
+                                  memCacheWidth: 800,
+                                )
+                                : null,
+                      ),
                     ),
                   ),
                 if (post.videoUrl != null && post.videoUrl!.isNotEmpty)
