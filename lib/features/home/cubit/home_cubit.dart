@@ -197,6 +197,20 @@ class HomeCubit extends Cubit<HomeState> {
     }
   }
 
+  Future<void> deletePost(String postId) async {
+    try {
+      await homeServices.deletePost(postId);
+      if (state is PostsLoaded) {
+        final updatePosts =
+            (state as PostsLoaded).posts.where((p) => p.id != postId).toList();
+        emit(PostsLoaded(updatePosts, DateTime.now()));
+      }
+    } catch (e) {
+      debugPrint('Error deleting post: $e');
+      emit(PostsError(e.toString()));
+    }
+  }
+
   void _resetMedia() {
     selectedImage = null;
     selectedVideo = null;

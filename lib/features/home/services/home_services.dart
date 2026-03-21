@@ -89,6 +89,17 @@ class HomeServices {
     }
   }
 
+  Future<void> deletePost(String postId) async {
+    try {
+      await _supabase
+          .from(SupabaseConstants.posts)
+          .delete()
+          .eq(PostColumns.id, postId);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   Future<UserData> fetchCurrentUser(String userId) async {
     try {
       final data =
