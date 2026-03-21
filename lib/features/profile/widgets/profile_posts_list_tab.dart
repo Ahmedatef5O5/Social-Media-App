@@ -1,6 +1,5 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:gap/gap.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
 import '../../home/cubit/home_cubit.dart';
 import '../../home/widgets/post_item_widget.dart';
@@ -34,16 +33,22 @@ class _ProfilePostsListTabState extends State<ProfilePostsListTab> {
           if (userPosts.isEmpty) {
             return const Center(child: Text('No posts yet'));
           }
-
-          return ListView.separated(
+          return CustomScrollView(
             primary: false,
-            physics: const NeverScrollableScrollPhysics(),
-            padding: const EdgeInsets.all(16),
-            shrinkWrap: true,
-            itemCount: userPosts.length,
-            itemBuilder:
-                (context, index) => PostItemWidget(post: userPosts[index]),
-            separatorBuilder: (BuildContext context, int index) => Gap(20),
+            slivers: [
+              SliverPadding(
+                padding: const EdgeInsets.all(16),
+                sliver: SliverList(
+                  delegate: SliverChildBuilderDelegate((context, index) {
+                    final post = userPosts[index];
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 20),
+                      child: PostItemWidget(post: post),
+                    );
+                  }, childCount: userPosts.length),
+                ),
+              ),
+            ],
           );
         }
         return const CustomLoadingIndicator();
