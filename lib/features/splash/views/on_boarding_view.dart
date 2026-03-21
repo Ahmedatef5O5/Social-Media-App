@@ -22,7 +22,11 @@ class _OnBoardingViewState extends State<OnBoardingView> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('onboarding_seen', true);
     if (mounted) {
-      Navigator.pushReplacementNamed(context, AppRoutes.authRoute);
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        AppRoutes.authRoute,
+        (route) => false,
+      );
     }
   }
 

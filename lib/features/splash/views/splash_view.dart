@@ -32,7 +32,7 @@ class _SplashViewState extends State<SplashView>
       } else if (hasSeenOnboarding) {
         route = AppRoutes.authRoute;
       }
-      Navigator.pushReplacementNamed(context, route);
+      Navigator.pushNamedAndRemoveUntil(context, route, (route) => false);
     }
   }
 
