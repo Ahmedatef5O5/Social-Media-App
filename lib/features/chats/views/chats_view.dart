@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 import 'package:social_media_app/core/constants/app_images.dart';
+import 'package:social_media_app/core/helpers/formatted_date.dart';
 import 'package:social_media_app/core/router/app_routes.dart';
 import 'package:social_media_app/core/themes/app_colors.dart';
 import 'package:social_media_app/core/themes/background_theme_widget.dart';
@@ -55,7 +56,9 @@ class ChatsView extends StatelessWidget {
                                   height: 52,
                                   width: 52,
                                   decoration: BoxDecoration(
-                                    color: AppColors.bgColor2,
+                                    color: AppColors.primaryColor.withValues(
+                                      alpha: 0.2,
+                                    ),
                                     shape: BoxShape.circle,
                                   ),
                                   child: ClipOval(
@@ -96,19 +99,44 @@ class ChatsView extends StatelessWidget {
                                 style: Theme.of(
                                   context,
                                 ).textTheme.labelSmall!.copyWith(
-                                  fontWeight: FontWeight.w400,
+                                  fontWeight:
+                                      user.lastMessage == null
+                                          ? FontWeight.w300
+                                          : FontWeight.w400,
+
+                                  color:
+                                      user.lastMessage == null
+                                          ? AppColors.grey6.withValues(
+                                            alpha: 0.95,
+                                          )
+                                          : AppColors.grey6,
                                   fontSize: 14,
-                                  color: AppColors.grey6,
                                   height: 1.8,
                                 ),
                               ),
-                              trailing: Image.asset(
-                                AppImages.sendIcon,
-                                width: 20,
-                                height: 20,
-                                color: AppColors.primaryColor.withValues(
-                                  alpha: 0.75,
-                                ),
+                              trailing: Column(
+                                children: [
+                                  Image.asset(
+                                    AppImages.sendIcon,
+                                    width: 20,
+                                    height: 20,
+                                    color: AppColors.primaryColor.withValues(
+                                      alpha: 0.75,
+                                    ),
+                                  ),
+                                  if (user.lastMessageTime != null) ...[
+                                    const Gap(10),
+                                    Text(
+                                      FormattedDate.getChatTime(
+                                        user.lastMessageTime!,
+                                      ),
+                                      style: const TextStyle(
+                                        color: Colors.grey,
+                                        fontSize: 11,
+                                      ),
+                                    ),
+                                  ],
+                                ],
                               ),
 
                               onTap:

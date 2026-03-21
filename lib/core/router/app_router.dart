@@ -64,7 +64,9 @@ class AppRouter {
                         DiscoverPeopleCubit(DiscoverPeopleServices())
                           ..getDiscoverPeople(),
               ),
-              BlocProvider(create: (context) => ChatsCubit()..getChats()),
+              BlocProvider(
+                create: (context) => ChatsCubit(ChatServices())..monitorChats(),
+              ),
             ],
             child: const CustomBottomNavBar(),
           ),

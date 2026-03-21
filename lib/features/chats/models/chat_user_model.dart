@@ -1,4 +1,4 @@
-import 'package:social_media_app/core/utilities/app_tables_names.dart';
+import 'package:social_media_app/core/utilities/supabase_constants.dart';
 
 class ChatUserModel {
   final String id;
@@ -18,12 +18,12 @@ class ChatUserModel {
   factory ChatUserModel.fromUserData(Map<String, dynamic> map) {
     return ChatUserModel(
       id: (map[MessagesColumns.id] ?? '').toString(),
-      name: (map[UserColumns.name] ?? 'Unknown User').toString(),
+      name: (map[UserColumns.name] ?? 'Unknown').toString(),
       imageUrl: map[UserColumns.imageUrl] as String?,
-      lastMessage: map[MessagesColumns.messageText] as String?,
+      lastMessage: map['last_message'] as String?, // from SQL
       lastMessageTime:
-          map[MessagesColumns.createdAt] != null
-              ? DateTime.parse(map[MessagesColumns.createdAt].toString())
+          map['last_message_time'] != null
+              ? DateTime.parse(map['last_message_time'].toString()) // from SQL
               : null,
     );
   }

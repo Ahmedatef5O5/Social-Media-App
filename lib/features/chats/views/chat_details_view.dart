@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:gap/gap.dart';
+import 'package:social_media_app/core/helpers/formatted_date.dart';
 import 'package:social_media_app/core/themes/background_theme_widget.dart';
 import 'package:social_media_app/core/widgets/custom_loading_indicator.dart';
 import 'package:social_media_app/features/chats/cubit/chat_details_cubit/chat_details_cubit.dart';
@@ -62,10 +64,10 @@ class _ChatDetailsViewState extends State<ChatDetailsView> {
                           title: 'No messages yet.',
                         );
                       }
-                      return ListView.builder(
+                      return ListView.separated(
                         padding: EdgeInsets.symmetric(
                           horizontal: 20,
-                          vertical: 10,
+                          vertical: 8,
                         ),
                         reverse: true,
                         itemCount: messages.length,
@@ -74,7 +76,50 @@ class _ChatDetailsViewState extends State<ChatDetailsView> {
                           final bool isMe =
                               msg.senderId ==
                               Supabase.instance.client.auth.currentUser!.id;
-                          return ChatBubble(message: msg.text, isMe: isMe);
+                          bool showDateSeparator = false;
+                          if (index == messages.length - 1) {
+                            showDateSeparator = true;
+                          } else {
+                            final prevMsg = messages[index + 1];
+                            if (msg.createdAt.day != prevMsg.createdAt.day) {
+                              showDateSeparator = true;
+                            }
+                          }
+                          return Column(
+                            children: [
+                              if (showDateSeparator)
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 12.0,
+                                  ),
+                                  child: Text(
+                                    FormattedDate.getChatTime(msg.createdAt),
+
+                                    textAlign: TextAlign.center,
+                                    style: const TextStyle(
+                                      color: Colors.grey,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ),
+                              ChatBubble(
+                                userImgUrl:
+                                    isMe ? null : widget.receiverUser.imageUrl,
+                                message: msg.text,
+                                isMe: isMe,
+                                time: msg.createdAt,
+                              ),
+                            ],
+                          );
+                        },
+                        separatorBuilder: (BuildContext context, int index) {
+                          final currMsg = messages[index];
+                          final nxtMsg = messages[index + 1];
+                          if (currMsg.senderId == nxtMsg.senderId) {
+                            return const Gap(1);
+                          } else {
+                            return const Gap(16);
+                          }
                         },
                       );
                     } else if (state is MessagesError) {

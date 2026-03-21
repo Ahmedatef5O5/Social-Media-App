@@ -2,8 +2,26 @@ import 'package:social_media_app/core/utilities/supabase_constants.dart';
 import 'package:social_media_app/features/chats/models/message_model.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../models/chat_user_model.dart';
+
 class ChatServices {
   final _supabase = Supabase.instance.client;
+
+  Future<List<ChatUserModel>> getChatsList(String currentUserId) async {
+    final response = await _supabase.rpc(
+      SupabaseConstants.getChatsWithLastMessage,
+      params: {'current_user_id': currentUserId},
+    );
+    return (response as List)
+        .map(((data) => ChatUserModel.fromUserData(data)))
+        .toList();
+  }
+
+  Stream<List<Map<String, dynamic>>> getChatsStream() {
+    return _supabase
+        .from(SupabaseConstants.messages)
+        .stream(primaryKey: [MessagesColumns.id]);
+  }
 
   Stream<List<MessageModel>> getMessagesStream({
     required String senderId,
