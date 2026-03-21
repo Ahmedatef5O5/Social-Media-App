@@ -134,11 +134,7 @@ class HomeCubit extends Cubit<HomeState> {
     }
   }
 
-  Future<void> createPost({
-    required String text,
-    File? image,
-    File? file,
-  }) async {
+  Future<void> createPost({required String text}) async {
     emit(PostCreating());
     try {
       //
@@ -147,26 +143,43 @@ class HomeCubit extends Cubit<HomeState> {
       String? videoUrl;
       String? fileUrl;
       if (selectedImage != null) {
-        imageUrl = await homeServices.uploadFile(
-          File(selectedImage!.path),
-          'post_images',
-          'images',
-        );
+        final imageFile = File(selectedImage!.path);
+
+        if (await imageFile.exists()) {
+          imageUrl = await homeServices.uploadFile(
+            File(selectedImage!.path),
+            'post_images',
+            'images',
+          );
+        } else {
+          throw Exception('image_not_found');
+        }
       }
       if (selectedVideo != null) {
-        videoUrl = await homeServices.uploadFile(
-          File(selectedVideo!.path),
-          'post_images',
-          'videos',
-        );
+        final videoFile = File(selectedVideo!.path);
+        if (await videoFile.exists()) {
+          videoUrl = await homeServices.uploadFile(
+            File(selectedVideo!.path),
+            'post_images',
+            'videos',
+          );
+        } else {
+          throw Exception('video_not_found');
+        }
       }
       if (selectedDocument != null) {
-        fileUrl = await homeServices.uploadFile(
-          File(selectedDocument!.path),
-          'post_images',
-          'documents',
-        );
+        final docFile = File(selectedDocument!.path);
+        if (await docFile.exists()) {
+          fileUrl = await homeServices.uploadFile(
+            docFile,
+            'post_images',
+            'documents',
+          );
+        } else {
+          throw Exception("file_not_found");
+        }
       }
+
       final postRequest = PostRequestBody(
         text: text,
         authorId: userId,
@@ -175,15 +188,37 @@ class HomeCubit extends Cubit<HomeState> {
         fileUrl: fileUrl,
       );
       await homeServices.addPost(postRequest);
-      selectedImage = null;
-      selectedVideo = null;
-      selectedDocument = null;
+      _resetMedia();
       emit(PostCreated());
-
       await fetchPosts();
     } catch (e) {
-      emit(PostCreateError(e.toString()));
+      // emit(PostCreateError(e.toString()));
+      emit(PostCreateError(_mapExceptionToMessage(e)));
     }
+  }
+
+  void _resetMedia() {
+    selectedImage = null;
+    selectedVideo = null;
+    selectedDocument = null;
+  }
+
+  String _mapExceptionToMessage(Object e) {
+    final error = e.toString().toLowerCase();
+
+    if (error.contains('pathnotfoundexception') ||
+        error.contains('not_found')) {
+      return "The selected file is no longer available. Please re-select it.";
+    } else if (error.contains('socketexception') ||
+        error.contains('connection reset')) {
+      return "Connection lost. Please check your internet and try again.";
+    } else if (error.contains('storage-byte-range-not-satisfiable')) {
+      return "File size is too large or upload was interrupted.";
+    } else if (error.contains('post_images/images')) {
+      return "Storage error: Make sure you have permission to upload.";
+    }
+
+    return "Something went wrong. Please try again later.";
   }
 
   Future<void> pickImageFromGallery() async {
@@ -258,7 +293,6 @@ class HomeCubit extends Cubit<HomeState> {
     final String currentUserImageUrl =
         user?.userMetadata?['image_url'] ?? currentUserData?.imageUrl ?? '';
 
-    //
     final oldState = state as PostsLoaded;
 
     final bool isCurrentlyLiked = post.isLikedBy(userId);
@@ -337,8 +371,6 @@ class HomeCubit extends Cubit<HomeState> {
           }).toList();
 
       emit(PostsLoaded(updatedPosts, DateTime.now()));
-      // emit(AddCommentSuccess());
-      // emit(PostsLoaded(updatedPosts, DateTime.now()));
       await homeServices.addComment(
         postId: postId,
         authorId: userId,

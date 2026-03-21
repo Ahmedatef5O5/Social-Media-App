@@ -18,7 +18,7 @@ class ChatsCubit extends Cubit<ChatsState> {
     getChats();
     _chatsSubscription = _chatServices.getChatsStream().listen((data) {
       getChats(isRefresh: true);
-    });
+    }, onError: (error) => debugPrint('Stream Error Detail : $error'));
   }
 
   Future<void> getChats({bool isRefresh = false}) async {

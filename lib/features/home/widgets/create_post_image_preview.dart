@@ -14,17 +14,68 @@ class CreatePostImagePreview extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bool fileExists = File(imagePath).existsSync();
+    if (!fileExists) {
+      return Container(
+        height: MediaQuery.sizeOf(context).height * 0.35,
+        decoration: BoxDecoration(
+          color: AppColors.grey7.withValues(alpha: 0.2),
+          borderRadius: BorderRadius.circular(15),
+        ),
+        child: Stack(
+          children: [
+            const Center(
+              child: Icon(Icons.broken_image, size: 50, color: AppColors.grey),
+            ),
+            Positioned(
+              right: 5,
+              top: 5,
+              child: IconButton(
+                onPressed: onRemove,
+                icon: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: AppColors.grey1,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Padding(
+                    padding: EdgeInsets.all(2.0),
+                    child: Icon(
+                      Icons.close_outlined,
+                      color: Colors.black,
+                      size: 20,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
     return Stack(
       children: [
         Container(
-          height: 200,
           width: double.infinity,
+          constraints: const BoxConstraints(maxHeight: 400, minHeight: 150),
           margin: const EdgeInsets.symmetric(vertical: 10),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(10),
-            image: DecorationImage(
-              image: FileImage(File(imagePath)),
-              fit: BoxFit.cover,
+            color: AppColors.grey7.withValues(alpha: 0.2),
+            borderRadius: BorderRadius.circular(15),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(18),
+            child: Image.file(
+              File(imagePath),
+              fit: BoxFit.contain,
+
+              errorBuilder:
+                  (context, error, stackTrace) => const Center(
+                    child: Icon(
+                      Icons.broken_image,
+                      size: 50,
+                      color: AppColors.grey,
+                    ),
+                  ),
             ),
           ),
         ),

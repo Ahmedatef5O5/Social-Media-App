@@ -128,8 +128,18 @@ class PostItemWidget extends StatelessWidget {
 
                                 fit: BoxFit.cover,
                                 placeholder:
-                                    (context, url) =>
-                                        const CustomLoadingIndicator(),
+                                    (context, url) => Container(
+                                      height:
+                                          MediaQuery.sizeOf(context).height *
+                                          0.3,
+                                      decoration: BoxDecoration(
+                                        color: AppColors.grey7.withValues(
+                                          alpha: 0.2,
+                                        ),
+                                        borderRadius: BorderRadius.circular(15),
+                                      ),
+                                      child: const CustomLoadingIndicator(),
+                                    ),
                                 errorWidget:
                                     (context, url, error) =>
                                         const Icon(Icons.error),
