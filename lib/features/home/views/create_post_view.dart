@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
+import 'package:social_media_app/core/themes/app_colors.dart';
 import 'package:social_media_app/core/themes/background_theme_widget.dart';
 import 'package:social_media_app/core/widgets/custom_loading_indicator.dart';
 import 'package:social_media_app/features/home/cubit/home_cubit.dart';
@@ -23,15 +25,35 @@ class _CreatePostViewState extends State<CreatePostView> {
   final TextEditingController _textEditingController = TextEditingController();
   final DraggableScrollableController _sheetController =
       DraggableScrollableController();
+
+  final FocusNode _focusNode = FocusNode();
   bool _hasText = false;
+
+  void _minimizeSheet() {
+    if (_sheetController.isAttached) {
+      _sheetController.animateTo(
+        0.15,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+      );
+    }
+  }
 
   @override
   void initState() {
     super.initState();
+    _focusNode.addListener(() {
+      if (_focusNode.hasFocus) {
+        _minimizeSheet();
+      }
+    });
     _textEditingController.addListener(() {
       setState(() {
         _hasText = _textEditingController.text.trim().isNotEmpty;
       });
+      if (_hasText) {
+        _minimizeSheet();
+      }
     });
   }
 
@@ -40,6 +62,7 @@ class _CreatePostViewState extends State<CreatePostView> {
     _textEditingController.removeListener(() {});
     _textEditingController.dispose();
     _sheetController.dispose();
+    _focusNode.dispose();
     super.dispose();
   }
 
@@ -88,7 +111,11 @@ class _CreatePostViewState extends State<CreatePostView> {
         final homeCubit = context.read<HomeCubit>();
         final user = homeCubit.currentUserData;
         final authUser = Supabase.instance.client.auth.currentUser;
-
+        final bool canPost =
+            _textEditingController.text.trim().isNotEmpty ||
+            homeCubit.selectedImage != null ||
+            homeCubit.selectedVideo != null ||
+            homeCubit.selectedDocument != null;
         final displayName =
             user?.name ?? authUser?.userMetadata?['full_name'] ?? 'User';
         final displayImage =
@@ -112,11 +139,29 @@ class _CreatePostViewState extends State<CreatePostView> {
                           Gap(12),
                           CreatePostHeaderSection(
                             isLoading: state is PostCreating,
-                            hasText: _hasText,
+                            canPost: canPost,
                             onTap: () {
-                              homeCubit.createPost(
-                                text: _textEditingController.text.trim(),
-                              );
+                              if (canPost) {
+                                homeCubit.createPost(
+                                  text: _textEditingController.text.trim(),
+                                );
+                              } else {
+                                HapticFeedback.vibrate();
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    elevation: 1,
+                                    content: Text(
+                                      "Write something or attach a file to share your post.",
+                                    ),
+                                    backgroundColor: AppColors.primaryColor
+                                        .withValues(alpha: 0.75),
+                                    behavior: SnackBarBehavior.floating,
+                                    duration: const Duration(
+                                      milliseconds: 1400,
+                                    ),
+                                  ),
+                                );
+                              }
                             },
                           ),
                           Gap(12),
@@ -128,6 +173,7 @@ class _CreatePostViewState extends State<CreatePostView> {
                           CreatePostInputField(
                             textEditingController: _textEditingController,
                             hasText: _hasText,
+                            focusNode: _focusNode,
                           ),
                           Gap(8),
                           BlocBuilder<HomeCubit, HomeState>(

@@ -6,12 +6,12 @@ import '../../../core/widgets/custom_loading_indicator.dart';
 class CreatePostHeaderSection extends StatelessWidget {
   const CreatePostHeaderSection({
     super.key,
-    required bool hasText,
+    required bool canPost,
     this.onTap,
     this.isLoading = false,
-  }) : _hasText = hasText;
+  }) : _canPost = canPost;
   final void Function()? onTap;
-  final bool _hasText;
+  final bool _canPost;
   final bool isLoading;
   @override
   Widget build(BuildContext context) {
@@ -32,7 +32,7 @@ class CreatePostHeaderSection extends StatelessWidget {
         ),
         Spacer(),
         GestureDetector(
-          onTap: _hasText ? onTap : null,
+          onTap: onTap,
           child:
               isLoading
                   ? CustomLoadingIndicator()
@@ -41,7 +41,7 @@ class CreatePostHeaderSection extends StatelessWidget {
                     style: Theme.of(context).textTheme.titleMedium!.copyWith(
                       fontWeight: FontWeight.w500,
                       color:
-                          _hasText
+                          _canPost
                               ? Theme.of(context).primaryColor
                               : AppColors.black54,
                       fontSize: 17,
