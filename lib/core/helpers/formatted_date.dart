@@ -52,4 +52,32 @@ class FormattedDate {
       return "$dayMonth at $time";
     }
   }
+
+  static String getChatTime(DateTime date) {
+    final DateTime localDate = date.toLocal();
+    final DateTime now = DateTime.now();
+    final DateTime today = DateTime(now.year, now.month, now.day);
+    final DateTime msgDate = DateTime(
+      localDate.year,
+      localDate.month,
+      localDate.day,
+    );
+    final int diffInDays = today.difference(msgDate).inDays;
+
+    if (date.day == now.day &&
+        date.month == now.month &&
+        date.year == now.year) {
+      return 'Today';
+    } else if (diffInDays == 1) {
+      return "Yesterday";
+    } else if (diffInDays < 7) {
+      return DateFormat.E().format(localDate);
+    } else {
+      return DateFormat.yMd().format(localDate);
+    }
+  }
+
+  static String getMessageTime(DateTime date) {
+    return DateFormat.jm().format(date.toLocal());
+  }
 }
