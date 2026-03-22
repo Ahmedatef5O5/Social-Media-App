@@ -131,9 +131,11 @@ class AppRouter {
           settings: settings,
         );
       case AppRoutes.storyDisplayViewRoute:
-        final story = settings.arguments as StoryModel;
+        final args = settings.arguments as Map<String, dynamic>;
+        final List<StoryModel> stories = args['stories'] as List<StoryModel>;
+        final int initialIndex = args['initialIndex'] as int;
         return _buildRoute(
-          StoryDisplayView(story: story),
+          StoryDisplayView(stories: stories, initialIndex: initialIndex),
           typeOfRoute: TypeOfRoute.fade,
           settings: settings,
         );

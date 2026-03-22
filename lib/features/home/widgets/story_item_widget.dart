@@ -42,14 +42,21 @@ class StoryItemWidget extends StatelessWidget {
         if (story == null) {
           _showAddStoryOptions(context);
         } else {
-          Navigator.of(
-            context,
-            rootNavigator: true,
-          ).pushNamed(AppRoutes.storyDisplayViewRoute, arguments: story);
+          final allStories =
+              context.read<HomeCubit>().state is StoriesLoaded
+                  ? (context.read<HomeCubit>().state as StoriesLoaded).stories
+                  : [story!];
+          final index = allStories.indexOf(story!);
+
+          Navigator.of(context, rootNavigator: true).pushNamed(
+            AppRoutes.storyDisplayViewRoute,
+            arguments: {'stories': allStories, 'initialIndex': index},
+          );
         }
       },
 
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
           Container(
             height: 50,

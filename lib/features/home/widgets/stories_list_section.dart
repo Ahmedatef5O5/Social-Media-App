@@ -33,8 +33,10 @@ class StoriesListSection extends StatelessWidget {
           } else if (state is StoriesLoaded) {
             final stories = state.stories;
             return ListView.builder(
-              physics: const BouncingScrollPhysics(),
               scrollDirection: Axis.horizontal,
+              primary: false,
+              physics: const ClampingScrollPhysics(),
+              // physics: const AlwaysScrollableScrollPhysics(),
               itemCount: stories.length + 1,
               itemBuilder: (context, index) {
                 if (index == 0) {
