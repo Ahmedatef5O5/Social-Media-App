@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:persistent_bottom_nav_bar_v2/persistent_bottom_nav_bar_v2.dart';
-import 'package:social_media_app/core/widgets/exit_confirmation_dialog.dart';
+import 'package:social_media_app/core/widgets/custom_confirmation_dialog.dart';
 import 'package:social_media_app/core/widgets/main_user_avatar.dart';
 import 'package:social_media_app/features/chats/views/chats_view.dart';
 import 'package:social_media_app/features/discover/views/discover_view.dart';
@@ -11,6 +11,7 @@ import 'package:social_media_app/features/settings/widgets/profile_drawer.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../features/home/views/home_view.dart';
 import '../../features/profile/cubits/profile_cubit/profile_cubit.dart';
+import '../constants/app_images.dart';
 import 'nav_bar_icon_widget.dart';
 
 class CustomBottomNavBar extends StatefulWidget {
@@ -34,7 +35,13 @@ class _CustomBottomNavBarState extends State<CustomBottomNavBar> {
   Future<bool?> _showExitConfirmationDialog(BuildContext context) {
     return showDialog<bool>(
       context: context,
-      builder: (context) => const ExitConfirmationDialog(),
+      builder:
+          (context) => CustomConfirmationDialog(
+            title: 'Are you sure you want to quit ?',
+            img: AppImages.exitAnimationLot,
+            onConfirm:
+                () => Navigator.of(context, rootNavigator: true).pop(true),
+          ),
     );
   }
 

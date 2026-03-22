@@ -2,11 +2,22 @@ import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:social_media_app/core/widgets/custom_elevated_button.dart';
 import '../../features/chats/widgets/empty_placeholder_state.dart';
-import '../constants/app_images.dart';
 import '../themes/app_colors.dart';
 
-class ExitConfirmationDialog extends StatelessWidget {
-  const ExitConfirmationDialog({super.key});
+class CustomConfirmationDialog extends StatelessWidget {
+  final String title;
+  final String img;
+  final String confirmBtnText;
+  final String cancelBtnText;
+  final VoidCallback onConfirm;
+  const CustomConfirmationDialog({
+    super.key,
+    required this.title,
+    required this.img,
+    this.confirmBtnText = 'Yes',
+    this.cancelBtnText = 'No',
+    required this.onConfirm,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -24,12 +35,11 @@ class ExitConfirmationDialog extends StatelessWidget {
               EmptyPlaceholderState(
                 opacity: 1,
                 periodSpeed: 1,
-                img: AppImages.exitAnimationLot,
-                // imgHeight: 170,
-                // imgWidth: 180,
+                img: img,
+
                 imgHeight: screenWidth * 0.4,
                 imgWidth: screenWidth * 0.45,
-                title: 'Are you sure you want to quit ?',
+                title: title,
                 style: Theme.of(context).textTheme.titleMedium!.copyWith(
                   color: AppColors.black,
                   fontWeight: FontWeight.w600,
@@ -43,7 +53,7 @@ class ExitConfirmationDialog extends StatelessWidget {
                     child: CustomElevatedButton(
                       maximumSize: Size(80, 40),
                       minimumSize: Size(80, 40),
-                      txtBtn: 'No',
+                      txtBtn: cancelBtnText,
                       onPressed:
                           () => Navigator.of(
                             context,
@@ -60,13 +70,9 @@ class ExitConfirmationDialog extends StatelessWidget {
                     child: CustomElevatedButton(
                       maximumSize: Size(80, 40),
                       minimumSize: Size(80, 40),
-                      txtBtn: 'Yes',
+                      txtBtn: confirmBtnText,
                       txtColor: AppColors.primaryColor,
-                      onPressed:
-                          () => Navigator.of(
-                            context,
-                            rootNavigator: true,
-                          ).pop(true),
+                      onPressed: onConfirm,
                       elevation: 1.5,
                       bgColor: AppColors.white,
                       shape: RoundedRectangleBorder(
