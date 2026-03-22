@@ -43,7 +43,7 @@ class _ProfilePostsListTabState extends State<ProfilePostsListTab> {
                     final post = userPosts[index];
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 20),
-                      child: PostItemWidget(post: post),
+                      child: PostItemWidget(currPost: post),
                     );
                   }, childCount: userPosts.length),
                 ),

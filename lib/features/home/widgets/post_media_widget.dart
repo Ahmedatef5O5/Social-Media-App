@@ -21,39 +21,33 @@ class PostMediaWidget extends StatelessWidget {
             onTap:
                 () => Navigator.of(context, rootNavigator: true).pushNamed(
                   AppRoutes.fullScreenImageViewRoute,
-                  arguments: {
-                    'url': post.imageUrl,
-                    'tag': '${post.id}_${post.imageUrl}',
-                  },
+                  arguments: {'url': post.imageUrl},
                 ),
-            child: Hero(
-              tag: '${post.id}_${post.imageUrl}',
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(14),
-                child:
-                    post.imageUrl != null
-                        ? CachedNetworkImage(
-                          imageUrl: post.imageUrl!,
-                          width: double.infinity,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(14),
+              child:
+                  post.imageUrl != null
+                      ? CachedNetworkImage(
+                        imageUrl: post.imageUrl!,
+                        width: double.infinity,
 
-                          fit: BoxFit.cover,
-                          placeholder:
-                              (context, url) => Container(
-                                height: MediaQuery.sizeOf(context).height * 0.3,
-                                decoration: BoxDecoration(
-                                  color: AppColors.grey7.withValues(alpha: 0.2),
-                                  borderRadius: BorderRadius.circular(15),
-                                ),
-                                child: const CustomLoadingIndicator(),
+                        fit: BoxFit.cover,
+                        placeholder:
+                            (context, url) => Container(
+                              height: MediaQuery.sizeOf(context).height * 0.3,
+                              decoration: BoxDecoration(
+                                color: AppColors.grey7.withValues(alpha: 0.2),
+                                borderRadius: BorderRadius.circular(15),
                               ),
-                          errorWidget:
-                              (context, url, error) => const Icon(Icons.error),
-                          filterQuality: FilterQuality.high,
+                              child: const CustomLoadingIndicator(),
+                            ),
+                        errorWidget:
+                            (context, url, error) => const Icon(Icons.error),
+                        filterQuality: FilterQuality.high,
 
-                          memCacheWidth: 800,
-                        )
-                        : null,
-              ),
+                        memCacheWidth: 800,
+                      )
+                      : null,
             ),
           ),
         if (post.videoUrl != null && post.videoUrl!.isNotEmpty)

@@ -39,7 +39,10 @@ class PostsSection extends StatelessWidget {
             itemBuilder: (context, index) {
               final post = posts[index];
 
-              return PostItemWidget(post: post);
+              return PostItemWidget(
+                key: ValueKey(posts[index].id),
+                currPost: post,
+              );
             },
             separatorBuilder:
                 (BuildContext context, int index) => const Gap(14),

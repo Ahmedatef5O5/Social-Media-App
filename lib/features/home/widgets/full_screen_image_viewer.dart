@@ -12,7 +12,6 @@ class FullScreenImageViewer extends StatelessWidget {
         ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
 
     final String imageUrl = args['url'];
-    final String heroTag = args['tag'];
 
     return Scaffold(
       backgroundColor: AppColors.black.withValues(alpha: 1),
@@ -48,13 +47,10 @@ class FullScreenImageViewer extends StatelessWidget {
               child: Center(
                 child: InteractiveViewer(
                   clipBehavior: Clip.none,
-                  child: Hero(
-                    tag: heroTag,
-                    child: CachedNetworkImage(
-                      imageUrl: imageUrl,
-                      fit: BoxFit.contain,
-                      width: double.infinity,
-                    ),
+                  child: CachedNetworkImage(
+                    imageUrl: imageUrl,
+                    fit: BoxFit.contain,
+                    width: double.infinity,
                   ),
                 ),
               ),
