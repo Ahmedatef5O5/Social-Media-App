@@ -28,7 +28,8 @@ class StoryItemWidget extends StatelessWidget {
                   arguments: context.read<HomeCubit>(),
                 );
               } else {
-                context.read<HomeCubit>().pickAndAddStory(source: source!);
+                final homeCubit = context.read<HomeCubit>();
+                homeCubit.pickAndAddStory(source: source!);
               }
             },
           ),
@@ -42,15 +43,24 @@ class StoryItemWidget extends StatelessWidget {
         if (story == null) {
           _showAddStoryOptions(context);
         } else {
+          final homeCubit = context.read<HomeCubit>();
           final allStories =
-              context.read<HomeCubit>().state is StoriesLoaded
-                  ? (context.read<HomeCubit>().state as StoriesLoaded).stories
+              homeCubit.cachedStories.isNotEmpty
+                  ? homeCubit.cachedStories
                   : [story!];
-          final index = allStories.indexOf(story!);
+
+          final index = allStories.indexWhere((s) => s.id == story!.id);
+
+          print('allStories count: ${allStories.length}');
+          print('current story index: $index');
 
           Navigator.of(context, rootNavigator: true).pushNamed(
             AppRoutes.storyDisplayViewRoute,
-            arguments: {'stories': allStories, 'initialIndex': index},
+            arguments: {
+              'stories': allStories,
+              'initialIndex': index,
+              'homeCubit': homeCubit,
+            },
           );
         }
       },
