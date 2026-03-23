@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -14,7 +16,6 @@ import 'package:social_media_app/features/chats/views/chats_view.dart';
 import 'package:social_media_app/features/discover/cubit/discover_people_cubit.dart';
 import 'package:social_media_app/features/discover/services/discover_people_services.dart';
 import 'package:social_media_app/features/home/cubit/home_cubit.dart';
-import 'package:social_media_app/features/home/models/story_model.dart';
 import 'package:social_media_app/features/home/views/create_post_view.dart';
 import 'package:social_media_app/features/home/views/post_themes_view.dart';
 import 'package:social_media_app/features/home/views/story_display_view.dart';
@@ -27,6 +28,7 @@ import 'package:social_media_app/features/splash/views/on_boarding_view.dart';
 import 'package:social_media_app/features/splash/views/splash_view.dart';
 import '../../features/auth/data/models/user_data.dart';
 import '../../features/chats/cubit/chats_cubit/chats_cubit.dart';
+import '../../features/home/views/add_story_caption_view.dart';
 import '../../features/home/views/creat_text_story_view.dart';
 
 enum TypeOfRoute { material, cupertino, fade }
@@ -130,12 +132,23 @@ class AppRouter {
           BlocProvider.value(value: cubit, child: const CreateTextStoryView()),
           settings: settings,
         );
+      case AppRoutes.addStoryCaptionViewRoute:
+        final args = settings.arguments as Map<String, dynamic>;
+        return _buildRoute(
+          AddStoryCaptionView(
+            file: args['file'] as File,
+            homeCubit: args['homeCubit'] as HomeCubit,
+          ),
+          settings: settings,
+        );
       case AppRoutes.storyDisplayViewRoute:
         final args = settings.arguments as Map<String, dynamic>;
-        final List<StoryModel> stories = args['stories'] as List<StoryModel>;
-        final int initialIndex = args['initialIndex'] as int;
         return _buildRoute(
-          StoryDisplayView(stories: stories, initialIndex: initialIndex),
+          StoryDisplayView(
+            initialIndex: args['initialIndex'],
+            homeCubit: args['homeCubit'],
+            stories: args['stories'],
+          ),
           typeOfRoute: TypeOfRoute.fade,
           settings: settings,
         );
