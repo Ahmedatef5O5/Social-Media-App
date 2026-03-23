@@ -25,6 +25,9 @@ class HomeCubit extends Cubit<HomeState> {
 
   //
   List<StoryModel> cachedStories = [];
+  //
+  List<List<StoryModel>> cachedUserGroups = [];
+  int cachedCurrentUserGroupIndex = 0;
 
   // Refresh Screen
   Future<void> refreshHomeData({bool isRefresh = false}) async {

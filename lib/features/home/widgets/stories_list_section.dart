@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:social_media_app/features/home/cubit/home_cubit.dart';
+import 'package:social_media_app/features/home/models/story_model.dart';
 import 'package:social_media_app/features/home/widgets/story_item_widget.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
@@ -44,12 +45,17 @@ class StoriesListSection extends StatelessWidget {
             return const CustomLoadingIndicator();
           } else if (state is StoriesLoaded) {
             final stories = state.stories;
+            final Map<String, List<StoryModel>> storiesByUser = {};
+            for (final story in stories) {
+              storiesByUser.putIfAbsent(story.authorId, () => []).add(story);
+            }
+            final uniqueUsers = storiesByUser.values.toList();
             return ListView.builder(
               scrollDirection: Axis.horizontal,
               physics: const ClampingScrollPhysics(),
               // physics: const AlwaysScrollableScrollPhysics(),
               primary: false,
-              itemCount: stories.length + 1,
+              itemCount: uniqueUsers.length + 1,
               itemBuilder: (context, index) {
                 if (index == 0) {
                   return Padding(
@@ -59,7 +65,11 @@ class StoriesListSection extends StatelessWidget {
                 }
                 return Padding(
                   padding: const EdgeInsets.only(right: 14),
-                  child: StoryItemWidget(story: stories[index - 1]),
+                  child: StoryItemWidget(
+                    story: uniqueUsers[index - 1].first,
+                    userStroies: uniqueUsers[index - 1],
+                    allUserGroups: uniqueUsers,
+                  ),
                 );
               },
             );

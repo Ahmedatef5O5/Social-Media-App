@@ -13,9 +13,13 @@ class SingleUserStoryView extends StatefulWidget {
   final StoryModel story;
   final HomeCubit homeCubit;
   final VoidCallback onComplete;
+  final VoidCallback onSwipeNext;
+  final VoidCallback onSwipePrev;
   final PageController pageController;
   final int currentIndex;
   final int totalCount;
+  final AnimationController progressController;
+  final VoidCallback onResetProgress;
 
   const SingleUserStoryView({
     super.key,
@@ -25,6 +29,10 @@ class SingleUserStoryView extends StatefulWidget {
     required this.pageController,
     required this.currentIndex,
     required this.totalCount,
+    required this.onSwipeNext,
+    required this.onSwipePrev,
+    required this.progressController,
+    required this.onResetProgress,
   });
 
   @override
@@ -68,7 +76,9 @@ class _SingleUserStoryViewState extends State<SingleUserStoryView> {
           controller: controller,
           onComplete: widget.onComplete,
           inline: true,
+          progressPosition: ProgressPosition.none,
         ),
+
         Positioned.fill(
           child: Listener(
             behavior: HitTestBehavior.translucent,
@@ -79,28 +89,42 @@ class _SingleUserStoryViewState extends State<SingleUserStoryView> {
             onPointerUp: (event) {
               final dx = event.position.dx - _pointerDownX;
               final dy = event.position.dy - _pointerDownY;
+
               if (dy.abs() > dx.abs() && dy.abs() > 50) {
                 Navigator.pop(context);
                 return;
               }
               if (dx.abs() > 50) {
-                if (dx < 0 && widget.currentIndex < widget.totalCount - 1) {
-                  widget.pageController.jumpToPage(widget.currentIndex + 1);
-                } else if (dx > 0 && widget.currentIndex > 0) {
-                  widget.pageController.jumpToPage(widget.currentIndex - 1);
+                if (dx < 0) {
+                  if (widget.currentIndex < widget.totalCount - 1) {
+                    widget.onResetProgress();
+                    widget.pageController.jumpToPage(widget.currentIndex + 1);
+                  } else {
+                    widget.onSwipeNext();
+                  }
+                } else {
+                  if (widget.currentIndex > 0) {
+                    widget.onResetProgress();
+                    widget.pageController.jumpToPage(widget.currentIndex - 1);
+                  } else {
+                    widget.onSwipePrev();
+                  }
                 }
               } else {
                 final screenWidth = MediaQuery.of(context).size.width;
                 if (event.position.dx < screenWidth / 2) {
+                  widget.onResetProgress();
+
                   controller.previous();
                 } else {
+                  widget.onResetProgress();
                   controller.next();
                 }
               }
             },
           ),
         ),
-        Positioned(top: 75, left: 20, right: 20, child: _buildHeader(context)),
+        Positioned(top: 55, left: 20, right: 20, child: _buildHeader(context)),
         // caption
         if (widget.story.caption != null && widget.story.caption!.isNotEmpty)
           Positioned(
@@ -164,8 +188,14 @@ class _SingleUserStoryViewState extends State<SingleUserStoryView> {
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(10),
             ),
-            onOpened: () => controller.pause(),
-            onCanceled: () => controller.play(),
+            onOpened: () {
+              controller.pause();
+              widget.progressController.stop();
+            },
+            onCanceled: () {
+              controller.play();
+              widget.progressController.forward();
+            },
             onSelected: (value) async {
               if (value == 'delete') {
                 final confirm = await _showDeleteConfirmation(context);
@@ -174,6 +204,7 @@ class _SingleUserStoryViewState extends State<SingleUserStoryView> {
                   if (context.mounted) Navigator.of(context).pop();
                 } else {
                   controller.play();
+                  widget.progressController.forward();
                 }
               }
             },

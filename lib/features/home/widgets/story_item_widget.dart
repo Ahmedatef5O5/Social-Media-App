@@ -10,7 +10,14 @@ import '../../../core/widgets/custom_loading_indicator.dart';
 
 class StoryItemWidget extends StatelessWidget {
   final StoryModel? story;
-  const StoryItemWidget({super.key, this.story});
+  final List<StoryModel>? userStroies;
+  final List<List<StoryModel>>? allUserGroups;
+  const StoryItemWidget({
+    super.key,
+    this.story,
+    this.userStroies,
+    this.allUserGroups,
+  });
   void _showAddStoryOptions(BuildContext context) {
     showModalBottomSheet(
       backgroundColor: AppColors.white,
@@ -44,22 +51,28 @@ class StoryItemWidget extends StatelessWidget {
           _showAddStoryOptions(context);
         } else {
           final homeCubit = context.read<HomeCubit>();
+
+          final stories = userStroies ?? [story!];
+          homeCubit.cachedUserGroups = allUserGroups ?? [stories];
+          homeCubit.cachedCurrentUserGroupIndex =
+              allUserGroups?.indexWhere(
+                (g) => g.first.authorId == story!.authorId,
+              ) ??
+              0;
           final allStories =
               homeCubit.cachedStories.isNotEmpty
                   ? homeCubit.cachedStories
                   : [story!];
 
           final index = allStories.indexWhere((s) => s.id == story!.id);
-
-          print('allStories count: ${allStories.length}');
-          print('current story index: $index');
-
           Navigator.of(context, rootNavigator: true).pushNamed(
             AppRoutes.storyDisplayViewRoute,
             arguments: {
               'stories': allStories,
               'initialIndex': index,
               'homeCubit': homeCubit,
+              'allUserGroups': allUserGroups ?? [stories],
+              'currentGroupIndex': homeCubit.cachedCurrentUserGroupIndex,
             },
           );
         }

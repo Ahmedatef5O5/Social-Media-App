@@ -148,6 +148,8 @@ class AppRouter {
             initialIndex: args['initialIndex'],
             homeCubit: args['homeCubit'],
             stories: args['stories'],
+            allUserGroups: args['allUserGroups'],
+            currentGroupIndex: args['currentGroupIndex'],
           ),
           typeOfRoute: TypeOfRoute.fade,
           settings: settings,
