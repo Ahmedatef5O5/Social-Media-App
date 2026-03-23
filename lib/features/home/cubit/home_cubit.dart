@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:social_media_app/core/services/file_picker_services.dart';
 import 'package:social_media_app/features/auth/data/models/user_data.dart';
 import 'package:social_media_app/features/home/models/comment_model.dart';
@@ -20,6 +21,7 @@ class HomeCubit extends Cubit<HomeState> {
   XFile? selectedImage;
   XFile? selectedVideo;
   XFile? selectedDocument;
+  File? selectedStoryFile;
 
   //
   List<StoryModel> cachedStories = [];
@@ -99,12 +101,15 @@ class HomeCubit extends Cubit<HomeState> {
   Future<void> deleteStory(String storyId) async {
     try {
       await homeServices.deleteStory(storyId);
+      cachedStories = cachedStories.where((s) => s.id != storyId).toList();
       if (state is StoriesLoaded) {
         final updateStories =
             (state as StoriesLoaded).stories
                 .where((s) => s.id != storyId)
                 .toList();
         emit(StoriesLoaded(updateStories, DateTime.now()));
+      } else {
+        emit(StoriesLoaded(cachedStories, DateTime.now()));
       }
     } catch (e) {
       debugPrint('Error deleting story: $e');
@@ -120,14 +125,46 @@ class HomeCubit extends Cubit<HomeState> {
               : await filePickerServices.pickImageFromGallery();
       if (pickedFile != null) {
         final file = File(pickedFile.path);
-        if (currentUserData != null) {
-          await addStory(file: file, user: currentUserData!);
+
+        if (await file.exists() && currentUserData != null) {
+          selectedStoryFile = file;
+
+          emit(StoryImagePicked(file: file));
         } else {
-          debugPrint('User data is not loaded yet, cannot add story');
+          final appDir = await getTemporaryDirectory();
+          final newPath =
+              '${appDir.path}/${DateTime.now().millisecondsSinceEpoch}.jpg';
+          final newFile = await File(pickedFile.path).copy(newPath);
+          selectedStoryFile = newFile;
+          emit(StoryImagePicked(file: newFile));
         }
       }
     } catch (e) {
       debugPrint('Error in pickAndAddStory: $e');
+      emit(AddStoryError(e.toString()));
+    }
+  }
+
+  Future<void> addStoryWithCaption({
+    required File file,
+    required UserData user,
+    String? caption,
+  }) async {
+    emit(AddStoryLoading());
+    try {
+      final fileUrl = await homeServices.uploadStoryFile(file, user.id);
+      final newStory = StoryModel(
+        imageUrl: fileUrl,
+        authorId: user.id,
+        authorName: user.name,
+        createdAt: DateTime.now().toIso8601String(),
+        caption: caption,
+      );
+      await homeServices.createStory(newStory);
+      await fetchStories();
+      emit(AddStorySuccess());
+    } catch (e) {
+      debugPrint('Error adding story With caption: $e');
       emit(AddStoryError(e.toString()));
     }
   }

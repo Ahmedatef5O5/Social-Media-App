@@ -45,6 +45,20 @@ final class AddStoryError extends HomeState {
   const AddStoryError(this.message);
 }
 
+final class StoryImagePicking extends HomeState {}
+
+final class StoryImagePicked extends HomeState {
+  final File file;
+
+  StoryImagePicked({required this.file});
+}
+
+final class StoryImagePickeError extends HomeState {
+  final String message;
+
+  const StoryImagePickeError(this.message);
+}
+
 final class PostsLoading extends HomeState {}
 
 final class PostsLoaded extends HomeState {

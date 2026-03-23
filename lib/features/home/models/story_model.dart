@@ -9,7 +9,7 @@ class StoryModel {
   final String authorName;
   final String? authorImageUrl;
   final String createdAt;
-
+  final String? caption;
   const StoryModel({
     this.id = '',
     this.imageUrl,
@@ -19,6 +19,7 @@ class StoryModel {
     required this.authorName,
     this.authorImageUrl,
     required this.createdAt,
+    this.caption,
   });
 
   Map<String, dynamic> toMap() {
@@ -29,6 +30,7 @@ class StoryModel {
       'background_color': backgroundColor,
       'author_id': authorId,
       'created_at': createdAt,
+      'caption': caption,
     };
   }
 
@@ -43,6 +45,7 @@ class StoryModel {
       authorName: userData?[UserColumns.name] as String? ?? 'Unknown User',
       authorImageUrl: userData?[UserColumns.imageUrl] as String?,
       createdAt: map[StoryColumns.createdAt] as String? ?? '',
+      caption: map['caption'] as String?,
     );
   }
 }
