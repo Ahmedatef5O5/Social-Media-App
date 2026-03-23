@@ -24,8 +24,9 @@ final class StoriesLoading extends HomeState {}
 
 final class StoriesLoaded extends HomeState {
   final List<StoryModel> stories;
-
-  const StoriesLoaded(this.stories);
+  final DateTime fetchedAt;
+  const StoriesLoaded(this.stories, this.fetchedAt);
+  List<Object?> get props => [stories, fetchedAt];
 }
 
 final class StoriesError extends HomeState {

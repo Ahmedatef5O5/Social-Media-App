@@ -24,6 +24,17 @@ class HomeServices {
     await _supabase.from(SupabaseConstants.stories).insert(story.toMap());
   }
 
+  Future<void> deleteStory(String storyId) async {
+    try {
+      await _supabase
+          .from(SupabaseConstants.stories)
+          .delete()
+          .eq(StoryColumns.id, storyId);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   Future<List<StoryModel>> fetchStories() async {
     try {
       return await supabaseServices.fetchRows(

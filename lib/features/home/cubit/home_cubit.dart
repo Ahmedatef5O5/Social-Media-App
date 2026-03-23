@@ -21,6 +21,9 @@ class HomeCubit extends Cubit<HomeState> {
   XFile? selectedVideo;
   XFile? selectedDocument;
 
+  //
+  List<StoryModel> cachedStories = [];
+
   // Refresh Screen
   Future<void> refreshHomeData({bool isRefresh = false}) async {
     try {
@@ -93,6 +96,22 @@ class HomeCubit extends Cubit<HomeState> {
     }
   }
 
+  Future<void> deleteStory(String storyId) async {
+    try {
+      await homeServices.deleteStory(storyId);
+      if (state is StoriesLoaded) {
+        final updateStories =
+            (state as StoriesLoaded).stories
+                .where((s) => s.id != storyId)
+                .toList();
+        emit(StoriesLoaded(updateStories, DateTime.now()));
+      }
+    } catch (e) {
+      debugPrint('Error deleting story: $e');
+      // emit(DeleteStoryError(e.toString()));
+    }
+  }
+
   Future<void> pickAndAddStory({required ImageSource source}) async {
     try {
       final XFile? pickedFile =
@@ -114,10 +133,11 @@ class HomeCubit extends Cubit<HomeState> {
   }
 
   Future<void> fetchStories({bool isRefresh = false}) async {
-    if (!isRefresh) emit(StoriesLoading());
+    if (!isRefresh && state is! StoriesLoading) emit(StoriesLoading());
     try {
       final stories = await homeServices.fetchStories();
-      emit(StoriesLoaded(stories));
+      cachedStories = stories;
+      emit(StoriesLoaded(stories, DateTime.now()));
     } catch (e) {
       debugPrint('Error fetching stories: $e');
       emit(StoriesError(e.toString()));
