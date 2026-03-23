@@ -12,27 +12,21 @@ import '../models/story_model.dart';
 class SingleUserStoryView extends StatefulWidget {
   final StoryModel story;
   final HomeCubit homeCubit;
-  final VoidCallback onComplete;
-  final VoidCallback onSwipeNext;
-  final VoidCallback onSwipePrev;
-  final PageController pageController;
-  final int currentIndex;
-  final int totalCount;
-  final AnimationController progressController;
-  final VoidCallback onResetProgress;
+  final VoidCallback onNext;
+  final VoidCallback onPrev;
+  final VoidCallback onLongPressStart;
+  final VoidCallback onLongPressEnd;
+  final VoidCallback onClose;
 
   const SingleUserStoryView({
     super.key,
     required this.story,
     required this.homeCubit,
-    required this.onComplete,
-    required this.pageController,
-    required this.currentIndex,
-    required this.totalCount,
-    required this.onSwipeNext,
-    required this.onSwipePrev,
-    required this.progressController,
-    required this.onResetProgress,
+    required this.onNext,
+    required this.onPrev,
+    required this.onLongPressStart,
+    required this.onLongPressEnd,
+    required this.onClose,
   });
 
   @override
@@ -42,6 +36,7 @@ class SingleUserStoryView extends StatefulWidget {
 class _SingleUserStoryViewState extends State<SingleUserStoryView> {
   double _pointerDownX = 0;
   double _pointerDownY = 0;
+  double _pointerDownTime = 0;
   final StoryController controller = StoryController();
 
   @override
@@ -74,7 +69,7 @@ class _SingleUserStoryViewState extends State<SingleUserStoryView> {
         StoryView(
           storyItems: storyItems,
           controller: controller,
-          onComplete: widget.onComplete,
+          onComplete: () {},
           inline: true,
           progressPosition: ProgressPosition.none,
         ),
@@ -85,47 +80,56 @@ class _SingleUserStoryViewState extends State<SingleUserStoryView> {
             onPointerDown: (event) {
               _pointerDownX = event.position.dx;
               _pointerDownY = event.position.dy;
+              _pointerDownTime = event.timeStamp.inMilliseconds.toDouble();
             },
             onPointerUp: (event) {
               final dx = event.position.dx - _pointerDownX;
               final dy = event.position.dy - _pointerDownY;
+              final dt = event.timeStamp.inMilliseconds - _pointerDownTime;
 
-              if (dy.abs() > dx.abs() && dy.abs() > 50) {
-                Navigator.pop(context);
+    
+              if (dt > 300 && dx.abs() < 10 && dy.abs() < 10) {
+                widget.onLongPressEnd();
                 return;
               }
+
+              if (dy.abs() > dx.abs() && dy.abs() > 50) {
+                widget.onClose();
+                return;
+              }
+
+             
               if (dx.abs() > 50) {
                 if (dx < 0) {
-                  if (widget.currentIndex < widget.totalCount - 1) {
-                    widget.onResetProgress();
-                    widget.pageController.jumpToPage(widget.currentIndex + 1);
-                  } else {
-                    widget.onSwipeNext();
-                  }
+                  widget.onNext();
                 } else {
-                  if (widget.currentIndex > 0) {
-                    widget.onResetProgress();
-                    widget.pageController.jumpToPage(widget.currentIndex - 1);
-                  } else {
-                    widget.onSwipePrev();
-                  }
+                  widget.onPrev();
                 }
               } else {
+                
                 final screenWidth = MediaQuery.of(context).size.width;
                 if (event.position.dx < screenWidth / 2) {
-                  widget.onResetProgress();
-
-                  controller.previous();
+                  widget.onPrev();
                 } else {
-                  widget.onResetProgress();
-                  controller.next();
+                  widget.onNext();
                 }
+              }
+            },
+            onPointerMove: (event) {
+              final dx = event.position.dx - _pointerDownX;
+              final dy = event.position.dy - _pointerDownY;
+              final dt = event.timeStamp.inMilliseconds - _pointerDownTime;
+
+              
+              if (dt > 300 && dx.abs() < 10 && dy.abs() < 10) {
+                widget.onLongPressStart();
               }
             },
           ),
         ),
+
         Positioned(top: 55, left: 20, right: 20, child: _buildHeader(context)),
-        // caption
+
         if (widget.story.caption != null && widget.story.caption!.isNotEmpty)
           Positioned(
             bottom: 40,
@@ -155,7 +159,7 @@ class _SingleUserStoryViewState extends State<SingleUserStoryView> {
     return Row(
       children: [
         InkWell(
-          onTap: () => Navigator.pop(context),
+          onTap: () => widget.onClose(),
           child: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
         ),
         const Gap(10),
@@ -190,11 +194,11 @@ class _SingleUserStoryViewState extends State<SingleUserStoryView> {
             ),
             onOpened: () {
               controller.pause();
-              widget.progressController.stop();
+              widget.onLongPressStart(); 
             },
             onCanceled: () {
               controller.play();
-              widget.progressController.forward();
+              widget.onLongPressEnd(); 
             },
             onSelected: (value) async {
               if (value == 'delete') {
@@ -204,7 +208,7 @@ class _SingleUserStoryViewState extends State<SingleUserStoryView> {
                   if (context.mounted) Navigator.of(context).pop();
                 } else {
                   controller.play();
-                  widget.progressController.forward();
+                  widget.onLongPressEnd();
                 }
               }
             },

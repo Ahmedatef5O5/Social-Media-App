@@ -51,28 +51,18 @@ class StoryItemWidget extends StatelessWidget {
           _showAddStoryOptions(context);
         } else {
           final homeCubit = context.read<HomeCubit>();
-
           final stories = userStroies ?? [story!];
-          homeCubit.cachedUserGroups = allUserGroups ?? [stories];
-          homeCubit.cachedCurrentUserGroupIndex =
-              allUserGroups?.indexWhere(
-                (g) => g.first.authorId == story!.authorId,
-              ) ??
-              0;
-          final allStories =
-              homeCubit.cachedStories.isNotEmpty
-                  ? homeCubit.cachedStories
-                  : [story!];
+          final groups = allUserGroups ?? [stories];
+          final groupIndex = groups.indexWhere(
+            (g) => g.first.authorId == story!.authorId,
+          );
 
-          final index = allStories.indexWhere((s) => s.id == story!.id);
           Navigator.of(context, rootNavigator: true).pushNamed(
             AppRoutes.storyDisplayViewRoute,
             arguments: {
-              'stories': allStories,
-              'initialIndex': index,
               'homeCubit': homeCubit,
-              'allUserGroups': allUserGroups ?? [stories],
-              'currentGroupIndex': homeCubit.cachedCurrentUserGroupIndex,
+              'allUserGroups': groups,
+              'initialGroupIndex': groupIndex,
             },
           );
         }

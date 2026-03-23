@@ -145,11 +145,9 @@ class AppRouter {
         final args = settings.arguments as Map<String, dynamic>;
         return _buildRoute(
           StoryDisplayView(
-            initialIndex: args['initialIndex'],
             homeCubit: args['homeCubit'],
-            stories: args['stories'],
             allUserGroups: args['allUserGroups'],
-            currentGroupIndex: args['currentGroupIndex'],
+            initialGroupIndex: args['initialGroupIndex'],
           ),
           typeOfRoute: TypeOfRoute.fade,
           settings: settings,
