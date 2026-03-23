@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:social_media_app/features/home/cubit/home_cubit.dart';
 import 'package:social_media_app/features/home/widgets/story_item_widget.dart';
+import '../../../core/router/app_routes.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
 
 class StoriesListSection extends StatelessWidget {
@@ -15,12 +16,23 @@ class StoriesListSection extends StatelessWidget {
       height: size.height * 0.12,
       child: BlocConsumer<HomeCubit, HomeState>(
         bloc: homeCubit,
-        listenWhen: (previous, current) => current is StoriesError,
+        listenWhen:
+            (previous, current) =>
+                current is StoriesError || current is StoryImagePicked,
         listener: (context, state) {
           if (state is StoriesError) {
             ScaffoldMessenger.of(
               context,
             ).showSnackBar(SnackBar(content: Text('Error: ${state.message}')));
+          }
+          if (state is StoryImagePicked) {
+            Navigator.of(context, rootNavigator: true).pushNamed(
+              AppRoutes.addStoryCaptionViewRoute,
+              arguments: {
+                'file': state.file,
+                'homeCubit': context.read<HomeCubit>(),
+              },
+            );
           }
         },
         buildWhen:
@@ -34,9 +46,9 @@ class StoriesListSection extends StatelessWidget {
             final stories = state.stories;
             return ListView.builder(
               scrollDirection: Axis.horizontal,
-              primary: false,
               physics: const ClampingScrollPhysics(),
               // physics: const AlwaysScrollableScrollPhysics(),
+              primary: false,
               itemCount: stories.length + 1,
               itemBuilder: (context, index) {
                 if (index == 0) {
