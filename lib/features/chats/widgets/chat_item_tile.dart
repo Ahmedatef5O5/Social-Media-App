@@ -1,0 +1,162 @@
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/material.dart';
+import 'package:gap/gap.dart';
+import '../../../core/constants/app_images.dart';
+import '../../../core/helpers/formatted_date.dart';
+import '../../../core/router/app_routes.dart';
+import '../../../core/themes/app_colors.dart';
+import '../../../core/widgets/custom_loading_indicator.dart';
+import '../models/chat_user_model.dart';
+
+class ChatItemTile extends StatelessWidget {
+  final ChatUserModel user;
+  const ChatItemTile({super.key, required this.user});
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      leading: _buildUserAvatar(),
+
+      title: _buildUserName(context),
+      subtitle: _buildLastMessage(context),
+      trailing: _buildTrailingSection(),
+      onTap:
+          () => Navigator.of(
+            context,
+            rootNavigator: true,
+          ).pushNamed(AppRoutes.chatDetailsViewRoute, arguments: user),
+    );
+  }
+
+  Column _buildTrailingSection() {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        if (user.lastMessageTime != null)
+          Text(
+            FormattedDate.getChatTime(user.lastMessageTime!),
+            style: const TextStyle(color: Colors.grey, fontSize: 11),
+          ),
+        const Gap(4),
+
+        if (user.unreadCount > 0)
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: const BoxDecoration(
+              color: Colors.green,
+              shape: BoxShape.circle,
+            ),
+            child: Text(
+              user.unreadCount > 99 ? '99+' : '${user.unreadCount}',
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  String _getLastMessageText() {
+    switch (user.lastMessageType) {
+      case 'image':
+        return '📷 Photo';
+      case 'video':
+        return '🎥 Video';
+      case 'voice':
+        return '🎤 Voice message';
+      default:
+        return (user.lastMessage == null || user.lastMessage!.isEmpty)
+            ? 'Tap to start chatting'
+            : user.lastMessage!;
+    }
+  }
+
+  Text _buildLastMessage(BuildContext context) {
+    return Text(
+      _getLastMessageText(),
+
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+
+      style: Theme.of(context).textTheme.labelSmall!.copyWith(
+        fontWeight: user.unreadCount > 0 ? FontWeight.w300 : FontWeight.w400,
+
+        color:
+            user.unreadCount > 0
+                ? AppColors.grey6.withValues(alpha: 0.95)
+                : AppColors.grey6,
+
+        fontSize: 14,
+        height: 1.8,
+      ),
+    );
+  }
+
+  Text _buildUserName(BuildContext context) {
+    return Text(
+      user.name,
+      style: Theme.of(context).textTheme.labelLarge!.copyWith(
+        fontWeight: FontWeight.w500,
+        fontSize: 18,
+      ),
+    );
+  }
+
+  Widget _buildUserAvatar() {
+    final lastSeenText =
+        user.lastSeen != null
+            ? FormattedDate.getLastSeen(user.lastSeen!)
+            : null;
+    final isOnline = user.lastSeen == null || lastSeenText == 'Online';
+
+    return Stack(
+      children: [
+        Hero(
+          tag: user.id,
+          child: Container(
+            height: 52,
+            width: 52,
+            decoration: BoxDecoration(
+              color: AppColors.primaryColor.withValues(alpha: 0.2),
+              shape: BoxShape.circle,
+              border:
+                  isOnline ? Border.all(color: Colors.green, width: 2.2) : null,
+            ),
+            child: ClipOval(
+              child: CachedNetworkImage(
+                imageUrl:
+                    (user.imageUrl != null && user.imageUrl!.isNotEmpty)
+                        ? user.imageUrl!
+                        : AppImages.defaultUserImg,
+                fit: BoxFit.cover,
+                placeholder: (context, url) => const CustomLoadingIndicator(),
+                errorWidget: (context, url, error) => const Icon(Icons.person),
+                maxWidthDiskCache: 200,
+                maxHeightDiskCache: 200,
+              ),
+            ),
+          ),
+        ),
+        if (isOnline)
+          Positioned(
+            bottom: 2,
+            right: 2,
+            child: Container(
+              width: 13,
+              height: 13,
+              decoration: BoxDecoration(
+                color: Colors.green,
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white, width: 1.5),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}
