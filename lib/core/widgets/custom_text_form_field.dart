@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:gap/gap.dart';
 import '../themes/app_colors.dart';
 
@@ -11,6 +12,7 @@ class CustomTextFormField extends StatefulWidget {
     this.validator,
     this.isPassword = false,
     this.keyboardType,
+    this.inputFormatters,
     this.suffixIcon,
     this.prefixIcon,
     this.labelText,
@@ -20,6 +22,7 @@ class CustomTextFormField extends StatefulWidget {
   final String? Function(String?)? validator;
   final bool isPassword;
   final TextInputType? keyboardType;
+  final List<TextInputFormatter>? inputFormatters;
 
   final Widget? suffixIcon;
   final Widget? prefixIcon;
@@ -62,6 +65,7 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
           validator: widget.validator,
           obscureText: _obscureText,
           keyboardType: widget.keyboardType,
+          inputFormatters: widget.inputFormatters,
           decoration: InputDecoration(
             isDense: true,
             contentPadding: const EdgeInsets.symmetric(

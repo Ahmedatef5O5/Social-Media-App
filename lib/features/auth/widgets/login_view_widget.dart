@@ -7,6 +7,8 @@ import 'package:social_media_app/features/auth/cubit/auth_cubit/auth_cubit.dart'
 import 'package:social_media_app/features/auth/widgets/sign_text_section.dart';
 import 'package:social_media_app/features/auth/widgets/social_sign_section.dart';
 import '../../../core/router/app_routes.dart';
+import '../../../core/utilities/app_formatters.dart';
+import '../../../core/utilities/app_validators.dart';
 
 class LoginViewWidget extends StatefulWidget {
   const LoginViewWidget({super.key});
@@ -44,7 +46,8 @@ class _LoginViewWidgetState extends State<LoginViewWidget> {
                 controller: _emailController,
                 labelText: 'Email/Phone',
                 hintText: 'Email/Phone',
-                validator: (v) => v!.isEmpty ? 'Email is required' : null,
+                inputFormatters: AppFormatters.noSpaces,
+                validator: AppValidators.validateEmail,
               ),
               Gap(26),
               CustomTextFormField(
@@ -52,19 +55,12 @@ class _LoginViewWidgetState extends State<LoginViewWidget> {
                 labelText: 'Password',
                 hintText: 'Enter password',
                 isPassword: true,
-                validator: (v) {
-                  if (v == null || v.isEmpty) {
-                    return 'Password is required';
-                  } else if (v.length < 6) {
-                    return 'Password must be at least 6 characters';
-                  }
-                  return null;
-                },
+                validator: AppValidators.validatePassword,
               ),
               Gap(12),
               Align(
                 alignment: Alignment.topRight,
-                child: Text('Forgor Password?'),
+                child: Text('Forgot Password?'),
               ),
               Gap(42),
               BlocConsumer<AuthCubit, AuthState>(
@@ -119,7 +115,7 @@ class _LoginViewWidgetState extends State<LoginViewWidget> {
                     onPressed: () {
                       if (_formKey.currentState!.validate()) {
                         context.read<AuthCubit>().signInWithEmail(
-                          _emailController.text,
+                          _emailController.text.trim(),
                           _passwordController.text,
                         );
                       }

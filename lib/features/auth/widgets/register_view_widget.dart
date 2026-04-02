@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 import 'package:social_media_app/core/router/app_routes.dart';
+import 'package:social_media_app/core/utilities/app_formatters.dart';
+import 'package:social_media_app/core/utilities/app_validators.dart';
 import 'package:social_media_app/features/auth/cubit/auth_cubit/auth_cubit.dart';
 import 'package:social_media_app/features/auth/widgets/sign_text_section.dart';
 import 'package:social_media_app/features/auth/widgets/social_sign_section.dart';
@@ -49,14 +51,16 @@ class _RegisterViewWidgetState extends State<RegisterViewWidget> {
                 controller: _fullNameController,
                 labelText: 'Full Name',
                 hintText: 'Your Full Name',
-                validator: (v) => v!.isEmpty ? 'Name is required' : null,
+                inputFormatters: AppFormatters.noLeadingSpace,
+                validator: AppValidators.validateName,
               ),
               Gap(18),
               CustomTextFormField(
                 controller: _emailController,
                 labelText: 'Email/Phone',
                 hintText: 'Email/Phone',
-                validator: (v) => v!.isEmpty ? 'Email is required' : null,
+                inputFormatters: AppFormatters.noSpaces,
+                validator: AppValidators.validateEmail,
               ),
               Gap(18),
               CustomTextFormField(
@@ -64,29 +68,19 @@ class _RegisterViewWidgetState extends State<RegisterViewWidget> {
                 labelText: 'Password',
                 hintText: 'Type your password',
                 isPassword: true,
-                validator: (v) {
-                  if (v == null || v.isEmpty) {
-                    return 'Password is required';
-                  } else if (v.length < 6) {
-                    return 'Password must be at least 6 characters';
-                  }
-                  return null;
-                },
+                validator: AppValidators.validatePassword,
               ),
               Gap(18),
               CustomTextFormField(
                 controller: _confirmPasswordController,
                 labelText: 'Confirm Password',
                 hintText: 'Retype your password',
-                validator: (v) {
-                  if (v == null || v.isEmpty) {
-                    return 'Confirm Password is required';
-                  } else if (v != _passwordController.text) {
-                    return 'Password does not match';
-                  }
-                  return null;
-                },
                 isPassword: true,
+                validator:
+                    (v) => AppValidators.validateConfirmPassword(
+                      v,
+                      _passwordController.text,
+                    ),
               ),
               Gap(22),
               BlocConsumer<AuthCubit, AuthState>(
@@ -148,8 +142,8 @@ class _RegisterViewWidgetState extends State<RegisterViewWidget> {
                         if (_passwordController.text ==
                             _confirmPasswordController.text) {
                           context.read<AuthCubit>().signUpWithEmail(
-                            _fullNameController.text,
-                            _emailController.text,
+                            _fullNameController.text.trim(),
+                            _emailController.text.trim(),
                             _passwordController.text,
                           );
                         }
