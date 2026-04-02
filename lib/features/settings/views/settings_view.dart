@@ -5,7 +5,7 @@ import 'package:social_media_app/core/themes/app_colors.dart';
 import 'package:social_media_app/core/themes/background_theme_widget.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/widgets/custom_elevated_button.dart';
-import '../../auth/logic/auth_cubit/auth_cubit.dart';
+import '../../auth/cubit/auth_cubit/auth_cubit.dart';
 
 class SettingsView extends StatelessWidget {
   const SettingsView({super.key});

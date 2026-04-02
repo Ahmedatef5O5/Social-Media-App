@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 import 'package:social_media_app/core/router/app_routes.dart';
-import 'package:social_media_app/features/auth/logic/auth_cubit/auth_cubit.dart';
+import 'package:social_media_app/features/auth/cubit/auth_cubit/auth_cubit.dart';
 import 'package:social_media_app/features/auth/widgets/sign_text_section.dart';
 import 'package:social_media_app/features/auth/widgets/social_sign_section.dart';
 import '../../../core/widgets/custom_elevated_button.dart';

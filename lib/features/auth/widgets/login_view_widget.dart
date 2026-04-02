@@ -3,7 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 import 'package:social_media_app/core/widgets/custom_elevated_button.dart';
 import 'package:social_media_app/core/widgets/custom_text_form_field.dart';
-import 'package:social_media_app/features/auth/logic/auth_cubit/auth_cubit.dart';
+import 'package:social_media_app/features/auth/cubit/auth_cubit/auth_cubit.dart';
 import 'package:social_media_app/features/auth/widgets/sign_text_section.dart';
 import 'package:social_media_app/features/auth/widgets/social_sign_section.dart';
 import '../../../core/router/app_routes.dart';
