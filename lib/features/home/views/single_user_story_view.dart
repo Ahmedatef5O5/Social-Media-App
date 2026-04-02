@@ -87,7 +87,6 @@ class _SingleUserStoryViewState extends State<SingleUserStoryView> {
               final dy = event.position.dy - _pointerDownY;
               final dt = event.timeStamp.inMilliseconds - _pointerDownTime;
 
-    
               if (dt > 300 && dx.abs() < 10 && dy.abs() < 10) {
                 widget.onLongPressEnd();
                 return;
@@ -98,7 +97,6 @@ class _SingleUserStoryViewState extends State<SingleUserStoryView> {
                 return;
               }
 
-             
               if (dx.abs() > 50) {
                 if (dx < 0) {
                   widget.onNext();
@@ -106,7 +104,6 @@ class _SingleUserStoryViewState extends State<SingleUserStoryView> {
                   widget.onPrev();
                 }
               } else {
-                
                 final screenWidth = MediaQuery.of(context).size.width;
                 if (event.position.dx < screenWidth / 2) {
                   widget.onPrev();
@@ -120,7 +117,6 @@ class _SingleUserStoryViewState extends State<SingleUserStoryView> {
               final dy = event.position.dy - _pointerDownY;
               final dt = event.timeStamp.inMilliseconds - _pointerDownTime;
 
-              
               if (dt > 300 && dx.abs() < 10 && dy.abs() < 10) {
                 widget.onLongPressStart();
               }
@@ -165,7 +161,7 @@ class _SingleUserStoryViewState extends State<SingleUserStoryView> {
         const Gap(10),
         CircleAvatar(
           backgroundImage: CachedNetworkImageProvider(
-            story.authorImageUrl ?? '',
+            story.authorImageUrl ?? AppImages.defaultUserImg,
           ),
         ),
         const Gap(10),
@@ -194,11 +190,11 @@ class _SingleUserStoryViewState extends State<SingleUserStoryView> {
             ),
             onOpened: () {
               controller.pause();
-              widget.onLongPressStart(); 
+              widget.onLongPressStart();
             },
             onCanceled: () {
               controller.play();
-              widget.onLongPressEnd(); 
+              widget.onLongPressEnd();
             },
             onSelected: (value) async {
               if (value == 'delete') {
