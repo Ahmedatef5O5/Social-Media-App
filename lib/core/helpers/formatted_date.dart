@@ -4,7 +4,7 @@ class FormattedDate {
   static String getFormattedDate(String dateString, {bool isShort = false}) {
     DateTime date = DateTime.parse(dateString);
     if (date.isUtc) {
-      date.toLocal().toIso8601String();
+      date = date.toLocal();
     }
     date = DateTime(
       date.year,
@@ -17,8 +17,6 @@ class FormattedDate {
     );
 
     final DateTime now = DateTime.now();
-
-    //
     final Duration exactDifference = now.difference(date);
 
     if (isShort) {
@@ -32,7 +30,7 @@ class FormattedDate {
       if (exactDifference.inDays < 30) {
         return '${(exactDifference.inDays / 7).floor()} w';
       }
-      return DateFormat.MMMd().format(date);
+      return DateFormat('d MMM').format(date);
     }
 
     final DateTime today = DateTime(now.year, now.month, now.day);
@@ -48,7 +46,7 @@ class FormattedDate {
     } else if (diffInDays == 1) {
       return "Yesterday at $time";
     } else {
-      final String dayMonth = DateFormat.MMMd().format(date);
+      final String dayMonth = DateFormat('d MMM').format(date);
       return "$dayMonth at $time";
     }
   }
@@ -73,8 +71,26 @@ class FormattedDate {
     } else if (diffInDays < 7) {
       return DateFormat.E().format(localDate);
     } else {
-      return DateFormat.yMd().format(localDate);
+      return DateFormat('d/M/y').format(localDate);
     }
+  }
+
+  static String getLastSeen(DateTime lastSeen) {
+    final lastSeenUtc = lastSeen.toUtc();
+    final nowUtc = DateTime.now().toUtc();
+    final diff = nowUtc.difference(lastSeenUtc);
+    final String time = DateFormat.jm().format(lastSeenUtc);
+    final String longTimeAgo = DateFormat('d/M/y').format(lastSeenUtc);
+    if (diff.inSeconds < 30) return 'Online';
+    if (diff.inSeconds < 60) return 'just now';
+    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
+    if (diff.inHours < 24) return '${diff.inHours}h ago';
+    if (diff.inDays == 1) return 'yesterday at $time';
+    if (diff.inDays < 7) return '${diff.inDays}d ago';
+    // if (diff.inDays < 30) return '${(diff.inDays / 7).floor()}w ago';
+    // if (diff.inDays < 365) return '${(diff.inDays / 30).floor()}mo ago';
+    // return '${(diff.inDays / 365).floor()}y ago';
+    return 'at $longTimeAgo';
   }
 
   static String getMessageTime(DateTime date) {
