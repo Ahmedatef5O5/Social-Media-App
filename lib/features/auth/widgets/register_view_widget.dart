@@ -39,7 +39,6 @@ class _RegisterViewWidgetState extends State<RegisterViewWidget> {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 22),
       child: SingleChildScrollView(
-        physics: const BouncingScrollPhysics(),
         scrollDirection: Axis.vertical,
         child: Form(
           key: _formKey,

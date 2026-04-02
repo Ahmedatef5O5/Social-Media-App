@@ -34,7 +34,7 @@ class _PostVideoPlayerState extends State<PostVideoPlayer> {
         autoPlay: false,
         looping: false,
         aspectRatio: _videoPlayerController.value.aspectRatio,
-        placeholder: Container(color: AppColors.blackWithOpacity),
+        placeholder: Container(color: AppColors.grey4.withValues(alpha: 0.2)),
         errorBuilder:
             (context, errorMessage) => Center(
               child: Text(
@@ -60,8 +60,9 @@ class _PostVideoPlayerState extends State<PostVideoPlayer> {
   Widget build(BuildContext context) {
     return Container(
       height: 250,
+      width: double.infinity,
       decoration: BoxDecoration(
-        color: AppColors.blackWithOpacity,
+        color: AppColors.grey4.withValues(alpha: 0.6),
         borderRadius: BorderRadius.circular(14),
       ),
       child:
@@ -71,7 +72,7 @@ class _PostVideoPlayerState extends State<PostVideoPlayer> {
                 borderRadius: BorderRadius.circular(14),
                 child: Chewie(controller: _chewieController!),
               )
-              : const CustomLoadingIndicator(),
+              : Center(child: const CustomLoadingIndicator()),
     );
   }
 }

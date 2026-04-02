@@ -136,7 +136,7 @@ class ReceiverDetailsHeaderSection extends StatelessWidget {
                     return Text(
                       isOnline ? 'Online' : 'last seen $lastSeenText',
                       style: TextStyle(
-                        fontSize: 12,
+                        fontSize: 11,
                         color: isOnline ? Colors.green : Colors.grey,
                       ),
                     );

@@ -83,10 +83,11 @@ class FormattedDate {
     final String longTimeAgo = DateFormat('d/M/y').format(lastSeenUtc);
     if (diff.inSeconds < 30) return 'Online';
     if (diff.inSeconds < 60) return 'just now';
-    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
-    if (diff.inHours < 24) return '${diff.inHours}h ago';
+    if (diff.inMinutes < 60) return 'at ${diff.inMinutes}minutes ago';
+    if (diff.inHours < 24) return 'at $time';
+    // if (diff.inHours < 24) return '${diff.inHours}h ago';
     if (diff.inDays == 1) return 'yesterday at $time';
-    if (diff.inDays < 7) return '${diff.inDays}d ago';
+    if (diff.inDays < 7) return 'at ${diff.inDays}days ago';
     // if (diff.inDays < 30) return '${(diff.inDays / 7).floor()}w ago';
     // if (diff.inDays < 365) return '${(diff.inDays / 30).floor()}mo ago';
     // return '${(diff.inDays / 365).floor()}y ago';

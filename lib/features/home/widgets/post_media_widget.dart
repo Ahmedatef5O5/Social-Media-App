@@ -36,7 +36,7 @@ class PostMediaWidget extends StatelessWidget {
                             (context, url) => Container(
                               height: MediaQuery.sizeOf(context).height * 0.3,
                               decoration: BoxDecoration(
-                                color: AppColors.grey7.withValues(alpha: 0.2),
+                                color: AppColors.grey4.withValues(alpha: 0.2),
                                 borderRadius: BorderRadius.circular(15),
                               ),
                               child: const CustomLoadingIndicator(),

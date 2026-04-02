@@ -106,7 +106,7 @@ class MessageContentContainer extends StatelessWidget {
 
         if (message.reaction != null && message.reaction!.isNotEmpty)
           Positioned(
-            bottom: -30,
+            bottom: -36,
             right: isMe ? 8 : null,
             left: isMe ? null : 8,
             child: Container(

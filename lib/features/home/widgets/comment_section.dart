@@ -13,10 +13,18 @@ class CommentsSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (post.comments == null || post.comments!.isEmpty) {
-      return EmptyPlaceholderState(
-        img: AppImages.smileFaceLot,
-        title: 'No comments yet.',
-        color: AppColors.grey7,
+      return SizedBox(
+        height: MediaQuery.of(context).size.height * 0.45,
+        child: EmptyPlaceholderState(
+          img: AppImages.smileFaceLot,
+          imgHeight: MediaQuery.of(context).size.height * 0.2,
+          title: 'No comments yet.',
+          style: Theme.of(context).textTheme.titleMedium!.copyWith(
+            color: AppColors.grey7,
+            fontWeight: FontWeight.w600,
+            fontSize: 18,
+          ),
+        ),
       );
     }
     return ListView.separated(

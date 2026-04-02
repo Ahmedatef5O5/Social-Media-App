@@ -35,6 +35,12 @@ class DiscoverView extends StatelessWidget {
                     }
                     if (state is DiscoverPeopleSuccess) {
                       return ListView.separated(
+                        physics: const AlwaysScrollableScrollPhysics(
+                          parent: BouncingScrollPhysics(),
+                        ),
+                        // physics: const AlwaysScrollableScrollPhysics(
+                        //   parent: ClampingScrollPhysics(),
+                        // ),
                         padding: EdgeInsets.only(top: 14),
                         itemCount: state.users.length,
                         separatorBuilder:

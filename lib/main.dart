@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:device_preview/device_preview.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -8,12 +9,16 @@ import 'package:social_media_app/core/router/app_router.dart';
 import 'package:social_media_app/core/router/app_routes.dart';
 import 'package:social_media_app/core/secrets/app_secrets.dart';
 import 'package:social_media_app/core/themes/app_themes.dart';
-import 'package:social_media_app/features/auth/logic/auth_cubit/auth_cubit.dart';
+import 'package:social_media_app/features/auth/cubit/auth_cubit/auth_cubit.dart';
 import 'package:social_media_app/features/auth/services/supabase_auth_services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  try {
+    await CachedNetworkImage.evictFromCache('');
+  } catch (_) {}
 
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,

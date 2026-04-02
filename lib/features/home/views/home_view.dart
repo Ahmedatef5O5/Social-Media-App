@@ -65,7 +65,10 @@ class _HomeViewState extends State<HomeView> {
                           .refreshHomeData(isRefresh: true),
                   child: CustomScrollView(
                     controller: _scrollController,
-                    physics: const AlwaysScrollableScrollPhysics(),
+                    // physics: const AlwaysScrollableScrollPhysics(),
+                    physics: const AlwaysScrollableScrollPhysics(
+                      parent: BouncingScrollPhysics(),
+                    ),
                     scrollDirection: Axis.vertical,
                     slivers: [
                       const SliverGap(30),

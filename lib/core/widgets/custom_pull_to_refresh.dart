@@ -45,13 +45,11 @@ class CustomPullToRefresh extends StatelessWidget {
               clipBehavior: Clip.none,
               alignment: alignment ?? Alignment.topCenter,
               children: <Widget>[
-                child,
-                // transform
-                //     ? Transform.translate(offset: Offset(0, dy), child: child)
-                //     : child,
+                Positioned.fill(child: child),
+
                 if (!controller.isIdle)
                   Positioned(
-                    top: dy.clamp(-100, 50),
+                    top: dy.clamp(0, 60),
                     child: IgnorePointer(
                       child: Opacity(
                         opacity: controller.value.clamp(0.0, 1.0),
