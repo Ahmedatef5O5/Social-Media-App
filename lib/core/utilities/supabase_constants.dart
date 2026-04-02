@@ -17,6 +17,7 @@ abstract class UserColumns {
   static const String email = 'email';
   static const String imageUrl = 'image_url';
   static const String title = 'title';
+  static const String lastSeen = 'last_seen';
 }
 
 // subClass for stories column table
@@ -71,4 +72,10 @@ abstract class MessagesColumns {
   static const String receiverId = 'receiver_id';
   static const String createdAt = 'created_at';
   static const String isRead = 'is_read';
+  static const String messageType = 'message_type';
+  static const String imageUrl = 'image_url';
+  static const String videoUrl = 'video_url';
+  static const String voiceUrl = 'voice_url';
+  static const String caption = 'caption';
+  static const String reaction = 'reaction';
 }
