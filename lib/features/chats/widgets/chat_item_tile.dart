@@ -20,7 +20,7 @@ class ChatItemTile extends StatelessWidget {
 
       title: _buildUserName(context),
       subtitle: _buildLastMessage(context),
-      trailing: _buildTrailingSection(),
+      trailing: _buildTrailingSection(context),
       onTap:
           () => Navigator.of(
             context,
@@ -29,23 +29,27 @@ class ChatItemTile extends StatelessWidget {
     );
   }
 
-  Column _buildTrailingSection() {
+  Column _buildTrailingSection(context) {
     return Column(
-      mainAxisSize: MainAxisSize.min,
+      mainAxisAlignment: MainAxisAlignment.center,
+      // mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
-        if (user.lastMessageTime != null)
+        if (user.lastMessageTime != null) ...[
+          const Gap(2),
           Text(
-            FormattedDate.getChatTime(user.lastMessageTime!),
-            style: const TextStyle(color: Colors.grey, fontSize: 11),
+            FormattedDate.getChatTime(user.lastMessageTime!, isChatList: true),
+            style: const TextStyle(color: Colors.grey, fontSize: 10),
           ),
-        const Gap(4),
+        ],
 
-        if (user.unreadCount > 0)
+        if (user.unreadCount > 0) ...[
+          const Gap(4),
           Container(
             padding: const EdgeInsets.all(6),
-            decoration: const BoxDecoration(
-              color: Colors.green,
+            decoration: BoxDecoration(
+              color: Theme.of(context).primaryColor,
+              // color: Colors.green,
               shape: BoxShape.circle,
             ),
             child: Text(
@@ -57,6 +61,7 @@ class ChatItemTile extends StatelessWidget {
               ),
             ),
           ),
+        ],
       ],
     );
   }

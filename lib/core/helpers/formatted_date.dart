@@ -76,12 +76,15 @@ class FormattedDate {
       return DateFormat.EEEE().format(localDate);
     }
 
-    return DateFormat('d MMMM y').format(localDate);
-    // if (localDate.year == now.year) {
-    //   return DateFormat('d MMMM').format(localDate);
-    // } else {
-    //   return DateFormat('d MMMM y').format(localDate);
-    // }
+    if (isChatList) {
+      return DateFormat('d MMMM').format(localDate);
+    } else {
+      if (localDate.year == now.year) {
+        return DateFormat('d MMMM y').format(localDate);
+      } else {
+        return DateFormat('d MMMM y').format(localDate);
+      }
+    }
   }
 
   static String getLastSeen(DateTime lastSeen) {
