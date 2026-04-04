@@ -53,7 +53,7 @@ class CreatePostUserInfo extends StatelessWidget {
                     fontWeight: FontWeight.w400,
                   ),
                 ),
-                Icon(Icons.arrow_drop_down, size: 26),
+                Icon(Icons.arrow_drop_down_outlined, size: 26),
               ],
             ),
           ),

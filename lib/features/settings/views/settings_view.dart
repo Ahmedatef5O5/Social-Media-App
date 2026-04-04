@@ -31,10 +31,8 @@ class SettingsView extends StatelessWidget {
                       SnackBar(
                         content: Text(
                           'LogOut Successfully',
-                          style:
-                              Theme.of(
-                                context,
-                              ).textTheme.titleSmall!.copyWith(),
+                          style: Theme.of(context).textTheme.titleSmall!
+                              .copyWith(color: AppColors.white),
                         ),
                         backgroundColor: Colors.redAccent,
                         behavior: SnackBarBehavior.floating,

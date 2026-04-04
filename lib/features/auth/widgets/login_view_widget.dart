@@ -69,10 +69,9 @@ class _LoginViewWidgetState extends State<LoginViewWidget> {
                       SnackBar(
                         content: Text(
                           'Login Successfully',
-                          style:
-                              Theme.of(
-                                context,
-                              ).textTheme.titleSmall!.copyWith(),
+                          style: Theme.of(
+                            context,
+                          ).textTheme.titleSmall!.copyWith(color: Colors.white),
                         ),
                         backgroundColor: Colors.green,
                         behavior: SnackBarBehavior.floating,

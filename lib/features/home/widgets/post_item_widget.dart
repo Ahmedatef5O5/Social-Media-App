@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:social_media_app/core/themes/app_colors.dart';
 import 'package:social_media_app/features/home/widgets/post_header_widget.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../cubit/home_cubit.dart';
@@ -15,6 +14,9 @@ class PostItemWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     final homeCubit = context.read<HomeCubit>();
 
     final currentUserId = Supabase.instance.client.auth.currentUser?.id;
@@ -49,11 +51,19 @@ class PostItemWidget extends StatelessWidget {
         }
         return Container(
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(12),
+            color: colorScheme.surface,
             border: Border.all(
               width: 1,
-              color: AppColors.blueGrey4.withValues(alpha: 0.35),
+              color: colorScheme.outlineVariant.withValues(alpha: 0.35),
             ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.03),
+                blurRadius: 4,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8),

@@ -11,6 +11,8 @@ class AddPostOptionsBottomSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final homeCubit = context.read<HomeCubit>();
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     return DraggableScrollableSheet(
       controller: controller,
       initialChildSize: 0.2,
@@ -19,13 +21,22 @@ class AddPostOptionsBottomSheet extends StatelessWidget {
       builder: (context, scrollController) {
         return Container(
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: colorScheme.surface.withValues(alpha: 0.9),
+
             borderRadius: const BorderRadius.vertical(top: Radius.circular(25)),
+            border: Border.all(
+              color:
+                  theme.brightness == Brightness.dark
+                      ? Colors.white.withValues(alpha: 0.08)
+                      : colorScheme.outlineVariant.withValues(alpha: 0.2),
+            ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.08),
-                blurRadius: 10,
-                spreadRadius: 5,
+                color: Colors.black.withValues(
+                  alpha: theme.brightness == Brightness.dark ? 0 : 0.15,
+                ),
+                blurRadius: 20,
+                offset: const Offset(0, -2),
               ),
             ],
           ),
@@ -33,16 +44,21 @@ class AddPostOptionsBottomSheet extends StatelessWidget {
             children: [
               Expanded(
                 child: ListView(
+                  physics: const AlwaysScrollableScrollPhysics(
+                    parent: ClampingScrollPhysics(),
+                  ),
                   controller: scrollController,
                   padding: const EdgeInsets.symmetric(horizontal: 10),
                   children: [
                     Gap(14),
                     Center(
                       child: Container(
-                        width: 75,
-                        height: 5,
+                        width: 70,
+                        height: 6,
                         decoration: BoxDecoration(
-                          color: Colors.grey[300],
+                          color: colorScheme.onSurfaceVariant.withValues(
+                            alpha: 0.4,
+                          ),
                           borderRadius: BorderRadius.circular(10),
                         ),
                       ),
@@ -51,25 +67,25 @@ class AddPostOptionsBottomSheet extends StatelessWidget {
                     BuildOptionItem(
                       Icons.image_outlined,
                       'Add Photo',
-                      Theme.of(context).primaryColor,
+                      colorScheme.primary,
                       onTap: () => homeCubit.pickImageFromGallery(),
                     ),
                     BuildOptionItem(
                       Icons.videocam_outlined,
                       'Add Video',
-                      Theme.of(context).primaryColor,
+                      colorScheme.primary,
                       onTap: () => homeCubit.pickVideo(),
                     ),
                     BuildOptionItem(
                       Icons.file_upload_outlined,
                       'Add A Document',
-                      Theme.of(context).primaryColor,
+                      colorScheme.primary,
                       onTap: () => homeCubit.pickDocument(),
                     ),
                     BuildOptionItem(
                       Icons.color_lens_outlined,
                       'Background Color',
-                      Theme.of(context).primaryColor,
+                      colorScheme.primary,
                       onTap:
                           () => Navigator.of(
                             context,
@@ -78,17 +94,17 @@ class AddPostOptionsBottomSheet extends StatelessWidget {
                     BuildOptionItem(
                       Icons.gif_box_outlined,
                       'Add GIF',
-                      Theme.of(context).primaryColor,
+                      colorScheme.primary,
                     ),
                     BuildOptionItem(
                       Icons.video_camera_front_outlined,
                       'Live Video',
-                      Theme.of(context).primaryColor,
+                      colorScheme.primary,
                     ),
                     BuildOptionItem(
                       Icons.camera_alt_outlined,
                       'Camera',
-                      Theme.of(context).primaryColor,
+                      colorScheme.primary,
                       onTap: () => homeCubit.takePhotoByCamera(),
                     ),
                   ],

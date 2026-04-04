@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../../core/themes/app_colors.dart';
 
 class BuildOptionItem extends StatelessWidget {
   final IconData icon;
@@ -15,14 +14,18 @@ class BuildOptionItem extends StatelessWidget {
   });
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return ListTile(
+      hoverColor: color.withValues(alpha: 0.1),
+      splashColor: color.withValues(alpha: 0.1),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       leading: Icon(icon, color: color, size: 30),
       title: Text(
         title,
-        style: const TextStyle(
+        style: Theme.of(context).textTheme.titleSmall!.copyWith(
           fontSize: 16,
           fontWeight: FontWeight.w500,
-          color: AppColors.black87,
+          color: theme.colorScheme.onSurface,
         ),
       ),
       onTap: onTap,
