@@ -12,15 +12,27 @@ class DiscoverPersonCardWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     return Card(
-      elevation: 0.5,
-      color: Theme.of(context).colorScheme.surface,
+      elevation: 0.4,
+      shadowColor:
+          theme.brightness == Brightness.dark
+              ? Colors.black.withValues(alpha: 0.5)
+              : Colors.grey.withValues(alpha: 0.2),
+      color: colorScheme.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(
+          color: colorScheme.outlineVariant.withValues(alpha: 0.1),
+        ),
+      ),
       child: ListTile(
         leading: Container(
           height: 44,
           width: 44,
           decoration: BoxDecoration(
-            color: Theme.of(context).primaryColor.withValues(alpha: 0.2),
+            color: theme.primaryColor.withValues(alpha: 0.1),
             shape: BoxShape.circle,
           ),
           child: ClipOval(
@@ -42,7 +54,7 @@ class DiscoverPersonCardWidget extends StatelessWidget {
           userData.name,
           style: Theme.of(context).textTheme.labelLarge!.copyWith(
             fontWeight: FontWeight.w500,
-            fontSize: 18,
+            fontSize: 17,
           ),
         ),
         subtitle: Text(
@@ -51,7 +63,7 @@ class DiscoverPersonCardWidget extends StatelessWidget {
               : '1K Followers',
           style: Theme.of(context).textTheme.labelMedium!.copyWith(
             fontWeight: FontWeight.w400,
-            fontSize: 14,
+            fontSize: 13,
             color: AppColors.grey4,
           ),
         ),
@@ -61,11 +73,11 @@ class DiscoverPersonCardWidget extends StatelessWidget {
           txtBtn: 'Follow',
           txtBtnStyle: Theme.of(context).textTheme.titleSmall!.copyWith(
             fontWeight: FontWeight.w400,
-            color: AppColors.white,
+            color: AppColors.white.withValues(alpha: 0.75),
             fontSize: 15,
           ),
           onPressed: () {},
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
       ),
     );
