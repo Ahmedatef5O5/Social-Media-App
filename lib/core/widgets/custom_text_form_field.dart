@@ -16,6 +16,7 @@ class CustomTextFormField extends StatefulWidget {
     this.suffixIcon,
     this.prefixIcon,
     this.labelText,
+    this.focusNode,
   });
   final String? hintText, labelText, headerText;
   final TextEditingController? controller;
@@ -23,9 +24,9 @@ class CustomTextFormField extends StatefulWidget {
   final bool isPassword;
   final TextInputType? keyboardType;
   final List<TextInputFormatter>? inputFormatters;
-
   final Widget? suffixIcon;
   final Widget? prefixIcon;
+  final FocusNode? focusNode;
 
   @override
   State<CustomTextFormField> createState() => _CustomTextFormFieldState();
@@ -33,11 +34,27 @@ class CustomTextFormField extends StatefulWidget {
 
 class _CustomTextFormFieldState extends State<CustomTextFormField> {
   late bool _obscureText;
+  late FocusNode _effectiveFocusNode;
 
   @override
   void initState() {
     super.initState();
     _obscureText = widget.isPassword;
+    _effectiveFocusNode = widget.focusNode ?? FocusNode();
+    _effectiveFocusNode.addListener(_onFocusChange);
+  }
+
+  void _onFocusChange() {
+    setState(() {});
+  }
+
+  @override
+  void dispose() {
+    _effectiveFocusNode.removeListener(_onFocusChange);
+    if (widget.focusNode == null) {
+      _effectiveFocusNode.dispose();
+    }
+    super.dispose();
   }
 
   @override
@@ -61,40 +78,51 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
           Gap(12),
         ],
         TextFormField(
+          focusNode: _effectiveFocusNode,
           controller: widget.controller,
           validator: widget.validator,
           obscureText: _obscureText,
           keyboardType: widget.keyboardType,
           inputFormatters: widget.inputFormatters,
+          cursorColor: Theme.of(context).primaryColor,
+          cursorHeight: 18.5,
           decoration: InputDecoration(
             isDense: true,
             contentPadding: const EdgeInsets.symmetric(
               horizontal: 16,
               vertical: 16,
             ),
-            // filled: true,
-            // fillColor: Colors.grey.shade300,
-            floatingLabelBehavior: FloatingLabelBehavior.always,
             labelText: widget.labelText,
-            labelStyle: Theme.of(context).textTheme.titleSmall!.copyWith(
-              color: AppColors.black87,
+            floatingLabelBehavior: FloatingLabelBehavior.always,
+            floatingLabelStyle: Theme.of(
+              context,
+            ).textTheme.titleSmall!.copyWith(
+              color:
+                  _effectiveFocusNode.hasFocus
+                      ? Theme.of(context).primaryColor
+                      : null,
+              // : AppColors.black87,
               fontSize: 15,
               fontWeight: FontWeight.w400,
             ),
+
             hintText: widget.hintText,
             hintStyle: Theme.of(context).textTheme.titleSmall!.copyWith(
-              color: AppColors.black26,
               fontSize: 15,
               fontWeight: FontWeight.w300,
             ),
             prefixIcon: widget.prefixIcon,
-
             suffixIcon:
                 widget.isPassword
                     ? IconButton(
                       icon: Icon(
                         _obscureText ? Icons.visibility_off : Icons.visibility,
-                        color: AppColors.black26,
+                        color:
+                            _effectiveFocusNode.hasFocus || !_obscureText
+                                ? Theme.of(
+                                  context,
+                                ).primaryColor.withValues(alpha: 0.6)
+                                : AppColors.black38,
                       ),
                       onPressed: () {
                         setState(() {

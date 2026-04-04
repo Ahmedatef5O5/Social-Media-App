@@ -1,7 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import '../../../core/constants/app_images.dart';
-import '../../../core/themes/app_colors.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
 
 class UserChatAvatar extends StatelessWidget {
@@ -15,7 +14,7 @@ class UserChatAvatar extends StatelessWidget {
       height: 28,
       width: 28,
       decoration: BoxDecoration(
-        color: AppColors.primaryColor.withValues(alpha: 0.2),
+        color: Theme.of(context).primaryColor.withValues(alpha: 0.2),
         shape: BoxShape.circle,
       ),
       child: ClipOval(

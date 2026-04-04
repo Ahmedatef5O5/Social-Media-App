@@ -101,60 +101,57 @@ class _EditProfileViewState extends State<EditProfileView> {
           );
         }
       },
-      child: SafeArea(
-        bottom: false,
-        child: GestureDetector(
-          onTap: () => FocusScope.of(context).unfocus(),
-          child: Scaffold(
-            extendBodyBehindAppBar: true,
-            appBar: AppBar(
-              backgroundColor: AppColors.transparent,
-              leading: InkWell(
-                onTap: () => Navigator.of(context).pop(),
-                child: Icon(Icons.arrow_back_ios_new, color: AppColors.black54),
+      child: GestureDetector(
+        onTap: () => FocusScope.of(context).unfocus(),
+        child: Scaffold(
+          extendBodyBehindAppBar: true,
+          appBar: AppBar(
+            backgroundColor: AppColors.transparent,
+            leading: InkWell(
+              onTap: () => Navigator.of(context).pop(),
+              child: Icon(
+                Icons.arrow_back_ios_new,
+                color: Theme.of(context).primaryColor,
               ),
-              title: Text(
-                'Edit Profile',
-                style: Theme.of(context).textTheme.titleMedium!.copyWith(
-                  fontWeight: FontWeight.w400,
-                  color: AppColors.black54,
-                  fontSize: 20,
-                ),
-              ),
-              centerTitle: true,
             ),
-            body: BackgroundThemeWidget(
-              child: SingleChildScrollView(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 24,
-                    vertical: 2,
-                  ),
+            title: Text(
+              'Edit Profile',
+              style: Theme.of(context).textTheme.titleMedium!.copyWith(
+                fontWeight: FontWeight.w400,
+                fontSize: 20,
+              ),
+            ),
+            centerTitle: true,
+          ),
+          body: BackgroundThemeWidget(
+            child: SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 2,
+                ),
 
-                  child: Column(
-                    children: [
-                      EditProfileImagesSection(
-                        userData: widget.userData,
-                        selectedProfileImage: selectedProfileImage,
-                        selectedBackgroundImage: selectedBackgroundImage,
-                        onEditProfile:
-                            () => showImagePickerOptions(context, true),
-                        onEditBackground:
-                            () => showImagePickerOptions(context, false),
-                      ),
-                      Gap(12),
-                      EditProfileForm(
-                        nameController: _nameController,
-                        userNameController: _userNameController,
-                        titleController: _titleController,
-                        bioController: _bioController,
-                      ),
-                      Gap(20),
-                      EditProfileActionButton(
-                        onPressed: () => _onSavePressed(),
-                      ),
-                    ],
-                  ),
+                child: Column(
+                  children: [
+                    EditProfileImagesSection(
+                      userData: widget.userData,
+                      selectedProfileImage: selectedProfileImage,
+                      selectedBackgroundImage: selectedBackgroundImage,
+                      onEditProfile:
+                          () => showImagePickerOptions(context, true),
+                      onEditBackground:
+                          () => showImagePickerOptions(context, false),
+                    ),
+                    Gap(12),
+                    EditProfileForm(
+                      nameController: _nameController,
+                      userNameController: _userNameController,
+                      titleController: _titleController,
+                      bioController: _bioController,
+                    ),
+                    Gap(20),
+                    EditProfileActionButton(onPressed: () => _onSavePressed()),
+                  ],
                 ),
               ),
             ),

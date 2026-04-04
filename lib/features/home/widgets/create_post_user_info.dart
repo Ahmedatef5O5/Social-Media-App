@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:social_media_app/core/widgets/main_user_avatar.dart';
-import '../../../core/themes/app_colors.dart';
 
 class CreatePostUserInfo extends StatelessWidget {
   const CreatePostUserInfo({
@@ -28,9 +27,7 @@ class CreatePostUserInfo extends StatelessWidget {
         Gap(12),
         Text(
           userName,
-          // 'user name',
           style: Theme.of(context).textTheme.titleMedium!.copyWith(
-            color: AppColors.black87,
             fontSize: 20,
             fontWeight: FontWeight.w400,
           ),
@@ -40,7 +37,10 @@ class CreatePostUserInfo extends StatelessWidget {
           decoration: BoxDecoration(
             shape: BoxShape.rectangle,
             borderRadius: BorderRadius.circular(3),
-            border: Border.all(width: 1.2, color: AppColors.black38),
+            border: Border.all(
+              width: 1.2,
+              color: Theme.of(context).primaryColor,
+            ),
           ),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
@@ -49,12 +49,11 @@ class CreatePostUserInfo extends StatelessWidget {
                 Text(
                   'Public',
                   style: Theme.of(context).textTheme.titleSmall!.copyWith(
-                    color: AppColors.black87,
                     fontSize: 14,
                     fontWeight: FontWeight.w400,
                   ),
                 ),
-                Icon(Icons.arrow_drop_down, size: 26, color: AppColors.black38),
+                Icon(Icons.arrow_drop_down, size: 26),
               ],
             ),
           ),

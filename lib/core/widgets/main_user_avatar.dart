@@ -1,9 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:social_media_app/core/widgets/custom_loading_indicator.dart';
 import '../constants/app_images.dart';
-import '../themes/app_colors.dart';
 
 class MainUserAvatar extends StatelessWidget {
   final String? imageUrl;
@@ -26,7 +24,7 @@ class MainUserAvatar extends StatelessWidget {
         border:
             showBorder
                 ? Border.all(
-                  color: AppColors.primaryColor.withValues(alpha: .5),
+                  color: Theme.of(context).primaryColor.withValues(alpha: .8),
                   width: 2.2,
                 )
                 : null,

@@ -38,10 +38,12 @@ class DiscoverView extends StatelessWidget {
                         physics: const AlwaysScrollableScrollPhysics(
                           parent: BouncingScrollPhysics(),
                         ),
-                        // physics: const AlwaysScrollableScrollPhysics(
-                        //   parent: ClampingScrollPhysics(),
-                        // ),
-                        padding: EdgeInsets.only(top: 14),
+                        padding: const EdgeInsets.only(
+                          top: 14,
+                          left: 0,
+                          right: 0,
+                          bottom: 100,
+                        ),
                         itemCount: state.users.length,
                         separatorBuilder:
                             (BuildContext context, int index) => const Gap(16),

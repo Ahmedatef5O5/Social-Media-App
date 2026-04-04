@@ -59,18 +59,9 @@ class _SendCommentSectionState extends State<SendCommentSection> {
                   width: 32,
                   height: 32,
                   fit: BoxFit.cover,
+                  color: Theme.of(context).primaryColor,
                 ),
               ),
-
-              // InkWell(
-              //   onTap: () {},
-              //   child: Image.asset(
-              //     AppImages.selectEmojisIcon,
-              //     width: 28,
-              //     height: 28,
-              //     fit: BoxFit.cover,
-              //   ),
-              // ),
               const Gap(5),
               Expanded(
                 child: TextField(
@@ -89,7 +80,7 @@ class _SendCommentSectionState extends State<SendCommentSection> {
                       onTap: () {},
                       child: Icon(
                         Icons.camera_alt_outlined,
-                        color: AppColors.primaryColor,
+                        color: Theme.of(context).primaryColor,
                         size: 24,
                       ),
                     ),
@@ -106,7 +97,7 @@ class _SendCommentSectionState extends State<SendCommentSection> {
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(25),
                       borderSide: BorderSide(
-                        color: AppColors.primaryColor,
+                        color: Theme.of(context).primaryColor,
                         width: 1.6,
                       ),
                     ),
@@ -128,7 +119,7 @@ class _SendCommentSectionState extends State<SendCommentSection> {
                       AppImages.sendIcon,
                       width: 24,
                       height: 24,
-                      color: AppColors.primaryColor,
+                      color: Theme.of(context).primaryColor,
                     ),
                   ),
               const Gap(2),

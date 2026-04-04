@@ -17,7 +17,7 @@ class NoRouteScreen extends StatelessWidget {
             Center(
               child: Text(
                 'No route found $routeName',
-                style: TextStyle(
+                style: Theme.of(context).textTheme.headlineMedium!.copyWith(
                   color: AppColors.black,
                   fontSize: 20,
                   fontWeight: FontWeight.w500,

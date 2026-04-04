@@ -5,7 +5,6 @@ import 'package:gap/gap.dart';
 import 'package:social_media_app/features/chats/widgets/custom_icon_btn_widget.dart';
 import '../../../core/constants/app_images.dart';
 import '../../../core/helpers/formatted_date.dart';
-import '../../../core/themes/app_colors.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
 import '../cubit/chat_details_cubit/chat_details_cubit.dart';
 import '../models/chat_user_model.dart';
@@ -24,7 +23,11 @@ class ReceiverDetailsHeaderSection extends StatelessWidget {
             onTap: () => Navigator.pop(context),
             child: Row(
               children: [
-                const Icon(Icons.arrow_back_ios_new, size: 22),
+                Icon(
+                  Icons.arrow_back_ios_new,
+                  color: Theme.of(context).primaryColor,
+                  size: 22,
+                ),
                 const Gap(8),
                 BlocBuilder<ChatDetailsCubit, ChatDetailsState>(
                   buildWhen: (previous, current) => current is LastSeenUpdated,
@@ -48,9 +51,9 @@ class ReceiverDetailsHeaderSection extends StatelessWidget {
                             height: 42,
                             width: 42,
                             decoration: BoxDecoration(
-                              color: AppColors.primaryColor.withValues(
-                                alpha: 0.2,
-                              ),
+                              color: Theme.of(
+                                context,
+                              ).primaryColor.withValues(alpha: 0.2),
                               shape: BoxShape.circle,
                               border:
                                   isOnline
@@ -111,7 +114,8 @@ class ReceiverDetailsHeaderSection extends StatelessWidget {
               children: [
                 Text(
                   receiverUser.name,
-                  style: const TextStyle(
+                  style: Theme.of(context).textTheme.titleSmall!.copyWith(
+                    color: Theme.of(context).primaryColor,
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
                     overflow: TextOverflow.ellipsis,

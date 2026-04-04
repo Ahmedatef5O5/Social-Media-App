@@ -16,21 +16,12 @@ class CreateTextStoryView extends StatefulWidget {
 class _CreateTextStoryViewState extends State<CreateTextStoryView> {
   final TextEditingController _controller = TextEditingController();
   bool _hasText = false;
-  final List<Color> _colors = [
-    AppColors.primaryColor,
-    Colors.purple,
-    Colors.red,
-    Colors.black,
-    Colors.grey,
-    Colors.orange,
-    Colors.green,
-  ];
+  late List<Color> _colors;
   late Color _selectedColor;
 
   @override
   void initState() {
     super.initState();
-    _selectedColor = _colors[0];
     _controller.addListener(() {
       setState(() {
         _hasText = _controller.text.trim().isNotEmpty;
@@ -39,8 +30,23 @@ class _CreateTextStoryViewState extends State<CreateTextStoryView> {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    _colors = [
+      Theme.of(context).primaryColor,
+      Colors.purple,
+      Colors.red,
+      Colors.black,
+      Colors.grey,
+      Colors.orange,
+      Colors.green,
+    ];
+    _selectedColor = _colors[0];
+  }
+
+  @override
   void dispose() {
-    _controller.removeListener(() {});
     _controller.dispose();
     super.dispose();
   }
@@ -64,7 +70,10 @@ class _CreateTextStoryViewState extends State<CreateTextStoryView> {
           }
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Story Added Successfully'),
+              content: Text(
+                'Story Added Successfully',
+                style: Theme.of(context).textTheme.titleSmall!.copyWith(),
+              ),
               backgroundColor: Colors.green,
               behavior: SnackBarBehavior.floating,
               duration: const Duration(seconds: 1),
@@ -165,7 +174,9 @@ class _CreateTextStoryViewState extends State<CreateTextStoryView> {
                                 color:
                                     _controller.text.length >= 140
                                         ? Colors.red
-                                        : null,
+                                        : AppColors.grey2.withValues(
+                                          alpha: 0.6,
+                                        ),
                                 fontWeight:
                                     _controller.text.length >= 140
                                         ? FontWeight.bold
@@ -218,10 +229,18 @@ class _CreateTextStoryViewState extends State<CreateTextStoryView> {
                     maximumSize: Size(290, 50),
                     minimumSize: Size(290, 50),
                     txtBtn: 'Share Your Story',
-                    txtColor:
-                        _hasText
-                            ? AppColors.primaryColor
-                            : AppColors.grey4.withValues(alpha: 0.6),
+                    txtBtnStyle: Theme.of(
+                      context,
+                    ).textTheme.labelLarge!.copyWith(
+                      color:
+                          _hasText
+                              ? Theme.of(context).primaryColor
+                              : AppColors.black12.withValues(alpha: 0.25),
+
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+
                     bgColor: AppColors.white,
                     isLoading: state is AddStoryLoading,
                     onPressed: () => _onShareTextStory(context),

@@ -3,7 +3,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 import 'package:social_media_app/core/router/app_routes.dart';
 import 'package:social_media_app/features/home/widgets/build_option_item.dart';
-import '../../../core/themes/app_colors.dart';
 import '../cubit/home_cubit.dart';
 
 class AddPostOptionsBottomSheet extends StatelessWidget {
@@ -52,25 +51,25 @@ class AddPostOptionsBottomSheet extends StatelessWidget {
                     BuildOptionItem(
                       Icons.image_outlined,
                       'Add Photo',
-                      AppColors.primaryColor,
+                      Theme.of(context).primaryColor,
                       onTap: () => homeCubit.pickImageFromGallery(),
                     ),
                     BuildOptionItem(
                       Icons.videocam_outlined,
                       'Add Video',
-                      AppColors.primaryColor,
+                      Theme.of(context).primaryColor,
                       onTap: () => homeCubit.pickVideo(),
                     ),
                     BuildOptionItem(
                       Icons.file_upload_outlined,
                       'Add A Document',
-                      AppColors.primaryColor,
+                      Theme.of(context).primaryColor,
                       onTap: () => homeCubit.pickDocument(),
                     ),
                     BuildOptionItem(
                       Icons.color_lens_outlined,
                       'Background Color',
-                      AppColors.primaryColor,
+                      Theme.of(context).primaryColor,
                       onTap:
                           () => Navigator.of(
                             context,
@@ -79,17 +78,17 @@ class AddPostOptionsBottomSheet extends StatelessWidget {
                     BuildOptionItem(
                       Icons.gif_box_outlined,
                       'Add GIF',
-                      AppColors.primaryColor,
+                      Theme.of(context).primaryColor,
                     ),
                     BuildOptionItem(
                       Icons.video_camera_front_outlined,
                       'Live Video',
-                      AppColors.primaryColor,
+                      Theme.of(context).primaryColor,
                     ),
                     BuildOptionItem(
                       Icons.camera_alt_outlined,
                       'Camera',
-                      AppColors.primaryColor,
+                      Theme.of(context).primaryColor,
                       onTap: () => homeCubit.takePhotoByCamera(),
                     ),
                   ],

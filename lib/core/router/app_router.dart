@@ -1,5 +1,4 @@
 import 'dart:io';
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -28,6 +27,8 @@ import 'package:social_media_app/features/splash/views/on_boarding_view.dart';
 import 'package:social_media_app/features/splash/views/splash_view.dart';
 import '../../features/auth/data/models/user_data.dart';
 import '../../features/chats/cubit/chats_cubit/chats_cubit.dart';
+import '../../features/group_chat/models/group_model.dart';
+import '../../features/group_chat/views/group_chat_view.dart';
 import '../../features/home/views/add_story_caption_view.dart';
 import '../../features/home/views/creat_text_story_view.dart';
 
@@ -168,6 +169,10 @@ class AppRouter {
           ),
           settings: settings,
         );
+      //
+      case AppRoutes.groupChatRoute:
+        final group = settings.arguments as GroupModel;
+        return _buildRoute(GroupChatView(group: group), settings: settings);
 
       case AppRoutes.editProfileViewRoute:
         final user = settings.arguments as UserData;

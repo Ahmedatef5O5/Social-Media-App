@@ -8,10 +8,11 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:social_media_app/core/router/app_router.dart';
 import 'package:social_media_app/core/router/app_routes.dart';
 import 'package:social_media_app/core/secrets/app_secrets.dart';
-import 'package:social_media_app/core/themes/app_themes.dart';
-import 'package:social_media_app/features/auth/cubit/auth_cubit/auth_cubit.dart';
+import 'package:social_media_app/core/themes/cubit/theme_cubit.dart';
 import 'package:social_media_app/features/auth/services/supabase_auth_services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+import 'features/auth/cubit/auth_cubit/auth_cubit.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -54,15 +55,30 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      locale: DevicePreview.locale(context),
-      builder: DevicePreview.appBuilder,
-      debugShowCheckedModeBanner: false,
-      title: 'Social Media App',
-      theme: AppThemes.lightTheme,
-      initialRoute: AppRoutes.splashViewRoute,
-      onGenerateRoute: AppRouter.generateRoute,
-      onUnknownRoute: (settings) => AppRouter.generateRoute(settings),
+    return BlocProvider(
+      lazy: false,
+      create: (_) {
+        final cubit = ThemeCubit();
+        final user = Supabase.instance.client.auth.currentUser;
+        if (user != null) {
+          cubit.loaderUserTheme(user.id);
+        }
+        return cubit;
+      },
+      child: BlocBuilder<ThemeCubit, ThemeState>(
+        builder: (context, state) {
+          return MaterialApp(
+            locale: DevicePreview.locale(context),
+            builder: DevicePreview.appBuilder,
+            debugShowCheckedModeBanner: false,
+            title: 'Social Media App',
+            theme: state.theme.themeData,
+            initialRoute: AppRoutes.splashViewRoute,
+            onGenerateRoute: AppRouter.generateRoute,
+            onUnknownRoute: (settings) => AppRouter.generateRoute(settings),
+          );
+        },
+      ),
     );
   }
 }

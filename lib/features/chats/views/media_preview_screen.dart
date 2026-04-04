@@ -54,7 +54,7 @@ class _MediaPreviewScreenState extends State<MediaPreviewScreen> {
         });
       },
       child: CircleAvatar(
-        backgroundColor: Colors.black38,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor.withValues(),
         radius: 30,
         child: Icon(
           _videoPlayerController!.value.isPlaying
@@ -129,7 +129,7 @@ class _MediaPreviewScreenState extends State<MediaPreviewScreen> {
                     ),
                     const SizedBox(width: 8),
                     CircleAvatar(
-                      backgroundColor: AppColors.primaryColor,
+                      backgroundColor: Theme.of(context).primaryColor,
                       child: IconButton(
                         icon: const Icon(Icons.send, color: AppColors.white),
                         onPressed: () {

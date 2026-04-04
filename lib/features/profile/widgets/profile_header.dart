@@ -60,13 +60,20 @@ class ProfileHeader extends StatelessWidget {
                   maximumSize: Size(260, 50),
                   minimumSize: Size(260, 50),
                   txtBtn: 'EDIT PROFILE',
+                  txtBtnStyle: Theme.of(
+                    context,
+                  ).textTheme.titleMedium!.copyWith(
+                    color: Theme.of(context).primaryColor,
+                    fontWeight: FontWeight.w500,
+                    fontSize: 20,
+                  ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(6),
                   ),
                   side: BorderSide(color: AppColors.grey3, width: 1.6),
                   elevation: 0,
-                  bgColor: AppColors.white,
-                  txtColor: AppColors.black54,
+                  bgColor: Theme.of(context).colorScheme.surface,
+
                   onPressed: () async {
                     final profileCubit = context.read<ProfileCubit>();
                     await Navigator.of(context, rootNavigator: true).pushNamed(

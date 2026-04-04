@@ -19,14 +19,17 @@ class CreatePostHeaderSection extends StatelessWidget {
       children: [
         IconButton(
           onPressed: () => Navigator.of(context).pop(),
-          icon: Icon(Icons.close, size: 24, color: AppColors.black54),
+          icon: Icon(
+            Icons.close,
+            size: 24,
+            color: Theme.of(context).primaryColor,
+          ),
         ),
         Gap(4),
         Text(
           'Create a Post',
           style: Theme.of(context).textTheme.titleMedium!.copyWith(
             fontWeight: FontWeight.w400,
-            color: AppColors.black54,
             fontSize: 16,
           ),
         ),
@@ -43,7 +46,7 @@ class CreatePostHeaderSection extends StatelessWidget {
                       color:
                           _canPost
                               ? Theme.of(context).primaryColor
-                              : AppColors.black54,
+                              : AppColors.grey4.withValues(alpha: 0.8),
                       fontSize: 17,
                     ),
                   ),

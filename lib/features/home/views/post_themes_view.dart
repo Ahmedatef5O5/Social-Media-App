@@ -20,13 +20,12 @@ class PostThemesView extends StatelessWidget {
           scrolledUnderElevation: 0,
           leading: IconButton(
             onPressed: () => Navigator.of(context).pop(),
-            icon: Icon(Icons.close, size: 24, color: AppColors.black54),
+            icon: Icon(Icons.close, size: 24),
           ),
           title: Text(
             'Create a Post',
             style: Theme.of(context).textTheme.titleMedium!.copyWith(
               fontWeight: FontWeight.w400,
-              color: AppColors.black54,
               fontSize: 18,
             ),
           ),
@@ -45,7 +44,9 @@ class PostThemesView extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       CustomPostType(
-                        bgColor: AppColors.primaryColor.withValues(alpha: 0.9),
+                        bgColor: Theme.of(
+                          context,
+                        ).primaryColor.withValues(alpha: 0.9),
                         border: Border.all(
                           width: 1.4,
                           color: AppColors.black38,
@@ -53,7 +54,9 @@ class PostThemesView extends StatelessWidget {
                         child: Image.asset(AppImages.textStoryIcon),
                       ),
                       CustomPostType(
-                        bgColor: AppColors.primaryColor.withValues(alpha: 0.6),
+                        bgColor: Theme.of(
+                          context,
+                        ).primaryColor.withValues(alpha: 0.6),
                         border: Border.all(
                           width: 1.4,
                           color: AppColors.black38,
@@ -81,8 +84,13 @@ class PostThemesView extends StatelessWidget {
                         ),
                       ),
                       CustomPostType(
-                        bgColor: Color(0xff5096F1).withValues(alpha: 0.18),
-                        child: Image.asset(AppImages.musicIcon),
+                        bgColor: Theme.of(
+                          context,
+                        ).primaryColor.withValues(alpha: 0.18),
+                        child: Image.asset(
+                          AppImages.musicIcon,
+                          color: Theme.of(context).primaryColor,
+                        ),
                       ),
                     ],
                   ),

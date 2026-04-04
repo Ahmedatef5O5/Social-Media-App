@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:social_media_app/core/themes/app_colors.dart';
 import 'package:social_media_app/features/home/models/post_model.dart';
 import 'package:social_media_app/features/home/widgets/comment_widget.dart';
 import '../../../core/constants/app_images.dart';
@@ -20,7 +19,7 @@ class CommentsSection extends StatelessWidget {
           imgHeight: MediaQuery.of(context).size.height * 0.2,
           title: 'No comments yet.',
           style: Theme.of(context).textTheme.titleMedium!.copyWith(
-            color: AppColors.grey7,
+            color: Theme.of(context).primaryColor,
             fontWeight: FontWeight.w600,
             fontSize: 18,
           ),

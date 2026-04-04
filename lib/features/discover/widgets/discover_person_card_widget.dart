@@ -14,13 +14,13 @@ class DiscoverPersonCardWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       elevation: 0.5,
-      color: AppColors.white,
+      color: Theme.of(context).colorScheme.surface,
       child: ListTile(
         leading: Container(
           height: 44,
           width: 44,
           decoration: BoxDecoration(
-            color: AppColors.primaryColor.withValues(alpha: 0.2),
+            color: Theme.of(context).primaryColor.withValues(alpha: 0.2),
             shape: BoxShape.circle,
           ),
           child: ClipOval(

@@ -29,7 +29,13 @@ class SettingsView extends StatelessWidget {
                   if (state is AuthSignedOut) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: Text('LogOut Successfully'),
+                        content: Text(
+                          'LogOut Successfully',
+                          style:
+                              Theme.of(
+                                context,
+                              ).textTheme.titleSmall!.copyWith(),
+                        ),
                         backgroundColor: Colors.redAccent,
                         behavior: SnackBarBehavior.floating,
                         duration: const Duration(seconds: 1),
@@ -58,7 +64,11 @@ class SettingsView extends StatelessWidget {
                     return CustomElevatedButton(
                       maximumSize: Size(150, 50),
                       minimumSize: Size(150, 50),
+
                       txtBtn: 'log out',
+                      txtBtnStyle: Theme.of(
+                        context,
+                      ).textTheme.titleMedium!.copyWith(color: AppColors.white),
                       onPressed: null,
                       isLoading: true,
                     );
@@ -67,6 +77,9 @@ class SettingsView extends StatelessWidget {
                     maximumSize: Size(150, 50),
                     minimumSize: Size(150, 50),
                     txtBtn: 'log out',
+                    txtBtnStyle: Theme.of(
+                      context,
+                    ).textTheme.titleMedium!.copyWith(color: AppColors.white),
                     onPressed: () {
                       context.read<AuthCubit>().signOut();
                     },

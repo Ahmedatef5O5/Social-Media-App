@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
+import 'package:lottie/lottie.dart';
 import 'package:social_media_app/core/widgets/custom_elevated_button.dart';
 import '../../features/chats/widgets/empty_placeholder_state.dart';
 import '../themes/app_colors.dart';
@@ -23,7 +24,7 @@ class CustomConfirmationDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     double screenWidth = MediaQuery.of(context).size.width;
     return AlertDialog(
-      backgroundColor: AppColors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor.withValues(),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       contentPadding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
       content: ConstrainedBox(
@@ -36,12 +37,18 @@ class CustomConfirmationDialog extends StatelessWidget {
                 opacity: 1,
                 periodSpeed: 1,
                 img: img,
-
+                delegates: LottieDelegates(
+                  values: [
+                    ValueDelegate.color(const [
+                      'Shape 1',
+                      '**',
+                    ], value: Theme.of(context).primaryColor),
+                  ],
+                ),
                 imgHeight: screenWidth * 0.4,
                 imgWidth: screenWidth * 0.45,
                 title: title,
                 style: Theme.of(context).textTheme.titleMedium!.copyWith(
-                  color: AppColors.black,
                   fontWeight: FontWeight.w600,
                   fontSize: 18,
                 ),
@@ -71,7 +78,9 @@ class CustomConfirmationDialog extends StatelessWidget {
                       maximumSize: Size(80, 40),
                       minimumSize: Size(80, 40),
                       txtBtn: confirmBtnText,
-                      txtColor: AppColors.primaryColor,
+                      txtBtnStyle: Theme.of(context).textTheme.titleMedium!
+                          .copyWith(color: Theme.of(context).primaryColor),
+                      txtColor: Theme.of(context).primaryColor,
                       onPressed: onConfirm,
                       elevation: 1.5,
                       bgColor: AppColors.white,

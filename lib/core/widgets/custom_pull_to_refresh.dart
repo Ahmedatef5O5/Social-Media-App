@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
 import 'package:social_media_app/core/widgets/custom_loading_indicator.dart';
 import '../constants/app_images.dart';
-import '../themes/app_colors.dart';
 
 class CustomPullToRefresh extends StatelessWidget {
   final Widget child;
@@ -55,13 +54,16 @@ class CustomPullToRefresh extends StatelessWidget {
                         opacity: controller.value.clamp(0.0, 1.0),
                         child: Material(
                           elevation: 0.9,
-                          shadowColor: AppColors.primaryColor.withValues(
-                            alpha: 0.6,
-                          ),
+                          shadowColor: Theme.of(
+                            context,
+                          ).primaryColor.withValues(alpha: 0.6),
                           shape: const CircleBorder(),
                           child: CircleAvatar(
                             radius: radius ?? 24,
-                            backgroundColor: AppColors.white,
+                            backgroundColor:
+                                Theme.of(
+                                  context,
+                                ).scaffoldBackgroundColor.withValues(),
 
                             child: Center(
                               child: Lottie.asset(
@@ -69,6 +71,19 @@ class CustomPullToRefresh extends StatelessWidget {
                                 width: 85,
                                 height: 85,
                                 fit: BoxFit.contain,
+                                delegates: LottieDelegates(
+                                  values: [
+                                    ValueDelegate.colorFilter(
+                                      ['**'],
+                                      value: ColorFilter.mode(
+                                        Theme.of(
+                                          context,
+                                        ).primaryColor.withValues(alpha: 0.85),
+                                        BlendMode.srcATop,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                                 animate:
                                     controller.isRefreshEnabled ||
                                     controller.isDragging,

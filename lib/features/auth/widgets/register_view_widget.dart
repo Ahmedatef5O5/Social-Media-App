@@ -5,6 +5,7 @@ import 'package:social_media_app/core/router/app_routes.dart';
 import 'package:social_media_app/core/utilities/app_formatters.dart';
 import 'package:social_media_app/core/utilities/app_validators.dart';
 import 'package:social_media_app/features/auth/cubit/auth_cubit/auth_cubit.dart';
+import 'package:social_media_app/features/auth/widgets/password_strength_bar.dart';
 import 'package:social_media_app/features/auth/widgets/sign_text_section.dart';
 import 'package:social_media_app/features/auth/widgets/social_sign_section.dart';
 import '../../../core/widgets/custom_elevated_button.dart';
@@ -24,12 +25,34 @@ class _RegisterViewWidgetState extends State<RegisterViewWidget> {
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
 
+  final FocusNode _passwordFocusNode = FocusNode();
+  bool _showStrenghtPasswordBar = false;
+  final ValueNotifier<String> _passwordStrengthNotifier = ValueNotifier<String>(
+    '',
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    _passwordController.addListener(() {
+      _passwordStrengthNotifier.value = _passwordController.text;
+    });
+
+    _passwordFocusNode.addListener(() {
+      setState(() {
+        _showStrenghtPasswordBar = _passwordFocusNode.hasFocus;
+      });
+    });
+  }
+
   @override
   void dispose() {
     _fullNameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
+    _passwordStrengthNotifier.dispose();
+    _passwordFocusNode.dispose();
     super.dispose();
   }
 
@@ -64,10 +87,36 @@ class _RegisterViewWidgetState extends State<RegisterViewWidget> {
               Gap(18),
               CustomTextFormField(
                 controller: _passwordController,
+                focusNode: _passwordFocusNode,
                 labelText: 'Password',
                 hintText: 'Type your password',
                 isPassword: true,
                 validator: AppValidators.validatePassword,
+              ),
+
+              AnimatedSize(
+                duration: const Duration(milliseconds: 300),
+
+                child:
+                    _showStrenghtPasswordBar
+                        ? Column(
+                          children: [
+                            const Gap(8),
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: SizedBox(
+                                width: MediaQuery.sizeOf(context).width * 0.5,
+                                child: ValueListenableBuilder<String>(
+                                  valueListenable: _passwordStrengthNotifier,
+                                  builder: (context, value, child) {
+                                    return PasswordStrengthBar(password: value);
+                                  },
+                                ),
+                              ),
+                            ),
+                          ],
+                        )
+                        : const SizedBox.shrink(),
               ),
               Gap(18),
               CustomTextFormField(
@@ -90,7 +139,13 @@ class _RegisterViewWidgetState extends State<RegisterViewWidget> {
                   if (state is AuthSuccess) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: Text('Sign up Successfully'),
+                        content: Text(
+                          'Sign up Successfully',
+                          style:
+                              Theme.of(
+                                context,
+                              ).textTheme.titleSmall!.copyWith(),
+                        ),
                         backgroundColor: Colors.green,
                         behavior: SnackBarBehavior.floating,
                         duration: const Duration(seconds: 1),

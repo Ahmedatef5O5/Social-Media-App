@@ -1,16 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
+import 'package:social_media_app/core/themes/app_colors.dart';
 import 'package:social_media_app/features/chats/cubit/chat_details_cubit/chat_details_cubit.dart';
 import 'package:social_media_app/features/chats/models/message_model.dart';
 import 'package:social_media_app/features/chats/widgets/message_content_container_widget.dart';
 import 'package:social_media_app/features/chats/widgets/user_chat_avatar_widget.dart';
-import '../../../core/themes/app_colors.dart';
 
 class ChatBubble extends StatelessWidget {
-  final MessageModel message;
-  final bool isMe;
-  final String? userImgUrl;
   const ChatBubble({
     super.key,
     required this.message,
@@ -18,21 +15,9 @@ class ChatBubble extends StatelessWidget {
     this.userImgUrl,
   });
 
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onLongPress: () => _showReactionAndDeleteMenu(context),
-      child: Row(
-        mainAxisAlignment:
-            isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          if (!isMe) ...[UserChatAvatar(userImgUrl: userImgUrl), const Gap(8)],
-          MessageContentContainer(message: message, isMe: isMe),
-        ],
-      ),
-    );
-  }
+  final bool isMe;
+  final MessageModel message;
+  final String? userImgUrl;
 
   void _showReactionAndDeleteMenu(BuildContext context) {
     showModalBottomSheet(
@@ -42,8 +27,7 @@ class ChatBubble extends StatelessWidget {
           (ctx) => Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: AppColors.white,
-              // color: Theme.of(context).scaffoldBackgroundColor,
+              color: Theme.of(context).scaffoldBackgroundColor,
               borderRadius: const BorderRadius.vertical(
                 top: Radius.circular(16),
               ),
@@ -70,29 +54,26 @@ class ChatBubble extends StatelessWidget {
                             decoration: BoxDecoration(
                               color:
                                   isSelected
-                                      ? AppColors.primaryColor.withValues(
-                                        alpha: 0.15,
-                                      )
+                                      ? Theme.of(
+                                        context,
+                                      ).primaryColor.withValues(alpha: 0.25)
                                       : Colors.transparent,
                               borderRadius: BorderRadius.circular(8),
                               border:
                                   isSelected
                                       ? Border.all(
-                                        color: AppColors.primaryColor,
+                                        color: Theme.of(context).primaryColor,
                                         width: 1.5,
                                       )
                                       : null,
                             ),
                             child: Text(
                               emoji,
-                              style: const TextStyle(fontSize: 28),
+                              style: Theme.of(
+                                context,
+                              ).textTheme.titleMedium!.copyWith(fontSize: 28),
                             ),
                           ),
-
-                          //  Text(
-                          //   emoji,
-                          //   style: const TextStyle(fontSize: 28),
-                          // ),
                         );
                       }).toList(),
                 ),
@@ -100,7 +81,12 @@ class ChatBubble extends StatelessWidget {
                 if (isMe)
                   ListTile(
                     leading: const Icon(Icons.delete_outline),
-                    title: const Text('Delete message'),
+                    title: Text(
+                      'Delete message',
+                      style: Theme.of(
+                        context,
+                      ).textTheme.titleMedium!.copyWith(color: Colors.red),
+                    ),
                     onTap: () {
                       Navigator.pop(ctx);
                       final String actualReceiverId =
@@ -114,6 +100,22 @@ class ChatBubble extends StatelessWidget {
               ],
             ),
           ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onLongPress: () => _showReactionAndDeleteMenu(context),
+      child: Row(
+        mainAxisAlignment:
+            isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          if (!isMe) ...[UserChatAvatar(userImgUrl: userImgUrl), const Gap(8)],
+          MessageContentContainer(message: message, isMe: isMe),
+        ],
+      ),
     );
   }
 }

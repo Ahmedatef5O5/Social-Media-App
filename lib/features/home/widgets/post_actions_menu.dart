@@ -29,24 +29,37 @@ class PostActionsMenu extends StatelessWidget {
       itemBuilder:
           (context) => [
             if (post.authorId == currentUserId)
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: 'delete',
                 child: Row(
                   children: [
                     Icon(Icons.delete_outline, color: Colors.red),
                     Gap(8),
-                    Text('Delete'),
+                    Text(
+                      'Delete',
+                      style: Theme.of(
+                        context,
+                      ).textTheme.titleSmall!.copyWith(color: Colors.red),
+                    ),
                   ],
                 ),
               )
             else
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: 'report',
                 child: Row(
                   children: [
-                    Icon(Icons.report_gmailerrorred),
+                    Icon(
+                      Icons.report_gmailerrorred,
+                      color: AppColors.grey8.withValues(alpha: 0.9),
+                    ),
                     Gap(8),
-                    Text('Report Post'),
+                    Text(
+                      'Report Post',
+                      style: Theme.of(context).textTheme.titleSmall!.copyWith(
+                        color: AppColors.grey8.withValues(alpha: 0.9),
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -67,8 +80,12 @@ class PostActionsMenu extends StatelessWidget {
                 await homeCubit.deletePost(post.id);
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Post deleted successfully'),
+                    SnackBar(
+                      content: Text(
+                        'Post deleted successfully',
+                        style:
+                            Theme.of(context).textTheme.titleSmall!.copyWith(),
+                      ),
                       backgroundColor: Colors.green,
                       behavior: SnackBarBehavior.floating,
                     ),
@@ -80,8 +97,11 @@ class PostActionsMenu extends StatelessWidget {
     } else if (value == 'report') {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Post Reported successfully'),
+          SnackBar(
+            content: Text(
+              'Post Reported successfully',
+              style: Theme.of(context).textTheme.titleSmall!.copyWith(),
+            ),
             backgroundColor: Colors.green,
             behavior: SnackBarBehavior.floating,
           ),

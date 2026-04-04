@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:image_picker/image_picker.dart';
-import '../../../core/themes/app_colors.dart';
 
 enum StoryType { text, image }
 
@@ -25,7 +24,7 @@ class StoryImagePickerSheet extends StatelessWidget {
           _buildBottomSheetOption(
             context,
             icon: Icons.text_fields,
-            color: AppColors.primaryColor,
+            color: Theme.of(context).primaryColor,
             title: 'Text Story',
             onTap: () => onSelected(null, StoryType.text),
           ),
@@ -33,7 +32,7 @@ class StoryImagePickerSheet extends StatelessWidget {
           _buildBottomSheetOption(
             context,
             icon: Icons.photo_library,
-            color: AppColors.primaryColor,
+            color: Theme.of(context).primaryColor,
             title: 'Gallery',
             onTap: () => onSelected(ImageSource.gallery, StoryType.image),
           ),

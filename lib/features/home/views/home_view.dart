@@ -53,6 +53,7 @@ class _HomeViewState extends State<HomeView> {
     return PopScope(
       canPop: false,
       child: BackgroundThemeWidget(
+        bottom: false,
         child: Stack(
           children: [
             Center(
@@ -79,7 +80,7 @@ class _HomeViewState extends State<HomeView> {
                       SliverToBoxAdapter(child: StoriesListSection()),
                       const SliverGap(4),
                       PostsSection(),
-                      const SliverGap(25),
+                      SliverGap(MediaQuery.of(context).padding.bottom + 100),
                     ],
                   ),
                 ),

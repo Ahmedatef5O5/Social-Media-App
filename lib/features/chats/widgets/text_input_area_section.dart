@@ -69,7 +69,9 @@ class _TextInputAreaSectionState extends State<TextInputAreaSection> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   decoration: BoxDecoration(
-                    color: AppColors.bgColor2.withValues(alpha: 0.25),
+                    color: Theme.of(
+                      context,
+                    ).primaryColor.withValues(alpha: 0.25),
                     borderRadius: BorderRadius.circular(25),
                   ),
                   child: TextField(
@@ -80,7 +82,6 @@ class _TextInputAreaSectionState extends State<TextInputAreaSection> {
                     decoration: InputDecoration(
                       hoverColor: AppColors.white,
                       hintText: "Type a message...",
-                      hintStyle: TextStyle(color: AppColors.black38),
                       border: InputBorder.none,
                       contentPadding: EdgeInsets.symmetric(
                         vertical: 12,
@@ -108,7 +109,9 @@ class _TextInputAreaSectionState extends State<TextInputAreaSection> {
                       padding: const EdgeInsets.only(bottom: 10),
                       child: Image.asset(
                         AppImages.sendIcon,
-                        color: AppColors.primaryColor.withValues(alpha: 0.95),
+                        color: Theme.of(
+                          context,
+                        ).primaryColor.withValues(alpha: 0.95),
                         width: 28,
                         height: 28,
                       ),
@@ -188,7 +191,9 @@ class _TextInputAreaSectionState extends State<TextInputAreaSection> {
                       child: Icon(
                         _isRecording ? Icons.mic : Icons.mic_none,
                         color:
-                            _isRecording ? Colors.red : AppColors.primaryColor,
+                            _isRecording
+                                ? Colors.red
+                                : Theme.of(context).primaryColor,
                         size: 28,
                       ),
                     ),
@@ -208,9 +213,9 @@ class _TextInputAreaSectionState extends State<TextInputAreaSection> {
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              leading: const Icon(
+              leading: Icon(
                 Icons.photo_library,
-                color: AppColors.primaryColor,
+                color: Theme.of(context).primaryColor,
               ),
               title: const Text('Send Image'),
               onTap: () async {
@@ -220,7 +225,6 @@ class _TextInputAreaSectionState extends State<TextInputAreaSection> {
                   source: ImageSource.gallery,
                 );
                 if (file != null && context.mounted) {
-                  // _showCaptionDialog(context, File(file.path), 'image');
                   final chatCubit = context.read<ChatDetailsCubit>();
                   Navigator.push(
                     context,
@@ -251,9 +255,9 @@ class _TextInputAreaSectionState extends State<TextInputAreaSection> {
             ),
 
             ListTile(
-              leading: const Icon(
+              leading: Icon(
                 Icons.videocam,
-                color: AppColors.primaryColor,
+                color: Theme.of(context).primaryColor,
               ),
               title: const Text('Send Video'),
               onTap: () async {
@@ -294,7 +298,6 @@ class _TextInputAreaSectionState extends State<TextInputAreaSection> {
                           ),
                     ),
                   );
-                  // _showCaptionDialog(context, File(file.path), 'video');
                 }
               },
             ),

@@ -23,7 +23,8 @@ class ImageMessageWidget extends StatelessWidget {
         );
       },
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.all(Radius.circular(22)),
+
         child: CachedNetworkImage(
           imageUrl: imageUrl,
           width: 200,

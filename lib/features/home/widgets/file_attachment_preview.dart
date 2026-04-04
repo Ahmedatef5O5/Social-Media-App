@@ -21,17 +21,22 @@ class FileAttachmentPreview extends StatelessWidget {
         ),
         child: Row(
           children: [
-            const Icon(Icons.insert_drive_file, color: AppColors.primaryColor),
+            Icon(
+              Icons.insert_drive_file,
+              color: Theme.of(context).primaryColor,
+            ),
             const Gap(10),
             Expanded(
               child: Text(
                 fileName,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.bodyMedium,
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyMedium!.copyWith(color: AppColors.black),
               ),
             ),
-            const Icon(Icons.download_rounded, size: 20, color: Colors.grey),
+            Icon(Icons.download_rounded, size: 20, color: AppColors.blueGrey3),
           ],
         ),
       ),

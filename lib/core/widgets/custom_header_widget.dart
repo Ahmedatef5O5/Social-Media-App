@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../themes/app_colors.dart';
 
 class CustomHeader extends StatelessWidget {
   final String title;
@@ -27,7 +26,6 @@ class CustomHeader extends StatelessWidget {
                 Theme.of(context).textTheme.titleLarge!.copyWith(
                   fontWeight: FontWeight.w400,
                   fontSize: 22,
-                  color: AppColors.black54,
                 ),
           ),
           const Spacer(),

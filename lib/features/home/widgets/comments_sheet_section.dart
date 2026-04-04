@@ -125,7 +125,9 @@ class _CommentsSheetSectionState extends State<CommentsSheetSection> {
                                   left: index * 18.0,
                                   child: CircleAvatar(
                                     radius: 13,
-                                    backgroundColor: AppColors.white,
+                                    backgroundColor: Theme.of(context)
+                                        .scaffoldBackgroundColor
+                                        .withValues(alpha: 0.92),
                                     child: CircleAvatar(
                                       radius: 11,
                                       backgroundImage: CachedNetworkImageProvider(

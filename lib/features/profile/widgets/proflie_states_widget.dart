@@ -13,7 +13,8 @@ class ProfileStatsWidget extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 20),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 18),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
+
         borderRadius: BorderRadius.circular(6),
         border: Border.all(color: AppColors.grey4),
       ),

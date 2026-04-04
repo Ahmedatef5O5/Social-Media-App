@@ -35,12 +35,17 @@ class PostInteractionsRow extends StatelessWidget {
                 LikeButton(
                   size: 24,
                   circleColor: CircleColor(
-                    start: AppColors.primaryColor,
-                    end: AppColors.primaryColor.withValues(alpha: 0.5),
+                    start: Theme.of(context).primaryColor,
+                    end: Theme.of(context).primaryColor.withValues(alpha: 0.5),
                   ),
                   bubblesColor: BubblesColor(
-                    dotPrimaryColor: AppColors.primaryColor,
-                    dotSecondaryColor: AppColors.bgColor,
+                    dotPrimaryColor: Theme.of(context).primaryColor,
+                    dotSecondaryColor: Theme.of(
+                      context,
+                    ).primaryColor.withValues(alpha: 0.5),
+                    dotThirdColor: Theme.of(
+                      context,
+                    ).primaryColor.withValues(alpha: 0.15),
                   ),
                   isLiked: currentPost.isLikedBy(currUserId!),
                   likeCount: currentPost.likesCount,
@@ -50,7 +55,10 @@ class PostInteractionsRow extends StatelessWidget {
                       isLiked
                           ? Icons.thumb_up_alt
                           : Icons.thumb_up_alt_outlined,
-                      color: isLiked ? AppColors.primaryColor : AppColors.grey6,
+                      color:
+                          isLiked
+                              ? Theme.of(context).primaryColor
+                              : AppColors.grey6,
                       size: 24,
                     );
                   },
@@ -79,7 +87,7 @@ class PostInteractionsRow extends StatelessWidget {
                   context: context,
                   useRootNavigator: true,
                   isScrollControlled: true,
-                  backgroundColor: AppColors.white,
+                  backgroundColor: Theme.of(context).scaffoldBackgroundColor,
                   useSafeArea: false,
                   shape: const RoundedRectangleBorder(
                     borderRadius: BorderRadius.vertical(

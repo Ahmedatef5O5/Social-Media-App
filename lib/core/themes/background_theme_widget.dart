@@ -1,64 +1,59 @@
 import 'package:flutter/material.dart';
-import 'app_colors.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:social_media_app/core/themes/cubit/theme_cubit.dart';
 
 class BackgroundThemeWidget extends StatelessWidget {
   final Widget child;
   final bool top, bottom;
+  final bool showCircles;
   const BackgroundThemeWidget({
     super.key,
     required this.child,
     this.top = true,
     this.bottom = true,
+    this.showCircles = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      // height: double.infinity,
-      height: MediaQuery.of(context).size.height,
-      decoration: const BoxDecoration(color: Colors.white),
-      child: Stack(
-        children: [
-          Positioned(
-            top: -50,
-            left: -50,
-            child: Container(
-              width: 250,
-              height: 250,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: RadialGradient(
-                  colors: [
-                    AppColors.bgColor,
-                    AppColors.bgColor.withValues(alpha: 0.01),
-                  ],
-                  stops: const [0.2, 1.0],
+    return BlocBuilder<ThemeCubit, ThemeState>(
+      builder: (context, state) {
+        final theme = state.theme;
+        return Container(
+          width: double.infinity,
+          height: MediaQuery.of(context).size.height,
+          decoration: BoxDecoration(color: theme.bgBase),
+          child: Stack(
+            children: [
+              if (showCircles) ...[
+                Positioned(top: -50, left: -50, child: _circle(theme.bgCircle)),
+                Positioned(
+                  bottom: -50,
+                  right: -50,
+                  child: _circle(theme.bgCircle),
                 ),
-              ),
-            ),
+              ],
+
+              SafeArea(top: top, bottom: bottom, child: child),
+            ],
           ),
-          Positioned(
-            bottom: -50,
-            right: -50,
-            child: Container(
-              width: 250,
-              height: 250,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: RadialGradient(
-                  colors: [
-                    AppColors.bgColor,
-                    AppColors.bgColor.withValues(alpha: 0.01),
-                  ],
-                  stops: const [0.2, 1.0],
-                ),
-              ),
-            ),
-          ),
-          SafeArea(top: top, bottom: bottom, child: child),
-        ],
-      ),
+        );
+      },
     );
   }
+
+  Widget _circle(Color color) => Opacity(
+    opacity: 0.8,
+    child: Container(
+      width: 250,
+      height: 250,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: RadialGradient(
+          colors: [color, color.withValues(alpha: 0.01)],
+          stops: const [0.2, 1.0],
+        ),
+      ),
+    ),
+  );
 }

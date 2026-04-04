@@ -13,7 +13,6 @@ class CustomLoadingIndicator extends StatelessWidget {
       child: CupertinoActivityIndicator(
         radius: radius ?? 10,
         color: color ?? Theme.of(context).primaryColor,
-        // color: AppColors.primaryColor,
       ),
     );
   }

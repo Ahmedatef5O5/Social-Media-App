@@ -51,9 +51,11 @@ class FormattedDate {
     }
   }
 
-  static String getChatTime(DateTime date) {
+  static String getChatTime(DateTime date, {bool isChatList = false}) {
     final DateTime localDate = date.toLocal();
     final DateTime now = DateTime.now();
+
+    final String time = DateFormat.jm().format(localDate);
     final DateTime today = DateTime(now.year, now.month, now.day);
     final DateTime msgDate = DateTime(
       localDate.year,
@@ -62,16 +64,22 @@ class FormattedDate {
     );
     final int diffInDays = today.difference(msgDate).inDays;
 
-    if (date.day == now.day &&
-        date.month == now.month &&
-        date.year == now.year) {
-      return 'Today';
-    } else if (diffInDays == 1) {
+    if (diffInDays == 0) {
+      return isChatList ? time : "Today";
+    }
+
+    if (diffInDays == 1) {
       return "Yesterday";
-    } else if (diffInDays < 7) {
-      return DateFormat.E().format(localDate);
+    }
+
+    if (diffInDays < 7) {
+      return DateFormat.EEEE().format(localDate);
+    }
+
+    if (localDate.year == now.year) {
+      return DateFormat('d MMMM').format(localDate);
     } else {
-      return DateFormat('d/M/y').format(localDate);
+      return DateFormat('d MMMM y').format(localDate);
     }
   }
 
@@ -87,7 +95,7 @@ class FormattedDate {
     if (diff.inHours < 24) return 'at $time';
     // if (diff.inHours < 24) return '${diff.inHours}h ago';
     if (diff.inDays == 1) return 'yesterday at $time';
-    if (diff.inDays < 7) return 'at ${diff.inDays}days ago';
+    if (diff.inDays < 7) return 'at ${diff.inDays} days ago';
     // if (diff.inDays < 30) return '${(diff.inDays / 7).floor()}w ago';
     // if (diff.inDays < 365) return '${(diff.inDays / 30).floor()}mo ago';
     // return '${(diff.inDays / 365).floor()}y ago';

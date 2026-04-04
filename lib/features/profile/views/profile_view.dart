@@ -110,18 +110,11 @@ class _ProfileViewState extends State<ProfileView> {
                               // pinned: true,
                               delegate: SliverTabBarDelegate(
                                 TabBar(
-                                  labelColor: Theme.of(context).primaryColor,
                                   unselectedLabelColor: AppColors.grey4,
                                   dividerColor: AppColors.grey3,
-                                  indicatorColor:
-                                      Theme.of(context).primaryColor,
                                   indicatorSize: TabBarIndicatorSize.tab,
                                   indicatorWeight: 3,
                                   padding: EdgeInsets.symmetric(horizontal: 30),
-                                  indicator: BoxDecoration(
-                                    color: Theme.of(context).primaryColor,
-                                    borderRadius: BorderRadius.circular(60),
-                                  ),
                                   indicatorPadding: const EdgeInsets.only(
                                     top: 45,
                                   ),

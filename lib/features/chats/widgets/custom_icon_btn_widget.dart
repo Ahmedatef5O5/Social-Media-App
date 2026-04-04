@@ -27,7 +27,7 @@ class CustomIconBtnWidget extends StatelessWidget {
         padding: padding ?? EdgeInsets.zero,
         child: Icon(
           icon,
-          color: AppColors.primaryColor.withValues(alpha: 0.85),
+          color: Theme.of(context).primaryColor.withValues(alpha: 0.85),
           size: size ?? 26,
         ),
       ),

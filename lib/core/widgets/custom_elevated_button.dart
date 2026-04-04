@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:social_media_app/core/widgets/custom_loading_indicator.dart';
+
 import '../themes/app_colors.dart';
 
 class CustomElevatedButton extends StatelessWidget {
@@ -53,9 +54,9 @@ class CustomElevatedButton extends StatelessWidget {
                 txtBtn,
                 style:
                     txtBtnStyle ??
-                    Theme.of(context).textTheme.titleMedium!.copyWith(
-                      color: txtColor ?? AppColors.white,
-                    ),
+                    Theme.of(
+                      context,
+                    ).textTheme.titleMedium!.copyWith(color: AppColors.white),
               )),
     );
   }

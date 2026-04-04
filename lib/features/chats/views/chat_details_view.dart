@@ -13,6 +13,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/constants/app_images.dart';
 import '../../../core/themes/app_colors.dart';
 import '../widgets/chat_bubble.dart';
+import '../widgets/date_separator_glassmorphism_widget.dart';
 import '../widgets/empty_placeholder_state.dart';
 import '../widgets/text_input_area_section.dart';
 
@@ -91,10 +92,11 @@ class _ChatDetailsViewState extends State<ChatDetailsView> {
                   if (messages.isEmpty && state is MessagesSuccessLoaded) {
                     return EmptyPlaceholderState(
                       img: AppImages.blueSmileFaceLot,
+
                       imgHeight: MediaQuery.of(context).size.height * 0.2,
                       title: 'No messages yet.',
                       style: Theme.of(context).textTheme.titleMedium!.copyWith(
-                        color: AppColors.primaryColor,
+                        color: Theme.of(context).primaryColor,
                         fontWeight: FontWeight.w600,
                         fontSize: 18,
                       ),
@@ -107,6 +109,9 @@ class _ChatDetailsViewState extends State<ChatDetailsView> {
                     children: [
                       GestureDetector(
                         onTap: () => FocusScope.of(context).unfocus(),
+                        onLongPress: () {},
+                        onVerticalDragStart:
+                            (_) => FocusScope.of(context).unfocus(),
                         child: ListView.separated(
                           padding: EdgeInsets.symmetric(
                             horizontal: 20,
@@ -133,18 +138,9 @@ class _ChatDetailsViewState extends State<ChatDetailsView> {
                             return Column(
                               children: [
                                 if (showDateSeparator)
-                                  Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                      vertical: 12.0,
-                                    ),
-                                    child: Text(
-                                      FormattedDate.getChatTime(msg.createdAt),
-
-                                      textAlign: TextAlign.center,
-                                      style: const TextStyle(
-                                        color: Colors.grey,
-                                        fontSize: 12,
-                                      ),
+                                  DateSeparatorGlassmorphismWidget(
+                                    date: FormattedDate.getChatTime(
+                                      msg.createdAt,
                                     ),
                                   ),
                                 ChatBubble(
@@ -162,7 +158,7 @@ class _ChatDetailsViewState extends State<ChatDetailsView> {
                             final currMsg = messages[index];
                             final nxtMsg = messages[index + 1];
                             if (currMsg.senderId == nxtMsg.senderId) {
-                              return Gap(nxtMsg.reaction != null ? 18 : 4);
+                              return Gap(nxtMsg.reaction != null ? 4 : 3);
                             } else {
                               return const Gap(16);
                             }

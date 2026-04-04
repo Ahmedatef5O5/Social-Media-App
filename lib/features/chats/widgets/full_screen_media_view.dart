@@ -87,27 +87,25 @@ class _FullScreenMediaViewState extends State<FullScreenMediaView> {
             ),
 
             if (widget.caption != null && widget.caption!.isNotEmpty)
-              SafeArea(
-                child: Align(
-                  alignment: Alignment.bottomCenter,
-                  child: Container(
-                    width: MediaQuery.sizeOf(context).width * 0.85,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.black54,
+              Align(
+                alignment: Alignment.bottomCenter,
+                child: Container(
+                  width: MediaQuery.sizeOf(context).width * 0.85,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.black54,
 
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      textAlign: TextAlign.center,
-                      widget.caption!,
-                      style: const TextStyle(
-                        color: AppColors.white,
-                        fontSize: 16,
-                      ),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    textAlign: TextAlign.center,
+                    widget.caption!,
+                    style: const TextStyle(
+                      color: AppColors.white,
+                      fontSize: 16,
                     ),
                   ),
                 ),

@@ -83,6 +83,7 @@ class _SplashViewState extends State<SplashView>
   Widget build(BuildContext context) {
     return Scaffold(
       body: BackgroundThemeWidget(
+        showCircles: true,
         child: FadeTransition(
           opacity: _fadeAnimation,
           child: Center(

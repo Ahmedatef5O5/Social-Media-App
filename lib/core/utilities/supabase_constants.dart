@@ -18,6 +18,7 @@ abstract class UserColumns {
   static const String imageUrl = 'image_url';
   static const String title = 'title';
   static const String lastSeen = 'last_seen';
+  static const String theme = 'theme';
 }
 
 // subClass for stories column table

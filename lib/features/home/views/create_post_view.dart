@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
-import 'package:social_media_app/core/themes/app_colors.dart';
 import 'package:social_media_app/core/themes/background_theme_widget.dart';
 import 'package:social_media_app/core/widgets/custom_loading_indicator.dart';
 import 'package:social_media_app/features/home/cubit/home_cubit.dart';
@@ -81,8 +80,11 @@ class _CreatePostViewState extends State<CreatePostView> {
         }
         if (state is PostCreated) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Post Published Successfully'),
+            SnackBar(
+              content: Text(
+                'Post Published Successfully',
+                style: Theme.of(context).textTheme.titleSmall!.copyWith(),
+              ),
               backgroundColor: Colors.green,
               behavior: SnackBarBehavior.floating,
             ),
@@ -136,7 +138,7 @@ class _CreatePostViewState extends State<CreatePostView> {
                         mainAxisAlignment: MainAxisAlignment.start,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Gap(12),
+                          const Gap(2),
                           CreatePostHeaderSection(
                             isLoading: state is PostCreating,
                             canPost: canPost,
@@ -152,9 +154,15 @@ class _CreatePostViewState extends State<CreatePostView> {
                                     elevation: 1,
                                     content: Text(
                                       "Write something or attach a file to share your post.",
+                                      style:
+                                          Theme.of(
+                                            context,
+                                          ).textTheme.labelMedium!.copyWith(),
                                     ),
-                                    backgroundColor: AppColors.primaryColor
-                                        .withValues(alpha: 0.75),
+
+                                    backgroundColor: Theme.of(context)
+                                        .scaffoldBackgroundColor
+                                        .withValues(alpha: 0.92),
                                     behavior: SnackBarBehavior.floating,
                                     duration: const Duration(
                                       milliseconds: 1400,
@@ -164,7 +172,7 @@ class _CreatePostViewState extends State<CreatePostView> {
                               }
                             },
                           ),
-                          Gap(12),
+                          Gap(20),
                           CreatePostUserInfo(
                             userName: displayName,
                             userImageUrl: displayImage,

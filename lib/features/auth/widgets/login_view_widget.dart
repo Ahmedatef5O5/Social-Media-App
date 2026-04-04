@@ -67,7 +67,13 @@ class _LoginViewWidgetState extends State<LoginViewWidget> {
                   if (state is AuthSuccess) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: Text('Login Successfully'),
+                        content: Text(
+                          'Login Successfully',
+                          style:
+                              Theme.of(
+                                context,
+                              ).textTheme.titleSmall!.copyWith(),
+                        ),
                         backgroundColor: Colors.green,
                         behavior: SnackBarBehavior.floating,
                         duration: const Duration(seconds: 1),

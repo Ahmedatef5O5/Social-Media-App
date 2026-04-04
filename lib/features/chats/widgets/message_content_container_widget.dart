@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
+import 'package:social_media_app/core/helpers/chat_helper.dart';
 import 'package:social_media_app/features/chats/widgets/image_message_widget.dart';
 import 'package:social_media_app/features/chats/widgets/video_message_widget.dart';
 import 'package:social_media_app/features/chats/widgets/voice_message_bubble_widget.dart';
@@ -18,19 +19,61 @@ class MessageContentContainer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bool isImage = message.messageType == 'image';
+    final bool isVideo = message.messageType == 'video';
+    final bool hasReaction =
+        message.reaction != null && message.reaction!.isNotEmpty;
+    final String displayDraft = message.caption ?? message.text;
+    Widget timeAndStatus(Color textColor, Color? iconColor) {
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        textDirection: TextDirection.ltr,
+        children: [
+          Text(
+            FormattedDate.getMessageTime(message.createdAt),
+            style: Theme.of(context).textTheme.titleMedium!.copyWith(
+              color: isMe ? AppColors.white70 : AppColors.black54,
+              fontSize: 9,
+            ),
+          ),
+          if (isMe) ...[
+            const Gap(2),
+            Icon(
+              message.isRead ? Icons.done_all : Icons.done,
+              size: 12,
+              color: message.isRead ? Colors.blue[200] : iconColor,
+            ),
+          ],
+        ],
+      );
+    }
+
     return Stack(
       clipBehavior: Clip.none,
       children: [
         Container(
-          margin: const EdgeInsets.symmetric(vertical: 2),
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          margin: EdgeInsets.only(
+            top: 2,
+            left: 0,
+            right: 0,
+            bottom: hasReaction ? 28 : 2,
+          ),
+          padding:
+              isImage
+                  ? EdgeInsets.symmetric(horizontal: 2, vertical: 2)
+                  : EdgeInsets.only(
+                    left: isVideo ? 4 : 8,
+                    right: isVideo ? 4 : 12,
+                    bottom: isVideo ? 4 : 8,
+                    top: isVideo ? 4 : 2,
+                  ),
           constraints: BoxConstraints(
             maxWidth: MediaQuery.of(context).size.width * 0.75,
           ),
           decoration: BoxDecoration(
             color:
                 isMe
-                    ? AppColors.primaryColor
+                    ? Theme.of(context).primaryColor
                     : AppColors.grey3.withValues(alpha: 0.3),
             borderRadius: BorderRadius.only(
               topLeft: const Radius.circular(20),
@@ -40,10 +83,10 @@ class MessageContentContainer extends StatelessWidget {
             ),
             boxShadow: [
               BoxShadow(
-                color: AppColors.grey.withValues(alpha: 0.18),
-                spreadRadius: 1,
-                blurRadius: 5,
-                offset: const Offset(0, 2),
+                color: AppColors.grey1.withValues(alpha: 0.8),
+                // spreadRadius: 1,
+                // blurRadius: 5,
+                // offset: const Offset(0, 2),
               ),
             ],
           ),
@@ -51,62 +94,69 @@ class MessageContentContainer extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             mainAxisSize: MainAxisSize.min,
             children: [
-              if (message.messageType == 'image' && message.imageUrl != null)
+              if (isImage && message.imageUrl != null)
                 ImageMessageWidget(
                   imageUrl: message.imageUrl!,
                   caption: message.caption,
                 ),
-              if (message.messageType == 'video' && message.videoUrl != null)
+              if (isVideo && message.videoUrl != null)
                 VideoMessageWidget(
                   videoUrl: message.videoUrl!,
                   caption: message.caption,
                 ),
-
               if (message.messageType == 'voice' && message.voiceUrl != null)
                 VoiceMessageBubbleWidget(
                   voiceUrl: message.voiceUrl!,
                   isMe: isMe,
+                  timestamp: message.createdAt,
+                  isRead: message.isRead,
                 ),
 
-              if (message.text.isNotEmpty || message.caption != null)
-                Text(
-                  message.caption ?? message.text,
-                  style: Theme.of(context).textTheme.titleMedium!.copyWith(
-                    color: isMe ? AppColors.white : AppColors.black87,
-                    fontSize: 15,
-                    height: 1.5,
-                    fontWeight: FontWeight.w500,
+              if ((isImage || isVideo) && displayDraft.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 4, right: 12, bottom: 2),
+                  child: timeAndStatus(
+                    isMe ? AppColors.white70 : AppColors.black54,
+                    isMe ? AppColors.white70 : AppColors.black54,
                   ),
                 ),
-
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    FormattedDate.getMessageTime(message.createdAt),
-                    style: TextStyle(
-                      color: isMe ? AppColors.white70 : AppColors.black54,
-                      fontSize: 10,
-                    ),
+              if (displayDraft.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 4.0),
+                  child: Wrap(
+                    alignment: WrapAlignment.end,
+                    crossAxisAlignment: WrapCrossAlignment.end,
+                    spacing: 10,
+                    runSpacing: 2,
+                    children: [
+                      Text(
+                        displayDraft,
+                        textDirection: ChatHelper.getTextDirection(
+                          displayDraft,
+                        ),
+                        style: Theme.of(
+                          context,
+                        ).textTheme.titleMedium!.copyWith(
+                          color: isMe ? AppColors.white : AppColors.black87,
+                          fontSize: 15,
+                          height: 1.3,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      timeAndStatus(
+                        isMe ? AppColors.white70 : AppColors.black54,
+                        isMe ? AppColors.white70 : AppColors.black54,
+                      ),
+                    ],
                   ),
-                  if (isMe) ...[
-                    const Gap(2),
-                    Icon(
-                      message.isRead ? Icons.done_all : Icons.done,
-                      size: 14,
-                      color:
-                          message.isRead ? Colors.blue[200] : AppColors.white70,
-                    ),
-                  ],
-                ],
-              ),
+                ),
             ],
           ),
         ),
 
-        if (message.reaction != null && message.reaction!.isNotEmpty)
+        if (hasReaction)
           Positioned(
-            bottom: -36,
+            bottom: -12,
             right: isMe ? 8 : null,
             left: isMe ? null : 8,
             child: Container(
@@ -119,8 +169,10 @@ class MessageContentContainer extends StatelessWidget {
               ),
               padding: const EdgeInsets.all(4),
               decoration: BoxDecoration(
-                color: AppColors.white.withValues(alpha: 0.5),
-                borderRadius: BorderRadius.circular(12),
+                color: Theme.of(
+                  context,
+                ).scaffoldBackgroundColor.withValues(alpha: 0.75),
+                shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.1),
@@ -131,10 +183,9 @@ class MessageContentContainer extends StatelessWidget {
 
               child: Text(
                 message.reaction!,
-                style: const TextStyle(
-                  fontSize: 14,
-                  // fontWeight: FontWeight.bold,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium!.copyWith(fontSize: 14),
               ),
             ),
           ),

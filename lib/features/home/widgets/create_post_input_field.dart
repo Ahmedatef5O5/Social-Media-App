@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../../core/themes/app_colors.dart';
 
 class CreatePostInputField extends StatelessWidget {
   final TextEditingController _textEditingController;
@@ -24,6 +23,10 @@ class CreatePostInputField extends StatelessWidget {
       style: TextStyle(fontSize: 18),
       decoration: InputDecoration(
         hintText: "What's on your head?",
+        hintStyle: Theme.of(context).textTheme.titleSmall!.copyWith(
+          fontSize: 19,
+          fontWeight: FontWeight.w400,
+        ),
         counterText: _hasText ? null : '',
         counterStyle: TextStyle(
           color: _textEditingController.text.length >= 140 ? Colors.red : null,
@@ -33,11 +36,6 @@ class CreatePostInputField extends StatelessWidget {
                   : null,
         ),
         border: InputBorder.none,
-        hintStyle: Theme.of(context).textTheme.titleSmall!.copyWith(
-          color: AppColors.black54,
-          fontSize: 19,
-          fontWeight: FontWeight.w400,
-        ),
       ),
     );
   }

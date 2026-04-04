@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:lottie/lottie.dart';
-import '../../../core/themes/app_colors.dart';
 
 class EmptyPlaceholderState extends StatefulWidget {
   final String title, img;
@@ -10,6 +9,7 @@ class EmptyPlaceholderState extends StatefulWidget {
   final double opacity;
   final double? imgHeight, imgWidth;
   final int? periodSpeed;
+  final LottieDelegates? delegates;
   const EmptyPlaceholderState({
     super.key,
     required this.title,
@@ -20,6 +20,7 @@ class EmptyPlaceholderState extends StatefulWidget {
     this.periodSpeed,
     this.imgHeight,
     this.imgWidth,
+    this.delegates,
   });
 
   @override
@@ -55,6 +56,19 @@ class _EmptyPlaceholderStateState extends State<EmptyPlaceholderState>
               controller: _controller,
               height: widget.imgHeight,
               width: widget.imgWidth,
+              delegates:
+                  widget.delegates ??
+                  LottieDelegates(
+                    values: [
+                      ValueDelegate.colorFilter(
+                        ['**'],
+                        value: ColorFilter.mode(
+                          Theme.of(context).primaryColor,
+                          BlendMode.srcATop,
+                        ),
+                      ),
+                    ],
+                  ),
               animate: true,
               onLoaded: (composition) {
                 _controller.duration = composition.duration;
@@ -69,7 +83,7 @@ class _EmptyPlaceholderStateState extends State<EmptyPlaceholderState>
               style:
                   widget.style ??
                   Theme.of(context).textTheme.titleMedium!.copyWith(
-                    color: widget.color ?? AppColors.primaryColor,
+                    color: widget.color ?? Theme.of(context).primaryColor,
                     fontWeight: FontWeight.w600,
                     fontSize: 20,
                   ),

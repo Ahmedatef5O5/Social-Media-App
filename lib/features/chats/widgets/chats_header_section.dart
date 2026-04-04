@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../../core/themes/app_colors.dart';
 import '../../../core/widgets/custom_header_widget.dart';
 
 class ChatsHeaderSection extends StatelessWidget {
@@ -9,9 +8,9 @@ class ChatsHeaderSection extends StatelessWidget {
   Widget build(BuildContext context) {
     return CustomHeader(
       title: 'Chats',
-      actions: const Icon(
+      actions: Icon(
         Icons.more_vert_outlined,
-        color: AppColors.black54,
+        color: Theme.of(context).primaryColor,
         size: 26,
       ),
     );

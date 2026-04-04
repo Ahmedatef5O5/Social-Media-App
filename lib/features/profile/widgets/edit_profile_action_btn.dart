@@ -14,6 +14,9 @@ class EditProfileActionButton extends StatelessWidget {
           maximumSize: Size(240, 50),
           minimumSize: Size(240, 50),
           txtBtn: 'Save Changes',
+          txtBtnStyle: Theme.of(
+            context,
+          ).textTheme.titleMedium!.copyWith(color: Colors.white),
           isLoading: state is EditProfileLoading,
           onPressed: state is EditProfileLoading ? null : onPressed,
         );

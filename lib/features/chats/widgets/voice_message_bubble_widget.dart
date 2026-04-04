@@ -2,16 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:social_media_app/core/widgets/custom_loading_indicator.dart';
 import 'package:video_player/video_player.dart';
+import '../../../core/helpers/formatted_date.dart';
 import '../../../core/themes/app_colors.dart';
 
 class VoiceMessageBubbleWidget extends StatefulWidget {
   final String voiceUrl;
   final bool isMe;
-
+  final DateTime timestamp;
+  final bool? isRead;
   const VoiceMessageBubbleWidget({
     super.key,
     required this.voiceUrl,
     required this.isMe,
+    required this.timestamp,
+    this.isRead,
   });
 
   static final ValueNotifier<String?> _activeVoiceUrl = ValueNotifier<String?>(
@@ -183,7 +187,8 @@ class _VoiceMessageBubbleWidgetState extends State<VoiceMessageBubbleWidget> {
 
   @override
   Widget build(BuildContext context) {
-    final activeColor = widget.isMe ? AppColors.white : AppColors.primaryColor;
+    final activeColor =
+        widget.isMe ? AppColors.white : Theme.of(context).primaryColor;
     return Row(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -200,18 +205,21 @@ class _VoiceMessageBubbleWidgetState extends State<VoiceMessageBubbleWidget> {
                       color:
                           widget.isMe
                               ? AppColors.white
-                              : AppColors.primaryColor,
+                              : Theme.of(context).primaryColor,
                     ),
                   )
                   : Icon(
                     _isPlaying ? Icons.pause_circle : Icons.play_circle,
                     color:
-                        widget.isMe ? AppColors.white : AppColors.primaryColor,
+                        widget.isMe
+                            ? AppColors.white
+                            : Theme.of(context).primaryColor,
                     size: 32,
                   ),
         ),
-        Expanded(
+        Flexible(
           child: Column(
+            mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
@@ -226,7 +234,7 @@ class _VoiceMessageBubbleWidgetState extends State<VoiceMessageBubbleWidget> {
                                 playedColor:
                                     widget.isMe
                                         ? AppColors.white
-                                        : AppColors.primaryColor,
+                                        : Theme.of(context).primaryColor,
                                 bufferedColor: Colors.white38,
                                 backgroundColor: Colors.white24,
                               ),
@@ -266,12 +274,48 @@ class _VoiceMessageBubbleWidgetState extends State<VoiceMessageBubbleWidget> {
               ),
 
               const Gap(4),
-              Text(
-                _durationText,
-                style: TextStyle(
-                  color: widget.isMe ? AppColors.white70 : AppColors.black54,
-                  fontSize: 11,
-                ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    _durationText,
+                    style: TextStyle(
+                      color:
+                          widget.isMe ? AppColors.white70 : AppColors.black54,
+                      fontSize: 11,
+                    ),
+                  ),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    textDirection: TextDirection.ltr,
+                    children: [
+                      Text(
+                        FormattedDate.getMessageTime(widget.timestamp),
+                        style: TextStyle(
+                          color:
+                              widget.isMe
+                                  ? AppColors.white70
+                                  : AppColors.black54,
+                          fontSize: 9,
+                        ),
+                      ),
+                      if (widget.isMe) ...[
+                        const Gap(2),
+                        Icon(
+                          (widget.isRead ?? false)
+                              ? Icons.done_all
+                              : Icons.done,
+                          size: 12,
+                          color:
+                              (widget.isRead ?? false)
+                                  ? Colors.blue[200]
+                                  : AppColors.white70,
+                        ),
+                      ],
+                    ],
+                  ),
+                ],
               ),
             ],
           ),

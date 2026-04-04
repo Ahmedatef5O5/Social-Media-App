@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import '../../../core/constants/app_images.dart';
+import '../../../core/helpers/chat_helper.dart';
 import '../../../core/helpers/formatted_date.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/themes/app_colors.dart';
@@ -16,7 +17,7 @@ class ChatItemTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListTile(
       contentPadding: EdgeInsets.zero,
-      leading: _buildUserAvatar(),
+      leading: _buildUserAvatar(context),
 
       title: _buildUserName(context),
       subtitle: _buildLastMessage(context),
@@ -76,24 +77,39 @@ class ChatItemTile extends StatelessWidget {
     }
   }
 
-  Text _buildLastMessage(BuildContext context) {
-    return Text(
-      _getLastMessageText(),
+  Widget _buildLastMessage(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (user.lastMessageIsMe) ...[
+          Icon(
+            user.lastMessageIsRead ? Icons.done_all : Icons.done,
+            size: 15,
+            color: user.lastMessageIsRead ? Colors.blue : Colors.grey,
+          ),
+          const Gap(4),
+        ],
+        Expanded(
+          child: Text(
+            _getLastMessageText(),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textDirection: ChatHelper.getTextDirection(_getLastMessageText()),
+            style: Theme.of(context).textTheme.labelSmall!.copyWith(
+              fontWeight:
+                  user.unreadCount > 0 ? FontWeight.w300 : FontWeight.w400,
 
-      maxLines: 1,
-      overflow: TextOverflow.ellipsis,
+              color:
+                  user.unreadCount > 0
+                      ? AppColors.grey6.withValues(alpha: 0.95)
+                      : AppColors.grey6,
 
-      style: Theme.of(context).textTheme.labelSmall!.copyWith(
-        fontWeight: user.unreadCount > 0 ? FontWeight.w300 : FontWeight.w400,
-
-        color:
-            user.unreadCount > 0
-                ? AppColors.grey6.withValues(alpha: 0.95)
-                : AppColors.grey6,
-
-        fontSize: 14,
-        height: 1.8,
-      ),
+              fontSize: 14,
+              height: 1.8,
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -107,7 +123,7 @@ class ChatItemTile extends StatelessWidget {
     );
   }
 
-  Widget _buildUserAvatar() {
+  Widget _buildUserAvatar(BuildContext context) {
     final lastSeenText =
         user.lastSeen != null
             ? FormattedDate.getLastSeen(user.lastSeen!)
@@ -122,7 +138,7 @@ class ChatItemTile extends StatelessWidget {
             height: 52,
             width: 52,
             decoration: BoxDecoration(
-              color: AppColors.primaryColor.withValues(alpha: 0.2),
+              color: Theme.of(context).primaryColor.withValues(alpha: 0.2),
               shape: BoxShape.circle,
               border:
                   isOnline ? Border.all(color: Colors.green, width: 2.2) : null,

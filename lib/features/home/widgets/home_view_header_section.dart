@@ -15,17 +15,29 @@ class HomeViewHeaderSection extends StatelessWidget {
           Spacer(),
           InkWell(
             onTap: () {},
-            child: Image.asset(AppImages.searchIcon, width: 24),
+            child: Image.asset(
+              AppImages.searchIcon,
+              width: 24,
+              color: Theme.of(context).primaryColor,
+            ),
           ),
           Gap(16),
           InkWell(
             onTap: () {},
-            child: Image.asset(AppImages.notificationIcon, width: 24),
+            child: Image.asset(
+              AppImages.notificationIcon,
+              width: 24,
+              color: Theme.of(context).primaryColor,
+            ),
           ),
           Gap(16),
           InkWell(
             onTap: () {},
-            child: Image.asset(AppImages.paperPlaneIcon, width: 24),
+            child: Image.asset(
+              AppImages.paperPlaneIcon,
+              width: 24,
+              color: Theme.of(context).primaryColor,
+            ),
           ),
         ],
       ),

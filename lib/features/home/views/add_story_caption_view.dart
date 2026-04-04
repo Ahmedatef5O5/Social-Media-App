@@ -37,8 +37,11 @@ class _AddStoryCaptionViewState extends State<AddStoryCaptionView> {
           if (state is AddStorySuccess) {
             Navigator.of(context).pop();
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Story Added Successfully'),
+              SnackBar(
+                content: Text(
+                  'Story Added Successfully',
+                  style: Theme.of(context).textTheme.titleSmall!.copyWith(),
+                ),
                 backgroundColor: Colors.green,
                 behavior: SnackBarBehavior.floating,
                 duration: Duration(seconds: 1),
@@ -89,10 +92,14 @@ class _AddStoryCaptionViewState extends State<AddStoryCaptionView> {
                                 radius: 10,
                                 color: AppColors.white,
                               )
-                              : const Text(
+                              : Text(
                                 'Share',
-                                style: TextStyle(
-                                  color: AppColors.white,
+                                style: Theme.of(
+                                  context,
+                                ).textTheme.headlineMedium!.copyWith(
+                                  color: Theme.of(
+                                    context,
+                                  ).primaryColor.withValues(alpha: 0.95),
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
                                 ),

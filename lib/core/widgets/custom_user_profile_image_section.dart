@@ -73,7 +73,9 @@ class CustomUserProfileImagesSection extends StatelessWidget {
                     height: backgroundHeight,
                     width: double.infinity,
                     decoration: BoxDecoration(
-                      color: Colors.black26,
+                      color: Theme.of(
+                        context,
+                      ).scaffoldBackgroundColor.withValues(alpha: 0.18),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: const Icon(Icons.edit, color: Colors.white),
@@ -100,7 +102,7 @@ class CustomUserProfileImagesSection extends StatelessWidget {
                           border:
                               !isEditMode
                                   ? Border.all(
-                                    color: AppColors.primaryColor,
+                                    color: Theme.of(context).primaryColor,
                                     width: isProfileHeader ? 4 : 2,
                                   )
                                   : null,
@@ -114,7 +116,9 @@ class CustomUserProfileImagesSection extends StatelessWidget {
                       if (isEditMode)
                         CircleAvatar(
                           radius: 50,
-                          backgroundColor: AppColors.black38,
+                          backgroundColor: Theme.of(
+                            context,
+                          ).scaffoldBackgroundColor.withValues(alpha: 0.25),
                           child: Icon(Icons.edit, color: AppColors.white),
                         ),
                     ],

@@ -19,26 +19,30 @@ class StoryItemWidget extends StatelessWidget {
     this.allUserGroups,
   });
   void _showAddStoryOptions(BuildContext context) {
+    final homeCubit = context.read<HomeCubit>();
     showModalBottomSheet(
-      backgroundColor: AppColors.white,
+      useRootNavigator: true,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor.withValues(),
       context: context,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder:
-          (context) => StoryImagePickerSheet(
-            onSelected: (source, type) {
-              Navigator.pop(context);
-              if (type == StoryType.text) {
-                Navigator.of(context, rootNavigator: true).pushNamed(
-                  AppRoutes.createTextStoryViewRoute,
-                  arguments: context.read<HomeCubit>(),
-                );
-              } else {
-                final homeCubit = context.read<HomeCubit>();
-                homeCubit.pickAndAddStory(source: source!);
-              }
-            },
+          (context) => BlocProvider.value(
+            value: homeCubit,
+            child: StoryImagePickerSheet(
+              onSelected: (source, type) {
+                Navigator.pop(context);
+                if (type == StoryType.text) {
+                  Navigator.of(context, rootNavigator: true).pushNamed(
+                    AppRoutes.createTextStoryViewRoute,
+                    arguments: homeCubit,
+                  );
+                } else {
+                  homeCubit.pickAndAddStory(source: source!);
+                }
+              },
+            ),
           ),
     );
   }
@@ -76,12 +80,14 @@ class StoryItemWidget extends StatelessWidget {
             width: 50,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: AppColors.bgColor2,
+              color: Theme.of(context).primaryColor.withValues(alpha: 0.8),
               border:
                   story == null
                       ? null
                       : Border.all(
-                        color: AppColors.primaryColor.withValues(alpha: 0.5),
+                        color: Theme.of(
+                          context,
+                        ).primaryColor.withValues(alpha: 0.5),
                         width: 2,
                       ),
             ),
@@ -89,7 +95,7 @@ class StoryItemWidget extends StatelessWidget {
               radius: 8,
               backgroundColor:
                   story == null
-                      ? AppColors.primaryColor.withValues(alpha: 0.2)
+                      ? Theme.of(context).primaryColor.withValues(alpha: 0.2)
                       : (story!.imageUrl == null &&
                           story!.backgroundColor != null)
                       ? Color(int.parse(story!.backgroundColor!, radix: 16))
@@ -133,18 +139,15 @@ class StoryItemWidget extends StatelessWidget {
                 style: Theme.of(context).textTheme.titleSmall!.copyWith(
                   fontSize: 13,
                   fontWeight: FontWeight.w300,
-                  color: AppColors.grey6,
                 ),
               )
               : Text(
                 story!.authorName.split(' ').first,
 
-                // story!.authorId,
                 textAlign: TextAlign.start,
-                style: Theme.of(context).textTheme.titleSmall!.copyWith(
-                  fontWeight: FontWeight.w400,
-                  color: AppColors.grey9,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleSmall!.copyWith(fontWeight: FontWeight.w400),
               ),
         ],
       ),

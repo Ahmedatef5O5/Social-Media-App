@@ -34,6 +34,7 @@ class _OnBoardingViewState extends State<OnBoardingView> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: BackgroundThemeWidget(
+        showCircles: true,
         child: Column(
           children: [
             Align(
@@ -91,7 +92,7 @@ class _OnBoardingViewState extends State<OnBoardingView> {
                           children: [
                             CustomElevatedButton(
                               onPressed: _finishOnboarding,
-                              bgColor: AppColors.primaryColor,
+                              bgColor: Theme.of(context).primaryColor,
                               minimumSize: const Size(double.infinity, 54),
 
                               shape: RoundedRectangleBorder(
@@ -106,10 +107,10 @@ class _OnBoardingViewState extends State<OnBoardingView> {
                             const Gap(15),
                             TextButton(
                               onPressed: _finishOnboarding,
-                              child: const Text(
+                              child: Text(
                                 'Sign In',
                                 style: TextStyle(
-                                  color: AppColors.primaryColor,
+                                  color: Theme.of(context).primaryColor,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
@@ -133,7 +134,10 @@ class _OnBoardingViewState extends State<OnBoardingView> {
       height: 8,
       width: _currentPage == index ? 20 : 10,
       decoration: BoxDecoration(
-        color: _currentPage == index ? AppColors.primaryColor : AppColors.grey2,
+        color:
+            _currentPage == index
+                ? Theme.of(context).primaryColor
+                : AppColors.grey2,
         borderRadius: BorderRadius.circular(5),
       ),
     );

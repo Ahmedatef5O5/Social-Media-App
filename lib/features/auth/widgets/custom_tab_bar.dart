@@ -12,16 +12,11 @@ class CustomTabBar extends StatelessWidget {
       tabs: tabs,
       isScrollable: true,
       tabAlignment: TabAlignment.start,
-      labelPadding: EdgeInsets.only(right: 22),
-      labelColor: AppColors.black,
-      unselectedLabelColor: Colors.grey,
-      indicatorColor: Theme.of(context).primaryColor.withValues(blue: 0.8),
+      unselectedLabelColor: AppColors.grey4,
+      dividerColor: AppColors.grey3,
       indicatorSize: TabBarIndicatorSize.tab,
-      indicatorPadding: EdgeInsets.only(right: 22),
-      labelStyle: Theme.of(
-        context,
-      ).textTheme.bodyLarge!.copyWith(fontWeight: FontWeight.w400),
-      dividerColor: AppColors.secondaryColor,
+      indicatorWeight: 3,
+      indicatorPadding: const EdgeInsets.only(top: 45),
       dividerHeight: 1.8,
     );
   }

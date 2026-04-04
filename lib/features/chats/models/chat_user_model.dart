@@ -5,6 +5,8 @@ class ChatUserModel {
   final String? lastMessage;
   final String? lastMessageType;
   final DateTime? lastMessageTime;
+  final bool lastMessageIsMe;
+  final bool lastMessageIsRead;
   final int unreadCount;
   final DateTime? lastSeen;
 
@@ -15,11 +17,16 @@ class ChatUserModel {
     this.lastMessage,
     this.lastMessageType,
     this.lastMessageTime,
+    this.lastMessageIsMe = false,
+    this.lastMessageIsRead = false,
     this.unreadCount = 0,
     this.lastSeen,
   });
 
-  factory ChatUserModel.fromUserData(Map<String, dynamic> map) {
+  factory ChatUserModel.fromUserData(
+    Map<String, dynamic> map,
+    String currentUserId,
+  ) {
     return ChatUserModel(
       id: (map['id'] ?? '').toString(),
       name: (map['name'] ?? 'Unknown').toString(),
@@ -30,6 +37,8 @@ class ChatUserModel {
           map['last_message_time'] != null
               ? DateTime.parse(map['last_message_time'].toString()) // from SQL
               : null,
+      lastMessageIsMe: map['last_message_sender_id'] == currentUserId,
+      lastMessageIsRead: map['last_message_is_read'] ?? false,
       unreadCount: (map['unread_count'] as num?)?.toInt() ?? 0,
       lastSeen:
           map['last_seen'] != null

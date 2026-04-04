@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:image_picker/image_picker.dart';
-import '../../../core/themes/app_colors.dart';
 
 class ImagePickerBottomSheet extends StatelessWidget {
   final String title;
@@ -29,9 +28,9 @@ class ImagePickerBottomSheet extends StatelessWidget {
           ),
           Gap(20),
           ListTile(
-            leading: const Icon(
+            leading: Icon(
               Icons.photo_library,
-              color: AppColors.primaryColor,
+              color: Theme.of(context).primaryColor,
             ),
             title: const Text('Choose from Gallery'),
             onTap: () => onImageSelected(ImageSource.gallery),

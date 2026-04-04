@@ -5,7 +5,7 @@ class DrawerItemWidget extends StatelessWidget {
   final IconData icon;
   final String title;
   final VoidCallback onTap;
-  final Color color;
+  final Color? color;
 
   const DrawerItemWidget({
     super.key,
@@ -13,7 +13,7 @@ class DrawerItemWidget extends StatelessWidget {
     required this.icon,
     required this.title,
     required this.onTap,
-    this.color = AppColors.black87,
+    this.color,
   });
 
   @override
@@ -21,11 +21,16 @@ class DrawerItemWidget extends StatelessWidget {
     return ListTile(
       leading: Icon(
         icon,
-        color: color == Colors.red ? Colors.red : AppColors.primaryColor,
+        color:
+            color == Colors.red ? Colors.red : Theme.of(context).primaryColor,
       ),
       title: Text(
         title,
-        style: TextStyle(color: color, fontWeight: FontWeight.w500),
+        style: Theme.of(context).textTheme.labelLarge!.copyWith(
+          color: color,
+          fontWeight: FontWeight.w500,
+          fontSize: 16,
+        ),
       ),
       trailing: const Icon(
         Icons.arrow_forward_ios,
