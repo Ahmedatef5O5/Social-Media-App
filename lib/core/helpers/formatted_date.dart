@@ -76,11 +76,12 @@ class FormattedDate {
       return DateFormat.EEEE().format(localDate);
     }
 
-    if (localDate.year == now.year) {
-      return DateFormat('d MMMM').format(localDate);
-    } else {
-      return DateFormat('d MMMM y').format(localDate);
-    }
+    return DateFormat('d MMMM y').format(localDate);
+    // if (localDate.year == now.year) {
+    //   return DateFormat('d MMMM').format(localDate);
+    // } else {
+    //   return DateFormat('d MMMM y').format(localDate);
+    // }
   }
 
   static String getLastSeen(DateTime lastSeen) {
@@ -91,7 +92,7 @@ class FormattedDate {
     final String longTimeAgo = DateFormat('d/M/y').format(lastSeenUtc);
     if (diff.inSeconds < 30) return 'Online';
     if (diff.inSeconds < 60) return 'just now';
-    if (diff.inMinutes < 60) return 'at ${diff.inMinutes}minutes ago';
+    if (diff.inMinutes < 60) return 'at ${diff.inMinutes} minutes ago';
     if (diff.inHours < 24) return 'at $time';
     // if (diff.inHours < 24) return '${diff.inHours}h ago';
     if (diff.inDays == 1) return 'yesterday at $time';

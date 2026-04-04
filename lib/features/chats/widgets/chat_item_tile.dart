@@ -5,7 +5,6 @@ import '../../../core/constants/app_images.dart';
 import '../../../core/helpers/chat_helper.dart';
 import '../../../core/helpers/formatted_date.dart';
 import '../../../core/router/app_routes.dart';
-import '../../../core/themes/app_colors.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
 import '../models/chat_user_model.dart';
 
@@ -97,13 +96,7 @@ class ChatItemTile extends StatelessWidget {
             textDirection: ChatHelper.getTextDirection(_getLastMessageText()),
             style: Theme.of(context).textTheme.labelSmall!.copyWith(
               fontWeight:
-                  user.unreadCount > 0 ? FontWeight.w300 : FontWeight.w400,
-
-              color:
-                  user.unreadCount > 0
-                      ? AppColors.grey6.withValues(alpha: 0.95)
-                      : AppColors.grey6,
-
+                  user.unreadCount > 0 ? FontWeight.w400 : FontWeight.w300,
               fontSize: 14,
               height: 1.8,
             ),
