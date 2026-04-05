@@ -66,7 +66,7 @@ class CreatePostImagePreview extends StatelessWidget {
             borderRadius: BorderRadius.circular(18),
             child: Image.file(
               File(imagePath),
-              fit: BoxFit.contain,
+              fit: BoxFit.cover,
 
               errorBuilder:
                   (context, error, stackTrace) => const Center(
