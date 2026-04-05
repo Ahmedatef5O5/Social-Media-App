@@ -111,7 +111,7 @@ class _CustomBottomNavBarState extends State<CustomBottomNavBar> {
                     navBarBuilder: (config) => const SizedBox.shrink(),
                     tabs: [
                       PersistentTabConfig(
-                        screen: HomeView(),
+                        screen: HomeView(navController: _controller),
                         item: ItemConfig(icon: const Icon(Icons.home)),
                       ),
                       PersistentTabConfig(

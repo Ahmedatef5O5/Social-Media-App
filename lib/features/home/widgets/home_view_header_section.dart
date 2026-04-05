@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
+import 'package:persistent_bottom_nav_bar_v2/persistent_bottom_nav_bar_v2.dart';
 import 'package:social_media_app/core/constants/app_images.dart';
+import 'package:social_media_app/features/chats/cubit/chats_cubit/chats_cubit.dart';
+import '../../../core/widgets/custom_badge.dart';
 
 class HomeViewHeaderSection extends StatelessWidget {
-  const HomeViewHeaderSection({super.key});
+  final PersistentTabController navController;
+  const HomeViewHeaderSection({super.key, required this.navController});
 
   @override
   Widget build(BuildContext context) {
@@ -32,11 +37,32 @@ class HomeViewHeaderSection extends StatelessWidget {
           ),
           Gap(16),
           InkWell(
-            onTap: () {},
-            child: Image.asset(
-              AppImages.paperPlaneIcon,
-              width: 24,
-              color: Theme.of(context).primaryColor,
+            onTap: () {
+              navController.jumpToTab(2);
+            },
+            child: BlocBuilder<ChatsCubit, ChatsState>(
+              builder: (context, state) {
+                int totalUnread = 0;
+                if (state is ChatsSuccessloaded) {
+                  totalUnread = state.chats.fold(
+                    0,
+                    (sum, chat) => sum + chat.unreadCount,
+                  );
+                }
+                return CustomBadge(
+                  count: totalUnread,
+                  top: -10.5,
+                  right: -30,
+                  left: 0,
+                  size: 16.5,
+                  // fontSize: 9,
+                  child: Image.asset(
+                    AppImages.paperPlaneIcon,
+                    width: 24,
+                    color: Theme.of(context).primaryColor,
+                  ),
+                );
+              },
             ),
           ),
         ],

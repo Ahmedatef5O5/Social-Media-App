@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:social_media_app/core/themes/app_colors.dart';
+import 'package:social_media_app/core/widgets/custom_badge.dart';
 
 class NavBarIcon extends StatelessWidget {
   const NavBarIcon({
@@ -37,35 +38,6 @@ class NavBarIcon extends StatelessWidget {
     );
     if (badgeCount <= 0) return iconBody;
 
-    return Stack(
-      clipBehavior: Clip.none,
-      children: [
-        iconBody,
-        Positioned(
-          top: 0,
-          right: 0,
-          child: Container(
-            padding: const EdgeInsets.all(4),
-            decoration: BoxDecoration(
-              color: Theme.of(context).primaryColor,
-              // color: Colors.green,
-              shape: BoxShape.circle,
-            ),
-            constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
-            child: Center(
-              child: Text(
-                badgeCount > 99 ? '99+' : '$badgeCount',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 9,
-                  fontWeight: FontWeight.bold,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
+    return CustomBadge(count: badgeCount, top: 0, right: 0, child: iconBody);
   }
 }

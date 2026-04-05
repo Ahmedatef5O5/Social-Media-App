@@ -49,7 +49,6 @@ class ChatItemTile extends StatelessWidget {
             padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
               color: Theme.of(context).primaryColor,
-              // color: Colors.green,
               shape: BoxShape.circle,
             ),
             child: Text(

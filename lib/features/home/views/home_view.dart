@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
+import 'package:persistent_bottom_nav_bar_v2/persistent_bottom_nav_bar_v2.dart';
 import 'package:social_media_app/core/themes/background_theme_widget.dart';
 import 'package:social_media_app/core/widgets/custom_back_to_top_btn.dart';
 import 'package:social_media_app/core/widgets/custom_pull_to_refresh.dart';
@@ -11,7 +12,8 @@ import '../widgets/posts_section.dart';
 import '../widgets/stories_list_section.dart';
 
 class HomeView extends StatefulWidget {
-  const HomeView({super.key});
+  final PersistentTabController navController;
+  const HomeView({super.key, required this.navController});
 
   @override
   State<HomeView> createState() => _HomeViewState();
@@ -73,7 +75,9 @@ class _HomeViewState extends State<HomeView> {
                     scrollDirection: Axis.vertical,
                     slivers: [
                       const SliverGap(30),
-                      SliverToBoxAdapter(child: HomeViewHeaderSection()),
+                      SliverToBoxAdapter(
+                        child: HomeViewHeaderSection(navController: widget.navController),
+                      ),
                       const SliverGap(35),
                       SliverToBoxAdapter(child: PostWritingCard()),
                       const SliverGap(20),
