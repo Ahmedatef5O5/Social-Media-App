@@ -59,162 +59,137 @@ class _ChatDetailsViewState extends State<ChatDetailsView> {
   @override
   Widget build(BuildContext context) {
     return BackgroundThemeWidget(
-      child: Scaffold(
-        resizeToAvoidBottomInset: true,
-        backgroundColor: AppColors.transparent,
+      child: GestureDetector(
+        onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+        child: Scaffold(
+          resizeToAvoidBottomInset: true,
+          backgroundColor: AppColors.transparent,
 
-        body: Column(
-          children: [
-            ReceiverDetailsHeaderSection(receiverUser: widget.receiverUser),
-            Expanded(
-              child: BlocConsumer<ChatDetailsCubit, ChatDetailsState>(
-                listener: (context, state) {
-                  /// TODO : add scroll controller to jump new msgs
-                },
-                buildWhen:
-                    (previous, current) =>
-                        current is MessagesSuccessLoaded ||
-                        current is MessagesSending ||
-                        current is MessagesLoading,
-                builder: (context, state) {
-                  //
-                  if (state is MessagesLoading) {
-                    return const Center(child: CustomLoadingIndicator());
-                  }
+          body: Column(
+            children: [
+              ReceiverDetailsHeaderSection(receiverUser: widget.receiverUser),
+              Expanded(
+                child: BlocConsumer<ChatDetailsCubit, ChatDetailsState>(
+                  listener: (context, state) {
+                    /// TODO : add scroll controller to jump new msgs
+                  },
+                  buildWhen:
+                      (previous, current) =>
+                          current is MessagesSuccessLoaded ||
+                          current is MessagesSending ||
+                          current is MessagesLoading,
+                  builder: (context, state) {
+                    //
+                    if (state is MessagesLoading) {
+                      return const Center(child: CustomLoadingIndicator());
+                    }
 
-                  //
-                  List<MessageModel> messages = [];
-                  if (state is MessagesSuccessLoaded) {
-                    messages = state.messages;
-                  } else if (state is MessagesSending) {
-                    messages = state.messages ?? [];
-                  }
-                  if (messages.isEmpty && state is MessagesSuccessLoaded) {
-                    return EmptyPlaceholderState(
-                      img: AppImages.blueSmileFaceLot,
+                    //
+                    List<MessageModel> messages = [];
+                    if (state is MessagesSuccessLoaded) {
+                      messages = state.messages;
+                    } else if (state is MessagesSending) {
+                      messages = state.messages ?? [];
+                    }
+                    if (messages.isEmpty && state is MessagesSuccessLoaded) {
+                      return EmptyPlaceholderState(
+                        img: AppImages.blueSmileFaceLot,
 
-                      imgHeight: MediaQuery.of(context).size.height * 0.2,
-                      title: 'No messages yet.',
-                      style: Theme.of(context).textTheme.titleMedium!.copyWith(
-                        color: Theme.of(context).primaryColor,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 18,
-                      ),
-                    );
-                  }
-                  if (messages.isEmpty && state is! MessagesLoading) {
-                    return const CustomLoadingIndicator();
-                  }
-                  return Stack(
-                    children: [
-                      GestureDetector(
-                        onTap: () => FocusScope.of(context).unfocus(),
-                        onLongPress: () {},
-                        onVerticalDragStart:
-                            (_) => FocusScope.of(context).unfocus(),
-                        child: ListView.separated(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 20,
-                            vertical: 8,
-                          ),
-                          keyboardDismissBehavior:
-                              ScrollViewKeyboardDismissBehavior.onDrag,
-                          reverse: true,
-                          itemCount: messages.length,
-                          itemBuilder: (BuildContext context, int index) {
-                            final msg = messages[index];
-                            final bool isMe =
-                                msg.senderId ==
-                                Supabase.instance.client.auth.currentUser!.id;
-                            bool showDateSeparator = false;
-                            if (index == messages.length - 1) {
-                              showDateSeparator = true;
-                            } else {
-                              final prevMsg = messages[index + 1];
-                              if (msg.createdAt.day != prevMsg.createdAt.day) {
-                                showDateSeparator = true;
-                              }
-                            }
-                            return Column(
-                              children: [
-                                if (showDateSeparator)
-                                  DateSeparatorGlassmorphismWidget(
-                                    date: FormattedDate.getChatTime(
-                                      msg.createdAt,
-                                    ),
-                                  ),
-                                ChatBubble(
-                                  userImgUrl:
-                                      isMe
-                                          ? null
-                                          : widget.receiverUser.imageUrl,
-                                  message: msg,
-                                  isMe: isMe,
-                                ),
-                              ],
-                            );
-                          },
-                          separatorBuilder: (BuildContext context, int index) {
-                            final currMsg = messages[index];
-                            final nxtMsg = messages[index + 1];
-                            if (currMsg.senderId == nxtMsg.senderId) {
-                              return Gap(nxtMsg.reaction != null ? 4 : 3);
-                            } else {
-                              return const Gap(16);
-                            }
-                          },
+                        imgHeight: MediaQuery.of(context).size.height * 0.2,
+                        title: 'No messages yet.',
+                        style: Theme.of(
+                          context,
+                        ).textTheme.titleMedium!.copyWith(
+                          color: Theme.of(context).primaryColor,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 18,
                         ),
-                      ),
+                      );
+                    }
+                    if (messages.isEmpty && state is! MessagesLoading) {
+                      return const CustomLoadingIndicator();
+                    }
+                    return Stack(
+                      children: [
+                        GestureDetector(
+                          onTap: () => FocusScope.of(context).unfocus(),
+                          onLongPress: () {},
+                          onVerticalDragStart:
+                              (_) => FocusScope.of(context).unfocus(),
+                          child: ListView.separated(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 20,
+                              vertical: 8,
+                            ),
+                            keyboardDismissBehavior:
+                                ScrollViewKeyboardDismissBehavior.onDrag,
+                            reverse: true,
+                            itemCount: messages.length,
+                            itemBuilder: (BuildContext context, int index) {
+                              final msg = messages[index];
+                              final bool isMe =
+                                  msg.senderId ==
+                                  Supabase.instance.client.auth.currentUser!.id;
 
-                      if (state is MessagesSending)
-                        Positioned(
-                          bottom: 8,
-                          left: 0,
-                          right: 0,
-                          child: Center(
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 8,
-                              ),
-                              decoration: BoxDecoration(
-                                color: AppColors.black54,
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: const Row(
-                                mainAxisSize: MainAxisSize.min,
+                              final cubit = context.read<ChatDetailsCubit>();
+                              final double? currentProgress =
+                                  cubit.uploadProgressMap[msg.id];
+
+                              bool showDateSeparator = false;
+                              if (index == messages.length - 1) {
+                                showDateSeparator = true;
+                              } else {
+                                final prevMsg = messages[index + 1];
+                                if (msg.createdAt.day !=
+                                    prevMsg.createdAt.day) {
+                                  showDateSeparator = true;
+                                }
+                              }
+                              return Column(
                                 children: [
-                                  SizedBox(
-                                    width: 16,
-                                    height: 16,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      color: AppColors.white,
+                                  if (showDateSeparator)
+                                    DateSeparatorGlassmorphismWidget(
+                                      date: FormattedDate.getChatTime(
+                                        msg.createdAt,
+                                      ),
                                     ),
-                                  ),
-                                  Gap(8),
-                                  Text(
-                                    'Sending...',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 13,
-                                    ),
+                                  ChatBubble(
+                                    userImgUrl:
+                                        isMe
+                                            ? null
+                                            : widget.receiverUser.imageUrl,
+                                    message: msg,
+                                    isMe: isMe,
+                                    uploadProgress: currentProgress,
                                   ),
                                 ],
-                              ),
-                            ),
+                              );
+                            },
+                            separatorBuilder: (
+                              BuildContext context,
+                              int index,
+                            ) {
+                              final currMsg = messages[index];
+                              final nxtMsg = messages[index + 1];
+                              if (currMsg.senderId == nxtMsg.senderId) {
+                                return Gap(nxtMsg.reaction != null ? 4 : 3);
+                              } else {
+                                return const Gap(16);
+                              }
+                            },
                           ),
                         ),
-                    ],
-                  );
-                },
+                      ],
+                    );
+                  },
+                ),
               ),
-            ),
-            TextInputAreaSection(
-              receiverUser: widget.receiverUser,
-              messageController: _messageController,
-            ),
-          ],
+              TextInputAreaSection(
+                receiverUser: widget.receiverUser,
+                messageController: _messageController,
+              ),
+            ],
+          ),
         ),
       ),
     );

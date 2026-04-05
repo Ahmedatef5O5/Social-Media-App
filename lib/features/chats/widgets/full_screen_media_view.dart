@@ -53,7 +53,9 @@ class _FullScreenMediaViewState extends State<FullScreenMediaView> {
         appBar: AppBar(
           elevation: 0,
           backgroundColor: Colors.transparent,
+
           iconTheme: const IconThemeData(color: Colors.white),
+          // ),
         ),
         body: Stack(
           children: [
@@ -97,7 +99,6 @@ class _FullScreenMediaViewState extends State<FullScreenMediaView> {
                   ),
                   decoration: BoxDecoration(
                     color: AppColors.black54,
-
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(

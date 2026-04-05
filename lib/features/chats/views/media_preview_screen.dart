@@ -60,7 +60,6 @@ class _MediaPreviewScreenState extends State<MediaPreviewScreen> {
           _videoPlayerController!.value.isPlaying
               ? Icons.pause
               : Icons.play_arrow,
-          color: Colors.white,
           size: 40,
         ),
       ),
@@ -119,7 +118,7 @@ class _MediaPreviewScreenState extends State<MediaPreviewScreen> {
                             borderRadius: BorderRadius.circular(30),
                             borderSide: BorderSide.none,
                           ),
-                          fillColor: Colors.white12,
+                          fillColor: Colors.white30,
                           filled: true,
                           contentPadding: const EdgeInsets.symmetric(
                             horizontal: 20,

@@ -35,6 +35,7 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState> {
     }
   }
 
+  final Map<String, double> uploadProgressMap = {};
   Future<void> sendMessage({
     required String receiverId,
     required String messageText,
@@ -56,27 +57,72 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState> {
       currentMessages = (state as MessagesSuccessLoaded).messages;
     }
 
-    emit(MessagesSending(messages: currentMessages));
+    // optimistic Message
+    final tempId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
+    final optimisticMessage = MessageModel(
+      id: tempId,
+      senderId: _currentUserId,
+      receiverId: receiverId,
+      text: messageText,
+      messageType: messageType,
+      createdAt: DateTime.now(),
+      isRead: false,
+      voiceUrl: voiceFile?.path,
+    );
+
+    final updatedMessages = [optimisticMessage, ...currentMessages];
+    emit(MessagesSending(messages: updatedMessages));
+
     try {
       String? imageUrl;
       String? videoUrl;
       String? voiceUrl;
+
       if (imageFile != null) {
-        imageUrl = await _chatServices.uploadChatFile(imageFile, 'image');
+        if (await imageFile.exists()) {
+          imageUrl = await _chatServices.uploadChatFile(
+            imageFile,
+            'image',
+            onProgress: (progress) {
+              uploadProgressMap[tempId] = progress;
+              emit(MessagesSending(messages: updatedMessages));
+            },
+          );
+
+          uploadProgressMap.remove(tempId);
+        } else {
+          emit(
+            MessagesError("Image file not found. Please try picking it again."),
+          );
+          emit(MessagesSuccessLoaded(messages: currentMessages));
+        }
       }
 
       if (videoFile != null) {
         if (await videoFile.exists()) {
-          videoUrl = await _chatServices.uploadChatFile(videoFile, 'video');
+          videoUrl = await _chatServices.uploadChatFile(
+            videoFile,
+            'video',
+            onProgress: (progress) {
+              uploadProgressMap[tempId] = progress;
+              emit(MessagesSending(messages: updatedMessages));
+            },
+          );
         } else {
-          debugPrint('File does not exist at path: ${videoFile.path}');
+          emit(MessagesError("Video file not found. Please try again."));
+          emit(MessagesSuccessLoaded(messages: currentMessages));
+          return;
         }
       }
 
       if (voiceFile != null) {
-        voiceUrl = await _chatServices.uploadChatFile(voiceFile, 'voice');
+        if (await voiceFile.exists()) {
+          voiceUrl = await _chatServices.uploadChatFile(voiceFile, 'voice');
+        } else {
+          emit(MessagesError("Voice file not found."));
+          return;
+        }
       }
-
       await _chatServices.sendMessage(
         senderId: _currentUserId,
         receiverId: receiverId,
@@ -89,8 +135,13 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState> {
       );
     } catch (e) {
       debugPrint('error sending message: $e');
-      emit(MessagesError(e.toString()));
+      // emit(MessagesError(e.toString()));
+      emit(
+        MessagesError("Failed to send message. Please check your connection."),
+      );
+
       emit(MessagesSuccessLoaded(messages: currentMessages));
+      uploadProgressMap.remove(tempId);
     }
   }
 

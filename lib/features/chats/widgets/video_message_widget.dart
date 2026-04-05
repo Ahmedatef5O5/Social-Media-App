@@ -24,8 +24,8 @@ class VideoMessageWidget extends StatelessWidget {
         alignment: Alignment.center,
         children: [
           Container(
-            width: 200,
-            height: 200,
+            width: double.infinity,
+            height: double.infinity,
             decoration: BoxDecoration(
               color: Colors.black26,
               borderRadius: BorderRadius.circular(12),

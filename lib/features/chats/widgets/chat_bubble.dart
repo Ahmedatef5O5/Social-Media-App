@@ -8,16 +8,17 @@ import 'package:social_media_app/features/chats/widgets/message_content_containe
 import 'package:social_media_app/features/chats/widgets/user_chat_avatar_widget.dart';
 
 class ChatBubble extends StatelessWidget {
+  final bool isMe;
+  final MessageModel message;
+  final String? userImgUrl;
+  final double? uploadProgress;
   const ChatBubble({
     super.key,
     required this.message,
     required this.isMe,
     this.userImgUrl,
+    this.uploadProgress,
   });
-
-  final bool isMe;
-  final MessageModel message;
-  final String? userImgUrl;
 
   void _showReactionAndDeleteMenu(BuildContext context) {
     showModalBottomSheet(
@@ -113,7 +114,11 @@ class ChatBubble extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           if (!isMe) ...[UserChatAvatar(userImgUrl: userImgUrl), const Gap(8)],
-          MessageContentContainer(message: message, isMe: isMe),
+          MessageContentContainer(
+            message: message,
+            isMe: isMe,
+            uploadProgress: uploadProgress,
+          ),
         ],
       ),
     );
