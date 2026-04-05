@@ -14,6 +14,8 @@ class AppImages {
       'assets/lotties/HandwrittenWelcome.json';
   static const String trailLoadingLot = 'assets/lotties/Trailloading.json';
   static const String loadingDotsLot = 'assets/lotties/LoadingDotsBlue.json';
+  static const String loadingBarProgressLot =
+      'assets/lotties/LoadingBarProgress.json';
   static const String error404Lot = 'assets/lotties/Error404.json';
   static const String exitAnimationLot = 'assets/lotties/exitAnimation.json';
   static const String deleteFilesAnimationLot =
