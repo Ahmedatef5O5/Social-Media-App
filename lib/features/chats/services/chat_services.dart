@@ -1,7 +1,8 @@
 import 'dart:async';
 import 'dart:io';
+import 'package:dio/dio.dart' as dio_pkg;
 import 'package:flutter/material.dart';
-import 'package:path_provider/path_provider.dart';
+import 'package:social_media_app/core/secrets/app_secrets.dart';
 import 'package:social_media_app/core/utilities/supabase_constants.dart';
 import 'package:social_media_app/features/chats/models/message_model.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -133,22 +134,72 @@ class ChatServices {
         .eq(MessagesColumns.isRead, false);
   }
 
-  Future<String> uploadChatFile(File file, String type) async {
-    File fileToUpload = file;
-    if (!await fileToUpload.exists()) {
+  Future<String> uploadChatFile(
+    File file,
+    String type, {
+    Function(double)? onProgress,
+  }) async {
+    if (!await file.exists()) {
       throw Exception('File not found at path: ${file.path}');
     }
-    final dir = await getApplicationDocumentsDirectory();
-    final ext = file.path.split('.').last;
+
+    final ext = file.path.split('.').last.toLowerCase();
     final fileName = '${DateTime.now().millisecondsSinceEpoch}.$ext';
-    final safePath = '${dir.path}/$fileName';
-    fileToUpload = await file.copy(safePath);
-
     final uploadPath = '$type/$fileName';
-    await _supabase.storage.from('chat_media').upload(uploadPath, fileToUpload);
-    await fileToUpload.delete();
 
-    return _supabase.storage.from('chat_media').getPublicUrl(uploadPath);
+    String contentType;
+    if (type == 'image') {
+      contentType = 'image/${(ext == 'jpg' || ext == 'jpeg') ? 'jpeg' : ext}';
+    } else if (type == 'video') {
+      contentType = ext == 'mov' ? 'video/quicktime' : 'video/mp4';
+    } else if (type == 'voice') {
+      contentType =
+          (ext == 'm4a' || ext == 'aac') ? 'audio/x-m4a' : 'audio/mpeg';
+    } else {
+      contentType = 'application/octet-stream';
+    }
+
+    final storageBaseUrl = '${AppSecrets.supabaseUrl}/storage/v1';
+    final accessToken =
+        _supabase.auth.currentSession?.accessToken ??
+        AppSecrets.supabaseAnonKey;
+    final fileLength = await file.length();
+
+    final dioClient = dio_pkg.Dio();
+
+    try {
+      onProgress?.call(0.01);
+
+      await dioClient.put(
+        '$storageBaseUrl/object/chat_media/$uploadPath',
+        data: file.openRead(),
+        options: dio_pkg.Options(
+          headers: {
+            'Authorization': 'Bearer $accessToken',
+            'Content-Type': contentType,
+            'x-upsert': 'false',
+            'Content-Length': fileLength.toString(),
+          },
+        ),
+        onSendProgress: (sent, total) {
+          if (total > 0 && onProgress != null) {
+            final progress = (sent / total).clamp(0.0, 0.99);
+            onProgress(progress);
+          }
+        },
+      );
+
+      onProgress?.call(1.0);
+
+      return _supabase.storage.from('chat_media').getPublicUrl(uploadPath);
+    } catch (e) {
+      debugPrint('Upload Error: $e');
+      if (e is dio_pkg.DioException) {
+        debugPrint('Status Code: ${e.response?.statusCode}');
+        debugPrint('Error Data: ${e.response?.data}');
+      }
+      throw Exception('Upload failed: $e');
+    }
   }
 
   Future<void> updateLastSeen(String userId) async {

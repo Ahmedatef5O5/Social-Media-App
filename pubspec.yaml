@@ -14,6 +14,7 @@ dependencies:
   cupertino_icons: ^1.0.8
   custom_refresh_indicator: ^4.0.1
   device_preview: ^1.2.0
+  dio: ^5.9.2
   file_picker: ^10.3.10
   flutter:
     sdk: flutter
@@ -33,7 +34,7 @@ dependencies:
   record: ^6.2.0
   shared_preferences: 2.5.3
   story_view: ^0.16.6
-  supabase_flutter: ^2.12.0
+  supabase_flutter: ^2.12.2
   video_player: 2.10.1
 
 dev_dependencies:
