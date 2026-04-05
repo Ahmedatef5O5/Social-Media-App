@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
@@ -10,68 +11,11 @@ class ChatServices {
   final _supabase = Supabase.instance.client;
 
   Future<List<ChatUserModel>> getChatsList(String currentUserId) async {
-    // final response = await _supabase
-    //     .from('users')
-    //     .select()
-    //     .neq('id', currentUserId);
-
-    // final List<ChatUserModel> res = [];
-    // for (final user in response as List) {
-    //   final userId = user['id'] as String;
-
-    //   final lastMsgResponse =
-    //       await _supabase
-    //           .from(SupabaseConstants.messages)
-    //           .select('message_text, message_type, created_at')
-    //           .or(
-    //             'and(sender_id.eq.$currentUserId,receiver_id.eq.$userId),and(sender_id.eq.$userId,receiver_id.eq.$currentUserId)',
-    //           )
-    //           .order(MessagesColumns.createdAt, ascending: false)
-    //           .limit(1)
-    //           .maybeSingle();
-
-    //   final unreadResponse = await _supabase
-    //       .from('messages')
-    //       .select()
-    //       .eq('sender_id', userId)
-    //       .eq('receiver_id', currentUserId)
-    //       .eq('is_read', false);
-
-    //   res.add(
-    //     ChatUserModel(
-    //       id: userId,
-    //       name: user['name'] as String? ?? 'Unknown',
-    //       imageUrl: user['image_url'] as String? ?? '',
-    //       lastMessage: lastMsgResponse?['message_text'] as String? ?? '',
-    //       lastMessageType: lastMsgResponse?['message_type'] ?? 'text',
-    //       lastMessageTime:
-    //           lastMsgResponse?['created_at'] != null
-    //               ? DateTime.parse(lastMsgResponse?['created_at'])
-    //               : null,
-    //       unreadCount: (unreadResponse as List).length,
-    //       lastSeen:
-    //           user['last_seen'] != null
-    //               ? DateTime.parse(user['last_seen'])
-    //               : null,
-    //     ),
-    //   );
-    // }
-    // res.sort((a, b) {
-    //   if (a.lastMessageTime == null && b.lastMessageTime == null) return 0;
-    //   if (a.lastMessageTime == null) return 1;
-    //   if (b.lastMessageTime == null) return -1;
-    //   return b.lastMessageTime!.compareTo(a.lastMessageTime!);
-    // });
-
-    // return res;
-
     try {
       final response = await _supabase.rpc(
         SupabaseConstants.getChatsWithLastMessage,
         params: {'current_user_id': currentUserId},
       );
-
-      // print('RPC response: $response');
 
       if (response == null) return [];
       return (response as List)
@@ -83,10 +27,32 @@ class ChatServices {
     }
   }
 
-  Stream<List<Map<String, dynamic>>> getChatsStream() {
-    return _supabase
-        .from(SupabaseConstants.messages)
-        .stream(primaryKey: [MessagesColumns.id]);
+  Stream<List<Map<String, dynamic>>> getChatsStream(String currentUserId) {
+    final controller = StreamController<List<Map<String, dynamic>>>();
+
+    final channel = _supabase.channel('chats_updates_$currentUserId');
+    channel
+        .onPostgresChanges(
+          event: PostgresChangeEvent.all,
+          schema: 'public',
+          table: SupabaseConstants.messages,
+          callback: (payload) {
+            if (!controller.isClosed) {
+              controller.add([]);
+            }
+          },
+        )
+        .subscribe((status, error) {
+          if (error != null) {
+            debugPrint('Realtime Channel Error: $error');
+          }
+        });
+
+    controller.onCancel = () {
+      _supabase.removeChannel(channel);
+      controller.close();
+    };
+    return controller.stream;
   }
 
   Stream<List<MessageModel>> getMessagesStream({

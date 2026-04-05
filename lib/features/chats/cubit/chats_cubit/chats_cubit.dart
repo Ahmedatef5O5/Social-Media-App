@@ -16,7 +16,10 @@ class ChatsCubit extends Cubit<ChatsState> {
 
   void monitorChats() {
     getChats();
-    _chatsSubscription = _chatServices.getChatsStream().listen((data) {
+    _chatsSubscription?.cancel();
+    _chatsSubscription = _chatServices.getChatsStream(_currentUserId).listen((
+      data,
+    ) {
       getChats(isRefresh: true);
     }, onError: (error) => debugPrint('Stream Error Detail : $error'));
   }
