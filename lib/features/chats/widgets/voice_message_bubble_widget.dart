@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:social_media_app/core/widgets/custom_loading_indicator.dart';
@@ -25,9 +27,38 @@ class VoiceMessageBubbleWidget extends StatefulWidget {
   static final Map<String, VideoPlayerController> _cache = {};
 
   static final Map<String, Duration> _durationCache = {};
+  static final Map<String, Future<void>> _preloadFutures = {};
+
+  static Future<Duration?> _fetchDuration(String url) async {
+    if (_durationCache.containsKey(url)) return _durationCache[url];
+    if (_preloadFutures.containsKey(url)) {
+      await _preloadFutures[url];
+      return _durationCache[url];
+    }
+    final completer = Completer<void>();
+    _preloadFutures[url] = completer.future;
+    VideoPlayerController? temp;
+    try {
+      temp = VideoPlayerController.networkUrl(Uri.parse(url));
+      await temp.initialize();
+      final duration = temp.value.duration;
+      await temp.dispose();
+      temp = null;
+      _durationCache[url] = duration;
+      completer.complete();
+      return duration;
+    } catch (e) {
+      completer.completeError(e);
+      return null;
+    } finally {
+      await temp?.dispose();
+      _preloadFutures.remove(url);
+    }
+  }
 
   static Future<void> clearCache() async {
     _activeVoiceUrl.value = null;
+    _preloadFutures.clear();
     for (final c in _cache.values) {
       await c.dispose();
     }
@@ -47,22 +78,66 @@ class _VoiceMessageBubbleWidgetState extends State<VoiceMessageBubbleWidget> {
   bool _isPlaying = false;
   bool _isInitialized = false;
   bool _isLoading = false;
+  bool _isLocalFile = false;
 
   static const List<double> _speeds = [1.0, 1.25, 1.5, 1.75, 2.0];
   int _speedIndex = 0;
   double get _currentSpeed => _speeds[_speedIndex];
+  Future<void> _preloadDuration() async {
+    if (widget.voiceUrl.startsWith('/')) return;
+
+    await VoiceMessageBubbleWidget._fetchDuration(widget.voiceUrl);
+    if (mounted) {
+      setState(() {});
+    }
+  }
 
   @override
   void initState() {
     super.initState();
     VoiceMessageBubbleWidget._activeVoiceUrl.addListener(_onActiveVoiceChanged);
 
+    if (widget.voiceUrl.startsWith('/')) {
+      _isLocalFile = true;
+      return;
+    }
+
     if (VoiceMessageBubbleWidget._cache.containsKey(widget.voiceUrl)) {
       _isInitialized = true;
       _isPlaying = _controller!.value.isPlaying;
       _controller!.addListener(_onControllerUpdate);
-    } else {
-      _preloadDuration();
+    }
+    // if (!VoiceMessageBubbleWidget._durationCache.containsKey(widget.voiceUrl)) {
+    //   _preloadDuration();
+    // } else {
+    //   WidgetsBinding.instance.addPostFrameCallback((_) {
+    //     if (mounted) setState(() {});
+    //   });
+    // }
+    _preloadDuration();
+  }
+
+  @override
+  void didUpdateWidget(VoiceMessageBubbleWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    if (oldWidget.voiceUrl != widget.voiceUrl) {
+      _controller?.removeListener(_onControllerUpdate);
+
+      if (!widget.voiceUrl.startsWith('/')) {
+        _isLocalFile = false;
+
+        if (VoiceMessageBubbleWidget._cache.containsKey(widget.voiceUrl)) {
+          _isInitialized = true;
+          _controller!.addListener(_onControllerUpdate);
+        } else {
+          _isInitialized = false;
+        }
+
+        _preloadDuration();
+      }
+
+      if (mounted) setState(() {});
     }
   }
 
@@ -90,23 +165,6 @@ class _VoiceMessageBubbleWidgetState extends State<VoiceMessageBubbleWidget> {
     } else {
       setState(() {});
     }
-  }
-
-  Future<void> _preloadDuration() async {
-    if (VoiceMessageBubbleWidget._durationCache.containsKey(widget.voiceUrl)) {
-      if (mounted) setState(() {});
-      return;
-    }
-    try {
-      final tempController = VideoPlayerController.networkUrl(
-        Uri.parse(widget.voiceUrl),
-      );
-      await tempController.initialize();
-      final duration = tempController.value.duration;
-      await tempController.dispose();
-      VoiceMessageBubbleWidget._durationCache[widget.voiceUrl] = duration;
-      if (mounted) setState(() {});
-    } catch (_) {}
   }
 
   Future<void> _initAndPlay() async {
@@ -168,14 +226,22 @@ class _VoiceMessageBubbleWidgetState extends State<VoiceMessageBubbleWidget> {
   }
 
   String get _durationText {
-    if (_isInitialized && _controller != null && _isPlaying) {
-      final remaining =
-          _controller!.value.duration - _controller!.value.position;
-      return _fmt(remaining.isNegative ? Duration.zero : remaining);
+    final ctrl = _controller;
+    if (ctrl != null && ctrl.value.isInitialized) {
+      if (_isPlaying) {
+        final remaining = ctrl.value.duration - ctrl.value.position;
+        return _fmt(remaining.isNegative ? Duration.zero : remaining);
+      }
+      return _fmt(ctrl.value.duration);
     }
 
     final cached = VoiceMessageBubbleWidget._durationCache[widget.voiceUrl];
-    if (cached != null) return _fmt(cached);
+
+    if (cached != null && cached > Duration.zero) return _fmt(cached);
+
+    if (_isInitialized && _controller != null) {
+      return _fmt(_controller!.value.duration);
+    }
     return '--:--';
   }
 
@@ -197,7 +263,19 @@ class _VoiceMessageBubbleWidgetState extends State<VoiceMessageBubbleWidget> {
           padding: EdgeInsets.zero,
           onPressed: _isLoading ? null : _initAndPlay,
           icon:
-              _isLoading
+              widget.voiceUrl.startsWith('/')
+                  ? SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CustomLoadingIndicator(
+                      // strokeWidth: 2,
+                      color:
+                          widget.isMe
+                              ? AppColors.white
+                              : Theme.of(context).primaryColor,
+                    ),
+                  )
+                  : _isLoading
                   ? SizedBox(
                     width: 24,
                     height: 24,
@@ -226,7 +304,7 @@ class _VoiceMessageBubbleWidgetState extends State<VoiceMessageBubbleWidget> {
                 children: [
                   Expanded(
                     child:
-                        _isInitialized
+                        _isInitialized && _controller != null
                             ? VideoProgressIndicator(
                               _controller!,
                               allowScrubbing: true,

@@ -122,72 +122,62 @@ class _TextInputAreaSectionState extends State<TextInputAreaSection> {
                     child: GestureDetector(
                       onLongPressStart: (_) async {
                         if (await _audioRecorder.hasPermission()) {
-                          final dir = await getTemporaryDirectory();
+                          final dir = await getApplicationDocumentsDirectory();
                           final path =
                               '${dir.path}/${DateTime.now().millisecondsSinceEpoch}.m4a';
                           await _audioRecorder.start(
-                            const RecordConfig(),
+                            const RecordConfig(
+                              encoder: AudioEncoder.aacLc,
+                              bitRate: 128000,
+                              sampleRate: 44100,
+                            ),
                             path: path,
                           );
-                          setState(() {
-                            _isRecording = true;
-                          });
+                          setState(() => _isRecording = true);
                         }
                       },
+
                       onLongPressEnd: (_) async {
                         final path = await _audioRecorder.stop();
-                        setState(() {
-                          _isRecording = false;
-                        });
+                        setState(() => _isRecording = false);
 
-                        if (path != null) {
-                          try {
-                            await Future.delayed(
-                              const Duration(milliseconds: 500),
-                            );
+                        if (path == null) return;
 
-                            final File originalFile = File(path);
+                        final file = File(path);
 
-                            int retries = 3;
-                            while (!await originalFile.exists() &&
-                                retries > 0) {
-                              await Future.delayed(
-                                const Duration(milliseconds: 200),
-                              );
-                              retries--;
-                            }
+                        int retries = 10;
+                        while (!await file.exists() && retries > 0) {
+                          await Future.delayed(
+                            const Duration(milliseconds: 300),
+                          );
+                          retries--;
+                        }
 
-                            if (await originalFile.exists()) {
-                              final directory =
-                                  await getApplicationDocumentsDirectory();
-                              final String fileName =
-                                  "${DateTime.now().millisecondsSinceEpoch}.m4a";
-                              final String newPath =
-                                  '${directory.path}/$fileName';
+                        if (!await file.exists()) {
+                          debugPrint(
+                            'Error: Recording file not found at $path',
+                          );
+                          return;
+                        }
 
-                              final File savedVoice = await originalFile.copy(
-                                newPath,
-                              );
+                        final fileSize = await file.length();
+                        if (fileSize < 1000) {
+                          debugPrint(
+                            'Recording too short or empty: $fileSize bytes',
+                          );
+                          await file.delete();
+                          return;
+                        }
 
-                              if (context.mounted) {
-                                context.read<ChatDetailsCubit>().sendMessage(
-                                  receiverId: widget.receiverUser.id,
-                                  messageText: '',
-                                  messageType: 'voice',
-                                  voiceFile: savedVoice,
-                                );
-                              }
-                            } else {
-                              debugPrint(
-                                "Error: Recording file not found at $path",
-                              );
-                            }
-                          } catch (e) {
-                            debugPrint("Error saving voice note: $e");
-                          }
+                        if (context.mounted) {
+                          context.read<ChatDetailsCubit>().sendMessage(
+                            receiverId: widget.receiverUser.id,
+                            messageText: '',
+                            messageType: 'voice',
+                            voiceFile: file,
+                          );
                         }
                       },
-
                       child: Icon(
                         _isRecording ? Icons.mic : Icons.mic_none,
                         color:
