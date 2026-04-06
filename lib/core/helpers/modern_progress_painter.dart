@@ -33,10 +33,15 @@ class ModernProgressPainter extends CustomPainter {
           ..strokeWidth = strokeWidth
           ..strokeCap = StrokeCap.round
           ..shader = SweepGradient(
-            colors: [progressColor.withOpacity(0.8), progressColor],
+            colors: [progressColor.withValues(alpha: 0.8), progressColor],
             startAngle: -pi / 2,
             endAngle: pi * 2 * progress - pi / 2,
-          ).createShader(Rect.fromCircle(center: center, radius: radius));
+          ).createShader(
+            Rect.fromCircle(
+              center: center,
+              radius: radius.abs() > 0 ? radius : 1.0,
+            ),
+          );
 
     canvas.drawArc(
       Rect.fromCircle(center: center, radius: radius),
