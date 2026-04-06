@@ -10,8 +10,8 @@ final class MessagesLoading extends ChatDetailsState {}
 
 final class MessagesSending extends ChatDetailsState {
   final List<MessageModel>? messages;
-
-  MessagesSending({this.messages});
+  final Map<String, double> uploadProgress;
+  const MessagesSending({this.uploadProgress = const {}, this.messages});
 }
 
 final class MessagesSent extends ChatDetailsState {}

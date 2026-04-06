@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'package:dio/dio.dart' as dio_pkg;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -41,6 +42,7 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState> {
   }
 
   final Map<String, double> uploadProgressMap = {};
+
   Future<void> sendMessage({
     required String receiverId,
     required String messageText,
@@ -78,6 +80,8 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState> {
     final updatedMessages = [optimisticMessage, ...currentMessages];
     emit(MessagesSending(messages: updatedMessages));
 
+    final cancelToken = dio_pkg.CancelToken();
+    _cancelTokens[tempId] = cancelToken;
     try {
       String? imageUrl;
       String? videoUrl;
@@ -88,6 +92,7 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState> {
           imageUrl = await _chatServices.uploadChatFile(
             imageFile,
             'image',
+            cancelToken: cancelToken,
             onProgress: (progress) {
               uploadProgressMap[tempId] = progress;
               emit(MessagesSending(messages: updatedMessages));
@@ -110,6 +115,7 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState> {
           videoUrl = await _chatServices.uploadChatFile(
             videoFile,
             'video',
+            cancelToken: cancelToken,
             onProgress: (progress) {
               uploadProgressMap[tempId] = progress;
               emit(MessagesSending(messages: updatedMessages));
@@ -144,7 +150,15 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState> {
         voiceUrl: voiceUrl,
         caption: caption,
       );
+      _cancelTokens.remove(tempId);
     } catch (e) {
+      _cancelTokens.remove(tempId);
+
+      if (e is dio_pkg.DioException &&
+          e.type == dio_pkg.DioExceptionType.cancel) {
+        debugPrint("User canceled the upload");
+        return;
+      }
       debugPrint('error sending message: $e');
       emit(
         MessagesError("Failed to send message. Please check your connection."),
@@ -153,6 +167,21 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState> {
       emit(MessagesSuccessLoaded(messages: currentMessages));
 
       uploadProgressMap.remove(tempId);
+    }
+  }
+
+  final Map<String, dio_pkg.CancelToken> _cancelTokens = {};
+  void cancelUpload(String tempId) {
+    if (_cancelTokens.containsKey(tempId)) {
+      _cancelTokens[tempId]!.cancel();
+      _cancelTokens.remove(tempId);
+      uploadProgressMap.remove(tempId);
+
+      if (state is MessagesSending) {
+        final currentList = (state as MessagesSending).messages;
+        final updatedList = currentList!.where((m) => m.id != tempId).toList();
+        emit(MessagesSuccessLoaded(messages: updatedList));
+      }
     }
   }
 

@@ -1,7 +1,9 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 import 'package:social_media_app/core/helpers/chat_helper.dart';
+import 'package:social_media_app/features/chats/cubit/chat_details_cubit/chat_details_cubit.dart';
 import 'package:social_media_app/features/chats/widgets/image_message_widget.dart';
 import 'package:social_media_app/features/chats/widgets/video_message_widget.dart';
 import 'package:social_media_app/features/chats/widgets/voice_message_bubble_widget.dart';
@@ -204,7 +206,7 @@ class MessageContentContainer extends StatelessWidget {
           ),
         ),
 
-        if (isUploading)
+        if (isUploading) ...[
           Positioned.fill(
             child: ClipRRect(
               borderRadius: BorderRadius.only(
@@ -229,6 +231,43 @@ class MessageContentContainer extends StatelessWidget {
               ),
             ),
           ),
+
+          Positioned(
+            top: 12,
+            right: 12,
+            child: GestureDetector(
+              onTap: () {
+                context.read<ChatDetailsCubit>().cancelUpload(message.id);
+              },
+              child: Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color:
+                      Theme.of(context).brightness == Brightness.light
+                          ? Theme.of(
+                            context,
+                          ).scaffoldBackgroundColor.withValues(alpha: 1)
+                          : Colors.white.withValues(alpha: 1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.close,
+                  size: 18,
+
+                  color:
+                      Theme.of(context).brightness == Brightness.light
+                          ? Theme.of(
+                            context,
+                          ).primaryColor.withValues(alpha: 0.5)
+                          : Theme.of(
+                            context,
+                          ).primaryColor.withValues(alpha: 0.95),
+                ),
+              ),
+            ),
+          ),
+        ],
+
         if (hasReaction)
           Positioned(
             bottom: -12,

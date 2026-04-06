@@ -44,7 +44,7 @@ class ModernCircularProgress extends StatelessWidget {
           children: [
             AnimatedOpacity(
               duration: const Duration(milliseconds: 400),
-              opacity: isCompleted ? 0.0 : 1.0,
+              opacity: (isCompleted && showCheckmark) ? 0.0 : 1.0,
               child: RepaintBoundary(
                 child: CustomPaint(
                   size: Size(size, size),

@@ -138,6 +138,7 @@ class ChatServices {
     File file,
     String type, {
     Function(double)? onProgress,
+    dio_pkg.CancelToken? cancelToken,
   }) async {
     if (!await file.exists()) {
       throw Exception('File not found at path: ${file.path}');
@@ -173,6 +174,7 @@ class ChatServices {
       await dioClient.put(
         '$storageBaseUrl/object/chat_media/$uploadPath',
         data: file.openRead(),
+        cancelToken: cancelToken,
         options: dio_pkg.Options(
           headers: {
             'Authorization': 'Bearer $accessToken',
@@ -193,11 +195,11 @@ class ChatServices {
 
       return _supabase.storage.from('chat_media').getPublicUrl(uploadPath);
     } catch (e) {
-      debugPrint('Upload Error: $e');
-      if (e is dio_pkg.DioException) {
-        debugPrint('Status Code: ${e.response?.statusCode}');
-        debugPrint('Error Data: ${e.response?.data}');
+      if (dio_pkg.DioExceptionType.cancel == (e as dio_pkg.DioException).type) {
+        debugPrint('Upload Canceled by user');
+        throw Exception('CANCELED');
       }
+
       throw Exception('Upload failed: $e');
     }
   }
