@@ -200,4 +200,8 @@ class AppThemeModel {
   }
 
   String toStorageString() => type.name;
+
+  bool get isDark => bgBase.computeLuminance() < 0.5;
+
+  bool get shouldShowCircles => !isDark;
 }
