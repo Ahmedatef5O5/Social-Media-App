@@ -19,7 +19,12 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState> {
         .getMessagesStream(senderId: _currentUserId, receiverId: receiverId)
         .listen((messages) {
           emit(MessagesSuccessLoaded(messages: messages));
-          markAsRead(senderId: receiverId);
+          bool hasUnread = messages.any(
+            (m) => !m.isRead && m.receiverId == _currentUserId,
+          );
+          if (hasUnread) {
+            markAsRead(senderId: receiverId);
+          }
         });
   }
 
@@ -88,7 +93,9 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState> {
               emit(MessagesSending(messages: updatedMessages));
             },
           );
-
+          uploadProgressMap[tempId] = 1.0;
+          emit(MessagesSending(messages: updatedMessages));
+          await Future.delayed(const Duration(milliseconds: 200));
           uploadProgressMap.remove(tempId);
         } else {
           emit(
@@ -108,6 +115,10 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState> {
               emit(MessagesSending(messages: updatedMessages));
             },
           );
+          uploadProgressMap[tempId] = 1.0;
+          emit(MessagesSending(messages: updatedMessages));
+          await Future.delayed(const Duration(milliseconds: 200));
+          uploadProgressMap.remove(tempId);
         } else {
           emit(MessagesError("Video file not found. Please try again."));
           emit(MessagesSuccessLoaded(messages: currentMessages));
@@ -135,12 +146,12 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState> {
       );
     } catch (e) {
       debugPrint('error sending message: $e');
-      // emit(MessagesError(e.toString()));
       emit(
         MessagesError("Failed to send message. Please check your connection."),
       );
 
       emit(MessagesSuccessLoaded(messages: currentMessages));
+
       uploadProgressMap.remove(tempId);
     }
   }

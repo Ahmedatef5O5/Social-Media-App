@@ -183,7 +183,7 @@ class ChatServices {
         ),
         onSendProgress: (sent, total) {
           if (total > 0 && onProgress != null) {
-            final progress = (sent / total).clamp(0.0, 0.99);
+            final progress = (sent / total).clamp(0.0, 1.0);
             onProgress(progress);
           }
         },
