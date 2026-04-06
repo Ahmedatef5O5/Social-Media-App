@@ -83,8 +83,9 @@ class PostActionsMenu extends StatelessWidget {
                     SnackBar(
                       content: Text(
                         'Post deleted successfully',
-                        style:
-                            Theme.of(context).textTheme.titleSmall!.copyWith(),
+                        style: Theme.of(
+                          context,
+                        ).textTheme.titleSmall!.copyWith(color: Colors.white),
                       ),
                       backgroundColor: Colors.green,
                       behavior: SnackBarBehavior.floating,

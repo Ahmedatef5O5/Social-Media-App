@@ -40,7 +40,9 @@ class _AddStoryCaptionViewState extends State<AddStoryCaptionView> {
               SnackBar(
                 content: Text(
                   'Story Added Successfully',
-                  style: Theme.of(context).textTheme.titleSmall!.copyWith(),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleSmall!.copyWith(color: AppColors.white),
                 ),
                 backgroundColor: Colors.green,
                 behavior: SnackBarBehavior.floating,

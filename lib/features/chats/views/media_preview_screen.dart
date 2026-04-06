@@ -59,7 +59,7 @@ class _MediaPreviewScreenState extends State<MediaPreviewScreen> {
         child: Icon(
           _videoPlayerController!.value.isPlaying
               ? Icons.pause
-              : Icons.play_arrow,
+              : Icons.play_arrow_rounded,
           size: 40,
         ),
       ),

@@ -76,7 +76,7 @@ class _CreatePostVideoPreviewState extends State<CreatePostVideoPreview> {
                       child: Icon(
                         _controller.value.isPlaying
                             ? Icons.pause
-                            : Icons.play_arrow,
+                            : Icons.play_arrow_rounded,
                         color: Colors.white,
                         size: 40,
                       ),

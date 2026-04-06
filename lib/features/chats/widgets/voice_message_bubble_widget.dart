@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:social_media_app/core/widgets/custom_loading_indicator.dart';
@@ -78,6 +77,7 @@ class _VoiceMessageBubbleWidgetState extends State<VoiceMessageBubbleWidget> {
   bool _isPlaying = false;
   bool _isInitialized = false;
   bool _isLoading = false;
+  // ignore: unused_field
   bool _isLocalFile = false;
 
   static const List<double> _speeds = [1.0, 1.25, 1.5, 1.75, 2.0];
