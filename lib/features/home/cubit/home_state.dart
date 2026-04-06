@@ -74,7 +74,14 @@ final class PostsError extends HomeState {
   const PostsError(this.message);
 }
 
-final class PostCreating extends HomeState {}
+final class PostCreating extends HomeState {
+  final double progress;
+  const PostCreating(this.progress);
+}
+
+final class PostUploadCanceled extends HomeState {
+  const PostUploadCanceled();
+}
 
 final class PostCreated extends HomeState {
   const PostCreated();

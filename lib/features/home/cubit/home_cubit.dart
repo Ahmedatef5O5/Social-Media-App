@@ -195,13 +195,19 @@ class HomeCubit extends Cubit<HomeState> {
   }
 
   Future<void> createPost({required String text}) async {
-    emit(PostCreating());
+    emit(PostCreating(0.05));
     try {
       //
       final userId = Supabase.instance.client.auth.currentUser!.id;
       String? imageUrl;
       String? videoUrl;
       String? fileUrl;
+      void updateProgress(double p) {
+        if (state is PostCreating) {
+          emit(PostCreating(p.clamp(0.05, 0.95)));
+        }
+      }
+
       if (selectedImage != null) {
         final imageFile = File(selectedImage!.path);
 
@@ -210,6 +216,8 @@ class HomeCubit extends Cubit<HomeState> {
             File(selectedImage!.path),
             'post_images',
             'images',
+
+            onProgress: updateProgress,
           );
         } else {
           throw Exception('image_not_found');
@@ -222,6 +230,7 @@ class HomeCubit extends Cubit<HomeState> {
             File(selectedVideo!.path),
             'post_images',
             'videos',
+            onProgress: updateProgress,
           );
         } else {
           throw Exception('video_not_found');
@@ -234,6 +243,7 @@ class HomeCubit extends Cubit<HomeState> {
             docFile,
             'post_images',
             'documents',
+            onProgress: updateProgress,
           );
         } else {
           throw Exception("file_not_found");
@@ -248,13 +258,27 @@ class HomeCubit extends Cubit<HomeState> {
         fileUrl: fileUrl,
       );
       await homeServices.addPost(postRequest);
+
+      emit(PostCreating(1.0));
+      await Future.delayed(const Duration(milliseconds: 2000));
+
       _resetMedia();
       emit(PostCreated());
       await fetchPosts();
     } catch (e) {
-      // emit(PostCreateError(e.toString()));
-      emit(PostCreateError(_mapExceptionToMessage(e)));
+      final errorMessage = _mapExceptionToMessage(e);
+
+      if (errorMessage == "upload_canceled") {
+        emit(const PostUploadCanceled());
+      } else {
+        emit(PostCreateError(errorMessage));
+      }
     }
+  }
+
+  void cancelUpload() {
+    homeServices.cancelCurrentUpload();
+    emit(const PostUploadCanceled());
   }
 
   Future<void> deletePost(String postId) async {
@@ -279,6 +303,10 @@ class HomeCubit extends Cubit<HomeState> {
 
   String _mapExceptionToMessage(Object e) {
     final error = e.toString().toLowerCase();
+
+    if (error.contains('canceled') || error.contains('cancel')) {
+      return "upload_canceled";
+    }
 
     if (error.contains('pathnotfoundexception') ||
         error.contains('not_found')) {
