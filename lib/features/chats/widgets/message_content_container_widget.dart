@@ -6,6 +6,7 @@ import 'package:social_media_app/features/chats/widgets/image_message_widget.dar
 import 'package:social_media_app/features/chats/widgets/video_message_widget.dart';
 import 'package:social_media_app/features/chats/widgets/voice_message_bubble_widget.dart';
 import '../../../core/helpers/formatted_date.dart';
+import '../../../core/helpers/modern_circle_progress.dart';
 import '../../../core/themes/app_colors.dart';
 import '../models/message_model.dart';
 
@@ -22,8 +23,9 @@ class MessageContentContainer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bool isUploading =
-        isMe && uploadProgress != null && uploadProgress! < 1.0;
+    final double maxBubbleWidth = MediaQuery.of(context).size.width * 0.70;
+
+    final bool isUploading = isMe && uploadProgress != null;
     final bool isImage = message.messageType == 'image';
     final bool isVideo = message.messageType == 'video';
     final bool isVoice = message.messageType == 'voice';
@@ -74,189 +76,155 @@ class MessageContentContainer extends StatelessWidget {
                     top: 6,
                   ),
           constraints: BoxConstraints(
-            maxWidth: MediaQuery.of(context).size.width * 0.70,
+            maxWidth: maxBubbleWidth,
             minWidth:
-                (isImage || isVideo)
-                    ? 200
-                    : isVoice
-                    ? 280
-                    : 40,
+                isVoice
+                    ? (280 > maxBubbleWidth ? maxBubbleWidth : 280)
+                    : (isImage || isVideo ? 200 : 40),
           ),
           decoration: BoxDecoration(
             color:
-                isMe
-                    ? Theme.of(context).primaryColor
-                    : AppColors.grey3.withValues(alpha: 0.3),
+                (isImage || isVideo) &&
+                        (isUploading ||
+                            message.imageUrl == null &&
+                                message.videoUrl == null)
+                    ? AppColors.transparent
+                    : (isMe
+                        ? Theme.of(context).primaryColor
+                        : AppColors.grey3.withValues(alpha: 0.3)),
             borderRadius: BorderRadius.only(
               topLeft: const Radius.circular(20),
               topRight: const Radius.circular(20),
               bottomLeft: Radius.circular(isMe ? 20 : 0),
               bottomRight: Radius.circular(isMe ? 0 : 20),
             ),
-            boxShadow: [
-              BoxShadow(color: AppColors.grey1.withValues(alpha: 0.8)),
-            ],
+            boxShadow:
+                isUploading
+                    ? []
+                    : [
+                      BoxShadow(color: AppColors.grey1.withValues(alpha: 0.8)),
+                    ],
           ),
-          child: IntrinsicWidth(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (isImage)
-                  SizedBox(
-                    width: 305,
-                    height: 200,
-                    child:
-                        message.imageUrl != null
-                            ? ImageMessageWidget(
-                              imageUrl: message.imageUrl!,
-                              caption: message.caption,
-                            )
-                            : const SizedBox.shrink(),
-                  ),
-                if (isVideo)
-                  SizedBox(
-                    height: 200,
-                    width: 280,
-                    child:
-                        message.videoUrl != null
-                            ? VideoMessageWidget(
-                              videoUrl: message.videoUrl!,
-                              caption: message.caption,
-                            )
-                            : const SizedBox.shrink(),
-                  ),
-                if (message.messageType == 'voice' && message.voiceUrl != null)
-                  VoiceMessageBubbleWidget(
-                    voiceUrl: message.voiceUrl!,
-                    isMe: isMe,
-                    timestamp: message.createdAt,
-                    isRead: message.isRead,
-                  ),
-
-                if ((isImage || isVideo) && displayDraft.isEmpty)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 4, right: 8, bottom: 2),
-                    child: SizedBox(
-                      width: double.infinity,
-                      child: Align(
-                        alignment: Alignment.bottomRight,
-                        child: timeAndStatus(
-                          isMe ? AppColors.white70 : AppColors.black54,
-                          isMe ? AppColors.white70 : AppColors.black54,
-                        ),
-                      ),
+          child: Opacity(
+            opacity: isUploading ? 0.3 : 1.0,
+            child: IntrinsicWidth(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (isImage)
+                    SizedBox(
+                      width: 305,
+                      height: 320,
+                      child:
+                          message.imageUrl != null
+                              ? ImageMessageWidget(
+                                imageUrl: message.imageUrl!,
+                                caption: message.caption,
+                                isMe: isMe,
+                              )
+                              : const SizedBox.shrink(),
                     ),
-                  ),
-                if (displayDraft.isNotEmpty)
-                  Padding(
-                    padding: EdgeInsets.only(top: (isImage || isVideo) ? 8 : 0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          displayDraft,
-                          textDirection: ChatHelper.getTextDirection(
-                            displayDraft,
-                          ),
-                          style: Theme.of(
-                            context,
-                          ).textTheme.titleMedium!.copyWith(
-                            color: isMe ? AppColors.white : AppColors.black87,
-                            fontSize: 15,
-                            height: 1.3,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        Align(
+                  if (isVideo)
+                    SizedBox(
+                      height: 200,
+                      width: 280,
+                      child:
+                          message.videoUrl != null
+                              ? VideoMessageWidget(
+                                videoUrl: message.videoUrl!,
+                                caption: message.caption,
+                                isMe: isMe,
+                              )
+                              : const SizedBox.shrink(),
+                    ),
+                  if (message.messageType == 'voice' &&
+                      message.voiceUrl != null)
+                    VoiceMessageBubbleWidget(
+                      voiceUrl: message.voiceUrl!,
+                      isMe: isMe,
+                      timestamp: message.createdAt,
+                      isRead: message.isRead,
+                    ),
+
+                  if ((isImage || isVideo) && displayDraft.isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(
+                        top: 4,
+                        right: 8,
+                        bottom: 2,
+                      ),
+                      child: SizedBox(
+                        width: double.infinity,
+                        child: Align(
                           alignment: Alignment.bottomRight,
                           child: timeAndStatus(
                             isMe ? AppColors.white70 : AppColors.black54,
                             isMe ? AppColors.white70 : AppColors.black54,
                           ),
                         ),
-                      ],
+                      ),
                     ),
-                  ),
-              ],
+                  if (displayDraft.isNotEmpty)
+                    Padding(
+                      padding: EdgeInsets.only(
+                        top: (isImage || isVideo) ? 8 : 0,
+                        left: (isImage || isVideo) ? 6 : 0,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            displayDraft,
+                            textDirection: ChatHelper.getTextDirection(
+                              displayDraft,
+                            ),
+                            style: Theme.of(
+                              context,
+                            ).textTheme.titleMedium!.copyWith(
+                              color: isMe ? AppColors.white : AppColors.black87,
+                              fontSize: 15,
+                              height: 1.3,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          Align(
+                            alignment: Alignment.bottomRight,
+                            child: timeAndStatus(
+                              isMe ? AppColors.white70 : AppColors.black54,
+                              isMe ? AppColors.white70 : AppColors.black54,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
+              ),
             ),
           ),
         ),
 
         if (isUploading)
-          // if (true)
           Positioned.fill(
-            child: Padding(
-              padding: EdgeInsets.only(
-                top: 2,
-                left: 0,
-                right: 0,
-                bottom: hasReaction ? 28 : 2,
+            child: ClipRRect(
+              borderRadius: BorderRadius.only(
+                topLeft: const Radius.circular(20),
+                topRight: const Radius.circular(20),
+                bottomLeft: Radius.circular(isMe ? 20 : 0),
+                bottomRight: Radius.circular(isMe ? 0 : 20),
               ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.only(
-                  topLeft: const Radius.circular(20),
-                  topRight: const Radius.circular(20),
-                  bottomLeft: Radius.circular(isMe ? 20 : 0),
-                  bottomRight: Radius.circular(isMe ? 0 : 20),
-                ),
-                child: Stack(
-                  children: [
-                    Positioned.fill(
-                      child: BackdropFilter(
-                        filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
-                        child: Container(
-                          color: Colors.black.withValues(alpha: 0.35),
-                          child: Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Stack(
-                                  alignment: Alignment.center,
-                                  children: [
-                                    SizedBox(
-                                      width: 50,
-                                      height: 50,
-                                      child: CircularProgressIndicator(
-                                        value: 1.0,
-                                        strokeWidth: 3,
-                                        color: Colors.white.withValues(
-                                          alpha: 0.2,
-                                        ),
-                                      ),
-                                    ),
-                                    SizedBox(
-                                      width: 50,
-                                      height: 50,
-                                      child: CircularProgressIndicator(
-                                        value: uploadProgress,
-                                        strokeWidth: 3,
-                                        color: Colors.white,
-                                        strokeCap: StrokeCap.round,
-                                      ),
-                                    ),
-                                    const Gap(10),
-                                    Text(
-                                      "${(uploadProgress! * 100).toInt()}%",
-                                      style: Theme.of(
-                                        context,
-                                      ).textTheme.titleMedium!.copyWith(
-                                        color: Colors.white,
-                                        // color: Colors.white,
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.bold,
-                                        fontFamily: 'Roboto',
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+                child: Container(
+                  color: Colors.black.withValues(alpha: 0.1),
+                  child: Center(
+                    child: Center(
+                      child: ModernCircularProgress(
+                        progress: uploadProgress ?? 0.0,
+                        size: 110,
                       ),
                     ),
-                  ],
+                  ),
                 ),
               ),
             ),
