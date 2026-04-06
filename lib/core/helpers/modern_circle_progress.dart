@@ -31,7 +31,7 @@ class ModernCircularProgress extends StatelessWidget {
 
     return TweenAnimationBuilder<double>(
       tween: Tween<double>(begin: 0, end: progress),
-      duration: const Duration(milliseconds: 600),
+      duration: const Duration(milliseconds: 1500),
       curve: Curves.easeOutBack,
       onEnd: () {
         if (progress >= 0.99 && enableHaptic) {
@@ -42,32 +42,42 @@ class ModernCircularProgress extends StatelessWidget {
         return Stack(
           alignment: Alignment.center,
           children: [
-            RepaintBoundary(
-              child: CustomPaint(
-                size: Size(size, size),
-                painter: ModernProgressPainter(
-                  progress: value,
-                  backgroundColor: bgCircleColor,
-                  progressColor: primaryColor,
+            AnimatedOpacity(
+              duration: const Duration(milliseconds: 400),
+              opacity: isCompleted ? 0.0 : 1.0,
+              child: RepaintBoundary(
+                child: CustomPaint(
+                  size: Size(size, size),
+                  painter: ModernProgressPainter(
+                    progress: value,
+                    backgroundColor: bgCircleColor,
+                    progressColor: primaryColor,
+                  ),
                 ),
               ),
             ),
             AnimatedSwitcher(
-              duration: const Duration(milliseconds: 300),
+              duration: const Duration(milliseconds: 400),
+              transitionBuilder: (Widget child, Animation<double> animation) {
+                return FadeTransition(
+                  opacity: animation,
+                  child: ScaleTransition(scale: animation, child: child),
+                );
+              },
               child:
                   (isCompleted && showCheckmark)
                       ? TweenAnimationBuilder<double>(
                         key: const ValueKey('check'),
                         tween: Tween(begin: 0.0, end: 1.0),
-                        duration: const Duration(milliseconds: 600),
-                        curve: Curves.elasticOut,
+                        duration: const Duration(milliseconds: 1000),
+                        curve: Curves.easeInOutBack,
                         builder: (context, checkVal, _) {
                           return CustomPaint(
                             size: Size(size, size),
                             painter: AnimatedCheckPainter(
                               progress: checkVal,
                               color: primaryColor,
-                              strokeWidth: size * 0.1,
+                              strokeWidth: size * 0.12,
                             ),
                           );
                         },

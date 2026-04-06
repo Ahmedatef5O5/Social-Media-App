@@ -14,9 +14,12 @@ class ModernProgressPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
+    if (progress <= 0) return;
     final strokeWidth = size.width * 0.12;
     final center = Offset(size.width / 2, size.height / 2);
     final radius = (size.width - strokeWidth) / 2;
+
+    if (radius <= 0) return;
 
     final backgroundPaint =
         Paint()
@@ -25,6 +28,8 @@ class ModernProgressPainter extends CustomPainter {
           ..strokeWidth = strokeWidth;
 
     canvas.drawCircle(center, radius, backgroundPaint);
+
+    final safeProgress = progress.clamp(0.001, 1.0);
 
     final progressPaint =
         Paint()
@@ -35,7 +40,7 @@ class ModernProgressPainter extends CustomPainter {
           ..shader = SweepGradient(
             colors: [progressColor.withValues(alpha: 0.8), progressColor],
             startAngle: -pi / 2,
-            endAngle: pi * 2 * progress - pi / 2,
+            endAngle: (pi * 2 * safeProgress) - pi / 2,
           ).createShader(
             Rect.fromCircle(
               center: center,
@@ -46,7 +51,7 @@ class ModernProgressPainter extends CustomPainter {
     canvas.drawArc(
       Rect.fromCircle(center: center, radius: radius),
       -pi / 2,
-      pi * 2 * progress,
+      pi * 2 * safeProgress,
       false,
       progressPaint,
     );
