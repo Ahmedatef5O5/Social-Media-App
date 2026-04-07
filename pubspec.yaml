@@ -9,6 +9,7 @@ environment:
 
 dependencies:
   audio_session: ^0.2.3
+  audioplayers: ^6.6.0
   cached_network_image: ^3.4.1
   chewie: 1.12.1
   cupertino_icons: ^1.0.8
@@ -58,6 +59,7 @@ flutter:
     - assets/icons/
     - assets/icons/inputAreaIcons/
     - assets/lotties/
+    - assets/sounds/
     - .env
   #   - images/a_dot_ham.jpeg
   # fonts:
