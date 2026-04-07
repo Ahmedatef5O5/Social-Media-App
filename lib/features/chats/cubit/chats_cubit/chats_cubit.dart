@@ -11,24 +11,76 @@ class ChatsCubit extends Cubit<ChatsState> {
   final ChatServices _chatServices;
   final _currentUserId = Supabase.instance.client.auth.currentUser!.id;
   StreamSubscription? _chatsSubscription;
+  StreamSubscription? _typingSubscription;
+  Timer? _refreshDebounce;
+
+  List<ChatUserModel> _cachedChats = [];
+  List<String> _typingUserIds = [];
 
   ChatsCubit(this._chatServices) : super(ChatsInitial());
 
   void monitorChats() {
     getChats();
     _chatsSubscription?.cancel();
+
+    _listenToChatsStream();
+    _listenToTypingStream();
+  }
+
+  void _listenToChatsStream() {
+    _chatsSubscription?.cancel();
     _chatsSubscription = _chatServices.getChatsStream(_currentUserId).listen((
-      data,
+      _,
     ) {
-      getChats(isRefresh: true);
-    }, onError: (error) => debugPrint('Stream Error Detail : $error'));
+      _refreshDebounce?.cancel();
+      _refreshDebounce = Timer(const Duration(milliseconds: 500), () {
+        getChats(isRefresh: true);
+      });
+    }, onError: (error) => debugPrint('Stream Error: $error'));
+  }
+
+  void _listenToTypingStream() {
+    _typingSubscription?.cancel();
+    _typingSubscription = _chatServices
+        .getTypingUsersStream(_currentUserId)
+        .listen((typingUserIds) {
+          _typingUserIds = typingUserIds;
+          _emitWithTyping();
+        });
+  }
+
+  void _emitWithTyping() {
+    if (_cachedChats.isEmpty) return;
+
+    final updatedChats =
+        _cachedChats.map((chat) {
+          final isTyping = _typingUserIds.contains(chat.id);
+
+          if (chat.isTyping == isTyping) return chat;
+          return ChatUserModel(
+            id: chat.id,
+            name: chat.name,
+            imageUrl: chat.imageUrl,
+            lastMessage: chat.lastMessage,
+            lastMessageType: chat.lastMessageType,
+            lastMessageTime: chat.lastMessageTime,
+            lastMessageIsMe: chat.lastMessageIsMe,
+            lastMessageIsRead: chat.lastMessageIsRead,
+            isTyping: isTyping,
+            unreadCount: chat.unreadCount,
+            lastSeen: chat.lastSeen,
+          );
+        }).toList();
+
+    emit(ChatsSuccessloaded(chats: updatedChats));
   }
 
   Future<void> getChats({bool isRefresh = false}) async {
     if (!isRefresh) emit(ChatsLoading());
     try {
       final chats = await _chatServices.getChatsList(_currentUserId);
-      emit(ChatsSuccessloaded(chats: chats));
+      _cachedChats = chats;
+      _emitWithTyping();
     } catch (e) {
       debugPrint('Error getting chats: $e');
       emit(ChatsError(e.toString()));
@@ -38,6 +90,8 @@ class ChatsCubit extends Cubit<ChatsState> {
   @override
   Future<void> close() {
     _chatsSubscription?.cancel();
+    _typingSubscription?.cancel();
+    _refreshDebounce?.cancel();
     return super.close();
   }
 }
