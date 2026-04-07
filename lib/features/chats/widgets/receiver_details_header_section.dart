@@ -11,7 +11,13 @@ import '../models/chat_user_model.dart';
 
 class ReceiverDetailsHeaderSection extends StatelessWidget {
   final ChatUserModel receiverUser;
-  const ReceiverDetailsHeaderSection({super.key, required this.receiverUser});
+  final Widget Function(ChatDetailsState state)? statusBuilder;
+
+  const ReceiverDetailsHeaderSection({
+    super.key,
+    required this.receiverUser,
+    this.statusBuilder,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -30,13 +36,15 @@ class ReceiverDetailsHeaderSection extends StatelessWidget {
                 ),
                 const Gap(8),
                 BlocBuilder<ChatDetailsCubit, ChatDetailsState>(
-                  buildWhen: (previous, current) => current is LastSeenUpdated,
+                  buildWhen:
+                      (previous, current) =>
+                          current is LastSeenUpdated ||
+                          current is ReceiverTypingState,
                   builder: (context, state) {
                     final lastSeen =
                         state is LastSeenUpdated
                             ? state.lastSeen
                             : receiverUser.lastSeen;
-
                     final lastSeenText =
                         lastSeen != null
                             ? FormattedDate.getLastSeen(lastSeen)
@@ -122,28 +130,13 @@ class ReceiverDetailsHeaderSection extends StatelessWidget {
                   ),
                 ),
                 BlocBuilder<ChatDetailsCubit, ChatDetailsState>(
-                  buildWhen: (prev, curr) => curr is LastSeenUpdated,
+                  buildWhen:
+                      (prev, curr) =>
+                          curr is LastSeenUpdated ||
+                          curr is ReceiverTypingState,
                   builder: (context, state) {
-                    final lastSeen =
-                        state is LastSeenUpdated
-                            ? state.lastSeen
-                            : receiverUser.lastSeen;
-
-                    if (lastSeen == null) {
-                      return const Text(
-                        'Online',
-                        style: TextStyle(fontSize: 12, color: Colors.green),
-                      );
-                    }
-                    final lastSeenText = FormattedDate.getLastSeen(lastSeen);
-                    final isOnline = lastSeenText == 'Online';
-                    return Text(
-                      isOnline ? 'Online' : 'last seen $lastSeenText',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: isOnline ? Colors.green : Colors.grey,
-                      ),
-                    );
+                    if (statusBuilder != null) return statusBuilder!(state);
+                    return const SizedBox.shrink();
                   },
                 ),
               ],
