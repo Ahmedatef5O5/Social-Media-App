@@ -7,6 +7,7 @@ import '../../../core/helpers/formatted_date.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
 import '../models/chat_user_model.dart';
+import 'typing_indicator_widget.dart';
 
 class ChatItemTile extends StatelessWidget {
   final ChatUserModel user;
@@ -32,7 +33,6 @@ class ChatItemTile extends StatelessWidget {
   Column _buildTrailingSection(context) {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
-      // mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
         if (user.lastMessageTime != null) ...[
@@ -81,33 +81,50 @@ class ChatItemTile extends StatelessWidget {
   }
 
   Widget _buildLastMessage(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        if (user.lastMessageIsMe) ...[
-          Icon(
-            user.lastMessageIsRead ? Icons.done_all : Icons.done,
-            size: 15,
-            color: user.lastMessageIsRead ? Colors.blue : Colors.grey,
-          ),
-          const Gap(4),
+    if (user.isTyping == true) {
+      return Row(
+        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Text('typing', style: TextStyle(color: Colors.green, fontSize: 14)),
+          const SizedBox(width: 5),
+          TypingIndicatorWidget(dotSize: 2.8, color: Colors.green),
         ],
-        Expanded(
-          child: Text(
-            _getLastMessageText(),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            textDirection: ChatHelper.getTextDirection(_getLastMessageText()),
-            style: Theme.of(context).textTheme.labelSmall!.copyWith(
-              fontWeight:
-                  user.unreadCount > 0 ? FontWeight.w400 : FontWeight.w300,
-              fontSize: 14,
-              height: 1.8,
+      );
+    } else {
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (user.lastMessageIsMe) ...[
+            Icon(
+              user.lastMessageIsRead ? Icons.done_all : Icons.done,
+              size: 15,
+              color: user.lastMessageIsRead ? Colors.blue : Colors.grey,
+            ),
+            const Gap(4),
+          ],
+          Expanded(
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                _getLastMessageText(),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textDirection: ChatHelper.getTextDirection(
+                  _getLastMessageText(),
+                ),
+                style: Theme.of(context).textTheme.labelSmall!.copyWith(
+                  fontWeight:
+                      user.unreadCount > 0 ? FontWeight.w400 : FontWeight.w300,
+                  fontSize: 14,
+                  height: 1.8,
+                ),
+              ),
             ),
           ),
-        ),
-      ],
-    );
+        ],
+      );
+    }
   }
 
   Text _buildUserName(BuildContext context) {
