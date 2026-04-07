@@ -11,19 +11,39 @@ part 'chat_details_state.dart';
 class ChatDetailsCubit extends Cubit<ChatDetailsState> {
   final ChatServices _chatServices;
   StreamSubscription? _messageSubscription;
+  StreamSubscription? _lastSeenSubscription;
+  StreamSubscription? _typingSubscription;
+  Timer? _typingDebounce;
+  Timer? _lastSeenPollingTimer;
+
+  List<MessageModel> cachedMessages = [];
+
+  final currentUserId = Supabase.instance.client.auth.currentUser!.id;
+
   ChatDetailsCubit(this._chatServices) : super(ChatDetailsInitial());
-  final _currentUserId = Supabase.instance.client.auth.currentUser!.id;
+
+  bool _isUserAtBottom = true;
+
+  void setUserAtBottom(bool isAtBottom) {
+    _isUserAtBottom = isAtBottom;
+    if (isAtBottom && _pendingReceiverId != null) {
+      markAsRead(senderId: _pendingReceiverId!);
+    }
+  }
+
+  String? _pendingReceiverId;
 
   void getMessagesStream({required String receiverId}) {
     _messageSubscription?.cancel();
     _messageSubscription = _chatServices
-        .getMessagesStream(senderId: _currentUserId, receiverId: receiverId)
+        .getMessagesStream(senderId: currentUserId, receiverId: receiverId)
         .listen((messages) {
+          cachedMessages = messages;
           emit(MessagesSuccessLoaded(messages: messages));
           bool hasUnread = messages.any(
-            (m) => !m.isRead && m.receiverId == _currentUserId,
+            (m) => !m.isRead && m.receiverId == currentUserId,
           );
-          if (hasUnread) {
+          if (hasUnread && _isUserAtBottom) {
             markAsRead(senderId: receiverId);
           }
         });
@@ -33,7 +53,7 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState> {
     try {
       await _chatServices.markMessagesAsRead(
         senderId: senderId,
-        currentUserId: _currentUserId,
+        currentUserId: currentUserId,
       );
     } catch (e) {
       debugPrint('error marking as read: $e');
@@ -51,6 +71,7 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState> {
     File? videoFile,
     File? voiceFile,
     String? caption,
+    MessageModel? replyTo,
   }) async {
     if (messageText.trim().isEmpty &&
         imageFile == null &&
@@ -58,17 +79,13 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState> {
         voiceFile == null) {
       return;
     }
-    List<MessageModel> currentMessages = [];
-
-    if (state is MessagesSuccessLoaded) {
-      currentMessages = (state as MessagesSuccessLoaded).messages;
-    }
+    final List<MessageModel> currentMessages = List.from(cachedMessages);
 
     // optimistic Message
     final tempId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
     final optimisticMessage = MessageModel(
       id: tempId,
-      senderId: _currentUserId,
+      senderId: currentUserId,
       receiverId: receiverId,
       text: messageText,
       messageType: messageType,
@@ -78,6 +95,7 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState> {
     );
 
     final updatedMessages = [optimisticMessage, ...currentMessages];
+    cachedMessages = updatedMessages;
     emit(MessagesSending(messages: updatedMessages));
 
     final cancelToken = dio_pkg.CancelToken();
@@ -141,7 +159,7 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState> {
         }
       }
       await _chatServices.sendMessage(
-        senderId: _currentUserId,
+        senderId: currentUserId,
         receiverId: receiverId,
         text: messageText,
         messageType: messageType,
@@ -149,6 +167,10 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState> {
         videoUrl: videoUrl,
         voiceUrl: voiceUrl,
         caption: caption,
+        replyToMessageId: replyTo?.id,
+        replyToText: _getReplyPreviewText(replyTo),
+        replyToMessageType: replyTo?.messageType,
+        replyToSenderId: replyTo?.senderId,
       );
       _cancelTokens.remove(tempId);
     } catch (e) {
@@ -185,6 +207,21 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState> {
     }
   }
 
+  String? _getReplyPreviewText(MessageModel? msg) {
+    if (msg == null) return null;
+    switch (msg.messageType) {
+      case 'image':
+        return '📷 Photo';
+      case 'video':
+        return '🎥 Video';
+      case 'voice':
+        return '🎤 Voice message';
+      default:
+        final text = msg.caption ?? msg.text;
+        return text.length > 60 ? '${text.substring(0, 60)}...' : text;
+    }
+  }
+
   Future<void> deleteMessage({
     required String messageId,
     required String receiverId,
@@ -216,26 +253,85 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState> {
 
   Future<void> updateLastSeen() async {
     try {
-      await _chatServices.updateLastSeen(_currentUserId);
+      await _chatServices.updateLastSeen(currentUserId);
     } catch (e) {
       debugPrint('error updating last seen: $e');
       emit(MessagesError(e.toString()));
     }
   }
 
-  StreamSubscription? _lastSeenSubscription;
-
   void watchReceiverLastSeen(String receiverId) {
     _lastSeenSubscription?.cancel();
     _lastSeenSubscription = _chatServices
         .getLastSeenStream(receiverId)
         .listen((lastSeen) => emit(LastSeenUpdated(lastSeen)));
+
+    _lastSeenPollingTimer = Timer.periodic(const Duration(seconds: 10), (
+      _,
+    ) async {
+      final lastSeen = await _chatServices.getUserLastSeen(receiverId);
+      if (!isClosed) emit(LastSeenUpdated(lastSeen));
+    });
+  }
+
+  String getChatId(String u1, String u2) {
+    List<String> ids = [u1, u2];
+    ids.sort();
+    return ids.join('_');
+  }
+
+  void watchReceiverTyping(String receiverId) {
+    final chatId = getChatId(currentUserId, receiverId);
+
+    _typingSubscription?.cancel();
+    _typingSubscription = _chatServices
+        .getTypingStream(
+          chatId: chatId,
+          receiverId: receiverId,
+          currentUserId: currentUserId,
+        )
+        .listen((isTyping) {
+          if (!isClosed) emit(ReceiverTypingState(isTyping));
+        });
+  }
+
+  void onUserTyping(String receiverId) {
+    final chatId = getChatId(currentUserId, receiverId);
+
+    _chatServices.setTyping(
+      chatId: chatId,
+      currentUserId: currentUserId,
+      isTyping: true,
+    );
+
+    _typingDebounce?.cancel();
+    _typingDebounce = Timer(const Duration(seconds: 2), () {
+      _chatServices.setTyping(
+        chatId: chatId,
+        currentUserId: currentUserId,
+        isTyping: false,
+      );
+    });
+  }
+
+  void stopTyping(String receiverId) {
+    final chatId = getChatId(currentUserId, receiverId);
+
+    _typingDebounce?.cancel();
+    _chatServices.setTyping(
+      chatId: chatId,
+      currentUserId: currentUserId,
+      isTyping: false,
+    );
   }
 
   @override
   Future<void> close() {
     _messageSubscription?.cancel();
     _lastSeenSubscription?.cancel();
+    _lastSeenPollingTimer?.cancel();
+    _typingSubscription?.cancel();
+    _typingDebounce?.cancel();
     return super.close();
   }
 }

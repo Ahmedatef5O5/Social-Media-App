@@ -21,6 +21,11 @@ final class LastSeenUpdated extends ChatDetailsState {
   const LastSeenUpdated(this.lastSeen);
 }
 
+final class ReceiverTypingState extends ChatDetailsState {
+  final bool isTyping;
+  const ReceiverTypingState(this.isTyping);
+}
+
 final class MessagesSuccessLoaded extends ChatDetailsState {
   final List<MessageModel> messages;
   const MessagesSuccessLoaded({required this.messages});

@@ -1,3 +1,5 @@
+import 'package:social_media_app/core/utilities/supabase_constants.dart';
+
 class ChatUserModel {
   final String id;
   final String name;
@@ -7,6 +9,7 @@ class ChatUserModel {
   final DateTime? lastMessageTime;
   final bool lastMessageIsMe;
   final bool lastMessageIsRead;
+  final bool? isTyping;
   final int unreadCount;
   final DateTime? lastSeen;
 
@@ -19,6 +22,7 @@ class ChatUserModel {
     this.lastMessageTime,
     this.lastMessageIsMe = false,
     this.lastMessageIsRead = false,
+    this.isTyping,
     this.unreadCount = 0,
     this.lastSeen,
   });
@@ -39,6 +43,7 @@ class ChatUserModel {
               : null,
       lastMessageIsMe: map['last_message_sender_id'] == currentUserId,
       lastMessageIsRead: map['last_message_is_read'] ?? false,
+      isTyping: map[UserColumns.isTypingTo] == currentUserId,
       unreadCount: (map['unread_count'] as num?)?.toInt() ?? 0,
       lastSeen:
           map['last_seen'] != null
@@ -55,6 +60,7 @@ class ChatUserModel {
     DateTime? lastMessageTime,
     int? unreadCount,
     DateTime? lastSeen,
+    bool? isTyping,
   }) {
     return ChatUserModel(
       id: id ?? this.id,
@@ -64,6 +70,7 @@ class ChatUserModel {
       lastMessageTime: lastMessageTime ?? this.lastMessageTime,
       unreadCount: unreadCount ?? this.unreadCount,
       lastSeen: lastSeen ?? this.lastSeen,
+      isTyping: isTyping ?? this.isTyping,
     );
   }
 }

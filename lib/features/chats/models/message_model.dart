@@ -13,6 +13,10 @@ class MessageModel {
   final String? voiceUrl;
   final String? caption;
   final String? reaction;
+  final String? replyToMessageId;
+  final String? replyToText;
+  final String? replyToMessageType;
+  final String? replyToSenderId;
 
   const MessageModel({
     required this.id,
@@ -27,6 +31,10 @@ class MessageModel {
     this.voiceUrl,
     this.caption,
     this.reaction,
+    this.replyToMessageId,
+    this.replyToText,
+    this.replyToMessageType,
+    this.replyToSenderId,
   });
 
   MessageModel copyWith({
@@ -42,6 +50,10 @@ class MessageModel {
     String? voiceUrl,
     String? caption,
     String? reaction,
+    String? replyToMessageId,
+    String? replyToText,
+    String? replyToMessageType,
+    String? replyToSenderId,
   }) {
     return MessageModel(
       id: id ?? this.id,
@@ -49,7 +61,6 @@ class MessageModel {
       receiverId: receiverId ?? this.receiverId,
       text: text ?? this.text,
       createdAt: createdAt ?? this.createdAt,
-
       isRead: isRead ?? this.isRead,
       messageType: messageType ?? this.messageType,
       imageUrl: imageUrl ?? this.imageUrl,
@@ -57,6 +68,10 @@ class MessageModel {
       voiceUrl: voiceUrl ?? this.voiceUrl,
       caption: caption ?? this.caption,
       reaction: reaction ?? this.reaction,
+      replyToMessageId: replyToMessageId ?? this.replyToMessageId,
+      replyToText: replyToText ?? this.replyToText,
+      replyToMessageType: replyToMessageType ?? this.replyToMessageType,
+      replyToSenderId: replyToSenderId ?? this.replyToSenderId,
     );
   }
 
@@ -74,6 +89,10 @@ class MessageModel {
       voiceUrl: json[MessagesColumns.voiceUrl],
       caption: json[MessagesColumns.caption],
       reaction: json[MessagesColumns.reaction],
+      replyToMessageId: json[MessagesColumns.replyToMessageId],
+      replyToText: json[MessagesColumns.replyToText],
+      replyToMessageType: json[MessagesColumns.replyToMessageType],
+      replyToSenderId: json[MessagesColumns.replyToSenderId],
     );
   }
 }
