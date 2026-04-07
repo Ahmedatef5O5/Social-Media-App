@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 import 'package:social_media_app/core/themes/app_colors.dart';
@@ -7,18 +8,30 @@ import 'package:social_media_app/features/chats/models/message_model.dart';
 import 'package:social_media_app/features/chats/widgets/message_content_container_widget.dart';
 import 'package:social_media_app/features/chats/widgets/user_chat_avatar_widget.dart';
 
-class ChatBubble extends StatelessWidget {
+class ChatBubble extends StatefulWidget {
   final bool isMe;
   final MessageModel message;
+  final ValueChanged<MessageModel>? onReply;
   final String? userImgUrl;
   final double? uploadProgress;
+
   const ChatBubble({
     super.key,
     required this.message,
+    this.onReply,
     required this.isMe,
     this.userImgUrl,
     this.uploadProgress,
   });
+
+  @override
+  State<ChatBubble> createState() => _ChatBubbleState();
+}
+
+class _ChatBubbleState extends State<ChatBubble>
+    with SingleTickerProviderStateMixin {
+  double _dragOffset = 0;
+  bool _triggered = false;
 
   void _showReactionAndDeleteMenu(BuildContext context) {
     showModalBottomSheet(
@@ -40,14 +53,14 @@ class ChatBubble extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children:
                       ['👍', '❤️', '😂', '😮', '😢', '😡'].map((emoji) {
-                        final isSelected = message.reaction == emoji;
+                        final isSelected = widget.message.reaction == emoji;
                         return GestureDetector(
                           onTap: () {
                             Navigator.pop(ctx);
                             context.read<ChatDetailsCubit>().addReaction(
-                              messageId: message.id,
+                              messageId: widget.message.id,
                               reaction: emoji,
-                              currentReaction: message.reaction,
+                              currentReaction: widget.message.reaction,
                             );
                           },
                           child: Container(
@@ -79,7 +92,15 @@ class ChatBubble extends StatelessWidget {
                       }).toList(),
                 ),
                 const Divider(),
-                if (isMe)
+                ListTile(
+                  leading: const Icon(Icons.reply_all_outlined),
+                  title: const Text('Replay'),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    widget.onReply?.call(widget.message);
+                  },
+                ),
+                if (widget.isMe)
                   ListTile(
                     leading: const Icon(Icons.delete_outline),
                     title: Text(
@@ -91,9 +112,11 @@ class ChatBubble extends StatelessWidget {
                     onTap: () {
                       Navigator.pop(ctx);
                       final String actualReceiverId =
-                          isMe ? message.receiverId : message.senderId;
+                          widget.isMe
+                              ? widget.message.receiverId
+                              : widget.message.senderId;
                       context.read<ChatDetailsCubit>().deleteMessage(
-                        messageId: message.id,
+                        messageId: widget.message.id,
                         receiverId: actualReceiverId,
                       );
                     },
@@ -108,18 +131,59 @@ class ChatBubble extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onLongPress: () => _showReactionAndDeleteMenu(context),
-      child: Row(
-        mainAxisAlignment:
-            isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          if (!isMe) ...[UserChatAvatar(userImgUrl: userImgUrl), const Gap(8)],
-          MessageContentContainer(
-            message: message,
-            isMe: isMe,
-            uploadProgress: uploadProgress,
-          ),
-        ],
+
+      onHorizontalDragUpdate: (details) {
+        if (widget.isMe && details.delta.dx < 0) {
+          setState(() {
+            _dragOffset = (_dragOffset + details.delta.dx).clamp(-60.0, 0.0);
+          });
+        } else if (!widget.isMe && details.delta.dx > 0) {
+          setState(() {
+            _dragOffset = (_dragOffset + details.delta.dx).clamp(0.0, 60.0);
+          });
+        }
+        if (!_triggered && _dragOffset.abs() >= 50) {
+          _triggered = true;
+          HapticFeedback.lightImpact();
+          widget.onReply?.call(widget.message);
+        }
+      },
+      onHorizontalDragEnd: (_) {
+        setState(() {
+          _dragOffset = 0;
+          _triggered = false;
+        });
+      },
+
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        transform: Matrix4.translationValues(_dragOffset, 0, 0),
+        child: Row(
+          mainAxisAlignment:
+              widget.isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            if (!widget.isMe) ...[
+              UserChatAvatar(userImgUrl: widget.userImgUrl),
+              const Gap(8),
+            ],
+            MessageContentContainer(
+              message: widget.message,
+              isMe: widget.isMe,
+              uploadProgress: widget.uploadProgress,
+            ),
+
+            if (_dragOffset.abs() > 10)
+              Padding(
+                padding: const EdgeInsets.only(left: 4, right: 4),
+                child: Icon(
+                  Icons.reply,
+                  size: 20,
+                  color: Theme.of(context).primaryColor.withValues(alpha: 0.7),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
