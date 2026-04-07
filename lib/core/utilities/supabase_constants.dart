@@ -5,6 +5,7 @@ abstract class SupabaseConstants {
   static const String likes = 'post_likes';
   static const String comments = 'comments';
   static const String messages = 'messages';
+  static const String typingStatus = 'typing_status';
 
   //  RPC (Functions)
   static const String getChatsWithLastMessage = 'get_chats_with_last_message';
@@ -18,6 +19,7 @@ abstract class UserColumns {
   static const String imageUrl = 'image_url';
   static const String title = 'title';
   static const String lastSeen = 'last_seen';
+  static const String isTypingTo = 'is_typing_to';
   static const String theme = 'theme';
 }
 
@@ -79,4 +81,17 @@ abstract class MessagesColumns {
   static const String voiceUrl = 'voice_url';
   static const String caption = 'caption';
   static const String reaction = 'reaction';
+
+  static const String replyToMessageId = 'reply_to_message_id';
+  static const String replyToText = 'reply_to_text';
+  static const String replyToMessageType = 'reply_to_message_type';
+  static const String replyToSenderId = 'reply_to_sender_id';
+}
+
+// subClass for users Status column table
+abstract class TypingStatusColumns {
+  static const String chatId = 'chat_id';
+  static const String userId = 'user_id';
+  static const String isTyping = 'is_typing';
+  static const String updatedAt = 'updated_at';
 }

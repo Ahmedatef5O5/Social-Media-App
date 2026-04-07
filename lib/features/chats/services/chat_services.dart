@@ -31,28 +31,49 @@ class ChatServices {
   Stream<List<Map<String, dynamic>>> getChatsStream(String currentUserId) {
     final controller = StreamController<List<Map<String, dynamic>>>();
 
-    final channel = _supabase.channel('chats_updates_$currentUserId');
-    channel
+    final messagesChannel = _supabase.channel('chats_messages_$currentUserId');
+    messagesChannel
         .onPostgresChanges(
           event: PostgresChangeEvent.all,
           schema: 'public',
           table: SupabaseConstants.messages,
           callback: (payload) {
-            if (!controller.isClosed) {
-              controller.add([]);
-            }
+            if (!controller.isClosed) controller.add([]);
           },
         )
-        .subscribe((status, error) {
-          if (error != null) {
-            debugPrint('Realtime Channel Error: $error');
-          }
-        });
+        .subscribe();
+
+    final typingChannel = _supabase.channel('chats_typing_$currentUserId');
+    typingChannel
+        .onPostgresChanges(
+          event: PostgresChangeEvent.all,
+          schema: 'public',
+          table: SupabaseConstants.typingStatus,
+          callback: (payload) {
+            if (!controller.isClosed) controller.add([]);
+          },
+        )
+        .subscribe();
+
+    final usersChannel = _supabase.channel('chats_users_$currentUserId');
+    usersChannel
+        .onPostgresChanges(
+          event: PostgresChangeEvent.update,
+          schema: 'public',
+          table: SupabaseConstants.users,
+          callback: (payload) {
+            if (!controller.isClosed) controller.add([]);
+          },
+        )
+        .subscribe();
 
     controller.onCancel = () {
-      _supabase.removeChannel(channel);
+      _supabase.removeChannel(messagesChannel);
+      _supabase.removeChannel(typingChannel);
+      _supabase.removeChannel(usersChannel);
       controller.close();
     };
+
     return controller.stream;
   }
 
@@ -88,6 +109,10 @@ class ChatServices {
     String? videoUrl,
     String? voiceUrl,
     String? caption,
+    String? replyToMessageId,
+    String? replyToText,
+    String? replyToMessageType,
+    String? replyToSenderId,
   }) async {
     await _supabase.from(SupabaseConstants.messages).insert({
       MessagesColumns.senderId: senderId,
@@ -98,6 +123,13 @@ class ChatServices {
       if (videoUrl != null) MessagesColumns.videoUrl: videoUrl,
       if (voiceUrl != null) MessagesColumns.voiceUrl: voiceUrl,
       if (caption != null) MessagesColumns.caption: caption,
+      if (replyToMessageId != null)
+        MessagesColumns.replyToMessageId: replyToMessageId,
+      if (replyToText != null) MessagesColumns.replyToText: replyToText,
+      if (replyToMessageType != null)
+        MessagesColumns.replyToMessageType: replyToMessageType,
+      if (replyToSenderId != null)
+        MessagesColumns.replyToSenderId: replyToSenderId,
     });
   }
 
@@ -105,7 +137,7 @@ class ChatServices {
     await _supabase
         .from(SupabaseConstants.messages)
         .delete()
-        .eq('id', messageId);
+        .eq(MessagesColumns.id, messageId);
   }
 
   Future<void> addReaction({
@@ -217,16 +249,86 @@ class ChatServices {
     }
   }
 
+  Future<DateTime?> getUserLastSeen(String userId) async {
+    try {
+      final data =
+          await _supabase
+              .from(SupabaseConstants.users)
+              .select(UserColumns.lastSeen)
+              .eq(UserColumns.id, userId)
+              .single();
+      if (data[UserColumns.lastSeen] == null) return null;
+      return DateTime.parse(data[UserColumns.lastSeen]);
+    } catch (_) {
+      return null;
+    }
+  }
+
   Stream<DateTime?> getLastSeenStream(String userId) {
     return _supabase
         .from(SupabaseConstants.users)
         .stream(primaryKey: [UserColumns.id])
-        .eq('id', userId)
+        .eq(UserColumns.id, userId)
         .map((data) {
-          if (data.isEmpty || data.first['last_seen'] == null) {
+          if (data.isEmpty || data.first[UserColumns.lastSeen] == null) {
             return null;
           }
-          return DateTime.parse(data.first['last_seen']);
+          return DateTime.parse(data.first[UserColumns.lastSeen]);
+        });
+  }
+
+  Future<void> setTyping({
+    required String chatId,
+    required String currentUserId,
+    required bool isTyping,
+  }) async {
+    await _supabase.from(SupabaseConstants.typingStatus).upsert({
+      TypingStatusColumns.chatId: chatId,
+      TypingStatusColumns.userId: currentUserId,
+      TypingStatusColumns.isTyping: isTyping,
+      TypingStatusColumns.updatedAt: DateTime.now().toUtc().toIso8601String(),
+    });
+  }
+
+  Stream<bool> getTypingStream({
+    required String chatId,
+    required String receiverId,
+    required String currentUserId,
+  }) {
+    return _supabase
+        .from(SupabaseConstants.typingStatus)
+        .stream(
+          primaryKey: [TypingStatusColumns.chatId, TypingStatusColumns.userId],
+        )
+        .eq(TypingStatusColumns.chatId, chatId)
+        .map((rows) {
+          final receiverRow = rows.where(
+            (row) => row[TypingStatusColumns.userId] == receiverId,
+          );
+
+          return receiverRow.isNotEmpty &&
+              receiverRow.first[TypingStatusColumns.isTyping] == true;
+        });
+  }
+
+  Stream<List<String>> getTypingUsersStream(String currentUserId) {
+    return _supabase
+        .from(SupabaseConstants.typingStatus)
+        .stream(
+          primaryKey: [TypingStatusColumns.chatId, TypingStatusColumns.userId],
+        )
+        .map((rows) {
+          return rows
+              .where(
+                (row) =>
+                    row[TypingStatusColumns.isTyping] == true &&
+                    (row[TypingStatusColumns.chatId] as String).contains(
+                      currentUserId,
+                    ) &&
+                    row[TypingStatusColumns.userId] != currentUserId,
+              )
+              .map((row) => row[TypingStatusColumns.userId] as String)
+              .toList();
         });
   }
 }
