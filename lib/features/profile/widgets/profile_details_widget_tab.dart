@@ -6,13 +6,21 @@ import '../../auth/data/models/user_data.dart';
 
 class ProfileDetailsWidgetTab extends StatelessWidget {
   final UserData user;
-  const ProfileDetailsWidgetTab({super.key, required this.user});
+  final ValueNotifier<double> refreshProgress;
+  final ValueNotifier<bool> isRefreshing;
+  const ProfileDetailsWidgetTab({
+    super.key,
+    required this.user,
+    required this.refreshProgress,
+    required this.isRefreshing,
+  });
 
   @override
   Widget build(BuildContext context) {
     return ListView(
-      primary: false,
-      physics: const NeverScrollableScrollPhysics(),
+      physics: const AlwaysScrollableScrollPhysics(
+        parent: ClampingScrollPhysics(),
+      ),
       padding: const EdgeInsets.all(20),
       children: [
         _buildInfoRow(CupertinoIcons.mail, 'Email', user.email, context),
