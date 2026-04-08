@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
+import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import 'package:social_media_app/core/themes/app_colors.dart';
 import 'package:social_media_app/features/chats/cubit/chat_details_cubit/chat_details_cubit.dart';
 import 'package:social_media_app/features/chats/models/message_model.dart';
@@ -14,6 +15,8 @@ class ChatBubble extends StatefulWidget {
   final ValueChanged<MessageModel>? onReply;
   final String? userImgUrl;
   final double? uploadProgress;
+  final bool isHighlighted;
+  final ItemScrollController itemScrollController;
 
   const ChatBubble({
     super.key,
@@ -22,16 +25,19 @@ class ChatBubble extends StatefulWidget {
     required this.isMe,
     this.userImgUrl,
     this.uploadProgress,
+    this.isHighlighted = false,
+    required this.itemScrollController,
   });
 
   @override
-  State<ChatBubble> createState() => _ChatBubbleState();
+  State<ChatBubble> createState() => ChatBubbleState();
 }
 
-class _ChatBubbleState extends State<ChatBubble>
+class ChatBubbleState extends State<ChatBubble>
     with SingleTickerProviderStateMixin {
   double _dragOffset = 0;
   bool _triggered = false;
+  final ValueNotifier<String?> highlightedMessageId = ValueNotifier(null);
 
   void _showReactionAndDeleteMenu(BuildContext context) {
     showModalBottomSheet(
@@ -129,62 +135,96 @@ class _ChatBubbleState extends State<ChatBubble>
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onLongPress: () => _showReactionAndDeleteMenu(context),
+    final cubit = context.read<ChatDetailsCubit>();
 
-      onHorizontalDragUpdate: (details) {
-        if (widget.isMe && details.delta.dx < 0) {
-          setState(() {
-            _dragOffset = (_dragOffset + details.delta.dx).clamp(-60.0, 0.0);
-          });
-        } else if (!widget.isMe && details.delta.dx > 0) {
-          setState(() {
-            _dragOffset = (_dragOffset + details.delta.dx).clamp(0.0, 60.0);
-          });
-        }
-        if (!_triggered && _dragOffset.abs() >= 50) {
-          _triggered = true;
-          HapticFeedback.lightImpact();
-          widget.onReply?.call(widget.message);
-        }
-      },
-      onHorizontalDragEnd: (_) {
-        setState(() {
-          _dragOffset = 0;
-          _triggered = false;
-        });
-      },
+    return ValueListenableBuilder<String?>(
+      valueListenable: cubit.highlightedMessageId,
+      builder: (BuildContext context, value, Widget? child) {
+        final bool isHighlighted = value == widget.message.id;
+        final highlightColor = Theme.of(
+          context,
+        ).primaryColor.withValues(alpha: widget.isMe ? 0.12 : 0.2);
 
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150),
-        transform: Matrix4.translationValues(_dragOffset, 0, 0),
-        child: Row(
-          mainAxisAlignment:
-              widget.isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            if (!widget.isMe) ...[
-              UserChatAvatar(userImgUrl: widget.userImgUrl),
-              const Gap(8),
-            ],
-            MessageContentContainer(
-              message: widget.message,
-              isMe: widget.isMe,
-              uploadProgress: widget.uploadProgress,
-            ),
+        return GestureDetector(
+          onLongPress: () => _showReactionAndDeleteMenu(context),
 
-            if (_dragOffset.abs() > 10)
-              Padding(
-                padding: const EdgeInsets.only(left: 4, right: 4),
-                child: Icon(
-                  Icons.reply,
-                  size: 20,
-                  color: Theme.of(context).primaryColor.withValues(alpha: 0.7),
+          onHorizontalDragUpdate: (details) {
+            if (widget.isMe && details.delta.dx < 0) {
+              setState(() {
+                _dragOffset = (_dragOffset + details.delta.dx).clamp(
+                  -60.0,
+                  0.0,
+                );
+              });
+            } else if (!widget.isMe && details.delta.dx > 0) {
+              setState(() {
+                _dragOffset = (_dragOffset + details.delta.dx).clamp(0.0, 60.0);
+              });
+            }
+            if (!_triggered && _dragOffset.abs() >= 50) {
+              _triggered = true;
+              HapticFeedback.lightImpact();
+              widget.onReply?.call(widget.message);
+            }
+          },
+          onHorizontalDragEnd: (_) {
+            setState(() {
+              _dragOffset = 0;
+              _triggered = false;
+            });
+          },
+
+          child: Row(
+            mainAxisAlignment:
+                widget.isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              if (!widget.isMe) ...[
+                UserChatAvatar(userImgUrl: widget.userImgUrl),
+                const Gap(8),
+              ],
+
+              Expanded(
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 400),
+                  transform: Matrix4.translationValues(_dragOffset, 0, 0),
+                  decoration: BoxDecoration(
+                    color: isHighlighted ? highlightColor : Colors.transparent,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    mainAxisAlignment:
+                        widget.isMe
+                            ? MainAxisAlignment.end
+                            : MainAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      MessageContentContainer(
+                        message: widget.message,
+                        isMe: widget.isMe,
+                        uploadProgress: widget.uploadProgress,
+                        itemScrollController: widget.itemScrollController,
+                      ),
+
+                      if (_dragOffset.abs() > 10)
+                        Padding(
+                          padding: const EdgeInsets.only(left: 4, right: 4),
+                          child: Icon(
+                            Icons.reply,
+                            size: 20,
+                            color: Theme.of(
+                              context,
+                            ).primaryColor.withValues(alpha: 0.7),
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
               ),
-          ],
-        ),
-      ),
+            ],
+          ),
+        );
+      },
     );
   }
 }
