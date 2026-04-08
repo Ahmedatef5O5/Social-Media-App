@@ -2,9 +2,11 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
+import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import 'package:social_media_app/core/helpers/chat_helper.dart';
 import 'package:social_media_app/features/chats/cubit/chat_details_cubit/chat_details_cubit.dart';
 import 'package:social_media_app/features/chats/widgets/image_message_widget.dart';
+import 'package:social_media_app/features/chats/widgets/reply_preview_widget.dart';
 import 'package:social_media_app/features/chats/widgets/video_message_widget.dart';
 import 'package:social_media_app/features/chats/widgets/voice_message_bubble_widget.dart';
 import '../../../core/helpers/formatted_date.dart';
@@ -12,46 +14,54 @@ import '../../../core/helpers/modern_circle_progress.dart';
 import '../../../core/themes/app_colors.dart';
 import '../models/message_model.dart';
 
-class MessageContentContainer extends StatelessWidget {
+class MessageContentContainer extends StatefulWidget {
   final MessageModel message;
   final bool isMe;
   final double? uploadProgress;
+  final ItemScrollController itemScrollController;
   const MessageContentContainer({
     super.key,
     required this.message,
     required this.isMe,
     this.uploadProgress,
+    required this.itemScrollController,
   });
 
+  @override
+  State<MessageContentContainer> createState() =>
+      _MessageContentContainerState();
+}
+
+class _MessageContentContainerState extends State<MessageContentContainer> {
   @override
   Widget build(BuildContext context) {
     final double maxBubbleWidth = MediaQuery.of(context).size.width * 0.70;
 
-    final bool isUploading = isMe && uploadProgress != null;
-    final bool isImage = message.messageType == 'image';
-    final bool isVideo = message.messageType == 'video';
-    final bool isVoice = message.messageType == 'voice';
+    final bool isUploading = widget.isMe && widget.uploadProgress != null;
+    final bool isImage = widget.message.messageType == 'image';
+    final bool isVideo = widget.message.messageType == 'video';
+    final bool isVoice = widget.message.messageType == 'voice';
     final bool hasReaction =
-        message.reaction != null && message.reaction!.isNotEmpty;
-    final String displayDraft = message.caption ?? message.text;
+        widget.message.reaction != null && widget.message.reaction!.isNotEmpty;
+    final String displayDraft = widget.message.caption ?? widget.message.text;
     Widget timeAndStatus(Color textColor, Color? iconColor) {
       return Row(
         mainAxisSize: MainAxisSize.min,
         textDirection: TextDirection.ltr,
         children: [
           Text(
-            FormattedDate.getMessageTime(message.createdAt),
+            FormattedDate.getMessageTime(widget.message.createdAt),
             style: Theme.of(context).textTheme.titleMedium!.copyWith(
-              color: isMe ? AppColors.white70 : AppColors.black54,
+              color: widget.isMe ? AppColors.white70 : AppColors.black54,
               fontSize: 9,
             ),
           ),
-          if (isMe) ...[
+          if (widget.isMe) ...[
             const Gap(2),
             Icon(
-              message.isRead ? Icons.done_all : Icons.done,
+              widget.message.isRead ? Icons.done_all : Icons.done,
               size: 12,
-              color: message.isRead ? Colors.blue[200] : iconColor,
+              color: widget.message.isRead ? Colors.blue[200] : iconColor,
             ),
           ],
         ],
@@ -88,17 +98,17 @@ class MessageContentContainer extends StatelessWidget {
             color:
                 (isImage || isVideo) &&
                         (isUploading ||
-                            message.imageUrl == null &&
-                                message.videoUrl == null)
+                            widget.message.imageUrl == null &&
+                                widget.message.videoUrl == null)
                     ? AppColors.transparent
-                    : (isMe
+                    : (widget.isMe
                         ? Theme.of(context).primaryColor
                         : AppColors.grey3.withValues(alpha: 0.3)),
             borderRadius: BorderRadius.only(
               topLeft: const Radius.circular(20),
               topRight: const Radius.circular(20),
-              bottomLeft: Radius.circular(isMe ? 20 : 0),
-              bottomRight: Radius.circular(isMe ? 0 : 20),
+              bottomLeft: Radius.circular(widget.isMe ? 20 : 0),
+              bottomRight: Radius.circular(widget.isMe ? 0 : 20),
             ),
             boxShadow:
                 isUploading
@@ -114,16 +124,30 @@ class MessageContentContainer extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  if (widget.message.replyToMessageId != null)
+                    GestureDetector(
+                      onTap: () {
+                        _navigateToOriginalMessage(
+                          context,
+                          widget.message.replyToMessageId!,
+                        );
+                      },
+                      child: ReplyBubblePreview(
+                        replyText: widget.message.replyToText,
+                        replyType: widget.message.replyToMessageType,
+                        isMe: widget.isMe,
+                      ),
+                    ),
                   if (isImage)
                     SizedBox(
                       width: 305,
                       height: 320,
                       child:
-                          message.imageUrl != null
+                          widget.message.imageUrl != null
                               ? ImageMessageWidget(
-                                imageUrl: message.imageUrl!,
-                                caption: message.caption,
-                                isMe: isMe,
+                                imageUrl: widget.message.imageUrl!,
+                                caption: widget.message.caption,
+                                isMe: widget.isMe,
                               )
                               : const SizedBox.shrink(),
                     ),
@@ -132,21 +156,21 @@ class MessageContentContainer extends StatelessWidget {
                       height: 200,
                       width: 280,
                       child:
-                          message.videoUrl != null
+                          widget.message.videoUrl != null
                               ? VideoMessageWidget(
-                                videoUrl: message.videoUrl!,
-                                caption: message.caption,
-                                isMe: isMe,
+                                videoUrl: widget.message.videoUrl!,
+                                caption: widget.message.caption,
+                                isMe: widget.isMe,
                               )
                               : const SizedBox.shrink(),
                     ),
-                  if (message.messageType == 'voice' &&
-                      message.voiceUrl != null)
+                  if (widget.message.messageType == 'voice' &&
+                      widget.message.voiceUrl != null)
                     VoiceMessageBubbleWidget(
-                      voiceUrl: message.voiceUrl!,
-                      isMe: isMe,
-                      timestamp: message.createdAt,
-                      isRead: message.isRead,
+                      voiceUrl: widget.message.voiceUrl!,
+                      isMe: widget.isMe,
+                      timestamp: widget.message.createdAt,
+                      isRead: widget.message.isRead,
                     ),
 
                   if ((isImage || isVideo) && displayDraft.isEmpty)
@@ -161,8 +185,8 @@ class MessageContentContainer extends StatelessWidget {
                         child: Align(
                           alignment: Alignment.bottomRight,
                           child: timeAndStatus(
-                            isMe ? AppColors.white70 : AppColors.black54,
-                            isMe ? AppColors.white70 : AppColors.black54,
+                            widget.isMe ? AppColors.white70 : AppColors.black54,
+                            widget.isMe ? AppColors.white70 : AppColors.black54,
                           ),
                         ),
                       ),
@@ -184,7 +208,10 @@ class MessageContentContainer extends StatelessWidget {
                             style: Theme.of(
                               context,
                             ).textTheme.titleMedium!.copyWith(
-                              color: isMe ? AppColors.white : AppColors.black87,
+                              color:
+                                  widget.isMe
+                                      ? AppColors.white
+                                      : AppColors.black87,
                               fontSize: 15,
                               height: 1.3,
                               fontWeight: FontWeight.w500,
@@ -193,8 +220,12 @@ class MessageContentContainer extends StatelessWidget {
                           Align(
                             alignment: Alignment.bottomRight,
                             child: timeAndStatus(
-                              isMe ? AppColors.white70 : AppColors.black54,
-                              isMe ? AppColors.white70 : AppColors.black54,
+                              widget.isMe
+                                  ? AppColors.white70
+                                  : AppColors.black54,
+                              widget.isMe
+                                  ? AppColors.white70
+                                  : AppColors.black54,
                             ),
                           ),
                         ],
@@ -212,8 +243,8 @@ class MessageContentContainer extends StatelessWidget {
               borderRadius: BorderRadius.only(
                 topLeft: const Radius.circular(20),
                 topRight: const Radius.circular(20),
-                bottomLeft: Radius.circular(isMe ? 20 : 0),
-                bottomRight: Radius.circular(isMe ? 0 : 20),
+                bottomLeft: Radius.circular(widget.isMe ? 20 : 0),
+                bottomRight: Radius.circular(widget.isMe ? 0 : 20),
               ),
               child: BackdropFilter(
                 filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
@@ -222,7 +253,7 @@ class MessageContentContainer extends StatelessWidget {
                   child: Center(
                     child: Center(
                       child: ModernCircularProgress(
-                        progress: uploadProgress ?? 0.0,
+                        progress: widget.uploadProgress ?? 0.0,
                         size: 110,
                       ),
                     ),
@@ -237,7 +268,9 @@ class MessageContentContainer extends StatelessWidget {
             right: 12,
             child: GestureDetector(
               onTap: () {
-                context.read<ChatDetailsCubit>().cancelUpload(message.id);
+                context.read<ChatDetailsCubit>().cancelUpload(
+                  widget.message.id,
+                );
               },
               child: Container(
                 padding: const EdgeInsets.all(4),
@@ -271,13 +304,14 @@ class MessageContentContainer extends StatelessWidget {
         if (hasReaction)
           Positioned(
             bottom: -12,
-            right: isMe ? 8 : null,
-            left: isMe ? null : 8,
+            right: widget.isMe ? 8 : null,
+            left: widget.isMe ? null : 8,
             child: Container(
               margin: EdgeInsets.only(
                 top: 2,
                 bottom:
-                    message.reaction != null && message.reaction!.isNotEmpty
+                    widget.message.reaction != null &&
+                            widget.message.reaction!.isNotEmpty
                         ? 18
                         : 2,
               ),
@@ -296,7 +330,7 @@ class MessageContentContainer extends StatelessWidget {
               ),
 
               child: Text(
-                message.reaction!,
+                widget.message.reaction!,
                 style: Theme.of(
                   context,
                 ).textTheme.titleMedium!.copyWith(fontSize: 14),
@@ -305,5 +339,19 @@ class MessageContentContainer extends StatelessWidget {
           ),
       ],
     );
+  }
+
+
+  void _navigateToOriginalMessage(BuildContext context, String replyId) {
+    final cubit = context.read<ChatDetailsCubit>();
+
+    if (widget.itemScrollController.isAttached) {
+      cubit.scrollToMessage(
+        messageId: replyId,
+        itemScrollController: widget.itemScrollController,
+      );
+    } else {
+      debugPrint("Controller is not attached to any list");
+    }
   }
 }
