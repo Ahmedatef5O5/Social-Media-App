@@ -12,7 +12,7 @@ class ChatsListViewSection extends StatelessWidget {
     return ListView.separated(
       padding: const EdgeInsets.only(top: 0, left: 0, right: 0, bottom: 100),
       physics: const AlwaysScrollableScrollPhysics(
-        parent: BouncingScrollPhysics(),
+        parent: ClampingScrollPhysics(),
       ),
       itemCount: chats.length + 1,
       itemBuilder: (BuildContext context, int index) {

@@ -119,11 +119,9 @@ class ProfileDrawer extends StatelessWidget {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text(
-                            'LogOut Successfully',
-                            style:
-                                Theme.of(
-                                  context,
-                                ).textTheme.titleSmall!.copyWith(),
+                            'Log out Successfully',
+                            style: Theme.of(context).textTheme.titleSmall!
+                                .copyWith(color: Colors.white),
                           ),
                           backgroundColor: Colors.redAccent,
                           behavior: SnackBarBehavior.floating,

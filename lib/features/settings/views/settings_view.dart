@@ -30,7 +30,7 @@ class SettingsView extends StatelessWidget {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text(
-                          'LogOut Successfully',
+                          'Log out Successfully',
                           style: Theme.of(context).textTheme.titleSmall!
                               .copyWith(color: AppColors.white),
                         ),
