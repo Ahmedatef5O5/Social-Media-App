@@ -163,13 +163,13 @@ class AppRouter {
           BlocProvider(
             create:
                 (context) =>
-                    ChatDetailsCubit(ChatServices())
+                    ChatDetailsCubit(ChatServices(), user.name)
                       ..getMessagesStream(receiverId: user.id),
             child: ChatDetailsView(receiverUser: user),
           ),
           settings: settings,
         );
-      //
+
       case AppRoutes.groupChatRoute:
         final group = settings.arguments as GroupModel;
         return _buildRoute(GroupChatView(group: group), settings: settings);

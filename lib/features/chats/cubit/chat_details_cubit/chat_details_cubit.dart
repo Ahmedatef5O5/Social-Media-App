@@ -12,6 +12,10 @@ part 'chat_details_state.dart';
 
 class ChatDetailsCubit extends Cubit<ChatDetailsState> {
   final ChatServices _chatServices;
+  final String receiverName;
+  final ValueNotifier<MessageModel?> replyToMessage =
+      ValueNotifier<MessageModel?>(null);
+
   StreamSubscription? _messageSubscription;
   StreamSubscription? _lastSeenSubscription;
   StreamSubscription? _typingSubscription;
@@ -21,10 +25,10 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState> {
   List<MessageModel> cachedMessages = [];
 
   final currentUserId = Supabase.instance.client.auth.currentUser!.id;
-
   final Map<String, GlobalKey<ChatBubbleState>> bubbleKeys = {};
 
-  ChatDetailsCubit(this._chatServices) : super(ChatDetailsInitial());
+  ChatDetailsCubit(this._chatServices, this.receiverName)
+    : super(ChatDetailsInitial());
 
   bool _isUserAtBottom = true;
 
@@ -91,6 +95,7 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState> {
         voiceFile == null) {
       return;
     }
+
     final List<MessageModel> currentMessages = List.from(cachedMessages);
 
     // optimistic Message
@@ -104,6 +109,10 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState> {
       createdAt: DateTime.now(),
       isRead: false,
       voiceUrl: voiceFile?.path,
+      replyToMessageId: replyToMessage.value?.id,
+      replyToText: replyToMessage.value?.text,
+      replyToMessageType: replyToMessage.value?.messageType,
+      replyToSenderId: replyToMessage.value?.senderId,
     );
 
     final updatedMessages = [optimisticMessage, ...currentMessages];
@@ -170,6 +179,7 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState> {
           return;
         }
       }
+
       await _chatServices.sendMessage(
         senderId: currentUserId,
         receiverId: receiverId,
@@ -217,6 +227,14 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState> {
         emit(MessagesSuccessLoaded(messages: updatedList));
       }
     }
+  }
+
+  void setReplyMessage(MessageModel message) {
+    replyToMessage.value = message;
+  }
+
+  void cancelReply() {
+    replyToMessage.value = null;
   }
 
   String? _getReplyPreviewText(MessageModel? msg) {
