@@ -84,6 +84,11 @@ class _TextInputAreaSectionState extends State<TextInputAreaSection> {
             isMe:
                 widget.replyTo!.senderId ==
                 context.read<ChatDetailsCubit>().currentUserId,
+            senderName:
+                widget.replyTo!.senderId ==
+                        context.read<ChatDetailsCubit>().currentUserId
+                    ? "You"
+                    : widget.receiverUser.name,
             onCancel: widget.onCancelReply ?? () {},
           ),
 

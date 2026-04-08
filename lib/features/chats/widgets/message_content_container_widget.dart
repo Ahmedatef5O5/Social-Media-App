@@ -44,6 +44,7 @@ class _MessageContentContainerState extends State<MessageContentContainer> {
     final bool hasReaction =
         widget.message.reaction != null && widget.message.reaction!.isNotEmpty;
     final String displayDraft = widget.message.caption ?? widget.message.text;
+
     Widget timeAndStatus(Color textColor, Color? iconColor) {
       return Row(
         mainAxisSize: MainAxisSize.min,
@@ -132,10 +133,18 @@ class _MessageContentContainerState extends State<MessageContentContainer> {
                           widget.message.replyToMessageId!,
                         );
                       },
-                      child: ReplyBubblePreview(
-                        replyText: widget.message.replyToText,
-                        replyType: widget.message.replyToMessageType,
-                        isMe: widget.isMe,
+                      child: SizedBox(
+                        width: double.infinity,
+                        child: ReplyBubblePreview(
+                          replyText: widget.message.replyToText,
+                          replyType: widget.message.replyToMessageType,
+                          isMe: widget.isMe,
+                          message: widget.message,
+                          currentUserId:
+                              context.read<ChatDetailsCubit>().currentUserId,
+                          receiverName:
+                              context.read<ChatDetailsCubit>().receiverName,
+                        ),
                       ),
                     ),
                   if (isImage)
@@ -340,7 +349,6 @@ class _MessageContentContainerState extends State<MessageContentContainer> {
       ],
     );
   }
-
 
   void _navigateToOriginalMessage(BuildContext context, String replyId) {
     final cubit = context.read<ChatDetailsCubit>();
