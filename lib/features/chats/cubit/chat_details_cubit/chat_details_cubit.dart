@@ -3,9 +3,11 @@ import 'dart:io';
 import 'package:dio/dio.dart' as dio_pkg;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../models/message_model.dart';
 import '../../services/chat_services.dart';
+import '../../widgets/chat_bubble.dart';
 part 'chat_details_state.dart';
 
 class ChatDetailsCubit extends Cubit<ChatDetailsState> {
@@ -19,6 +21,8 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState> {
   List<MessageModel> cachedMessages = [];
 
   final currentUserId = Supabase.instance.client.auth.currentUser!.id;
+
+  final Map<String, GlobalKey<ChatBubbleState>> bubbleKeys = {};
 
   ChatDetailsCubit(this._chatServices) : super(ChatDetailsInitial());
 
@@ -38,6 +42,14 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState> {
     _messageSubscription = _chatServices
         .getMessagesStream(senderId: currentUserId, receiverId: receiverId)
         .listen((messages) {
+          final currentIds = messages.map((m) => m.id).toSet();
+          bubbleKeys.removeWhere((key, _) => !currentIds.contains(key));
+          for (final msg in messages) {
+            if (!bubbleKeys.containsKey(msg.id)) {
+              bubbleKeys[msg.id] = GlobalKey<ChatBubbleState>();
+            }
+          }
+
           cachedMessages = messages;
           emit(MessagesSuccessLoaded(messages: messages));
           bool hasUnread = messages.any(
@@ -222,6 +234,33 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState> {
     }
   }
 
+  int? findMessageIndex(String messageId) {
+    final index = cachedMessages.indexWhere((m) => m.id == messageId);
+    return index == -1 ? null : index;
+  }
+
+  final ValueNotifier<String?> highlightedMessageId = ValueNotifier(null);
+
+  Future<void> scrollToMessage({
+    required String messageId,
+    required ItemScrollController itemScrollController,
+  }) async {
+    final index = cachedMessages.indexWhere((m) => m.id == messageId);
+    if (index == -1) return;
+
+    await itemScrollController.scrollTo(
+      index: index,
+      duration: const Duration(milliseconds: 450),
+      curve: Curves.easeInOutCubic,
+      alignment: 0.3,
+    );
+
+    highlightedMessageId.value = messageId;
+    Future.delayed(const Duration(milliseconds: 1500), () {
+      if (!isClosed) highlightedMessageId.value = null;
+    });
+  }
+
   Future<void> deleteMessage({
     required String messageId,
     required String receiverId,
@@ -327,6 +366,8 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState> {
 
   @override
   Future<void> close() {
+    highlightedMessageId.dispose();
+
     _messageSubscription?.cancel();
     _lastSeenSubscription?.cancel();
     _lastSeenPollingTimer?.cancel();
