@@ -2,6 +2,7 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
+import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import 'package:social_media_app/features/chats/widgets/chat_bubble.dart';
 import 'package:social_media_app/features/chats/widgets/date_separator_glassmorphism_widget.dart';
 import 'package:social_media_app/features/chats/widgets/empty_placeholder_state.dart';
@@ -13,9 +14,10 @@ import '../cubit/chat_details_cubit/chat_details_cubit.dart';
 import '../models/chat_user_model.dart';
 import '../models/message_model.dart';
 
-class MessagesListView extends StatelessWidget {
+class MessagesListView extends StatefulWidget {
   final ChatUserModel receiverUser;
-  final ScrollController scrollController;
+  final ItemScrollController itemScrollController;
+  final ItemPositionsListener itemPositionsListener;
   final Function(MessageModel) onReply;
   final ValueNotifier<bool> showScrollButtonNotifier;
   final ValueNotifier<int> unreadCountNotifier;
@@ -23,15 +25,23 @@ class MessagesListView extends StatelessWidget {
   const MessagesListView({
     super.key,
     required this.receiverUser,
-    required this.scrollController,
+    required this.itemScrollController,
+    required this.itemPositionsListener,
     required this.onReply,
     required this.showScrollButtonNotifier,
     required this.unreadCountNotifier,
     required this.scrollToBottom,
   });
 
+  @override
+  State<MessagesListView> createState() => _MessagesListViewState();
+}
+
+class _MessagesListViewState extends State<MessagesListView> {
   static final AudioPlayer _audioPlayer = AudioPlayer();
   static String? _lastPlayedMessageId;
+
+  int _lastMessageCount = 0;
 
   Future<void> _playNotificationSound() async {
     try {
@@ -62,69 +72,69 @@ class MessagesListView extends StatelessWidget {
         }
         return Stack(
           children: [
-            GestureDetector(
-              onTap: () => FocusScope.of(context).unfocus(),
-              onLongPress: () {},
-              onVerticalDragStart: (_) => FocusScope.of(context).unfocus(),
-              child: ListView.separated(
-                physics: const AlwaysScrollableScrollPhysics(
-                  parent: ClampingScrollPhysics(),
-                ),
-                controller: scrollController,
-                padding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                keyboardDismissBehavior:
-                    ScrollViewKeyboardDismissBehavior.onDrag,
-                reverse: true,
-                itemCount: messages.length + (isTyping ? 1 : 0),
-                itemBuilder: (BuildContext context, int index) {
-                  if (isTyping && index == 0) {
-                    return TypingBubbleWidget(
-                      receiverUserImgUrl: receiverUser.imageUrl,
-                    );
-                  }
-
-                  final msgIndex = isTyping ? index - 1 : index;
-                  if (msgIndex < 0 || msgIndex >= messages.length) {
-                    return const SizedBox.shrink();
-                  }
-
-                  final msg = messages[msgIndex];
-                  final bool isMe =
-                      msg.senderId ==
-                      Supabase.instance.client.auth.currentUser!.id;
-
-                  final double? currentProgress =
-                      cubit.uploadProgressMap[msg.id];
-
-                  bool showDateSeparator = false;
-                  if (msgIndex == messages.length - 1) {
-                    showDateSeparator = true;
-                  } else {
-                    final prevMsg = messages[msgIndex + 1];
-                    if (msg.createdAt.day != prevMsg.createdAt.day) {
-                      showDateSeparator = true;
-                    }
-                  }
-                  return Column(
-                    children: [
-                      if (showDateSeparator)
-                        DateSeparatorGlassmorphismWidget(
-                          date: FormattedDate.getChatTime(msg.createdAt),
-                        ),
-                      ChatBubble(
-                        userImgUrl: isMe ? null : receiverUser.imageUrl,
-                        message: msg,
-                        onReply: onReply,
-                        isMe: isMe,
-                        uploadProgress: currentProgress,
-                      ),
-                    ],
-                  );
-                },
-                separatorBuilder:
-                    (context, index) =>
-                        __buildSeparator(index, messages, isTyping),
+            ScrollablePositionedList.separated(
+              physics: const AlwaysScrollableScrollPhysics(
+                parent: ClampingScrollPhysics(),
               ),
+              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+              itemScrollController: widget.itemScrollController,
+              itemPositionsListener: widget.itemPositionsListener,
+              reverse: true,
+
+              itemCount: messages.length + (isTyping ? 1 : 0),
+              itemBuilder: (BuildContext context, int index) {
+                final cubit = context.read<ChatDetailsCubit>();
+
+                if (isTyping && index == 0) {
+                  return TypingBubbleWidget(
+                    receiverUserImgUrl: widget.receiverUser.imageUrl,
+                  );
+                }
+
+                final msgIndex = isTyping ? index - 1 : index;
+                if (msgIndex < 0 || msgIndex >= messages.length) {
+                  return const SizedBox.shrink();
+                }
+
+                final msg = messages[msgIndex];
+                final bool isMe =
+                    msg.senderId ==
+                    Supabase.instance.client.auth.currentUser!.id;
+
+                final double? currentProgress = cubit.uploadProgressMap[msg.id];
+
+                bool showDateSeparator = false;
+                if (msgIndex == messages.length - 1) {
+                  showDateSeparator = true;
+                } else {
+                  final prevMsg = messages[msgIndex + 1];
+                  if (msg.createdAt.day != prevMsg.createdAt.day) {
+                    showDateSeparator = true;
+                  }
+                }
+
+                return Column(
+                  key: ValueKey('item_${msg.id}'),
+                  children: [
+                    if (showDateSeparator)
+                      DateSeparatorGlassmorphismWidget(
+                        key: ValueKey('date_${msg.id}'),
+                        date: FormattedDate.getChatTime(msg.createdAt),
+                      ),
+                    ChatBubble(
+                      userImgUrl: isMe ? null : widget.receiverUser.imageUrl,
+                      message: msg,
+                      onReply: widget.onReply,
+                      itemScrollController: widget.itemScrollController,
+                      isMe: isMe,
+                      uploadProgress: currentProgress,
+                    ),
+                  ],
+                );
+              },
+              separatorBuilder:
+                  (context, index) =>
+                      __buildSeparator(index, messages, isTyping),
             ),
             _buildScrollToBottomButton(context),
           ],
@@ -134,35 +144,38 @@ class MessagesListView extends StatelessWidget {
   }
 
   void _handleMessagesLogic(BuildContext context, ChatDetailsState state) {
-    if (state is MessagesSuccessLoaded) {
+    if (state is MessagesSuccessLoaded && state.messages.isNotEmpty) {
+      final messages = state.messages;
       final currentUserId = Supabase.instance.client.auth.currentUser!.id;
 
-      if (state.messages.isNotEmpty) {
-        final lastMessage = state.messages.first;
-        final messageAge =
-            DateTime.now().difference(lastMessage.createdAt).inSeconds;
-        if (lastMessage.senderId != currentUserId &&
-            !lastMessage.isRead &&
-            _lastPlayedMessageId != lastMessage.id &&
-            messageAge < 5) {
-          _lastPlayedMessageId = lastMessage.id;
-          _playNotificationSound();
-        }
-      }
+      bool isNewMessage = messages.length > _lastMessageCount;
 
-      final unreadCount =
-          state.messages
-              .where((m) => !m.isRead && m.senderId != currentUserId)
-              .length;
+      final int previousCount = _lastMessageCount;
+      _lastMessageCount = messages.length;
 
-      if (scrollController.hasClients && scrollController.offset > 300) {
-        unreadCountNotifier.value = unreadCount;
-      }
-
-      // Scroll logic
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (scrollController.hasClients && scrollController.offset < 100) {
-          scrollToBottom();
+        if (!context.mounted) return;
+
+        final positions = widget.itemPositionsListener.itemPositions.value;
+        final isAtBottom = positions.any((p) => p.index == 0);
+        final lastMsg = messages.first;
+
+        if (isNewMessage && previousCount != 0) {
+          if (lastMsg.senderId != currentUserId &&
+              _lastPlayedMessageId != lastMsg.id) {
+            _lastPlayedMessageId = lastMsg.id;
+            _playNotificationSound();
+          }
+
+          if (lastMsg.senderId == currentUserId) {
+            widget.scrollToBottom();
+          } else {
+            if (isAtBottom) {
+              widget.scrollToBottom();
+            } else {
+              widget.unreadCountNotifier.value++;
+            }
+          }
         }
       });
     }
@@ -205,28 +218,27 @@ class MessagesListView extends StatelessWidget {
 
   Widget _buildScrollToBottomButton(BuildContext context) {
     return ValueListenableBuilder<bool>(
-      valueListenable: showScrollButtonNotifier,
+      valueListenable: widget.showScrollButtonNotifier,
       builder: (context, showButton, _) {
         return ValueListenableBuilder<int>(
-          valueListenable: unreadCountNotifier,
+          valueListenable: widget.unreadCountNotifier,
           builder: (context, unreadCount, _) {
-            final bool effectivelyVisible =
-                showButton ||
-                (unreadCount > 0 && scrollController.offset > 300);
+            final visible = showButton || unreadCount > 0;
+
             return AnimatedPositioned(
               duration: const Duration(milliseconds: 400),
               curve: Curves.easeOutBack,
               left: 16,
-              bottom: effectivelyVisible ? 20 : -80,
+              bottom: visible ? 20 : -80,
               child: AnimatedOpacity(
                 duration: const Duration(milliseconds: 300),
-                opacity: effectivelyVisible ? 1.0 : 0.0,
+                opacity: visible ? 1.0 : 0.0,
                 child: AnimatedScale(
                   duration: const Duration(milliseconds: 400),
-                  scale: effectivelyVisible ? 1.0 : 0.5,
+                  scale: visible ? 1.0 : 0.5,
                   curve: Curves.easeOutBack,
                   child: GestureDetector(
-                    onTap: scrollToBottom,
+                    onTap: widget.scrollToBottom,
                     child: Stack(
                       clipBehavior: Clip.none,
                       children: [
