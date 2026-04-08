@@ -23,16 +23,22 @@ class _HomeViewState extends State<HomeView> {
   late ScrollController _scrollController;
   bool _showBackToTop = false;
 
+  double _lastOffset = 0;
+
   @override
   void initState() {
     super.initState();
     _scrollController = ScrollController();
     _scrollController.addListener(() {
-      if (_scrollController.offset > 3000 && !_showBackToTop) {
-        setState(() => _showBackToTop = true);
-      } else if (_scrollController.offset <= 3000 && _showBackToTop) {
-        setState(() => _showBackToTop = false);
+      double currentOffset = _scrollController.offset;
+      bool isScrollingUp = currentOffset < _lastOffset;
+
+      if (currentOffset > 450 && isScrollingUp) {
+        if (!_showBackToTop) setState(() => _showBackToTop = true);
+      } else {
+        if (_showBackToTop) setState(() => _showBackToTop = false);
       }
+      _lastOffset = currentOffset;
     });
   }
 
@@ -43,6 +49,9 @@ class _HomeViewState extends State<HomeView> {
   }
 
   void _scrollToTop() {
+    setState(() {
+      _showBackToTop = false;
+    });
     _scrollController.animateTo(
       0,
       duration: Duration(milliseconds: 600),
@@ -62,21 +71,23 @@ class _HomeViewState extends State<HomeView> {
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
                 child: CustomPullToRefresh(
+                  top: MediaQuery.sizeOf(context).height * 0.068,
                   onRefresh:
                       () async => await context
                           .read<HomeCubit>()
                           .refreshHomeData(isRefresh: true),
                   child: CustomScrollView(
                     controller: _scrollController,
-                    // physics: const AlwaysScrollableScrollPhysics(),
                     physics: const AlwaysScrollableScrollPhysics(
-                      parent: BouncingScrollPhysics(),
+                      parent: ClampingScrollPhysics(),
                     ),
                     scrollDirection: Axis.vertical,
                     slivers: [
                       const SliverGap(30),
                       SliverToBoxAdapter(
-                        child: HomeViewHeaderSection(navController: widget.navController),
+                        child: HomeViewHeaderSection(
+                          navController: widget.navController,
+                        ),
                       ),
                       const SliverGap(35),
                       SliverToBoxAdapter(child: PostWritingCard()),
