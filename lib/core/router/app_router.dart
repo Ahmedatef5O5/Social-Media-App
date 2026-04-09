@@ -15,6 +15,7 @@ import 'package:social_media_app/features/chats/views/chats_view.dart';
 import 'package:social_media_app/features/discover/cubit/discover_people_cubit.dart';
 import 'package:social_media_app/features/discover/services/discover_people_services.dart';
 import 'package:social_media_app/features/home/cubit/home_cubit.dart';
+import 'package:social_media_app/features/home/services/home_services.dart';
 import 'package:social_media_app/features/home/views/create_post_view.dart';
 import 'package:social_media_app/features/home/views/post_themes_view.dart';
 import 'package:social_media_app/features/home/views/story_display_view.dart';
@@ -31,6 +32,8 @@ import '../../features/group_chat/models/group_model.dart';
 import '../../features/group_chat/views/group_chat_view.dart';
 import '../../features/home/views/add_story_caption_view.dart';
 import '../../features/home/views/creat_text_story_view.dart';
+import '../../features/profile/cubits/profile_cubit/profile_cubit.dart';
+import '../../features/profile/views/profile_view.dart';
 
 enum TypeOfRoute { material, cupertino, fade }
 
@@ -180,6 +183,25 @@ class AppRouter {
           BlocProvider(
             create: (context) => EditProfileCubit(EditProfileServices()),
             child: EditProfileView(userData: user),
+          ),
+          settings: settings,
+        );
+
+      case AppRoutes.profileViewRoute:
+        final userId = settings.arguments as String;
+        return _buildRoute(
+          Scaffold(
+            body: MultiBlocProvider(
+              providers: [
+                BlocProvider(
+                  create:
+                      (context) =>
+                          ProfileCubit(HomeServices())..getProfileData(userId),
+                ),
+                BlocProvider(create: (context) => HomeCubit()),
+              ],
+              child: ProfileView(userId: userId),
+            ),
           ),
           settings: settings,
         );
