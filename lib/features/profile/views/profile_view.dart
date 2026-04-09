@@ -4,12 +4,14 @@ import 'package:social_media_app/core/themes/background_theme_widget.dart';
 import 'package:social_media_app/core/widgets/custom_back_to_top_btn.dart';
 import 'package:social_media_app/features/profile/cubits/profile_cubit/profile_cubit.dart';
 import 'package:social_media_app/features/profile/widgets/profile_body_content.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
 import '../../home/cubit/home_cubit.dart';
 import '../widgets/profile_refresh_indicator.dart';
 
 class ProfileView extends StatefulWidget {
-  const ProfileView({super.key});
+  final String? userId;
+  const ProfileView({super.key, this.userId});
 
   @override
   State<ProfileView> createState() => _ProfileViewState();
@@ -28,6 +30,10 @@ class _ProfileViewState extends State<ProfileView> {
   @override
   void initState() {
     super.initState();
+    final effectiveId =
+        widget.userId ?? Supabase.instance.client.auth.currentUser!.id;
+    context.read<ProfileCubit>().getProfileData(effectiveId);
+
     _scrollController = ScrollController();
 
     _canRefresh = true;
@@ -118,11 +124,19 @@ class _ProfileViewState extends State<ProfileView> {
 
                         if (currentOffset > 450 && isScrollingUp) {
                           if (!_showBackToTop) {
-                            setState(() => _showBackToTop = true);
+                            WidgetsBinding.instance.addPostFrameCallback((_) {
+                              if (mounted) {
+                                setState(() => _showBackToTop = true);
+                              }
+                            });
                           }
                         } else {
                           if (_showBackToTop) {
-                            setState(() => _showBackToTop = false);
+                            WidgetsBinding.instance.addPostFrameCallback((_) {
+                              if (mounted) {
+                                setState(() => _showBackToTop = false);
+                              }
+                            });
                           }
                         }
 
