@@ -6,13 +6,15 @@ import 'package:social_media_app/features/profile/models/profile_stats_model.dar
 part 'profile_state.dart';
 
 class ProfileCubit extends Cubit<ProfileState> {
-  ProfileCubit() : super(ProfileInitial());
-  final homeServices = HomeServices();
+  final HomeServices _homeServices;
+
+  ProfileCubit(this._homeServices) : super(ProfileInitial());
+
   Future<void> getProfileData(String userId, {bool isRefresh = false}) async {
     if (!isRefresh) emit(ProfileLoading());
     try {
-      final user = await homeServices.fetchCurrentUser(userId);
-      final allPosts = await homeServices.fetchPosts();
+      final user = await _homeServices.fetchCurrentUser(userId);
+      final allPosts = await _homeServices.fetchPosts();
       final userPostsCount = allPosts.where((p) => p.authorId == userId).length;
       final stats = ProfileStatsModel(
         postsCount: userPostsCount,
