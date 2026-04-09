@@ -144,49 +144,60 @@ class ChatItemTile extends StatelessWidget {
             : null;
     final isOnline = user.lastSeen == null || lastSeenText == 'Online';
 
-    return Stack(
-      children: [
-        Hero(
-          tag: user.id,
-          child: Container(
-            height: 52,
-            width: 52,
-            decoration: BoxDecoration(
-              color: Theme.of(context).primaryColor.withValues(alpha: 0.2),
-              shape: BoxShape.circle,
-              border:
-                  isOnline ? Border.all(color: Colors.green, width: 2.2) : null,
-            ),
-            child: ClipOval(
-              child: CachedNetworkImage(
-                imageUrl:
-                    (user.imageUrl != null && user.imageUrl!.isNotEmpty)
-                        ? user.imageUrl!
-                        : AppImages.defaultUserImg,
-                fit: BoxFit.cover,
-                placeholder: (context, url) => const CustomLoadingIndicator(),
-                errorWidget: (context, url, error) => const Icon(Icons.person),
-                maxWidthDiskCache: 200,
-                maxHeightDiskCache: 200,
-              ),
-            ),
-          ),
-        ),
-        if (isOnline)
-          Positioned(
-            bottom: 2,
-            right: 2,
+    return GestureDetector(
+      onTap: () {
+        Navigator.of(
+          context,
+          rootNavigator: true,
+        ).pushNamed(AppRoutes.profileViewRoute, arguments: user.id);
+      },
+      child: Stack(
+        children: [
+          Hero(
+            tag: user.id,
             child: Container(
-              width: 13,
-              height: 13,
+              height: 52,
+              width: 52,
               decoration: BoxDecoration(
-                color: Colors.green,
+                color: Theme.of(context).primaryColor.withValues(alpha: 0.2),
                 shape: BoxShape.circle,
-                border: Border.all(color: Colors.white, width: 1.5),
+                border:
+                    isOnline
+                        ? Border.all(color: Colors.green, width: 2.2)
+                        : null,
+              ),
+              child: ClipOval(
+                child: CachedNetworkImage(
+                  imageUrl:
+                      (user.imageUrl != null && user.imageUrl!.isNotEmpty)
+                          ? user.imageUrl!
+                          : AppImages.defaultUserImg,
+                  fit: BoxFit.cover,
+                  placeholder: (context, url) => const CustomLoadingIndicator(),
+                  errorWidget:
+                      (context, url, error) => const Icon(Icons.person),
+                  maxWidthDiskCache: 200,
+                  maxHeightDiskCache: 200,
+                ),
               ),
             ),
           ),
-      ],
+          if (isOnline)
+            Positioned(
+              bottom: 2,
+              right: 2,
+              child: Container(
+                width: 13,
+                height: 13,
+                decoration: BoxDecoration(
+                  color: Colors.green,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white, width: 1.5),
+                ),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }

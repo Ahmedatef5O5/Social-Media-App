@@ -98,6 +98,7 @@ class _TextInputAreaSectionState extends State<TextInputAreaSection> {
           child: Padding(
             padding: const EdgeInsets.only(left: 2, right: 2, bottom: 3),
             child: SafeArea(
+              top: false,
               bottom: true,
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.end,
@@ -122,7 +123,7 @@ class _TextInputAreaSectionState extends State<TextInputAreaSection> {
                         controller: widget.messageController,
                         minLines: 1,
                         maxLines: 5,
-                        textInputAction: TextInputAction.send,
+                        textInputAction: TextInputAction.newline,
                         decoration: InputDecoration(
                           hoverColor: AppColors.white,
                           hintText: "Type a message...",

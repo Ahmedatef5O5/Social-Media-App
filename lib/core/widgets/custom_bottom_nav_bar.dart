@@ -8,6 +8,7 @@ import 'package:social_media_app/core/widgets/main_user_avatar.dart';
 import 'package:social_media_app/features/chats/cubit/chats_cubit/chats_cubit.dart';
 import 'package:social_media_app/features/chats/views/chats_view.dart';
 import 'package:social_media_app/features/discover/views/discover_view.dart';
+import 'package:social_media_app/features/home/services/home_services.dart';
 import 'package:social_media_app/features/profile/views/profile_view.dart';
 import 'package:social_media_app/features/settings/widgets/profile_drawer.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -90,7 +91,9 @@ class _CustomBottomNavBarState extends State<CustomBottomNavBar> {
           child: MultiBlocProvider(
             providers: [
               BlocProvider(
-                create: (context) => ProfileCubit()..getProfileData(userId),
+                create:
+                    (context) =>
+                        ProfileCubit(HomeServices())..getProfileData(userId),
               ),
             ],
             child: Scaffold(
