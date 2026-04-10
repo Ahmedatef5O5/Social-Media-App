@@ -31,46 +31,47 @@ class ChatServices {
   Stream<List<Map<String, dynamic>>> getChatsStream(String currentUserId) {
     final controller = StreamController<List<Map<String, dynamic>>>();
 
-    final messagesChannel = _supabase.channel('chats_messages_$currentUserId');
-    messagesChannel
+    final channelName =
+        'chats_updates_${currentUserId}_${DateTime.now().millisecondsSinceEpoch}';
+    final combinedChannel = _supabase.channel(channelName);
+
+    void notify(PostgresChangePayload payload) {
+      if (!controller.isClosed) {
+        debugPrint('Realtime Change Detected in: ${payload.table}');
+        controller.add([]);
+      }
+    }
+
+    combinedChannel
         .onPostgresChanges(
           event: PostgresChangeEvent.all,
           schema: 'public',
           table: SupabaseConstants.messages,
-          callback: (payload) {
-            if (!controller.isClosed) controller.add([]);
-          },
+          callback: notify,
         )
-        .subscribe();
-
-    final typingChannel = _supabase.channel('chats_typing_$currentUserId');
-    typingChannel
         .onPostgresChanges(
-          event: PostgresChangeEvent.all,
           schema: 'public',
           table: SupabaseConstants.typingStatus,
-          callback: (payload) {
-            if (!controller.isClosed) controller.add([]);
-          },
+          event: PostgresChangeEvent.all,
+          callback: notify,
         )
-        .subscribe();
-
-    final usersChannel = _supabase.channel('chats_users_$currentUserId');
-    usersChannel
         .onPostgresChanges(
-          event: PostgresChangeEvent.update,
           schema: 'public',
           table: SupabaseConstants.users,
-          callback: (payload) {
-            if (!controller.isClosed) controller.add([]);
-          },
-        )
-        .subscribe();
+          event: PostgresChangeEvent.update,
+          callback: notify,
+        );
+
+    controller.onListen = () {
+      combinedChannel.subscribe((status, [error]) {
+        if (status == RealtimeSubscribeStatus.channelError) {
+          debugPrint('Detailed Realtime Error: $error');
+        }
+      });
+    };
 
     controller.onCancel = () {
-      _supabase.removeChannel(messagesChannel);
-      _supabase.removeChannel(typingChannel);
-      _supabase.removeChannel(usersChannel);
+      _supabase.removeChannel(combinedChannel);
       controller.close();
     };
 
