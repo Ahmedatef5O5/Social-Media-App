@@ -1,14 +1,13 @@
 import 'dart:io';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:social_media_app/core/widgets/custom_loading_indicator.dart';
 import '../../../core/constants/app_images.dart';
-import '../../../core/themes/app_colors.dart';
 
 class CustomUserProfileImagesSection extends StatelessWidget {
-  final double totalHeight;
-  final double backgroundHeight;
-  final double avatarSize;
+  final double aspectRatio;
+  final double avatarSizeFactor;
+  final double? totalHeight;
+  final double? backgroundHeight;
   final String? backgroundUrl;
   final String? avatarUrl;
   final File? selectedBackgroundFile;
@@ -21,9 +20,10 @@ class CustomUserProfileImagesSection extends StatelessWidget {
 
   const CustomUserProfileImagesSection({
     super.key,
-    required this.totalHeight,
-    required this.backgroundHeight,
-    this.avatarSize = 80,
+    this.aspectRatio = 1.8,
+    this.avatarSizeFactor = 0.28,
+    this.totalHeight,
+    this.backgroundHeight,
     this.backgroundUrl,
     this.avatarUrl,
     this.selectedBackgroundFile,
@@ -38,9 +38,17 @@ class CustomUserProfileImagesSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final double screenWidth = MediaQuery.of(context).size.width;
+    final double dynamicBackgroundHeight = screenWidth / aspectRatio;
+    final double dynamicAvatarSize = screenWidth * avatarSizeFactor;
+
+    final double totalHeight =
+        dynamicBackgroundHeight + (dynamicAvatarSize / 2);
+
     return SizedBox(
       height: totalHeight,
       child: Stack(
+        clipBehavior: Clip.none,
         children: [
           GestureDetector(
             onTap: isEditMode ? onEditBackground : null,
@@ -48,7 +56,7 @@ class CustomUserProfileImagesSection extends StatelessWidget {
               alignment: Alignment.center,
               children: [
                 Container(
-                  height: backgroundHeight,
+                  height: dynamicBackgroundHeight,
                   width: double.infinity,
                   decoration: BoxDecoration(
                     borderRadius:
@@ -70,7 +78,7 @@ class CustomUserProfileImagesSection extends StatelessWidget {
                 ),
                 if (isEditMode)
                   Container(
-                    height: backgroundHeight,
+                    height: dynamicBackgroundHeight,
                     width: double.infinity,
                     decoration: BoxDecoration(
                       color: Theme.of(
@@ -78,7 +86,13 @@ class CustomUserProfileImagesSection extends StatelessWidget {
                       ).scaffoldBackgroundColor.withValues(alpha: 0.18),
                       borderRadius: BorderRadius.circular(20),
                     ),
-                    child: const Icon(Icons.edit, color: Colors.white),
+                    child: Icon(
+                      Icons.edit,
+                      color: Theme.of(
+                        context,
+                      ).primaryColor.withValues(alpha: 0.9),
+                      size: 28,
+                    ),
                   ),
               ],
             ),
@@ -91,8 +105,8 @@ class CustomUserProfileImagesSection extends StatelessWidget {
               child: Hero(
                 tag: heroTag ?? 'default-avatar-tag-${avatarUrl ?? "none"}',
                 child: SizedBox(
-                  height: avatarSize,
-                  width: avatarSize,
+                  height: dynamicAvatarSize,
+                  width: dynamicAvatarSize,
                   child: Stack(
                     alignment: Alignment.center,
                     children: [
@@ -109,6 +123,9 @@ class CustomUserProfileImagesSection extends StatelessWidget {
                           image: DecorationImage(
                             image: _getAvatarImage(),
                             fit: BoxFit.cover,
+                            onError: (exception, stackTrace) {
+                              debugPrint("Error loading image: $exception");
+                            },
                           ),
                         ),
                       ),
@@ -119,7 +136,14 @@ class CustomUserProfileImagesSection extends StatelessWidget {
                           backgroundColor: Theme.of(
                             context,
                           ).scaffoldBackgroundColor.withValues(alpha: 0.25),
-                          child: Icon(Icons.edit, color: AppColors.white),
+                          child: Icon(
+                            Icons.edit,
+
+                            color: Theme.of(
+                              context,
+                            ).primaryColor.withValues(alpha: 0.9),
+                            size: 26,
+                          ),
                         ),
                     ],
                   ),
@@ -136,18 +160,19 @@ class CustomUserProfileImagesSection extends StatelessWidget {
     if (selectedBackgroundFile != null) {
       return FileImage(selectedBackgroundFile!);
     }
-    return CachedNetworkImageProvider(
-      backgroundUrl ?? AppImages.defaultBackgroundImg,
-      errorListener:
-          (p0) => const CustomLoadingIndicator(color: AppColors.black12),
-    );
+    if (backgroundUrl != null && backgroundUrl!.startsWith('http')) {
+      return CachedNetworkImageProvider(backgroundUrl!);
+    }
+
+    return const AssetImage(AppImages.defaultBackgroundImg);
   }
 
   ImageProvider _getAvatarImage() {
     if (selectedAvatarFile != null) return FileImage(selectedAvatarFile!);
-    return CachedNetworkImageProvider(
-      avatarUrl ?? AppImages.defaultUserImg,
-      errorListener: (p0) => const CustomLoadingIndicator(),
-    );
+    if (avatarUrl != null && avatarUrl!.startsWith('http')) {
+      return CachedNetworkImageProvider(avatarUrl!);
+    }
+
+    return const AssetImage(AppImages.defaultUserImg);
   }
 }

@@ -26,10 +26,9 @@ class ProfileHeader extends StatelessWidget {
         Stack(
           children: [
             CustomUserProfileImagesSection(
-              avatarAlignment: const Alignment(-0.82, 1.15),
-              totalHeight: size.height * 0.38,
-              backgroundHeight: size.height * 0.34,
-              avatarSize: 115,
+              aspectRatio: 1.7,
+              avatarSizeFactor: 0.26,
+              avatarAlignment: const Alignment(-0.85, .99),
               backgroundUrl:
                   user.backgroundImageUrl ?? AppImages.defaultBackgroundImg,
               avatarUrl: user.imageUrl ?? AppImages.defaultUserImg,
@@ -66,7 +65,7 @@ class ProfileHeader extends StatelessWidget {
               ),
           ],
         ),
-        const Gap(22),
+        Gap(size.height * 0.02),
         Padding(
           padding: const EdgeInsets.only(left: 20.0),
           child: Column(

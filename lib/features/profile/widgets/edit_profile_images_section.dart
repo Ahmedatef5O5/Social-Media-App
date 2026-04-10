@@ -20,13 +20,10 @@ class EditProfileImagesSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.sizeOf(context);
-
     return CustomUserProfileImagesSection(
       isEditMode: true,
-      totalHeight: size.height * 0.26,
-      backgroundHeight: size.height * 0.22,
-      avatarSize: 70,
+      aspectRatio: 1.9,
+      avatarSizeFactor: 0.24,
       avatarAlignment: Alignment.bottomRight * 0.85,
       backgroundUrl: userData?.backgroundImageUrl,
       avatarUrl: userData?.imageUrl,

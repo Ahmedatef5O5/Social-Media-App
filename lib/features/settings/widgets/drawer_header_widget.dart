@@ -21,7 +21,6 @@ class DrawerHeaderWidget extends StatelessWidget {
               CustomUserProfileImagesSection(
                 totalHeight: size.height * 0.26,
                 backgroundHeight: size.height * 0.22,
-                avatarSize: 80,
                 backgroundUrl:
                     user.backgroundImageUrl ?? AppImages.defaultBackgroundImg,
                 avatarUrl: user.imageUrl ?? AppImages.defaultUserImg,
