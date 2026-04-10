@@ -21,13 +21,13 @@ class CommentWidget extends StatelessWidget {
           children: [
             CircleAvatar(
               backgroundImage:
-                  comment.authorImageUrl != null
-                      ? NetworkImage(comment.authorImageUrl!)
-                      : CachedNetworkImageProvider(
-                        AppImages.defaultUserImg,
+                  (comment.authorImageUrl != null &&
+                          comment.authorImageUrl!.isNotEmpty)
+                      ? CachedNetworkImageProvider(
+                        comment.authorImageUrl!,
                         errorListener: (_) => const CustomLoadingIndicator(),
-                      ),
-              // : null,
+                      )
+                      : AssetImage(AppImages.defaultUserImg),
             ),
             const SizedBox(width: 8),
             Expanded(
@@ -94,7 +94,6 @@ class CommentWidget extends StatelessWidget {
           child: Text(
             FormattedDate.getFormattedDate((comment.createdAt), isShort: true),
 
-            // DateFormat('h:mm a').format(DateTime.parse(comment.createdAt)),
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.w400,
               color: AppColors.grey8,

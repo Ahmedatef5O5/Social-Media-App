@@ -49,8 +49,7 @@ class ReceiverDetailsHeaderSection extends StatelessWidget {
                         lastSeen != null
                             ? FormattedDate.getLastSeen(lastSeen)
                             : null;
-                    final isOnline =
-                        lastSeen == null || lastSeenText == 'Online';
+                    final isOnline = lastSeenText == 'Online';
                     return Stack(
                       children: [
                         Hero(
@@ -72,20 +71,26 @@ class ReceiverDetailsHeaderSection extends StatelessWidget {
                                       : null,
                             ),
                             child: ClipOval(
-                              child: CachedNetworkImage(
-                                imageUrl:
-                                    (receiverUser.imageUrl != null &&
-                                            receiverUser.imageUrl!.isNotEmpty)
-                                        ? receiverUser.imageUrl!
-                                        : AppImages.defaultUserImg,
-                                fit: BoxFit.cover,
-                                placeholder:
-                                    (context, url) =>
-                                        const CustomLoadingIndicator(),
-                                errorWidget:
-                                    (context, url, error) =>
-                                        const Icon(Icons.person),
-                              ),
+                              child:
+                                  (receiverUser.imageUrl != null &&
+                                          receiverUser.imageUrl!.isNotEmpty)
+                                      ? CachedNetworkImage(
+                                        imageUrl: receiverUser.imageUrl!,
+                                        fit: BoxFit.cover,
+                                        placeholder:
+                                            (context, url) =>
+                                                const CustomLoadingIndicator(),
+                                        errorWidget:
+                                            (context, url, error) =>
+                                                Image.asset(
+                                                  AppImages.defaultUserImg,
+                                                  fit: BoxFit.cover,
+                                                ),
+                                      )
+                                      : Image.asset(
+                                        AppImages.defaultUserImg,
+                                        fit: BoxFit.cover,
+                                      ),
                             ),
                           ),
                         ),

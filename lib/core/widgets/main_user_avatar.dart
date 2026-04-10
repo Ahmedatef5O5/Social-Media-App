@@ -30,17 +30,23 @@ class MainUserAvatar extends StatelessWidget {
                 : null,
       ),
       child: ClipOval(
-        child: CachedNetworkImage(
-          imageUrl: imageUrl ?? AppImages.defaultUserImg,
-          fit: BoxFit.cover,
-          placeholder:
-              (context, url) =>
-                  CustomLoadingIndicator(radius: size != null ? size! / 4 : 10),
+        child:
+            (imageUrl != null && imageUrl!.isNotEmpty)
+                ? CachedNetworkImage(
+                  imageUrl: imageUrl!,
+                  fit: BoxFit.cover,
+                  placeholder:
+                      (context, url) => CustomLoadingIndicator(
+                        radius: size != null ? size! / 4 : 10,
+                      ),
 
-          errorWidget:
-              (context, url, error) =>
-                  Image.network(AppImages.defaultUserImg, fit: BoxFit.cover),
-        ),
+                  errorWidget:
+                      (context, url, error) => Image.network(
+                        AppImages.defaultUserImg,
+                        fit: BoxFit.cover,
+                      ),
+                )
+                : Image.asset(AppImages.defaultUserImg, fit: BoxFit.cover),
       ),
     );
   }

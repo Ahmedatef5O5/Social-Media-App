@@ -160,9 +160,10 @@ class _SingleUserStoryViewState extends State<SingleUserStoryView> {
         ),
         const Gap(10),
         CircleAvatar(
-          backgroundImage: CachedNetworkImageProvider(
-            story.authorImageUrl ?? AppImages.defaultUserImg,
-          ),
+          backgroundImage:
+              (story.authorImageUrl != null && story.authorImageUrl!.isNotEmpty)
+                  ? CachedNetworkImageProvider(story.authorImageUrl!)
+                  : AssetImage(AppImages.defaultUserImg),
         ),
         const Gap(10),
         Column(

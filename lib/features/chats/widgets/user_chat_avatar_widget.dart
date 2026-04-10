@@ -18,17 +18,19 @@ class UserChatAvatar extends StatelessWidget {
         shape: BoxShape.circle,
       ),
       child: ClipOval(
-        child: CachedNetworkImage(
-          imageUrl:
-              (userImgUrl != null && userImgUrl!.isNotEmpty)
-                  ? userImgUrl!
-                  : AppImages.defaultUserImg,
-          fit: BoxFit.cover,
-          placeholder: (context, url) => const CustomLoadingIndicator(),
-          errorWidget: (context, url, error) => const Icon(Icons.person),
-          maxWidthDiskCache: 200,
-          maxHeightDiskCache: 200,
-        ),
+        child:
+            (userImgUrl != null && userImgUrl!.isNotEmpty)
+                ? CachedNetworkImage(
+                  imageUrl: userImgUrl!,
+                  fit: BoxFit.cover,
+                  placeholder: (context, url) => const CustomLoadingIndicator(),
+                  errorWidget:
+                      (context, url, error) => Image.asset(
+                        AppImages.defaultUserImg,
+                        fit: BoxFit.cover,
+                      ),
+                )
+                : Image.asset(AppImages.defaultUserImg, fit: BoxFit.cover),
       ),
     );
   }

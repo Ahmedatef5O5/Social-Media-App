@@ -19,18 +19,19 @@ class AuthorImageWidget extends StatelessWidget {
         shape: BoxShape.circle,
       ),
       child: ClipOval(
-        child: CachedNetworkImage(
-          imageUrl:
-              (post.authorImageUrl != null && post.authorImageUrl!.isNotEmpty)
-                  ? post.authorImageUrl!
-                  : AppImages.defaultUserImg,
-
-          fit: BoxFit.cover,
-          placeholder: (context, url) => const CustomLoadingIndicator(),
-          errorWidget: (context, url, error) => const Icon(Icons.person),
-          maxWidthDiskCache: 200,
-          maxHeightDiskCache: 200,
-        ),
+        child:
+            (post.authorImageUrl != null && post.authorImageUrl!.isNotEmpty)
+                ? CachedNetworkImage(
+                  imageUrl: post.authorImageUrl!,
+                  fit: BoxFit.cover,
+                  placeholder: (context, url) => const CustomLoadingIndicator(),
+                  errorWidget:
+                      (context, url, error) => Image.asset(
+                        AppImages.defaultUserImg,
+                        fit: BoxFit.cover,
+                      ),
+                )
+                : Image.asset(AppImages.defaultUserImg, fit: BoxFit.cover),
       ),
     );
   }
