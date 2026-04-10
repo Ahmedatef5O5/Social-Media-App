@@ -23,9 +23,8 @@ class HomeCubit extends Cubit<HomeState> {
   XFile? selectedDocument;
   File? selectedStoryFile;
 
-  //
   List<StoryModel> cachedStories = [];
-  //
+
   List<List<StoryModel>> cachedUserGroups = [];
   int cachedCurrentUserGroupIndex = 0;
 
@@ -116,7 +115,6 @@ class HomeCubit extends Cubit<HomeState> {
       }
     } catch (e) {
       debugPrint('Error deleting story: $e');
-      // emit(DeleteStoryError(e.toString()));
     }
   }
 
@@ -188,7 +186,9 @@ class HomeCubit extends Cubit<HomeState> {
     if (!isRefresh) emit(PostsLoading());
     try {
       final posts = await homeServices.fetchPosts();
-      emit(PostsLoaded(posts, DateTime.now()));
+
+      final fixedPosts = _fixLikersImages(posts);
+      emit(PostsLoaded(fixedPosts, DateTime.now()));
     } catch (e) {
       emit(PostsError(e.toString()));
     }
@@ -392,8 +392,6 @@ class HomeCubit extends Cubit<HomeState> {
     final user = Supabase.instance.client.auth.currentUser;
     final userId = user?.id;
     if (userId == null) return;
-    final String currentUserImageUrl =
-        user?.userMetadata?['image_url'] ?? currentUserData?.imageUrl ?? '';
 
     final oldState = state as PostsLoaded;
 
@@ -405,26 +403,24 @@ class HomeCubit extends Cubit<HomeState> {
             final updatedLikes = List<String>.from(p.likes ?? []);
             final updatedImages = List<String>.from(p.likersImages ?? []);
 
-            if (isCurrentlyLiked) {
-              updatedLikes.remove(userId);
-              if (updatedImages.contains(currentUserImageUrl)) {
-                updatedImages.remove(currentUserImageUrl);
-              } else {
-                updatedImages.removeWhere(
-                  (img) => img.trim() == currentUserImageUrl.trim(),
-                );
-              }
+            final String imagePlaceholder =
+                (currentUserData?.imageUrl != null &&
+                        currentUserData!.imageUrl!.startsWith('http'))
+                    ? currentUserData!.imageUrl!
+                    : 'asset:default';
+
+            if (!isCurrentlyLiked) {
+              updatedLikes.insert(0, userId);
+              updatedImages.insert(0, imagePlaceholder);
             } else {
-              updatedLikes.add(userId);
-              if (currentUserImageUrl.isNotEmpty) {
-                updatedImages.insert(0, currentUserImageUrl);
-              }
+              updatedLikes.remove(userId);
+              updatedImages.remove(imagePlaceholder);
             }
 
             return p.copyWith(
               likes: updatedLikes,
               likersImages:
-                  updatedImages.where((img) => img.isNotEmpty).toSet().toList(),
+                  updatedImages.where((img) => img.isNotEmpty).toList(),
             );
           }
           return p;
@@ -441,6 +437,24 @@ class HomeCubit extends Cubit<HomeState> {
       emit(PostsLoaded(oldState.posts, DateTime.now()));
       debugPrint('Error toggling like: $e');
     }
+  }
+
+  List<PostModel> _fixLikersImages(List<PostModel> posts) {
+    return posts.map((post) {
+      if (post.likes == null || post.likes!.isEmpty) return post;
+
+      final likersImages = post.likersImages ?? [];
+
+      if (likersImages.length >= post.likes!.length) return post;
+
+      final fixedImages = List<String>.from(likersImages);
+      final missing = post.likes!.length - likersImages.length;
+      for (int i = 0; i < missing; i++) {
+        fixedImages.add('asset:default');
+      }
+
+      return post.copyWith(likersImages: fixedImages);
+    }).toList();
   }
 
   Future<void> addComment(String postId, String commentText) async {

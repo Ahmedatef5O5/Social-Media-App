@@ -117,52 +117,65 @@ class _CommentsSheetSectionState extends State<CommentsSheetSection> {
                             post.likes!.isNotEmpty)
                           SizedBox(
                             height: 25,
-                            width: 65,
+                            width: 125,
                             child: Stack(
                               children: List.generate(
-                                post.likersImages!.take(3).length,
-                                (index) => Positioned(
-                                  left: index * 18.0,
-                                  child: CircleAvatar(
-                                    radius: 13,
-                                    backgroundColor: Theme.of(context)
-                                        .scaffoldBackgroundColor
-                                        .withValues(alpha: 0.92),
-                                    child: CircleAvatar(
-                                      radius: 11,
-                                      backgroundImage: CachedNetworkImageProvider(
-                                        post.likersImages![index].isNotEmpty
-                                            ? post.likersImages![index]
-                                            : AppImages.defaultUserImg,
-                                        errorListener:
-                                            (_) =>
-                                                const CustomLoadingIndicator(),
+                                post.likersImages!.take(6).length,
+                                (index) {
+                                  final String imageUrl =
+                                      post.likersImages![index];
+                                  final bool isNetworkImage =
+                                      imageUrl.isNotEmpty &&
+                                      imageUrl.startsWith('http') &&
+                                      imageUrl != 'asset:default';
+                                  return Positioned(
+                                    key: ValueKey('${post.id}_liker_$index'),
+                                    left: index * 18.0,
+                                    child: Container(
+                                      width:
+                                          26, 
+                                      height: 26,
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color:
+                                            Theme.of(
+                                              context,
+                                            ).scaffoldBackgroundColor,
+                                        border: Border.all(
+                                          color:
+                                              Theme.of(
+                                                context,
+                                              ).scaffoldBackgroundColor,
+                                          width: 2,
+                                        ),
                                       ),
-                                      onBackgroundImageError: (
-                                        exception,
-                                        stackTrace,
-                                      ) {
-                                        CachedNetworkImageProvider(
-                                          AppImages.defaultUserImg,
-                                          errorListener:
-                                              (p0) =>
-                                                  const CustomLoadingIndicator(),
-                                        );
-                                        debugPrint(
-                                          'Error loading imageLikers : $exception',
-                                        );
-                                      },
-                                      child:
-                                          post.likersImages![index].isEmpty
-                                              ? Icon(
-                                                Icons.person,
-                                                size: 18,
-                                                color: AppColors.grey7,
-                                              )
-                                              : null,
+                                      child: ClipOval(
+                                        child:
+                                            isNetworkImage
+                                                ? CachedNetworkImage(
+                                                  imageUrl: imageUrl,
+                                                  fit: BoxFit.cover,
+                                                  errorWidget:
+                                                      (context, url, error) =>
+                                                          Image.asset(
+                                                            AppImages
+                                                                .defaultUserImg,
+                                                            fit: BoxFit.cover,
+                                                          ),
+                                                  placeholder:
+                                                      (context, url) =>
+                                                          const CustomLoadingIndicator(),
+                                                )
+                                                : Image.asset(
+                                                  AppImages.defaultUserImg,
+                                                  fit: BoxFit.cover,
+                                                ),
+                                      ),
                                     ),
-                                  ),
-                                ),
+                                  );
+
+                                
+                                },
                               ),
                             ),
                           ),
