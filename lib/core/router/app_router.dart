@@ -164,10 +164,7 @@ class AppRouter {
         final user = settings.arguments as ChatUserModel;
         return _buildRoute(
           BlocProvider(
-            create:
-                (context) =>
-                    ChatDetailsCubit(ChatServices(), user.name)
-                      ..getMessagesStream(receiverId: user.id),
+            create: (context) => ChatDetailsCubit(ChatServices(), user.name),
             child: ChatDetailsView(receiverUser: user),
           ),
           settings: settings,

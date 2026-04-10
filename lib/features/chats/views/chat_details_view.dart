@@ -39,6 +39,7 @@ class _ChatDetailsViewState extends State<ChatDetailsView> {
   void initState() {
     super.initState();
     _messageController = TextEditingController();
+
     _itemPositionsListener.itemPositions.addListener(_scrollListener);
 
     final cubit = context.read<ChatDetailsCubit>();
@@ -48,10 +49,15 @@ class _ChatDetailsViewState extends State<ChatDetailsView> {
     cubit.getMessagesStream(receiverId: widget.receiverUser.id);
     cubit.updateLastSeen();
 
-    _lastSeenTimer = Timer.periodic(
-      const Duration(seconds: 30),
-      (_) => cubit.updateLastSeen(),
-    );
+    _lastSeenTimer = Timer.periodic(const Duration(seconds: 20), (_) {
+      if (mounted) {
+        if (!cubit.isClosed) {
+          cubit.updateLastSeen();
+        } else {
+          _lastSeenTimer?.cancel();
+        }
+      }
+    });
   }
 
   int _lastMinIndex = 0;
@@ -110,8 +116,8 @@ class _ChatDetailsViewState extends State<ChatDetailsView> {
 
   @override
   void dispose() {
-    _itemPositionsListener.itemPositions.removeListener(_scrollListener);
     _lastSeenTimer?.cancel();
+    _itemPositionsListener.itemPositions.removeListener(_scrollListener);
     _messageController.dispose();
     super.dispose();
   }
