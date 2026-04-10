@@ -6,6 +6,7 @@ import '../../../core/helpers/chat_helper.dart';
 import '../../../core/helpers/formatted_date.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
+import '../../profile/widgets/user_preview_dialog.dart';
 import '../models/chat_user_model.dart';
 import 'typing_indicator_widget.dart';
 
@@ -146,10 +147,12 @@ class ChatItemTile extends StatelessWidget {
 
     return GestureDetector(
       onTap: () {
-        Navigator.of(
-          context,
-          rootNavigator: true,
-        ).pushNamed(AppRoutes.profileViewRoute, arguments: user.id);
+        showDialog(
+          context: context,
+          builder:
+              (context) =>
+                  UserPreviewDialog(user: user, showContactOptions: true),
+        );
       },
       child: Stack(
         children: [
@@ -167,18 +170,23 @@ class ChatItemTile extends StatelessWidget {
                         : null,
               ),
               child: ClipOval(
-                child: CachedNetworkImage(
-                  imageUrl:
-                      (user.imageUrl != null && user.imageUrl!.isNotEmpty)
-                          ? user.imageUrl!
-                          : AppImages.defaultUserImg,
-                  fit: BoxFit.cover,
-                  placeholder: (context, url) => const CustomLoadingIndicator(),
-                  errorWidget:
-                      (context, url, error) => const Icon(Icons.person),
-                  maxWidthDiskCache: 200,
-                  maxHeightDiskCache: 200,
-                ),
+                child:
+                    (user.imageUrl != null && user.imageUrl!.isNotEmpty)
+                        ? CachedNetworkImage(
+                          imageUrl: user.imageUrl!,
+                          fit: BoxFit.cover,
+                          placeholder:
+                              (context, url) => const CustomLoadingIndicator(),
+                          errorWidget:
+                              (context, url, error) => Image.asset(
+                                AppImages.defaultUserImg,
+                                fit: BoxFit.cover,
+                              ),
+                        )
+                        : Image.asset(
+                          AppImages.defaultUserImg,
+                          fit: BoxFit.cover,
+                        ),
               ),
             ),
           ),

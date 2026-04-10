@@ -2,9 +2,12 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:social_media_app/core/constants/app_images.dart';
 import 'package:social_media_app/features/auth/data/models/user_data.dart';
+import 'package:social_media_app/features/chats/models/chat_user_model.dart';
+import '../../../core/router/app_routes.dart';
 import '../../../core/themes/app_colors.dart';
 import '../../../core/widgets/custom_elevated_button.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
+import '../../profile/widgets/user_preview_dialog.dart';
 
 class DiscoverPersonCardWidget extends StatelessWidget {
   final UserData userData;
@@ -28,24 +31,47 @@ class DiscoverPersonCardWidget extends StatelessWidget {
         ),
       ),
       child: ListTile(
-        leading: Container(
-          height: 44,
-          width: 44,
-          decoration: BoxDecoration(
-            color: theme.primaryColor.withValues(alpha: 0.1),
-            shape: BoxShape.circle,
-          ),
-          child: ClipOval(
-            child: CachedNetworkImage(
-              imageUrl:
+        onTap: () {
+          Navigator.of(
+            context,
+            rootNavigator: true,
+          ).pushNamed(AppRoutes.profileViewRoute, arguments: userData.id);
+        },
+        leading: GestureDetector(
+          onTap: () {
+            showDialog(
+              context: context,
+              builder:
+                  (context) => UserPreviewDialog(
+                    user: ChatUserModel.fromEntity(userData),
+                  ),
+            );
+          },
+          child: Container(
+            height: 44,
+            width: 44,
+            decoration: BoxDecoration(
+              color: theme.primaryColor.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: ClipOval(
+              child:
                   (userData.imageUrl != null && userData.imageUrl!.isNotEmpty)
-                      ? userData.imageUrl!
-                      : AppImages.defaultUserImg,
-              fit: BoxFit.cover,
-              placeholder: (context, url) => const CustomLoadingIndicator(),
-              errorWidget: (context, url, error) => const Icon(Icons.person),
-              maxWidthDiskCache: 200,
-              maxHeightDiskCache: 200,
+                      ? CachedNetworkImage(
+                        imageUrl: userData.imageUrl!,
+                        fit: BoxFit.cover,
+                        placeholder:
+                            (context, url) => const CustomLoadingIndicator(),
+                        errorWidget:
+                            (context, url, error) => Image.asset(
+                              AppImages.defaultUserImg,
+                              fit: BoxFit.cover,
+                            ),
+                      )
+                      : Image.asset(
+                        AppImages.defaultUserImg,
+                        fit: BoxFit.cover,
+                      ),
             ),
           ),
         ),
