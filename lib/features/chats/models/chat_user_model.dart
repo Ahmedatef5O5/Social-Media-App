@@ -1,5 +1,7 @@
 import 'package:social_media_app/core/utilities/supabase_constants.dart';
 
+import '../../auth/data/models/user_data.dart';
+
 class ChatUserModel {
   final String id;
   final String name;
@@ -71,6 +73,17 @@ class ChatUserModel {
       unreadCount: unreadCount ?? this.unreadCount,
       lastSeen: lastSeen ?? this.lastSeen,
       isTyping: isTyping ?? this.isTyping,
+    );
+  }
+
+  factory ChatUserModel.fromEntity(UserData userData) {
+    return ChatUserModel(
+      id: userData.id,
+      name: userData.name,
+      imageUrl: userData.imageUrl,
+      unreadCount: 0,
+      lastMessageIsMe: false,
+      lastMessageIsRead: false,
     );
   }
 }
