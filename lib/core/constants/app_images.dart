@@ -63,6 +63,7 @@ class AppImages {
   static const String musicIcon = 'assets/icons/music.png';
 
   //icons
+  static const String addUserIcon = 'assets/icons/add_user.png';
 
   // themes
   static const String postTheme1 = 'assets/images/PostThemeImgs/unsplash_1.png';

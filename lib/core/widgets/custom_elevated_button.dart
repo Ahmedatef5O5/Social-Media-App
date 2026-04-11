@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:gap/gap.dart';
 import 'package:social_media_app/core/widgets/custom_loading_indicator.dart';
-
-import '../themes/app_colors.dart';
 
 class CustomElevatedButton extends StatelessWidget {
   const CustomElevatedButton({
@@ -13,6 +12,7 @@ class CustomElevatedButton extends StatelessWidget {
     this.isLoading = false,
     this.minimumSize,
     this.suffixIcon,
+    this.prefixIcon,
     this.maximumSize,
     this.side,
     this.elevation,
@@ -20,7 +20,7 @@ class CustomElevatedButton extends StatelessWidget {
     this.txtBtnStyle,
   });
   final String txtBtn;
-  final Widget? suffixIcon;
+  final Widget? suffixIcon, prefixIcon;
   final VoidCallback? onPressed;
   final Color? bgColor;
   final Color? txtColor;
@@ -29,12 +29,14 @@ class CustomElevatedButton extends StatelessWidget {
   final BorderSide? side;
   final double? elevation;
   final TextStyle? txtBtnStyle;
+
   final bool isLoading;
 
   @override
   Widget build(BuildContext context) {
     return ElevatedButton(
       style: ElevatedButton.styleFrom(
+        padding: EdgeInsets.zero,
         minimumSize: minimumSize ?? const Size(double.infinity, 55),
         maximumSize: maximumSize ?? const Size(double.infinity, 55),
         backgroundColor: bgColor ?? Theme.of(context).primaryColor,
@@ -45,19 +47,26 @@ class CustomElevatedButton extends StatelessWidget {
         elevation: elevation,
       ),
 
-      onPressed: onPressed,
+      onPressed: isLoading ? null : onPressed,
       child:
-          suffixIcon ??
-          (isLoading
+          isLoading
               ? const CustomLoadingIndicator()
-              : Text(
-                txtBtn,
-                style:
-                    txtBtnStyle ??
-                    Theme.of(
-                      context,
-                    ).textTheme.titleMedium!.copyWith(color: AppColors.white),
-              )),
+              : Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  if (prefixIcon != null) ...[prefixIcon!, const Gap(10)],
+                  Text(
+                    txtBtn,
+                    style:
+                        txtBtnStyle ??
+                        Theme.of(context).textTheme.titleMedium!.copyWith(
+                          color: txtColor ?? Colors.white,
+                        ),
+                  ),
+                  if (suffixIcon != null) ...[const Gap(10), suffixIcon!],
+                ],
+              ),
     );
   }
 }
