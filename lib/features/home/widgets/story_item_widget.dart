@@ -5,6 +5,7 @@ import 'package:social_media_app/core/router/app_routes.dart';
 import 'package:social_media_app/features/home/cubit/home_cubit.dart';
 import 'package:social_media_app/features/home/models/story_model.dart';
 import 'package:social_media_app/features/home/widgets/story_image_picker_sheet.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/themes/app_colors.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
 
@@ -49,6 +50,7 @@ class StoryItemWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final currentUserId = Supabase.instance.client.auth.currentUser?.id;
     return InkWell(
       onTap: () {
         if (story == null) {
@@ -142,7 +144,9 @@ class StoryItemWidget extends StatelessWidget {
                 ),
               )
               : Text(
-                story!.authorName.split(' ').first,
+                story!.authorId == currentUserId
+                    ? 'You'
+                    : story!.authorName.split(' ').first,
 
                 textAlign: TextAlign.start,
                 style: Theme.of(

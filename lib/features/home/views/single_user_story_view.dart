@@ -5,7 +5,9 @@ import 'package:story_view/story_view.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/constants/app_images.dart';
 import '../../../core/helpers/formatted_date.dart';
+import '../../../core/router/app_routes.dart';
 import '../../../core/widgets/custom_confirmation_dialog.dart';
+import '../../profile/widgets/user_preview_dialog.dart';
 import '../cubit/home_cubit.dart';
 import '../models/story_model.dart';
 
@@ -152,6 +154,8 @@ class _SingleUserStoryViewState extends State<SingleUserStoryView> {
     final story = widget.story;
     final currentUserId = Supabase.instance.client.auth.currentUser!.id;
 
+    bool isPostByMe = story.authorId == currentUserId;
+
     return Row(
       children: [
         InkWell(
@@ -159,25 +163,50 @@ class _SingleUserStoryViewState extends State<SingleUserStoryView> {
           child: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
         ),
         const Gap(10),
-        CircleAvatar(
-          backgroundImage:
-              (story.authorImageUrl != null && story.authorImageUrl!.isNotEmpty)
-                  ? CachedNetworkImageProvider(story.authorImageUrl!)
-                  : AssetImage(AppImages.defaultUserImg),
+        GestureDetector(
+          onTap: () {
+            showDialog(
+              context: context,
+              builder:
+                  (context) => UserPreviewDialog(
+                    user: story.toChatUserModel(),
+                    showContactOptions: false,
+                  ),
+            );
+          },
+
+          child: CircleAvatar(
+            backgroundImage:
+                (story.authorImageUrl != null &&
+                        story.authorImageUrl!.isNotEmpty)
+                    ? CachedNetworkImageProvider(story.authorImageUrl!)
+                    : AssetImage(AppImages.defaultUserImg),
+          ),
         ),
         const Gap(10),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              story.authorId == currentUserId ? 'You' : story.authorName,
-              style: const TextStyle(color: Colors.white),
-            ),
-            Text(
-              FormattedDate.getFormattedDate(story.createdAt),
-              style: const TextStyle(color: Colors.white70, fontSize: 12),
-            ),
-          ],
+        GestureDetector(
+          onTap:
+              isPostByMe
+                  ? null
+                  : () {
+                    Navigator.of(context, rootNavigator: true).pushNamed(
+                      AppRoutes.profileViewRoute,
+                      arguments: story.authorId,
+                    );
+                  },
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                story.authorId == currentUserId ? 'You' : story.authorName,
+                style: const TextStyle(color: Colors.white),
+              ),
+              Text(
+                FormattedDate.getFormattedDate(story.createdAt),
+                style: const TextStyle(color: Colors.white70, fontSize: 12),
+              ),
+            ],
+          ),
         ),
         const Spacer(),
 
