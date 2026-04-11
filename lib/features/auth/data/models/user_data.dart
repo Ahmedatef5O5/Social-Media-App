@@ -1,3 +1,5 @@
+import 'package:social_media_app/core/utilities/supabase_constants.dart';
+
 class UserData {
   final String id;
   final String name;
@@ -7,6 +9,7 @@ class UserData {
   final String? bio;
   final String? imageUrl;
   final String? backgroundImageUrl;
+  final DateTime? lastSeen;
 
   const UserData({
     required this.id,
@@ -17,6 +20,7 @@ class UserData {
     this.bio,
     this.imageUrl,
     this.backgroundImageUrl,
+    this.lastSeen,
   });
 
   Map<String, dynamic> toMap() {
@@ -29,6 +33,7 @@ class UserData {
       'bio': bio,
       'image_url': imageUrl,
       'background_image_url': backgroundImageUrl,
+      UserColumns.lastSeen: lastSeen,
     };
   }
 
@@ -47,13 +52,12 @@ class UserData {
           map['background_image_url'] != null
               ? map['background_image_url'] as String? ?? ''
               : null,
+      lastSeen:
+          map[UserColumns.lastSeen] != null
+              ? DateTime.parse(map[UserColumns.lastSeen].toString())
+              : null,
     );
   }
-
-  // String toJson() => json.encode(toMap());
-
-  // factory UserData.fromJson(String source) =>
-  //     UserData.fromMap(json.decode(source) as Map<String, dynamic>);
 
   UserData copyWith({
     String? id,
@@ -64,6 +68,7 @@ class UserData {
     String? bio,
     String? imageUrl,
     String? backgroundImageUrl,
+    final DateTime? lastSeen,
   }) {
     return UserData(
       id: id ?? this.id,
@@ -74,6 +79,7 @@ class UserData {
       bio: bio ?? this.bio,
       imageUrl: imageUrl ?? this.imageUrl,
       backgroundImageUrl: backgroundImageUrl ?? this.backgroundImageUrl,
+      lastSeen: lastSeen ?? this.lastSeen,
     );
   }
 }

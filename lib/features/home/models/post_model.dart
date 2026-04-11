@@ -1,4 +1,5 @@
 import 'package:social_media_app/core/utilities/supabase_constants.dart';
+import 'package:social_media_app/features/chats/models/chat_user_model.dart';
 import 'comment_model.dart';
 
 class PostModel {
@@ -18,6 +19,7 @@ class PostModel {
   final List<String>? likersImages;
   final List<CommentModel>? comments;
   final List<String>? shares;
+  final DateTime? lastSeen;
 
   const PostModel({
     required this.id,
@@ -33,6 +35,7 @@ class PostModel {
     this.likersImages,
     this.comments,
     this.shares,
+    this.lastSeen,
   });
 
   Map<String, dynamic> toMap() {
@@ -50,7 +53,17 @@ class PostModel {
       'likers_images': likersImages,
       'comments': comments,
       'shares': shares,
+      UserColumns.lastSeen: lastSeen,
     };
+  }
+
+  ChatUserModel toChatUserModel() {
+    return ChatUserModel(
+      id: authorId,
+      name: authorName ?? 'Unknown User',
+      imageUrl: authorImageUrl,
+      lastSeen: lastSeen,
+    );
   }
 
   factory PostModel.fromMap(Map<String, dynamic> map) {
@@ -93,6 +106,10 @@ class PostModel {
           map[PostColumns.shares] != null
               ? List<String>.from(map[PostColumns.shares])
               : [],
+      lastSeen:
+          userData != null && userData[UserColumns.lastSeen] != null
+              ? DateTime.parse(userData[UserColumns.lastSeen].toString())
+              : null,
     );
   }
 
@@ -110,6 +127,7 @@ class PostModel {
     List<String>? likersImages,
     List<CommentModel>? comments,
     List<String>? shares,
+    final DateTime? lastSeen,
   }) {
     return PostModel(
       id: id ?? this.id,
@@ -125,6 +143,7 @@ class PostModel {
       likersImages: likersImages ?? this.likersImages,
       comments: comments ?? this.comments,
       shares: shares ?? this.shares,
+      lastSeen: lastSeen ?? this.lastSeen,
     );
   }
 }

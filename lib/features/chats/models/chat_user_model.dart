@@ -82,6 +82,7 @@ class ChatUserModel {
       name: userData.name,
       imageUrl: userData.imageUrl,
       unreadCount: 0,
+      lastSeen: userData.lastSeen,
       lastMessageIsMe: false,
       lastMessageIsRead: false,
     );

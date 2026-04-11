@@ -1,4 +1,5 @@
 import 'package:social_media_app/core/utilities/supabase_constants.dart';
+import 'package:social_media_app/features/chats/models/chat_user_model.dart';
 
 class StoryModel {
   final String id;
@@ -10,6 +11,7 @@ class StoryModel {
   final String? authorImageUrl;
   final String createdAt;
   final String? caption;
+  final DateTime? lastSeen;
   const StoryModel({
     this.id = '',
     this.imageUrl,
@@ -20,6 +22,7 @@ class StoryModel {
     this.authorImageUrl,
     required this.createdAt,
     this.caption,
+    this.lastSeen,
   });
 
   Map<String, dynamic> toMap() {
@@ -31,6 +34,7 @@ class StoryModel {
       'author_id': authorId,
       'created_at': createdAt,
       'caption': caption,
+      UserColumns.lastSeen: lastSeen,
     };
   }
 
@@ -46,6 +50,19 @@ class StoryModel {
       authorImageUrl: userData?[UserColumns.imageUrl] as String?,
       createdAt: map[StoryColumns.createdAt] as String? ?? '',
       caption: map['caption'] as String?,
+      lastSeen:
+          userData != null && userData[UserColumns.lastSeen] != null
+              ? DateTime.parse(userData[UserColumns.lastSeen].toString())
+              : null,
+    );
+  }
+
+  ChatUserModel toChatUserModel() {
+    return ChatUserModel(
+      id: authorId,
+      name: authorName,
+      imageUrl: authorImageUrl,
+      lastSeen: lastSeen,
     );
   }
 }
