@@ -22,22 +22,30 @@ class HomeView extends StatefulWidget {
 class _HomeViewState extends State<HomeView> {
   late ScrollController _scrollController;
   bool _showBackToTop = false;
-
   double _lastOffset = 0;
+  bool _isScrollingToTop = false;
 
   @override
   void initState() {
     super.initState();
+    context.read<HomeCubit>().navController = widget.navController;
     _scrollController = ScrollController();
     _scrollController.addListener(() {
-      double currentOffset = _scrollController.offset;
-      bool isScrollingUp = currentOffset < _lastOffset;
+      if (_isScrollingToTop) return;
+
+      final currentOffset = _scrollController.offset;
+      final isScrollingUp = currentOffset < _lastOffset;
 
       if (currentOffset > 450 && isScrollingUp) {
-        if (!_showBackToTop) setState(() => _showBackToTop = true);
+        if (!_showBackToTop) {
+          setState(() => _showBackToTop = true);
+        }
       } else {
-        if (_showBackToTop) setState(() => _showBackToTop = false);
+        if (_showBackToTop) {
+          setState(() => _showBackToTop = false);
+        }
       }
+
       _lastOffset = currentOffset;
     });
   }
@@ -48,15 +56,21 @@ class _HomeViewState extends State<HomeView> {
     super.dispose();
   }
 
-  void _scrollToTop() {
+  void _scrollToTop() async {
+    _isScrollingToTop = true;
+
     setState(() {
       _showBackToTop = false;
     });
-    _scrollController.animateTo(
+
+    await _scrollController.animateTo(
       0,
-      duration: Duration(milliseconds: 600),
-      curve: Curves.easeOutCubic,
+      duration: const Duration(milliseconds: 600),
+      curve: Curves.easeInOut,
     );
+
+    _lastOffset = 0;
+    _isScrollingToTop = false;
   }
 
   @override

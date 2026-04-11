@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:persistent_bottom_nav_bar_v2/persistent_bottom_nav_bar_v2.dart';
 import 'package:social_media_app/core/services/file_picker_services.dart';
 import 'package:social_media_app/features/auth/data/models/user_data.dart';
 import 'package:social_media_app/features/home/models/comment_model.dart';
@@ -27,6 +28,8 @@ class HomeCubit extends Cubit<HomeState> {
 
   List<List<StoryModel>> cachedUserGroups = [];
   int cachedCurrentUserGroupIndex = 0;
+
+  PersistentTabController? navController;
 
   // Refresh Screen
   Future<void> refreshHomeData({bool isRefresh = false}) async {

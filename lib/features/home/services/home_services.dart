@@ -66,7 +66,8 @@ class HomeServices {
         *,
          ${SupabaseConstants.users}
         (${UserColumns.name}, 
-        ${UserColumns.imageUrl}
+        ${UserColumns.imageUrl},
+        ${UserColumns.lastSeen}
         ),
         ${SupabaseConstants.comments}(
           *,

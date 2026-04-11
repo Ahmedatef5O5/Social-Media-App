@@ -42,6 +42,7 @@ class PostsSection extends StatelessWidget {
               return PostItemWidget(
                 key: ValueKey(posts[index].id),
                 currPost: post,
+                homeCubit: homeCubit,
               );
             },
             separatorBuilder:

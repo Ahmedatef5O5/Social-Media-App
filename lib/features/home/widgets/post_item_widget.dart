@@ -9,15 +9,18 @@ import 'post_media_widget.dart';
 import 'post_txt_content_widget.dart';
 
 class PostItemWidget extends StatelessWidget {
-  const PostItemWidget({super.key, required this.currPost});
   final PostModel currPost;
+  final HomeCubit homeCubit;
+  const PostItemWidget({
+    super.key,
+    required this.currPost,
+    required this.homeCubit,
+  });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-
-    final homeCubit = context.read<HomeCubit>();
 
     final currentUserId = Supabase.instance.client.auth.currentUser?.id;
     if (currentUserId == null) return SizedBox.shrink();
