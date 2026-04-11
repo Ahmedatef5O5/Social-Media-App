@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:social_media_app/core/router/app_routes.dart';
 import '../../../core/constants/app_images.dart';
 
 class CustomUserProfileImagesSection extends StatelessWidget {
@@ -51,7 +52,14 @@ class CustomUserProfileImagesSection extends StatelessWidget {
         clipBehavior: Clip.none,
         children: [
           GestureDetector(
-            onTap: isEditMode ? onEditBackground : null,
+            onTap:
+                isEditMode
+                    ? onEditBackground
+                    : () {
+                      final String url =
+                          backgroundUrl ?? AppImages.defaultBackgroundImg;
+                      _openFullScreenImage(context, url, 'background-$url');
+                    },
             child: Stack(
               alignment: Alignment.center,
               children: [
@@ -101,7 +109,14 @@ class CustomUserProfileImagesSection extends StatelessWidget {
           Align(
             alignment: avatarAlignment,
             child: GestureDetector(
-              onTap: isEditMode ? onEditAvatar : null,
+              onTap:
+                  isEditMode
+                      ? onEditAvatar
+                      : () {
+                        final String url =
+                            avatarUrl ?? AppImages.defaultUserImg;
+                        _openFullScreenImage(context, url, 'avatar-$url');
+                      },
               child: Hero(
                 tag: heroTag ?? 'default-avatar-tag-${avatarUrl ?? "none"}',
                 child: SizedBox(
@@ -175,4 +190,11 @@ class CustomUserProfileImagesSection extends StatelessWidget {
 
     return const AssetImage(AppImages.defaultUserImg);
   }
+}
+
+void _openFullScreenImage(BuildContext context, String url, String tag) {
+  Navigator.of(context, rootNavigator: true).pushNamed(
+    AppRoutes.fullScreenImageViewRoute,
+    arguments: {'url': url, 'tag': tag, 'isAsset': !url.startsWith('http')},
+  );
 }
