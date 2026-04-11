@@ -6,15 +6,19 @@ import '../../home/cubit/home_cubit.dart';
 import '../../home/widgets/post_item_widget.dart';
 
 class ProfilePostsListTab extends StatefulWidget {
+  final HomeCubit homeCubit;
   final String userId;
   final ValueNotifier<double> refreshProgress;
   final ValueNotifier<bool> isRefreshing;
+  final bool isCurrentUser;
 
   const ProfilePostsListTab({
     super.key,
     required this.userId,
     required this.refreshProgress,
     required this.isRefreshing,
+    required this.homeCubit,
+    required this.isCurrentUser,
   });
 
   @override
@@ -55,13 +59,18 @@ class _ProfilePostsListTabState extends State<ProfilePostsListTab> {
                     final post = userPosts[index];
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 20),
-                      child: PostItemWidget(currPost: post),
+                      child: PostItemWidget(
+                        currPost: post,
+                        homeCubit: widget.homeCubit,
+                      ),
                     );
                   }, childCount: userPosts.length),
                 ),
               ),
 
-              SliverGap(MediaQuery.of(context).padding.bottom + 60),
+              if (widget.isCurrentUser) ...[
+                SliverGap(MediaQuery.of(context).padding.bottom + 60),
+              ],
             ],
           );
         }

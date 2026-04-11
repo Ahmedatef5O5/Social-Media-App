@@ -5,16 +5,18 @@ import 'package:social_media_app/features/profile/widgets/profile_header.dart';
 import 'package:social_media_app/features/profile/widgets/profile_posts_list_tab.dart';
 import 'package:social_media_app/features/profile/widgets/proflie_states_widget.dart';
 import 'package:social_media_app/features/profile/widgets/sliver_tab_bar_delegate.dart';
-
 import '../../../core/themes/app_colors.dart';
+import '../../home/cubit/home_cubit.dart';
 import '../cubits/profile_cubit/profile_cubit.dart';
 
 class ProfileBodyContent extends StatelessWidget {
+  final HomeCubit homeCubit;
   final ProfileLoaded state;
   final ScrollController scrollController;
   final Size size;
   final ValueNotifier<double> refreshProgress;
   final ValueNotifier<bool> isRefreshing;
+  final bool isCurrentUser;
   const ProfileBodyContent({
     super.key,
     required this.state,
@@ -22,6 +24,8 @@ class ProfileBodyContent extends StatelessWidget {
     required this.size,
     required this.refreshProgress,
     required this.isRefreshing,
+    required this.homeCubit,
+    required this.isCurrentUser,
   });
 
   @override
@@ -70,6 +74,8 @@ class ProfileBodyContent extends StatelessWidget {
                 userId: state.user.id,
                 refreshProgress: refreshProgress,
                 isRefreshing: isRefreshing,
+                homeCubit: homeCubit,
+                isCurrentUser: isCurrentUser,
               ),
               ProfileDetailsWidgetTab(
                 user: state.user,
