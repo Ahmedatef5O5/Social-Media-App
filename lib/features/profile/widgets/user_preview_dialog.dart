@@ -28,68 +28,83 @@ class UserPreviewDialog extends StatelessWidget {
         children: [
           Hero(
             tag: user.id,
-            child: ClipRRect(
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(20),
-              ),
-              child: Stack(
-                children: [
-                  ClipRRect(
-                    child:
+            child: GestureDetector(
+              onTap: () {
+                Navigator.of(context, rootNavigator: true).pushNamed(
+                  AppRoutes.fullScreenImageViewRoute,
+                  arguments: {
+                    'url':
                         (user.imageUrl != null && user.imageUrl!.isNotEmpty)
-                            ? CachedNetworkImage(
-                              imageUrl: user.imageUrl!,
-                              fit: BoxFit.cover,
-                              height: 300,
-                              width: double.infinity,
-                              placeholder:
-                                  (context, url) => SizedBox(
-                                    height: 300,
-                                    child: const Center(
-                                      child: CustomLoadingIndicator(),
+                            ? user.imageUrl!
+                            : AppImages.defaultUserImg,
+                    'tag': user.id,
+                    'isAsset': user.imageUrl == null || user.imageUrl!.isEmpty,
+                  },
+                );
+              },
+              child: ClipRRect(
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(20),
+                ),
+                child: Stack(
+                  children: [
+                    ClipRRect(
+                      child:
+                          (user.imageUrl != null && user.imageUrl!.isNotEmpty)
+                              ? CachedNetworkImage(
+                                imageUrl: user.imageUrl!,
+                                fit: BoxFit.cover,
+                                height: 300,
+                                width: double.infinity,
+                                placeholder:
+                                    (context, url) => SizedBox(
+                                      height: 300,
+                                      child: const Center(
+                                        child: CustomLoadingIndicator(),
+                                      ),
                                     ),
-                                  ),
-                              errorWidget:
-                                  (context, url, error) => Image.asset(
-                                    AppImages.defaultUserImg,
-                                    fit: BoxFit.cover,
-                                  ),
-                            )
-                            : Image.asset(
-                              AppImages.defaultUserImg,
-                              fit: BoxFit.cover,
-                            ),
-                  ),
-                  Positioned(
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 8,
-                      ),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            Colors.black.withValues(alpha: 0.5),
-                            Colors.transparent,
-                          ],
+                                errorWidget:
+                                    (context, url, error) => Image.asset(
+                                      AppImages.defaultUserImg,
+                                      fit: BoxFit.cover,
+                                    ),
+                              )
+                              : Image.asset(
+                                AppImages.defaultUserImg,
+                                fit: BoxFit.cover,
+                              ),
+                    ),
+                    Positioned(
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
                         ),
-                      ),
-                      child: Text(
-                        user.name,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.w500,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              Colors.black.withValues(alpha: 0.5),
+                              Colors.transparent,
+                            ],
+                          ),
+                        ),
+                        child: Text(
+                          user.name,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
