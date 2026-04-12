@@ -22,8 +22,31 @@ class FullScreenMediaView extends StatefulWidget {
 class _FullScreenMediaViewState extends State<FullScreenMediaView> {
   VideoPlayerController? _videoController;
   bool _showControls = true;
+  double _playbackSpeed = 1.0;
   final TransformationController _transformationController =
       TransformationController();
+  void _changeSpeed() {
+    setState(() {
+      if (_playbackSpeed == 1.0) {
+        _playbackSpeed = 1.5;
+      } else if (_playbackSpeed == 1.5) {
+        _playbackSpeed = 2.0;
+      } else if (_playbackSpeed == 2.0) {
+        _playbackSpeed = 0.5;
+      } else {
+        _playbackSpeed = 1.0;
+      }
+
+      _videoController?.setPlaybackSpeed(_playbackSpeed);
+    });
+  }
+
+  void _seekRelative(Duration offset) {
+    if (_videoController != null) {
+      final newPosition = _videoController!.value.position + offset;
+      _videoController!.seekTo(newPosition);
+    }
+  }
 
   @override
   void initState() {
@@ -82,7 +105,23 @@ class _FullScreenMediaViewState extends State<FullScreenMediaView> {
           backgroundColor: Colors.transparent,
 
           iconTheme: const IconThemeData(color: Colors.white),
-          // ),
+          actions: [
+            if (widget.videoUrl != null && _showControls)
+              Padding(
+                padding: const EdgeInsets.only(right: 10),
+                child: TextButton(
+                  onPressed: _changeSpeed,
+                  child: Text(
+                    "${_playbackSpeed}x",
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
+              ),
+          ],
         ),
         body: Stack(
           alignment: Alignment.center,
@@ -147,22 +186,45 @@ class _FullScreenMediaViewState extends State<FullScreenMediaView> {
         children: [
           Container(color: Colors.black26),
           Center(
-            child: IconButton(
-              iconSize: 70,
-              icon: Icon(
-                _videoController!.value.isPlaying
-                    ? Icons.pause_circle_filled
-                    : Icons.play_circle_filled,
-                color: Colors.white,
-              ),
-              onPressed: () {
-                setState(() {
-                  _videoController!.value.isPlaying
-                      ? _videoController!.pause()
-                      : _videoController!.play();
-                });
-                _hideControlsAfterDelay();
-              },
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                IconButton(
+                  icon: const Icon(
+                    Icons.replay_5,
+                    color: Colors.white,
+                    size: 30,
+                  ),
+                  onPressed: () => _seekRelative(const Duration(seconds: -5)),
+                ),
+
+                IconButton(
+                  iconSize: 60,
+                  icon: Icon(
+                    _videoController!.value.isPlaying
+                        ? Icons.pause_circle_filled
+                        : Icons.play_circle_filled,
+                    color: Colors.white,
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      _videoController!.value.isPlaying
+                          ? _videoController!.pause()
+                          : _videoController!.play();
+                    });
+                    _hideControlsAfterDelay();
+                  },
+                ),
+
+                IconButton(
+                  icon: const Icon(
+                    Icons.forward_5,
+                    color: Colors.white,
+                    size: 30,
+                  ),
+                  onPressed: () => _seekRelative(const Duration(seconds: 5)),
+                ),
+              ],
             ),
           ),
 
