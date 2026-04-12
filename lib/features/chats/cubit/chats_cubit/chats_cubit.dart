@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:social_media_app/features/chats/models/chat_user_model.dart';
 import 'package:social_media_app/features/chats/services/chat_services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../auth/handler/auth_exception_handler.dart';
 
 part 'chats_state.dart';
 
@@ -82,8 +83,16 @@ class ChatsCubit extends Cubit<ChatsState> {
       _cachedChats = chats;
       _emitWithTyping();
     } catch (e) {
-      debugPrint('Error getting chats: $e');
-      emit(ChatsError(e.toString()));
+      if (e.toString().contains('no-internet')) {
+        if (_cachedChats.isNotEmpty) {
+          debugPrint('Silent error: No internet, but showing cached chats.');
+          return;
+        }
+        emit(ChatsError("No internet connection. Please check your network."));
+      } else {
+        emit(ChatsError(AuthExceptionHandler.handle(e)));
+      }
+      debugPrint('Error in getChats Cubit: $e');
     }
   }
 

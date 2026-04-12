@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'package:dio/dio.dart' as dio_pkg;
 import 'package:flutter/material.dart';
+import 'package:internet_connection_checker_plus/internet_connection_checker_plus.dart';
 import 'package:social_media_app/core/secrets/app_secrets.dart';
 import 'package:social_media_app/core/utilities/supabase_constants.dart';
 import 'package:social_media_app/features/chats/models/message_model.dart';
@@ -11,7 +12,16 @@ import '../models/chat_user_model.dart';
 class ChatServices {
   final _supabase = Supabase.instance.client;
 
+  Future<bool> isConnected() async {
+    return await InternetConnection().hasInternetAccess;
+  }
+
   Future<List<ChatUserModel>> getChatsList(String currentUserId) async {
+
+    if (!(await isConnected())) {
+      throw Exception('no-internet');
+    }
+    
     try {
       final response = await _supabase.rpc(
         SupabaseConstants.getChatsWithLastMessage,
@@ -23,7 +33,6 @@ class ChatServices {
           .map(((data) => ChatUserModel.fromUserData(data, currentUserId)))
           .toList();
     } catch (e) {
-      debugPrint('Error in getChatsList RPC: $e');
       rethrow;
     }
   }
