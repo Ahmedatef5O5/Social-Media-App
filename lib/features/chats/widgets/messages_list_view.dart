@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import 'package:social_media_app/features/chats/widgets/chat_bubble.dart';
+import 'package:social_media_app/features/chats/widgets/chat_loading_skeleton.dart';
 import 'package:social_media_app/features/chats/widgets/date_separator_glassmorphism_widget.dart';
 import 'package:social_media_app/features/chats/widgets/empty_placeholder_state.dart';
 import 'package:social_media_app/features/chats/widgets/typing_bubble_widget.dart';
@@ -67,8 +68,20 @@ class _MessagesListViewState extends State<MessagesListView> {
         final cubit = context.read<ChatDetailsCubit>();
         final messages = cubit.cachedMessages;
         final isTyping = state is ReceiverTypingState ? state.isTyping : false;
+        final hasNoLastMessage = widget.receiverUser.lastMessage == null;
+        if ((state is ChatDetailsInitial || state is MessagesLoading) &&
+            messages.isEmpty) {
+          if (hasNoLastMessage) {
+            return _buildEmptyState(context);
+          }
+          return const ChatLoadingSkeleton();
+        }
+
         if (messages.isEmpty && state is MessagesSuccessLoaded) {
           return _buildEmptyState(context);
+        }
+        if (state is MessagesError && messages.isEmpty) {
+          return Center(child: Text(state.message));
         }
         return Stack(
           children: [
