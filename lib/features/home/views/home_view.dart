@@ -5,11 +5,13 @@ import 'package:persistent_bottom_nav_bar_v2/persistent_bottom_nav_bar_v2.dart';
 import 'package:social_media_app/core/themes/background_theme_widget.dart';
 import 'package:social_media_app/core/widgets/custom_back_to_top_btn.dart';
 import 'package:social_media_app/core/widgets/custom_pull_to_refresh.dart';
+import 'package:social_media_app/core/widgets/custom_tab_wrapper.dart';
 import 'package:social_media_app/features/home/cubit/home_cubit.dart';
 import '../widgets/home_view_header_section.dart';
 import '../widgets/post_writing_card.dart';
 import '../widgets/posts_section.dart';
 import '../widgets/stories_list_section.dart';
+import 'home_shimmer_skeleton_view.dart';
 
 class HomeView extends StatefulWidget {
   final PersistentTabController navController;
@@ -77,47 +79,67 @@ class _HomeViewState extends State<HomeView> {
   Widget build(BuildContext context) {
     return PopScope(
       canPop: false,
-      child: BackgroundThemeWidget(
-        bottom: false,
-        child: Stack(
-          children: [
-            Center(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                child: CustomPullToRefresh(
-                  top: MediaQuery.sizeOf(context).height * 0.068,
-                  onRefresh:
-                      () async => await context
-                          .read<HomeCubit>()
-                          .refreshHomeData(isRefresh: true),
-                  child: CustomScrollView(
-                    controller: _scrollController,
-                    physics: const AlwaysScrollableScrollPhysics(
-                      parent: ClampingScrollPhysics(),
-                    ),
-                    scrollDirection: Axis.vertical,
-                    slivers: [
-                      const SliverGap(30),
-                      SliverToBoxAdapter(
-                        child: HomeViewHeaderSection(
-                          navController: widget.navController,
+      child: BlocBuilder<HomeCubit, HomeState>(
+        builder: (context, state) {
+          return CustomTabWrapper(
+            isLoading:
+                state is HomeInitial ||
+                state is UserDataLoading ||
+                state is PostsLoading ||
+                state is StoriesLoading,
+            errorMessage: state is UserDataLoadError ? state.message : null,
+            onRetry: () => context.read<HomeCubit>().refreshHomeData(),
+            loadingSkeleton: const HomeShimmerSkeleton(),
+
+            child: BackgroundThemeWidget(
+              bottom: false,
+              child: Stack(
+                children: [
+                  Center(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      child: CustomPullToRefresh(
+                        top: MediaQuery.sizeOf(context).height * 0.068,
+                        onRefresh:
+                            () async => await context
+                                .read<HomeCubit>()
+                                .refreshHomeData(isRefresh: true),
+                        child: CustomScrollView(
+                          controller: _scrollController,
+                          physics: const AlwaysScrollableScrollPhysics(
+                            parent: ClampingScrollPhysics(),
+                          ),
+                          scrollDirection: Axis.vertical,
+                          slivers: [
+                            const SliverGap(30),
+                            SliverToBoxAdapter(
+                              child: HomeViewHeaderSection(
+                                navController: widget.navController,
+                              ),
+                            ),
+                            const SliverGap(35),
+                            SliverToBoxAdapter(child: PostWritingCard()),
+                            const SliverGap(20),
+                            SliverToBoxAdapter(child: StoriesListSection()),
+                            const SliverGap(4),
+                            PostsSection(),
+                            SliverGap(
+                              MediaQuery.of(context).padding.bottom + 100,
+                            ),
+                          ],
                         ),
                       ),
-                      const SliverGap(35),
-                      SliverToBoxAdapter(child: PostWritingCard()),
-                      const SliverGap(20),
-                      SliverToBoxAdapter(child: StoriesListSection()),
-                      const SliverGap(4),
-                      PostsSection(),
-                      SliverGap(MediaQuery.of(context).padding.bottom + 100),
-                    ],
+                    ),
                   ),
-                ),
+                  CustomBackToTopBtn(
+                    isVisible: _showBackToTop,
+                    onTap: _scrollToTop,
+                  ),
+                ],
               ),
             ),
-            CustomBackToTopBtn(isVisible: _showBackToTop, onTap: _scrollToTop),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
