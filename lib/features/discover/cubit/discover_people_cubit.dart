@@ -15,8 +15,20 @@ class DiscoverPeopleCubit extends Cubit<DiscoverPeopleState> {
       final users = await _discoverPeopleServices.getAllUsers();
       emit(DiscoverPeopleSuccess(users));
     } catch (e) {
-      debugPrint('Error Discover people $e');
-      emit(DiscoverPeopleFailure(e.toString()));
+      if (e.toString().contains('no-internet')) {
+        emit(
+          DiscoverPeopleFailure(
+            "No internet connection. Please check your network.",
+          ),
+        );
+      } else {
+        emit(
+          DiscoverPeopleFailure(
+            "Something went wrong. Please try again later.",
+          ),
+        );
+      }
+      debugPrint('Error in getDiscoverPeople: $e');
     }
   }
 }
