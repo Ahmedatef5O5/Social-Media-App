@@ -48,25 +48,32 @@ class CustomElevatedButton extends StatelessWidget {
       ),
 
       onPressed: isLoading ? null : onPressed,
-      child:
-          isLoading
-              ? const CustomLoadingIndicator()
-              : Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  if (prefixIcon != null) ...[prefixIcon!, const Gap(10)],
-                  Text(
-                    txtBtn,
-                    style:
-                        txtBtnStyle ??
-                        Theme.of(context).textTheme.titleMedium!.copyWith(
-                          color: txtColor ?? Colors.white,
-                        ),
-                  ),
-                  if (suffixIcon != null) ...[const Gap(10), suffixIcon!],
-                ],
-              ),
+      child: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 300),
+        child:
+            isLoading
+                ? SizedBox(
+                  key: ValueKey('loading'),
+                  child: const CustomLoadingIndicator(),
+                )
+                : Row(
+                  key: const ValueKey('content'),
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    if (prefixIcon != null) ...[prefixIcon!, const Gap(10)],
+                    Text(
+                      txtBtn,
+                      style:
+                          txtBtnStyle ??
+                          Theme.of(context).textTheme.titleMedium!.copyWith(
+                            color: txtColor ?? Colors.white,
+                          ),
+                    ),
+                    if (suffixIcon != null) ...[const Gap(10), suffixIcon!],
+                  ],
+                ),
+      ),
     );
   }
 }

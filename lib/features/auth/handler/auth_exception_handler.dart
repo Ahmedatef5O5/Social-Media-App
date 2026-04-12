@@ -17,6 +17,11 @@ class AuthExceptionHandler {
       return 'No internet connection. Please check your network.';
     }
 
+    if (msg.contains('realtimesubscribeexception') ||
+        msg.contains('timedout')) {
+      return 'No internet connection. Realtime sync failed.';
+    }
+
     // ─── Timeout ───────────────────────────────────────────────
     if (msg.contains('timeout')) {
       return 'Request timed out. Please try again.';
