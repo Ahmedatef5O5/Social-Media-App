@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -33,6 +34,13 @@ class HomeCubit extends Cubit<HomeState> {
 
   // Refresh Screen
   Future<void> refreshHomeData({bool isRefresh = false}) async {
+    bool hasNet = await homeServices.isConnected();
+    if (!hasNet) {
+      emit(
+        UserDataLoadError("No internet connection. Please check your network."),
+      );
+      return;
+    }
     try {
       await getHomeData(isRefresh: isRefresh);
     } catch (e) {
@@ -41,6 +49,7 @@ class HomeCubit extends Cubit<HomeState> {
   }
 
   Future<void> getHomeData({bool isRefresh = false}) async {
+    if (!isRefresh) emit(UserDataLoading());
     final userId = Supabase.instance.client.auth.currentUser!.id;
     await Future.wait([
       _getCurrentUser(userId),
@@ -185,22 +194,39 @@ class HomeCubit extends Cubit<HomeState> {
     }
   }
 
+  StreamSubscription? _postsSubscription;
+
   Future<void> fetchPosts({bool isRefresh = false}) async {
     if (!isRefresh) emit(PostsLoading());
-    try {
-      final posts = await homeServices.fetchPosts();
-
-      final fixedPosts = _fixLikersImages(posts);
-      emit(PostsLoaded(fixedPosts, DateTime.now()));
-    } catch (e) {
-      emit(PostsError(e.toString()));
+    bool hasNet = await homeServices.isConnected();
+    if (!hasNet) {
+      emit(UserDataLoadError("No internet connection."));
+      return;
     }
+    getPosts();
+  }
+
+  void getPosts() {
+    _postsSubscription?.cancel();
+
+    _postsSubscription = homeServices.getPostsStream().listen((
+      newPostsFromStream,
+    ) async {
+      try {
+        final completePosts = await homeServices.fetchPosts();
+        final fixedPosts = _fixLikersImages(completePosts);
+        if (!isClosed) {
+          emit(PostsLoaded(fixedPosts, DateTime.now()));
+        }
+      } catch (e) {
+        debugPrint("Error updating posts via stream: $e");
+      }
+    }, onError: (error) => debugPrint("Stream Error: $error"));
   }
 
   Future<void> createPost({required String text}) async {
     emit(PostCreating(0.05));
     try {
-      //
       final userId = Supabase.instance.client.auth.currentUser!.id;
       String? imageUrl;
       String? videoUrl;
@@ -267,7 +293,6 @@ class HomeCubit extends Cubit<HomeState> {
 
       _resetMedia();
       emit(PostCreated());
-      await fetchPosts();
     } catch (e) {
       final errorMessage = _mapExceptionToMessage(e);
 
@@ -504,5 +529,11 @@ class HomeCubit extends Cubit<HomeState> {
 
   void _emitPreviousState() {
     emit(MediaPickingError('Selected Cancelled'));
+  }
+
+  @override
+  Future<void> close() {
+    _postsSubscription?.cancel();
+    return super.close();
   }
 }
