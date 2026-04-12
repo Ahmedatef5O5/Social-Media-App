@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:social_media_app/core/widgets/custom_back_to_top_btn.dart';
+import 'package:social_media_app/core/widgets/custom_tab_wrapper.dart';
 import 'package:social_media_app/features/profile/cubits/profile_cubit/profile_cubit.dart';
+import 'package:social_media_app/features/profile/views/profile_shimmer_view.dart';
 import 'package:social_media_app/features/profile/widgets/profile_body_content.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../../core/widgets/custom_loading_indicator.dart';
 import '../../home/cubit/home_cubit.dart';
 import '../widgets/profile_refresh_indicator.dart';
 
@@ -121,56 +122,74 @@ class _ProfileViewState extends State<ProfileView> {
           },
           child: BlocBuilder<ProfileCubit, ProfileState>(
             builder: (context, state) {
-              if (state is ProfileLoading) {
-                return CustomLoadingIndicator();
-              } else if (state is ProfileLoaded) {
-                return NotificationListener<ScrollNotification>(
-                  onNotification: (notification) {
-                    if (_isScrollingToTop) return false;
+              // bool isLoading = false;
+              // bool isLoading = true;
+              bool isLoading =
+                  state is ProfileInitial || state is ProfileLoading;
+              String? errorMessage =
+                  state is ProfileError ? state.message : null;
 
-                    if (notification is ScrollUpdateNotification) {
-                      final metrics = notification.metrics;
-                      double currentOffset = metrics.pixels;
+              return CustomTabWrapper(
+                isLoading: isLoading,
+                errorMessage: errorMessage,
+                loadingSkeleton: ProfileShimmerLoading(
+                  isCurrentUser: isCurrentUser,
+                ),
+                onRetry: () {
+                  final effectiveId = widget.userId ?? currentUserId;
+                  context.read<ProfileCubit>().getProfileData(effectiveId);
+                },
 
-                      bool isScrollingUp = currentOffset < _lastOffset;
+                child:
+                    state is ProfileLoaded
+                        ? NotificationListener<ScrollNotification>(
+                          onNotification: (notification) {
+                            if (_isScrollingToTop) return false;
 
-                      if (currentOffset > 450 && isScrollingUp) {
-                        if (!_showBackToTop) {
-                          WidgetsBinding.instance.addPostFrameCallback((_) {
-                            if (mounted && !_showBackToTop) {
-                              setState(() => _showBackToTop = true);
+                            if (notification is ScrollUpdateNotification) {
+                              final metrics = notification.metrics;
+                              double currentOffset = metrics.pixels;
+
+                              bool isScrollingUp = currentOffset < _lastOffset;
+
+                              if (currentOffset > 450 && isScrollingUp) {
+                                if (!_showBackToTop) {
+                                  WidgetsBinding.instance.addPostFrameCallback((
+                                    _,
+                                  ) {
+                                    if (mounted && !_showBackToTop) {
+                                      setState(() => _showBackToTop = true);
+                                    }
+                                  });
+                                }
+                              } else if (!isScrollingUp || currentOffset < 10) {
+                                if (_showBackToTop) {
+                                  WidgetsBinding.instance.addPostFrameCallback((
+                                    _,
+                                  ) {
+                                    if (mounted && _showBackToTop) {
+                                      setState(() => _showBackToTop = false);
+                                    }
+                                  });
+                                }
+                              }
+
+                              _lastOffset = currentOffset;
                             }
-                          });
-                        }
-                      } else if (!isScrollingUp || currentOffset < 10) {
-                        if (_showBackToTop) {
-                          WidgetsBinding.instance.addPostFrameCallback((_) {
-                            if (mounted && _showBackToTop) {
-                              setState(() => _showBackToTop = false);
-                            }
-                          });
-                        }
-                      }
-
-                      _lastOffset = currentOffset;
-                    }
-                    return false;
-                  },
-                  child: ProfileBodyContent(
-                    state: state,
-                    scrollController: _scrollController,
-                    size: size,
-                    refreshProgress: _refreshProgress,
-                    isRefreshing: _isRefreshing,
-                    homeCubit: homeCubit,
-                    isCurrentUser: isCurrentUser,
-                  ),
-                );
-              } else if (state is ProfileError) {
-                return Center(child: Text(state.message));
-              } else {
-                return SizedBox.shrink();
-              }
+                            return false;
+                          },
+                          child: ProfileBodyContent(
+                            state: state,
+                            scrollController: _scrollController,
+                            size: size,
+                            refreshProgress: _refreshProgress,
+                            isRefreshing: _isRefreshing,
+                            homeCubit: homeCubit,
+                            isCurrentUser: isCurrentUser,
+                          ),
+                        )
+                        : const SizedBox.shrink(),
+              );
             },
           ),
         ),

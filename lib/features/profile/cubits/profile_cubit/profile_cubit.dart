@@ -25,7 +25,8 @@ class ProfileCubit extends Cubit<ProfileState> {
       emit(ProfileLoaded(stats, user));
     } catch (e) {
       debugPrint("Error in getProfileData: $e");
-      emit(ProfileError(e.toString()));
+      String errorMessage = e.toString().replaceAll('Exception:', '').trim();
+      emit(ProfileError(errorMessage));
     }
   }
 }
