@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:internet_connection_checker_plus/internet_connection_checker_plus.dart';
 import 'package:social_media_app/core/services/supabase_database_services.dart';
 import 'package:social_media_app/core/utilities/supabase_constants.dart';
 import 'package:social_media_app/features/auth/data/models/user_data.dart';
@@ -14,6 +15,10 @@ import '../../../core/secrets/app_secrets.dart';
 class HomeServices {
   final supabaseServices = SupabaseDatabaseServices.instance;
   final _supabase = Supabase.instance.client;
+
+  Future<bool> isConnected() async {
+    return await InternetConnection().hasInternetAccess;
+  }
 
   Future<String> uploadStoryFile(File file, String userId) async {
     final fileName =
@@ -56,33 +61,23 @@ class HomeServices {
     }
   }
 
+  static const String _postsQuery = ''' 
+  *,
+  ${SupabaseConstants.users} (${UserColumns.name}, ${UserColumns.imageUrl}, ${UserColumns.lastSeen}),
+  ${SupabaseConstants.comments} (*, ${SupabaseConstants.users} (${UserColumns.name}, ${UserColumns.imageUrl})),
+  ${SupabaseConstants.likes} (${LikeColumns.userId}, ${SupabaseConstants.users} (${UserColumns.imageUrl}))
+''';
+
   Future<List<PostModel>> fetchPosts() async {
+    if (!(await isConnected())) {
+      throw Exception('no-internet');
+    }
     try {
       return await supabaseServices.fetchRows(
         table: SupabaseConstants.posts,
         filter:
             (query) => query
-                .select(''' 
-        *,
-         ${SupabaseConstants.users}
-        (${UserColumns.name}, 
-        ${UserColumns.imageUrl},
-        ${UserColumns.lastSeen}
-        ),
-        ${SupabaseConstants.comments}(
-          *,
-          ${SupabaseConstants.users}(
-             ${UserColumns.name}, 
-             ${UserColumns.imageUrl}
-          )
-        ),
-          ${SupabaseConstants.likes}(
-            ${LikeColumns.userId},
-            ${SupabaseConstants.users} (
-              ${UserColumns.imageUrl}
-            )
-        )  
-        ''')
+                .select(_postsQuery)
                 .order(PostColumns.createdAt, ascending: false),
         builder:
             (Map<String, dynamic> data, String id) => PostModel.fromMap(data),
@@ -91,6 +86,12 @@ class HomeServices {
     } catch (e) {
       rethrow;
     }
+  }
+
+  Stream<List<Map<String, dynamic>>> getPostsStream() {
+    return _supabase
+        .from(SupabaseConstants.posts)
+        .stream(primaryKey: [PostColumns.id]);
   }
 
   Future<void> addPost(PostRequestBody post) async {
