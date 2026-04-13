@@ -44,6 +44,8 @@ class _MessagesListViewState extends State<MessagesListView> {
 
   int _lastMessageCount = 0;
 
+  bool _hasLoadedOnce = false;
+
   Future<void> _playNotificationSound() async {
     try {
       await _audioPlayer.play(
@@ -63,23 +65,28 @@ class _MessagesListViewState extends State<MessagesListView> {
           (prev, curr) =>
               curr is MessagesSuccessLoaded ||
               curr is MessagesSending ||
-              curr is ReceiverTypingState,
+              curr is ReceiverTypingState ||
+              curr is ChatDetailsInitial,
       builder: (context, state) {
         final cubit = context.read<ChatDetailsCubit>();
         final messages = cubit.cachedMessages;
         final isTyping = state is ReceiverTypingState ? state.isTyping : false;
-        final hasNoLastMessage = widget.receiverUser.lastMessage == null;
-        if ((state is ChatDetailsInitial || state is MessagesLoading) &&
-            messages.isEmpty) {
-          if (hasNoLastMessage) {
+
+        if (messages.isEmpty) {
+          // لو لسه بيلود → shimmer
+          if (state is ChatDetailsInitial ||
+              state is MessagesLoading ||
+              state is MessagesSending) {
+            return const ChatLoadingSkeleton();
+          }
+          // لو خلص فعلاً وفاضي → empty state
+          if (_hasLoadedOnce || state is MessagesSuccessLoaded) {
             return _buildEmptyState(context);
           }
+          // أي حالة تانية (زي error أو أول ما بيبدأ) → shimmer كـ fallback
           return const ChatLoadingSkeleton();
         }
 
-        if (messages.isEmpty && state is MessagesSuccessLoaded) {
-          return _buildEmptyState(context);
-        }
         if (state is MessagesError && messages.isEmpty) {
           return Center(child: Text(state.message));
         }
@@ -158,6 +165,7 @@ class _MessagesListViewState extends State<MessagesListView> {
 
   void _handleMessagesLogic(BuildContext context, ChatDetailsState state) {
     if (state is MessagesSuccessLoaded && state.messages.isNotEmpty) {
+      _hasLoadedOnce = true;
       final messages = state.messages;
       final currentUserId = Supabase.instance.client.auth.currentUser!.id;
 

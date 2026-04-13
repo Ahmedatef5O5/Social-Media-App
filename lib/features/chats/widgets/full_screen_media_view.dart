@@ -23,6 +23,8 @@ class _FullScreenMediaViewState extends State<FullScreenMediaView> {
   VideoPlayerController? _videoController;
   bool _showControls = true;
   double _playbackSpeed = 1.0;
+  double _dragOffset = 0;
+
   final TransformationController _transformationController =
       TransformationController();
   void _changeSpeed() {
@@ -92,13 +94,32 @@ class _FullScreenMediaViewState extends State<FullScreenMediaView> {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
+      onVerticalDragUpdate: (details) {
+        if (_transformationController.value.getMaxScaleOnAxis() <= 1.0) {
+          setState(() {
+            _dragOffset += details.delta.dy;
+          });
+        }
+      },
+      onVerticalDragEnd: (details) {
+        if (_dragOffset.abs() > 100 ||
+            details.velocity.pixelsPerSecond.dy.abs() > 500) {
+          Navigator.of(context).pop();
+        } else {
+          setState(() {
+            _dragOffset = 0;
+          });
+        }
+      },
       onTap: () {
         FocusScope.of(context).unfocus();
         setState(() => _showControls = !_showControls);
         if (_showControls) _hideControlsAfterDelay();
       },
       child: Scaffold(
-        backgroundColor: Colors.black,
+        backgroundColor: Colors.black.withValues(
+          alpha: (1.0 - (_dragOffset.abs() / 500)).clamp(0.0, 1.0),
+        ),
         extendBodyBehindAppBar: true,
         appBar: AppBar(
           elevation: 0,
@@ -126,7 +147,10 @@ class _FullScreenMediaViewState extends State<FullScreenMediaView> {
         body: Stack(
           alignment: Alignment.center,
           children: [
-            _buildMainContent(),
+            Transform.translate(
+              offset: Offset(0, _dragOffset),
+              child: _buildMainContent(),
+            ),
 
             if (widget.videoUrl != null &&
                 _videoController != null &&

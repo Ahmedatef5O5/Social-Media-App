@@ -7,6 +7,7 @@ import 'package:social_media_app/features/chats/widgets/chats_header_section.dar
 import 'package:social_media_app/features/chats/widgets/chats_list_view_section.dart';
 // import 'package:social_media_app/features/chats/widgets/voice_message_bubble_widget.dart';
 // import '../../../core/router/app_routes.dart';
+import '../../../core/router/app_router.dart';
 import '../../../core/widgets/custom_pull_to_refresh.dart';
 // import '../../group_chat/models/group_model.dart';
 // import '../../group_chat/services/group_chat_services.dart';
@@ -19,7 +20,40 @@ class ChatsViewBody extends StatefulWidget {
   State<ChatsViewBody> createState() => _ChatsViewBodyState();
 }
 
-class _ChatsViewBodyState extends State<ChatsViewBody> {
+class _ChatsViewBodyState extends State<ChatsViewBody>
+    with WidgetsBindingObserver, RouteAware {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    routeObserver.subscribe(this, ModalRoute.of(context)!);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    routeObserver.unsubscribe(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      context.read<ChatsCubit>().getChats(isRefresh: true);
+    }
+  }
+
+  @override
+  void didPopNext() {
+    debugPrint('Return to Chats List... updating automatically');
+    context.read<ChatsCubit>().getChats(isRefresh: true);
+  }
+
   // late final Future<GroupModel?> _groupFuture;
 
   // @override

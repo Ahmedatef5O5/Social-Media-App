@@ -10,6 +10,7 @@ class NoRouteScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       body: BackgroundThemeWidget(
+        top: false,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.center,

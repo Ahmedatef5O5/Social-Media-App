@@ -11,6 +11,8 @@ import 'package:social_media_app/features/home/models/story_model.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:dio/dio.dart' as dio_pkg;
 import '../../../core/secrets/app_secrets.dart';
+import '../helper/comment_tree_builder.dart';
+import '../models/comment_model.dart';
 
 class HomeServices {
   final supabaseServices = SupabaseDatabaseServices.instance;
@@ -64,8 +66,14 @@ class HomeServices {
   static const String _postsQuery = ''' 
   *,
   ${SupabaseConstants.users} (${UserColumns.name}, ${UserColumns.imageUrl}, ${UserColumns.lastSeen}),
-  ${SupabaseConstants.comments} (*, ${SupabaseConstants.users} (${UserColumns.name}, ${UserColumns.imageUrl})),
-  ${SupabaseConstants.likes} (${LikeColumns.userId}, ${SupabaseConstants.users} (${UserColumns.imageUrl}))
+  ${SupabaseConstants.comments} (
+  *,
+  ${SupabaseConstants.users} (${UserColumns.name}, ${UserColumns.imageUrl}), 
+  comment_reactions (*)
+  ),
+  ${SupabaseConstants.likes} (
+  ${LikeColumns.userId}, 
+  ${SupabaseConstants.users} (${UserColumns.imageUrl}))
 ''';
 
   Future<List<PostModel>> fetchPosts() async {
@@ -79,8 +87,15 @@ class HomeServices {
             (query) => query
                 .select(_postsQuery)
                 .order(PostColumns.createdAt, ascending: false),
-        builder:
-            (Map<String, dynamic> data, String id) => PostModel.fromMap(data),
+        builder: (Map<String, dynamic> data, String id) {
+          final post = PostModel.fromMap(data);
+          final flatComments =
+              (data['comments'] as List? ?? [])
+                  .map((e) => CommentModel.fromMap(e))
+                  .toList();
+          final tree = CommentTreeBuilder.build(flatComments);
+          return post.copyWith(comments: tree);
+        },
         primaryKey: PostColumns.id,
       );
     } catch (e) {
@@ -239,22 +254,66 @@ class HomeServices {
     }
   }
 
-  Future<void> addComment({
+  Future<String> addComment({
     required String postId,
     required String authorId,
     required String commentText,
+    String? parentCommentId,
   }) async {
     try {
-      await supabaseServices.insertRow(
-        table: SupabaseConstants.comments,
-        values: {
-          CommentColumns.postId: postId,
-          CommentColumns.authorId: authorId,
-          CommentColumns.text: commentText,
-          CommentColumns.createdAt: DateTime.now().toIso8601String(),
-        },
-      );
+      final response =
+          await _supabase
+              .from(SupabaseConstants.comments)
+              .insert({
+                CommentColumns.postId: postId,
+                CommentColumns.authorId: authorId,
+                CommentColumns.text: commentText,
+                if (parentCommentId != null)
+                  CommentColumns.parentCommentId: parentCommentId,
+              })
+              .select(CommentColumns.id)
+              .single();
+
+      return response[CommentColumns.id] as String;
     } catch (e) {
+      debugPrint("DB Insert Error: $e");
+      rethrow;
+    }
+  }
+
+  Future<void> toggleCommentReaction({
+    required String commentId,
+    required String userId,
+    required String emoji,
+  }) async {
+    try {
+      final existing =
+          await _supabase.from('comment_reactions').select().match({
+            'comment_id': commentId,
+            'user_id': userId,
+          }).maybeSingle();
+
+      if (existing != null) {
+        if (existing['emoji'] == emoji) {
+          await _supabase.from('comment_reactions').delete().match({
+            'comment_id': commentId,
+            'user_id': userId,
+          });
+        } else {
+          await _supabase
+              .from('comment_reactions')
+              .update({'emoji': emoji})
+              .match({'comment_id': commentId, 'user_id': userId});
+        }
+      } else {
+        await _supabase.from('comment_reactions').insert({
+          'comment_id': commentId,
+          'user_id': userId,
+          'emoji': emoji,
+        });
+      }
+    } catch (e) {
+      debugPrint("Error toggling comment reaction: $e");
       rethrow;
     }
   }

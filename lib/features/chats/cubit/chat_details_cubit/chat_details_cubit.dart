@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../../core/services/fcm_services.dart';
 import '../../models/message_model.dart';
 import '../../services/chat_services.dart';
 import '../../widgets/chat_bubble.dart';
@@ -13,6 +14,8 @@ part 'chat_details_state.dart';
 class ChatDetailsCubit extends Cubit<ChatDetailsState> {
   final ChatServices _chatServices;
   final String receiverName;
+  final String? senderImageUrl;
+
   final ValueNotifier<MessageModel?> replyToMessage =
       ValueNotifier<MessageModel?>(null);
 
@@ -25,15 +28,23 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState> {
   List<MessageModel> cachedMessages = [];
 
   final currentUserId = Supabase.instance.client.auth.currentUser!.id;
+
+  final String currentUserName;
+
   final Map<String, GlobalKey<ChatBubbleState>> bubbleKeys = {};
 
-  ChatDetailsCubit(this._chatServices, this.receiverName)
-    : super(ChatDetailsInitial());
+  ChatDetailsCubit(
+    this._chatServices,
+    this.receiverName, {
+    this.senderImageUrl,
+    this.currentUserName = 'Someone',
+  }) : super(ChatDetailsInitial());
 
   bool _isUserAtBottom = true;
 
   void setUserAtBottom(bool isAtBottom) {
     _isUserAtBottom = isAtBottom;
+
     if (isAtBottom && _pendingReceiverId != null) {
       markAsRead(senderId: _pendingReceiverId!);
     }
@@ -195,6 +206,13 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState> {
         replyToSenderId: replyTo?.senderId,
       );
       _cancelTokens.remove(tempId);
+
+      _sendPushNotification(
+        receiverId: receiverId,
+        messageText: caption ?? messageText,
+        messageType: messageType,
+        attachmentUrl: imageUrl ?? videoUrl,
+      );
     } catch (e) {
       _cancelTokens.remove(tempId);
 
@@ -211,6 +229,53 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState> {
       emit(MessagesSuccessLoaded(messages: currentMessages));
 
       uploadProgressMap.remove(tempId);
+    }
+  }
+
+  // ignore: unused_field
+  String _resolvedCurrentUserName = '';
+  // ignore: unused_field
+  String _resolvedSenderImageUrl = '';
+
+  Future<void> loadCurrentUserInfo() async {
+    try {
+      final info = await _chatServices.getCurrentUserInfo(currentUserId);
+      _resolvedCurrentUserName = info['name'] ?? currentUserName;
+      _resolvedSenderImageUrl = info['imageUrl'] ?? senderImageUrl ?? '';
+    } catch (_) {}
+  }
+
+  Future<void> _sendPushNotification({
+    required String receiverId,
+    required String messageText,
+    required String messageType,
+    String? attachmentUrl,
+  }) async {
+    try {
+      final receiverInfo = await _chatServices.getReceiverPushInfo(receiverId);
+
+      if (receiverInfo == null) {
+        debugPrint('ℹ️  No FCM token for receiver — skipping notification');
+        return;
+      }
+
+      await FcmService.instance.sendNotification(
+        receiverFcmToken: receiverInfo.fcmToken,
+        senderId: currentUserId,
+        senderName:
+            _resolvedCurrentUserName.isNotEmpty
+                ? _resolvedCurrentUserName
+                : currentUserName,
+        senderImageUrl:
+            _resolvedSenderImageUrl.isNotEmpty
+                ? _resolvedSenderImageUrl
+                : (senderImageUrl ?? ''),
+        messageBody: messageText,
+        messageType: messageType,
+        attachmentUrl: attachmentUrl,
+      );
+    } catch (e) {
+      debugPrint('⚠️  _sendPushNotification silent error: $e');
     }
   }
 
@@ -317,13 +382,24 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState> {
     }
   }
 
-  void watchReceiverLastSeen(String receiverId) {
+  void watchReceiverLastSeen(String receiverId, {DateTime? initialLastSeen}) {
     _lastSeenSubscription?.cancel();
-    _lastSeenSubscription = _chatServices
-        .getLastSeenStream(receiverId)
-        .listen((lastSeen) => emit(LastSeenUpdated(lastSeen)));
+    _lastSeenPollingTimer?.cancel();
 
-    _lastSeenPollingTimer = Timer.periodic(const Duration(seconds: 10), (
+    // _chatServices.getUserLastSeen(receiverId).then((lastSeen) {
+    //   if (!isClosed) emit(LastSeenUpdated(lastSeen));
+    // });
+    if (initialLastSeen != null) {
+      emit(LastSeenUpdated(initialLastSeen));
+    }
+
+    _lastSeenSubscription = _chatServices.getLastSeenStream(receiverId).listen((
+      lastSeen,
+    ) {
+      if (!isClosed) emit(LastSeenUpdated(lastSeen));
+    });
+
+    _lastSeenPollingTimer = Timer.periodic(const Duration(seconds: 45), (
       _,
     ) async {
       final lastSeen = await _chatServices.getUserLastSeen(receiverId);

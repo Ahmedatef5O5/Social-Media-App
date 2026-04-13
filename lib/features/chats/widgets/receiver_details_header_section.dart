@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
+import 'package:social_media_app/core/router/app_routes.dart';
 import 'package:social_media_app/features/chats/widgets/custom_icon_btn_widget.dart';
 import '../../../core/constants/app_images.dart';
 import '../../../core/helpers/formatted_date.dart';
@@ -52,45 +53,56 @@ class ReceiverDetailsHeaderSection extends StatelessWidget {
                     final isOnline = lastSeenText == 'Online';
                     return Stack(
                       children: [
-                        Hero(
-                          tag: receiverUser.id,
-                          child: Container(
-                            height: 42,
-                            width: 42,
-                            decoration: BoxDecoration(
-                              color: Theme.of(
-                                context,
-                              ).primaryColor.withValues(alpha: 0.2),
-                              shape: BoxShape.circle,
-                              border:
-                                  isOnline
-                                      ? Border.all(
-                                        color: Colors.green,
-                                        width: 2.5,
-                                      )
-                                      : null,
-                            ),
-                            child: ClipOval(
-                              child:
-                                  (receiverUser.imageUrl != null &&
-                                          receiverUser.imageUrl!.isNotEmpty)
-                                      ? CachedNetworkImage(
-                                        imageUrl: receiverUser.imageUrl!,
-                                        fit: BoxFit.cover,
-                                        placeholder:
-                                            (context, url) =>
-                                                const CustomLoadingIndicator(),
-                                        errorWidget:
-                                            (context, url, error) =>
-                                                Image.asset(
-                                                  AppImages.defaultUserImg,
-                                                  fit: BoxFit.cover,
-                                                ),
-                                      )
-                                      : Image.asset(
-                                        AppImages.defaultUserImg,
-                                        fit: BoxFit.cover,
-                                      ),
+                        InkWell(
+                          onTap: () {
+                            Navigator.of(
+                              context,
+                              rootNavigator: true,
+                            ).pushNamed(
+                              AppRoutes.receiverProfileViewRoute,
+                              arguments: receiverUser,
+                            );
+                          },
+                          child: Hero(
+                            tag: receiverUser.id,
+                            child: Container(
+                              height: 42,
+                              width: 42,
+                              decoration: BoxDecoration(
+                                color: Theme.of(
+                                  context,
+                                ).primaryColor.withValues(alpha: 0.2),
+                                shape: BoxShape.circle,
+                                border:
+                                    isOnline
+                                        ? Border.all(
+                                          color: Colors.green,
+                                          width: 2.5,
+                                        )
+                                        : null,
+                              ),
+                              child: ClipOval(
+                                child:
+                                    (receiverUser.imageUrl != null &&
+                                            receiverUser.imageUrl!.isNotEmpty)
+                                        ? CachedNetworkImage(
+                                          imageUrl: receiverUser.imageUrl!,
+                                          fit: BoxFit.cover,
+                                          placeholder:
+                                              (context, url) =>
+                                                  const CustomLoadingIndicator(),
+                                          errorWidget:
+                                              (context, url, error) =>
+                                                  Image.asset(
+                                                    AppImages.defaultUserImg,
+                                                    fit: BoxFit.cover,
+                                                  ),
+                                        )
+                                        : Image.asset(
+                                          AppImages.defaultUserImg,
+                                          fit: BoxFit.cover,
+                                        ),
+                              ),
                             ),
                           ),
                         ),
@@ -121,30 +133,38 @@ class ReceiverDetailsHeaderSection extends StatelessWidget {
           const Gap(12),
 
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  receiverUser.name,
-                  style: Theme.of(context).textTheme.titleSmall!.copyWith(
-                    color: Theme.of(context).primaryColor,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    overflow: TextOverflow.ellipsis,
+            child: InkWell(
+              onTap: () {
+                Navigator.of(context, rootNavigator: true).pushNamed(
+                  AppRoutes.receiverProfileViewRoute,
+                  arguments: receiverUser,
+                );
+              },
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    receiverUser.name,
+                    style: Theme.of(context).textTheme.titleSmall!.copyWith(
+                      color: Theme.of(context).primaryColor,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
-                ),
-                BlocBuilder<ChatDetailsCubit, ChatDetailsState>(
-                  buildWhen:
-                      (prev, curr) =>
-                          curr is LastSeenUpdated ||
-                          curr is ReceiverTypingState,
-                  builder: (context, state) {
-                    if (statusBuilder != null) return statusBuilder!(state);
-                    return const SizedBox.shrink();
-                  },
-                ),
-              ],
+                  BlocBuilder<ChatDetailsCubit, ChatDetailsState>(
+                    buildWhen:
+                        (prev, curr) =>
+                            curr is LastSeenUpdated ||
+                            curr is ReceiverTypingState,
+                    builder: (context, state) {
+                      if (statusBuilder != null) return statusBuilder!(state);
+                      return const SizedBox.shrink();
+                    },
+                  ),
+                ],
+              ),
             ),
           ),
 

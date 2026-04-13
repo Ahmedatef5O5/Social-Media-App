@@ -5,8 +5,9 @@ import 'package:gap/gap.dart';
 import 'package:social_media_app/core/widgets/custom_loading_indicator.dart';
 import 'package:social_media_app/features/home/cubit/home_cubit.dart';
 import 'package:social_media_app/features/home/models/post_model.dart';
-import 'package:social_media_app/features/home/widgets/comment_section.dart';
+import 'package:social_media_app/features/home/widgets/comments_section.dart';
 import '../../../core/constants/app_images.dart';
+import '../../../core/helpers/comment_helper.dart';
 import '../../../core/themes/app_colors.dart';
 import 'send_comment_section.dart';
 
@@ -26,6 +27,10 @@ class _CommentsSheetSectionState extends State<CommentsSheetSection> {
 
   final ScrollController _scrollController = ScrollController();
 
+  /// When set, the send-field shows "@name" prefix and sends a reply
+  String? _replyingToCommentId;
+  String? _replyingToAuthorName;
+
   void _scrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) {
@@ -35,6 +40,26 @@ class _CommentsSheetSectionState extends State<CommentsSheetSection> {
           curve: Curves.easeInOut,
         );
       }
+    });
+  }
+
+  bool _isNearBottom([double threshold = 120]) {
+    if (!_scrollController.hasClients) return false;
+    final pos = _scrollController.position;
+    return pos.maxScrollExtent - pos.pixels < threshold;
+  }
+
+  void _startReply(String commentId, String authorName) {
+    setState(() {
+      _replyingToCommentId = commentId;
+      _replyingToAuthorName = authorName;
+    });
+  }
+
+  void _cancelReply() {
+    setState(() {
+      _replyingToCommentId = null;
+      _replyingToAuthorName = null;
     });
   }
 
@@ -54,6 +79,7 @@ class _CommentsSheetSectionState extends State<CommentsSheetSection> {
       } else if (state is AddingCommentLoading) {
         postsList = state.oldPosts;
       }
+
       if (postsList != null) {
         try {
           return postsList.firstWhere((p) => p.id == widget.postId);
@@ -70,7 +96,10 @@ class _CommentsSheetSectionState extends State<CommentsSheetSection> {
     return BlocListener<HomeCubit, HomeState>(
       listener: (context, state) {
         if (state is PostsLoaded || state is AddCommentSuccess) {
-          _scrollToBottom();
+          if (_isNearBottom()) {
+            _scrollToBottom();
+          }
+          if (state is AddCommentSuccess) _cancelReply();
         }
       },
       child: GestureDetector(
@@ -94,7 +123,6 @@ class _CommentsSheetSectionState extends State<CommentsSheetSection> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Handle/Divider
                 const Divider(thickness: 4, indent: 150, endIndent: 150),
                 const SizedBox(height: 10),
 
@@ -132,8 +160,7 @@ class _CommentsSheetSectionState extends State<CommentsSheetSection> {
                                     key: ValueKey('${post.id}_liker_$index'),
                                     left: index * 18.0,
                                     child: Container(
-                                      width:
-                                          26, 
+                                      width: 26,
                                       height: 26,
                                       decoration: BoxDecoration(
                                         shape: BoxShape.circle,
@@ -173,8 +200,6 @@ class _CommentsSheetSectionState extends State<CommentsSheetSection> {
                                       ),
                                     ),
                                   );
-
-                                
                                 },
                               ),
                             ),
@@ -185,7 +210,7 @@ class _CommentsSheetSectionState extends State<CommentsSheetSection> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Text(
-                              'Comments ${post.comments?.length ?? 0}',
+                              'Comments ${countAllComments(post.comments)}',
                               style: Theme.of(context).textTheme.titleMedium!
                                   .copyWith(color: AppColors.grey7),
                             ),
@@ -228,19 +253,95 @@ class _CommentsSheetSectionState extends State<CommentsSheetSection> {
                           ],
                         ),
                         const SizedBox(height: 16),
-                        CommentsSection(post: post),
+                        CommentsSection(post: post, onReplyTap: _startReply),
                       ],
                     ),
                   ),
                 ),
 
                 const Divider(),
-                SendCommentSection(post: post),
+                if (_replyingToCommentId != null)
+                  _ReplyingToBanner(
+                    authorName: _replyingToAuthorName ?? '',
+                    onCancel: _cancelReply,
+                  ),
+
+                Row(
+                  children: [
+                    Expanded(
+                      child: SendCommentSection(
+                        post: post,
+                        replyingToCommentId: _replyingToCommentId,
+                        replyingToAuthorName: _replyingToAuthorName,
+                        onReplySent: () {
+                          setState(() {
+                            _replyingToCommentId = null;
+                            _replyingToAuthorName = null;
+                          });
+                        },
+                      ),
+                    ),
+                  ],
+                ),
                 const SizedBox(height: 8),
               ],
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _ReplyingToBanner extends StatelessWidget {
+  final String authorName;
+  final VoidCallback onCancel;
+
+  const _ReplyingToBanner({required this.authorName, required this.onCancel});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      margin: const EdgeInsets.only(bottom: 4),
+      decoration: BoxDecoration(
+        color: Theme.of(context).primaryColor.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.reply_rounded,
+            size: 16,
+            color: Theme.of(context).primaryColor,
+          ),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text.rich(
+              TextSpan(
+                text: 'Replying to ',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: AppColors.grey7,
+                  fontSize: 12,
+                ),
+                children: [
+                  TextSpan(
+                    text: '@$authorName',
+                    style: TextStyle(
+                      color: Theme.of(context).primaryColor,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          GestureDetector(
+            onTap: onCancel,
+            child: Icon(Icons.close_rounded, size: 18, color: AppColors.grey6),
+          ),
+        ],
       ),
     );
   }

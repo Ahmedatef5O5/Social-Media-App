@@ -34,7 +34,7 @@ class ChatsCubit extends Cubit<ChatsState> {
       _,
     ) {
       _refreshDebounce?.cancel();
-      _refreshDebounce = Timer(const Duration(milliseconds: 500), () {
+      _refreshDebounce = Timer(const Duration(milliseconds: 100), () {
         getChats(isRefresh: true);
       });
     }, onError: (error) => debugPrint('Stream Error: $error'));

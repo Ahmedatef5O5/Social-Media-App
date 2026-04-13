@@ -86,7 +86,8 @@ class AppThemeModel {
     AppThemeModel(
       type: AppThemeType.lavender,
       name: 'Lavender',
-      emoji: '🪻',
+      emoji: '🔮',
+      // emoji: '💜',
       bgBase: Color(0xFFF8F7FF),
       bgCircle: Color(0xFFEBE9FF),
       primaryColor: Color(0xFF7E60FF),

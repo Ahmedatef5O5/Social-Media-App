@@ -21,6 +21,7 @@ abstract class UserColumns {
   static const String lastSeen = 'last_seen';
   static const String isTypingTo = 'is_typing_to';
   static const String theme = 'theme';
+  static const String fcmToken = 'fcm_token';
 }
 
 // subClass for stories column table
@@ -63,8 +64,7 @@ abstract class CommentColumns {
   static const String createdAt = 'created_at';
   static const String imageUrl = 'image_url';
   static const String videoUrl = 'video_url';
-  static const String likes = 'likes';
-  static const String replays = 'replays';
+  static const String parentCommentId = 'parent_comment_id';
 }
 
 // subClass for Messages column table

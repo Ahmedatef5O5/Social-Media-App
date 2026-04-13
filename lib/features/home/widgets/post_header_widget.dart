@@ -3,6 +3,7 @@ import 'package:social_media_app/features/home/widgets/post_actions_menu.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/helpers/formatted_date.dart';
 import '../../../core/router/app_routes.dart';
+import '../../profile/widgets/user_preview_dialog.dart';
 import '../cubit/home_cubit.dart';
 import '../models/post_model.dart';
 import 'author_image_widget.dart';
@@ -34,7 +35,28 @@ class PostHeaderWidget extends StatelessWidget {
 
     return ListTile(
       contentPadding: EdgeInsets.zero,
-      leading: AuthorImageWidget(post: post),
+      leading: AuthorImageWidget(
+        post: post,
+        onTap:
+            shouldDisableTap
+                ? null
+                : () {
+                  if (isPostByMe) {
+                    if (homeCubit.navController != null) {
+                      homeCubit.navController!.jumpToTab(3);
+                    }
+                  } else {
+                    showDialog(
+                      context: context,
+                      builder:
+                          (context) => UserPreviewDialog(
+                            user: post.toChatUserModel(),
+                            showContactOptions: false,
+                          ),
+                    );
+                  }
+                },
+      ),
       onTap:
           shouldDisableTap
               ? null

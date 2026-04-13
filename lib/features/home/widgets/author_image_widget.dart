@@ -2,26 +2,17 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import '../../../core/constants/app_images.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
-import '../../profile/widgets/user_preview_dialog.dart';
 import '../models/post_model.dart';
 
 class AuthorImageWidget extends StatelessWidget {
-  const AuthorImageWidget({super.key, required this.post});
+  const AuthorImageWidget({super.key, required this.post, required this.onTap});
   final PostModel post;
+  final void Function()? onTap;
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () {
-        showDialog(
-          context: context,
-          builder:
-              (context) => UserPreviewDialog(
-                user: post.toChatUserModel(),
-                showContactOptions: false,
-              ),
-        );
-      },
+      onTap: onTap,
       child: Container(
         height: 44,
         width: 44,

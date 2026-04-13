@@ -1,4 +1,3 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:device_preview/device_preview.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -21,51 +20,67 @@ import 'features/auth/cubit/auth_cubit/auth_cubit.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  try {
-    await CachedNetworkImage.evictFromCache('');
-  } catch (_) {}
+  await _initializeApp();
 
+  runApp(_buildApp());
+}
+
+Future<void> _initializeApp() async {
+  await _lockOrientation();
+  await _loadEnv();
+  await _initFirebase();
+  await _initSupabase();
+  await _initNotifications();
+  _setupAuthListener();
+}
+
+Future<void> _lockOrientation() async {
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
+}
 
+Future<void> _loadEnv() async {
   await dotenv.load(fileName: '.env');
+}
 
+Future<void> _initFirebase() async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
-  FirebaseMessaging messaging = FirebaseMessaging.instance;
-  await messaging.requestPermission(
+  await FirebaseMessaging.instance.requestPermission(
     alert: true,
-    announcement: false,
     badge: true,
     sound: true,
   );
+}
 
+Future<void> _initSupabase() async {
   await Supabase.initialize(
     url: AppSecrets.supabaseUrl,
     anonKey: AppSecrets.supabaseAnonKey,
   );
+}
 
+Future<void> _initNotifications() async {
   await NotificationService.instance.initialize();
+}
 
+void _setupAuthListener() {
   Supabase.instance.client.auth.onAuthStateChange.listen((data) {
     final session = data.session;
     if (session != null) {
-      debugPrint('✅ Logged in successfully: ${session.user.email}');
+      debugPrint('✅ Logged in: ${session.user.email}');
     }
   });
+}
 
-  runApp(
-    BlocProvider(
-      create: (context) => AuthCubit(SupabaseAuthServices())..checkAuthStatus(),
-      child: DevicePreview(
-        enabled: !kReleaseMode,
-        builder: (BuildContext context) => MyApp(),
-      ),
-    ),
+Widget _buildApp() {
+  return BlocProvider(
+    create: (_) => AuthCubit(SupabaseAuthServices())..checkAuthStatus(),
+    child: DevicePreview(enabled: !kReleaseMode, builder: (_) => const MyApp()),
   );
 }
 
@@ -79,9 +94,11 @@ class MyApp extends StatelessWidget {
       create: (_) {
         final cubit = ThemeCubit();
         final user = Supabase.instance.client.auth.currentUser;
+
         if (user != null) {
           cubit.loaderUserTheme(user.id);
         }
+
         return cubit;
       },
       child: BlocBuilder<ThemeCubit, ThemeState>(
@@ -94,10 +111,8 @@ class MyApp extends StatelessWidget {
             theme: state.theme.themeData,
             initialRoute: AppRoutes.splashViewRoute,
             onGenerateRoute: AppRouter.generateRoute,
-            onUnknownRoute: (settings) => AppRouter.generateRoute(settings),
-
+            onUnknownRoute: AppRouter.generateRoute,
             navigatorKey: navigatorKey,
-
             navigatorObservers: [_RouteObserver(), routeObserver],
           );
         },

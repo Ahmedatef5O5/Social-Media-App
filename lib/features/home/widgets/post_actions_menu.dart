@@ -101,7 +101,9 @@ class PostActionsMenu extends StatelessWidget {
           SnackBar(
             content: Text(
               'Post Reported successfully',
-              style: Theme.of(context).textTheme.titleSmall!.copyWith(),
+              style: Theme.of(
+                context,
+              ).textTheme.titleSmall!.copyWith(color: Colors.white),
             ),
             backgroundColor: Colors.green,
             behavior: SnackBarBehavior.floating,

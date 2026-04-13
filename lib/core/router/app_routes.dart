@@ -6,6 +6,7 @@ class AppRoutes {
   static const String fullScreenImageViewRoute = '/full-screen-image-view';
   static const String chatsViewRoute = '/chats-view';
   static const String chatDetailsViewRoute = '/chatDetailsView';
+  static const String receiverProfileViewRoute = '/ReceiverProfileView';
 
   //
   static const String groupChatRoute = '/group-chat';

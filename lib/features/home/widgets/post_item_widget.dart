@@ -80,12 +80,7 @@ class PostItemWidget extends StatelessWidget {
                 ),
                 PostTxtContentWidget(post: currentPost),
                 PostMediaWidget(post: currentPost),
-                PostInteractionsRow(
-                  currentPost: currentPost,
-                  currUserId: currentUserId,
-                  homeCubit: homeCubit,
-                  post: currentPost,
-                ),
+                PostInteractionsRow(postId: currentPost.id),
               ],
             ),
           ),

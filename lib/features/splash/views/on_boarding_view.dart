@@ -34,20 +34,24 @@ class _OnBoardingViewState extends State<OnBoardingView> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: BackgroundThemeWidget(
+        top: false,
         showCircles: true,
         child: Column(
           children: [
-            Align(
-              alignment: Alignment.topRight,
-              child: TextButton(
-                onPressed: _finishOnboarding,
-                child: Text(
-                  'Skip',
-                  style: Theme.of(context).textTheme.titleMedium!.copyWith(
-                    color: AppColors.grey,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 15,
-                    letterSpacing: 1.3,
+            Padding(
+              padding: const EdgeInsets.only(right: 8.0, top: 8.0),
+              child: Align(
+                alignment: Alignment.topRight,
+                child: TextButton(
+                  onPressed: _finishOnboarding,
+                  child: Text(
+                    'Skip',
+                    style: Theme.of(context).textTheme.titleMedium!.copyWith(
+                      color: AppColors.grey,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
+                      letterSpacing: 1.3,
+                    ),
                   ),
                 ),
               ),

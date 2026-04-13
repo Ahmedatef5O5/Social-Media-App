@@ -9,6 +9,8 @@ import 'package:social_media_app/features/chats/models/chat_user_model.dart';
 import 'package:social_media_app/features/chats/models/message_model.dart';
 import 'package:social_media_app/features/chats/widgets/messages_list_view.dart';
 import 'package:social_media_app/features/chats/widgets/receiver_details_header_section.dart';
+import '../../../core/services/active_screen_tracker.dart';
+import '../../../core/services/notification_services.dart';
 import '../../../core/themes/app_colors.dart';
 import '../widgets/text_input_area_section.dart';
 import '../widgets/typing_indicator_widget.dart';
@@ -40,11 +42,20 @@ class _ChatDetailsViewState extends State<ChatDetailsView> {
     super.initState();
     _messageController = TextEditingController();
 
+    ActiveScreenTracker.setActiveChatReceiver(widget.receiverUser.id);
+
+    NotificationService.instance.cancelNotificationsForSender(
+      widget.receiverUser.id,
+    );
+
     _itemPositionsListener.itemPositions.addListener(_scrollListener);
 
     final cubit = context.read<ChatDetailsCubit>();
 
-    cubit.watchReceiverLastSeen(widget.receiverUser.id);
+    cubit.watchReceiverLastSeen(
+      widget.receiverUser.id,
+      initialLastSeen: widget.receiverUser.lastSeen,
+    );
     cubit.watchReceiverTyping(widget.receiverUser.id);
     cubit.getMessagesStream(receiverId: widget.receiverUser.id);
     cubit.updateLastSeen();
@@ -116,6 +127,7 @@ class _ChatDetailsViewState extends State<ChatDetailsView> {
 
   @override
   void dispose() {
+    ActiveScreenTracker.setActiveChatReceiver(null);
     _lastSeenTimer?.cancel();
     _itemPositionsListener.itemPositions.removeListener(_scrollListener);
     _messageController.dispose();

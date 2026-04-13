@@ -42,7 +42,10 @@ class PostMediaWidget extends StatelessWidget {
                               child: const CustomLoadingIndicator(),
                             ),
                         errorWidget:
-                            (context, url, error) => const Icon(Icons.error),
+                            (context, url, error) => SizedBox(
+                              height: MediaQuery.sizeOf(context).height * 0.3,
+                              child: const Icon(Icons.error),
+                            ),
                         filterQuality: FilterQuality.high,
 
                         memCacheWidth: 800,
@@ -53,7 +56,7 @@ class PostMediaWidget extends StatelessWidget {
         if (post.videoUrl != null && post.videoUrl!.isNotEmpty)
           PostVideoPlayer(videoUrl: post.videoUrl!),
         if (post.fileUrl != null && post.fileUrl!.isNotEmpty)
-          FileAttachmentPreview(url: post.fileUrl!, onTap: () {}),
+          FileAttachmentPreview(url: post.fileUrl!),
       ],
     );
   }

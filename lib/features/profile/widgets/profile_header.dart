@@ -54,11 +54,7 @@ class ProfileHeader extends StatelessWidget {
                         context,
                         label: 'Add friend\t\t\t\t\t\t\t',
                         txtColor: Theme.of(context).scaffoldBackgroundColor,
-                        // iconWidget: Icon(
-                        //   Icons.person_add_alt_1_rounded,
-                        //   size: 21,
-                        //   color: Theme.of(context).scaffoldBackgroundColor,
-                        // ),
+
                         iconWidget: Image.asset(
                           AppImages.addUserIcon,
                           width: 18,
@@ -114,7 +110,7 @@ class ProfileHeader extends StatelessWidget {
                 alignment: Alignment.topLeft,
                 child: SafeArea(
                   child: Padding(
-                    padding: const EdgeInsets.only(top: 2),
+                    padding: const EdgeInsets.only(top: 12.0),
                     child: GestureDetector(
                       behavior: HitTestBehavior.opaque,
                       onTap: () => Navigator.of(context).pop(),

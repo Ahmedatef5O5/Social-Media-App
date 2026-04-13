@@ -9,6 +9,7 @@ import 'package:social_media_app/core/services/file_picker_services.dart';
 import 'package:social_media_app/features/auth/data/models/user_data.dart';
 import 'package:social_media_app/features/home/models/comment_model.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:uuid/uuid.dart';
 import '../models/post_model.dart';
 import '../models/post_request_body.dart';
 import '../models/story_model.dart';
@@ -485,46 +486,267 @@ class HomeCubit extends Cubit<HomeState> {
     }).toList();
   }
 
-  Future<void> addComment(String postId, String commentText) async {
+  Future<void> addComment({
+    required String postId,
+    required String commentText,
+    String? parentCommentId,
+  }) async {
     if (state is! PostsLoaded) return;
     final oldState = state as PostsLoaded;
-    emit(AddingCommentLoading(oldState.posts));
+    final oldPosts = oldState.posts;
 
     try {
       final userId = Supabase.instance.client.auth.currentUser!.id;
       final userName = currentUserData?.name ?? 'User';
-      final oldPosts = oldState.posts;
+      final tempId = const Uuid().v4();
 
       final newComment = CommentModel(
-        id: DateTime.now().toString(),
+        id: tempId,
         createdAt: DateTime.now().toIso8601String(),
         authorId: userId,
         authorName: userName,
         text: commentText,
         postId: postId,
+        parentCommentId: parentCommentId,
       );
 
-      final List<PostModel> updatedPosts =
-          oldPosts.map((p) {
-            if (p.id == postId) {
-              final updatedComments = List<CommentModel>.from(p.comments ?? []);
-              updatedComments.add(newComment);
-              return p.copyWith(comments: updatedComments);
-            }
-            return p;
-          }).toList();
+      _updateCommentState(postId, parentCommentId, newComment, isAdding: true);
 
-      emit(PostsLoaded(updatedPosts, DateTime.now()));
-      await homeServices.addComment(
+      final realId = await homeServices.addComment(
         postId: postId,
         authorId: userId,
         commentText: commentText,
+        parentCommentId: parentCommentId,
       );
+
+      _replaceTempIdWithRealId(postId, tempId, realId);
     } catch (e) {
       debugPrint('Error adding comment: $e');
       emit(AddCommentError(e.toString()));
-      emit(oldState);
+      emit(PostsLoaded(oldPosts, DateTime.now()));
     }
+  }
+
+  void _replaceTempIdWithRealId(String postId, String tempId, String realId) {
+    if (state is! PostsLoaded) return;
+    final currentPosts = (state as PostsLoaded).posts;
+
+    final updatedPosts =
+        currentPosts.map((p) {
+          if (p.id != postId) return p;
+          return p.copyWith(
+            comments: _replaceIdInList(p.comments ?? [], tempId, realId),
+          );
+        }).toList();
+
+    emit(PostsLoaded(updatedPosts, DateTime.now()));
+  }
+
+  List<CommentModel> _replaceIdInList(
+    List<CommentModel> comments,
+    String tempId,
+    String realId,
+  ) {
+    return comments.map((c) {
+      if (c.id == tempId) return c.copyWith(id: realId);
+      if (c.replies.isNotEmpty) {
+        return c.copyWith(replies: _replaceIdInList(c.replies, tempId, realId));
+      }
+      return c;
+    }).toList();
+  }
+
+  void _updateCommentState(
+    String postId,
+    String? parentCommentId,
+    CommentModel newComment, {
+    required bool isAdding,
+  }) {
+    if (state is! PostsLoaded) return;
+    final oldState = state as PostsLoaded;
+
+    final updatedPosts =
+        oldState.posts.map((p) {
+          if (p.id != postId) return p;
+
+          final List<CommentModel> currentComments = List<CommentModel>.from(
+            p.comments ?? [],
+          );
+          if (parentCommentId != null) {
+            return p.copyWith(
+              comments: _insertReplyRecursive(
+                currentComments,
+                parentCommentId,
+                newComment,
+              ),
+            );
+          } else {
+            return p.copyWith(comments: [...currentComments, newComment]);
+          }
+        }).toList();
+
+    emit(PostsLoaded(updatedPosts, DateTime.now()));
+  }
+
+  /// Recursively walks the comment tree to find [parentId] and appends [reply].
+  List<CommentModel> _insertReplyRecursive(
+    List<CommentModel> comments,
+    String parentId,
+    CommentModel reply,
+  ) {
+    return comments.map((c) {
+      if (c.id == parentId) {
+        return c.copyWith(replies: [...c.replies, reply]);
+      }
+      if (c.replies.isNotEmpty) {
+        return c.copyWith(
+          replies: _insertReplyRecursive(c.replies, parentId, reply),
+        );
+      }
+      return c;
+    }).toList();
+  }
+
+  final Set<String> collapsedComments = {};
+
+  void toggleReplies(String commentId) {
+    final updated = Set<String>.from(collapsedComments);
+
+    if (updated.contains(commentId)) {
+      updated.remove(commentId); 
+    } else {
+      updated.add(commentId); 
+    }
+
+    collapsedComments
+      ..clear()
+      ..addAll(updated);
+
+    if (state is PostsLoaded) {
+      emit(PostsLoaded((state as PostsLoaded).posts, DateTime.now()));
+    }
+  }
+  
+void resetCollapsedComments() {
+  collapsedComments.clear();
+
+  if (state is PostsLoaded) {
+    emit(PostsLoaded((state as PostsLoaded).posts, DateTime.now()));
+  }
+}
+
+  Future<void> toggleCommentReaction({
+    required String commentId,
+    required String emoji,
+    required String postId,
+  }) async {
+    if (state is! PostsLoaded) return;
+
+    final userId = Supabase.instance.client.auth.currentUser?.id;
+    if (userId == null) return;
+
+    final oldState = state as PostsLoaded;
+
+    final updatedPosts =
+        oldState.posts.map((p) {
+          if (p.id != postId) return p;
+          return p.copyWith(
+            comments: _updateReactionInTree(
+              p.comments ?? [],
+              commentId,
+              emoji,
+              userId,
+            ),
+          );
+        }).toList();
+    emit(PostsLoaded(updatedPosts, DateTime.now()));
+
+    try {
+      await homeServices.toggleCommentReaction(
+        commentId: commentId,
+        userId: userId,
+        emoji: emoji,
+      );
+    } catch (e) {
+      // Rollback to old state on error
+      debugPrint('Cubit Reaction Error: $e — rolling back');
+      if (!isClosed) emit(PostsLoaded(oldState.posts, DateTime.now()));
+    }
+  }
+
+  List<CommentModel> _updateReactionInTree(
+    List<CommentModel> comments,
+    String commentId,
+    String emoji,
+    String userId,
+  ) {
+    return comments.map((c) {
+      if (c.id == commentId) {
+        return c.copyWith(reactions: _toggleReaction(c.reactions, emoji));
+      }
+      if (c.replies.isNotEmpty) {
+        return c.copyWith(
+          replies: _updateReactionInTree(c.replies, commentId, emoji, userId),
+        );
+      }
+      return c;
+    }).toList();
+  }
+
+  List<CommentReaction> _toggleReaction(
+    List<CommentReaction> reactions,
+    String emoji,
+  ) {
+    final updated = List<CommentReaction>.from(reactions);
+    final myIdx = updated.indexWhere((r) => r.reactedByMe);
+
+    if (myIdx >= 0) {
+      final old = updated[myIdx];
+      if (old.emoji == emoji) {
+        if (old.count <= 1) {
+          updated.removeAt(myIdx);
+        } else {
+          updated[myIdx] = old.copyWith(
+            count: old.count - 1,
+            reactedByMe: false,
+          );
+        }
+      } else {
+        if (old.count <= 1) {
+          updated.removeAt(myIdx);
+        } else {
+          updated[myIdx] = old.copyWith(
+            count: old.count - 1,
+            reactedByMe: false,
+          );
+        }
+        // Add/increment new
+        final newIdx = updated.indexWhere((r) => r.emoji == emoji);
+        if (newIdx >= 0) {
+          updated[newIdx] = updated[newIdx].copyWith(
+            count: updated[newIdx].count + 1,
+            reactedByMe: true,
+          );
+        } else {
+          updated.add(
+            CommentReaction(emoji: emoji, count: 1, reactedByMe: true),
+          );
+        }
+      }
+    } else {
+      // No prior reaction — add new
+      final newIdx = updated.indexWhere((r) => r.emoji == emoji);
+      if (newIdx >= 0) {
+        updated[newIdx] = updated[newIdx].copyWith(
+          count: updated[newIdx].count + 1,
+          reactedByMe: true,
+        );
+      } else {
+        updated.add(CommentReaction(emoji: emoji, count: 1, reactedByMe: true));
+      }
+    }
+
+    return updated;
   }
 
   void _emitPreviousState() {

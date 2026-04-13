@@ -3,130 +3,199 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 import 'package:like_button/like_button.dart';
 import '../../../core/constants/app_images.dart';
+import '../../../core/helpers/comment_helper.dart';
 import '../../../core/themes/app_colors.dart';
 import '../cubit/home_cubit.dart';
 import '../models/post_model.dart';
 import 'comments_sheet_section.dart';
 
 class PostInteractionsRow extends StatelessWidget {
-  const PostInteractionsRow({
-    super.key,
-    required this.currentPost,
-    required this.currUserId,
-    required this.homeCubit,
-    required this.post,
-  });
+  const PostInteractionsRow({super.key, required this.postId});
 
-  final PostModel currentPost;
-  final String? currUserId;
-  final HomeCubit homeCubit;
-  final PostModel post;
+  final String postId;
 
   @override
   Widget build(BuildContext context) {
+    return BlocBuilder<HomeCubit, HomeState>(
+      buildWhen: (prev, curr) {
+        if (prev is PostsLoaded && curr is PostsLoaded) {
+          final oldPost = prev.posts.firstWhere(
+            (p) => p.id == postId,
+            orElse: () => prev.posts.first,
+          );
+          final newPost = curr.posts.firstWhere(
+            (p) => p.id == postId,
+            orElse: () => curr.posts.first,
+          );
+
+          return countAllComments(oldPost.comments) !=
+              countAllComments(newPost.comments);
+        }
+        return false;
+      },
+      builder: (context, state) {
+        if (state is! PostsLoaded) {
+          return const SizedBox.shrink();
+        }
+
+        final post = state.posts.firstWhere((p) => p.id == postId);
+
+        final totalComments = countAllComments(post.comments);
+
+        return _InteractionsContent(post: post, totalComments: totalComments);
+      },
+    );
+  }
+}
+
+class _InteractionsContent extends StatelessWidget {
+  const _InteractionsContent({required this.post, required this.totalComments});
+
+  final PostModel post;
+  final int totalComments;
+
+  @override
+  Widget build(BuildContext context) {
+    final homeCubit = context.read<HomeCubit>();
+    final currUserId = homeCubit.currentUserData?.id;
+
     return Column(
       children: [
         const Gap(12),
         Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            const Gap(12),
-            Row(
-              children: [
-                LikeButton(
-                  size: 24,
-                  circleColor: CircleColor(
-                    start: Theme.of(context).primaryColor,
-                    end: Theme.of(context).primaryColor.withValues(alpha: 0.5),
-                  ),
-                  bubblesColor: BubblesColor(
-                    dotPrimaryColor: Theme.of(context).primaryColor,
-                    dotSecondaryColor: Theme.of(
-                      context,
-                    ).primaryColor.withValues(alpha: 0.5),
-                    dotThirdColor: Theme.of(
-                      context,
-                    ).primaryColor.withValues(alpha: 0.15),
-                  ),
-                  isLiked: currentPost.isLikedBy(currUserId!),
-                  likeCount: currentPost.likesCount,
-                  countPostion: CountPostion.right,
-                  likeBuilder: (bool isLiked) {
-                    return Icon(
-                      isLiked
-                          ? Icons.thumb_up_alt
-                          : Icons.thumb_up_alt_outlined,
-                      color:
-                          isLiked
-                              ? Theme.of(context).primaryColor
-                              : AppColors.grey6,
-                      size: 24,
-                    );
-                  },
-                  countBuilder:
-                      (likeCount, isLiked, text) => Padding(
-                        padding: const EdgeInsets.only(left: 4.0),
-                        child: Text(
-                          '${currentPost.likesCount}',
-                          style: Theme.of(context).textTheme.bodyLarge,
-                        ),
-                      ),
-                  onTap: (isLiked) async {
-                    await homeCubit.toggleLike(currentPost);
-                    return !isLiked;
-                  },
-                ),
+            const Gap(18),
+            _LikeButtonWidget(post: post, currUserId: currUserId),
 
-                // Gap(4),
-              ],
-            ),
-            const Gap(12),
-            InkWell(
-              onTap: () {
-                final homeCubit = context.read<HomeCubit>();
-                showModalBottomSheet(
-                  context: context,
-                  useRootNavigator: true,
-                  isScrollControlled: true,
-                  backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-                  useSafeArea: false,
-                  shape: const RoundedRectangleBorder(
-                    borderRadius: BorderRadius.vertical(
-                      top: Radius.circular(20),
-                    ),
-                  ),
-                  builder:
-                      (BuildContext context) => BlocProvider.value(
-                        value: homeCubit,
-                        child: CommentsSheetSection(postId: post.id),
-                      ),
-                );
-              },
-              child: Row(
-                children: [
-                  Image.asset(
-                    AppImages.commentAtPostIcon,
-                    width: 24,
-                    height: 24,
-                  ),
+            const Gap(20),
 
-                  const Gap(4),
-                  Text(
-                    '${currentPost.comments?.length ?? 0}',
+            _CommentButtonWidget(post: post, totalComments: totalComments),
 
-                    style: Theme.of(context).textTheme.bodyLarge,
-                  ),
-                ],
-              ),
-            ),
+            const Gap(20),
+
+            const _ShareButtons(),
+
+            const Spacer(),
+
+            const _SaveButtons(),
+
             const Gap(12),
-            Image.asset(AppImages.sharePostIcon, width: 24, height: 24),
-            Spacer(),
-            Image.asset(AppImages.savePostIcon, width: 24, height: 24),
-            const Gap(8),
           ],
         ),
         const Gap(8),
       ],
+    );
+  }
+}
+
+class _LikeButtonWidget extends StatelessWidget {
+  const _LikeButtonWidget({required this.post, required this.currUserId});
+
+  final PostModel post;
+  final String? currUserId;
+
+  @override
+  Widget build(BuildContext context) {
+    final homeCubit = context.read<HomeCubit>();
+
+    return LikeButton(
+      size: 24,
+      isLiked: post.isLikedBy(currUserId!),
+      likeCount: post.likesCount,
+      circleColor: CircleColor(
+        start: Theme.of(context).primaryColor,
+        end: Theme.of(context).primaryColor.withValues(alpha: 0.5),
+      ),
+      bubblesColor: BubblesColor(
+        dotPrimaryColor: Theme.of(context).primaryColor,
+        dotSecondaryColor: Theme.of(
+          context,
+        ).primaryColor.withValues(alpha: 0.5),
+        dotThirdColor: Theme.of(context).primaryColor.withValues(alpha: 0.15),
+      ),
+      likeBuilder: (isLiked) {
+        return Icon(
+          isLiked ? Icons.thumb_up_alt : Icons.thumb_up_alt_outlined,
+          color: isLiked ? Theme.of(context).primaryColor : AppColors.grey6,
+          size: 24,
+        );
+      },
+      countBuilder: (count, isLiked, text) {
+        return Padding(
+          padding: const EdgeInsets.only(left: 4),
+          child: Text(
+            '${post.likesCount}',
+            style: Theme.of(context).textTheme.bodyLarge,
+          ),
+        );
+      },
+      onTap: (isLiked) async {
+        await homeCubit.toggleLike(post);
+        return !isLiked;
+      },
+    );
+  }
+}
+
+class _CommentButtonWidget extends StatelessWidget {
+  const _CommentButtonWidget({required this.post, required this.totalComments});
+
+  final PostModel post;
+  final int totalComments;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: () {
+        final homeCubit = context.read<HomeCubit>();
+
+        showModalBottomSheet(
+          context: context,
+          useRootNavigator: true,
+          isScrollControlled: true,
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          builder:
+              (_) => BlocProvider.value(
+                value: homeCubit,
+                child: CommentsSheetSection(postId: post.id),
+              ),
+        ).whenComplete(() {
+          homeCubit.resetCollapsedComments();
+        });
+      },
+      child: Row(
+        children: [
+          Image.asset(AppImages.commentAtPostIcon, width: 24, height: 24),
+          const Gap(4),
+          Text('$totalComments', style: Theme.of(context).textTheme.bodyLarge),
+        ],
+      ),
+    );
+  }
+}
+
+class _ShareButtons extends StatelessWidget {
+  const _ShareButtons();
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [Image.asset(AppImages.sharePostIcon, width: 24, height: 24)],
+    );
+  }
+}
+
+class _SaveButtons extends StatelessWidget {
+  const _SaveButtons();
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [Image.asset(AppImages.savePostIcon, width: 24, height: 24)],
     );
   }
 }

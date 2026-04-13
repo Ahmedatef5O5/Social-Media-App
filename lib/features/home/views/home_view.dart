@@ -1,12 +1,14 @@
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 import 'package:persistent_bottom_nav_bar_v2/persistent_bottom_nav_bar_v2.dart';
-import 'package:social_media_app/core/themes/background_theme_widget.dart';
+import 'package:social_media_app/core/utilities/supabase_constants.dart';
 import 'package:social_media_app/core/widgets/custom_back_to_top_btn.dart';
 import 'package:social_media_app/core/widgets/custom_pull_to_refresh.dart';
 import 'package:social_media_app/core/widgets/custom_tab_wrapper.dart';
 import 'package:social_media_app/features/home/cubit/home_cubit.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../widgets/home_view_header_section.dart';
 import '../widgets/post_writing_card.dart';
 import '../widgets/posts_section.dart';
@@ -30,6 +32,7 @@ class _HomeViewState extends State<HomeView> {
   @override
   void initState() {
     super.initState();
+    updateMyFcmToken();
     context.read<HomeCubit>().navController = widget.navController;
     _scrollController = ScrollController();
     _scrollController.addListener(() {
@@ -50,6 +53,27 @@ class _HomeViewState extends State<HomeView> {
 
       _lastOffset = currentOffset;
     });
+  }
+
+  Future<void> updateMyFcmToken() async {
+    try {
+      String? token = await FirebaseMessaging.instance.getToken();
+
+      if (token != null) {
+        final user = Supabase.instance.client.auth.currentUser;
+
+        if (user != null) {
+          await Supabase.instance.client
+              .from(SupabaseConstants.users)
+              .update({UserColumns.fcmToken: token})
+              .eq(UserColumns.id, user.id);
+
+          debugPrint("✅ My FCM Token updated in Supabase: $token");
+        }
+      }
+    } catch (e) {
+      debugPrint("⚠️ Error updating FCM token: $e");
+    }
   }
 
   @override
@@ -91,52 +115,49 @@ class _HomeViewState extends State<HomeView> {
             onRetry: () => context.read<HomeCubit>().refreshHomeData(),
             loadingSkeleton: const HomeShimmerSkeleton(),
 
-            child: BackgroundThemeWidget(
-              bottom: false,
-              child: Stack(
-                children: [
-                  Center(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                      child: CustomPullToRefresh(
-                        top: MediaQuery.sizeOf(context).height * 0.068,
-                        onRefresh:
-                            () async => await context
-                                .read<HomeCubit>()
-                                .refreshHomeData(isRefresh: true),
-                        child: CustomScrollView(
-                          controller: _scrollController,
-                          physics: const AlwaysScrollableScrollPhysics(
-                            parent: ClampingScrollPhysics(),
-                          ),
-                          scrollDirection: Axis.vertical,
-                          slivers: [
-                            const SliverGap(30),
-                            SliverToBoxAdapter(
-                              child: HomeViewHeaderSection(
-                                navController: widget.navController,
-                              ),
-                            ),
-                            const SliverGap(35),
-                            SliverToBoxAdapter(child: PostWritingCard()),
-                            const SliverGap(20),
-                            SliverToBoxAdapter(child: StoriesListSection()),
-                            const SliverGap(4),
-                            PostsSection(),
-                            SliverGap(
-                              MediaQuery.of(context).padding.bottom + 100,
-                            ),
-                          ],
+            child: Stack(
+              children: [
+                Center(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                    child: CustomPullToRefresh(
+                      top: MediaQuery.sizeOf(context).height * 0.068,
+                      onRefresh:
+                          () async => await context
+                              .read<HomeCubit>()
+                              .refreshHomeData(isRefresh: true),
+                      child: CustomScrollView(
+                        controller: _scrollController,
+                        physics: const AlwaysScrollableScrollPhysics(
+                          parent: ClampingScrollPhysics(),
                         ),
+                        scrollDirection: Axis.vertical,
+                        slivers: [
+                          const SliverGap(44),
+                          SliverToBoxAdapter(
+                            child: HomeViewHeaderSection(
+                              navController: widget.navController,
+                            ),
+                          ),
+                          const SliverGap(35),
+                          SliverToBoxAdapter(child: PostWritingCard()),
+                          const SliverGap(20),
+                          SliverToBoxAdapter(child: StoriesListSection()),
+                          const SliverGap(4),
+                          PostsSection(),
+                          SliverGap(
+                            MediaQuery.of(context).padding.bottom + 100,
+                          ),
+                        ],
                       ),
                     ),
                   ),
-                  CustomBackToTopBtn(
-                    isVisible: _showBackToTop,
-                    onTap: _scrollToTop,
-                  ),
-                ],
-              ),
+                ),
+                CustomBackToTopBtn(
+                  isVisible: _showBackToTop,
+                  onTap: _scrollToTop,
+                ),
+              ],
             ),
           );
         },

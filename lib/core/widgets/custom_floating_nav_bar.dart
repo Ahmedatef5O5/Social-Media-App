@@ -19,9 +19,9 @@ class CustomFloatingNavBar extends StatelessWidget {
     return ClipRRect(
       borderRadius: BorderRadius.circular(32),
       child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+        filter: ImageFilter.blur(sigmaX: 2.5, sigmaY: 2.5),
         child: Container(
-          height: 64,
+          height: 60,
           decoration: BoxDecoration(
             color: Theme.of(
               context,

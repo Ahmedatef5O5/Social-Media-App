@@ -106,6 +106,8 @@ class _EditProfileViewState extends State<EditProfileView> {
         child: Scaffold(
           extendBodyBehindAppBar: true,
           appBar: AppBar(
+            elevation: 0,
+            scrolledUnderElevation: 0,
             backgroundColor: AppColors.transparent,
             leading: InkWell(
               onTap: () => Navigator.of(context).pop(),

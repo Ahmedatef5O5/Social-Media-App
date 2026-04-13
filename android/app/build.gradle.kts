@@ -3,6 +3,9 @@ import java.io.FileInputStream
 
 plugins {
     id("com.android.application")
+    // START: FlutterFire Configuration
+    id("com.google.gms.google-services")
+    // END: FlutterFire Configuration
     id("kotlin-android")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
@@ -23,15 +26,16 @@ android {
     // ndkVersion = flutter.ndkVersion
 
     compileOptions {
-
-sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
-        // sourceCompatibility = JavaVersion.VERSION_11
+        isCoreLibraryDesugaringEnabled = true
+     sourceCompatibility = JavaVersion.VERSION_1_8 // رجعها 1.8
+        targetCompatibility = JavaVersion.VERSION_1_8 // رجعها 1.8
+       // sourceCompatibility = JavaVersion.VERSION_11
         // targetCompatibility = JavaVersion.VERSION_11
     }
 
     kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_17.toString()
+        jvmTarget = "1.8"
+        // jvmTarget = JavaVersion.VERSION_17.toString()
         // jvmTarget = JavaVersion.VERSION_11.toString()
     }
     
@@ -66,8 +70,10 @@ sourceCompatibility = JavaVersion.VERSION_17
            
             signingConfig = signingConfigs.getByName("release")
             
-            isMinifyEnabled = true
-            isShrinkResources = true
+            isMinifyEnabled = false 
+            isShrinkResources = false
+            // isMinifyEnabled = true
+            // isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
         
@@ -88,4 +94,8 @@ configurations.all {
         force("androidx.core:core:1.13.1")
         force("androidx.core:core-ktx:1.13.1")
     }
+}
+dependencies {
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.3")
+    
 }

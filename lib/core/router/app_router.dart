@@ -12,6 +12,7 @@ import 'package:social_media_app/features/chats/models/chat_user_model.dart';
 import 'package:social_media_app/features/chats/services/chat_services.dart';
 import 'package:social_media_app/features/chats/views/chat_details_view.dart';
 import 'package:social_media_app/features/chats/views/chats_view.dart';
+import 'package:social_media_app/features/chats/views/receiver_profile_view.dart';
 import 'package:social_media_app/features/discover/cubit/discover_people_cubit.dart';
 import 'package:social_media_app/features/discover/services/discover_people_services.dart';
 import 'package:social_media_app/features/home/cubit/home_cubit.dart';
@@ -36,6 +37,9 @@ import '../../features/profile/cubits/profile_cubit/profile_cubit.dart';
 import '../../features/profile/views/profile_view.dart';
 
 enum TypeOfRoute { material, cupertino, fade }
+
+final RouteObserver<ModalRoute<void>> routeObserver =
+    RouteObserver<ModalRoute<void>>();
 
 class AppRouter {
   static bool _isAuthCallback(String? routeName) {
@@ -162,11 +166,23 @@ class AppRouter {
 
       case AppRoutes.chatDetailsViewRoute:
         final user = settings.arguments as ChatUserModel;
+
         return _buildRoute(
           BlocProvider(
-            create: (context) => ChatDetailsCubit(ChatServices(), user.name),
+            create:
+                (context) =>
+                    ChatDetailsCubit(ChatServices(), user.name)
+                      ..loadCurrentUserInfo()
+                      ..getMessagesStream(receiverId: user.id),
             child: ChatDetailsView(receiverUser: user),
           ),
+          settings: settings,
+        );
+
+      case AppRoutes.receiverProfileViewRoute:
+        final user = settings.arguments as ChatUserModel;
+        return _buildRoute(
+          ReceiverProfileView(receiverUser: user),
           settings: settings,
         );
 
