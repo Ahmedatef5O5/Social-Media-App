@@ -16,12 +16,52 @@ class ChatServices {
     return await InternetConnection().hasInternetAccess;
   }
 
-  Future<List<ChatUserModel>> getChatsList(String currentUserId) async {
+  Future<ReceiverPushInfo?> getReceiverPushInfo(String receiverId) async {
+    try {
+      final data =
+          await _supabase
+              .from(SupabaseConstants.users)
+              .select(
+                '${UserColumns.id}, '
+                '${UserColumns.name}, '
+                '${UserColumns.imageUrl}, '
+                '${UserColumns.fcmToken}',
+              )
+              .eq(UserColumns.id, receiverId)
+              .maybeSingle();
 
+      if (data == null) return null;
+      final token = data[UserColumns.fcmToken] as String?;
+      if (token == null || token.isEmpty) return null;
+
+      return ReceiverPushInfo(
+        fcmToken: token,
+        name: (data[UserColumns.name] as String?) ?? 'Unknown',
+        imageUrl: (data[UserColumns.imageUrl] as String?) ?? '',
+      );
+    } catch (e) {
+      debugPrint('⚠️  getReceiverPushInfo failed: $e');
+      return null;
+    }
+  }
+
+  Future<void> saveMyFcmToken(String userId, String token) async {
+    try {
+      await _supabase
+          .from(SupabaseConstants.users)
+          .update({UserColumns.fcmToken: token})
+          .eq(UserColumns.id, userId);
+      debugPrint('✅ FCM token saved to Supabase');
+    } catch (e) {
+      debugPrint('⚠️  saveMyFcmToken failed: $e');
+    }
+  }
+
+  Future<List<ChatUserModel>> getChatsList(String currentUserId) async {
     if (!(await isConnected())) {
       throw Exception('no-internet');
     }
-    
+
     try {
       final response = await _supabase.rpc(
         SupabaseConstants.getChatsWithLastMessage,
@@ -37,25 +77,29 @@ class ChatServices {
     }
   }
 
-  Stream<List<Map<String, dynamic>>> getChatsStream(String currentUserId) {
-    final controller = StreamController<List<Map<String, dynamic>>>();
+  Stream<void> getChatsStream(String currentUserId) {
+    final controller = StreamController<void>.broadcast();
 
-    final channelName =
-        'chats_updates_${currentUserId}_${DateTime.now().millisecondsSinceEpoch}';
-    final combinedChannel = _supabase.channel(channelName);
+    final channelName = 'chats_$currentUserId';
 
-    void notify(PostgresChangePayload payload) {
-      if (!controller.isClosed) {
-        debugPrint('Realtime Change Detected in: ${payload.table}');
-        controller.add([]);
-      }
+    _supabase.removeChannel(_supabase.channel(channelName));
+
+    final channel = _supabase.channel(channelName);
+
+    void notify(PostgresChangePayload _) {
+      if (!controller.isClosed) controller.add(null);
     }
 
-    combinedChannel
+    channel
         .onPostgresChanges(
           event: PostgresChangeEvent.all,
           schema: 'public',
           table: SupabaseConstants.messages,
+          filter: PostgresChangeFilter(
+            type: PostgresChangeFilterType.eq,
+            column: MessagesColumns.receiverId,
+            value: currentUserId,
+          ),
           callback: notify,
         )
         .onPostgresChanges(
@@ -64,23 +108,10 @@ class ChatServices {
           event: PostgresChangeEvent.all,
           callback: notify,
         )
-        .onPostgresChanges(
-          schema: 'public',
-          table: SupabaseConstants.users,
-          event: PostgresChangeEvent.update,
-          callback: notify,
-        );
-
-    controller.onListen = () {
-      combinedChannel.subscribe((status, [error]) {
-        if (status == RealtimeSubscribeStatus.channelError) {
-          debugPrint('Detailed Realtime Error: $error');
-        }
-      });
-    };
+        .subscribe();
 
     controller.onCancel = () {
-      _supabase.removeChannel(combinedChannel);
+      _supabase.removeChannel(channel);
       controller.close();
     };
 
@@ -341,4 +372,34 @@ class ChatServices {
               .toList();
         });
   }
+
+  Future<Map<String, String?>> getCurrentUserInfo(String userId) async {
+    try {
+      final data =
+          await _supabase
+              .from(SupabaseConstants.users)
+              .select('${UserColumns.name}, ${UserColumns.imageUrl}')
+              .eq(UserColumns.id, userId)
+              .single();
+      return {
+        'name': data[UserColumns.name] as String?,
+        'imageUrl': data[UserColumns.imageUrl] as String?,
+      };
+    } catch (e) {
+      debugPrint('Error fetching user info: $e');
+      return {'name': null, 'imageUrl': null};
+    }
+  }
+}
+
+class ReceiverPushInfo {
+  final String fcmToken;
+  final String name;
+  final String imageUrl;
+
+  const ReceiverPushInfo({
+    required this.fcmToken,
+    required this.name,
+    required this.imageUrl,
+  });
 }
