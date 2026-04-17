@@ -13,8 +13,8 @@ class ProfileCubit extends Cubit<ProfileState> {
   Future<void> getProfileData(String userId, {bool isRefresh = false}) async {
     if (!isRefresh) emit(ProfileLoading());
     try {
-      final user = await _homeServices.fetchCurrentUser(userId);
-      final allPosts = await _homeServices.fetchPosts();
+      final user = await _homeServices.userServices.fetchCurrentUser(userId);
+      final allPosts = await _homeServices.postServices.fetchPosts();
       final userPostsCount = allPosts.where((p) => p.authorId == userId).length;
       final stats = ProfileStatsModel(
         postsCount: userPostsCount,

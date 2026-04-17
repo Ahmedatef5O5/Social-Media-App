@@ -49,7 +49,7 @@ class HomeCubit extends Cubit<HomeState> {
 
   // Refresh Screen
   Future<void> refreshHomeData({bool isRefresh = false}) async {
-    bool hasNet = await homeServices.isConnected();
+    bool hasNet = await homeServices.postServices.isConnected();
     if (!hasNet) {
       emit(
         UserDataLoadError("No internet connection. Please check your network."),
@@ -75,7 +75,9 @@ class HomeCubit extends Cubit<HomeState> {
 
   Future<void> _getCurrentUser(String userId, {bool isRefresh = false}) async {
     try {
-      currentUserData = await homeServices.fetchCurrentUser(userId);
+      currentUserData = await homeServices.userServices.fetchCurrentUser(
+        userId,
+      );
       if (!isRefresh) emit(UserDataLoaded(currentUserData!));
     } catch (e) {
       debugPrint("Error fetching user: $e");
@@ -99,7 +101,7 @@ class HomeCubit extends Cubit<HomeState> {
         createdAt: DateTime.now().toIso8601String(),
         imageUrl: null,
       );
-      await homeServices.createStory(newStory);
+      await homeServices.storyServices.createStory(newStory);
       await fetchStories();
       emit(AddStorySuccess());
     } catch (e) {
@@ -111,7 +113,10 @@ class HomeCubit extends Cubit<HomeState> {
   Future<void> addStory({required File file, required UserData user}) async {
     emit(AddStoryLoading());
     try {
-      final fileUrl = await homeServices.uploadStoryFile(file, user.id);
+      final fileUrl = await homeServices.storyServices.uploadStoryFile(
+        file,
+        user.id,
+      );
       final newStory = StoryModel(
         // id: '',
         imageUrl: fileUrl,
@@ -119,7 +124,7 @@ class HomeCubit extends Cubit<HomeState> {
         authorName: user.name,
         createdAt: DateTime.now().toIso8601String(),
       );
-      await homeServices.createStory(newStory);
+      await homeServices.storyServices.createStory(newStory);
       await fetchStories();
     } catch (e) {
       debugPrint('Error adding story: $e');
@@ -129,7 +134,7 @@ class HomeCubit extends Cubit<HomeState> {
 
   Future<void> deleteStory(String storyId) async {
     try {
-      await homeServices.deleteStory(storyId);
+      await homeServices.storyServices.deleteStory(storyId);
       cachedStories = cachedStories.where((s) => s.id != storyId).toList();
       if (state is StoriesLoaded) {
         final updateStories =
@@ -180,7 +185,10 @@ class HomeCubit extends Cubit<HomeState> {
   }) async {
     emit(AddStoryLoading());
     try {
-      final fileUrl = await homeServices.uploadStoryFile(file, user.id);
+      final fileUrl = await homeServices.storyServices.uploadStoryFile(
+        file,
+        user.id,
+      );
       final newStory = StoryModel(
         imageUrl: fileUrl,
         authorId: user.id,
@@ -188,7 +196,7 @@ class HomeCubit extends Cubit<HomeState> {
         createdAt: DateTime.now().toIso8601String(),
         caption: caption,
       );
-      await homeServices.createStory(newStory);
+      await homeServices.storyServices.createStory(newStory);
       await fetchStories();
       emit(AddStorySuccess());
     } catch (e) {
@@ -200,7 +208,7 @@ class HomeCubit extends Cubit<HomeState> {
   Future<void> fetchStories({bool isRefresh = false}) async {
     if (!isRefresh && state is! StoriesLoading) emit(StoriesLoading());
     try {
-      final stories = await homeServices.fetchStories();
+      final stories = await homeServices.storyServices.fetchStories();
       cachedStories = stories;
       emit(StoriesLoaded(stories, DateTime.now()));
     } catch (e) {
@@ -212,7 +220,7 @@ class HomeCubit extends Cubit<HomeState> {
   Future<void> fetchPosts({bool isRefresh = false}) async {
     if (!isRefresh) emit(PostsLoading());
 
-    final hasNet = await homeServices.isConnected();
+    final hasNet = await homeServices.postServices.isConnected();
     if (!hasNet) {
       emit(UserDataLoadError("No internet connection."));
       return;
@@ -224,9 +232,11 @@ class HomeCubit extends Cubit<HomeState> {
   void _listenToPosts() {
     _postsSubscription?.cancel();
 
-    _postsSubscription = homeServices.getPostsStream().listen((_) async {
+    _postsSubscription = homeServices.postServices.getPostsStream().listen((
+      _,
+    ) async {
       try {
-        final posts = await homeServices.fetchPosts();
+        final posts = await homeServices.postServices.fetchPosts();
 
         if (!isClosed) {
           emit(PostsLoaded(_fixLikersImages(posts), DateTime.now()));
@@ -305,7 +315,7 @@ class HomeCubit extends Cubit<HomeState> {
         final imageFile = File(selectedImage!.path);
 
         if (await imageFile.exists()) {
-          imageUrl = await homeServices.uploadFile(
+          imageUrl = await homeServices.storage.uploadFile(
             File(selectedImage!.path),
             'post_images',
             'images',
@@ -319,7 +329,7 @@ class HomeCubit extends Cubit<HomeState> {
       if (selectedVideo != null) {
         final videoFile = File(selectedVideo!.path);
         if (await videoFile.exists()) {
-          videoUrl = await homeServices.uploadFile(
+          videoUrl = await homeServices.storage.uploadFile(
             File(selectedVideo!.path),
             'post_images',
             'videos',
@@ -332,7 +342,7 @@ class HomeCubit extends Cubit<HomeState> {
       if (selectedDocument != null) {
         final docFile = File(selectedDocument!.path);
         if (await docFile.exists()) {
-          fileUrl = await homeServices.uploadFile(
+          fileUrl = await homeServices.storage.uploadFile(
             docFile,
             'post_images',
             'documents',
@@ -350,7 +360,7 @@ class HomeCubit extends Cubit<HomeState> {
         videoUrl: videoUrl,
         fileUrl: fileUrl,
       );
-      await homeServices.addPost(postRequest);
+      await homeServices.postServices.addPost(postRequest);
 
       emit(PostCreating(1.0));
       await Future.delayed(const Duration(milliseconds: 2000));
@@ -369,13 +379,13 @@ class HomeCubit extends Cubit<HomeState> {
   }
 
   void cancelUpload() {
-    homeServices.cancelCurrentUpload();
+    homeServices.storage.cancelCurrentUpload();
     emit(const PostUploadCanceled());
   }
 
   Future<void> deletePost(String postId) async {
     try {
-      await homeServices.deletePost(postId);
+      await homeServices.postServices.deletePost(postId);
       if (state is PostsLoaded) {
         final updatePosts =
             (state as PostsLoaded).posts.where((p) => p.id != postId).toList();
@@ -513,7 +523,6 @@ class HomeCubit extends Cubit<HomeState> {
               likes: updatedLikes,
               likersImages:
                   updatedImages.where((img) => img.isNotEmpty).toList(),
-              // likesCount: updatedLikes.length,
             );
           }
           return p;
@@ -521,7 +530,7 @@ class HomeCubit extends Cubit<HomeState> {
     emit(PostsLoaded(updatedPosts, DateTime.now()));
 
     try {
-      await homeServices.toggleLike(
+      await homeServices.postServices.toggleLike(
         postId: post.id,
         userId: userId,
         isLiked: isCurrentlyLiked,

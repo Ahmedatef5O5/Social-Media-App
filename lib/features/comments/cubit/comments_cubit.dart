@@ -76,7 +76,7 @@ class CommentsCubit extends Cubit<CommentsState> {
     );
 
     try {
-      final realId = await homeServices.addComment(
+      final realId = await homeServices.commentServices.addComment(
         postId: post.id,
         authorId: user.id,
         commentText: commentText,
@@ -110,7 +110,7 @@ class CommentsCubit extends Cubit<CommentsState> {
 
     try {
       final userId = Supabase.instance.client.auth.currentUser!.id;
-      await homeServices.toggleCommentReaction(
+      await homeServices.commentServices.toggleCommentReaction(
         commentId: commentId,
         userId: userId,
         emoji: emoji,
