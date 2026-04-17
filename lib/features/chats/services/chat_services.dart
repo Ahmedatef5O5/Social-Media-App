@@ -141,6 +141,35 @@ class ChatServices {
         );
   }
 
+  Future<List<Map<String, dynamic>>> getChatMedia(String receiverId) async {
+    final currentUserId = _supabase.auth.currentUser!.id;
+
+    try {
+      final response = await _supabase
+          .from(SupabaseConstants.messages)
+          .select(
+            '${MessagesColumns.imageUrl}, ${MessagesColumns.videoUrl}, ${MessagesColumns.voiceUrl}, ${MessagesColumns.messageType}',
+          )
+          .or(
+            '${MessagesColumns.senderId}.eq.$currentUserId,${MessagesColumns.senderId}.eq.$receiverId',
+          )
+          .or(
+            '${MessagesColumns.receiverId}.eq.$currentUserId,${MessagesColumns.receiverId}.eq.$receiverId',
+          )
+          .filter(MessagesColumns.messageType, 'in', [
+            'image',
+            'video',
+            'voice',
+          ])
+          .order(MessagesColumns.createdAt, ascending: false);
+
+      return (response as List).cast<Map<String, dynamic>>();
+    } catch (e) {
+      debugPrint('Error fetching media: $e');
+      return [];
+    }
+  }
+
   Future<void> sendMessage({
     required String senderId,
     required String receiverId,
