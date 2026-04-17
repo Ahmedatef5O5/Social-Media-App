@@ -259,7 +259,7 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState> {
         return;
       }
 
-      await FcmService.instance.sendNotification(
+      await FcmService.instance.sendChatNotification(
         receiverFcmToken: receiverInfo.fcmToken,
         senderId: currentUserId,
         senderName:

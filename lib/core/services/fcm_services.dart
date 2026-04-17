@@ -1,7 +1,8 @@
 import 'package:dio/dio.dart' as dio_pkg;
 import 'package:flutter/material.dart';
 import 'package:social_media_app/core/secrets/app_secrets.dart';
-import 'package:googleapis_auth/auth_io.dart';
+import 'package:social_media_app/core/services/fcm_payload_builder.dart';
+import 'package:social_media_app/core/services/fcm_token_service.dart';
 
 class FcmService {
   FcmService._();
@@ -10,36 +11,16 @@ class FcmService {
   static final String _fcmUrl =
       'https://fcm.googleapis.com/v1/projects/${AppSecrets.fcmProjectId}/messages:send';
 
-  final dio_pkg.Dio _dio = dio_pkg.Dio(
+  final _dio = dio_pkg.Dio(
     dio_pkg.BaseOptions(
       connectTimeout: const Duration(seconds: 10),
       receiveTimeout: const Duration(seconds: 10),
     ),
   );
 
-  Future<String> _getAccessToken() async {
-    final serviceAccountJson = {
-      "type": "service_account",
-      "project_id": AppSecrets.fcmProjectId,
-      "private_key": AppSecrets.fcmPrivateKey.trim(),
+  final _tokenService = FcmTokenService();
 
-      "client_email": AppSecrets.fcmClientEmail,
-      "client_id": AppSecrets.fcmClientId,
-      "token_uri": "https://oauth2.googleapis.com/token",
-    };
-
-    final credentials = ServiceAccountCredentials.fromJson(serviceAccountJson);
-
-    final scopes = ['https://www.googleapis.com/auth/firebase.messaging'];
-
-    final client = await clientViaServiceAccount(credentials, scopes);
-
-    final token = client.credentials.accessToken.data;
-    client.close();
-    return token;
-  }
-
-  Future<void> sendNotification({
+  Future<void> sendChatNotification({
     required String receiverFcmToken,
     required String senderId,
     required String senderName,
@@ -48,63 +29,33 @@ class FcmService {
     String senderImageUrl = '',
     String? attachmentUrl,
   }) async {
-    final String displayBody = _buildDisplayBody(messageBody, messageType);
-
     try {
-      final String accessToken = await _getAccessToken();
+      final accessToken = await _tokenService.getValidToken();
 
-      final Map<String, dynamic> payload = {
-        'message': {
-          'token': receiverFcmToken,
-          'notification': {'title': senderName, 'body': displayBody},
-          'data': {
-            'senderId': senderId,
-            'senderName': senderName,
-            'messageBody': displayBody,
-            'messageType': messageType,
-            'senderImageUrl': senderImageUrl,
-            'messageImageUrl': attachmentUrl ?? '',
-          },
-          'android': {
-            'priority': 'high',
-            'notification': {
-              'channel_id': 'chat_messages_channel',
-              'sound': 'message_tone',
-            },
-          },
-        },
-      };
+      final payload = FcmPayloadBuilder.buildChatPayload(
+        receiverFcmToken: receiverFcmToken,
+        senderId: senderId,
+        senderName: senderName,
+        messageBody: messageBody,
+        messageType: messageType,
+        senderImageUrl: senderImageUrl,
+        attachmentUrl: attachmentUrl,
+      );
 
       final response = await _dio.post(
         _fcmUrl,
         data: payload,
         options: dio_pkg.Options(
           headers: {
-            'Content-Type': 'application/json',
             'Authorization': 'Bearer $accessToken',
+            'Content-Type': 'application/json',
           },
         ),
       );
 
-      debugPrint('✅ FCM V1 sent → status: ${response.statusCode}');
+      debugPrint('✅ FCM sent → ${response.statusCode}');
     } catch (e) {
-      if (e is dio_pkg.DioException) {
-        debugPrint('⚠️ FCM error details: ${e.response?.data}');
-      }
-      debugPrint('⚠️ FCM send failed: $e');
-    }
-  }
-
-  String _buildDisplayBody(String text, String type) {
-    switch (type) {
-      case 'image':
-        return text.isNotEmpty ? '📷 $text' : '📷 Photo';
-      case 'video':
-        return text.isNotEmpty ? '🎥 $text' : '🎥 Video';
-      case 'voice':
-        return '🎤 Voice message';
-      default:
-        return text;
+      debugPrint('❌ FCM send failed: $e');
     }
   }
 }
