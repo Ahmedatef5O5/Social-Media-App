@@ -4,7 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 import 'package:social_media_app/core/themes/background_theme_widget.dart';
 import 'package:social_media_app/core/widgets/custom_loading_indicator.dart';
-import 'package:social_media_app/features/home/cubit/home_cubit.dart';
+import 'package:social_media_app/features/home/cubits/home_cubit/home_cubit.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/helpers/modern_circle_progress.dart';
 import '../widgets/add_post_options_bottom_sheet.dart';

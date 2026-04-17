@@ -6,7 +6,7 @@ import 'package:social_media_app/features/profile/cubits/profile_cubit/profile_c
 import 'package:social_media_app/features/profile/views/profile_shimmer_view.dart';
 import 'package:social_media_app/features/profile/widgets/profile_body_content.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../home/cubit/home_cubit.dart';
+import '../../home/cubits/home_cubit/home_cubit.dart';
 import '../widgets/profile_refresh_indicator.dart';
 
 class ProfileView extends StatefulWidget {

@@ -3,7 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 import 'package:social_media_app/core/router/app_routes.dart';
 import 'package:social_media_app/features/home/widgets/build_option_item.dart';
-import '../cubit/home_cubit.dart';
+import '../cubits/home_cubit/home_cubit.dart';
 
 class AddPostOptionsBottomSheet extends StatelessWidget {
   final DraggableScrollableController controller;

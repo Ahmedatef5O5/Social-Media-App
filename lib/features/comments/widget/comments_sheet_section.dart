@@ -3,9 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 import 'package:social_media_app/core/widgets/custom_loading_indicator.dart';
-import 'package:social_media_app/features/home/cubit/home_cubit.dart';
+import 'package:social_media_app/features/comments/cubit/comments_cubit.dart';
+import 'package:social_media_app/features/home/cubits/home_cubit/home_cubit.dart';
 import 'package:social_media_app/features/home/models/post_model.dart';
-import 'package:social_media_app/features/home/widgets/comments_section.dart';
+import 'package:social_media_app/features/comments/widget/comments_section.dart';
 import '../../../core/constants/app_images.dart';
 import '../../../core/helpers/comment_helper.dart';
 import '../../../core/themes/app_colors.dart';
@@ -13,6 +14,7 @@ import 'send_comment_section.dart';
 
 class CommentsSheetSection extends StatefulWidget {
   final String postId;
+
   const CommentsSheetSection({super.key, required this.postId});
 
   @override
@@ -27,7 +29,6 @@ class _CommentsSheetSectionState extends State<CommentsSheetSection> {
 
   final ScrollController _scrollController = ScrollController();
 
-  /// When set, the send-field shows "@name" prefix and sends a reply
   String? _replyingToCommentId;
   String? _replyingToAuthorName;
 
@@ -73,16 +74,10 @@ class _CommentsSheetSectionState extends State<CommentsSheetSection> {
   Widget build(BuildContext context) {
     final post = context.select<HomeCubit, PostModel?>((cubit) {
       final state = cubit.state;
-      List<PostModel>? postsList;
-      if (state is PostsLoaded) {
-        postsList = state.posts;
-      } else if (state is AddingCommentLoading) {
-        postsList = state.oldPosts;
-      }
 
-      if (postsList != null) {
+      if (state is PostsLoaded) {
         try {
-          return postsList.firstWhere((p) => p.id == widget.postId);
+          return state.posts.firstWhere((p) => p.id == widget.postId);
         } catch (_) {
           return null;
         }
@@ -93,13 +88,15 @@ class _CommentsSheetSectionState extends State<CommentsSheetSection> {
     if (post == null) {
       return const SizedBox(height: 300, child: CustomLoadingIndicator());
     }
-    return BlocListener<HomeCubit, HomeState>(
+    return BlocListener<CommentsCubit, CommentsState>(
       listener: (context, state) {
-        if (state is PostsLoaded || state is AddCommentSuccess) {
+        if (state is CommentOptimisticAdded) {
           if (_isNearBottom()) {
             _scrollToBottom();
           }
-          if (state is AddCommentSuccess) _cancelReply();
+        }
+        if (state is CommentTempIdResolved) {
+          _cancelReply();
         }
       },
       child: GestureDetector(

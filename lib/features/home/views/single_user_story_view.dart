@@ -8,7 +8,7 @@ import '../../../core/helpers/formatted_date.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/widgets/custom_confirmation_dialog.dart';
 import '../../profile/widgets/user_preview_dialog.dart';
-import '../cubit/home_cubit.dart';
+import '../cubits/home_cubit/home_cubit.dart';
 import '../models/story_model.dart';
 
 class SingleUserStoryView extends StatefulWidget {

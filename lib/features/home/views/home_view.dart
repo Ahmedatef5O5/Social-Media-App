@@ -7,7 +7,7 @@ import 'package:social_media_app/core/utilities/supabase_constants.dart';
 import 'package:social_media_app/core/widgets/custom_back_to_top_btn.dart';
 import 'package:social_media_app/core/widgets/custom_pull_to_refresh.dart';
 import 'package:social_media_app/core/widgets/custom_tab_wrapper.dart';
-import 'package:social_media_app/features/home/cubit/home_cubit.dart';
+import 'package:social_media_app/features/home/cubits/home_cubit/home_cubit.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../widgets/home_view_header_section.dart';
 import '../widgets/post_writing_card.dart';

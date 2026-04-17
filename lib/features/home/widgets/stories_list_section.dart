@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:social_media_app/features/home/cubit/home_cubit.dart';
+import 'package:social_media_app/features/home/cubits/home_cubit/home_cubit.dart';
 import 'package:social_media_app/features/home/models/story_model.dart';
 import 'package:social_media_app/features/home/widgets/story_item_widget.dart';
 import '../../../core/router/app_routes.dart';

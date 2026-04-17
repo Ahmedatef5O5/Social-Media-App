@@ -1,7 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
-import 'package:social_media_app/features/home/cubit/home_cubit.dart';
+import 'package:social_media_app/features/home/cubits/home_cubit/home_cubit.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
 import 'post_item_widget.dart';
 

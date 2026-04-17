@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:social_media_app/features/home/models/post_model.dart';
-import 'package:social_media_app/features/home/widgets/comment_widget.dart';
+import 'package:social_media_app/features/comments/widget/comment_widget.dart';
 import '../../../core/constants/app_images.dart';
 import '../../chats/widgets/empty_placeholder_state.dart';
 

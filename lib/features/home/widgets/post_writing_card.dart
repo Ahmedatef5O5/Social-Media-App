@@ -4,7 +4,7 @@ import 'package:gap/gap.dart';
 import 'package:social_media_app/core/router/app_routes.dart';
 import 'package:social_media_app/core/themes/app_colors.dart';
 import 'package:social_media_app/core/widgets/main_user_avatar.dart';
-import 'package:social_media_app/features/home/cubit/home_cubit.dart';
+import 'package:social_media_app/features/home/cubits/home_cubit/home_cubit.dart';
 import '../../../core/constants/app_images.dart';
 
 class PostWritingCard extends StatelessWidget {

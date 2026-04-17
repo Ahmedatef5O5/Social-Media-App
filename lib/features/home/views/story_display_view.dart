@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:social_media_app/features/home/cubit/home_cubit.dart';
+import 'package:social_media_app/features/home/cubits/home_cubit/home_cubit.dart';
 import 'package:social_media_app/features/home/models/story_model.dart';
 
 import '../widgets/user_story_group_container.dart';

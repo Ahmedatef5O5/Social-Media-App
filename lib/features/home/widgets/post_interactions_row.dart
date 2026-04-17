@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 import 'package:like_button/like_button.dart';
+import 'package:social_media_app/features/comments/cubit/comments_cubit.dart';
 import '../../../core/constants/app_images.dart';
 import '../../../core/helpers/comment_helper.dart';
 import '../../../core/themes/app_colors.dart';
-import '../cubit/home_cubit.dart';
+import '../cubits/home_cubit/home_cubit.dart';
 import '../models/post_model.dart';
-import 'comments_sheet_section.dart';
+import '../services/home_services.dart';
+import '../../comments/widget/comments_sheet_section.dart';
 
 class PostInteractionsRow extends StatelessWidget {
   const PostInteractionsRow({super.key, required this.postId});
@@ -98,11 +100,17 @@ class _LikeButtonWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final homeCubit = context.read<HomeCubit>();
+    final state = context.watch<HomeCubit>().state;
+
+    final currentPost =
+        (state is PostsLoaded)
+            ? state.posts.firstWhere((p) => p.id == post.id)
+            : post;
 
     return LikeButton(
       size: 24,
-      isLiked: post.isLikedBy(currUserId!),
-      likeCount: post.likesCount,
+      isLiked: currentPost.isLikedBy(currUserId!),
+      likeCount: currentPost.likesCount,
       circleColor: CircleColor(
         start: Theme.of(context).primaryColor,
         end: Theme.of(context).primaryColor.withValues(alpha: 0.5),
@@ -125,13 +133,13 @@ class _LikeButtonWidget extends StatelessWidget {
         return Padding(
           padding: const EdgeInsets.only(left: 4),
           child: Text(
-            '${post.likesCount}',
+            '${currentPost.likesCount}',
             style: Theme.of(context).textTheme.bodyLarge,
           ),
         );
       },
       onTap: (isLiked) async {
-        await homeCubit.toggleLike(post);
+        homeCubit.toggleLike(currentPost);
         return !isLiked;
       },
     );
@@ -149,7 +157,11 @@ class _CommentButtonWidget extends StatelessWidget {
     return InkWell(
       onTap: () {
         final homeCubit = context.read<HomeCubit>();
-
+        final homeServices = context.read<HomeServices>();
+        final commentsCubit = CommentsCubit(
+          homeServices,
+          currentUserData: context.read<HomeCubit>().currentUserData,
+        );
         showModalBottomSheet(
           context: context,
           useRootNavigator: true,
@@ -159,12 +171,15 @@ class _CommentButtonWidget extends StatelessWidget {
             borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
           ),
           builder:
-              (_) => BlocProvider.value(
-                value: homeCubit,
+              (_) => MultiBlocProvider(
+                providers: [
+                  BlocProvider.value(value: homeCubit),
+                  BlocProvider.value(value: commentsCubit),
+                ],
                 child: CommentsSheetSection(postId: post.id),
               ),
         ).whenComplete(() {
-          homeCubit.resetCollapsedComments();
+          commentsCubit.resetCollapsedComments();
         });
       },
       child: Row(

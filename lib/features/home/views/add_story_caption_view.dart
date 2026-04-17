@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/themes/app_colors.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
-import '../cubit/home_cubit.dart';
+import '../cubits/home_cubit/home_cubit.dart';
 
 class AddStoryCaptionView extends StatefulWidget {
   final File file;

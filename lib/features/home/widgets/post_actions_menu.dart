@@ -4,7 +4,7 @@ import 'package:social_media_app/core/themes/app_colors.dart';
 import 'package:social_media_app/features/home/models/post_model.dart';
 import '../../../core/constants/app_images.dart';
 import '../../../core/widgets/custom_confirmation_dialog.dart';
-import '../cubit/home_cubit.dart';
+import '../cubits/home_cubit/home_cubit.dart';
 
 class PostActionsMenu extends StatelessWidget {
   final PostModel post;

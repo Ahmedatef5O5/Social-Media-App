@@ -1,5 +1,5 @@
 import '../../features/home/models/comment_model.dart';
-import '../../features/home/widgets/comment_constants.dart';
+import '../../features/comments/widget/comment_constants.dart';
 
 int countAllComments(List<CommentModel>? comments) {
   if (comments == null || comments.isEmpty) return 0;

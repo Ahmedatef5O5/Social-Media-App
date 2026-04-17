@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/themes/app_colors.dart';
-import '../models/comment_model.dart';
+import '../../home/models/comment_model.dart';
 
 class CommentReactionsSummary extends StatelessWidget {
   final List<CommentReaction> reactions;

@@ -15,7 +15,7 @@ import 'package:social_media_app/features/chats/views/chats_view.dart';
 import 'package:social_media_app/features/chats/views/receiver_profile_view.dart';
 import 'package:social_media_app/features/discover/cubit/discover_people_cubit.dart';
 import 'package:social_media_app/features/discover/services/discover_people_services.dart';
-import 'package:social_media_app/features/home/cubit/home_cubit.dart';
+import 'package:social_media_app/features/home/cubits/home_cubit/home_cubit.dart';
 import 'package:social_media_app/features/home/services/home_services.dart';
 import 'package:social_media_app/features/home/views/create_post_view.dart';
 import 'package:social_media_app/features/home/views/post_themes_view.dart';

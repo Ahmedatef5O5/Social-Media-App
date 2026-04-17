@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:social_media_app/features/comments/cubit/comments_cubit.dart';
 import 'package:social_media_app/features/home/models/comment_model.dart';
-import 'package:social_media_app/features/home/widgets/thread_painter.dart';
+import 'package:social_media_app/features/comments/widget/thread_painter.dart';
 import '../../../core/helpers/comment_helper.dart';
-import '../widgets/comment_constants.dart';
-import '../widgets/comment_avatar.dart';
-import '../widgets/comment_action_chip.dart';
-import '../widgets/comment_overlay_picker.dart';
+import 'comment_constants.dart';
+import 'comment_avatar.dart';
+import 'comment_action_chip.dart';
+import 'comment_overlay_picker.dart';
 import '../../../core/helpers/formatted_date.dart';
 import '../../../core/themes/app_colors.dart';
-import '../cubit/home_cubit.dart';
 
 class CommentWidget extends StatefulWidget {
   final CommentModel comment;
@@ -156,7 +156,7 @@ class _CommentWidgetState extends State<CommentWidget>
       _reactions = updated;
     });
 
-    context.read<HomeCubit>().toggleCommentReaction(
+    context.read<CommentsCubit>().toggleReaction(
       commentId: widget.comment.id,
       emoji: emoji,
       postId: widget.postId,
@@ -192,9 +192,10 @@ class _CommentWidgetState extends State<CommentWidget>
 
   @override
   Widget build(BuildContext context) {
-    final isExpanded = context.watch<HomeCubit>().collapsedComments.contains(
-      widget.comment.id,
-    );
+    final isExpanded = context
+        .watch<CommentsCubit>()
+        .collapsedComments
+        .contains(widget.comment.id);
     final theme = Theme.of(context);
     final hasReplies = widget.comment.replies.isNotEmpty;
     final replyCount = widget.comment.replies.length;
@@ -347,7 +348,7 @@ class _CommentWidgetState extends State<CommentWidget>
                   ),
                   child: GestureDetector(
                     onTap:
-                        () => context.read<HomeCubit>().toggleReplies(
+                        () => context.read<CommentsCubit>().toggleReplies(
                           widget.comment.id,
                         ),
                     child: Row(

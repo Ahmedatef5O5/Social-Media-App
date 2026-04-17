@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 import 'package:social_media_app/core/constants/app_images.dart';
-import 'package:social_media_app/features/home/cubit/home_cubit.dart';
+import 'package:social_media_app/features/comments/cubit/comments_cubit.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/themes/app_colors.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
-import '../models/post_model.dart';
+import '../../home/models/post_model.dart';
 
 class SendCommentSection extends StatefulWidget {
   final PostModel post;
@@ -72,17 +72,13 @@ class _SendCommentSectionState extends State<SendCommentSection> {
     if (userId == null) return;
 
     if (textComment.isNotEmpty) {
-      context.read<HomeCubit>().addComment(
-        postId: widget.post.id,
-
+      context.read<CommentsCubit>().addComment(
+        post: widget.post,
         commentText: textComment,
         parentCommentId: widget.replyingToCommentId,
-        // Pass reply context — cubit should forward to service
-        // parentCommentId: widget.replyingToCommentId,
       );
       _commentController.clear();
       widget.onReplySent?.call();
-      // FocusScope.of(context).unfocus(); to close keyboard after send a comment
     }
   }
 
@@ -96,12 +92,12 @@ class _SendCommentSectionState extends State<SendCommentSection> {
 
       children: [
         Expanded(
-          child: BlocConsumer<HomeCubit, HomeState>(
+          child: BlocConsumer<CommentsCubit, CommentsState>(
             listener: (context, state) {
-              if (state is AddCommentSuccess) {
+              if (state is CommentOptimisticAdded) {
                 _commentController.clear();
               }
-              if (state is AddCommentError) {
+              if (state is CommentError) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text(state.message),
@@ -111,7 +107,7 @@ class _SendCommentSectionState extends State<SendCommentSection> {
               }
             },
             builder: (context, state) {
-              final isLoading = state is AddingCommentLoading;
+              final isLoading = state is AddingComment;
               return Container(
                 padding: const EdgeInsets.symmetric(vertical: 4),
                 child: Row(

@@ -4,7 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/helpers/formatted_date.dart';
 import '../../../core/router/app_routes.dart';
 import '../../profile/widgets/user_preview_dialog.dart';
-import '../cubit/home_cubit.dart';
+import '../cubits/home_cubit/home_cubit.dart';
 import '../models/post_model.dart';
 import 'author_image_widget.dart';
 
