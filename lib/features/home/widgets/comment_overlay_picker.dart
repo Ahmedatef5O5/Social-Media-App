@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'comment_reactions_bar.dart';
+import 'comment_reactions_picker_bubble.dart';
 
 class PickerPosition {
   final double x;
