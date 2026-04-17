@@ -11,7 +11,7 @@ import 'package:social_media_app/features/home/models/story_model.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:dio/dio.dart' as dio_pkg;
 import '../../../core/secrets/app_secrets.dart';
-import '../helper/comment_tree_builder.dart';
+import '../../comments/helper/comment_tree_builder.dart';
 import '../models/comment_model.dart';
 
 class HomeServices {
@@ -107,6 +107,12 @@ class HomeServices {
     return _supabase
         .from(SupabaseConstants.posts)
         .stream(primaryKey: [PostColumns.id]);
+  }
+
+  Stream<List<Map<String, dynamic>>> getCommentsStream() {
+    return _supabase
+        .from(SupabaseConstants.comments)
+        .stream(primaryKey: [CommentColumns.id]);
   }
 
   Future<void> addPost(PostRequestBody post) async {
