@@ -4,7 +4,7 @@ import 'package:uuid/uuid.dart';
 import '../../auth/data/models/user_data.dart';
 import '../events/comment_event_bus.dart';
 import '../events/comment_events.dart';
-import '../../home/models/comment_model.dart';
+import '../model/comment_model.dart';
 import '../../home/models/post_model.dart';
 import '../../home/services/home_services.dart';
 part 'comments_state.dart';

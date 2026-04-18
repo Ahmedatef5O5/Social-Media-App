@@ -4,7 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/services/supabase_database_services.dart';
 import '../../../core/utilities/supabase_constants.dart';
 import '../../comments/helper/comment_tree_builder.dart';
-import '../models/comment_model.dart';
+import '../../comments/model/comment_model.dart';
 import '../models/post_model.dart';
 import '../models/post_request_body.dart';
 

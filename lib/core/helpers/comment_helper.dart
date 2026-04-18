@@ -1,4 +1,4 @@
-import '../../features/home/models/comment_model.dart';
+import '../../features/comments/model/comment_model.dart';
 import '../../features/comments/widget/comment_constants.dart';
 
 int countAllComments(List<CommentModel>? comments) {

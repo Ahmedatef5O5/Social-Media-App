@@ -1,4 +1,4 @@
-import '../../home/models/comment_model.dart';
+import '../model/comment_model.dart';
 
 class CommentTreeBuilder {
   static List<CommentModel> build(List<CommentModel> comments) {

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:social_media_app/features/comments/cubit/comments_cubit.dart';
-import 'package:social_media_app/features/home/models/comment_model.dart';
+import 'package:social_media_app/features/comments/model/comment_model.dart';
 import 'package:social_media_app/features/comments/widget/thread_painter.dart';
 import '../../../core/helpers/comment_helper.dart';
 import 'comment_constants.dart';

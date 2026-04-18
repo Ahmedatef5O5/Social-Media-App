@@ -1,6 +1,6 @@
 import 'package:social_media_app/core/utilities/supabase_constants.dart';
 import 'package:social_media_app/features/chats/models/chat_user_model.dart';
-import 'comment_model.dart';
+import '../../comments/model/comment_model.dart';
 
 class PostModel {
   bool isLikedBy(String userId) => likes?.contains(userId) ?? false;
