@@ -1,9 +1,12 @@
 import 'package:social_media_app/core/utilities/supabase_constants.dart';
 import 'package:social_media_app/features/chats/models/chat_user_model.dart';
 
+enum StoryType { image, video, text }
+
 class StoryModel {
   final String id;
   final String? imageUrl;
+  final String? videoUrl;
   final String? contentText;
   final String? backgroundColor;
   final String authorId;
@@ -15,6 +18,7 @@ class StoryModel {
   const StoryModel({
     this.id = '',
     this.imageUrl,
+    this.videoUrl,
     this.contentText,
     this.backgroundColor,
     required this.authorId,
@@ -25,16 +29,22 @@ class StoryModel {
     this.lastSeen,
   });
 
+  StoryType get storyType {
+    if (videoUrl != null) return StoryType.video;
+    if (imageUrl != null) return StoryType.image;
+    return StoryType.text;
+  }
+
   Map<String, dynamic> toMap() {
     return <String, dynamic>{
-      if (id.isNotEmpty) 'id': id,
-      'image_url': imageUrl,
-      'content_text': contentText,
-      'background_color': backgroundColor,
-      'author_id': authorId,
-      'created_at': createdAt,
-      'caption': caption,
-      UserColumns.lastSeen: lastSeen,
+      if (id.isNotEmpty) StoryColumns.id: id,
+      StoryColumns.imageUrl: imageUrl,
+      StoryColumns.videoUrl: videoUrl,
+      StoryColumns.contentText: contentText,
+      StoryColumns.backgroundColor: backgroundColor,
+      StoryColumns.authorId: authorId,
+      StoryColumns.createdAt: createdAt,
+      StoryColumns.storyCaption: caption,
     };
   }
 
@@ -43,13 +53,14 @@ class StoryModel {
     return StoryModel(
       id: map[StoryColumns.id] as String,
       imageUrl: map[StoryColumns.imageUrl] as String?,
+      videoUrl: map[StoryColumns.videoUrl] as String?,
       contentText: map[StoryColumns.contentText] as String?,
       backgroundColor: map[StoryColumns.backgroundColor] as String?,
       authorId: map[StoryColumns.authorId] as String? ?? '',
       authorName: userData?[UserColumns.name] as String? ?? 'Unknown User',
       authorImageUrl: userData?[UserColumns.imageUrl] as String?,
       createdAt: map[StoryColumns.createdAt] as String? ?? '',
-      caption: map['caption'] as String?,
+      caption: map[StoryColumns.storyCaption] as String?,
       lastSeen:
           userData != null && userData[UserColumns.lastSeen] != null
               ? DateTime.parse(userData[UserColumns.lastSeen].toString())

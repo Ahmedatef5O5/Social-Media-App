@@ -1,6 +1,7 @@
 abstract class SupabaseConstants {
   static const String users = 'users';
   static const String stories = 'stories';
+  static const String storyVideos = 'story_videos';
   static const String posts = 'posts';
   static const String likes = 'post_likes';
   static const String comments = 'comments';
@@ -29,9 +30,11 @@ abstract class StoryColumns {
   static const String id = 'id';
   static const String createdAt = 'created_at';
   static const String imageUrl = 'image_url';
+  static const String videoUrl = 'video_url';
   static const String contentText = 'content_text';
   static const String backgroundColor = 'background_color';
   static const String authorId = 'author_id';
+  static const String storyCaption = 'caption';
 }
 
 // subClass for posts column table
