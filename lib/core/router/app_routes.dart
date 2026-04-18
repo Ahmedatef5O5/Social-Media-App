@@ -13,7 +13,10 @@ class AppRoutes {
   //
   static const String createTextStoryViewRoute = '/create-text-story-view';
   static const String addStoryCaptionViewRoute = '/add-Story-Caption-view';
+
   static const String storyDisplayViewRoute = '/story-display-view';
+  static const String addStoryPreviewViewRoute = '/add-Story-Preview-View-';
+
   static const String createPostViewRoute = '/home-create-post-view';
   static const String postThemesViewRoute = '/post-themes-view';
   static const String profileViewRoute = '/profile-view';

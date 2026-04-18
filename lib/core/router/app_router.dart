@@ -17,6 +17,7 @@ import 'package:social_media_app/features/discover/cubit/discover_people_cubit.d
 import 'package:social_media_app/features/discover/services/discover_people_services.dart';
 import 'package:social_media_app/features/home/cubits/home_cubit/home_cubit.dart';
 import 'package:social_media_app/features/home/services/home_services.dart';
+import 'package:social_media_app/features/home/views/add_story_preview_view.dart';
 import 'package:social_media_app/features/home/views/create_post_view.dart';
 import 'package:social_media_app/features/home/views/post_themes_view.dart';
 import 'package:social_media_app/features/home/views/story_display_view.dart';
@@ -100,7 +101,6 @@ class AppRouter {
         return _buildRoute(
           MultiBlocProvider(
             providers: [
-              BlocProvider(create: (context) => HomeCubit()..getHomeData()),
               BlocProvider(
                 create:
                     (context) =>
@@ -161,6 +161,19 @@ class AppRouter {
           settings: settings,
         );
 
+      case AppRoutes.addStoryPreviewViewRoute:
+        final args = settings.arguments as Map<String, dynamic>;
+        return _buildRoute(
+          AddStoryPreviewView(
+            file: args['file'] as File,
+            isVideo: args['isVideo'] as bool,
+            videoDuration: args['videoDuration'] as Duration?,
+            homeCubit: args['homeCubit'] as HomeCubit,
+          ),
+          typeOfRoute: TypeOfRoute.fade,
+          settings: settings,
+        );
+
       case AppRoutes.chatsViewRoute:
         return _buildRoute(const ChatsView(), settings: settings);
 
@@ -211,7 +224,6 @@ class AppRouter {
                       (context) =>
                           ProfileCubit(HomeServices())..getProfileData(userId),
                 ),
-                BlocProvider(create: (context) => HomeCubit()),
               ],
               child: ProfileView(userId: userId),
             ),
