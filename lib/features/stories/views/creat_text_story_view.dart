@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:gap/gap.dart';
-import 'package:social_media_app/core/widgets/custom_elevated_button.dart';
 import '../../../core/themes/app_colors.dart';
-import '../../../core/widgets/custom_loading_indicator.dart';
 import '../../home/cubits/home_cubit/home_cubit.dart';
+import '../widgets/story_color_picker.dart';
+import '../widgets/story_submit_bar.dart';
+import '../widgets/story_text_editor.dart';
 
 class CreateTextStoryView extends StatefulWidget {
   const CreateTextStoryView({super.key});
@@ -16,6 +16,7 @@ class CreateTextStoryView extends StatefulWidget {
 class _CreateTextStoryViewState extends State<CreateTextStoryView> {
   final TextEditingController _controller = TextEditingController();
   bool _hasText = false;
+
   late List<Color> _colors;
   late Color _selectedColor;
 
@@ -42,7 +43,8 @@ class _CreateTextStoryViewState extends State<CreateTextStoryView> {
       Colors.orange,
       Colors.green,
     ];
-    _selectedColor = _colors[0];
+
+    _selectedColor = _colors.first;
   }
 
   @override
@@ -51,13 +53,13 @@ class _CreateTextStoryViewState extends State<CreateTextStoryView> {
     super.dispose();
   }
 
-  void _onShareTextStory(BuildContext context) {
-    if (_hasText) {
-      context.read<HomeCubit>().addTextStory(
-        text: _controller.text.trim(),
-        bgColor: _selectedColor,
-      );
-    }
+  void _share(BuildContext context) {
+    if (!_hasText) return;
+
+    context.read<HomeCubit>().addTextStory(
+      text: _controller.text.trim(),
+      bgColor: _selectedColor,
+    );
   }
 
   @override
@@ -65,31 +67,19 @@ class _CreateTextStoryViewState extends State<CreateTextStoryView> {
     return BlocConsumer<HomeCubit, HomeState>(
       listener: (context, state) {
         if (state is AddStorySuccess) {
-          if (context.mounted) {
-            Navigator.of(context).pop();
-          }
+          Navigator.of(context).pop();
+
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                'Story Added Successfully',
-                style: Theme.of(
-                  context,
-                ).textTheme.titleSmall!.copyWith(color: Colors.white),
-              ),
+            const SnackBar(
+              content: Text('Story Added Successfully'),
               backgroundColor: Colors.green,
-              behavior: SnackBarBehavior.floating,
-              duration: const Duration(seconds: 1),
             ),
           );
         }
+
         if (state is AddStoryError) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(state.message),
-              backgroundColor: Colors.red,
-              behavior: SnackBarBehavior.floating,
-              duration: const Duration(seconds: 1),
-            ),
+            SnackBar(content: Text(state.message), backgroundColor: Colors.red),
           );
         }
       },
@@ -103,153 +93,33 @@ class _CreateTextStoryViewState extends State<CreateTextStoryView> {
               toolbarHeight: 70,
               leading: IconButton(
                 onPressed: () => Navigator.of(context).pop(),
-                icon: Icon(Icons.close, size: 24, color: AppColors.white),
+                icon: const Icon(Icons.close, color: AppColors.white),
               ),
-              actionsPadding: EdgeInsets.only(right: 10),
+              backgroundColor: Colors.transparent,
+              elevation: 0,
               actions: [
-                TextButton(
-                  onPressed:
-                      state is AddStoryLoading
-                          ? null
-                          : () => _onShareTextStory(context),
-                  child:
-                      state is AddStoryLoading
-                          ? const CustomLoadingIndicator(
-                            radius: 10,
-                            color: AppColors.white,
-                          )
-                          : Text(
-                            'Done',
-                            style: Theme.of(
-                              context,
-                            ).textTheme.labelLarge!.copyWith(
-                              color:
-                                  _hasText
-                                      ? AppColors.white
-                                      : AppColors.grey2.withValues(alpha: 0.6),
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
+                StorySubmitBar(
+                  hasText: _hasText,
+                  loading: state is AddStoryLoading,
+                  onPressed: () => _share(context),
                 ),
               ],
-              backgroundColor: AppColors.transparent,
-              elevation: 0,
-              scrolledUnderElevation: 0,
             ),
-            body: Center(
-              child: Column(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 14),
-                    child: SingleChildScrollView(
-                      scrollDirection: Axis.vertical,
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          const Gap(25),
-                          TextField(
-                            controller: _controller,
-                            textAlign: TextAlign.center,
-                            style: Theme.of(
-                              context,
-                            ).textTheme.headlineMedium!.copyWith(
-                              color: AppColors.white,
-                              fontWeight: FontWeight.w400,
-                              fontSize: 32,
-                            ),
-
-                            maxLines: null,
-                            maxLength: 180,
-                            decoration: InputDecoration(
-                              hintText: 'Write your thought with others',
-                              hintStyle: Theme.of(
-                                context,
-                              ).textTheme.headlineMedium!.copyWith(
-                                color: AppColors.white70,
-                                fontWeight: FontWeight.w400,
-                                fontSize: 32,
-                              ),
-                              counterText: _hasText ? null : '',
-                              counterStyle: TextStyle(
-                                color:
-                                    _controller.text.length >= 140
-                                        ? Colors.red
-                                        : AppColors.grey2.withValues(
-                                          alpha: 0.6,
-                                        ),
-                                fontWeight:
-                                    _controller.text.length >= 140
-                                        ? FontWeight.bold
-                                        : null,
-                              ),
-                              border: InputBorder.none,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+            body: Column(
+              children: [
+                Expanded(
+                  child: StoryTextEditor(
+                    controller: _controller,
+                    hasText: _hasText,
                   ),
-                  Spacer(),
-                  SizedBox(
-                    height: 50,
-                    child: ListView.separated(
-                      padding: EdgeInsets.only(left: 28),
-                      scrollDirection: Axis.horizontal,
-                      itemCount: _colors.length,
-                      separatorBuilder: (context, index) => const Gap(12),
-                      itemBuilder:
-                          (context, index) => InkWell(
-                            splashColor: AppColors.transparent,
-                            onTap: () {
-                              setState(() {
-                                _selectedColor = _colors[index];
-                              });
-                            },
-                            child: AnimatedContainer(
-                              width: 38,
-                              height: 38,
-                              decoration: BoxDecoration(
-                                color: _colors[index],
-                                shape: BoxShape.circle,
-                                border:
-                                    _selectedColor == _colors[index]
-                                        ? Border.all(
-                                          color: AppColors.white,
-                                          width: 3,
-                                        )
-                                        : null,
-                              ),
-                              duration: const Duration(milliseconds: 300),
-                            ),
-                          ),
-                    ),
-                  ),
-                  const Gap(14),
-                  CustomElevatedButton(
-                    maximumSize: Size(290, 50),
-                    minimumSize: Size(290, 50),
-                    txtBtn: 'Share Your Story',
-                    txtBtnStyle: Theme.of(
-                      context,
-                    ).textTheme.labelLarge!.copyWith(
-                      color:
-                          _hasText
-                              ? Theme.of(context).primaryColor
-                              : AppColors.black12.withValues(alpha: 0.25),
-
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-
-                    bgColor: AppColors.white,
-                    isLoading: state is AddStoryLoading,
-                    onPressed: () => _onShareTextStory(context),
-                  ),
-                  const Gap(50),
-                ],
-              ),
+                ),
+                StoryColorPicker(
+                  colors: _colors,
+                  selected: _selectedColor,
+                  onSelect: (c) => setState(() => _selectedColor = c),
+                ),
+                const SizedBox(height: 14),
+              ],
             ),
           ),
         );
