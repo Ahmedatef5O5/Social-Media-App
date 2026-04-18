@@ -3,7 +3,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:social_media_app/features/home/cubits/home_cubit/home_cubit.dart';
 import 'package:social_media_app/features/home/models/story_model.dart';
 import 'package:social_media_app/features/home/widgets/story_item_widget.dart';
-import '../../../core/router/app_routes.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
 
 class StoriesListSection extends StatelessWidget {
@@ -13,26 +12,41 @@ class StoriesListSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
     final homeCubit = BlocProvider.of<HomeCubit>(context);
+
     return SizedBox(
       height: size.height * 0.12,
       child: BlocConsumer<HomeCubit, HomeState>(
         bloc: homeCubit,
         listenWhen:
-            (previous, current) =>
-                current is StoriesError || current is StoryImagePicked,
+            (_, current) =>
+                current is StoriesError ||
+                current is StoryVideoTooLong ||
+                current is StoryVideoPickError,
         listener: (context, state) {
           if (state is StoriesError) {
             ScaffoldMessenger.of(
               context,
             ).showSnackBar(SnackBar(content: Text('Error: ${state.message}')));
           }
-          if (state is StoryImagePicked) {
-            Navigator.of(context, rootNavigator: true).pushNamed(
-              AppRoutes.addStoryCaptionViewRoute,
-              arguments: {
-                'file': state.file,
-                'homeCubit': context.read<HomeCubit>(),
-              },
+          if (state is StoryVideoTooLong) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  'Video is ${state.videoDuration.inSeconds}s — '
+                  'max allowed is ${state.maxAllowed.inSeconds}s.',
+                ),
+                backgroundColor: Colors.red,
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+          }
+          if (state is StoryVideoPickError) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Error: ${state.message}'),
+                backgroundColor: Colors.red,
+                behavior: SnackBarBehavior.floating,
+              ),
             );
           }
         },
@@ -45,11 +59,13 @@ class StoriesListSection extends StatelessWidget {
             return const CustomLoadingIndicator();
           } else if (state is StoriesLoaded) {
             final stories = state.stories;
+
             final Map<String, List<StoryModel>> storiesByUser = {};
             for (final story in stories) {
               storiesByUser.putIfAbsent(story.authorId, () => []).add(story);
             }
             final uniqueUsers = storiesByUser.values.toList();
+
             return ListView.builder(
               scrollDirection: Axis.horizontal,
               physics: const ClampingScrollPhysics(),
@@ -57,8 +73,8 @@ class StoriesListSection extends StatelessWidget {
               itemCount: uniqueUsers.length + 1,
               itemBuilder: (context, index) {
                 if (index == 0) {
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 14),
+                  return const Padding(
+                    padding: EdgeInsets.only(right: 14),
                     child: StoryItemWidget(),
                   );
                 }
