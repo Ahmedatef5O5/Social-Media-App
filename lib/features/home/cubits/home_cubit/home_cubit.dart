@@ -8,6 +8,7 @@ import 'package:persistent_bottom_nav_bar_v2/persistent_bottom_nav_bar_v2.dart';
 import 'package:social_media_app/core/services/file_picker_services.dart';
 import 'package:social_media_app/features/auth/data/models/user_data.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:video_player/video_player.dart';
 import '../../../comments/events/comment_event_bus.dart';
 import '../../models/comment_model.dart';
 import '../../models/post_model.dart';
@@ -16,10 +17,13 @@ import '../../models/story_model.dart';
 import '../../services/home_services.dart';
 part 'home_state.dart';
 
+const Duration kMaxStoryVideoDuration = Duration(seconds: 60);
+
 class HomeCubit extends Cubit<HomeState> {
   HomeCubit() : super(HomeInitial()) {
     _listenToCommentEvents();
   }
+
   final homeServices = HomeServices();
   final filePickerServices = FilePickerServices();
 
@@ -30,7 +34,11 @@ class HomeCubit extends Cubit<HomeState> {
   XFile? selectedDocument;
   File? selectedStoryFile;
 
+  File? _stableVideoFile;
+
   List<StoryModel> cachedStories = [];
+
+  List<PostModel> cachedPosts = [];
 
   PersistentTabController? navController;
 
@@ -47,7 +55,8 @@ class HomeCubit extends Cubit<HomeState> {
     });
   }
 
-  // Refresh Screen
+  // ── Home data ──────────────────────────────────────────────────────────────
+
   Future<void> refreshHomeData({bool isRefresh = false}) async {
     bool hasNet = await homeServices.postServices.isConnected();
     if (!hasNet) {
@@ -85,13 +94,14 @@ class HomeCubit extends Cubit<HomeState> {
     }
   }
 
+  // ── Story actions ──────────────────────────────────────────────────────────
+
   Future<void> addTextStory({
     required String text,
     required Color bgColor,
   }) async {
     if (currentUserData == null) return;
     emit(AddStoryLoading());
-
     try {
       final newStory = StoryModel(
         contentText: text,
@@ -104,6 +114,11 @@ class HomeCubit extends Cubit<HomeState> {
       await homeServices.storyServices.createStory(newStory);
       await fetchStories();
       emit(AddStorySuccess());
+      await Future.delayed(const Duration(milliseconds: 100));
+      emit(StoriesLoaded(cachedStories, DateTime.now()));
+      if (cachedPosts.isNotEmpty) {
+        emit(PostsLoaded(cachedPosts, DateTime.now()));
+      }
     } catch (e) {
       debugPrint('Error adding text story: $e');
       emit(AddStoryError(e.toString()));
@@ -118,7 +133,6 @@ class HomeCubit extends Cubit<HomeState> {
         user.id,
       );
       final newStory = StoryModel(
-        // id: '',
         imageUrl: fileUrl,
         authorId: user.id,
         authorName: user.name,
@@ -126,6 +140,11 @@ class HomeCubit extends Cubit<HomeState> {
       );
       await homeServices.storyServices.createStory(newStory);
       await fetchStories();
+      await Future.delayed(const Duration(milliseconds: 100));
+      emit(StoriesLoaded(cachedStories, DateTime.now()));
+      if (cachedPosts.isNotEmpty) {
+        emit(PostsLoaded(cachedPosts, DateTime.now()));
+      }
     } catch (e) {
       debugPrint('Error adding story: $e');
       emit(AddStoryError(e.toString()));
@@ -156,22 +175,12 @@ class HomeCubit extends Cubit<HomeState> {
           source == ImageSource.camera
               ? await filePickerServices.takePhotoByCamera()
               : await filePickerServices.pickImageFromGallery();
-      if (pickedFile != null) {
-        final file = File(pickedFile.path);
 
-        if (await file.exists() && currentUserData != null) {
-          selectedStoryFile = file;
+      if (pickedFile == null) return;
 
-          emit(StoryImagePicked(file: file));
-        } else {
-          final appDir = await getTemporaryDirectory();
-          final newPath =
-              '${appDir.path}/${DateTime.now().millisecondsSinceEpoch}.jpg';
-          final newFile = await File(pickedFile.path).copy(newPath);
-          selectedStoryFile = newFile;
-          emit(StoryImagePicked(file: newFile));
-        }
-      }
+      final file = await _writeToAppDir(xFile: pickedFile, extension: 'jpg');
+      selectedStoryFile = file;
+      emit(StoryImagePicked(file: file));
     } catch (e) {
       debugPrint('Error in pickAndAddStory: $e');
       emit(AddStoryError(e.toString()));
@@ -199,11 +208,108 @@ class HomeCubit extends Cubit<HomeState> {
       await homeServices.storyServices.createStory(newStory);
       await fetchStories();
       emit(AddStorySuccess());
+      await Future.delayed(const Duration(milliseconds: 100));
+      emit(StoriesLoaded(cachedStories, DateTime.now()));
+      if (cachedPosts.isNotEmpty) {
+        emit(PostsLoaded(cachedPosts, DateTime.now()));
+      }
     } catch (e) {
-      debugPrint('Error adding story With caption: $e');
+      debugPrint('Error adding story with caption: $e');
       emit(AddStoryError(e.toString()));
     }
   }
+
+  Future<void> pickAndPreviewVideoStory({required ImageSource source}) async {
+    if (state is StoryVideoPicked) return;
+
+    try {
+      final XFile? pickedFile =
+          source == ImageSource.camera
+              ? await filePickerServices.takeVideoByCamera()
+              : await filePickerServices.pickVideoFromGallery();
+
+      if (pickedFile == null) return;
+
+      final appDir = await getApplicationDocumentsDirectory();
+      final destPath =
+          '${appDir.path}/${DateTime.now().millisecondsSinceEpoch}.mp4';
+
+      final stableFile = await File(pickedFile.path).copy(destPath);
+
+      if (!await stableFile.exists()) {
+        emit(const StoryVideoPickError('Could not process the video file.'));
+        return;
+      }
+
+      final duration = await _getVideoDuration(stableFile);
+
+      if (duration > kMaxStoryVideoDuration) {
+        // ignore: body_might_complete_normally_catch_error
+        await stableFile.delete().catchError((_) {});
+        emit(
+          StoryVideoTooLong(
+            videoDuration: duration,
+            maxAllowed: kMaxStoryVideoDuration,
+          ),
+        );
+        return;
+      }
+
+      _stableVideoFile = stableFile;
+      selectedStoryFile = stableFile;
+      emit(StoryVideoPicked(file: stableFile, videoDuration: duration));
+    } catch (e) {
+      debugPrint('Error picking video story: $e');
+      emit(StoryVideoPickError(e.toString()));
+    }
+  }
+
+  Future<void> addVideoStoryWithCaption({
+    required File file,
+    required UserData user,
+    String? caption,
+  }) async {
+    emit(AddStoryLoading());
+    try {
+      final File uploadFile =
+          (_stableVideoFile != null && await _stableVideoFile!.exists())
+              ? _stableVideoFile!
+              : (await file.exists()
+                  ? file
+                  : throw PathNotFoundException(
+                    file.path,
+                    const OSError('File not found', 2),
+                  ));
+
+      final videoUrl = await homeServices.storyServices.uploadStoryVideoFile(
+        uploadFile,
+        user.id,
+      );
+
+      final newStory = StoryModel(
+        videoUrl: videoUrl,
+        authorId: user.id,
+        authorName: user.name,
+        createdAt: DateTime.now().toIso8601String(),
+        caption: caption,
+      );
+      await homeServices.storyServices.createStory(newStory);
+      await fetchStories(isRefresh: true);
+      _cleanupStableVideo();
+      emit(AddStorySuccess());
+      await Future.delayed(const Duration(milliseconds: 300));
+      if (cachedPosts.isNotEmpty) {
+        emit(PostsLoaded(cachedPosts, DateTime.now()));
+      } else {
+        emit(StoriesLoaded(cachedStories, DateTime.now()));
+      }
+    } catch (e) {
+      debugPrint('Error adding video story: $e');
+      emit(AddStoryError(e.toString()));
+    }
+  }
+
+  // ── Stories fetch ──────────────────────────────────────────────────────────
 
   Future<void> fetchStories({bool isRefresh = false}) async {
     if (!isRefresh && state is! StoriesLoading) emit(StoriesLoading());
@@ -217,29 +323,28 @@ class HomeCubit extends Cubit<HomeState> {
     }
   }
 
+  // ── Posts ──────────────────────────────────────────────────────────────────
+
   Future<void> fetchPosts({bool isRefresh = false}) async {
     if (!isRefresh) emit(PostsLoading());
-
     final hasNet = await homeServices.postServices.isConnected();
     if (!hasNet) {
       emit(UserDataLoadError("No internet connection."));
       return;
     }
-
     _listenToPosts();
   }
 
   void _listenToPosts() {
     _postsSubscription?.cancel();
-
     _postsSubscription = homeServices.postServices.getPostsStream().listen((
       _,
     ) async {
       try {
         final posts = await homeServices.postServices.fetchPosts();
-
+        cachedPosts = _fixLikersImages(posts);
         if (!isClosed) {
-          emit(PostsLoaded(_fixLikersImages(posts), DateTime.now()));
+          emit(PostsLoaded(cachedPosts, DateTime.now()));
         }
       } catch (e) {
         debugPrint("Posts stream error: $e");
@@ -253,58 +358,48 @@ class HomeCubit extends Cubit<HomeState> {
     String? parentId,
   ) {
     if (state is! PostsLoaded) return;
-
     final oldState = state as PostsLoaded;
 
     final updatedPosts =
         oldState.posts.map((post) {
           if (post.id != postId) return post;
-
           final updatedComments = List<CommentModel>.from(
             post.comments ?? const [],
           );
-
           if (parentId == null) {
             updatedComments.insert(0, comment);
           } else {
-            _insertReply(updatedComments, parentId, comment);
+            for (int i = 0; i < updatedComments.length; i++) {
+              if (updatedComments[i].id == parentId) {
+                final replies = List<CommentModel>.from(
+                  updatedComments[i].replies,
+                );
+                replies.add(comment);
+                updatedComments[i] = updatedComments[i].copyWith(
+                  replies: replies,
+                );
+                break;
+              }
+            }
           }
-
           return post.copyWith(comments: updatedComments);
         }).toList();
 
     emit(PostsLoaded(updatedPosts, DateTime.now()));
   }
 
-  bool _insertReply(
-    List<CommentModel> comments,
-    String parentId,
-    CommentModel reply,
-  ) {
-    for (int i = 0; i < comments.length; i++) {
-      if (comments[i].id == parentId) {
-        final updated = List<CommentModel>.from(comments[i].replies);
-
-        updated.add(reply);
-
-        comments[i] = comments[i].copyWith(replies: updated);
-
-        return true;
-      } else {
-        final found = _insertReply(comments[i].replies, parentId, reply);
-        if (found) return true;
-      }
-    }
-    return false;
-  }
-
   Future<void> createPost({required String text}) async {
-    emit(PostCreating(0.05));
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user == null) return;
+    final userId = user.id;
+
+    emit(const PostCreating(0.0));
+
+    String? imageUrl;
+    String? videoUrl;
+    String? fileUrl;
+
     try {
-      final userId = Supabase.instance.client.auth.currentUser!.id;
-      String? imageUrl;
-      String? videoUrl;
-      String? fileUrl;
       void updateProgress(double p) {
         if (state is PostCreating) {
           emit(PostCreating(p.clamp(0.05, 0.95)));
@@ -313,24 +408,23 @@ class HomeCubit extends Cubit<HomeState> {
 
       if (selectedImage != null) {
         final imageFile = File(selectedImage!.path);
-
         if (await imageFile.exists()) {
           imageUrl = await homeServices.storage.uploadFile(
-            File(selectedImage!.path),
+            imageFile,
             'post_images',
             'images',
-
             onProgress: updateProgress,
           );
         } else {
           throw Exception('image_not_found');
         }
       }
+
       if (selectedVideo != null) {
         final videoFile = File(selectedVideo!.path);
         if (await videoFile.exists()) {
           videoUrl = await homeServices.storage.uploadFile(
-            File(selectedVideo!.path),
+            videoFile,
             'post_images',
             'videos',
             onProgress: updateProgress,
@@ -339,6 +433,7 @@ class HomeCubit extends Cubit<HomeState> {
           throw Exception('video_not_found');
         }
       }
+
       if (selectedDocument != null) {
         final docFile = File(selectedDocument!.path);
         if (await docFile.exists()) {
@@ -364,12 +459,10 @@ class HomeCubit extends Cubit<HomeState> {
 
       emit(PostCreating(1.0));
       await Future.delayed(const Duration(milliseconds: 2000));
-
       _resetMedia();
       emit(PostCreated());
     } catch (e) {
       final errorMessage = _mapExceptionToMessage(e);
-
       if (errorMessage == "upload_canceled") {
         emit(const PostUploadCanceled());
       } else {
@@ -397,33 +490,7 @@ class HomeCubit extends Cubit<HomeState> {
     }
   }
 
-  void _resetMedia() {
-    selectedImage = null;
-    selectedVideo = null;
-    selectedDocument = null;
-  }
-
-  String _mapExceptionToMessage(Object e) {
-    final error = e.toString().toLowerCase();
-
-    if (error.contains('canceled') || error.contains('cancel')) {
-      return "upload_canceled";
-    }
-
-    if (error.contains('pathnotfoundexception') ||
-        error.contains('not_found')) {
-      return "The selected file is no longer available. Please re-select it.";
-    } else if (error.contains('socketexception') ||
-        error.contains('connection reset')) {
-      return "Connection lost. Please check your internet and try again.";
-    } else if (error.contains('storage-byte-range-not-satisfiable')) {
-      return "File size is too large or upload was interrupted.";
-    } else if (error.contains('post_images/images')) {
-      return "Storage error: Make sure you have permission to upload.";
-    }
-
-    return "Something went wrong. Please try again later.";
-  }
+  // ── Media picking (posts) ──────────────────────────────────────────────────
 
   Future<void> pickImageFromGallery() async {
     emit(MediaPicking());
@@ -489,6 +556,8 @@ class HomeCubit extends Cubit<HomeState> {
     }
   }
 
+  // ── Likes ──────────────────────────────────────────────────────────────────
+
   Future<void> toggleLike(PostModel post) async {
     if (state is! PostsLoaded) return;
     final user = Supabase.instance.client.auth.currentUser;
@@ -496,7 +565,6 @@ class HomeCubit extends Cubit<HomeState> {
     if (userId == null) return;
 
     final oldState = state as PostsLoaded;
-
     final bool isCurrentlyLiked = post.isLikedBy(userId);
 
     final List<PostModel> updatedPosts =
@@ -527,6 +595,7 @@ class HomeCubit extends Cubit<HomeState> {
           }
           return p;
         }).toList();
+
     emit(PostsLoaded(updatedPosts, DateTime.now()));
 
     try {
@@ -541,31 +610,81 @@ class HomeCubit extends Cubit<HomeState> {
     }
   }
 
+  Future<File> _writeToAppDir({
+    required XFile xFile,
+    required String extension,
+  }) async {
+    final bytes = await xFile.readAsBytes();
+    final appDir = await getApplicationDocumentsDirectory();
+    final destPath =
+        '${appDir.path}/${DateTime.now().millisecondsSinceEpoch}.$extension';
+    return File(destPath).writeAsBytes(bytes);
+  }
+
+  /// Returns the duration of a local video file.
+  Future<Duration> _getVideoDuration(File file) async {
+    final controller = VideoPlayerController.file(file);
+    try {
+      await controller.initialize();
+      return controller.value.duration;
+    } finally {
+      await controller.dispose();
+    }
+  }
+
+  void _cleanupStableVideo() {
+    // ignore: body_might_complete_normally_catch_error
+    _stableVideoFile?.delete().catchError((_) {});
+    _stableVideoFile = null;
+  }
+
   List<PostModel> _fixLikersImages(List<PostModel> posts) {
     return posts.map((post) {
       if (post.likes == null || post.likes!.isEmpty) return post;
-
       final likersImages = post.likersImages ?? [];
-
       if (likersImages.length >= post.likes!.length) return post;
-
       final fixedImages = List<String>.from(likersImages);
       final missing = post.likes!.length - likersImages.length;
       for (int i = 0; i < missing; i++) {
         fixedImages.add('asset:default');
       }
-
       return post.copyWith(likersImages: fixedImages);
     }).toList();
   }
 
+  void _resetMedia() {
+    selectedImage = null;
+    selectedVideo = null;
+    selectedDocument = null;
+  }
+
   void _emitPreviousState() {
-    emit(MediaPickingError('Selected Cancelled'));
+    emit(MediaPickingError('Selection Cancelled'));
+  }
+
+  String _mapExceptionToMessage(Object e) {
+    final error = e.toString().toLowerCase();
+    if (error.contains('canceled') || error.contains('cancel')) {
+      return "upload_canceled";
+    }
+    if (error.contains('pathnotfoundexception') ||
+        error.contains('not_found')) {
+      return "The selected file is no longer available. Please re-select it.";
+    } else if (error.contains('socketexception') ||
+        error.contains('connection reset')) {
+      return "Connection lost. Please check your internet and try again.";
+    } else if (error.contains('storage-byte-range-not-satisfiable')) {
+      return "File size is too large or upload was interrupted.";
+    } else if (error.contains('post_images/images')) {
+      return "Storage error: Make sure you have permission to upload.";
+    }
+    return "Something went wrong. Please try again later.";
   }
 
   @override
   Future<void> close() {
     _postsSubscription?.cancel();
+    _cleanupStableVideo();
     return super.close();
   }
 }
