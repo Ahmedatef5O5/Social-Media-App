@@ -117,8 +117,9 @@ class _FullScreenMediaViewState extends State<FullScreenMediaView> {
         if (_showControls) _hideControlsAfterDelay();
       },
       child: Scaffold(
+        // backgroundColor: Colors.transparent,
         backgroundColor: Colors.black.withValues(
-          alpha: (1.0 - (_dragOffset.abs() / 500)).clamp(0.0, 1.0),
+          alpha: (.95 - (_dragOffset.abs() / 500)).clamp(0.0, 1.0),
         ),
         extendBodyBehindAppBar: true,
         appBar: AppBar(

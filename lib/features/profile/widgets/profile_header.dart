@@ -163,24 +163,6 @@ class ProfileHeader extends StatelessWidget {
                           style: TextStyle(color: AppColors.grey, fontSize: 14),
                         ),
                       ],
-                      // if (!isMe &&
-                      //     user.title != null &&
-                      //     user.title!.isNotEmpty) ...[
-                      //   const Gap(4),
-                      //   Text(
-                      //     user.title.toString(),
-                      //     style: const TextStyle(fontSize: 16),
-                      //   ),
-                      // ],
-                      // if (!isMe &&
-                      //     user.bio != null &&
-                      //     user.bio!.isNotEmpty) ...[
-                      //   const Gap(4),
-                      //   Text(
-                      //     user.bio.toString(),
-                      //     style: const TextStyle(fontSize: 16),
-                      //   ),
-                      // ],
                     ],
                   ),
                 ),

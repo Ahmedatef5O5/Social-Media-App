@@ -132,7 +132,7 @@ class CustomUserProfileImagesSection extends StatelessWidget {
                               !isEditMode
                                   ? Border.all(
                                     color: Theme.of(context).primaryColor,
-                                    width: isProfileHeader ? 4 : 2,
+                                    width: isProfileHeader ? 2.2 : 2,
                                   )
                                   : null,
                           image: DecorationImage(

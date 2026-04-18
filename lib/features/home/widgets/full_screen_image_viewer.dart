@@ -60,7 +60,7 @@ class _FullScreenImageViewerState extends State<FullScreenImageViewer> {
       },
       child: Scaffold(
         backgroundColor: AppColors.black.withValues(
-          alpha: (1.0 - (_dragOffset.abs() / 500)).clamp(0.0, 1.0),
+          alpha: (.95 - (_dragOffset.abs() / 500)).clamp(0.0, 1.0),
         ),
         body: SafeArea(
           child: Column(
