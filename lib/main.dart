@@ -17,6 +17,7 @@ import 'package:social_media_app/firebase_options.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'features/auth/cubit/auth_cubit/auth_cubit.dart';
 import 'features/chats/services/chat_services.dart';
+import 'features/home/cubits/home_cubit/home_cubit.dart';
 import 'features/home/services/home_services.dart';
 
 void main() async {
@@ -86,8 +87,13 @@ Widget _buildApp() {
       RepositoryProvider(create: (_) => ChatServices()),
       RepositoryProvider(create: (_) => SupabaseAuthServices()),
     ],
-    child: BlocProvider(
-      create: (_) => AuthCubit(SupabaseAuthServices())..checkAuthStatus(),
+    child: MultiBlocProvider(
+      providers: [
+        BlocProvider(
+          create: (_) => AuthCubit(SupabaseAuthServices())..checkAuthStatus(),
+        ),
+        BlocProvider(create: (context) => HomeCubit()..getHomeData()),
+      ],
       child: DevicePreview(
         enabled: !kReleaseMode,
         builder: (_) => const MyApp(),
