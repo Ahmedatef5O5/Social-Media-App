@@ -72,7 +72,9 @@ class _CreateTextStoryViewState extends State<CreateTextStoryView> {
             SnackBar(
               content: Text(
                 'Story Added Successfully',
-                style: Theme.of(context).textTheme.titleSmall!.copyWith(),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleSmall!.copyWith(color: Colors.white),
               ),
               backgroundColor: Colors.green,
               behavior: SnackBarBehavior.floating,
