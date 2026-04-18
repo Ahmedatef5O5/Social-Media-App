@@ -59,9 +59,6 @@ final class StoryImagePickeError extends HomeState {
   const StoryImagePickeError(this.message);
 }
 
-// ── Video story states ──────────────────────────────────────────────────────
-
-/// Emitted after the user picks a video file and validation passes.
 final class StoryVideoPicked extends HomeState {
   final File file;
   final Duration videoDuration;
@@ -69,7 +66,6 @@ final class StoryVideoPicked extends HomeState {
   const StoryVideoPicked({required this.file, required this.videoDuration});
 }
 
-/// Emitted when the picked video exceeds the allowed duration.
 final class StoryVideoTooLong extends HomeState {
   final Duration videoDuration;
   final Duration maxAllowed;

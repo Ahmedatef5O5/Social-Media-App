@@ -3,7 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/services/supabase_database_services.dart';
 import '../../../core/services/supabase_storage_services.dart';
 import '../../../core/utilities/supabase_constants.dart';
-import '../../home/models/story_model.dart';
+import '../model/story_model.dart';
 
 class StoriesServices {
   final _supabase = Supabase.instance.client;

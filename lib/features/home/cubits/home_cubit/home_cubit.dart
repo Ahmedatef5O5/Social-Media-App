@@ -10,10 +10,10 @@ import 'package:social_media_app/features/auth/data/models/user_data.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:video_player/video_player.dart';
 import '../../../comments/events/comment_event_bus.dart';
-import '../../models/comment_model.dart';
+import '../../../comments/model/comment_model.dart';
 import '../../models/post_model.dart';
 import '../../models/post_request_body.dart';
-import '../../models/story_model.dart';
+import '../../../stories/model/story_model.dart';
 import '../../services/home_services.dart';
 part 'home_state.dart';
 

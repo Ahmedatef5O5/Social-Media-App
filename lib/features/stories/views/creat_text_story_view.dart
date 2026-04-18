@@ -4,7 +4,7 @@ import 'package:gap/gap.dart';
 import 'package:social_media_app/core/widgets/custom_elevated_button.dart';
 import '../../../core/themes/app_colors.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
-import '../cubits/home_cubit/home_cubit.dart';
+import '../../home/cubits/home_cubit/home_cubit.dart';
 
 class CreateTextStoryView extends StatefulWidget {
   const CreateTextStoryView({super.key});

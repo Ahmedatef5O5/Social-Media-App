@@ -17,10 +17,10 @@ import 'package:social_media_app/features/discover/cubit/discover_people_cubit.d
 import 'package:social_media_app/features/discover/services/discover_people_services.dart';
 import 'package:social_media_app/features/home/cubits/home_cubit/home_cubit.dart';
 import 'package:social_media_app/features/home/services/home_services.dart';
-import 'package:social_media_app/features/home/views/add_story_preview_view.dart';
+import 'package:social_media_app/features/stories/views/add_story_preview_view.dart';
 import 'package:social_media_app/features/home/views/create_post_view.dart';
 import 'package:social_media_app/features/home/views/post_themes_view.dart';
-import 'package:social_media_app/features/home/views/story_display_view.dart';
+import 'package:social_media_app/features/stories/views/story_display_view.dart';
 import 'package:social_media_app/features/home/widgets/full_screen_image_viewer.dart';
 import 'package:social_media_app/features/profile/cubits/edit_profile_cubit/edit_profile_cubit.dart';
 import 'package:social_media_app/features/profile/services/edit_profile_services.dart';
@@ -32,8 +32,8 @@ import '../../features/auth/data/models/user_data.dart';
 import '../../features/chats/cubit/chats_cubit/chats_cubit.dart';
 import '../../features/group_chat/models/group_model.dart';
 import '../../features/group_chat/views/group_chat_view.dart';
-import '../../features/home/views/add_story_caption_view.dart';
-import '../../features/home/views/creat_text_story_view.dart';
+import '../../features/stories/views/add_story_caption_view.dart';
+import '../../features/stories/views/creat_text_story_view.dart';
 import '../../features/profile/cubits/profile_cubit/profile_cubit.dart';
 import '../../features/profile/views/profile_view.dart';
 

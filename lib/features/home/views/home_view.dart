@@ -12,7 +12,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../widgets/home_view_header_section.dart';
 import '../widgets/post_writing_card.dart';
 import '../widgets/posts_section.dart';
-import '../widgets/stories_list_section.dart';
+import '../../stories/widgets/stories_list_section.dart';
 import 'home_shimmer_skeleton_view.dart';
 
 class HomeView extends StatefulWidget {

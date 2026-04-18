@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:social_media_app/features/home/cubits/home_cubit/home_cubit.dart';
-import 'package:social_media_app/features/home/models/story_model.dart';
-import 'package:social_media_app/features/home/widgets/story_item_widget.dart';
+import 'package:social_media_app/features/stories/model/story_model.dart';
+import 'package:social_media_app/features/stories/widgets/story_item_widget.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
 
 class StoriesListSection extends StatelessWidget {

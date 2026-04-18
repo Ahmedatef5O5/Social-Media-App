@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../cubits/home_cubit/home_cubit.dart';
-import '../models/story_model.dart';
+import '../../home/cubits/home_cubit/home_cubit.dart';
+import '../model/story_model.dart';
 import '../views/single_user_story_view.dart';
 
 class UserStoryGroupContainer extends StatefulWidget {
