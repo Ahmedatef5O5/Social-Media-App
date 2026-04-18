@@ -30,32 +30,62 @@ class _UserStoryGroupContainerState extends State<UserStoryGroupContainer>
   late AnimationController _progressController;
   bool _isCompleted = false;
 
+  bool _mediaReady = false;
+
   @override
   void initState() {
     super.initState();
-    _initController();
+    _initController(autoStart: false);
   }
 
-  void _initController() {
+  void _initController({bool autoStart = false}) {
     _progressController = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 7),
+      duration: _durationForStory(widget.userStories[_currentStoryIndex]),
     )..addStatusListener((status) {
-      if (status == AnimationStatus.completed) {
-        _nextStory();
-      }
+      if (status == AnimationStatus.completed) _nextStory();
     });
-    _progressController.forward();
+
+    if (autoStart) _progressController.forward();
+  }
+
+  Duration _durationForStory(StoryModel story) {
+    switch (story.storyType) {
+      case StoryType.video:
+        return const Duration(seconds: 60);
+      case StoryType.image:
+      case StoryType.text:
+        return const Duration(seconds: 7);
+    }
+  }
+
+  void _onMediaReady(Duration? actualDuration) {
+    if (!mounted || _mediaReady) return;
+    _mediaReady = true;
+
+    final duration =
+        actualDuration ??
+        _durationForStory(widget.userStories[_currentStoryIndex]);
+
+    _progressController.stop();
+    _progressController.reset();
+    _progressController.duration = duration;
+    _progressController.forward(from: 0.0);
   }
 
   void _nextStory() {
     if (_isCompleted) return;
     if (_currentStoryIndex < widget.userStories.length - 1) {
+      _progressController.stop();
+      _progressController.reset();
+
       setState(() {
         _currentStoryIndex++;
+        _mediaReady = false;
       });
-      _progressController.reset();
-      _progressController.forward();
+      _progressController.duration = _durationForStory(
+        widget.userStories[_currentStoryIndex],
+      );
     } else {
       _isCompleted = true;
       widget.onAllStoriesComplete();
@@ -64,14 +94,25 @@ class _UserStoryGroupContainerState extends State<UserStoryGroupContainer>
 
   void _prevStory() {
     if (_currentStoryIndex > 0) {
+      _progressController.stop();
+      _progressController.reset();
+
       setState(() {
         _currentStoryIndex--;
+        _mediaReady = false;
       });
-      _progressController.reset();
-      _progressController.forward();
+      _progressController.duration = _durationForStory(
+        widget.userStories[_currentStoryIndex],
+      );
     } else {
       widget.onPrevGroup();
     }
+  }
+
+  void _pauseProgress() => _progressController.stop();
+
+  void _resumeProgress() {
+    if (_mediaReady) _progressController.forward();
   }
 
   @override
@@ -85,13 +126,15 @@ class _UserStoryGroupContainerState extends State<UserStoryGroupContainer>
     return Stack(
       children: [
         SingleUserStoryView(
+          key: ValueKey(widget.userStories[_currentStoryIndex].id),
           story: widget.userStories[_currentStoryIndex],
           homeCubit: widget.homeCubit,
           onNext: _nextStory,
           onPrev: _prevStory,
-          onLongPressStart: () => _progressController.stop(),
-          onLongPressEnd: () => _progressController.forward(),
+          onLongPressStart: _pauseProgress,
+          onLongPressEnd: _resumeProgress,
           onClose: widget.onClose,
+          onMediaReady: _onMediaReady,
         ),
 
         Positioned(
