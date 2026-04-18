@@ -50,6 +50,22 @@ class FilePickerServices {
     }
   }
 
+  Future<XFile?> takeVideoByCamera() async {
+    try {
+      final XFile? video = await _imagePicker.pickVideo(
+        source: ImageSource.camera,
+        maxDuration: const Duration(seconds: 60),
+      );
+      if (video != null) {
+        return video;
+      }
+      return null;
+    } catch (e) {
+      debugPrint('Error capturing video from camera: $e');
+      rethrow;
+    }
+  }
+
   Future<XFile?> pickFile() async {
     try {
       final FilePickerResult? file = await FilePicker.platform.pickFiles(
