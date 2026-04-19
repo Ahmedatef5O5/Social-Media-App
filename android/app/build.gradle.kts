@@ -27,8 +27,8 @@ android {
 
     compileOptions {
         isCoreLibraryDesugaringEnabled = true
-     sourceCompatibility = JavaVersion.VERSION_1_8 // رجعها 1.8
-        targetCompatibility = JavaVersion.VERSION_1_8 // رجعها 1.8
+     sourceCompatibility = JavaVersion.VERSION_1_8 
+        targetCompatibility = JavaVersion.VERSION_1_8 
        // sourceCompatibility = JavaVersion.VERSION_11
         // targetCompatibility = JavaVersion.VERSION_11
     }
@@ -54,7 +54,7 @@ android {
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         
-        minSdk = 23
+        minSdk = 24
         // minSdk = flutter.minSdkVersion
         
         targetSdk = 36
