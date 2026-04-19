@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
+import 'package:social_media_app/core/widgets/custom_linkify_text.dart';
 import '../models/post_model.dart';
 
 class PostTxtContentWidget extends StatelessWidget {
@@ -15,12 +16,14 @@ class PostTxtContentWidget extends StatelessWidget {
           child: Column(
             children: [
               const Gap(4),
-              Text(
-                post.text.trim(),
-                textAlign: TextAlign.start,
+              CustomLinkifyText(
+                text: post.text.trim(),
+                maxLines: 10,
+                overflow: TextOverflow.ellipsis,
+
                 style: Theme.of(context).textTheme.titleSmall!.copyWith(
                   fontWeight: FontWeight.w400,
-                  fontSize: 14,
+                  fontSize: 15,
                 ),
               ),
               const Gap(8),

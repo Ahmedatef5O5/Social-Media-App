@@ -5,6 +5,7 @@ import 'package:social_media_app/features/comments/cubit/comments_cubit.dart';
 import 'package:social_media_app/features/comments/model/comment_model.dart';
 import 'package:social_media_app/features/comments/widget/thread_painter.dart';
 import '../../../core/helpers/comment_helper.dart';
+import '../../../core/widgets/custom_linkify_text.dart';
 import 'comment_constants.dart';
 import 'comment_avatar.dart';
 import 'comment_action_chip.dart';
@@ -271,8 +272,9 @@ class _CommentWidgetState extends State<CommentWidget>
                                   ),
                                 ),
                                 const SizedBox(height: 3),
-                                Text(
-                                  widget.comment.text,
+
+                                CustomLinkifyText(
+                                  text: widget.comment.text,
                                   style: theme.textTheme.bodyMedium?.copyWith(
                                     fontSize: 14,
                                     height: 1.4,
