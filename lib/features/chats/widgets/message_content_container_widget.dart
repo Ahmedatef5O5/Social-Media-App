@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
-import 'package:social_media_app/core/helpers/chat_helper.dart';
+import 'package:social_media_app/core/widgets/custom_linkify_text.dart';
 import 'package:social_media_app/features/chats/cubit/chat_details_cubit/chat_details_cubit.dart';
 import 'package:social_media_app/features/chats/widgets/image_message_widget.dart';
 import 'package:social_media_app/features/chats/widgets/reply_preview_widget.dart';
@@ -209,11 +209,11 @@ class _MessageContentContainerState extends State<MessageContentContainer> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            displayDraft,
-                            textDirection: ChatHelper.getTextDirection(
-                              displayDraft,
-                            ),
+                          CustomLinkifyText(
+                            text: displayDraft,
+                            maxLines: 4,
+                            overflow: TextOverflow.ellipsis,
+
                             style: Theme.of(
                               context,
                             ).textTheme.titleMedium!.copyWith(
@@ -224,6 +224,12 @@ class _MessageContentContainerState extends State<MessageContentContainer> {
                               fontSize: 15,
                               height: 1.3,
                               fontWeight: FontWeight.w500,
+                            ),
+                            linkStyle: TextStyle(
+                              color: widget.isMe ? Colors.black45 : Colors.blue,
+
+                              decorationColor:
+                                  widget.isMe ? Colors.black45 : Colors.blue,
                             ),
                           ),
                           Align(
