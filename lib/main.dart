@@ -13,6 +13,12 @@ import 'package:social_media_app/core/services/active_screen_tracker.dart';
 import 'package:social_media_app/core/services/notification_services.dart';
 import 'package:social_media_app/core/themes/cubit/theme_cubit.dart';
 import 'package:social_media_app/features/auth/services/supabase_auth_services.dart';
+import 'package:social_media_app/features/calls/cubit/call_cubit.dart';
+import 'package:social_media_app/features/calls/cubit/call_state.dart';
+import 'package:social_media_app/features/calls/services/call_signaling_service.dart';
+import 'package:social_media_app/features/calls/views/dialing_view.dart';
+import 'package:social_media_app/features/calls/views/incoming_call_view.dart';
+import 'package:social_media_app/features/calls/views/zego_call_view.dart';
 import 'package:social_media_app/firebase_options.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'features/auth/cubit/auth_cubit/auth_cubit.dart';
@@ -86,6 +92,8 @@ Widget _buildApp() {
       RepositoryProvider(create: (_) => HomeServices()),
       RepositoryProvider(create: (_) => ChatServices()),
       RepositoryProvider(create: (_) => SupabaseAuthServices()),
+
+      RepositoryProvider(create: (_) => CallSignalingService()),
     ],
     child: MultiBlocProvider(
       providers: [
@@ -93,6 +101,10 @@ Widget _buildApp() {
           create: (_) => AuthCubit(SupabaseAuthServices())..checkAuthStatus(),
         ),
         BlocProvider(create: (context) => HomeCubit()..getHomeData()),
+
+        BlocProvider(
+          create: (context) => CallCubit(context.read<CallSignalingService>()),
+        ),
       ],
       child: DevicePreview(
         enabled: !kReleaseMode,
@@ -123,7 +135,62 @@ class MyApp extends StatelessWidget {
         builder: (context, state) {
           return MaterialApp(
             locale: DevicePreview.locale(context),
-            builder: DevicePreview.appBuilder,
+            builder: (ctx, child) {
+              final devicePreviewChild = DevicePreview.appBuilder(ctx, child);
+              return BlocListener<CallCubit, CallState>(
+                listener: (context, callState) {
+                  Future.delayed(const Duration(milliseconds: 300), () async {
+                    final nav = navigatorKey.currentState;
+                    if (nav == null) return;
+
+                    if (callState is CallIncomingState) {
+                      nav.push(
+                        MaterialPageRoute(
+                          builder:
+                              (_) => IncomingCallView(call: callState.call),
+                        ),
+                      );
+                    } else if (callState is CallDialingState) {
+                      nav.push(
+                        MaterialPageRoute(
+                          builder: (_) => DialingView(call: callState.call),
+                        ),
+                      );
+                    } else if (callState is CallConnectedState) {
+                      if (nav.canPop()) nav.pop();
+
+                      final currentUser =
+                          Supabase.instance.client.auth.currentUser;
+                      if (currentUser == null) return;
+
+                      final userData =
+                          await Supabase.instance.client
+                              .from('users')
+                              .select('name')
+                              .eq('id', currentUser.id)
+                              .maybeSingle();
+
+                      final currentUserName =
+                          (userData?['name'] as String?) ?? 'Unknown';
+
+                      nav.push(
+                        MaterialPageRoute(
+                          builder:
+                              (_) => ZegoCallView(
+                                call: callState.call,
+                                currentUserId: currentUser.id,
+                                currentUserName: currentUserName,
+                              ),
+                        ),
+                      );
+                    } else if (callState is CallEndedState) {
+                      nav.popUntil((route) => route.isFirst);
+                    }
+                  });
+                },
+                child: devicePreviewChild,
+              );
+            },
             debugShowCheckedModeBanner: false,
             title: 'Social Media App',
             theme: state.theme.themeData,
