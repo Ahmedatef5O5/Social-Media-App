@@ -1,13 +1,17 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 import 'package:social_media_app/core/helpers/formatted_date.dart';
 import 'package:social_media_app/core/widgets/custom_loading_indicator.dart';
 import 'package:social_media_app/features/chats/models/chat_user_model.dart';
 import 'package:social_media_app/features/chats/widgets/full_screen_media_view.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/utilities/supabase_constants.dart';
 import '../../../core/widgets/custom_user_profile_image_section.dart';
+import '../../calls/cubit/call_cubit.dart';
+import '../../calls/model/call_model.dart';
 import '../services/chat_services.dart';
 
 class ReceiverProfileView extends StatelessWidget {
@@ -66,7 +70,9 @@ class ReceiverProfileView extends StatelessWidget {
             ),
             if (receiverUser.lastSeen != null)
               Text(
-                "Last seen: ${FormattedDate.getLastSeen(receiverUser.lastSeen!)}",
+                FormattedDate.getLastSeen(receiverUser.lastSeen!) == 'Online'
+                    ? 'Online'
+                    : "Last seen: ${FormattedDate.getLastSeen(receiverUser.lastSeen!)}",
                 style: const TextStyle(color: Colors.grey),
               ),
 
@@ -81,8 +87,72 @@ class ReceiverProfileView extends StatelessWidget {
                   "Message",
                   () => Navigator.pop(context),
                 ),
-                _buildOptionItem(context, Icons.call, "Call", () {}),
-                _buildOptionItem(context, Icons.videocam, "Video", () {}),
+
+                _buildOptionItem(context, Icons.call, "Call", () async {
+                  final currentUser = Supabase.instance.client.auth.currentUser;
+                  if (currentUser == null) return;
+
+                  final userData =
+                      await Supabase.instance.client
+                          .from('users')
+                          .select('name, image_url')
+                          .eq('id', currentUser.id)
+                          .maybeSingle();
+
+                  final callerName =
+                      (userData?['name'] as String?) ?? 'Unknown';
+                  final callerAvatar =
+                      (userData?['image_url'] as String?) ?? '';
+
+                  final call = CallModel(
+                    callId: 'room_${DateTime.now().millisecondsSinceEpoch}',
+                    callerId: currentUser.id,
+                    callerName: callerName,
+                    callerAvatar: callerAvatar,
+                    receiverId: receiverUser.id,
+                    receiverName: receiverUser.name,
+                    receiverAvatar: receiverUser.imageUrl ?? '',
+                    status: CallStatus.ringing,
+                    type: CallType.audio,
+                  );
+
+                  if (context.mounted) {
+                    context.read<CallCubit>().makeAudioCall(call);
+                  }
+                }),
+
+                _buildOptionItem(context, Icons.videocam, "Video", () async {
+                  final currentUser = Supabase.instance.client.auth.currentUser;
+                  if (currentUser == null) return;
+
+                  final userData =
+                      await Supabase.instance.client
+                          .from('users')
+                          .select('name, image_url')
+                          .eq('id', currentUser.id)
+                          .maybeSingle();
+
+                  final callerName =
+                      (userData?['name'] as String?) ?? 'Unknown';
+                  final callerAvatar =
+                      (userData?['image_url'] as String?) ?? '';
+
+                  final call = CallModel(
+                    callId: 'room_${DateTime.now().millisecondsSinceEpoch}',
+                    callerId: currentUser.id,
+                    callerName: callerName,
+                    callerAvatar: callerAvatar,
+                    receiverId: receiverUser.id,
+                    receiverName: receiverUser.name,
+                    receiverAvatar: receiverUser.imageUrl ?? '',
+                    status: CallStatus.ringing,
+                    type: CallType.video,
+                  );
+
+                  if (context.mounted) {
+                    context.read<CallCubit>().makeAudioCall(call);
+                  }
+                }),
                 _buildOptionItem(
                   context,
                   Icons.notifications_off,
