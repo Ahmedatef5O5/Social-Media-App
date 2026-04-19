@@ -29,6 +29,12 @@ migrate_working_dir/
 **/*.jks.old
 .env
 
+master_code.txt
+repomix-output.xml
+
+
+
+
 # Flutter/Dart/Pub related
 **/doc/api/
 **/ios/Flutter/.last_build_id
