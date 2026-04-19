@@ -1,5 +1,7 @@
+import 'dart:async';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
-import 'package:internet_connection_checker_plus/internet_connection_checker_plus.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/services/supabase_database_services.dart';
 import '../../../core/utilities/supabase_constants.dart';
@@ -13,7 +15,18 @@ class PostsServices {
   final _supabase = Supabase.instance.client;
 
   Future<bool> isConnected() async {
-    return await InternetConnection().hasInternetAccess;
+    try {
+      final result = await InternetAddress.lookup(
+        'google.com',
+      ).timeout(const Duration(seconds: 5));
+      return result.isNotEmpty && result[0].rawAddress.isNotEmpty;
+    } on SocketException catch (_) {
+      return false;
+    } on TimeoutException catch (_) {
+      return false;
+    } catch (_) {
+      return false;
+    }
   }
 
   static const String _postsQuery = ''' 

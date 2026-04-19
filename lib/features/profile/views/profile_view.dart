@@ -122,8 +122,6 @@ class _ProfileViewState extends State<ProfileView> {
           },
           child: BlocBuilder<ProfileCubit, ProfileState>(
             builder: (context, state) {
-              // bool isLoading = false;
-              // bool isLoading = true;
               bool isLoading =
                   state is ProfileInitial || state is ProfileLoading;
               String? errorMessage =

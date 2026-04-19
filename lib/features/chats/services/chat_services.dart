@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:io';
 import 'package:dio/dio.dart' as dio_pkg;
 import 'package:flutter/material.dart';
-import 'package:internet_connection_checker_plus/internet_connection_checker_plus.dart';
 import 'package:social_media_app/core/secrets/app_secrets.dart';
 import 'package:social_media_app/core/utilities/supabase_constants.dart';
 import 'package:social_media_app/features/chats/models/message_model.dart';
@@ -13,7 +12,18 @@ class ChatServices {
   final _supabase = Supabase.instance.client;
 
   Future<bool> isConnected() async {
-    return await InternetConnection().hasInternetAccess;
+    try {
+      final result = await InternetAddress.lookup(
+        'google.com',
+      ).timeout(const Duration(seconds: 5));
+      return result.isNotEmpty && result[0].rawAddress.isNotEmpty;
+    } on SocketException catch (_) {
+      return false;
+    } on TimeoutException catch (_) {
+      return false;
+    } catch (_) {
+      return false;
+    }
   }
 
   Future<ReceiverPushInfo?> getReceiverPushInfo(String receiverId) async {

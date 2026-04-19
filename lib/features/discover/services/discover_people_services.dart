@@ -1,5 +1,6 @@
+import 'dart:async';
+import 'dart:io';
 import 'package:flutter/cupertino.dart';
-import 'package:internet_connection_checker_plus/internet_connection_checker_plus.dart';
 import 'package:social_media_app/core/utilities/supabase_constants.dart';
 import 'package:social_media_app/features/auth/data/models/user_data.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -7,7 +8,18 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 class DiscoverPeopleServices {
   final _supabase = Supabase.instance.client;
   Future<bool> isConnected() async {
-    return await InternetConnection().hasInternetAccess;
+    try {
+      final result = await InternetAddress.lookup(
+        'google.com',
+      ).timeout(const Duration(seconds: 5));
+      return result.isNotEmpty && result[0].rawAddress.isNotEmpty;
+    } on SocketException catch (_) {
+      return false;
+    } on TimeoutException catch (_) {
+      return false;
+    } catch (_) {
+      return false;
+    }
   }
 
   Future<List<UserData>> getAllUsers() async {
