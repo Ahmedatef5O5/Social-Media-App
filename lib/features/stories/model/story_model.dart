@@ -43,13 +43,22 @@ class StoryModel {
       StoryColumns.contentText: contentText,
       StoryColumns.backgroundColor: backgroundColor,
       StoryColumns.authorId: authorId,
-      StoryColumns.createdAt: createdAt,
+      StoryColumns.createdAt:
+          DateTime.parse(createdAt).toUtc().toIso8601String(),
       StoryColumns.storyCaption: caption,
     };
   }
 
   factory StoryModel.fromMap(Map<String, dynamic> map) {
     final userData = map[SupabaseConstants.users] as Map<String, dynamic>?;
+    String formattedLocalTime = '';
+    if (map[StoryColumns.createdAt] != null) {
+      formattedLocalTime =
+          DateTime.parse(
+            map[StoryColumns.createdAt].toString(),
+          ).toLocal().toString();
+    }
+
     return StoryModel(
       id: map[StoryColumns.id] as String,
       imageUrl: map[StoryColumns.imageUrl] as String?,
@@ -59,7 +68,7 @@ class StoryModel {
       authorId: map[StoryColumns.authorId] as String? ?? '',
       authorName: userData?[UserColumns.name] as String? ?? 'Unknown User',
       authorImageUrl: userData?[UserColumns.imageUrl] as String?,
-      createdAt: map[StoryColumns.createdAt] as String? ?? '',
+      createdAt: formattedLocalTime,
       caption: map[StoryColumns.storyCaption] as String?,
       lastSeen:
           userData != null && userData[UserColumns.lastSeen] != null

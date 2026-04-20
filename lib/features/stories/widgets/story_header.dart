@@ -64,7 +64,9 @@ class StoryHeader extends StatelessWidget {
                 style: const TextStyle(color: Colors.white),
               ),
               Text(
-                FormattedDate.getFormattedDate(story.createdAt),
+                FormattedDate.getFormattedDate(
+                  DateTime.parse(story.createdAt).toLocal().toIso8601String(),
+                ),
                 style: const TextStyle(color: Colors.white70, fontSize: 12),
               ),
             ],
@@ -73,6 +75,7 @@ class StoryHeader extends StatelessWidget {
         const Spacer(),
         if (isMyStory)
           PopupMenuButton(
+            icon: Icon(Icons.more_vert, color: Colors.white),
             onOpened: onPause,
             onCanceled: onResume,
             onSelected: (_) async {
