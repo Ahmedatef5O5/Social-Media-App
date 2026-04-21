@@ -18,6 +18,10 @@ class ChatsCubit extends Cubit<ChatsState> {
   List<ChatUserModel> _cachedChats = [];
   List<String> _typingUserIds = [];
 
+  bool _showSkeleton = true;
+
+  bool get showSkeleton => _showSkeleton;
+
   ChatsCubit(this._chatServices) : super(ChatsInitial());
 
   void monitorChats() {
@@ -77,16 +81,19 @@ class ChatsCubit extends Cubit<ChatsState> {
   }
 
   Future<void> getChats({bool isRefresh = false}) async {
-    if (!isRefresh) emit(ChatsLoading());
+    if (!isRefresh) {
+      _showSkeleton = true;
+      emit(ChatsLoading());
+    }
     try {
       final start = DateTime.now();
 
       final chats = await _chatServices.getChatsList(_currentUserId);
       _cachedChats = chats;
+      _showSkeleton = false;
 
       if (isRefresh) {
         emit(ChatsRefreshFeedback());
-
         final elapsed = DateTime.now().difference(start);
         if (elapsed < const Duration(milliseconds: 500)) {
           await Future.delayed(const Duration(milliseconds: 500) - elapsed);
@@ -94,6 +101,7 @@ class ChatsCubit extends Cubit<ChatsState> {
       }
       _emitWithTyping();
     } catch (e) {
+      _showSkeleton = false;
       if (e.toString().contains('no-internet')) {
         if (_cachedChats.isNotEmpty) {
           debugPrint('Silent error: No internet, but showing cached chats.');
