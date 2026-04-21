@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:social_media_app/core/router/app_router.dart';
 import 'package:social_media_app/core/router/app_routes.dart';
 import 'package:social_media_app/core/secrets/app_secrets.dart';
@@ -19,12 +20,102 @@ import 'package:social_media_app/features/calls/services/call_signaling_service.
 import 'package:social_media_app/features/calls/views/dialing_view.dart';
 import 'package:social_media_app/features/calls/views/incoming_call_view.dart';
 import 'package:social_media_app/features/calls/views/zego_call_view.dart';
+import 'package:social_media_app/features/group_chat/cubit/group_list_cubit/group_list_cubit.dart';
+import 'package:social_media_app/features/group_chat/services/group_chat_services.dart';
 import 'package:social_media_app/firebase_options.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'features/auth/cubit/auth_cubit/auth_cubit.dart';
 import 'features/chats/services/chat_services.dart';
 import 'features/home/cubits/home_cubit/home_cubit.dart';
 import 'features/home/services/home_services.dart';
+
+@pragma('vm:entry-point')
+Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  final type = message.data['notificationType'] as String? ?? 'chat';
+
+  if (type == 'incoming_call') {
+    final plugin = FlutterLocalNotificationsPlugin();
+
+    const androidInit = AndroidInitializationSettings(
+      '@drawable/ic_notification',
+    );
+    await plugin.initialize(
+      const InitializationSettings(android: androidInit),
+      onDidReceiveBackgroundNotificationResponse: _bgNotificationTapped,
+    );
+
+    final androidPlugin =
+        plugin
+            .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin
+            >();
+
+    final callChannel = AndroidNotificationChannel(
+      'incoming_call_channel',
+      'Incoming Calls',
+      importance: Importance.max,
+      playSound: true,
+      sound: const RawResourceAndroidNotificationSound('incoming_ring'),
+      enableVibration: true,
+      vibrationPattern: Int64List.fromList([0, 1000, 500, 1000]),
+    );
+    await androidPlugin?.createNotificationChannel(callChannel);
+
+    final callId = message.data['callId'] ?? '';
+    final callerId = message.data['callerId'] ?? '';
+    final callerName = message.data['callerName'] ?? 'Unknown';
+    final callerAvatar = message.data['callerAvatar'] ?? '';
+    final callType = message.data['callType'] ?? 'audio';
+    final subtitle =
+        callType == 'video' ? 'Incoming video call' : 'Incoming voice call';
+
+    final androidDetails = AndroidNotificationDetails(
+      'incoming_call_channel',
+      'Incoming Calls',
+      importance: Importance.max,
+      priority: Priority.max,
+      category: AndroidNotificationCategory.call,
+      icon: '@drawable/ic_notification',
+      fullScreenIntent: true,
+      ongoing: true,
+      autoCancel: false,
+      timeoutAfter: 60000,
+      actions: [
+        const AndroidNotificationAction(
+          'decline_call',
+          'Decline',
+          cancelNotification: true,
+        ),
+        AndroidNotificationAction(
+          'accept_call',
+          'Accept',
+          cancelNotification: true,
+          showsUserInterface: true,
+        ),
+      ],
+    );
+
+    await plugin.show(
+      callId.hashCode,
+      callerName,
+      subtitle,
+      NotificationDetails(android: androidDetails),
+      payload: 'call|$callId|$callerId|$callerName|$callerAvatar|$callType',
+    );
+    return;
+  }
+
+  // For regular messages — initialize full NotificationService
+  await NotificationService.instance.initialize(isBackground: true);
+  await NotificationService.instance.showNotificationFromMessage(message);
+}
+
+@pragma('vm:entry-point')
+void _bgNotificationTapped(NotificationResponse response) {}
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -60,6 +151,13 @@ Future<void> _initFirebase() async {
   FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
   await FirebaseMessaging.instance.requestPermission(
+    alert: true,
+    badge: true,
+    sound: true,
+    criticalAlert: true,
+  );
+
+  await FirebaseMessaging.instance.setForegroundNotificationPresentationOptions(
     alert: true,
     badge: true,
     sound: true,
@@ -101,6 +199,7 @@ Widget _buildApp() {
           create: (_) => AuthCubit(SupabaseAuthServices())..checkAuthStatus(),
         ),
         BlocProvider(create: (context) => HomeCubit()..getHomeData()),
+        BlocProvider(create: (_) => GroupListCubit(GroupChatServices())),
 
         BlocProvider(
           create: (context) => CallCubit(context.read<CallSignalingService>()),
