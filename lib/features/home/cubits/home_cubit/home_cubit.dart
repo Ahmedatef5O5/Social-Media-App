@@ -65,8 +65,22 @@ class HomeCubit extends Cubit<HomeState> {
       );
       return;
     }
+
     try {
+      final start = DateTime.now();
+
       await getHomeData(isRefresh: isRefresh);
+
+      if (isRefresh) {
+        emit(HomeRefreshFeedback());
+
+        final elapsed = DateTime.now().difference(start);
+        const minDuration = Duration(milliseconds: 700);
+
+        if (elapsed < minDuration) {
+          await Future.delayed(minDuration - elapsed);
+        }
+      }
     } catch (e) {
       debugPrint('Error refreshing home data: $e');
     }

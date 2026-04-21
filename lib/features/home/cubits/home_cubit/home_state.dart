@@ -6,6 +6,8 @@ sealed class HomeState {
 
 final class HomeInitial extends HomeState {}
 
+class HomeRefreshFeedback extends HomeState {}
+
 final class UserDataLoading extends HomeState {}
 
 final class UserDataLoaded extends HomeState {
