@@ -55,18 +55,18 @@ class GroupModel {
 
   factory GroupModel.fromMap(Map<String, dynamic> map) {
     return GroupModel(
-      id: map['id'] as String,
-      name: map['name'] as String,
-      avatarUrl: map['avatar_url'] as String?,
+      id: map['id'],
+      name: map['name'] ?? '',
+      avatarUrl: map['avatar_url'],
       createdBy: map['created_by'] as String,
-      createdAt: DateTime.parse(map['created_at'] as String),
-      lastMessage: map['last_message'] as String?,
-      lastMessageType: map['last_message_type'] as String?,
+
+      createdAt: DateTime.parse(map['group_created_at'] as String),
+      lastMessage: map['last_message'] ?? '',
+      lastMessageType: map['last_message_type'] ?? 'text',
       lastMessageAt:
           map['last_message_at'] != null
-              ? DateTime.parse(map['last_message_at'] as String)
+              ? DateTime.parse(map['last_message_at'])
               : null,
-      unreadCount: (map['unread_count'] as int?) ?? 0,
     );
   }
 
