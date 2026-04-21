@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -41,6 +42,7 @@ class _MessageContentContainerState extends State<MessageContentContainer> {
     final bool isImage = widget.message.messageType == 'image';
     final bool isVideo = widget.message.messageType == 'video';
     final bool isVoice = widget.message.messageType == 'voice';
+    final bool isCall = widget.message.messageType == 'call';
     final bool hasReaction =
         widget.message.reaction != null && widget.message.reaction!.isNotEmpty;
     final String displayDraft = widget.message.caption ?? widget.message.text;
@@ -53,7 +55,10 @@ class _MessageContentContainerState extends State<MessageContentContainer> {
           Text(
             FormattedDate.getMessageTime(widget.message.createdAt),
             style: Theme.of(context).textTheme.titleMedium!.copyWith(
-              color: widget.isMe ? AppColors.white70 : AppColors.black54,
+              color:
+                  widget.isMe
+                      ? AppColors.white70
+                      : Theme.of(context).colorScheme.onSurface,
               fontSize: 9,
             ),
           ),
@@ -66,6 +71,17 @@ class _MessageContentContainerState extends State<MessageContentContainer> {
             ),
           ],
         ],
+      );
+    }
+
+    // ── CALL BUBBLE ──────────────────────────────────────────────────
+
+    if (isCall) {
+      return _buildCallBubble(
+        context,
+        timeAndStatus,
+        maxBubbleWidth,
+        hasReaction,
       );
     }
 
@@ -367,5 +383,147 @@ class _MessageContentContainerState extends State<MessageContentContainer> {
     } else {
       debugPrint("Controller is not attached to any list");
     }
+  }
+
+  // ── Call bubble ────────────────────────────────────────────────────────────
+
+  Widget _buildCallBubble(
+    BuildContext context,
+    Widget Function(Color, Color?) timeAndStatus,
+    double maxBubbleWidth,
+    bool hasReaction,
+  ) {
+    Map<String, dynamic> callData = {};
+    try {
+      callData = jsonDecode(widget.message.text) as Map<String, dynamic>;
+    } catch (_) {}
+
+    final status = callData['status'] as String? ?? 'ended';
+    final callType = callData['call_type'] as String? ?? 'audio';
+    final duration = callData['duration'] as String? ?? '';
+
+    final bool isAudio = callType == 'audio';
+    final bool isMissed = status == 'rejected' || status == 'missed';
+
+    final colorScheme = Theme.of(context).colorScheme;
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
+    final IconData icon =
+        isMissed
+            ? (isAudio ? Icons.call_missed : Icons.missed_video_call)
+            : (isAudio ? Icons.call : Icons.videocam);
+
+    final Color bubbleBg =
+        widget.isMe
+            ? Theme.of(context).primaryColor.withValues(alpha: 0.95)
+            : (isDarkMode
+                ? colorScheme.surfaceContainerHigh
+                : Colors.grey.shade200);
+
+    final Color textColor =
+        widget.isMe
+            ? colorScheme.onPrimary
+            : colorScheme.onSurface.withValues(alpha: 0.7);
+    final Color timeColor =
+        widget.isMe
+            ? Theme.of(context).scaffoldBackgroundColor.withValues(alpha: 0.8)
+            : Theme.of(context).scaffoldBackgroundColor;
+
+    final Color iconColor =
+        widget.isMe
+            ? colorScheme.onPrimary
+            : (isMissed ? Colors.redAccent : Colors.green);
+
+    final Color iconBgColor =
+        widget.isMe
+            ? Colors.white.withValues(alpha: 0.2)
+            : iconColor.withValues(alpha: 0.15);
+
+    String title =
+        isMissed
+            ? (isAudio ? 'Missed voice call' : 'Missed video call')
+            : (isAudio ? 'Voice call' : 'Video call');
+
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Container(
+          margin: EdgeInsets.only(top: 2, bottom: hasReaction ? 28 : 2),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          constraints: BoxConstraints(maxWidth: maxBubbleWidth, minWidth: 180),
+          decoration: BoxDecoration(
+            color: bubbleBg,
+            borderRadius: BorderRadius.only(
+              topLeft: const Radius.circular(20),
+              topRight: const Radius.circular(20),
+              bottomLeft: Radius.circular(widget.isMe ? 20 : 4),
+              bottomRight: Radius.circular(widget.isMe ? 4 : 20),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                blurRadius: 5,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: iconBgColor,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(icon, color: iconColor, size: 20),
+                  ),
+                  const Gap(12),
+                  Flexible(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          style: Theme.of(
+                            context,
+                          ).textTheme.titleMedium!.copyWith(
+                            color: textColor,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        if (duration.isNotEmpty && !isMissed) ...[
+                          const Gap(2),
+                          Text(
+                            duration,
+                            style: Theme.of(
+                              context,
+                            ).textTheme.titleMedium!.copyWith(
+                              color: widget.isMe ? timeColor : null,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w400,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const Gap(6),
+              Align(
+                alignment: Alignment.bottomRight,
+                child: timeAndStatus(timeColor, timeColor),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
   }
 }
