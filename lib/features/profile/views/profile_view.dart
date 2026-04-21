@@ -7,7 +7,7 @@ import 'package:social_media_app/features/profile/views/profile_shimmer_view.dar
 import 'package:social_media_app/features/profile/widgets/profile_body_content.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../home/cubits/home_cubit/home_cubit.dart';
-import '../widgets/profile_refresh_indicator.dart';
+import '../../../core/widgets/global_refresh_indicator.dart';
 
 class ProfileView extends StatefulWidget {
   final String? userId;
@@ -123,7 +123,9 @@ class _ProfileViewState extends State<ProfileView> {
           child: BlocBuilder<ProfileCubit, ProfileState>(
             builder: (context, state) {
               bool isLoading =
-                  state is ProfileInitial || state is ProfileLoading;
+                  state is ProfileInitial ||
+                  state is ProfileLoading ||
+                  state is ProfileRefreshFeedback;
               String? errorMessage =
                   state is ProfileError ? state.message : null;
 
@@ -194,7 +196,7 @@ class _ProfileViewState extends State<ProfileView> {
 
         CustomBackToTopBtn(isVisible: _showBackToTop, onTap: _scrollToTop),
 
-        ProfileRefreshIndicator(
+        GlobalRefreshIndicator(
           refreshProgress: _refreshProgress,
           isRefreshing: _isRefreshing,
         ),

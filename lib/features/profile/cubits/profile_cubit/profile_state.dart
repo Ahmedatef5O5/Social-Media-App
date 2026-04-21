@@ -6,6 +6,8 @@ sealed class ProfileState {
 
 final class ProfileInitial extends ProfileState {}
 
+final class ProfileRefreshFeedback extends ProfileState {}
+
 final class ProfileLoading extends ProfileState {}
 
 final class ProfileLoaded extends ProfileState {

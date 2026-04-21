@@ -16,12 +16,17 @@ class ProfileCubit extends Cubit<ProfileState> {
       final user = await _homeServices.userServices.fetchCurrentUser(userId);
       final allPosts = await _homeServices.postServices.fetchPosts();
       final userPostsCount = allPosts.where((p) => p.authorId == userId).length;
+
       final stats = ProfileStatsModel(
         postsCount: userPostsCount,
         photosCount: userPostsCount,
         followersCount: 10500,
         followingCount: 65000,
       );
+      if (isRefresh) {
+        emit(ProfileRefreshFeedback());
+        await Future.delayed(const Duration(milliseconds: 500));
+      }
       emit(ProfileLoaded(stats, user));
     } catch (e) {
       debugPrint("Error in getProfileData: $e");
