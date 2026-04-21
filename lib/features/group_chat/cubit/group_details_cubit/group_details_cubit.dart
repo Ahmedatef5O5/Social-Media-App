@@ -3,15 +3,17 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../helper/last_message_group_preview.dart';
 import '../../models/group_model.dart';
 import '../../models/groupe_message_model.dart';
 import '../../services/group_chat_services.dart';
+import '../group_list_cubit/group_list_cubit.dart';
 import 'group_details_state.dart';
 
-// ──────────────── Cubit ────────────────
 class GroupDetailsCubit extends Cubit<GroupDetailsState> {
   final GroupChatServices _services;
   final GroupModel group;
+  final GroupListCubit groupListCubit;
 
   StreamSubscription? _messagesSubscription;
   StreamSubscription? _typingSubscription;
@@ -29,7 +31,8 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState> {
 
   String get currentUserId => Supabase.instance.client.auth.currentUser!.id;
 
-  GroupDetailsCubit(this._services, this.group) : super(GroupDetailsInitial());
+  GroupDetailsCubit(this._services, this.group, this.groupListCubit)
+    : super(GroupDetailsInitial());
 
   void init() {
     _listenMessages();
@@ -44,7 +47,6 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState> {
     _messagesSubscription = _services.getGroupMessagesStream(group.id).listen((
       messages,
     ) {
-      // Merge reactions into messages
       final enriched =
           messages.map((msg) {
             final reactions = _reactionsCache[msg.id] ?? {};
@@ -56,13 +58,11 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState> {
     });
   }
 
-  // ── Reactions stream ──
   void _listenReactions() {
     _reactionsSubscription?.cancel();
     _reactionsSubscription = _services.getReactionsStream(group.id).listen((
       reactionsList,
     ) {
-      // Rebuild reactions cache
       _reactionsCache = {};
       for (final r in reactionsList) {
         final msgId = r['message_id'] as String?;
@@ -74,7 +74,6 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState> {
         }
       }
 
-      // Re-enrich messages
       cachedMessages =
           cachedMessages.map((msg) {
             final reactions = _reactionsCache[msg.id] ?? {};
@@ -84,7 +83,6 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState> {
     });
   }
 
-  // ── Typing ──
   void _listenTyping() {
     _typingSubscription?.cancel();
     _typingSubscription = _services.getTypingUsersStream(group.id).listen((
@@ -105,7 +103,6 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState> {
     );
   }
 
-  // ── Send Message ──
   Future<void> sendMessage({
     required String text,
     String messageType = 'text',
@@ -124,7 +121,6 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState> {
     final reply = replyToMessage.value;
     replyToMessage.value = null;
 
-    // Optimistic temp message
     final tempId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
     final tempMsg = GroupMessageModel(
       id: tempId,
@@ -187,11 +183,18 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState> {
         videoUrl: uploadedVideoUrl,
         voiceUrl: uploadedVoiceUrl,
         caption: caption,
-        replyTo: reply, 
-        
+        replyTo: reply,
+      );
+      groupListCubit.updateGroupLastMessage(
+        groupId: group.id,
+        message: buildLastMessageGroupPreview(
+          text: text,
+          messageType: messageType,
+        ),
+        messageType: messageType,
+        createdAt: DateTime.now(),
       );
 
-      // Remove temp message (stream will reload)
       cachedMessages.removeWhere((m) => m.id == tempId);
     } catch (e) {
       cachedMessages.removeWhere((m) => m.id == tempId);
@@ -200,14 +203,12 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState> {
     }
   }
 
-  // ── Delete ──
   Future<void> deleteMessage(String messageId) async {
     cachedMessages.removeWhere((m) => m.id == messageId);
     _emitLoaded();
     await _services.deleteGroupMessage(messageId);
   }
 
-  // ── Reaction ──
   Future<void> toggleReaction({
     required String messageId,
     required String emoji,
@@ -220,7 +221,6 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState> {
     );
   }
 
-  // ── Typing ──
   void onTyping() {
     _services.setTyping(group.id, true);
     _typingDebounce?.cancel();
@@ -229,12 +229,10 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState> {
     });
   }
 
-  // ── Read ──
   Future<void> markRead() async {
     await _services.markGroupMessagesRead(group.id);
   }
 
-  // ── Highlight message (for reply navigation) ──
   void highlightMessage(String messageId) {
     highlightedMessageId.value = messageId;
     Future.delayed(const Duration(milliseconds: 1200), () {
