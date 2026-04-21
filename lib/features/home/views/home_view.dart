@@ -153,6 +153,19 @@ class _HomeViewState extends State<HomeView> {
                     ),
                   ),
                 ),
+                if (state is HomeRefreshFeedback)
+                  Positioned.fill(
+                    child: IgnorePointer(
+                      child: Container(
+                        color: Theme.of(context).scaffoldBackgroundColor,
+                        child: AnimatedOpacity(
+                          duration: const Duration(milliseconds: 200),
+                          opacity: 1,
+                          child: const HomeShimmerSkeleton(),
+                        ),
+                      ),
+                    ),
+                  ),
                 CustomBackToTopBtn(
                   isVisible: _showBackToTop,
                   onTap: _scrollToTop,
