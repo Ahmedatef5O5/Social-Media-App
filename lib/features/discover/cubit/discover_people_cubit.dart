@@ -12,7 +12,19 @@ class DiscoverPeopleCubit extends Cubit<DiscoverPeopleState> {
   Future<void> getDiscoverPeople({bool isRefresh = false}) async {
     if (!isRefresh) emit(DiscoverPeopleLoading());
     try {
+      final start = DateTime.now();
+
       final users = await _discoverPeopleServices.getAllUsers();
+
+      if (isRefresh) {
+        emit(DiscoverPeopleRefreshFeedback());
+
+        final elapsed = DateTime.now().difference(start);
+        if (elapsed < const Duration(milliseconds: 600)) {
+          await Future.delayed(const Duration(milliseconds: 600) - elapsed);
+        }
+      }
+
       emit(DiscoverPeopleSuccess(users));
     } catch (e) {
       if (e.toString().contains('no-internet')) {

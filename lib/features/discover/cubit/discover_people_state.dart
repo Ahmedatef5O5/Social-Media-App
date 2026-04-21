@@ -6,6 +6,8 @@ sealed class DiscoverPeopleState {
 
 final class DiscoverPeopleInitial extends DiscoverPeopleState {}
 
+class DiscoverPeopleRefreshFeedback extends DiscoverPeopleState {}
+
 final class DiscoverPeopleLoading extends DiscoverPeopleState {}
 
 final class DiscoverPeopleSuccess extends DiscoverPeopleState {

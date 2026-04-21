@@ -2,7 +2,6 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 import 'package:social_media_app/core/themes/background_theme_widget.dart';
-import 'package:social_media_app/core/widgets/custom_loading_indicator.dart';
 import 'package:social_media_app/core/widgets/custom_pull_to_refresh.dart';
 import 'package:social_media_app/core/widgets/custom_tab_wrapper.dart';
 import 'package:social_media_app/features/discover/cubit/discover_people_cubit.dart';
@@ -22,7 +21,8 @@ class DiscoverView extends StatelessWidget {
           return CustomTabWrapper(
             isLoading:
                 state is DiscoverPeopleInitial ||
-                state is DiscoverPeopleLoading,
+                state is DiscoverPeopleLoading ||
+                state is DiscoverPeopleRefreshFeedback,
             loadingSkeleton: const DiscoverPeopleSkeleton(),
             errorMessage: state is DiscoverPeopleFailure ? state.message : null,
             onRetry:
@@ -33,55 +33,51 @@ class DiscoverView extends StatelessWidget {
                   () async => await context
                       .read<DiscoverPeopleCubit>()
                       .getDiscoverPeople(isRefresh: true),
-              child: Column(
-                children: [
-                  const Gap(20),
-                  DiscoverPeopleHeaderSection(),
-                  const Gap(8),
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 12.0),
-                      child:
-                          BlocBuilder<DiscoverPeopleCubit, DiscoverPeopleState>(
-                            builder: (context, state) {
-                              if (state is DiscoverPeopleLoading) {
-                                return const CustomLoadingIndicator();
-                              }
-                              if (state is DiscoverPeopleSuccess) {
-                                return ListView.separated(
-                                  physics: const AlwaysScrollableScrollPhysics(
-                                    parent: ClampingScrollPhysics(),
-                                  ),
-                                  padding: const EdgeInsets.only(
-                                    top: 14,
-                                    left: 0,
-                                    right: 0,
-                                    bottom: 100,
-                                  ),
-                                  itemCount: state.users.length,
-                                  separatorBuilder:
-                                      (BuildContext context, int index) =>
-                                          const Gap(16),
 
-                                  itemBuilder: (
-                                    BuildContext context,
-                                    int index,
-                                  ) {
-                                    return DiscoverPersonCardWidget(
-                                      userData: state.users[index],
-                                    );
-                                  },
-                                );
-                              } else if (state is DiscoverPeopleFailure) {
-                                return Center(child: Text(state.message));
-                              } else {
-                                return const SizedBox.shrink();
-                              }
-                            },
-                          ),
+              child: CustomScrollView(
+                physics: const AlwaysScrollableScrollPhysics(
+                  parent: ClampingScrollPhysics(),
+                ),
+                slivers: [
+                  SliverToBoxAdapter(
+                    child: Column(
+                      children: [
+                        const Gap(20),
+                        DiscoverPeopleHeaderSection(),
+                        const Gap(8),
+                      ],
                     ),
                   ),
-                  const Gap(20),
+
+                  Builder(
+                    builder: (context) {
+                      if (state is DiscoverPeopleSuccess) {
+                        return SliverPadding(
+                          padding: const EdgeInsets.only(
+                            top: 14,
+                            left: 12,
+                            right: 12,
+                            bottom: 100,
+                          ),
+                          sliver: SliverList.separated(
+                            itemCount: state.users.length,
+                            separatorBuilder:
+                                (BuildContext context, int index) =>
+                                    const Gap(16),
+                            itemBuilder: (BuildContext context, int index) {
+                              return DiscoverPersonCardWidget(
+                                userData: state.users[index],
+                              );
+                            },
+                          ),
+                        );
+                      } else {
+                        return const SliverToBoxAdapter(
+                          child: SizedBox.shrink(),
+                        );
+                      }
+                    },
+                  ),
                 ],
               ),
             ),
