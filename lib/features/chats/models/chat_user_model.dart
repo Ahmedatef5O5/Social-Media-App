@@ -1,5 +1,4 @@
 import 'package:social_media_app/core/utilities/supabase_constants.dart';
-
 import '../../auth/data/models/user_data.dart';
 
 class ChatUserModel {
@@ -59,6 +58,9 @@ class ChatUserModel {
     String? name,
     String? imageUrl,
     String? lastMessage,
+    String? lastMessageType,
+    bool? lastMessageIsMe,
+    bool? lastMessageIsRead,
     DateTime? lastMessageTime,
     int? unreadCount,
     DateTime? lastSeen,
@@ -69,7 +71,10 @@ class ChatUserModel {
       name: name ?? this.name,
       imageUrl: imageUrl ?? this.imageUrl,
       lastMessage: lastMessage ?? this.lastMessage,
+      lastMessageType: lastMessageType ?? this.lastMessageType,
       lastMessageTime: lastMessageTime ?? this.lastMessageTime,
+      lastMessageIsMe: lastMessageIsMe ?? this.lastMessageIsMe,
+      lastMessageIsRead: lastMessageIsRead ?? this.lastMessageIsRead,
       unreadCount: unreadCount ?? this.unreadCount,
       lastSeen: lastSeen ?? this.lastSeen,
       isTyping: isTyping ?? this.isTyping,
