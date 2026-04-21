@@ -20,6 +20,7 @@ class FcmService {
 
   final _tokenService = FcmTokenService();
 
+  // ── Send chat message notification ──
   Future<void> sendChatNotification({
     required String receiverFcmToken,
     required String senderId,
@@ -42,20 +43,83 @@ class FcmService {
         attachmentUrl: attachmentUrl,
       );
 
-      final response = await _dio.post(
-        _fcmUrl,
-        data: payload,
-        options: dio_pkg.Options(
-          headers: {
-            'Authorization': 'Bearer $accessToken',
-            'Content-Type': 'application/json',
-          },
-        ),
+      await _post(payload, accessToken);
+      debugPrint('✅ Chat FCM sent');
+    } catch (e) {
+      debugPrint('❌ Chat FCM failed: $e');
+    }
+  }
+
+  // ── Send incoming call notification ──
+  // This wakes the device even when the app is killed
+  Future<void> sendCallNotification({
+    required String receiverFcmToken,
+    required String callerId,
+    required String callerName,
+    required String callerAvatar,
+    required String callId,
+    required String callType, // 'audio' | 'video'
+  }) async {
+    try {
+      final accessToken = await _tokenService.getValidToken();
+
+      final payload = FcmPayloadBuilder.buildIncomingCallPayload(
+        receiverFcmToken: receiverFcmToken,
+        callerId: callerId,
+        callerName: callerName,
+        callerAvatar: callerAvatar,
+        callId: callId,
+        callType: callType,
       );
 
-      debugPrint('✅ FCM sent → ${response.statusCode}');
+      await _post(payload, accessToken);
+      debugPrint('✅ Call FCM sent → $callerName');
     } catch (e) {
-      debugPrint('❌ FCM send failed: $e');
+      debugPrint('❌ Call FCM failed: $e');
     }
+  }
+
+  // ── Send group message notification ──
+  Future<void> sendGroupNotification({
+    required String receiverFcmToken,
+    required String groupId,
+    required String groupName,
+    required String senderName,
+    required String messageBody,
+    String messageType = 'text',
+    String senderImageUrl = '',
+  }) async {
+    try {
+      final accessToken = await _tokenService.getValidToken();
+
+      final payload = FcmPayloadBuilder.buildGroupMessagePayload(
+        receiverFcmToken: receiverFcmToken,
+        groupId: groupId,
+        groupName: groupName,
+        senderName: senderName,
+        messageBody: messageBody,
+        messageType: messageType,
+        senderImageUrl: senderImageUrl,
+      );
+
+      await _post(payload, accessToken);
+      debugPrint('✅ Group FCM sent → $groupName');
+    } catch (e) {
+      debugPrint('❌ Group FCM failed: $e');
+    }
+  }
+
+  Future<void> _post(Map<String, dynamic> payload, String accessToken) async {
+    final response = await _dio.post(
+      _fcmUrl,
+      data: payload,
+      options: dio_pkg.Options(
+        headers: {
+          'Authorization': 'Bearer $accessToken',
+          'Content-Type': 'application/json',
+        },
+      ),
+    );
+    debugPrint('FCM response: ${response.statusCode}');
   }
 }
