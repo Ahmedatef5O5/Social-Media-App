@@ -6,6 +6,8 @@ sealed class ChatsState {
 
 final class ChatsInitial extends ChatsState {}
 
+class ChatsRefreshFeedback extends ChatsState {}
+
 final class ChatsLoading extends ChatsState {}
 
 final class ChatsSuccessloaded extends ChatsState {

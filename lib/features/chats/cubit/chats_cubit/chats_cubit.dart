@@ -79,8 +79,19 @@ class ChatsCubit extends Cubit<ChatsState> {
   Future<void> getChats({bool isRefresh = false}) async {
     if (!isRefresh) emit(ChatsLoading());
     try {
+      final start = DateTime.now();
+
       final chats = await _chatServices.getChatsList(_currentUserId);
       _cachedChats = chats;
+
+      if (isRefresh) {
+        emit(ChatsRefreshFeedback());
+
+        final elapsed = DateTime.now().difference(start);
+        if (elapsed < const Duration(milliseconds: 500)) {
+          await Future.delayed(const Duration(milliseconds: 500) - elapsed);
+        }
+      }
       _emitWithTyping();
     } catch (e) {
       if (e.toString().contains('no-internet')) {
