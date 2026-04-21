@@ -15,6 +15,9 @@ import 'package:social_media_app/features/chats/views/chats_view.dart';
 import 'package:social_media_app/features/chats/views/receiver_profile_view.dart';
 import 'package:social_media_app/features/discover/cubit/discover_people_cubit.dart';
 import 'package:social_media_app/features/discover/services/discover_people_services.dart';
+import 'package:social_media_app/features/group_chat/cubit/group_details_cubit/group_details_cubit.dart';
+import 'package:social_media_app/features/group_chat/models/group_model.dart';
+import 'package:social_media_app/features/group_chat/views/group_chat_details_view.dart';
 import 'package:social_media_app/features/home/cubits/home_cubit/home_cubit.dart';
 import 'package:social_media_app/features/home/services/home_services.dart';
 import 'package:social_media_app/features/stories/views/add_story_preview_view.dart';
@@ -28,10 +31,13 @@ import 'package:social_media_app/features/profile/views/edit_profile_view.dart';
 import 'package:social_media_app/features/settings/views/settings_view.dart';
 import 'package:social_media_app/features/splash/views/on_boarding_view.dart';
 import 'package:social_media_app/features/splash/views/splash_view.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../features/auth/data/models/user_data.dart';
+import '../../features/calls/model/call_model.dart';
+import '../../features/calls/views/incoming_call_view.dart';
 import '../../features/chats/cubit/chats_cubit/chats_cubit.dart';
-import '../../features/group_chat/models/group_model.dart';
-import '../../features/group_chat/views/group_chat_view.dart';
+import '../../features/group_chat/cubit/group_list_cubit/group_list_cubit.dart';
+import '../../features/group_chat/services/group_chat_services.dart';
 import '../../features/stories/views/add_story_caption_view.dart';
 import '../../features/stories/views/creat_text_story_view.dart';
 import '../../features/profile/cubits/profile_cubit/profile_cubit.dart';
@@ -110,11 +116,39 @@ class AppRouter {
               BlocProvider(
                 create: (context) => ChatsCubit(ChatServices())..monitorChats(),
               ),
+              BlocProvider(
+                create:
+                    (context) =>
+                        GroupListCubit(GroupChatServices())..monitorGroups(),
+              ),
             ],
             child: const CustomBottomNavBar(),
           ),
           settings: settings,
         );
+
+      case AppRoutes.incomingCallRoute:
+        final args = settings.arguments as Map<String, dynamic>? ?? {};
+        final call = CallModel(
+          callId: args['callId'] as String? ?? '',
+          callerId: args['callerId'] as String? ?? '',
+          callerName: args['callerName'] as String? ?? 'Unknown',
+          callerAvatar: args['callerAvatar'] as String? ?? '',
+          receiverId: Supabase.instance.client.auth.currentUser?.id ?? '',
+          receiverName: '',
+          receiverAvatar: '',
+          status: CallStatus.ringing,
+          type:
+              (args['callType'] as String?) == 'video'
+                  ? CallType.video
+                  : CallType.audio,
+        );
+        return _buildRoute(
+          IncomingCallView(call: call),
+          settings: settings,
+          typeOfRoute: TypeOfRoute.fade,
+        );
+
       case AppRoutes.createPostViewRoute:
         return _buildRoute(
           BlocProvider.value(
@@ -140,6 +174,7 @@ class AppRouter {
           BlocProvider.value(value: cubit, child: const CreateTextStoryView()),
           settings: settings,
         );
+
       case AppRoutes.addStoryCaptionViewRoute:
         final args = settings.arguments as Map<String, dynamic>;
         return _buildRoute(
@@ -149,6 +184,7 @@ class AppRouter {
           ),
           settings: settings,
         );
+
       case AppRoutes.storyDisplayViewRoute:
         final args = settings.arguments as Map<String, dynamic>;
         return _buildRoute(
@@ -201,7 +237,19 @@ class AppRouter {
 
       case AppRoutes.groupChatRoute:
         final group = settings.arguments as GroupModel;
-        return _buildRoute(GroupChatView(group: group), settings: settings);
+        final services = GroupChatServices();
+        return _buildRoute(
+          BlocProvider(
+            create:
+                (context) => GroupDetailsCubit(
+                  services,
+                  group,
+                  context.read<GroupListCubit>(),
+                )..init(),
+            child: GroupChatDetailsView(group: group),
+          ),
+          settings: settings,
+        );
 
       case AppRoutes.editProfileViewRoute:
         final user = settings.arguments as UserData;

@@ -8,21 +8,26 @@ class AppRoutes {
   static const String chatDetailsViewRoute = '/chatDetailsView';
   static const String receiverProfileViewRoute = '/ReceiverProfileView';
 
-  //
+  // Group chat
   static const String groupChatRoute = '/group-chat';
-  //
+  static const String createGroupRoute = '/group-chat/create';
+
+  // Calls
+  static const String incomingCallRoute = '/incoming-call'; // ← NEW
+
+  // Stories
   static const String createTextStoryViewRoute = '/create-text-story-view';
   static const String addStoryCaptionViewRoute = '/add-Story-Caption-view';
-
   static const String storyDisplayViewRoute = '/story-display-view';
   static const String addStoryPreviewViewRoute = '/add-Story-Preview-View-';
 
+  // Posts / Profile / Settings
   static const String createPostViewRoute = '/home-create-post-view';
   static const String postThemesViewRoute = '/post-themes-view';
   static const String profileViewRoute = '/profile-view';
   static const String editProfileViewRoute = '/edit-profile-view';
   static const String settingsViewRoute = '/settings-view';
 
-  // callBack from Supabase
+  // Supabase callback
   static const String loginCallback = 'callback';
 }
