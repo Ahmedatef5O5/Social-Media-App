@@ -7,7 +7,11 @@ import 'package:social_media_app/features/chats/widgets/custom_icon_btn_widget.d
 import '../../../core/constants/app_images.dart';
 import '../../../core/helpers/formatted_date.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
+import '../../calls/cubit/call_cubit.dart';
+import '../../calls/model/call_model.dart';
 import '../cubit/chat_details_cubit/chat_details_cubit.dart';
+import '../helper/call_actions.dart';
+import '../helper/safe_pop.dart';
 import '../models/chat_user_model.dart';
 
 class ReceiverDetailsHeaderSection extends StatelessWidget {
@@ -27,7 +31,7 @@ class ReceiverDetailsHeaderSection extends StatelessWidget {
       child: Row(
         children: [
           InkWell(
-            onTap: () => Navigator.pop(context),
+            onTap: () => safePop(context),
             child: Row(
               children: [
                 Icon(
@@ -172,13 +176,33 @@ class ReceiverDetailsHeaderSection extends StatelessWidget {
             children: [
               CustomIconBtnWidget(
                 icon: Icons.call_outlined,
-                onTap: () {},
+                onTap: () async {
+                  final call = await CallActions.buildCall(
+                    type: CallType.audio,
+                    receiverId: receiverUser.id,
+                    receiverName: receiverUser.name,
+                    receiverAvatar: receiverUser.imageUrl ?? '',
+                  );
+                  if (call == null || !context.mounted) return;
+
+                  context.read<CallCubit>().makeAudioCall(call);
+                },
                 size: 24,
               ),
               const Gap(12),
               CustomIconBtnWidget(
                 icon: Icons.videocam_outlined,
-                onTap: () {},
+                onTap: () async {
+                  final call = await CallActions.buildCall(
+                    type: CallType.video,
+                    receiverId: receiverUser.id,
+                    receiverName: receiverUser.name,
+                    receiverAvatar: receiverUser.imageUrl ?? '',
+                  );
+                  if (call == null || !context.mounted) return;
+
+                  context.read<CallCubit>().makeAudioCall(call);
+                },
                 size: 24,
               ),
               const Gap(8),
