@@ -73,17 +73,14 @@ class _MessagesListViewState extends State<MessagesListView> {
         final isTyping = state is ReceiverTypingState ? state.isTyping : false;
 
         if (messages.isEmpty) {
-          // لو لسه بيلود → shimmer
           if (state is ChatDetailsInitial ||
               state is MessagesLoading ||
               state is MessagesSending) {
             return const ChatLoadingSkeleton();
           }
-          // لو خلص فعلاً وفاضي → empty state
           if (_hasLoadedOnce || state is MessagesSuccessLoaded) {
             return _buildEmptyState(context);
           }
-          // أي حالة تانية (زي error أو أول ما بيبدأ) → shimmer كـ fallback
           return const ChatLoadingSkeleton();
         }
 

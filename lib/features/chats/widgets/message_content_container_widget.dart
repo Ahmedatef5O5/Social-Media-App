@@ -36,6 +36,8 @@ class MessageContentContainer extends StatefulWidget {
 class _MessageContentContainerState extends State<MessageContentContainer> {
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     final double maxBubbleWidth = MediaQuery.of(context).size.width * 0.70;
 
     final bool isUploading = widget.isMe && widget.uploadProgress != null;
@@ -67,14 +69,16 @@ class _MessageContentContainerState extends State<MessageContentContainer> {
             Icon(
               widget.message.isRead ? Icons.done_all : Icons.done,
               size: 12,
-              color: widget.message.isRead ? Colors.blue[200] : iconColor,
+              color:
+                  widget.message.isRead
+                      ? Colors.green.shade200
+                      : Theme.of(context).scaffoldBackgroundColor,
+              // color: widget.message.isRead ? Colors.blue[200] : iconColor,
             ),
           ],
         ],
       );
     }
-
-    // ── CALL BUBBLE ──────────────────────────────────────────────────
 
     if (isCall) {
       return _buildCallBubble(
@@ -120,7 +124,9 @@ class _MessageContentContainerState extends State<MessageContentContainer> {
                     ? AppColors.transparent
                     : (widget.isMe
                         ? Theme.of(context).primaryColor
-                        : AppColors.grey3.withValues(alpha: 0.3)),
+                        : (isDarkMode
+                            ? Theme.of(context).colorScheme.surfaceContainerHigh
+                            : Colors.grey.shade200)),
             borderRadius: BorderRadius.only(
               topLeft: const Radius.circular(20),
               topRight: const Radius.circular(20),
@@ -235,8 +241,10 @@ class _MessageContentContainerState extends State<MessageContentContainer> {
                             ).textTheme.titleMedium!.copyWith(
                               color:
                                   widget.isMe
-                                      ? AppColors.white
-                                      : AppColors.black87,
+                                      ? Theme.of(context).colorScheme.onPrimary
+                                      : (Theme.of(context).colorScheme.onSurface
+                                          .withValues(alpha: 0.7)),
+
                               fontSize: 15,
                               height: 1.3,
                               fontWeight: FontWeight.w500,
@@ -385,8 +393,6 @@ class _MessageContentContainerState extends State<MessageContentContainer> {
     }
   }
 
-  // ── Call bubble ────────────────────────────────────────────────────────────
-
   Widget _buildCallBubble(
     BuildContext context,
     Widget Function(Color, Color?) timeAndStatus,
@@ -436,7 +442,7 @@ class _MessageContentContainerState extends State<MessageContentContainer> {
 
     final Color iconBgColor =
         widget.isMe
-            ? Colors.white.withValues(alpha: 0.2)
+            ? Colors.white.withValues(alpha: 0.5)
             : iconColor.withValues(alpha: 0.15);
 
     String title =
