@@ -13,11 +13,13 @@ const List<Map<String, String>> kReactionsList = [
 class ReactionsPickerBubble extends StatefulWidget {
   final void Function(String emoji) onReactionSelected;
   final VoidCallback onDismiss;
+  final String? selectedEmoji;
 
   const ReactionsPickerBubble({
     super.key,
     required this.onReactionSelected,
     required this.onDismiss,
+    this.selectedEmoji,
   });
 
   @override
@@ -89,6 +91,7 @@ class _ReactionsPickerBubbleState extends State<ReactionsPickerBubble>
               children: List.generate(kReactionsList.length, (i) {
                 final r = kReactionsList[i];
                 final isHovered = _hoveredIndex == i;
+                final isSelected = widget.selectedEmoji == r['emoji'];
                 return MouseRegion(
                   onEnter: (_) => setState(() => _hoveredIndex = i),
                   onExit: (_) => setState(() => _hoveredIndex = null),
@@ -98,9 +101,26 @@ class _ReactionsPickerBubbleState extends State<ReactionsPickerBubble>
                       widget.onReactionSelected(r['emoji']!);
                     },
                     child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 150),
+                      duration: const Duration(milliseconds: 180),
                       curve: Curves.easeOut,
                       margin: const EdgeInsets.symmetric(horizontal: 3),
+                      padding: const EdgeInsets.all(6), //
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(20),
+
+                        color:
+                            isSelected
+                                ? scheme.primary.withValues(alpha: 0.15)
+                                : Colors.transparent,
+
+                        border:
+                            isSelected
+                                ? Border.all(
+                                  color: scheme.primary.withValues(alpha: 0.4),
+                                  width: 1,
+                                )
+                                : null,
+                      ),
                       transform:
                           isHovered
                               ? (Matrix4.identity()
@@ -118,9 +138,23 @@ class _ReactionsPickerBubbleState extends State<ReactionsPickerBubble>
                           fontSize: 12,
                         ),
                         preferBelow: false,
+
                         child: Text(
                           r['emoji']!,
-                          style: const TextStyle(fontSize: 26),
+                          style: TextStyle(
+                            fontSize: 26,
+                            shadows:
+                                isSelected
+                                    ? [
+                                      Shadow(
+                                        color: scheme.primary.withValues(
+                                          alpha: 0.4,
+                                        ),
+                                        blurRadius: 8,
+                                      ),
+                                    ]
+                                    : [],
+                          ),
                         ),
                       ),
                     ),

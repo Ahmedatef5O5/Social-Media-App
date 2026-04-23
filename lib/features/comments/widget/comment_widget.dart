@@ -101,6 +101,7 @@ class _CommentWidgetState extends State<CommentWidget>
         _applyReaction(emoji);
       },
       onDismiss: _dismissPicker,
+      selectedEmoji: currentSelectedEmoji,
     );
 
     Overlay.of(context).insert(_overlayEntry!);
@@ -162,6 +163,14 @@ class _CommentWidgetState extends State<CommentWidget>
       emoji: emoji,
       postId: widget.postId,
     );
+  }
+
+  String? get currentSelectedEmoji {
+    try {
+      return _reactions.firstWhere((r) => r.reactedByMe).emoji;
+    } catch (_) {
+      return null;
+    }
   }
 
   @override

@@ -14,6 +14,7 @@ class CommentOverlayPicker {
     required Rect anchorRect,
     required void Function(String emoji) onSelect,
     required VoidCallback onDismiss,
+    String? selectedEmoji,
     double bubbleWidth = 220,
     double offsetRight = 80,
   }) {
@@ -41,6 +42,7 @@ class CommentOverlayPicker {
                 child: ReactionsPickerBubble(
                   onReactionSelected: onSelect,
                   onDismiss: onDismiss,
+                  selectedEmoji: selectedEmoji,
                 ),
               ),
             ],
