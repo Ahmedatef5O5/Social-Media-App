@@ -18,6 +18,7 @@ import 'package:social_media_app/features/discover/services/discover_people_serv
 import 'package:social_media_app/features/group_chat/cubit/group_details_cubit/group_details_cubit.dart';
 import 'package:social_media_app/features/group_chat/models/group_model.dart';
 import 'package:social_media_app/features/group_chat/views/group_chat_details_view.dart';
+import 'package:social_media_app/features/group_chat/views/group_info_view.dart';
 import 'package:social_media_app/features/home/cubits/home_cubit/home_cubit.dart';
 import 'package:social_media_app/features/home/services/home_services.dart';
 import 'package:social_media_app/features/stories/views/add_story_preview_view.dart';
@@ -34,10 +35,13 @@ import 'package:social_media_app/features/splash/views/splash_view.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../features/auth/data/models/user_data.dart';
 import '../../features/calls/model/call_model.dart';
+import '../../features/calls/views/dialing_view.dart';
 import '../../features/calls/views/incoming_call_view.dart';
+import '../../features/calls/views/zego_call_view.dart';
 import '../../features/chats/cubit/chats_cubit/chats_cubit.dart';
 import '../../features/group_chat/cubit/group_list_cubit/group_list_cubit.dart';
 import '../../features/group_chat/services/group_chat_services.dart';
+import '../../features/group_chat/views/create_group_view.dart';
 import '../../features/stories/views/add_story_caption_view.dart';
 import '../../features/stories/views/creat_text_story_view.dart';
 import '../../features/profile/cubits/profile_cubit/profile_cubit.dart';
@@ -149,6 +153,26 @@ class AppRouter {
           typeOfRoute: TypeOfRoute.fade,
         );
 
+      case AppRoutes.dialingRoute:
+        final call = settings.arguments as CallModel;
+        return _buildRoute(
+          typeOfRoute: TypeOfRoute.material,
+          DialingView(call: call),
+          settings: settings,
+        );
+
+      case AppRoutes.callRoute:
+        final args = settings.arguments as Map<String, dynamic>;
+        return _buildRoute(
+          typeOfRoute: TypeOfRoute.material,
+          ZegoCallView(
+            call: args['call'],
+            currentUserId: args['userId'],
+            currentUserName: args['userName'],
+          ),
+          settings: settings,
+        );
+
       case AppRoutes.createPostViewRoute:
         return _buildRoute(
           BlocProvider.value(
@@ -235,6 +259,16 @@ class AppRouter {
           settings: settings,
         );
 
+      case AppRoutes.createGroupRoute:
+        return _buildRoute(
+          BlocProvider(
+            create: (_) => GroupListCubit(GroupChatServices()),
+            child: const CreateGroupView(),
+          ),
+
+          settings: settings,
+        );
+
       case AppRoutes.groupChatRoute:
         final group = settings.arguments as GroupModel;
         final services = GroupChatServices();
@@ -248,6 +282,14 @@ class AppRouter {
                 )..init(),
             child: GroupChatDetailsView(group: group),
           ),
+          settings: settings,
+        );
+
+      case AppRoutes.groupInfoViewRoute:
+        final group = settings.arguments as GroupModel;
+        return _buildRoute(
+          typeOfRoute: TypeOfRoute.material,
+          GroupInfoView(group: group),
           settings: settings,
         );
 

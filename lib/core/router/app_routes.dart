@@ -10,10 +10,13 @@ class AppRoutes {
 
   // Group chat
   static const String groupChatRoute = '/group-chat';
+  static const String groupInfoViewRoute = '/group-info/View';
   static const String createGroupRoute = '/group-chat/create';
 
   // Calls
-  static const String incomingCallRoute = '/incoming-call'; // ← NEW
+  static const String incomingCallRoute = '/incoming-call';
+  static const dialingRoute = '/dialing';
+  static const callRoute = '/call';
 
   // Stories
   static const String createTextStoryViewRoute = '/create-text-story-view';

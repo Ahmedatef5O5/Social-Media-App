@@ -1,4 +1,5 @@
 import 'package:device_preview/device_preview.dart';
+import 'package:dio/dio.dart' as dio_pkg;
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
@@ -16,10 +17,8 @@ import 'package:social_media_app/core/themes/cubit/theme_cubit.dart';
 import 'package:social_media_app/features/auth/services/supabase_auth_services.dart';
 import 'package:social_media_app/features/calls/cubit/call_cubit.dart';
 import 'package:social_media_app/features/calls/cubit/call_state.dart';
+import 'package:social_media_app/features/calls/model/call_model.dart';
 import 'package:social_media_app/features/calls/services/call_signaling_service.dart';
-import 'package:social_media_app/features/calls/views/dialing_view.dart';
-import 'package:social_media_app/features/calls/views/incoming_call_view.dart';
-import 'package:social_media_app/features/calls/views/zego_call_view.dart';
 import 'package:social_media_app/features/group_chat/cubit/group_list_cubit/group_list_cubit.dart';
 import 'package:social_media_app/features/group_chat/services/group_chat_services.dart';
 import 'package:social_media_app/firebase_options.dart';
@@ -73,6 +72,19 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
     final subtitle =
         callType == 'video' ? 'Incoming video call' : 'Incoming voice call';
 
+    Uint8List? avatarBytes;
+    if (callerAvatar.isNotEmpty && callerAvatar.startsWith('http')) {
+      try {
+        final response = await dio_pkg.Dio().get<List<int>>(
+          callerAvatar,
+          options: dio_pkg.Options(responseType: dio_pkg.ResponseType.bytes),
+        );
+        if (response.data != null) {
+          avatarBytes = Uint8List.fromList(response.data!);
+        }
+      } catch (_) {}
+    }
+
     final androidDetails = AndroidNotificationDetails(
       'incoming_call_channel',
       'Incoming Calls',
@@ -80,6 +92,8 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
       priority: Priority.max,
       category: AndroidNotificationCategory.call,
       icon: '@drawable/ic_notification',
+      largeIcon:
+          avatarBytes != null ? ByteArrayAndroidBitmap(avatarBytes) : null,
       fullScreenIntent: true,
       ongoing: true,
       autoCancel: false,
@@ -99,12 +113,16 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
       ],
     );
 
+    final supabaseUrl = message.data['supabaseUrl'] ?? '';
+    final supabaseAnonKey = message.data['supabaseAnonKey'] ?? '';
+
     await plugin.show(
       callId.hashCode,
       callerName,
       subtitle,
       NotificationDetails(android: androidDetails),
-      payload: 'call|$callId|$callerId|$callerName|$callerAvatar|$callType',
+      payload:
+          'call|$callId|$callerId|$callerName|$callerAvatar|$callType|$supabaseUrl|$supabaseAnonKey',
     );
     return;
   }
@@ -115,7 +133,45 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 }
 
 @pragma('vm:entry-point')
-void _bgNotificationTapped(NotificationResponse response) {}
+void _bgNotificationTapped(NotificationResponse response) {
+  final payload = response.payload ?? '';
+  final actionId = response.actionId;
+
+  if (payload.startsWith('call|') && actionId == 'decline_call') {
+    final parts = payload.split('|');
+    if (parts.length >= 8) {
+      final callId = parts[1];
+      final supabaseUrl = parts[6];
+      final anonKey = parts[7];
+      if (supabaseUrl.isNotEmpty && anonKey.isNotEmpty) {
+        _rejectCallRest(callId, supabaseUrl, anonKey);
+      }
+    }
+  }
+}
+
+Future<void> _rejectCallRest(
+  String callId,
+  String supabaseUrl,
+  String anonKey,
+) async {
+  try {
+    await dio_pkg.Dio().patch(
+      '$supabaseUrl/rest/v1/calls?call_id=eq.$callId',
+      data: {'status': 'rejected'},
+      options: dio_pkg.Options(
+        headers: {
+          'apikey': anonKey,
+          'Authorization': 'Bearer $anonKey',
+          'Content-Type': 'application/json',
+          'Prefer': 'return=minimal',
+        },
+      ),
+    );
+  } catch (e) {
+    debugPrint('Background call reject error: $e');
+  }
+}
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -237,55 +293,58 @@ class MyApp extends StatelessWidget {
             builder: (ctx, child) {
               final devicePreviewChild = DevicePreview.appBuilder(ctx, child);
               return BlocListener<CallCubit, CallState>(
-                listener: (context, callState) {
-                  Future.delayed(const Duration(milliseconds: 300), () async {
-                    final nav = navigatorKey.currentState;
-                    if (nav == null) return;
+                listener: (context, callState) async {
+                  final nav = navigatorKey.currentState;
+                  if (nav == null) return;
 
-                    if (callState is CallIncomingState) {
-                      nav.push(
-                        MaterialPageRoute(
-                          builder:
-                              (_) => IncomingCallView(call: callState.call),
-                        ),
-                      );
-                    } else if (callState is CallDialingState) {
-                      nav.push(
-                        MaterialPageRoute(
-                          builder: (_) => DialingView(call: callState.call),
-                        ),
-                      );
-                    } else if (callState is CallConnectedState) {
-                      if (nav.canPop()) nav.pop();
+                  if (callState is CallIncomingState) {
+                    nav.pushNamed(
+                      AppRoutes.incomingCallRoute,
+                      arguments: {
+                        'callId': callState.call.callId,
+                        'callerId': callState.call.callerId,
+                        'callerName': callState.call.callerName,
+                        'callerAvatar': callState.call.callerAvatar,
+                        'callType':
+                            callState.call.type == CallType.video
+                                ? 'video'
+                                : 'audio',
+                      },
+                    );
+                  } else if (callState is CallDialingState) {
+                    nav.pushNamed(
+                      AppRoutes.dialingRoute,
+                      arguments: callState.call,
+                    );
+                  } else if (callState is CallConnectedState) {
+                    final currentUser =
+                        Supabase.instance.client.auth.currentUser;
+                    if (currentUser == null) return;
 
-                      final currentUser =
-                          Supabase.instance.client.auth.currentUser;
-                      if (currentUser == null) return;
+                    final userData =
+                        await Supabase.instance.client
+                            .from('users')
+                            .select('name')
+                            .eq('id', currentUser.id)
+                            .maybeSingle();
 
-                      final userData =
-                          await Supabase.instance.client
-                              .from('users')
-                              .select('name')
-                              .eq('id', currentUser.id)
-                              .maybeSingle();
+                    final currentUserName =
+                        (userData?['name'] as String?) ?? 'Unknown';
 
-                      final currentUserName =
-                          (userData?['name'] as String?) ?? 'Unknown';
-
-                      nav.push(
-                        MaterialPageRoute(
-                          builder:
-                              (_) => ZegoCallView(
-                                call: callState.call,
-                                currentUserId: currentUser.id,
-                                currentUserName: currentUserName,
-                              ),
-                        ),
-                      );
-                    } else if (callState is CallEndedState) {
-                      nav.popUntil((route) => route.isFirst);
-                    }
-                  });
+                    nav.pushReplacementNamed(
+                      AppRoutes.callRoute,
+                      arguments: {
+                        'call': callState.call,
+                        'userId': currentUser.id,
+                        'userName': currentUserName,
+                      },
+                    );
+                  } else if (callState is CallEndedState) {
+                    nav.popUntil((route) {
+                      return route.settings.name != AppRoutes.callRoute &&
+                          route.settings.name != AppRoutes.dialingRoute;
+                    });
+                  }
                 },
                 child: devicePreviewChild,
               );
