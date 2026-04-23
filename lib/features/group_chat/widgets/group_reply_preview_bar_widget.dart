@@ -5,6 +5,7 @@ import '../models/groupe_message_model.dart';
 class GroupReplyPreviewBar extends StatelessWidget {
   final GroupMessageModel reply;
   final VoidCallback onDismiss;
+
   const GroupReplyPreviewBar({
     super.key,
     required this.reply,
@@ -16,14 +17,19 @@ class GroupReplyPreviewBar extends StatelessWidget {
     final primary = Theme.of(context).primaryColor;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    final text =
+        reply.text.isNotEmpty ? reply.text : (reply.caption ?? '📎 Media');
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      color:
-          isDark ? Colors.white.withValues(alpha: 0.06) : Colors.grey.shade100,
+      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: primary.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(12),
+        border: Border(left: BorderSide(color: primary, width: 3)),
+      ),
       child: Row(
         children: [
-          Container(width: 3, height: 36, color: primary),
-          const Gap(8),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -37,10 +43,9 @@ class GroupReplyPreviewBar extends StatelessWidget {
                     fontSize: 12,
                   ),
                 ),
+                const Gap(2),
                 Text(
-                  reply.text.isNotEmpty
-                      ? reply.text
-                      : (reply.caption ?? '📎 Media'),
+                  text,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -52,7 +57,9 @@ class GroupReplyPreviewBar extends StatelessWidget {
             ),
           ),
           IconButton(
-            icon: const Icon(Icons.close_rounded, size: 20),
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+            icon: const Icon(Icons.close, size: 18),
             onPressed: onDismiss,
           ),
         ],
