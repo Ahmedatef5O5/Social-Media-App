@@ -2,10 +2,9 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:social_media_app/features/group_chat/widgets/date_separator_widget.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-
 import '../../../core/helpers/formatted_date.dart';
 import '../cubit/group_details_cubit/group_details_cubit.dart';
-import '../helper/group_chat_input_section.dart';
+import '../helpers/group_chat_input_section.dart';
 import '../models/groupe_message_model.dart';
 import 'group_message_bubble.dart';
 import 'group_typing_indicator_widget.dart';
