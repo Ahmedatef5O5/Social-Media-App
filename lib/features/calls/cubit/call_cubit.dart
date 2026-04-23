@@ -1,10 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
-
+import 'package:flutter/cupertino.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:social_media_app/features/chats/services/chat_services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-
 import '../../../core/services/fcm_services.dart';
 import '../model/call_model.dart';
 import '../services/call_signaling_service.dart';
@@ -64,28 +63,23 @@ class CallCubit extends Cubit<CallState> {
       (data) {
         if (isClosed) return;
         if (data.isEmpty) return;
-
         final updatedCall = CallModel.fromMap(data.first);
 
-        switch (updatedCall.status) {
-          case CallStatus.accepted:
-            _callAcceptedAt = DateTime.now();
-            _activeCall = updatedCall;
-            emit(CallConnectedState(updatedCall));
-            break;
-
-          case CallStatus.rejected:
-            _handleCallEnded(updatedCall);
-            emit(CallEndedState());
-            break;
-
-          case CallStatus.ended:
-            _handleCallEnded(updatedCall);
-            emit(CallEndedState());
-            break;
-
-          default:
-            break;
+        if (updatedCall.status == CallStatus.accepted) {
+          _callAcceptedAt = DateTime.now();
+          _activeCall = updatedCall;
+          emit(CallConnectedState(updatedCall));
+        } else if (updatedCall.status == CallStatus.rejected) {
+          _logCallToChat(
+            receiverId: call.receiverId,
+            status: 'missed',
+            callType: call.type == CallType.video ? 'video' : 'audio',
+            duration: '',
+          );
+          emit(CallEndedState());
+        } else if (updatedCall.status == CallStatus.ended) {
+          _handleCallEnded(call);
+          emit(CallEndedState());
         }
       },
     );
@@ -189,7 +183,9 @@ class CallCubit extends Cubit<CallState> {
         text: callInfoJson,
         messageType: 'call',
       );
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('_logCallToChat error: $e');
+    }
   }
 
   String _formatDuration(Duration d) {
