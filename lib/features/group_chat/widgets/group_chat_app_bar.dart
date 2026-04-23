@@ -2,9 +2,9 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
+import 'package:social_media_app/core/router/app_routes.dart';
 import 'package:social_media_app/features/group_chat/cubit/group_list_cubit/group_list_cubit.dart';
 import '../models/group_model.dart';
-import '../views/group_info_view.dart';
 
 class GroupChatAppBar extends StatelessWidget implements PreferredSizeWidget {
   final GroupModel group;
@@ -30,10 +30,9 @@ class GroupChatAppBar extends StatelessWidget implements PreferredSizeWidget {
           titleSpacing: 0,
           title: GestureDetector(
             onTap: () {
-              Navigator.push(
+              Navigator.of(
                 context,
-                MaterialPageRoute(builder: (_) => GroupInfoView(group: group)),
-              );
+              ).pushNamed(AppRoutes.groupInfoViewRoute, arguments: group);
             },
             child: Row(
               children: [
@@ -44,15 +43,37 @@ class GroupChatAppBar extends StatelessWidget implements PreferredSizeWidget {
                       hasAvatar
                           ? CachedNetworkImageProvider(group.avatarUrl!)
                           : null,
-                  child: !hasAvatar ? Text(group.name[0].toUpperCase()) : null,
+                  child:
+                      !hasAvatar
+                          ? Text(
+                            group.name[0].toUpperCase(),
+                            style: Theme.of(
+                              context,
+                            ).textTheme.titleLarge!.copyWith(
+                              color: Theme.of(context).primaryColor,
+                            ),
+                          )
+                          : null,
                 ),
                 const Gap(10),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(group.name, overflow: TextOverflow.ellipsis),
-                      const Text('Tap for group info'),
+                      Text(
+                        group.name,
+                        style: Theme.of(context).textTheme.titleLarge!.copyWith(
+                          color: Theme.of(context).primaryColor,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      Text(
+                        'Tap for group info',
+                        style: Theme.of(context).textTheme.titleSmall!.copyWith(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w300,
+                        ),
+                      ),
                     ],
                   ),
                 ),
