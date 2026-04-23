@@ -1,3 +1,5 @@
+import '../secrets/app_secrets.dart';
+
 class FcmPayloadBuilder {
   static Map<String, dynamic> buildChatPayload({
     required String receiverFcmToken,
@@ -52,6 +54,8 @@ class FcmPayloadBuilder {
           'callerName': callerName,
           'callerAvatar': callerAvatar,
           'callType': callType,
+          'supabaseUrl': AppSecrets.supabaseUrl,
+          'supabaseAnonKey': AppSecrets.supabaseAnonKey,
         },
         'android': {'priority': 'high', 'ttl': '30s'},
         'apns': {
