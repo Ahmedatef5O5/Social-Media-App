@@ -2,13 +2,13 @@ import 'dart:convert';
 import 'dart:ui';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-
-import '../../../core/helpers/formatted_date.dart';
 import '../../../core/helpers/modern_circle_progress.dart';
 import '../../../core/themes/app_colors.dart';
+import '../../../core/widgets/reaction_picker_overlay.dart';
 import '../../chats/widgets/video_message_widget.dart';
 import '../../chats/widgets/voice_message_bubble_widget.dart';
 import '../cubit/group_details_cubit/group_details_cubit.dart';
@@ -18,8 +18,9 @@ import 'group_message_avatar.dart';
 import 'group_message_menu_sheet.dart';
 import 'group_message_reply_preview.dart';
 import 'group_reactions_row_widget.dart';
+import 'group_time_row.dart';
 
-class GroupMessageBubble extends StatelessWidget {
+class GroupMessageBubble extends StatefulWidget {
   final GroupMessageModel message;
   final bool isMe;
   final Function(GroupMessageModel) onReply;
@@ -32,23 +33,81 @@ class GroupMessageBubble extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    return GroupMessageContent(message: message, isMe: isMe, onReply: onReply);
-  }
+  State<GroupMessageBubble> createState() => _GroupMessageBubbleState();
 }
 
-// ─── Full message content (with all types + progress) ────────────────────────
+class _GroupMessageBubbleState extends State<GroupMessageBubble> {
+  OverlayEntry? _overlayEntry;
+  final GlobalKey _bubbleKey = GlobalKey();
+
+  @override
+  void dispose() {
+    _dismissPicker();
+    super.dispose();
+  }
+
+  void _showPicker() {
+    if (_overlayEntry != null) return;
+
+    final currentUserId = Supabase.instance.client.auth.currentUser!.id;
+    final myReaction = widget.message.reactions[currentUserId];
+
+    final isCall = widget.message.messageType == 'call';
+    if (isCall) return;
+
+    try {
+      _overlayEntry = ChatReactionOverlay.create(
+        context: context,
+        anchorKey: _bubbleKey,
+        isMe: widget.isMe,
+        selectedEmoji: myReaction,
+        onSelect: (emoji) {
+          _dismissPicker();
+          HapticFeedback.selectionClick();
+          context.read<GroupDetailsCubit>().toggleReaction(
+            messageId: widget.message.id,
+            emoji: emoji,
+          );
+        },
+        onDismiss: _dismissPicker,
+      );
+      Overlay.of(context).insert(_overlayEntry!);
+      setState(() {});
+    } catch (_) {}
+  }
+
+  void _dismissPicker() {
+    _overlayEntry?.remove();
+    _overlayEntry = null;
+    if (mounted) setState(() {});
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return KeyedSubtree(
+      key: _bubbleKey,
+      child: GroupMessageContent(
+        message: widget.message,
+        isMe: widget.isMe,
+        onReply: widget.onReply,
+        onLongPress: _showPicker,
+      ),
+    );
+  }
+}
 
 class GroupMessageContent extends StatelessWidget {
   final GroupMessageModel message;
   final bool isMe;
   final Function(GroupMessageModel) onReply;
+  final VoidCallback? onLongPress;
 
   const GroupMessageContent({
     super.key,
     required this.message,
     required this.isMe,
     required this.onReply,
+    this.onLongPress,
   });
 
   @override
@@ -68,11 +127,9 @@ class GroupMessageContent extends StatelessWidget {
             : (isDark
                 ? Colors.white.withValues(alpha: 0.10)
                 : AppColors.grey3.withValues(alpha: 0.35));
-
     final textColor =
         isMe ? Colors.white : (isDark ? Colors.white : AppColors.black87);
 
-    // ── Upload progress from cubit state ──────────────────────────
     return BlocBuilder<GroupDetailsCubit, GroupDetailsState>(
       buildWhen: (prev, cur) {
         if (cur is GroupDetailsLoaded && prev is GroupDetailsLoaded) {
@@ -92,6 +149,7 @@ class GroupMessageContent extends StatelessWidget {
 
         return GestureDetector(
           onLongPress:
+              onLongPress ??
               () => GroupMessageMenuSheet.show(
                 context: context,
                 message: message,
@@ -103,7 +161,6 @@ class GroupMessageContent extends StatelessWidget {
                 isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              // Avatar for others
               if (!isMe) ...[
                 GroupMessageAvatar(
                   avatar: message.senderAvatar,
@@ -113,7 +170,6 @@ class GroupMessageContent extends StatelessWidget {
                 const Gap(8),
               ],
 
-              // Bubble
               Flexible(
                 child: Stack(
                   clipBehavior: Clip.none,
@@ -132,10 +188,9 @@ class GroupMessageContent extends StatelessWidget {
                       uploadProgress: uploadProgress,
                     ),
 
-                    // Reactions row
                     if (message.reactions.isNotEmpty)
                       Positioned(
-                        bottom: -14,
+                        bottom: -1.0,
                         right: isMe ? 4 : null,
                         left: isMe ? null : 4,
                         child: GroupReactionsRow(
@@ -168,12 +223,11 @@ class GroupMessageContent extends StatelessWidget {
     double? uploadProgress,
   }) {
     final hasReaction = message.reactions.isNotEmpty;
-    final timeWidget = _TimeRow(message: message, isMe: isMe);
+    final timeWidget = GroupTimeRow(message: message, isMe: isMe);
 
     Widget content;
-
     if (isCall) {
-      content = _buildCallBubble(context, textColor, timeWidget);
+      content = _buildCallBubble(context, textColor, timeWidget, primary);
     } else if (isVoice) {
       content = _buildVoiceBubble(context, timeWidget);
     } else if (isImage) {
@@ -190,7 +244,7 @@ class GroupMessageContent extends StatelessWidget {
         Opacity(
           opacity: isUploading ? 0.4 : 1.0,
           child: Container(
-            margin: EdgeInsets.only(top: 2, bottom: hasReaction ? 20 : 2),
+            margin: EdgeInsets.only(top: 2, bottom: hasReaction ? 18 : 2),
             constraints: BoxConstraints(
               maxWidth: MediaQuery.of(context).size.width * 0.68,
               minWidth: isVoice ? 240 : (isImage || isVideo ? 160 : 50),
@@ -249,8 +303,6 @@ class GroupMessageContent extends StatelessWidget {
     );
   }
 
-  // ── Text bubble ──────────────────────────────────────────────────
-
   Widget _buildTextBubble(
     BuildContext context,
     Color textColor,
@@ -262,7 +314,6 @@ class GroupMessageContent extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Sender name (only for others)
           if (!isMe)
             Padding(
               padding: const EdgeInsets.only(bottom: 2),
@@ -275,22 +326,17 @@ class GroupMessageContent extends StatelessWidget {
                 ),
               ),
             ),
-
-          // Reply preview
           if (message.replyToMessageId != null)
             GroupMessageReplyPreview(
               message: message,
               isMe: isMe,
               primary: primary,
             ),
-
-          // Message text
           if (message.text.isNotEmpty)
             Text(
               message.text,
               style: TextStyle(color: textColor, fontSize: 15, height: 1.3),
             ),
-
           const Gap(2),
           Align(alignment: Alignment.bottomRight, child: timeWidget),
         ],
@@ -298,15 +344,12 @@ class GroupMessageContent extends StatelessWidget {
     );
   }
 
-  // ── Image bubble ─────────────────────────────────────────────────
-
   Widget _buildImageBubble(
     BuildContext context,
     Color textColor,
     Widget timeWidget,
   ) {
     if (message.imageUrl == null) {
-      // Still uploading — placeholder
       return Container(
         width: 200,
         height: 200,
@@ -316,7 +359,6 @@ class GroupMessageContent extends StatelessWidget {
         ),
       );
     }
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -377,8 +419,6 @@ class GroupMessageContent extends StatelessWidget {
     );
   }
 
-  // ── Video bubble ─────────────────────────────────────────────────
-
   Widget _buildVideoBubble(
     BuildContext context,
     Color textColor,
@@ -422,8 +462,6 @@ class GroupMessageContent extends StatelessWidget {
     );
   }
 
-  // ── Voice bubble ─────────────────────────────────────────────────
-
   Widget _buildVoiceBubble(BuildContext context, Widget timeWidget) {
     if (message.voiceUrl == null) {
       return const Padding(
@@ -435,22 +473,38 @@ class GroupMessageContent extends StatelessWidget {
       );
     }
     return Padding(
-      padding: const EdgeInsets.all(6),
-      child: VoiceMessageBubbleWidget(
-        voiceUrl: message.voiceUrl!,
-        isMe: isMe,
-        timestamp: message.createdAt,
-        isRead: false,
+      padding: const EdgeInsets.fromLTRB(8, 6, 8, 6),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (!isMe)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: Text(
+                message.senderName,
+                style: TextStyle(
+                  color: Theme.of(context).primaryColor,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 11,
+                ),
+              ),
+            ),
+          VoiceMessageBubbleWidget(
+            voiceUrl: message.voiceUrl!,
+            isMe: isMe,
+            timestamp: message.createdAt,
+            isRead: false,
+          ),
+        ],
       ),
     );
   }
-
-  // ── Call bubble ──────────────────────────────────────────────────
 
   Widget _buildCallBubble(
     BuildContext context,
     Color textColor,
     Widget timeWidget,
+    Color primary,
   ) {
     Map<String, dynamic> callData = {};
     try {
@@ -460,7 +514,6 @@ class GroupMessageContent extends StatelessWidget {
     final status = callData['status'] as String? ?? 'ended';
     final callType = callData['call_type'] as String? ?? 'audio';
     final duration = callData['duration'] as String? ?? '';
-
     final isAudio = callType == 'audio';
     final isMissed = status == 'rejected' || status == 'missed';
 
@@ -468,14 +521,12 @@ class GroupMessageContent extends StatelessWidget {
         isMissed
             ? (isAudio ? Icons.call_missed : Icons.missed_video_call)
             : (isAudio ? Icons.call : Icons.videocam);
-
-    final Color iconColor = isMissed ? Colors.redAccent : Colors.greenAccent;
-
+    final Color iconColor =
+        isMissed ? Colors.redAccent.shade100 : Colors.greenAccent.shade100;
     String label =
         isMissed
             ? (isAudio ? 'Missed voice call' : 'Missed video call')
             : (isAudio ? 'Voice call' : 'Video call');
-
     if (duration.isNotEmpty && !isMissed) label += ' • $duration';
 
     return Padding(
@@ -490,7 +541,7 @@ class GroupMessageContent extends StatelessWidget {
               child: Text(
                 message.senderName,
                 style: TextStyle(
-                  color: Theme.of(context).primaryColor,
+                  color: primary,
                   fontWeight: FontWeight.w700,
                   fontSize: 12,
                 ),
@@ -514,25 +565,6 @@ class GroupMessageContent extends StatelessWidget {
           const Gap(4),
           Align(alignment: Alignment.bottomRight, child: timeWidget),
         ],
-      ),
-    );
-  }
-}
-
-// ── Time + read indicator ─────────────────────────────────────────────────────
-
-class _TimeRow extends StatelessWidget {
-  final GroupMessageModel message;
-  final bool isMe;
-  const _TimeRow({required this.message, required this.isMe});
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      FormattedDate.getMessageTime(message.createdAt),
-      style: TextStyle(
-        fontSize: 10,
-        color: isMe ? Colors.white60 : AppColors.black38,
       ),
     );
   }

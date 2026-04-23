@@ -13,6 +13,7 @@ class GroupMessageMenuSheet {
   }) {
     final currentUserId = Supabase.instance.client.auth.currentUser!.id;
     final cubit = context.read<GroupDetailsCubit>();
+    final isCall = message.messageType == 'call';
 
     showModalBottomSheet(
       context: context,
@@ -27,51 +28,54 @@ class GroupMessageMenuSheet {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children:
-                    ['👍', '❤️', '😂', '😮', '😢', '😡'].map((emoji) {
-                      final myReaction = message.reactions[currentUserId];
-                      final isSelected = myReaction == emoji;
+              if (!isCall) ...[
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children:
+                      ['👍', '❤️', '😂', '😮', '😢', '😡'].map((emoji) {
+                        final myReaction = message.reactions[currentUserId];
+                        final isSelected = myReaction == emoji;
 
-                      return GestureDetector(
-                        onTap: () {
-                          Navigator.pop(ctx);
-                          cubit.toggleReaction(
-                            messageId: message.id,
-                            emoji: emoji,
-                          );
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color:
-                                isSelected
-                                    ? primary.withValues(alpha: 0.2)
-                                    : Colors.transparent,
-                            borderRadius: BorderRadius.circular(10),
-                            border:
-                                isSelected
-                                    ? Border.all(color: primary, width: 1.5)
-                                    : null,
+                        return GestureDetector(
+                          onTap: () {
+                            Navigator.pop(ctx);
+                            cubit.toggleReaction(
+                              messageId: message.id,
+                              emoji: emoji,
+                            );
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color:
+                                  isSelected
+                                      ? primary.withValues(alpha: 0.2)
+                                      : Colors.transparent,
+                              borderRadius: BorderRadius.circular(10),
+                              border:
+                                  isSelected
+                                      ? Border.all(color: primary, width: 1.5)
+                                      : null,
+                            ),
+                            child: Text(
+                              emoji,
+                              style: const TextStyle(fontSize: 26),
+                            ),
                           ),
-                          child: Text(
-                            emoji,
-                            style: const TextStyle(fontSize: 26),
-                          ),
-                        ),
-                      );
-                    }).toList(),
-              ),
-              const Divider(),
-              ListTile(
-                leading: const Icon(Icons.reply_all_outlined),
-                title: const Text('Reply'),
-                onTap: () {
-                  Navigator.pop(ctx);
-                  onReply(message);
-                },
-              ),
+                        );
+                      }).toList(),
+                ),
+                const Divider(),
+                ListTile(
+                  leading: const Icon(Icons.reply_all_outlined),
+                  title: const Text('Reply'),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    onReply(message);
+                  },
+                ),
+              ],
+
               if (message.senderId == currentUserId)
                 ListTile(
                   leading: const Icon(Icons.delete_outline, color: Colors.red),

@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../helper/last_message_group_preview.dart';
+import '../../helpers/last_message_group_preview.dart';
 import '../../models/group_model.dart';
 import '../../models/groupe_message_model.dart';
 import '../../services/group_chat_services.dart';
