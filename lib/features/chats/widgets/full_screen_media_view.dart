@@ -94,17 +94,17 @@ class _FullScreenMediaViewState extends State<FullScreenMediaView> {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onVerticalDragUpdate: (details) {
+      onScaleUpdate: (details) {
         if (_transformationController.value.getMaxScaleOnAxis() <= 1.0) {
           setState(() {
-            _dragOffset += details.delta.dy;
+            _dragOffset += details.focalPointDelta.dy;
           });
         }
       },
-      onVerticalDragEnd: (details) {
-        if (_dragOffset.abs() > 100 ||
-            details.velocity.pixelsPerSecond.dy.abs() > 500) {
-          Navigator.of(context).pop();
+
+      onScaleEnd: (details) {
+        if (_dragOffset.abs() > 150) {
+          Navigator.pop(context);
         } else {
           setState(() {
             _dragOffset = 0;

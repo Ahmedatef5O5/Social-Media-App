@@ -40,17 +40,16 @@ class _FullScreenImageViewerState extends State<FullScreenImageViewer> {
     final String heroTag = args['tag'] ?? imageUrl;
     final bool isAsset = args['isAsset'] ?? false;
     return GestureDetector(
-      onVerticalDragUpdate: (details) {
+      onScaleUpdate: (details) {
         if (_transformationController.value.getMaxScaleOnAxis() <= 1.0) {
           setState(() {
-            _dragOffset += details.delta.dy;
+            _dragOffset += details.focalPointDelta.dy;
           });
         }
       },
 
-      onVerticalDragEnd: (details) {
-        if (_dragOffset.abs() > 150 ||
-            details.velocity.pixelsPerSecond.dy.abs() > 800) {
+      onScaleEnd: (details) {
+        if (_dragOffset.abs() > 150) {
           Navigator.pop(context);
         } else {
           setState(() {
