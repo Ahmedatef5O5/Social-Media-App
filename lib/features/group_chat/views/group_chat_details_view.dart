@@ -50,14 +50,20 @@ class _GroupChatDetailsViewState extends State<GroupChatDetailsView> {
               ),
             ),
 
-            GroupChatInputBarSection(
-              controller: _controller,
-              onSend: (text) {
-                cubit.sendMessage(text: text);
-                _controller.clear();
-                _scrollToBottom();
-              },
-              onTyping: cubit.onTyping,
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: SafeArea(
+                top: false,
+                child: GroupChatInputBarSection(
+                  controller: _controller,
+                  onSend: (text) {
+                    cubit.sendMessage(text: text);
+                    _controller.clear();
+                    _scrollToBottom();
+                  },
+                  onTyping: cubit.onTyping,
+                ),
+              ),
             ),
           ],
         ),
