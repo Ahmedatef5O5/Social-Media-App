@@ -6,12 +6,13 @@ import 'package:social_media_app/core/helpers/formatted_date.dart';
 import 'package:social_media_app/core/widgets/custom_loading_indicator.dart';
 import 'package:social_media_app/features/chats/models/chat_user_model.dart';
 import 'package:social_media_app/features/chats/widgets/full_screen_media_view.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/utilities/supabase_constants.dart';
 import '../../../core/widgets/custom_user_profile_image_section.dart';
 import '../../calls/cubit/call_cubit.dart';
 import '../../calls/model/call_model.dart';
+import '../helper/call_actions.dart';
+import '../helper/safe_pop.dart';
 import '../services/chat_services.dart';
 
 class ReceiverProfileView extends StatelessWidget {
@@ -38,7 +39,7 @@ class ReceiverProfileView extends StatelessWidget {
                     padding: const EdgeInsets.only(top: 12.0),
                     child: GestureDetector(
                       behavior: HitTestBehavior.opaque,
-                      onTap: () => Navigator.of(context).pop(),
+                      onTap: () => safePop(context),
                       child: Padding(
                         padding: const EdgeInsets.all(12.0),
                         child: Container(
@@ -83,79 +84,47 @@ class ReceiverProfileView extends StatelessWidget {
               children: [
                 _buildOptionItem(
                   context,
-                  Icons.message,
+                  Icons.message_outlined,
                   "Message",
-                  () => Navigator.pop(context),
+                  () => safePop(context),
                 ),
 
-                _buildOptionItem(context, Icons.call, "Call", () async {
-                  final currentUser = Supabase.instance.client.auth.currentUser;
-                  if (currentUser == null) return;
-
-                  final userData =
-                      await Supabase.instance.client
-                          .from('users')
-                          .select('name, image_url')
-                          .eq('id', currentUser.id)
-                          .maybeSingle();
-
-                  final callerName =
-                      (userData?['name'] as String?) ?? 'Unknown';
-                  final callerAvatar =
-                      (userData?['image_url'] as String?) ?? '';
-
-                  final call = CallModel(
-                    callId: 'room_${DateTime.now().millisecondsSinceEpoch}',
-                    callerId: currentUser.id,
-                    callerName: callerName,
-                    callerAvatar: callerAvatar,
-                    receiverId: receiverUser.id,
-                    receiverName: receiverUser.name,
-                    receiverAvatar: receiverUser.imageUrl ?? '',
-                    status: CallStatus.ringing,
-                    type: CallType.audio,
-                  );
-
-                  if (context.mounted) {
-                    context.read<CallCubit>().makeAudioCall(call);
-                  }
-                }),
-
-                _buildOptionItem(context, Icons.videocam, "Video", () async {
-                  final currentUser = Supabase.instance.client.auth.currentUser;
-                  if (currentUser == null) return;
-
-                  final userData =
-                      await Supabase.instance.client
-                          .from('users')
-                          .select('name, image_url')
-                          .eq('id', currentUser.id)
-                          .maybeSingle();
-
-                  final callerName =
-                      (userData?['name'] as String?) ?? 'Unknown';
-                  final callerAvatar =
-                      (userData?['image_url'] as String?) ?? '';
-
-                  final call = CallModel(
-                    callId: 'room_${DateTime.now().millisecondsSinceEpoch}',
-                    callerId: currentUser.id,
-                    callerName: callerName,
-                    callerAvatar: callerAvatar,
-                    receiverId: receiverUser.id,
-                    receiverName: receiverUser.name,
-                    receiverAvatar: receiverUser.imageUrl ?? '',
-                    status: CallStatus.ringing,
-                    type: CallType.video,
-                  );
-
-                  if (context.mounted) {
-                    context.read<CallCubit>().makeAudioCall(call);
-                  }
-                }),
                 _buildOptionItem(
                   context,
-                  Icons.notifications_off,
+                  Icons.call_outlined,
+                  "Call",
+                  () async {
+                    final call = await CallActions.buildCall(
+                      type: CallType.audio,
+                      receiverId: receiverUser.id,
+                      receiverName: receiverUser.name,
+                      receiverAvatar: receiverUser.imageUrl ?? '',
+                    );
+                    if (call == null || !context.mounted) return;
+
+                    context.read<CallCubit>().makeAudioCall(call);
+                  },
+                ),
+
+                _buildOptionItem(
+                  context,
+                  Icons.videocam_outlined,
+                  "Video",
+                  () async {
+                    final call = await CallActions.buildCall(
+                      type: CallType.video,
+                      receiverId: receiverUser.id,
+                      receiverName: receiverUser.name,
+                      receiverAvatar: receiverUser.imageUrl ?? '',
+                    );
+                    if (call == null || !context.mounted) return;
+
+                    context.read<CallCubit>().makeAudioCall(call);
+                  },
+                ),
+                _buildOptionItem(
+                  context,
+                  Icons.notifications_off_outlined,
                   "Mute",
                   () {},
                 ),
@@ -216,7 +185,17 @@ class ReceiverProfileView extends StatelessWidget {
                 "Media, links, and docs",
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
               ),
-              TextButton(onPressed: () {}, child: const Text("See all")),
+              TextButton(
+                onPressed: () {},
+                child: Text(
+                  "See all",
+                  style: Theme.of(context).textTheme.titleSmall!.copyWith(
+                    color: Theme.of(
+                      context,
+                    ).primaryColor.withValues(alpha: 0.85),
+                  ),
+                ),
+              ),
             ],
           ),
         ),
