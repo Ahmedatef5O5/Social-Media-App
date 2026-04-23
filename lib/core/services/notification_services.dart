@@ -23,8 +23,6 @@ class NotificationService {
   final FirebaseMessaging _fcm = FirebaseMessaging.instance;
   bool _initialized = false;
 
-  // ── Channels ──
-
   static final AndroidNotificationChannel _messageChannel =
       AndroidNotificationChannel(
         'chat_messages_channel',
@@ -60,7 +58,7 @@ class NotificationService {
     await _localNotifications.initialize(
       initSettings,
       onDidReceiveNotificationResponse: _onNotificationTapped,
-      onDidReceiveBackgroundNotificationResponse: _onNotificationTapped,
+      onDidReceiveBackgroundNotificationResponse: _onBgNotificationTapped,
     );
 
     final androidPlugin =
@@ -86,7 +84,6 @@ class NotificationService {
     _messagesBySender.remove(senderId);
   }
 
-  /// Cancel incoming call notification (called when call is answered or dismissed)
   Future<void> cancelCallNotification(String callId) async {
     await _localNotifications.cancel(callId.hashCode);
   }
@@ -97,18 +94,21 @@ class NotificationService {
           AndroidFlutterLocalNotificationsPlugin
         >()
         ?.requestNotificationsPermission();
+    await _fcm.requestPermission(
+      alert: true,
+      badge: true,
+      sound: true,
+      criticalAlert: true,
+    );
   }
 
   void _listenToForegroundMessages() {
     FirebaseMessaging.onMessage.listen((RemoteMessage message) async {
       final type = message.data['notificationType'] as String? ?? 'chat';
-
       if (type == 'incoming_call') {
-        // Show call UI directly via navigatorKey
         await _handleIncomingCallData(message.data);
         return;
       }
-
       final senderId = message.data['senderId'] as String?;
       if (senderId != null &&
           !ActiveScreenTracker.isViewingChatWith(senderId)) {
@@ -149,10 +149,12 @@ class NotificationService {
     required String callerAvatar,
     required String callType,
   }) async {
-    final Uint8List profileBitmap = await _getAvatarBitmap(
-      callerId,
-      callerAvatar,
-    );
+    Uint8List profileBitmap;
+    try {
+      profileBitmap = await _getAvatarBitmap(callerId, callerAvatar);
+    } catch (_) {
+      profileBitmap = await _defaultBitmap();
+    }
 
     final subtitle =
         callType == 'video' ? 'Incoming video call' : 'Incoming voice call';
@@ -166,9 +168,10 @@ class NotificationService {
       category: AndroidNotificationCategory.call,
       icon: '@drawable/ic_notification',
       largeIcon: ByteArrayAndroidBitmap(profileBitmap),
-      fullScreenIntent: true, // ← This wakes the screen
-      ongoing: true, // Can't be swiped away
+      fullScreenIntent: true,
+      ongoing: true,
       autoCancel: false,
+      timeoutAfter: 60000,
       actions: [
         const AndroidNotificationAction(
           'decline_call',
@@ -208,7 +211,6 @@ class NotificationService {
       callType: callType,
     );
 
-    // Also navigate in-app if app is open
     WidgetsBinding.instance.addPostFrameCallback((_) {
       navigatorKey.currentState?.pushNamed(
         AppRoutes.incomingCallRoute,
@@ -231,7 +233,7 @@ class NotificationService {
     final senderName =
         data['senderName'] ?? notification?.title ?? 'New Message';
     final body = data['messageBody'] ?? notification?.body ?? '';
-    final avatarUrl = data['senderImageUrl'];
+    final avatarUrl = data['senderImageUrl']; // ✅ from FCM payload
     final messageType = data['messageType'] ?? 'text';
     final messageImageUrl = data['messageImageUrl'];
 
@@ -317,26 +319,44 @@ class NotificationService {
 
   @pragma('vm:entry-point')
   static void _onNotificationTapped(NotificationResponse response) {
+    _handleTap(response);
+  }
+
+  @pragma('vm:entry-point')
+  static void _onBgNotificationTapped(NotificationResponse response) {
+    _handleTap(response);
+  }
+
+  static void _handleTap(NotificationResponse response) {
     if (response.payload == null) return;
     final payload = response.payload!;
 
     if (payload.startsWith('call|')) {
       final parts = payload.split('|');
       if (parts.length >= 6) {
-        final actionId = response.actionId;
-        if (actionId == 'decline_call') {
+        final callId = parts[1];
+        final callerId = parts[2];
+        final callerName = parts[3];
+        final callerAvatar = parts[4];
+        final callType = parts[5];
+
+        if (response.actionId == 'decline_call') {
+          _rejectCallViaRest(callId);
           return;
         }
-        navigatorKey.currentState?.pushNamed(
-          AppRoutes.incomingCallRoute,
-          arguments: {
-            'callId': parts[1],
-            'callerId': parts[2],
-            'callerName': parts[3],
-            'callerAvatar': parts[4],
-            'callType': parts[5],
-          },
-        );
+
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          navigatorKey.currentState?.pushNamed(
+            AppRoutes.incomingCallRoute,
+            arguments: {
+              'callId': callId,
+              'callerId': callerId,
+              'callerName': callerName,
+              'callerAvatar': callerAvatar,
+              'callType': callType,
+            },
+          );
+        });
       }
       return;
     }
@@ -348,6 +368,37 @@ class NotificationService {
         'senderName': parts[1],
         'senderImageUrl': parts.length > 2 ? parts[2] : null,
       });
+    }
+  }
+
+  static Future<void> _rejectCallViaRest(String callId) async {
+    try {
+      final dio = dio_pkg.Dio();
+      const supabaseUrl = String.fromEnvironment(
+        'SUPABASE_URL',
+        defaultValue: '',
+      );
+      const anonKey = String.fromEnvironment(
+        'SUPABASE_ANON_KEY',
+        defaultValue: '',
+      );
+
+      if (supabaseUrl.isEmpty || anonKey.isEmpty) return;
+
+      await dio.patch(
+        '$supabaseUrl/rest/v1/calls?call_id=eq.$callId',
+        data: {'status': 'rejected'},
+        options: dio_pkg.Options(
+          headers: {
+            'apikey': anonKey,
+            'Authorization': 'Bearer $anonKey',
+            'Content-Type': 'application/json',
+            'Prefer': 'return=minimal',
+          },
+        ),
+      );
+    } catch (e) {
+      debugPrint('_rejectCallViaRest error: $e');
     }
   }
 
@@ -401,9 +452,7 @@ class NotificationService {
       return _avatarCache[senderId]!;
     }
     final raw = await _fetchBitmap(imageUrl);
-    final bitmap = await _makeCircularBitmap(
-      raw ?? await _loadFlutterAsset('assets/images/no_profile_picture.png'),
-    );
+    final bitmap = await _makeCircularBitmap(raw ?? await _defaultBitmap());
     _avatarCache[senderId] = bitmap;
     return bitmap;
   }
@@ -415,9 +464,89 @@ class NotificationService {
         url,
         options: dio_pkg.Options(responseType: dio_pkg.ResponseType.bytes),
       );
-      return response.data != null ? Uint8List.fromList(response.data!) : null;
+      if (response.data == null) return null;
+      return Uint8List.fromList(response.data!);
     } catch (_) {
       return null;
+    }
+  }
+
+  Future<Uint8List> _defaultBitmap() async {
+    try {
+      final data = await rootBundle.load(
+        'assets/images/no_profile_picture.png',
+      );
+      return data.buffer.asUint8List();
+    } catch (_) {
+      return Uint8List.fromList([
+        0x89,
+        0x50,
+        0x4E,
+        0x47,
+        0x0D,
+        0x0A,
+        0x1A,
+        0x0A,
+        0x00,
+        0x00,
+        0x00,
+        0x0D,
+        0x49,
+        0x48,
+        0x44,
+        0x52,
+        0x00,
+        0x00,
+        0x00,
+        0x01,
+        0x00,
+        0x00,
+        0x00,
+        0x01,
+        0x08,
+        0x06,
+        0x00,
+        0x00,
+        0x00,
+        0x1F,
+        0x15,
+        0xC4,
+        0x89,
+        0x00,
+        0x00,
+        0x00,
+        0x0A,
+        0x49,
+        0x44,
+        0x41,
+        0x54,
+        0x78,
+        0x9C,
+        0x62,
+        0x00,
+        0x01,
+        0x00,
+        0x00,
+        0x05,
+        0x00,
+        0x01,
+        0x0D,
+        0x0A,
+        0x2D,
+        0xB4,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x49,
+        0x45,
+        0x4E,
+        0x44,
+        0xAE,
+        0x42,
+        0x60,
+        0x82,
+      ]);
     }
   }
 
