@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import '../../../core/widgets/custom_text_form_field.dart';
@@ -23,24 +24,28 @@ class EditProfileForm extends StatelessWidget {
           controller: nameController,
           labelText: 'Name',
           hintText: 'Enter New Name',
+          prefixIcon: Icon(Icons.person_outline_rounded),
         ),
         Gap(16),
         CustomTextFormField(
           controller: userNameController,
           labelText: 'UserName',
           hintText: 'Enter New UserName',
+          prefixIcon: Icon(CupertinoIcons.person_alt_circle),
         ),
         Gap(16),
         CustomTextFormField(
           controller: titleController,
           labelText: 'Title',
           hintText: 'Enter New Title',
+          prefixIcon: const Icon(Icons.badge_outlined),
         ),
         Gap(16),
         CustomTextFormField(
           controller: bioController,
           labelText: 'Bio',
           hintText: 'Enter New Bio',
+          prefixIcon: const Icon(Icons.info_outline_rounded),
         ),
       ],
     );

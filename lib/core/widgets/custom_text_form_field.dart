@@ -111,7 +111,28 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
               fontSize: 15,
               fontWeight: FontWeight.w300,
             ),
-            prefixIcon: widget.prefixIcon,
+            prefixIcon:
+                widget.isPassword && widget.prefixIcon != null
+                    ? Icon(
+                      _obscureText
+                          ? Icons.lock_rounded
+                          : Icons.lock_open_rounded,
+                      color:
+                          widget.prefixIcon is Icon
+                              ? (widget.prefixIcon as Icon).color
+                              : null,
+                      size:
+                          widget.prefixIcon is Icon
+                              ? (widget.prefixIcon as Icon).size
+                              : null,
+                    )
+                    : widget.prefixIcon,
+            prefixIconColor:
+                _effectiveFocusNode.hasFocus
+                    ? Theme.of(context).primaryColor.withValues(alpha: 0.6)
+                    : Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withValues(alpha: 0.5),
             suffixIcon:
                 widget.isPassword
                     ? IconButton(
@@ -122,7 +143,9 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
                                 ? Theme.of(
                                   context,
                                 ).primaryColor.withValues(alpha: 0.6)
-                                : AppColors.black38,
+                                : Theme.of(
+                                  context,
+                                ).colorScheme.onSurface.withValues(alpha: 0.5),
                       ),
                       onPressed: () {
                         setState(() {

@@ -173,6 +173,5 @@ class _EditProfileViewState extends State<EditProfileView> {
       profileImage: selectedProfileImage,
       backgroundImage: selectedBackgroundImage,
     );
-    // Navigator.of(context).pop();
   }
 }
