@@ -6,6 +6,12 @@ sealed class ChatDetailsState {
 
 final class ChatDetailsInitial extends ChatDetailsState {}
 
+final class ReceiverPresenceUpdated extends ChatDetailsState {
+  final bool isOnline;
+  final DateTime? lastSeen;
+  const ReceiverPresenceUpdated({required this.isOnline, this.lastSeen});
+}
+
 final class MessagesLoading extends ChatDetailsState {}
 
 final class MessagesSending extends ChatDetailsState {

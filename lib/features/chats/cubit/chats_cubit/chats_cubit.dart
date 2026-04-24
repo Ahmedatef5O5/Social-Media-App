@@ -5,7 +5,6 @@ import 'package:social_media_app/features/chats/models/chat_user_model.dart';
 import 'package:social_media_app/features/chats/services/chat_services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../auth/handler/auth_exception_handler.dart';
-
 part 'chats_state.dart';
 
 class ChatsCubit extends Cubit<ChatsState> {
@@ -62,19 +61,7 @@ class ChatsCubit extends Cubit<ChatsState> {
           final isTyping = _typingUserIds.contains(chat.id);
 
           if (chat.isTyping == isTyping) return chat;
-          return ChatUserModel(
-            id: chat.id,
-            name: chat.name,
-            imageUrl: chat.imageUrl,
-            lastMessage: chat.lastMessage,
-            lastMessageType: chat.lastMessageType,
-            lastMessageTime: chat.lastMessageTime,
-            lastMessageIsMe: chat.lastMessageIsMe,
-            lastMessageIsRead: chat.lastMessageIsRead,
-            isTyping: isTyping,
-            unreadCount: chat.unreadCount,
-            lastSeen: chat.lastSeen,
-          );
+          return chat.copyWith(isTyping: isTyping);
         }).toList();
 
     emit(ChatsSuccessloaded(chats: updatedChats));

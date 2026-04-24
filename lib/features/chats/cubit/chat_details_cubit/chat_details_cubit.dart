@@ -7,6 +7,7 @@ import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/services/fcm_services.dart';
 import '../../models/message_model.dart';
+import '../../models/presence_snapshot.dart';
 import '../../services/chat_services.dart';
 import '../../widgets/chat_bubble.dart';
 part 'chat_details_state.dart';
@@ -20,10 +21,13 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState> {
       ValueNotifier<MessageModel?>(null);
 
   StreamSubscription? _messageSubscription;
-  StreamSubscription? _lastSeenSubscription;
+  StreamSubscription? _presenceSubscription;
+
   StreamSubscription? _typingSubscription;
   Timer? _typingDebounce;
   Timer? _lastSeenPollingTimer;
+
+  PresenceSnapshot? _lastPresence;
 
   List<MessageModel> cachedMessages = [];
 
@@ -40,17 +44,12 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState> {
     this.currentUserName = 'Someone',
   }) : super(ChatDetailsInitial());
 
+  // ignore: unused_field
   bool _isUserAtBottom = true;
 
   void setUserAtBottom(bool isAtBottom) {
     _isUserAtBottom = isAtBottom;
-
-    if (isAtBottom && _pendingReceiverId != null) {
-      markAsRead(senderId: _pendingReceiverId!);
-    }
   }
-
-  String? _pendingReceiverId;
 
   void getMessagesStream({required String receiverId}) {
     _messageSubscription?.cancel();
@@ -67,16 +66,11 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState> {
 
           cachedMessages = messages;
           emit(MessagesSuccessLoaded(messages: messages));
-          bool hasUnread = messages.any(
-            (m) => !m.isRead && m.receiverId == currentUserId,
-          );
-          if (hasUnread && _isUserAtBottom) {
-            markAsRead(senderId: receiverId);
-          }
         });
   }
 
   Future<void> markAsRead({required String senderId}) async {
+    // if (!_isUserAtBottom) return;
     try {
       await _chatServices.markMessagesAsRead(
         senderId: senderId,
@@ -382,30 +376,39 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState> {
     }
   }
 
-  void watchReceiverLastSeen(String receiverId, {DateTime? initialLastSeen}) {
-    _lastSeenSubscription?.cancel();
-    _lastSeenPollingTimer?.cancel();
+  void watchReceiverPresence(String receiverId, {PresenceSnapshot? initial}) {
+    _presenceSubscription?.cancel();
 
-    // _chatServices.getUserLastSeen(receiverId).then((lastSeen) {
-    //   if (!isClosed) emit(LastSeenUpdated(lastSeen));
-    // });
-    if (initialLastSeen != null) {
-      emit(LastSeenUpdated(initialLastSeen));
+    if (initial != null) {
+      _lastPresence = initial;
+      Future.microtask(() {
+        if (!isClosed) {
+          emit(
+            ReceiverPresenceUpdated(
+              isOnline: initial.isOnline,
+              lastSeen: initial.lastSeen,
+            ),
+          );
+        }
+      });
     }
 
-    _lastSeenSubscription = _chatServices.getLastSeenStream(receiverId).listen((
-      lastSeen,
+    _presenceSubscription = _chatServices.getPresenceStream(receiverId).listen((
+      snapshot,
     ) {
-      if (!isClosed) emit(LastSeenUpdated(lastSeen));
-    });
-
-    _lastSeenPollingTimer = Timer.periodic(const Duration(seconds: 45), (
-      _,
-    ) async {
-      final lastSeen = await _chatServices.getUserLastSeen(receiverId);
-      if (!isClosed) emit(LastSeenUpdated(lastSeen));
+      _lastPresence = snapshot;
+      if (!isClosed) {
+        emit(
+          ReceiverPresenceUpdated(
+            isOnline: snapshot.isOnline,
+            lastSeen: snapshot.lastSeen,
+          ),
+        );
+      }
     });
   }
+
+  PresenceSnapshot? get lastPresence => _lastPresence;
 
   String getChatId(String u1, String u2) {
     List<String> ids = [u1, u2];
@@ -463,7 +466,7 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState> {
     highlightedMessageId.dispose();
 
     _messageSubscription?.cancel();
-    _lastSeenSubscription?.cancel();
+    _presenceSubscription?.cancel();
     _lastSeenPollingTimer?.cancel();
     _typingSubscription?.cancel();
     _typingDebounce?.cancel();
