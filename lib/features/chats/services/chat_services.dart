@@ -3,10 +3,12 @@ import 'dart:io';
 import 'package:dio/dio.dart' as dio_pkg;
 import 'package:flutter/material.dart';
 import 'package:social_media_app/core/secrets/app_secrets.dart';
+import 'package:social_media_app/core/services/presence_service.dart';
 import 'package:social_media_app/core/utilities/supabase_constants.dart';
 import 'package:social_media_app/features/chats/models/message_model.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/chat_user_model.dart';
+import '../models/presence_snapshot.dart';
 
 class ChatServices {
   final _supabase = Supabase.instance.client;
@@ -79,8 +81,34 @@ class ChatServices {
       );
 
       if (response == null) return [];
-      return (response as List)
-          .map(((data) => ChatUserModel.fromUserData(data, currentUserId)))
+
+      final chats =
+          (response as List)
+              .map((data) => ChatUserModel.fromUserData(data, currentUserId))
+              .toList();
+
+      if (chats.isEmpty) return chats;
+
+      final userIds = chats.map((c) => c.id).toList();
+      final presenceRows = await _supabase
+          .from('user_presence')
+          .select('user_id, is_online, updated_at')
+          .inFilter('user_id', userIds);
+
+      final onlineSet = <String>{
+        for (final row in presenceRows as List)
+          if (PresenceService.isConsideredOnline(
+            isOnline: row['is_online'] as bool? ?? false,
+            updatedAt:
+                row['updated_at'] != null
+                    ? DateTime.parse(row['updated_at'].toString())
+                    : null,
+          ))
+            row['user_id'] as String,
+      };
+
+      return chats
+          .map((c) => c.copyWith(isOnline: onlineSet.contains(c.id)))
           .toList();
     } catch (e) {
       rethrow;
@@ -105,16 +133,17 @@ class ChatServices {
           event: PostgresChangeEvent.all,
           schema: 'public',
           table: SupabaseConstants.messages,
-          filter: PostgresChangeFilter(
-            type: PostgresChangeFilterType.eq,
-            column: MessagesColumns.receiverId,
-            value: currentUserId,
-          ),
           callback: notify,
         )
         .onPostgresChanges(
           schema: 'public',
           table: SupabaseConstants.typingStatus,
+          event: PostgresChangeEvent.all,
+          callback: notify,
+        )
+        .onPostgresChanges(
+          schema: 'public',
+          table: 'user_presence',
           event: PostgresChangeEvent.all,
           callback: notify,
         )
@@ -316,6 +345,81 @@ class ChatServices {
     }
   }
 
+  Stream<PresenceSnapshot> getPresenceStream(String userId) {
+    final controller = StreamController<PresenceSnapshot>();
+
+    Future<void> fetchAndEmit() async {
+      try {
+        final rows = await _supabase
+            .from('user_presence')
+            .select('is_online, last_seen, updated_at')
+            .eq('user_id', userId)
+            .limit(1);
+
+        if (controller.isClosed) return;
+
+        if (rows == null || (rows as List).isEmpty) {
+          controller.add(
+            const PresenceSnapshot(isOnline: false, lastSeen: null),
+          );
+          return;
+        }
+
+        final row = rows.first as Map<String, dynamic>;
+
+        final updatedAtRaw = row['updated_at'];
+        final updatedAt =
+            updatedAtRaw != null
+                ? DateTime.parse(updatedAtRaw.toString())
+                : null;
+        final isOnline = PresenceService.isConsideredOnline(
+          isOnline: row['is_online'] as bool? ?? false,
+          updatedAt: updatedAt,
+        );
+
+        final lastSeenRaw = row['last_seen'];
+        final lastSeen =
+            lastSeenRaw != null
+                ? DateTime.parse(lastSeenRaw.toString()).toLocal()
+                : null;
+
+        controller.add(
+          PresenceSnapshot(isOnline: isOnline, lastSeen: lastSeen),
+        );
+      } catch (e) {
+        debugPrint('getPresenceStream fetchAndEmit error: $e');
+      }
+    }
+
+    fetchAndEmit();
+
+    final channelName = 'presence_$userId';
+    _supabase.removeChannel(_supabase.channel(channelName));
+
+    final channel =
+        _supabase
+            .channel(channelName)
+            .onPostgresChanges(
+              event: PostgresChangeEvent.all,
+              schema: 'public',
+              table: 'user_presence',
+              filter: PostgresChangeFilter(
+                type: PostgresChangeFilterType.eq,
+                column: 'user_id',
+                value: userId,
+              ),
+              callback: (_) => fetchAndEmit(),
+            )
+            .subscribe();
+
+    controller.onCancel = () {
+      _supabase.removeChannel(channel);
+      controller.close();
+    };
+
+    return controller.stream;
+  }
+
   Future<void> updateLastSeen(String userId) async {
     try {
       await _supabase
@@ -386,8 +490,21 @@ class ChatServices {
             (row) => row[TypingStatusColumns.userId] == receiverId,
           );
 
-          return receiverRow.isNotEmpty &&
+          if (receiverRow.isEmpty) return false;
+
+          final isTyping =
               receiverRow.first[TypingStatusColumns.isTyping] == true;
+          final updatedAtRaw = receiverRow.first[TypingStatusColumns.updatedAt];
+
+          if (isTyping && updatedAtRaw != null) {
+            final updatedAt = DateTime.parse(updatedAtRaw.toString()).toUtc();
+            final now = DateTime.now().toUtc();
+            if (now.difference(updatedAt).inSeconds > 4) {
+              return false;
+            }
+          }
+
+          return isTyping;
         });
   }
 
@@ -398,15 +515,30 @@ class ChatServices {
           primaryKey: [TypingStatusColumns.chatId, TypingStatusColumns.userId],
         )
         .map((rows) {
+          final now = DateTime.now().toUtc();
+
           return rows
-              .where(
-                (row) =>
-                    row[TypingStatusColumns.isTyping] == true &&
-                    (row[TypingStatusColumns.chatId] as String).contains(
-                      currentUserId,
-                    ) &&
-                    row[TypingStatusColumns.userId] != currentUserId,
-              )
+              .where((row) {
+                if (row[TypingStatusColumns.isTyping] != true) return false;
+                if (!(row[TypingStatusColumns.chatId] as String).contains(
+                  currentUserId,
+                )) {
+                  return false;
+                }
+                if (row[TypingStatusColumns.userId] == currentUserId) {
+                  return false;
+                }
+
+                final updatedAtRaw = row[TypingStatusColumns.updatedAt];
+                if (updatedAtRaw != null) {
+                  final updatedAt =
+                      DateTime.parse(updatedAtRaw.toString()).toUtc();
+                  if (now.difference(updatedAt).inSeconds > 4) {
+                    return false; // الحالة معلقة، تجاهلها
+                  }
+                }
+                return true;
+              })
               .map((row) => row[TypingStatusColumns.userId] as String)
               .toList();
         });
