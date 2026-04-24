@@ -245,8 +245,7 @@ class AppRouter {
             create:
                 (context) =>
                     ChatDetailsCubit(ChatServices(), user.name)
-                      ..loadCurrentUserInfo()
-                      ..getMessagesStream(receiverId: user.id),
+                      ..loadCurrentUserInfo(),
             child: ChatDetailsView(receiverUser: user),
           ),
           settings: settings,

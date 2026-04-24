@@ -14,7 +14,7 @@ import '../helper/call_actions.dart';
 import '../helper/safe_pop.dart';
 import '../models/chat_user_model.dart';
 
-class ReceiverDetailsHeaderSection extends StatelessWidget {
+class ReceiverDetailsHeaderSection extends StatefulWidget {
   final ChatUserModel receiverUser;
   final Widget Function(ChatDetailsState state)? statusBuilder;
 
@@ -23,6 +23,24 @@ class ReceiverDetailsHeaderSection extends StatelessWidget {
     required this.receiverUser,
     this.statusBuilder,
   });
+
+  @override
+  State<ReceiverDetailsHeaderSection> createState() =>
+      _ReceiverDetailsHeaderSectionState();
+}
+
+class _ReceiverDetailsHeaderSectionState
+    extends State<ReceiverDetailsHeaderSection> {
+  // Caching Variables
+  late bool _isOnlineCache;
+  DateTime? _lastSeenCache;
+
+  @override
+  void initState() {
+    super.initState();
+    _isOnlineCache = widget.receiverUser.isOnline;
+    _lastSeenCache = widget.receiverUser.lastSeen;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -41,20 +59,28 @@ class ReceiverDetailsHeaderSection extends StatelessWidget {
                 ),
                 const Gap(8),
                 BlocBuilder<ChatDetailsCubit, ChatDetailsState>(
-                  buildWhen:
-                      (previous, current) =>
-                          current is LastSeenUpdated ||
-                          current is ReceiverTypingState,
                   builder: (context, state) {
-                    final lastSeen =
-                        state is LastSeenUpdated
-                            ? state.lastSeen
-                            : receiverUser.lastSeen;
+                    // Update cache securely
+                    if (state is ReceiverPresenceUpdated) {
+                      _isOnlineCache = state.isOnline;
+                      if (state.lastSeen != null) {
+                        _lastSeenCache = state.lastSeen;
+                      }
+                    } else if (state is LastSeenUpdated) {
+                      if (state.lastSeen != null) {
+                        _lastSeenCache = state.lastSeen;
+                      }
+                    }
+
                     final lastSeenText =
-                        lastSeen != null
-                            ? FormattedDate.getLastSeen(lastSeen)
+                        _lastSeenCache != null
+                            ? FormattedDate.getLastSeen(_lastSeenCache!)
                             : null;
-                    final isOnline = lastSeenText == 'Online';
+                    final isOnlineIndicator =
+                        _isOnlineCache == true ||
+                        lastSeenText == 'just now' ||
+                        lastSeenText == 'Online';
+
                     return Stack(
                       children: [
                         InkWell(
@@ -64,21 +90,22 @@ class ReceiverDetailsHeaderSection extends StatelessWidget {
                               rootNavigator: true,
                             ).pushNamed(
                               AppRoutes.receiverProfileViewRoute,
-                              arguments: receiverUser,
+                              arguments: widget.receiverUser,
                             );
                           },
                           child: Hero(
-                            tag: receiverUser.id,
+                            tag: widget.receiverUser.id,
                             child: Container(
                               height: 42,
                               width: 42,
+
                               decoration: BoxDecoration(
                                 color: Theme.of(
                                   context,
                                 ).primaryColor.withValues(alpha: 0.2),
                                 shape: BoxShape.circle,
                                 border:
-                                    isOnline
+                                    isOnlineIndicator
                                         ? Border.all(
                                           color: Colors.green,
                                           width: 2.5,
@@ -87,10 +114,14 @@ class ReceiverDetailsHeaderSection extends StatelessWidget {
                               ),
                               child: ClipOval(
                                 child:
-                                    (receiverUser.imageUrl != null &&
-                                            receiverUser.imageUrl!.isNotEmpty)
+                                    (widget.receiverUser.imageUrl != null &&
+                                            widget
+                                                .receiverUser
+                                                .imageUrl!
+                                                .isNotEmpty)
                                         ? CachedNetworkImage(
-                                          imageUrl: receiverUser.imageUrl!,
+                                          imageUrl:
+                                              widget.receiverUser.imageUrl!,
                                           fit: BoxFit.cover,
                                           placeholder:
                                               (context, url) =>
@@ -110,7 +141,7 @@ class ReceiverDetailsHeaderSection extends StatelessWidget {
                             ),
                           ),
                         ),
-                        if (isOnline)
+                        if (isOnlineIndicator)
                           Positioned(
                             bottom: 1,
                             right: 1,
@@ -135,13 +166,12 @@ class ReceiverDetailsHeaderSection extends StatelessWidget {
             ),
           ),
           const Gap(12),
-
           Expanded(
             child: InkWell(
               onTap: () {
                 Navigator.of(context, rootNavigator: true).pushNamed(
                   AppRoutes.receiverProfileViewRoute,
-                  arguments: receiverUser,
+                  arguments: widget.receiverUser,
                 );
               },
               child: Column(
@@ -149,7 +179,7 @@ class ReceiverDetailsHeaderSection extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    receiverUser.name,
+                    widget.receiverUser.name,
                     style: Theme.of(context).textTheme.titleSmall!.copyWith(
                       color: Theme.of(context).primaryColor,
                       fontSize: 16,
@@ -158,12 +188,10 @@ class ReceiverDetailsHeaderSection extends StatelessWidget {
                     ),
                   ),
                   BlocBuilder<ChatDetailsCubit, ChatDetailsState>(
-                    buildWhen:
-                        (prev, curr) =>
-                            curr is LastSeenUpdated ||
-                            curr is ReceiverTypingState,
                     builder: (context, state) {
-                      if (statusBuilder != null) return statusBuilder!(state);
+                      if (widget.statusBuilder != null) {
+                        return widget.statusBuilder!(state);
+                      }
                       return const SizedBox.shrink();
                     },
                   ),
@@ -171,7 +199,6 @@ class ReceiverDetailsHeaderSection extends StatelessWidget {
               ),
             ),
           ),
-
           Row(
             children: [
               CustomIconBtnWidget(
@@ -179,9 +206,9 @@ class ReceiverDetailsHeaderSection extends StatelessWidget {
                 onTap: () async {
                   final call = await CallActions.buildCall(
                     type: CallType.audio,
-                    receiverId: receiverUser.id,
-                    receiverName: receiverUser.name,
-                    receiverAvatar: receiverUser.imageUrl ?? '',
+                    receiverId: widget.receiverUser.id,
+                    receiverName: widget.receiverUser.name,
+                    receiverAvatar: widget.receiverUser.imageUrl ?? '',
                   );
                   if (call == null || !context.mounted) return;
 
@@ -195,9 +222,9 @@ class ReceiverDetailsHeaderSection extends StatelessWidget {
                 onTap: () async {
                   final call = await CallActions.buildCall(
                     type: CallType.video,
-                    receiverId: receiverUser.id,
-                    receiverName: receiverUser.name,
-                    receiverAvatar: receiverUser.imageUrl ?? '',
+                    receiverId: widget.receiverUser.id,
+                    receiverName: widget.receiverUser.name,
+                    receiverAvatar: widget.receiverUser.imageUrl ?? '',
                   );
                   if (call == null || !context.mounted) return;
 

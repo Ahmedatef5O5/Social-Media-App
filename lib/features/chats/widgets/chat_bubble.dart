@@ -71,6 +71,7 @@ class ChatBubbleState extends State<ChatBubble>
   }
 
   void _dismissPicker() {
+    if (!mounted) return;
     _overlayEntry?.remove();
     _overlayEntry = null;
     if (mounted) setState(() {});

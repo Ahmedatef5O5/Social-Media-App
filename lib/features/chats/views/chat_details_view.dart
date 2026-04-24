@@ -9,9 +9,11 @@ import 'package:social_media_app/features/chats/models/chat_user_model.dart';
 import 'package:social_media_app/features/chats/models/message_model.dart';
 import 'package:social_media_app/features/chats/widgets/messages_list_view.dart';
 import 'package:social_media_app/features/chats/widgets/receiver_details_header_section.dart';
+import '../../../core/router/app_router.dart';
 import '../../../core/services/active_screen_tracker.dart';
 import '../../../core/services/notification_services.dart';
 import '../../../core/themes/app_colors.dart';
+import '../models/presence_snapshot.dart';
 import '../widgets/text_input_area_section.dart';
 import '../widgets/typing_indicator_widget.dart';
 
@@ -24,8 +26,13 @@ class ChatDetailsView extends StatefulWidget {
   State<ChatDetailsView> createState() => _ChatDetailsViewState();
 }
 
-class _ChatDetailsViewState extends State<ChatDetailsView> {
+class _ChatDetailsViewState extends State<ChatDetailsView>
+    with WidgetsBindingObserver, RouteAware {
   late final TextEditingController _messageController;
+
+  late bool _isOnlineCache;
+  DateTime? _lastSeenCache;
+  bool _isTypingCache = false;
 
   Timer? _lastSeenTimer;
   MessageModel? _replyTo;
@@ -37,38 +44,87 @@ class _ChatDetailsViewState extends State<ChatDetailsView> {
   final ItemPositionsListener _itemPositionsListener =
       ItemPositionsListener.create();
 
+  late final String _receiverId;
+
   @override
   void initState() {
     super.initState();
+    _isOnlineCache = widget.receiverUser.isOnline;
+    _lastSeenCache = widget.receiverUser.lastSeen;
+    _receiverId = widget.receiverUser.id;
     _messageController = TextEditingController();
 
-    ActiveScreenTracker.setActiveChatReceiver(widget.receiverUser.id);
+    WidgetsBinding.instance.addObserver(this);
 
-    NotificationService.instance.cancelNotificationsForSender(
-      widget.receiverUser.id,
-    );
+    ActiveScreenTracker.setActiveChatReceiver(_receiverId);
+
+    NotificationService.instance.cancelNotificationsForSender(_receiverId);
 
     _itemPositionsListener.itemPositions.addListener(_scrollListener);
 
     final cubit = context.read<ChatDetailsCubit>();
 
-    cubit.watchReceiverLastSeen(
-      widget.receiverUser.id,
-      initialLastSeen: widget.receiverUser.lastSeen,
+    cubit.watchReceiverPresence(
+      _receiverId,
+      initial: PresenceSnapshot(
+        isOnline: widget.receiverUser.isOnline,
+        lastSeen: widget.receiverUser.lastSeen,
+      ),
     );
-    cubit.watchReceiverTyping(widget.receiverUser.id);
-    cubit.getMessagesStream(receiverId: widget.receiverUser.id);
+    cubit.getMessagesStream(receiverId: _receiverId);
     cubit.updateLastSeen();
 
     _lastSeenTimer = Timer.periodic(const Duration(seconds: 20), (_) {
-      if (mounted) {
+      if (!mounted) {
+        _lastSeenTimer?.cancel();
+        return;
+      }
+
+      try {
+        final cubit = context.read<ChatDetailsCubit>();
         if (!cubit.isClosed) {
           cubit.updateLastSeen();
         } else {
           _lastSeenTimer?.cancel();
         }
+      } catch (e) {
+        _lastSeenTimer?.cancel();
       }
     });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final route = ModalRoute.of(context);
+    if (route != null) {
+      routeObserver.subscribe(this, route);
+    }
+  }
+
+  @override
+  void didPop() {
+    if (mounted) {
+      context.read<ChatDetailsCubit>().markAsRead(senderId: _receiverId);
+    }
+  }
+
+  @override
+  void didPopNext() {
+    if (_isAtBottom()) {
+      context.read<ChatDetailsCubit>().markAsRead(senderId: _receiverId);
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (!mounted) return;
+    if (state == AppLifecycleState.resumed) {
+      if (_isAtBottom()) {
+        context.read<ChatDetailsCubit>().markAsRead(senderId: _receiverId);
+      }
+      context.read<ChatDetailsCubit>().updateLastSeen();
+    }
   }
 
   int _lastMinIndex = 0;
@@ -95,14 +151,25 @@ class _ChatDetailsViewState extends State<ChatDetailsView> {
       } else if (isAtBottom) {
         _showScrollButtonNotifier.value = false;
         _unreadCountNotifier.value = 0;
-        context.read<ChatDetailsCubit>().markAsRead(
-          senderId: widget.receiverUser.id,
-        );
+        if (mounted) {
+          context.read<ChatDetailsCubit>().markAsRead(senderId: _receiverId);
+        }
       }
 
       context.read<ChatDetailsCubit>().setUserAtBottom(isAtBottom);
       _lastMinIndex = minIndex;
     });
+  }
+
+  bool _isAtBottom() {
+    final positions = _itemPositionsListener.itemPositions.value;
+    if (positions.isEmpty) return true;
+
+    final minIndex = positions
+        .map((p) => p.index)
+        .reduce((a, b) => a < b ? a : b);
+
+    return minIndex == 0;
   }
 
   void _scrollToBottom() {
@@ -117,7 +184,6 @@ class _ChatDetailsViewState extends State<ChatDetailsView> {
             if (mounted) {
               _showScrollButtonNotifier.value = false;
               _unreadCountNotifier.value = 0;
-
               _itemScrollController.jumpTo(index: 0);
             }
           });
@@ -126,46 +192,79 @@ class _ChatDetailsViewState extends State<ChatDetailsView> {
   }
 
   @override
+  @override
   void dispose() {
-    ActiveScreenTracker.setActiveChatReceiver(null);
     _lastSeenTimer?.cancel();
+    _lastSeenTimer = null;
+
     _itemPositionsListener.itemPositions.removeListener(_scrollListener);
+    WidgetsBinding.instance.removeObserver(this);
+    routeObserver.unsubscribe(this);
+
+    ActiveScreenTracker.setActiveChatReceiver(null);
     _messageController.dispose();
+    _showScrollButtonNotifier.dispose();
+    _unreadCountNotifier.dispose();
+
     super.dispose();
   }
 
   Widget _buildStatusWidget(ChatDetailsState state) {
-    if (state is ReceiverTypingState && state.isTyping) {
-      return Row(
+    if (state is ReceiverTypingState) {
+      _isTypingCache = state.isTyping;
+    } else if (state is ReceiverPresenceUpdated) {
+      _isOnlineCache = state.isOnline;
+      if (state.lastSeen != null) {
+        _lastSeenCache = state.lastSeen;
+      }
+    } else if (state is LastSeenUpdated) {
+      if (state.lastSeen != null) {
+        _lastSeenCache = state.lastSeen;
+      }
+    }
+
+    if (_isTypingCache) {
+      return const Row(
         mainAxisSize: MainAxisSize.min,
-        children: const [
+        children: [
           Text('typing ', style: TextStyle(fontSize: 11, color: Colors.green)),
           TypingIndicatorWidget(color: Colors.green),
         ],
       );
     }
-    final lastSeen =
-        state is LastSeenUpdated
-            ? state.lastSeen
-            : widget.receiverUser.lastSeen;
-    if (lastSeen != null) {
-      final text = FormattedDate.getLastSeen(lastSeen);
-      if (text == 'Online') {
-        return const Text(
-          'Online',
-          style: TextStyle(
-            fontSize: 12,
-            color: Colors.green,
-            fontWeight: FontWeight.bold,
-          ),
-        );
-      }
+
+    String? lastSeenText;
+    if (_lastSeenCache != null) {
+      lastSeenText = FormattedDate.getLastSeen(_lastSeenCache!);
+    }
+
+    final isActuallyOnline =
+        _isOnlineCache ||
+        lastSeenText == 'Online' ||
+        lastSeenText == 'just now';
+
+    if (isActuallyOnline) {
+      return const Text(
+        'Online',
+        style: TextStyle(
+          fontSize: 12,
+          color: Colors.green,
+          fontWeight: FontWeight.bold,
+        ),
+      );
+    }
+
+    if (lastSeenText != null && lastSeenText.isNotEmpty) {
       return Text(
-        'last seen $text',
+        'last seen $lastSeenText',
         style: const TextStyle(fontSize: 11, color: Colors.grey),
       );
     }
-    return const SizedBox.shrink();
+
+    return const Text(
+      'Offline',
+      style: TextStyle(fontSize: 11, color: Colors.grey),
+    );
   }
 
   @override
@@ -176,7 +275,6 @@ class _ChatDetailsViewState extends State<ChatDetailsView> {
         child: Scaffold(
           resizeToAvoidBottomInset: true,
           backgroundColor: AppColors.transparent,
-
           body: Column(
             children: [
               ReceiverDetailsHeaderSection(
@@ -188,7 +286,9 @@ class _ChatDetailsViewState extends State<ChatDetailsView> {
                   receiverUser: widget.receiverUser,
                   itemScrollController: _itemScrollController,
                   itemPositionsListener: _itemPositionsListener,
-                  onReply: (msg) => setState(() => _replyTo = msg),
+                  onReply: (msg) {
+                    if (mounted) setState(() => _replyTo = msg);
+                  },
                   showScrollButtonNotifier: _showScrollButtonNotifier,
                   unreadCountNotifier: _unreadCountNotifier,
                   scrollToBottom: _scrollToBottom,
@@ -198,7 +298,9 @@ class _ChatDetailsViewState extends State<ChatDetailsView> {
                 receiverUser: widget.receiverUser,
                 messageController: _messageController,
                 replyTo: _replyTo,
-                onCancelReply: () => setState(() => _replyTo = null),
+                onCancelReply: () {
+                  if (mounted) setState(() => _replyTo = null);
+                },
               ),
             ],
           ),

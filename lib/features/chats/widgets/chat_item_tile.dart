@@ -201,6 +201,7 @@ class ChatItemTile extends StatelessWidget {
             ? FormattedDate.getLastSeen(user.lastSeen!)
             : null;
     final isOnline = user.lastSeen == null || lastSeenText == 'Online';
+    // final isOnline = user.isOnline;
 
     return GestureDetector(
       onTap: () {
