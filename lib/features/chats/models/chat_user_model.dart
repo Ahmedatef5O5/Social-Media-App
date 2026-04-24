@@ -13,6 +13,7 @@ class ChatUserModel {
   final bool? isTyping;
   final int unreadCount;
   final DateTime? lastSeen;
+  final bool isOnline;
 
   const ChatUserModel({
     required this.id,
@@ -26,6 +27,7 @@ class ChatUserModel {
     this.isTyping,
     this.unreadCount = 0,
     this.lastSeen,
+    this.isOnline = false,
   });
 
   factory ChatUserModel.fromUserData(
@@ -50,6 +52,7 @@ class ChatUserModel {
           map['last_seen'] != null
               ? DateTime.parse(map['last_seen'].toString())
               : null,
+      isOnline: false,
     );
   }
 
@@ -65,6 +68,7 @@ class ChatUserModel {
     int? unreadCount,
     DateTime? lastSeen,
     bool? isTyping,
+    bool? isOnline,
   }) {
     return ChatUserModel(
       id: id ?? this.id,
@@ -78,6 +82,7 @@ class ChatUserModel {
       unreadCount: unreadCount ?? this.unreadCount,
       lastSeen: lastSeen ?? this.lastSeen,
       isTyping: isTyping ?? this.isTyping,
+      isOnline: isOnline ?? this.isOnline,
     );
   }
 
@@ -90,6 +95,7 @@ class ChatUserModel {
       lastSeen: userData.lastSeen,
       lastMessageIsMe: false,
       lastMessageIsRead: false,
+      isOnline: false,
     );
   }
 }
