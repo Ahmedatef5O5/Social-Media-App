@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:social_media_app/core/router/app_router.dart';
 import 'package:social_media_app/core/router/app_routes.dart';
 import 'package:social_media_app/core/secrets/app_secrets.dart';
@@ -23,6 +24,7 @@ import 'package:social_media_app/features/group_chat/cubit/group_list_cubit/grou
 import 'package:social_media_app/features/group_chat/services/group_chat_services.dart';
 import 'package:social_media_app/firebase_options.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'core/services/presence_service.dart';
 import 'features/auth/cubit/auth_cubit/auth_cubit.dart';
 import 'features/chats/services/chat_services.dart';
 import 'features/home/cubits/home_cubit/home_cubit.dart';
@@ -127,7 +129,6 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
     return;
   }
 
-  // For regular messages — initialize full NotificationService
   await NotificationService.instance.initialize(isBackground: true);
   await NotificationService.instance.showNotificationFromMessage(message);
 }
@@ -178,7 +179,32 @@ void main() async {
 
   await _initializeApp();
 
-  runApp(_buildApp());
+  final prefs = await SharedPreferences.getInstance();
+
+  final String savedTheme = prefs.getString('user_theme_key') ?? 'ocean';
+
+  runApp(_buildApp(savedTheme));
+}
+
+void _setupAuthListener() {
+  Supabase.instance.client.auth.onAuthStateChange.listen((data) async {
+    final event = data.event;
+    final session = data.session;
+
+    if (event == AuthChangeEvent.signedIn && session != null) {
+      debugPrint('✅ Logged in: ${session.user.email}');
+      await PresenceService.instance.init();
+    } else if (event == AuthChangeEvent.signedOut ||
+        event == AuthChangeEvent.tokenRefreshed && session == null) {
+      debugPrint('⚠️ Session expired or signed out. Redirecting to Login...');
+      await PresenceService.instance.dispose();
+
+      navigatorKey.currentState?.pushNamedAndRemoveUntil(
+        AppRoutes.authRoute,
+        (route) => false,
+      );
+    }
+  });
 }
 
 Future<void> _initializeApp() async {
@@ -187,6 +213,7 @@ Future<void> _initializeApp() async {
   await _initFirebase();
   await _initSupabase();
   await _initNotifications();
+  await PresenceService.instance.init();
   _setupAuthListener();
 }
 
@@ -231,16 +258,7 @@ Future<void> _initNotifications() async {
   await NotificationService.instance.initialize();
 }
 
-void _setupAuthListener() {
-  Supabase.instance.client.auth.onAuthStateChange.listen((data) {
-    final session = data.session;
-    if (session != null) {
-      debugPrint('✅ Logged in: ${session.user.email}');
-    }
-  });
-}
-
-Widget _buildApp() {
+Widget _buildApp(String savedTheme) {
   return MultiRepositoryProvider(
     providers: [
       RepositoryProvider(create: (_) => HomeServices()),
@@ -263,21 +281,22 @@ Widget _buildApp() {
       ],
       child: DevicePreview(
         enabled: !kReleaseMode,
-        builder: (_) => const MyApp(),
+        builder: (_) => MyApp(savedTheme: savedTheme),
       ),
     ),
   );
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final String savedTheme;
+  const MyApp({super.key, required this.savedTheme});
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
       lazy: false,
       create: (_) {
-        final cubit = ThemeCubit();
+        final cubit = ThemeCubit(initialTheme: savedTheme);
         final user = Supabase.instance.client.auth.currentUser;
 
         if (user != null) {
