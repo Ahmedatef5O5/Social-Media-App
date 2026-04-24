@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:social_media_app/features/chats/widgets/typing_indicator_widget.dart';
 import 'package:social_media_app/features/chats/widgets/user_chat_avatar_widget.dart';
 import '../../../core/constants/app_images.dart';
-import '../../../core/themes/app_colors.dart';
+import '../helper/chat_bubble_colors.dart';
 
 class TypingBubbleWidget extends StatelessWidget {
   final String? receiverUserImgUrl;
@@ -10,7 +10,7 @@ class TypingBubbleWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final bubbleColor = getReceiverBubbleColor(context);
 
     return Padding(
       padding: const EdgeInsets.only(left: 0, bottom: 8, top: 4),
@@ -28,10 +28,11 @@ class TypingBubbleWidget extends StatelessWidget {
             margin: const EdgeInsets.only(bottom: 4),
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
-              color:
-                  isDarkMode
-                      ? AppColors.white.withValues(alpha: 0.85)
-                      : AppColors.grey.withValues(alpha: 0.25),
+              // color:
+              //     isDarkMode
+              //         ? AppColors.white.withValues(alpha: 0.85)
+              //         : AppColors.grey.withValues(alpha: 0.25),
+              color: getReceiverBubbleColor(context),
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(18),
                 topRight: Radius.circular(18),
@@ -40,7 +41,12 @@ class TypingBubbleWidget extends StatelessWidget {
               ),
             ),
             child: TypingIndicatorWidget(
-              color: isDarkMode ? AppColors.grey5 : AppColors.grey6,
+              color:
+                  ThemeData.estimateBrightnessForColor(bubbleColor) ==
+                          Brightness.dark
+                      ? Colors.white70
+                      : Colors.black54,
+              // color: isDarkMode ? AppColors.grey5 : AppColors.grey6,
               dotSize: 5,
             ),
           ),
