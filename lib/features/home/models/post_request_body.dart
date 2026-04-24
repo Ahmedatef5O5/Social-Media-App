@@ -30,18 +30,6 @@ class PostRequestBody {
       imageUrl: map['image_url'] as String?,
       videoUrl: map['video_url'] as String?,
       fileUrl: map['file_url'] as String?,
-      // image:
-      //     map['image'] != null
-      //         ? File.fromMap(map['image'] as Map<String, dynamic>)
-      //         : null,
-      // file:
-      //     map['file'] != null
-      //         ? File.fromMap(map['file'] as Map<String, dynamic>)
-      //         : null,
     );
   }
-
-  // String toJson() => json.encode(toMap());
-
-  // factory PostRequestBody.fromJson(String source) => PostRequestBody.fromMap(json.decode(source) as Map<String, dynamic>);
 }

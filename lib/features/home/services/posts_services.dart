@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../core/services/presence_service.dart';
 import '../../../core/services/supabase_database_services.dart';
 import '../../../core/utilities/supabase_constants.dart';
 import '../../comments/helper/comment_tree_builder.dart';
@@ -47,7 +48,7 @@ class PostsServices {
       throw Exception('no-internet');
     }
     try {
-      return await supabaseServices.fetchRows(
+      final posts = await supabaseServices.fetchRows(
         table: SupabaseConstants.posts,
         filter:
             (query) => query
@@ -64,15 +65,77 @@ class PostsServices {
         },
         primaryKey: PostColumns.id,
       );
+
+      if (posts.isEmpty) return posts;
+
+      final authorIds = posts.map((p) => p.authorId).toSet().toList();
+      final presenceRows = await _supabase
+          .from('user_presence')
+          .select('user_id, is_online, updated_at')
+          .inFilter('user_id', authorIds);
+
+      final onlineSet = <String>{
+        for (final row in presenceRows as List)
+          if (PresenceService.isConsideredOnline(
+            isOnline: row['is_online'] as bool? ?? false,
+            updatedAt:
+                row['updated_at'] != null
+                    ? DateTime.parse(row['updated_at'].toString())
+                    : null,
+          ))
+            row['user_id'] as String,
+      };
+
+      return posts
+          .map((p) => p.copyWith(isOnline: onlineSet.contains(p.authorId)))
+          .toList();
     } catch (e) {
       rethrow;
     }
   }
 
-  Stream<List<Map<String, dynamic>>> getPostsStream() {
-    return _supabase
-        .from(SupabaseConstants.posts)
-        .stream(primaryKey: [PostColumns.id]);
+  Stream<void> getPostsStream() {
+    final controller = StreamController<void>.broadcast();
+
+    void notify(dynamic _) {
+      if (!controller.isClosed) controller.add(null);
+    }
+
+    const channelName = 'home_feed_watcher';
+    _supabase.removeChannel(_supabase.channel(channelName));
+
+    final channel = _supabase
+        .channel(channelName)
+        .onPostgresChanges(
+          event: PostgresChangeEvent.all,
+          schema: 'public',
+          table: SupabaseConstants.posts,
+          callback: notify,
+        )
+        .onPostgresChanges(
+          event: PostgresChangeEvent.all,
+          schema: 'public',
+          table: SupabaseConstants.likes,
+          callback: notify,
+        )
+        .onPostgresChanges(
+          event: PostgresChangeEvent.all,
+          schema: 'public',
+          table: 'user_presence',
+          callback: notify,
+        )
+        .subscribe((status, [error]) {
+          debugPrint('[PostsStream] channel status: $status');
+        });
+
+    Future.microtask(() => notify(null));
+
+    controller.onCancel = () {
+      _supabase.removeChannel(channel);
+      controller.close();
+    };
+
+    return controller.stream;
   }
 
   Future<void> addPost(PostRequestBody post) async {

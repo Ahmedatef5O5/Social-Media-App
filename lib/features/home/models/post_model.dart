@@ -20,6 +20,7 @@ class PostModel {
   final List<CommentModel>? comments;
   final List<String>? shares;
   final DateTime? lastSeen;
+  final bool isOnline;
 
   const PostModel({
     required this.id,
@@ -36,6 +37,7 @@ class PostModel {
     this.comments,
     this.shares,
     this.lastSeen,
+    this.isOnline = false,
   });
 
   Map<String, dynamic> toMap() {
@@ -63,6 +65,7 @@ class PostModel {
       name: authorName ?? 'Unknown User',
       imageUrl: authorImageUrl,
       lastSeen: lastSeen,
+      isOnline: isOnline,
     );
   }
 
@@ -110,6 +113,7 @@ class PostModel {
           userData != null && userData[UserColumns.lastSeen] != null
               ? DateTime.parse(userData[UserColumns.lastSeen].toString())
               : null,
+      isOnline: false,
     );
   }
 
@@ -128,6 +132,7 @@ class PostModel {
     List<CommentModel>? comments,
     List<String>? shares,
     final DateTime? lastSeen,
+    final bool? isOnline,
   }) {
     return PostModel(
       id: id ?? this.id,
@@ -144,6 +149,7 @@ class PostModel {
       comments: comments ?? this.comments,
       shares: shares ?? this.shares,
       lastSeen: lastSeen ?? this.lastSeen,
+      isOnline: isOnline ?? this.isOnline,
     );
   }
 }
