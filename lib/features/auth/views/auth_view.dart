@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
-import 'package:social_media_app/core/constants/app_images.dart';
+import 'package:social_media_app/core/themes/dynamic_splash_app.dart';
 import 'package:social_media_app/features/auth/widgets/login_view_widget.dart';
 import 'package:social_media_app/features/auth/widgets/register_view_widget.dart';
 import '../../../core/themes/background_theme_widget.dart';
@@ -30,7 +30,7 @@ class AuthView extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Gap(35),
-                  Image.asset(AppImages.secondaryLogoApp, width: 350),
+                  SizedBox(width: 350, child: DynamicSplashLogo(width: 350)),
                   Gap(40),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 26),

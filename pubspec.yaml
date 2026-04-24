@@ -78,6 +78,7 @@ flutter:
     - assets/images/PostThemeImgs/
     - assets/icons/
     - assets/icons/inputAreaIcons/
+    - assets/svg/
     - assets/lotties/
     - assets/sounds/
     - .env

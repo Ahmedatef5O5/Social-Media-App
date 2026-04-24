@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:social_media_app/core/constants/app_images.dart';
 import 'package:social_media_app/core/router/app_routes.dart';
 import 'package:social_media_app/core/themes/background_theme_widget.dart';
+import 'package:social_media_app/core/themes/dynamic_splash_app.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SplashView extends StatefulWidget {
@@ -100,10 +101,10 @@ class _SplashViewState extends State<SplashView>
                 const Gap(80),
                 SlideTransition(
                   position: _bottomLogoAnimation,
-                  child: Image.asset(
-                    AppImages.secondaryLogoApp,
+                  child: SizedBox(
                     width: 280,
                     height: 120,
+                    child: DynamicSplashLogo(width: 280, height: 120),
                   ),
                 ),
               ],

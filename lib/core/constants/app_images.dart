@@ -2,6 +2,7 @@ class AppImages {
   // logo app for splash
   static const String logoApp = 'assets/images/logo_app.png';
   static const String secondaryLogoApp = 'assets/images/logo.png';
+
   // logo for OnBoarding
   static const String onBoardingOne = 'assets/images/onBoarding_one.png';
   static const String onBoardingTwo = 'assets/images/onBoarding_two.png';

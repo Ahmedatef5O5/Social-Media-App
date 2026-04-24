@@ -4,6 +4,7 @@ import 'package:gap/gap.dart';
 import 'package:persistent_bottom_nav_bar_v2/persistent_bottom_nav_bar_v2.dart';
 import 'package:social_media_app/core/constants/app_images.dart';
 import 'package:social_media_app/features/chats/cubit/chats_cubit/chats_cubit.dart';
+import '../../../core/themes/dynamic_logo_app.dart';
 import '../../../core/widgets/custom_badge.dart';
 
 class HomeViewHeaderSection extends StatelessWidget {
@@ -16,7 +17,11 @@ class HomeViewHeaderSection extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 12),
       child: Row(
         children: [
-          Image.asset(AppImages.headerLogo, height: 25),
+          SizedBox(
+            height: 25,
+            width: 160,
+            child: DynamicHeaderLogo(height: 25),
+          ),
           Spacer(),
           InkWell(
             onTap: () {},
@@ -41,6 +46,7 @@ class HomeViewHeaderSection extends StatelessWidget {
               navController.jumpToTab(2);
             },
             child: BlocBuilder<ChatsCubit, ChatsState>(
+              buildWhen: (previous, current) => current is ChatsSuccessloaded,
               builder: (context, state) {
                 int totalUnread = 0;
                 if (state is ChatsSuccessloaded) {

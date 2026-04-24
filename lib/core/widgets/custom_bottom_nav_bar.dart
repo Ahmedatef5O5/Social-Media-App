@@ -139,6 +139,9 @@ class _CustomBottomNavBarState extends State<CustomBottomNavBar> {
                       child: SizedBox(
                         width: MediaQuery.of(context).size.width * 0.92,
                         child: BlocBuilder<ChatsCubit, ChatsState>(
+                          buildWhen:
+                              (previous, current) =>
+                                  current is ChatsSuccessloaded,
                           builder: (context, chatsState) {
                             int unread = 0;
                             if (chatsState is ChatsSuccessloaded) {

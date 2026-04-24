@@ -42,14 +42,16 @@ class _LoginViewWidgetState extends State<LoginViewWidget> {
             children: [
               Gap(12),
               CustomTextFormField(
+                prefixIcon: Icon(Icons.email_rounded),
                 controller: _emailController,
-                labelText: 'Email/Phone',
-                hintText: 'Email/Phone',
+                labelText: 'Email',
+                hintText: 'Enter Email',
                 inputFormatters: AppFormatters.noSpaces,
                 validator: AppValidators.validateEmail,
               ),
               Gap(26),
               CustomTextFormField(
+                prefixIcon: Icon(Icons.lock_rounded),
                 controller: _passwordController,
                 labelText: 'Password',
                 hintText: 'Enter password',

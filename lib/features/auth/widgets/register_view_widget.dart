@@ -70,6 +70,7 @@ class _RegisterViewWidgetState extends State<RegisterViewWidget> {
             children: [
               Gap(4),
               CustomTextFormField(
+                prefixIcon: Icon(Icons.person_rounded),
                 controller: _fullNameController,
                 labelText: 'Full Name',
                 hintText: 'Your Full Name',
@@ -78,14 +79,16 @@ class _RegisterViewWidgetState extends State<RegisterViewWidget> {
               ),
               Gap(18),
               CustomTextFormField(
+                prefixIcon: Icon(Icons.email_rounded),
                 controller: _emailController,
-                labelText: 'Email/Phone',
-                hintText: 'Email/Phone',
+                labelText: 'Email',
+                hintText: 'Enter New Email',
                 inputFormatters: AppFormatters.noSpaces,
                 validator: AppValidators.validateEmail,
               ),
               Gap(18),
               CustomTextFormField(
+                prefixIcon: Icon(Icons.lock_rounded),
                 controller: _passwordController,
                 focusNode: _passwordFocusNode,
                 labelText: 'Password',
@@ -120,6 +123,7 @@ class _RegisterViewWidgetState extends State<RegisterViewWidget> {
               ),
               Gap(18),
               CustomTextFormField(
+                prefixIcon: Icon(Icons.lock_rounded),
                 controller: _confirmPasswordController,
                 labelText: 'Confirm Password',
                 hintText: 'Retype your password',

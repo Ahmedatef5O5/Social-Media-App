@@ -10,7 +10,8 @@ class ThemeCubit extends Cubit<ThemeState> {
   final _supabase = Supabase.instance.client;
   static const String _themeKey = 'user_theme';
 
-  ThemeCubit() : super(ThemeState(AppThemeModel.themes.first)) {
+  ThemeCubit({String? initialTheme})
+    : super(ThemeState(AppThemeModel.themes.first)) {
     _loadThemeFromPrefs();
   }
 
