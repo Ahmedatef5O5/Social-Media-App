@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:social_media_app/features/group_chat/helpers/swipe_to_reply_wrapper.dart';
 import 'package:social_media_app/features/group_chat/widgets/group_message_content.dart';
 import '../models/groupe_message_model.dart';
 
@@ -16,6 +17,14 @@ class GroupMessageBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GroupMessageContent(message: message, isMe: isMe, onReply: onReply);
+    return SwipeToReplyWrapper(
+      isMe: isMe,
+      onReply: () => onReply(message),
+      child: GroupMessageContent(
+        message: message,
+        isMe: isMe,
+        onReply: onReply,
+      ),
+    );
   }
 }
