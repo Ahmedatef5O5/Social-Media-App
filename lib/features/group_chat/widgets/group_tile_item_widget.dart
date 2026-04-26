@@ -1,9 +1,10 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
-
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/helpers/formatted_date.dart';
 import '../../../core/router/app_routes.dart';
+import '../helpers/last_message_group_preview.dart';
 import '../models/group_model.dart';
 
 class GroupTileItem extends StatelessWidget {
@@ -12,6 +13,7 @@ class GroupTileItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final currentUserId = Supabase.instance.client.auth.currentUser?.id;
     final primary = Theme.of(context).primaryColor;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -45,7 +47,10 @@ class GroupTileItem extends StatelessWidget {
       subtitle:
           group.lastMessage != null
               ? Text(
-                _buildLastMessagePreview(group),
+                buildGroupLastMessagePreview(
+                  group: group,
+                  currentUserId: currentUserId ?? '',
+                ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
@@ -99,22 +104,5 @@ class GroupTileItem extends StatelessWidget {
         ).pushNamed(AppRoutes.groupChatRoute, arguments: group);
       },
     );
-  }
-
-  String _buildLastMessagePreview(GroupModel group) {
-    final type = group.lastMessageType ?? 'text';
-    final text = group.lastMessage ?? '';
-    switch (type) {
-      case 'image':
-        return '📷 Photo';
-      case 'video':
-        return '🎬 Video';
-      case 'voice':
-        return '🎤 Voice message';
-      case 'call':
-        return '📞 Call';
-      default:
-        return text;
-    }
   }
 }

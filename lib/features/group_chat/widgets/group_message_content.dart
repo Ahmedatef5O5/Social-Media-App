@@ -14,8 +14,8 @@ import '../../chats/widgets/voice_message_bubble_widget.dart';
 import '../cubit/group_details_cubit/group_details_cubit.dart';
 import '../cubit/group_details_cubit/group_details_state.dart';
 import '../models/groupe_message_model.dart';
+import 'group_chat_reaction_overlay.dart';
 import 'group_message_avatar.dart';
-import 'group_message_menu_sheet.dart';
 import 'group_message_reply_preview.dart';
 import 'group_reactions_row_widget.dart';
 import 'group_time_row.dart';
@@ -96,7 +96,7 @@ class _GroupMessageBubbleState extends State<GroupMessageBubble> {
   }
 }
 
-class GroupMessageContent extends StatelessWidget {
+class GroupMessageContent extends StatefulWidget {
   final GroupMessageModel message;
   final bool isMe;
   final Function(GroupMessageModel) onReply;
@@ -111,95 +111,115 @@ class GroupMessageContent extends StatelessWidget {
   });
 
   @override
+  State<GroupMessageContent> createState() => _GroupMessageContentState();
+}
+
+class _GroupMessageContentState extends State<GroupMessageContent> {
+  final _anchorKey = GlobalKey();
+  @override
   Widget build(BuildContext context) {
     final primary = Theme.of(context).primaryColor;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final currentUserId = Supabase.instance.client.auth.currentUser!.id;
 
-    final isImage = message.messageType == 'image';
-    final isVideo = message.messageType == 'video';
-    final isVoice = message.messageType == 'voice';
-    final isCall = message.messageType == 'call';
+    final isImage = widget.message.messageType == 'image';
+    final isVideo = widget.message.messageType == 'video';
+    final isVoice = widget.message.messageType == 'voice';
+    final isCall = widget.message.messageType == 'call';
 
     final bgColor =
-        isMe
+        widget.isMe
             ? primary
             : (isDark
                 ? Colors.white.withValues(alpha: 0.10)
                 : AppColors.grey3.withValues(alpha: 0.35));
     final textColor =
-        isMe ? Colors.white : (isDark ? Colors.white : AppColors.black87);
+        widget.isMe
+            ? Colors.white
+            : (isDark ? Colors.white : AppColors.black87);
 
     return BlocBuilder<GroupDetailsCubit, GroupDetailsState>(
       buildWhen: (prev, cur) {
         if (cur is GroupDetailsLoaded && prev is GroupDetailsLoaded) {
-          final hadPrev = prev.uploadProgress.containsKey(message.id);
-          final hasCur = cur.uploadProgress.containsKey(message.id);
+          final hadPrev = prev.uploadProgress.containsKey(widget.message.id);
+          final hasCur = cur.uploadProgress.containsKey(widget.message.id);
           return hadPrev != hasCur ||
-              prev.uploadProgress[message.id] != cur.uploadProgress[message.id];
+              prev.uploadProgress[widget.message.id] !=
+                  cur.uploadProgress[widget.message.id];
         }
         return false;
       },
       builder: (context, state) {
         final double? uploadProgress =
-            (state is GroupDetailsLoaded && isMe)
-                ? state.uploadProgress[message.id]
+            (state is GroupDetailsLoaded && widget.isMe)
+                ? state.uploadProgress[widget.message.id]
                 : null;
         final bool isUploading = uploadProgress != null;
 
         return GestureDetector(
           onLongPress:
-              onLongPress ??
-              () => GroupMessageMenuSheet.show(
+              () => GroupChatReactionOverlay.show(
                 context: context,
-                message: message,
-                onReply: onReply,
+                anchorKey: _anchorKey,
+                message: widget.message,
+                onReply: widget.onReply,
                 primary: primary,
+                isMe: widget.isMe,
               ),
+          // onLongPress ??
+          // () => GroupMessageMenuSheet.show(
+          //   context: context,
+          //   message: message,
+          //   onReply: onReply,
+          //   primary: primary,
+          // ),
           child: Row(
             mainAxisAlignment:
-                isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
+                widget.isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              if (!isMe) ...[
+              if (!widget.isMe) ...[
                 GroupMessageAvatar(
-                  avatar: message.senderAvatar,
-                  name: message.senderName,
+                  avatar: widget.message.senderAvatar,
+                  name: widget.message.senderName,
                   primary: primary,
                 ),
                 const Gap(8),
               ],
 
               Flexible(
-                child: Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    _buildBubble(
-                      context: context,
-                      primary: primary,
-                      isDark: isDark,
-                      bgColor: bgColor,
-                      textColor: textColor,
-                      isImage: isImage,
-                      isVideo: isVideo,
-                      isVoice: isVoice,
-                      isCall: isCall,
-                      isUploading: isUploading,
-                      uploadProgress: uploadProgress,
-                    ),
-
-                    if (message.reactions.isNotEmpty)
-                      Positioned(
-                        bottom: -1.0,
-                        right: isMe ? 4 : null,
-                        left: isMe ? null : 4,
-                        child: GroupReactionsRow(
-                          reactions: message.reactions,
-                          currentUserId: currentUserId,
-                          primary: primary,
-                        ),
+                child: KeyedSubtree(
+                  key: _anchorKey,
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      _buildBubble(
+                        context: context,
+                        primary: primary,
+                        isDark: isDark,
+                        bgColor: bgColor,
+                        textColor: textColor,
+                        isImage: isImage,
+                        isVideo: isVideo,
+                        isVoice: isVoice,
+                        isCall: isCall,
+                        isUploading: isUploading,
+                        uploadProgress: uploadProgress,
                       ),
-                  ],
+
+                      if (widget.message.reactions.isNotEmpty)
+                        Positioned(
+                          bottom: 12.0,
+                          right: widget.isMe ? 4 : null,
+                          left: widget.isMe ? null : 4,
+                          child: GroupReactionsRow(
+                            reactions: widget.message.reactions,
+                            currentUserId: currentUserId,
+                            primary: primary,
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
               ),
             ],
@@ -222,8 +242,8 @@ class GroupMessageContent extends StatelessWidget {
     required bool isUploading,
     double? uploadProgress,
   }) {
-    final hasReaction = message.reactions.isNotEmpty;
-    final timeWidget = GroupTimeRow(message: message, isMe: isMe);
+    final hasReaction = widget.message.reactions.isNotEmpty;
+    final timeWidget = GroupTimeRow(message: widget.message, isMe: widget.isMe);
 
     Widget content;
     if (isCall) {
@@ -244,37 +264,52 @@ class GroupMessageContent extends StatelessWidget {
         Opacity(
           opacity: isUploading ? 0.4 : 1.0,
           child: Container(
-            margin: EdgeInsets.only(top: 2, bottom: hasReaction ? 18 : 2),
+            margin: EdgeInsets.only(
+              top: 2,
+              bottom: hasReaction ? 28 : 2,
+            ), // ← 28 بدل 18 زي single chat
             constraints: BoxConstraints(
-              maxWidth: MediaQuery.of(context).size.width * 0.68,
-              minWidth: isVoice ? 240 : (isImage || isVideo ? 160 : 50),
+              maxWidth:
+                  MediaQuery.of(context).size.width * 0.70, // ← 0.70 بدل 0.68
+              minWidth: isVoice ? 240 : (isImage || isVideo ? 200 : 50),
             ),
             decoration: BoxDecoration(
               color:
                   (isImage || isVideo) &&
                           !isUploading &&
-                          (message.imageUrl == null && message.videoUrl == null)
+                          (widget.message.imageUrl == null &&
+                              widget.message.videoUrl == null)
                       ? Colors.transparent
                       : bgColor,
               borderRadius: BorderRadius.only(
-                topLeft: const Radius.circular(18),
-                topRight: const Radius.circular(18),
-                bottomLeft: Radius.circular(isMe ? 18 : 4),
-                bottomRight: Radius.circular(isMe ? 4 : 18),
+                topLeft: const Radius.circular(20),
+                topRight: const Radius.circular(20),
+                bottomLeft: Radius.circular(widget.isMe ? 20 : 0),
+                bottomRight: Radius.circular(widget.isMe ? 0 : 20),
               ),
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.only(
-                topLeft: const Radius.circular(18),
-                topRight: const Radius.circular(18),
-                bottomLeft: Radius.circular(isMe ? 18 : 4),
-                bottomRight: Radius.circular(isMe ? 4 : 18),
+                topLeft: const Radius.circular(20),
+                topRight: const Radius.circular(20),
+                bottomLeft: Radius.circular(widget.isMe ? 20 : 0),
+                bottomRight: Radius.circular(widget.isMe ? 0 : 20),
               ),
-              child: content,
+              child: Padding(
+                padding:
+                    (isImage || isVideo)
+                        ? const EdgeInsets.all(3)
+                        : const EdgeInsets.only(
+                          left: 10,
+                          right: 10,
+                          bottom: 8,
+                          top: 6,
+                        ),
+                child: content,
+              ),
             ),
           ),
         ),
-
         // Upload progress overlay
         if (isUploading)
           Positioned.fill(
@@ -282,8 +317,8 @@ class GroupMessageContent extends StatelessWidget {
               borderRadius: BorderRadius.only(
                 topLeft: const Radius.circular(18),
                 topRight: const Radius.circular(18),
-                bottomLeft: Radius.circular(isMe ? 18 : 4),
-                bottomRight: Radius.circular(isMe ? 4 : 18),
+                bottomLeft: Radius.circular(widget.isMe ? 18 : 4),
+                bottomRight: Radius.circular(widget.isMe ? 4 : 18),
               ),
               child: BackdropFilter(
                 filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
@@ -314,11 +349,11 @@ class GroupMessageContent extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (!isMe)
+          if (!widget.isMe)
             Padding(
               padding: const EdgeInsets.only(bottom: 2),
               child: Text(
-                message.senderName,
+                widget.message.senderName,
                 style: TextStyle(
                   color: primary,
                   fontWeight: FontWeight.w700,
@@ -326,15 +361,15 @@ class GroupMessageContent extends StatelessWidget {
                 ),
               ),
             ),
-          if (message.replyToMessageId != null)
+          if (widget.message.replyToMessageId != null)
             GroupMessageReplyPreview(
-              message: message,
-              isMe: isMe,
+              message: widget.message,
+              isMe: widget.isMe,
               primary: primary,
             ),
-          if (message.text.isNotEmpty)
+          if (widget.message.text.isNotEmpty)
             Text(
-              message.text,
+              widget.message.text,
               style: TextStyle(color: textColor, fontSize: 15, height: 1.3),
             ),
           const Gap(2),
@@ -349,7 +384,7 @@ class GroupMessageContent extends StatelessWidget {
     Color textColor,
     Widget timeWidget,
   ) {
-    if (message.imageUrl == null) {
+    if (widget.message.imageUrl == null) {
       return Container(
         width: 200,
         height: 200,
@@ -363,9 +398,9 @@ class GroupMessageContent extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         GestureDetector(
-          onTap: () => _openFullscreenImage(context, message.imageUrl!),
+          onTap: () => _openFullscreenImage(context, widget.message.imageUrl!),
           child: CachedNetworkImage(
-            imageUrl: message.imageUrl!,
+            imageUrl: widget.message.imageUrl!,
             width: 260,
             height: 260,
             fit: BoxFit.cover,
@@ -385,11 +420,11 @@ class GroupMessageContent extends StatelessWidget {
                 ),
           ),
         ),
-        if (message.caption?.isNotEmpty == true)
+        if (widget.message.caption?.isNotEmpty == true)
           Padding(
             padding: const EdgeInsets.fromLTRB(10, 6, 10, 0),
             child: Text(
-              message.caption!,
+              widget.message.caption!,
               style: TextStyle(color: textColor, fontSize: 13),
             ),
           ),
@@ -424,7 +459,7 @@ class GroupMessageContent extends StatelessWidget {
     Color textColor,
     Widget timeWidget,
   ) {
-    if (message.videoUrl == null) {
+    if (widget.message.videoUrl == null) {
       return Container(
         width: 200,
         height: 150,
@@ -441,16 +476,16 @@ class GroupMessageContent extends StatelessWidget {
           height: 200,
           width: 260,
           child: VideoMessageWidget(
-            videoUrl: message.videoUrl!,
-            caption: message.caption,
-            isMe: isMe,
+            videoUrl: widget.message.videoUrl!,
+            caption: widget.message.caption,
+            isMe: widget.isMe,
           ),
         ),
-        if (message.caption?.isNotEmpty == true)
+        if (widget.message.caption?.isNotEmpty == true)
           Padding(
             padding: const EdgeInsets.fromLTRB(10, 6, 10, 0),
             child: Text(
-              message.caption!,
+              widget.message.caption!,
               style: TextStyle(color: textColor, fontSize: 13),
             ),
           ),
@@ -463,7 +498,7 @@ class GroupMessageContent extends StatelessWidget {
   }
 
   Widget _buildVoiceBubble(BuildContext context, Widget timeWidget) {
-    if (message.voiceUrl == null) {
+    if (widget.message.voiceUrl == null) {
       return const Padding(
         padding: EdgeInsets.all(12),
         child: Text(
@@ -477,11 +512,11 @@ class GroupMessageContent extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (!isMe)
+          if (!widget.isMe)
             Padding(
               padding: const EdgeInsets.only(bottom: 4),
               child: Text(
-                message.senderName,
+                widget.message.senderName,
                 style: TextStyle(
                   color: Theme.of(context).primaryColor,
                   fontWeight: FontWeight.w700,
@@ -490,9 +525,9 @@ class GroupMessageContent extends StatelessWidget {
               ),
             ),
           VoiceMessageBubbleWidget(
-            voiceUrl: message.voiceUrl!,
-            isMe: isMe,
-            timestamp: message.createdAt,
+            voiceUrl: widget.message.voiceUrl!,
+            isMe: widget.isMe,
+            timestamp: widget.message.createdAt,
             isRead: false,
           ),
         ],
@@ -508,7 +543,7 @@ class GroupMessageContent extends StatelessWidget {
   ) {
     Map<String, dynamic> callData = {};
     try {
-      callData = jsonDecode(message.text) as Map<String, dynamic>;
+      callData = jsonDecode(widget.message.text) as Map<String, dynamic>;
     } catch (_) {}
 
     final status = callData['status'] as String? ?? 'ended';
@@ -535,11 +570,11 @@ class GroupMessageContent extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (!isMe)
+          if (!widget.isMe)
             Padding(
               padding: const EdgeInsets.only(bottom: 4),
               child: Text(
-                message.senderName,
+                widget.message.senderName,
                 style: TextStyle(
                   color: primary,
                   fontWeight: FontWeight.w700,

@@ -1,21 +1,43 @@
-String buildLastMessageGroupPreview({
-  required String text,
-  required String messageType,
+import '../models/group_model.dart';
+
+String buildGroupLastMessagePreview({
+  required GroupModel group,
+  required String? currentUserId,
 }) {
-  switch (messageType) {
+  final type = group.lastMessageType ?? 'text';
+
+  final hasNoMessage =
+      (group.lastMessage == null || group.lastMessage!.trim().isEmpty) &&
+      type == 'text';
+
+  if (hasNoMessage) {
+    return 'No messages yet';
+  }
+
+  final senderId = group.lastMessageSenderId;
+  final senderNameFromData = group.lastMessageSenderName;
+
+  final isMe =
+      currentUserId != null && senderId != null && senderId == currentUserId;
+
+  final senderName =
+      isMe
+          ? 'You'
+          : (senderNameFromData?.trim().isNotEmpty == true
+              ? senderNameFromData!
+              : 'Someone');
+
+  switch (type) {
     case 'image':
-      return '📷 Photo';
-
+      return '$senderName: 📷 Photo';
     case 'video':
-      return '🎥 Video';
-
+      return '$senderName: 🎬 Video';
     case 'voice':
-      return '🎤 Voice message';
-
+      return '$senderName: 🎤 Voice message';
     case 'call':
-      return '📞 Call';
-
+      return '$senderName: 📞 Call';
+    case 'text':
     default:
-      return text;
+      return '$senderName: ${group.lastMessage}';
   }
 }

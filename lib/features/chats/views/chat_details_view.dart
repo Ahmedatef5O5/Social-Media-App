@@ -73,7 +73,7 @@ class _ChatDetailsViewState extends State<ChatDetailsView>
     );
     cubit.getMessagesStream(receiverId: _receiverId);
     cubit.updateLastSeen();
-
+    cubit.watchReceiverTyping(_receiverId);
     _lastSeenTimer = Timer.periodic(const Duration(seconds: 20), (_) {
       if (!mounted) {
         _lastSeenTimer?.cancel();

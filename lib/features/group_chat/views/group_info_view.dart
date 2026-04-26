@@ -1,8 +1,10 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
+import '../cubit/group_list_cubit/group_list_cubit.dart';
 import '../models/group_member_model.dart';
 import '../models/group_model.dart';
 import '../services/group_chat_services.dart';
@@ -23,6 +25,7 @@ class _GroupInfoViewState extends State<GroupInfoView> {
   List<GroupMemberModel> _members = [];
   bool _isLoading = true;
   bool _isEditingName = false;
+  String? _currentAvatarUrl;
 
   final _nameController = TextEditingController();
   final _services = GroupChatServices();
@@ -37,7 +40,23 @@ class _GroupInfoViewState extends State<GroupInfoView> {
   void initState() {
     super.initState();
     _nameController.text = widget.group.name;
+    _currentAvatarUrl = widget.group.avatarUrl;
     _loadMembers();
+  }
+
+  Future<void> _changeGroupPhoto() async {
+    final picked = await ImagePicker().pickImage(source: ImageSource.gallery);
+    if (picked == null || !mounted) return;
+
+    final url = await _services.uploadGroupFile(File(picked.path), 'image');
+    await _services.updateGroup(groupId: widget.group.id, avatarUrl: url);
+
+    if (mounted) {
+      setState(() {
+        _currentAvatarUrl = url;
+      });
+      context.read<GroupListCubit>().loadGroups(isRefresh: true);
+    }
   }
 
   @override
@@ -71,17 +90,6 @@ class _GroupInfoViewState extends State<GroupInfoView> {
     if (mounted) setState(() => _isEditingName = false);
   }
 
-  Future<void> _changeGroupPhoto() async {
-    final picked = await ImagePicker().pickImage(source: ImageSource.gallery);
-    if (picked == null || !mounted) return;
-
-    final url = await _services.uploadGroupFile(File(picked.path), 'image');
-
-    await _services.updateGroup(groupId: widget.group.id, avatarUrl: url);
-
-    if (mounted) setState(() {});
-  }
-
   Future<void> _removeMember(GroupMemberModel member) async {
     final confirm = await _showConfirmDialog(
       title: 'Remove Member',
@@ -106,7 +114,9 @@ class _GroupInfoViewState extends State<GroupInfoView> {
 
     if (confirm == true && mounted) {
       await _services.leaveGroup(widget.group.id);
-      Navigator.popUntil(context, (r) => r.isFirst);
+      if (mounted) {
+        Navigator.popUntil(context, (r) => r.isFirst);
+      }
     }
   }
 
@@ -121,7 +131,9 @@ class _GroupInfoViewState extends State<GroupInfoView> {
 
     if (confirm == true && mounted) {
       await _services.deleteGroup(widget.group.id);
-      Navigator.popUntil(context, (r) => r.isFirst);
+      if (mounted) {
+        Navigator.popUntil(context, (r) => r.isFirst);
+      }
     }
   }
 
@@ -162,7 +174,7 @@ class _GroupInfoViewState extends State<GroupInfoView> {
       body: CustomScrollView(
         slivers: [
           GroupInfoHeader(
-            group: widget.group,
+            group: widget.group.copyWith(avatarUrl: _currentAvatarUrl),
             isAdmin: _isAdmin,
             isEditingName: _isEditingName,
             controller: _nameController,

@@ -8,8 +8,9 @@ class GroupModel {
   final DateTime createdAt;
   final List<GroupMemberModel> members;
 
-  // last message preview (populated by RPC)
   final String? lastMessage;
+  final String? lastMessageSenderId;
+  final String? lastMessageSenderName;
   final String? lastMessageType;
   final DateTime? lastMessageAt;
   final int unreadCount;
@@ -22,6 +23,8 @@ class GroupModel {
     required this.createdAt,
     this.members = const [],
     this.lastMessage,
+    this.lastMessageSenderId,
+    this.lastMessageSenderName,
     this.lastMessageType,
     this.lastMessageAt,
     this.unreadCount = 0,
@@ -35,6 +38,8 @@ class GroupModel {
     DateTime? createdAt,
     List<GroupMemberModel>? members,
     String? lastMessage,
+    String? lastMessageSenderId,
+    String? lastMessageSenderName,
     String? lastMessageType,
     DateTime? lastMessageAt,
     int? unreadCount,
@@ -47,6 +52,9 @@ class GroupModel {
       createdAt: createdAt ?? this.createdAt,
       members: members ?? this.members,
       lastMessage: lastMessage ?? this.lastMessage,
+      lastMessageSenderId: lastMessageSenderId ?? this.lastMessageSenderId,
+      lastMessageSenderName:
+          lastMessageSenderName ?? this.lastMessageSenderName,
       lastMessageType: lastMessageType ?? this.lastMessageType,
       lastMessageAt: lastMessageAt ?? this.lastMessageAt,
       unreadCount: unreadCount ?? this.unreadCount,
@@ -62,6 +70,8 @@ class GroupModel {
 
       createdAt: DateTime.parse(map['group_created_at'] as String),
       lastMessage: map['last_message'] ?? '',
+      lastMessageSenderId: map['last_message_sender_id'],
+      lastMessageSenderName: map['last_message_sender_name'],
       lastMessageType: map['last_message_type'] ?? 'text',
       lastMessageAt:
           map['last_message_at'] != null
