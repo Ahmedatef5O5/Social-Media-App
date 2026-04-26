@@ -3,7 +3,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../helpers/last_message_group_preview.dart';
 import '../../models/group_model.dart';
 import '../../models/groupe_message_model.dart';
 import '../../services/group_chat_services.dart';
@@ -22,8 +21,7 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState> {
 
   List<GroupMessageModel> cachedMessages = [];
   List<String> _typingUserIds = [];
-  Map<String, Map<String, String>> _reactionsCache =
-      {}; // messageId -> {userId: emoji}
+  Map<String, Map<String, String>> _reactionsCache = {};
   final Map<String, double> uploadProgressMap = {};
 
   final ValueNotifier<GroupMessageModel?> replyToMessage = ValueNotifier(null);
@@ -41,7 +39,6 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState> {
     markRead();
   }
 
-  // ── Messages ──
   void _listenMessages() {
     _messagesSubscription?.cancel();
     _messagesSubscription = _services.getGroupMessagesStream(group.id).listen((
@@ -118,6 +115,16 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState> {
       return;
     }
 
+    final userProfile =
+        await Supabase.instance.client
+            .from('users')
+            .select('name, image_url')
+            .eq('id', currentUserId)
+            .maybeSingle();
+
+    final senderName = (userProfile?['name'] as String?) ?? 'Me';
+    final senderAvatar = (userProfile?['image_url'] as String?) ?? '';
+
     final reply = replyToMessage.value;
     replyToMessage.value = null;
 
@@ -126,7 +133,8 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState> {
       id: tempId,
       groupId: group.id,
       senderId: currentUserId,
-      senderName: 'Me',
+      senderName: senderName,
+      senderAvatar: senderAvatar,
       text: text,
       createdAt: DateTime.now(),
       messageType: messageType,
@@ -185,14 +193,23 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState> {
         caption: caption,
         replyTo: reply,
       );
+      final previewText =
+          messageType == 'text'
+              ? text
+              : messageType == 'image'
+              ? '📷 Photo'
+              : messageType == 'video'
+              ? '🎥 Video'
+              : messageType == 'voice'
+              ? '🎤 Voice message'
+              : text;
       groupListCubit.updateGroupLastMessage(
         groupId: group.id,
-        message: buildLastMessageGroupPreview(
-          text: text,
-          messageType: messageType,
-        ),
+        message: 'You: $previewText',
         messageType: messageType,
         createdAt: DateTime.now(),
+        lastMessageSenderId: currentUserId,
+        lastMessageSenderName: 'You',
       );
 
       cachedMessages.removeWhere((m) => m.id == tempId);
