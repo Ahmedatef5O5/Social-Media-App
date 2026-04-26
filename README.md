@@ -77,3 +77,8 @@ lib/
  │   └── stories/       # User Status / Stories
  └── main.dart          # Application entry point
  
+<<<<<<< HEAD
+=======
+
+ <!-- pair extraordinaire achievement -->
+>>>>>>> 2cb77de172f6ae74c5597ffcdd4db6cd035b3990
