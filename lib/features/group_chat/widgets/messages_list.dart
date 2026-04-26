@@ -3,7 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import '../../../core/constants/app_images.dart';
-import '../../../core/widgets/custom_loading_indicator.dart';
+import '../../chats/widgets/chat_loading_skeleton.dart';
 import '../../chats/widgets/empty_placeholder_state.dart';
 import '../cubit/group_details_cubit/group_details_cubit.dart';
 import '../cubit/group_details_cubit/group_details_state.dart';
@@ -24,7 +24,7 @@ class GroupMessagesList extends StatelessWidget {
     return BlocBuilder<GroupDetailsCubit, GroupDetailsState>(
       builder: (context, state) {
         if (state is GroupDetailsLoading || state is GroupDetailsInitial) {
-          return const Center(child: CustomLoadingIndicator());
+          return const ChatLoadingSkeleton();
         }
 
         if (state is GroupDetailsError) {
