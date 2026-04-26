@@ -28,6 +28,8 @@ class AuthCubit extends Cubit<AuthState> {
         final user = session.user;
         await _ensureUserExistsInDb(user);
         emit(AuthSuccess());
+      } else if (event == AuthChangeEvent.signedOut) {
+        emit(AuthSignedOut());
       }
     });
   }
@@ -135,10 +137,18 @@ class AuthCubit extends Cubit<AuthState> {
     }
   }
 
-  void checkAuthStatus() {
-    final userData = _authServices.fetchRawUser();
-    if (userData != null) {
-      emit(AuthSuccess());
+  Future<void> checkAuthStatus() async {
+    final session = Supabase.instance.client.auth.currentSession;
+
+    if (session != null) {
+      if (session.isExpired) {
+        debugPrint('⚠️ Session Expired! Forcing Sign Out...');
+        await signOut();
+      } else {
+        emit(AuthSuccess());
+      }
+    } else {
+      emit(AuthInitial());
     }
   }
 
