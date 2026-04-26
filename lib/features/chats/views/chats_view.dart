@@ -7,7 +7,7 @@ import '../../../core/widgets/custom_tab_wrapper.dart';
 import '../../../core/widgets/global_refresh_indicator.dart';
 import '../widgets/messages_header_section.dart';
 import '../widgets/chats_view_body.dart';
-import '../../group_chat/widgets/group_list_view_body.dart';
+import '../../group_chat/views/group_list_view_body.dart';
 import 'chats_view_skeleton.dart';
 
 class ChatsView extends StatefulWidget {
