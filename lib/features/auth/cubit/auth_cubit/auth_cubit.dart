@@ -137,16 +137,6 @@ class AuthCubit extends Cubit<AuthState> {
     }
   }
 
-<<<<<<< HEAD
-=======
-  // void checkAuthStatus() {
-  //   final userData = _authServices.fetchRawUser();
-  //   if (userData != null) {
-  //     emit(AuthSuccess());
-  //   }
-  // }
-
->>>>>>> 2cb77de172f6ae74c5597ffcdd4db6cd035b3990
   Future<void> checkAuthStatus() async {
     final session = Supabase.instance.client.auth.currentSession;
 
