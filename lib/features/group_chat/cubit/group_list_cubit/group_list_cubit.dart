@@ -20,7 +20,7 @@ class GroupListCubit extends Cubit<GroupListState> {
     _streamSubscription?.cancel();
     _streamSubscription = _services.getGroupsListStream().listen((_) {
       _refreshDebounce?.cancel();
-      _refreshDebounce = Timer(const Duration(milliseconds: 200), () {
+      _refreshDebounce = Timer(const Duration(milliseconds: 100), () {
         loadGroups(isRefresh: true);
       });
     });
@@ -55,6 +55,8 @@ class GroupListCubit extends Cubit<GroupListState> {
     required String message,
     required String messageType,
     required DateTime createdAt,
+    String? lastMessageSenderId,
+    String? lastMessageSenderName,
   }) {
     if (state is GroupListLoaded) {
       final currentState = state as GroupListLoaded;
@@ -66,6 +68,8 @@ class GroupListCubit extends Cubit<GroupListState> {
                 lastMessage: message,
                 lastMessageType: messageType,
                 lastMessageAt: createdAt,
+                lastMessageSenderId: lastMessageSenderId,
+                lastMessageSenderName: lastMessageSenderName,
               );
             }
             return group;

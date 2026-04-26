@@ -44,7 +44,9 @@ class ChatBubbleState extends State<ChatBubble>
 
   @override
   void dispose() {
-    _dismissPicker();
+    if (mounted) {
+      _dismissPicker();
+    }
     super.dispose();
   }
 

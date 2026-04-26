@@ -32,7 +32,6 @@ class GroupChatServices {
 
     final newGroupId = groupData['id'] as String;
 
-    // Add creator as admin
     await _supabase.from('group_members').insert({
       'group_id': newGroupId,
       'user_id': currentUserId,
@@ -150,7 +149,6 @@ class GroupChatServices {
   }) async {
     final currentUser = _supabase.auth.currentUser!;
 
-    // Get sender profile
     final userProfile =
         await _supabase
             .from('users')
@@ -164,6 +162,8 @@ class GroupChatServices {
     final insertData = {
       'group_id': groupId,
       'sender_id': currentUser.id,
+      'sender_name': senderName,
+      'sender_avatar': senderAvatar,
       'message_text': text,
       'message_type': messageType,
       if (imageUrl != null) 'image_url': imageUrl,
@@ -339,32 +339,39 @@ class GroupChatServices {
     final fileBytes = await file.readAsBytes();
     final dioInstance = dio_pkg.Dio();
 
-    final response = await dioInstance.put(
-      storageUrl,
-      data: fileBytes,
-      cancelToken: cancelToken,
-      options: dio_pkg.Options(
-        headers: {
-          'Authorization':
-              'Bearer ${_supabase.auth.currentSession?.accessToken}',
-          'Content-Type':
-              type == 'image'
-                  ? 'image/$ext'
-                  : type == 'video'
-                  ? 'video/$ext'
-                  : 'audio/$ext',
+    try {
+      final response = await dioInstance.put(
+        storageUrl,
+        data: fileBytes,
+        cancelToken: cancelToken,
+        options: dio_pkg.Options(
+          sendTimeout: const Duration(minutes: 2),
+          receiveTimeout: const Duration(minutes: 2),
+          headers: {
+            'Authorization':
+                'Bearer ${_supabase.auth.currentSession?.accessToken}',
+            'Content-Type':
+                type == 'image'
+                    ? 'image/$ext'
+                    : type == 'video'
+                    ? 'video/$ext'
+                    : 'audio/$ext',
+          },
+        ),
+        onSendProgress: (sent, total) {
+          if (total > 0) onProgress?.call(sent / total);
         },
-      ),
-      onSendProgress: (sent, total) {
-        if (total > 0) onProgress?.call(sent / total);
-      },
-    );
+      );
 
-    if (response.statusCode != 200 && response.statusCode != 201) {
-      throw Exception('Upload failed: ${response.statusMessage}');
+      if (response.statusCode != 200 && response.statusCode != 201) {
+        throw Exception('Upload failed: ${response.statusMessage}');
+      }
+
+      return '${AppSecrets.supabaseUrl}/storage/v1/object/public/$bucket/$path';
+    } on dio_pkg.DioException catch (e) {
+      debugPrint('Dio Upload Error: ${e.response?.data ?? e.message}');
+      throw Exception('Failed to upload file: ${e.message}');
     }
-
-    return '${AppSecrets.supabaseUrl}/storage/v1/object/public/$bucket/$path';
   }
 
   Stream<void> getGroupsListStream() {
