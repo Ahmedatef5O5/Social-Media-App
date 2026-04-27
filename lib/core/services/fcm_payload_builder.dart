@@ -15,7 +15,7 @@ class FcmPayloadBuilder {
     return {
       'message': {
         'token': receiverFcmToken,
-        'notification': {'title': senderName, 'body': displayBody},
+        // 'notification': {'title': senderName, 'body': displayBody},
         'data': {
           'notificationType': 'chat',
           'senderId': senderId,
@@ -25,13 +25,13 @@ class FcmPayloadBuilder {
           'senderImageUrl': senderImageUrl,
           'messageImageUrl': attachmentUrl ?? '',
         },
-        'android': {
-          'priority': 'high',
-          'notification': {
-            'channel_id': 'chat_messages_channel',
-            'sound': 'message_tone',
-          },
-        },
+        // 'android': {
+        //   'priority': 'high',
+        //   'notification': {
+        //     'channel_id': 'chat_messages_channel',
+        //     'sound': 'message_tone',
+        //   },
+        // },
       },
     };
   }
@@ -92,10 +92,10 @@ class FcmPayloadBuilder {
     return {
       'message': {
         'token': receiverFcmToken,
-        'notification': {
-          'title': '$senderName @ $groupName',
-          'body': displayBody,
-        },
+        // 'notification': {
+        //   'title': '$senderName @ $groupName',
+        //   'body': displayBody,
+        // },
         'data': {
           'notificationType': 'group_message',
           'groupId': groupId,
@@ -105,13 +105,13 @@ class FcmPayloadBuilder {
           'messageType': messageType,
           'senderImageUrl': senderImageUrl,
         },
-        'android': {
-          'priority': 'high',
-          'notification': {
-            'channel_id': 'chat_messages_channel',
-            'sound': 'message_tone',
-          },
-        },
+        // 'android': {
+        //   'priority': 'high',
+        //   'notification': {
+        //     'channel_id': 'chat_messages_channel',
+        //     'sound': 'message_tone',
+        //   },
+        // },
       },
     };
   }
