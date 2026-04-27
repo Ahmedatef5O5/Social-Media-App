@@ -29,15 +29,22 @@ class ChatReactionOverlay {
     final anchorRect = offset & renderBox.size;
 
     const bubbleWidth = 260.0;
+    const edgePadding = 12.0;
+    const scaleSafeExtra = 24.0;
+
     final screenWidth = overlayBox.size.width;
 
-    double x =
-        isMe
-            ? (anchorRect.right - bubbleWidth).clamp(
-              8.0,
-              screenWidth - bubbleWidth - 8,
-            )
-            : anchorRect.left.clamp(8.0, screenWidth - bubbleWidth - 8);
+    double x;
+    if (isMe) {
+      x = anchorRect.center.dx - bubbleWidth;
+    } else {
+      x = anchorRect.center.dx;
+    }
+
+    x = x.clamp(
+      edgePadding,
+      screenWidth - bubbleWidth - edgePadding - scaleSafeExtra,
+    );
 
     final y = anchorRect.bottom + 6;
 
@@ -117,9 +124,9 @@ class _ReactionPickerBubbleState extends State<_ReactionPickerBubble>
         color: Colors.transparent,
         elevation: 0,
         borderRadius: BorderRadius.circular(32),
-        clipBehavior: Clip.antiAlias,
+        clipBehavior: Clip.none,
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           decoration: BoxDecoration(
             color: scheme.surfaceContainerHighest.withValues(
               alpha: isDark ? 0.88 : 0.78,
@@ -157,8 +164,8 @@ class _ReactionPickerBubbleState extends State<_ReactionPickerBubble>
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 180),
                       curve: Curves.easeOut,
-                      margin: const EdgeInsets.symmetric(horizontal: 3),
-                      padding: const EdgeInsets.all(6),
+                      margin: const EdgeInsets.symmetric(horizontal: 2.5),
+                      padding: const EdgeInsets.all(4),
 
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(20),
@@ -178,11 +185,11 @@ class _ReactionPickerBubbleState extends State<_ReactionPickerBubble>
                       ),
                       transform:
                           isSelected
-                              ? (Matrix4.identity()..scale(1.15))
+                              ? (Matrix4.identity()..scale(1.18))
                               : isHov
                               ? (Matrix4.identity()
                                 ..translate(0.0, -8.0)
-                                ..scale(1.35))
+                                ..scale(1.1))
                               : Matrix4.identity(),
                       child: Tooltip(
                         message: r['label']!,

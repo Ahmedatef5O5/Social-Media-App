@@ -66,7 +66,10 @@ class _GroupReactionChip extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
 
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: count > 1 ? 7 : 5, vertical: 3),
+      padding: EdgeInsets.symmetric(
+        horizontal: count > 1 ? 8 : 4,
+        vertical: count > 1 ? 6 : 3,
+      ),
       decoration: BoxDecoration(
         color: Theme.of(
           context,
@@ -81,31 +84,36 @@ class _GroupReactionChip extends StatelessWidget {
         ],
       ),
 
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            emoji,
-            style: const TextStyle(
-              fontSize: 13,
-              height: 1.2,
-              color: Colors.black,
-            ),
-          ),
+      child: Padding(
+        padding: const EdgeInsets.all(2.0),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (count > 1) ...[
+              const SizedBox(width: 1.5),
 
-          if (count > 1) ...[
-            const SizedBox(width: 3),
+              Text(
+                '$count',
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  color: isMine ? primary : scheme.onSurfaceVariant,
+                  height: 1.2,
+                ),
+              ),
+              const SizedBox(width: 3),
+            ],
+
             Text(
-              '$count',
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-                color: isMine ? primary : scheme.onSurfaceVariant,
+              emoji,
+              style: const TextStyle(
+                fontSize: 12,
                 height: 1.2,
+                color: Colors.black,
               ),
             ),
           ],
-        ],
+        ),
       ),
     );
   }
