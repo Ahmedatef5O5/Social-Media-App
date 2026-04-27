@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-
-import '../../../core/themes/app_colors.dart';
 import '../model/comment_model.dart';
+import '../../../core/themes/app_colors.dart';
 
 class CommentReactionsSummary extends StatelessWidget {
   final List<CommentReaction> reactions;
@@ -15,50 +14,44 @@ class CommentReactionsSummary extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final active = reactions.where((r) => r.count > 0).toList();
-    if (active.isEmpty) return const SizedBox.shrink();
+    if (reactions.isEmpty) return const SizedBox.shrink();
 
-    final total = active.fold<int>(0, (s, r) => s + r.count);
+    final total = reactions.fold<int>(0, (s, r) => s + r.count);
 
     return GestureDetector(
       onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-        decoration: BoxDecoration(
-          color: Theme.of(context).scaffoldBackgroundColor,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: Theme.of(
-              context,
-            ).colorScheme.outlineVariant.withValues(alpha: 0.4),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const SizedBox(width: 5),
+          Text(
+            '$total',
+            style: Theme.of(context).textTheme.bodySmall!.copyWith(
+              color: AppColors.grey6,
+              fontSize: 11,
+            ),
           ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
-              blurRadius: 4,
-            ),
-          ],
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Show up to 3 emoji icons
-            ...active
-                .take(3)
-                .map(
-                  (r) => Text(r.emoji, style: const TextStyle(fontSize: 13)),
+          const SizedBox(width: 3),
+          ...reactions
+              .take(3)
+              .map(
+                (r) => Text(
+                  r.emoji,
+                  style: Theme.of(context).textTheme.bodySmall!.copyWith(
+                    color: Theme.of(context).primaryColor,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    shadows: [
+                      Shadow(
+                        color: Colors.black.withValues(alpha: 0.15),
+                        offset: const Offset(0, 0.5),
+                        blurRadius: 1,
+                      ),
+                    ],
+                  ),
                 ),
-            const SizedBox(width: 4),
-            Text(
-              '$total',
-              style: Theme.of(context).textTheme.bodySmall!.copyWith(
-                color: AppColors.grey7,
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
               ),
-            ),
-          ],
-        ),
+        ],
       ),
     );
   }

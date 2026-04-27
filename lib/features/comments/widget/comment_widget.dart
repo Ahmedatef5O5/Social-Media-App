@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:social_media_app/features/comments/cubit/comments_cubit.dart';
 import 'package:social_media_app/features/comments/model/comment_model.dart';
+import 'package:social_media_app/features/comments/widget/comment_reaction_summary.dart';
 import 'package:social_media_app/features/comments/widget/thread_painter.dart';
 import '../../../core/helpers/comment_helper.dart';
 import '../../../core/widgets/custom_linkify_text.dart';
@@ -342,7 +343,10 @@ class _CommentWidgetState extends State<CommentWidget>
                                     ),
                               ),
                               const SizedBox(width: 12),
-                              _inlineReactionSummary(),
+                              CommentReactionsSummary(
+                                reactions: _reactions,
+                                onTap: _showPicker,
+                              ),
                             ],
                           ),
                         ),
@@ -446,26 +450,6 @@ class _CommentWidgetState extends State<CommentWidget>
           ),
         );
       },
-    );
-  }
-
-  Widget _inlineReactionSummary() {
-    if (_reactions.isEmpty) return const SizedBox.shrink();
-    final total = _reactions.fold<int>(0, (s, r) => s + r.count);
-    return Row(
-      children: [
-        const SizedBox(width: 5),
-        Text(
-          '$total',
-          style: Theme.of(
-            context,
-          ).textTheme.bodySmall!.copyWith(color: AppColors.grey6, fontSize: 11),
-        ),
-        const SizedBox(width: 3),
-        ..._reactions
-            .take(2)
-            .map((r) => Text(r.emoji, style: const TextStyle(fontSize: 12))),
-      ],
     );
   }
 }
