@@ -68,7 +68,7 @@ class _RegisterViewWidgetState extends State<RegisterViewWidget> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Gap(4),
+              const Gap(8),
               CustomTextFormField(
                 prefixIcon: Icon(Icons.person_rounded),
                 controller: _fullNameController,
@@ -77,7 +77,7 @@ class _RegisterViewWidgetState extends State<RegisterViewWidget> {
                 inputFormatters: AppFormatters.noLeadingSpace,
                 validator: AppValidators.validateName,
               ),
-              Gap(18),
+              const Gap(18),
               CustomTextFormField(
                 prefixIcon: Icon(Icons.email_rounded),
                 controller: _emailController,
@@ -86,7 +86,7 @@ class _RegisterViewWidgetState extends State<RegisterViewWidget> {
                 inputFormatters: AppFormatters.noSpaces,
                 validator: AppValidators.validateEmail,
               ),
-              Gap(18),
+              const Gap(18),
               CustomTextFormField(
                 prefixIcon: Icon(Icons.lock_rounded),
                 controller: _passwordController,
@@ -121,7 +121,7 @@ class _RegisterViewWidgetState extends State<RegisterViewWidget> {
                         )
                         : const SizedBox.shrink(),
               ),
-              Gap(18),
+              const Gap(18),
               CustomTextFormField(
                 prefixIcon: Icon(Icons.lock_rounded),
                 controller: _confirmPasswordController,
@@ -134,7 +134,7 @@ class _RegisterViewWidgetState extends State<RegisterViewWidget> {
                       _passwordController.text,
                     ),
               ),
-              Gap(22),
+              const Gap(22),
               BlocConsumer<AuthCubit, AuthState>(
                 listenWhen:
                     (previous, current) =>
@@ -210,15 +210,15 @@ class _RegisterViewWidgetState extends State<RegisterViewWidget> {
                   );
                 },
               ),
-              Gap(18),
+              const Gap(18),
               SocialSignSection(label: 'Or Sign up with'),
-              Gap(22),
+              const Gap(22),
               SignTextSection(
                 staticText: 'By Using this app you agree with the\n',
                 clickableText: 'Terms of Service',
               ),
               Gap(bottomInset > 0 ? bottomInset : 18),
-              Gap(18),
+              const Gap(18),
             ],
           ),
         ),

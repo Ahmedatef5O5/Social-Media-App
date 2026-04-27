@@ -40,7 +40,7 @@ class _LoginViewWidgetState extends State<LoginViewWidget> {
           key: _formKey,
           child: Column(
             children: [
-              Gap(12),
+              const Gap(12),
               CustomTextFormField(
                 prefixIcon: Icon(Icons.email_rounded),
                 controller: _emailController,
@@ -49,7 +49,7 @@ class _LoginViewWidgetState extends State<LoginViewWidget> {
                 inputFormatters: AppFormatters.noSpaces,
                 validator: AppValidators.validateEmail,
               ),
-              Gap(26),
+              const Gap(26),
               CustomTextFormField(
                 prefixIcon: Icon(Icons.lock_rounded),
                 controller: _passwordController,
@@ -58,12 +58,12 @@ class _LoginViewWidgetState extends State<LoginViewWidget> {
                 isPassword: true,
                 validator: AppValidators.validatePassword,
               ),
-              Gap(12),
+              const Gap(12),
               Align(
                 alignment: Alignment.topRight,
                 child: Text('Forgot Password?'),
               ),
-              Gap(42),
+              const Gap(42),
               BlocConsumer<AuthCubit, AuthState>(
                 listener: (context, state) {
                   if (state is AuthSuccess) {
@@ -129,14 +129,17 @@ class _LoginViewWidgetState extends State<LoginViewWidget> {
                   );
                 },
               ),
-              Gap(14),
+              const Gap(14),
               SocialSignSection(label: 'Or Sign in with'),
-              Gap(22),
+              const Gap(22),
               SignTextSection(
                 staticText: 'Don\'t  have an account?',
                 clickableText: '\t\tSign up',
+                onTap: () {
+                  DefaultTabController.of(context).animateTo(1);
+                },
               ),
-              Gap(18),
+              const Gap(18),
               Gap(bottomInset > 0 ? bottomInset : 18),
             ],
           ),
