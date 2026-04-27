@@ -19,6 +19,15 @@ class GroupChatAppBar extends StatelessWidget implements PreferredSizeWidget {
 
     return BlocBuilder<GroupListCubit, GroupListState>(
       builder: (context, state) {
+        final updatedGroup =
+            (state is GroupListLoaded)
+                ? state.groups.firstWhere(
+                  (g) => g.id == group.id,
+                  orElse: () => group,
+                )
+                : group;
+        final avatarUrl = updatedGroup.avatarUrl;
+
         return AppBar(
           elevation: 0,
           scrolledUnderElevation: 0,
@@ -40,9 +49,7 @@ class GroupChatAppBar extends StatelessWidget implements PreferredSizeWidget {
                   radius: 20,
                   backgroundColor: primary.withValues(alpha: 0.12),
                   backgroundImage:
-                      hasAvatar
-                          ? CachedNetworkImageProvider(group.avatarUrl!)
-                          : null,
+                      hasAvatar ? CachedNetworkImageProvider(avatarUrl!) : null,
                   child:
                       !hasAvatar
                           ? Text(

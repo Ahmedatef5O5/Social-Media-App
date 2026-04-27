@@ -127,6 +127,8 @@ class _CreateGroupViewState extends State<CreateGroupView> {
 
     return Scaffold(
       appBar: AppBar(
+        elevation: 0,
+        scrolledUnderElevation: 0,
         title: const Text('New Group'),
         actions: [
           TextButton(

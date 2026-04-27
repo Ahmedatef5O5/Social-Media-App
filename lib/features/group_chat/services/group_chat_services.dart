@@ -251,19 +251,23 @@ class GroupChatServices {
     required String emoji,
     String? currentEmoji,
   }) async {
+    final query = _supabase
+        .from('group_message_reactions')
+        .delete()
+        .eq('message_id', messageId)
+        .eq('user_id', currentUserId);
+
+    await query;
+
     if (currentEmoji == emoji) {
-      await _supabase
-          .from('group_message_reactions')
-          .delete()
-          .eq('message_id', messageId)
-          .eq('user_id', currentUserId);
-    } else {
-      await _supabase.from('group_message_reactions').upsert({
-        'message_id': messageId,
-        'user_id': currentUserId,
-        'reaction': emoji,
-      });
+      return;
     }
+
+    await _supabase.from('group_message_reactions').insert({
+      'message_id': messageId,
+      'user_id': currentUserId,
+      'reaction': emoji,
+    });
   }
 
   Stream<List<Map<String, dynamic>>> getReactionsStream(String groupId) {

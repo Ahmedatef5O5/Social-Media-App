@@ -231,11 +231,30 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState> {
     required String emoji,
   }) async {
     final currentEmoji = _reactionsCache[messageId]?[currentUserId];
-    await _services.toggleReaction(
-      messageId: messageId,
-      emoji: emoji,
-      currentEmoji: currentEmoji,
-    );
+
+    _reactionsCache[messageId] ??= {};
+
+    if (currentEmoji == emoji) {
+      _reactionsCache[messageId]!.remove(currentUserId);
+    } else {
+      _reactionsCache[messageId]![currentUserId] = emoji;
+    }
+
+    try {
+      await _services.toggleReaction(
+        messageId: messageId,
+        emoji: emoji,
+        currentEmoji: currentEmoji,
+      );
+    } catch (e) {
+      if (currentEmoji == null) {
+        _reactionsCache[messageId]!.remove(currentUserId);
+      } else {
+        _reactionsCache[messageId]![currentUserId] = currentEmoji;
+      }
+
+      rethrow;
+    }
   }
 
   void onTyping() {
