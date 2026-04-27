@@ -11,11 +11,23 @@ import 'package:social_media_app/features/chats/models/chat_user_model.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
+class _StoredMessage {
+  final String text;
+  final String senderName;
+  final int timestamp;
+
+  const _StoredMessage({
+    required this.text,
+    required this.senderName,
+    required this.timestamp,
+  });
+}
+
 class NotificationService {
   NotificationService._();
   static final NotificationService instance = NotificationService._();
 
-  static final Map<String, List<Message>> _messagesBySender = {};
+  static final Map<String, List<_StoredMessage>> _messagesByConversation = {};
   static final Map<String, Uint8List> _avatarCache = {};
 
   final FlutterLocalNotificationsPlugin _localNotifications =
@@ -78,10 +90,10 @@ class NotificationService {
     }
   }
 
+  // ── Public helpers ───────────────────────────────────────────
   Future<void> cancelNotificationsForSender(String senderId) async {
     await _localNotifications.cancel(senderId.hashCode);
-    await _localNotifications.cancel(senderId.hashCode + 1);
-    _messagesBySender.remove(senderId);
+    _messagesByConversation.remove(senderId);
   }
 
   Future<void> cancelCallNotification(String callId) async {
@@ -229,55 +241,96 @@ class NotificationService {
     final data = message.data;
     final notification = message.notification;
 
-    final senderId = data['senderId'] ?? '';
-    final senderName =
+    final String type = data['notificationType'] ?? 'chat';
+    final bool isGroup = type == 'group_message';
+
+    final String conversationId =
+        isGroup ? (data['groupId'] ?? '') : (data['senderId'] ?? '');
+
+    final String senderName =
         data['senderName'] ?? notification?.title ?? 'New Message';
-    final body = data['messageBody'] ?? notification?.body ?? '';
-    final avatarUrl = data['senderImageUrl']; // ✅ from FCM payload
-    final messageType = data['messageType'] ?? 'text';
-    final messageImageUrl = data['messageImageUrl'];
 
-    final Uint8List profileBitmap = await _getAvatarBitmap(senderId, avatarUrl);
+    final String conversationTitle =
+        isGroup ? (data['groupName'] ?? 'Group') : senderName;
 
-    _messagesBySender.putIfAbsent(senderId, () => []);
-    _messagesBySender[senderId]!.add(
-      Message(
-        messageType == 'image'
-            ? '📷 Photo'
-            : messageType == 'video'
-            ? '🎥 Video'
-            : messageType == 'voice'
-            ? '🎤 Voice message'
-            : body,
-        DateTime.now(),
-        Person(name: senderName, icon: ByteArrayAndroidIcon(profileBitmap)),
+    final String body = _buildStyleBody(
+      data['messageType'] ?? 'text',
+      data['messageBody'] ?? notification?.body ?? '',
+    );
+
+    final String? avatarUrl = data['senderImageUrl'];
+    final String? groupImageUrl = data['groupImageUrl'];
+
+    Future<Uint8List> _getGroupAvatarBitmap(
+      String groupName,
+      String? groupImageUrl,
+    ) async {
+      if (groupImageUrl != null && groupImageUrl.isNotEmpty) {
+        final bytes = await _fetchBitmap(groupImageUrl);
+        if (bytes != null) return bytes;
+      }
+
+      return _buildLetterAvatar(groupName);
+    }
+
+    final stored = _messagesByConversation.putIfAbsent(
+      conversationId,
+      () => [],
+    );
+    stored.add(
+      _StoredMessage(
+        text: body,
+        senderName: senderName,
+        timestamp: DateTime.now().millisecondsSinceEpoch,
       ),
     );
+    if (stored.length > 7) stored.removeAt(0);
 
-    final messagingStyle = MessagingStyleInformation(
-      Person(name: senderName, icon: ByteArrayAndroidIcon(profileBitmap)),
-      conversationTitle: senderName,
-      messages: _messagesBySender[senderId]!,
+    final Uint8List senderBitmap = await _getAvatarBitmap(
+      conversationId,
+      avatarUrl,
     );
 
-    StyleInformation styleInformation;
+    final Uint8List headerBitmap =
+        isGroup
+            ? await _getGroupAvatarBitmap(
+              conversationTitle,
+              data['groupImageUrl'],
+            )
+            : senderBitmap;
 
-    if (messageType == 'image') {
-      final Uint8List? sentImageBytes = await _fetchBitmap(messageImageUrl);
-      if (sentImageBytes != null) {
-        styleInformation = BigPictureStyleInformation(
-          ByteArrayAndroidBitmap(sentImageBytes),
-          largeIcon: ByteArrayAndroidBitmap(profileBitmap),
-          contentTitle: senderName,
-          summaryText: '📷 Photo',
-          hideExpandedLargeIcon: false,
-        );
-      } else {
-        styleInformation = messagingStyle;
-      }
-    } else {
-      styleInformation = messagingStyle;
-    }
+    final ByteArrayAndroidIcon headerIcon = ByteArrayAndroidIcon(headerBitmap);
+
+    final ByteArrayAndroidIcon senderIcon = ByteArrayAndroidIcon(senderBitmap);
+
+    final Uint8List profileBitmap = await _getAvatarBitmap(
+      conversationId,
+      avatarUrl,
+    );
+
+    final Person person = Person(
+      name: conversationTitle,
+      icon: headerIcon,
+      important: true,
+    );
+
+    final List<Message> styleMessages =
+        stored
+            .map(
+              (m) => Message(
+                m.text,
+                DateTime.fromMillisecondsSinceEpoch(m.timestamp),
+                Person(name: m.senderName, icon: senderIcon),
+              ),
+            )
+            .toList();
+
+    final messagingStyle = MessagingStyleInformation(
+      person,
+      conversationTitle: isGroup ? conversationTitle : null,
+      groupConversation: isGroup,
+      messages: styleMessages,
+    );
 
     final androidDetails = AndroidNotificationDetails(
       _messageChannel.id,
@@ -287,34 +340,93 @@ class NotificationService {
       priority: Priority.high,
       category: AndroidNotificationCategory.message,
       icon: '@drawable/ic_notification',
-      styleInformation: styleInformation,
-      groupKey: 'chat_$senderId',
-      color: ThemeData().primaryColor,
+      largeIcon: ByteArrayAndroidBitmap(headerBitmap),
+      styleInformation: messagingStyle,
+      autoCancel: true,
+      ongoing: false,
+      color: const Color(0xFF2196F3),
     );
 
     await _localNotifications.show(
-      senderId.hashCode,
-      senderName,
+      conversationId.hashCode,
+      conversationTitle,
       body,
       NotificationDetails(android: androidDetails),
-      payload: '$senderId|$senderName|$avatarUrl',
+      payload:
+          isGroup
+              ? 'group|$conversationId|$conversationTitle'
+              : '$conversationId|$senderName|$avatarUrl',
+    );
+  }
+
+  String _buildStyleBody(String type, String body) {
+    switch (type) {
+      case 'image':
+        return '📷 Photo';
+      case 'video':
+        return '🎥 Video';
+      case 'voice':
+        return '🎤 Voice message';
+      default:
+        return body;
+    }
+  }
+
+  Future<Uint8List> _buildLetterAvatar(String title, {int size = 128}) async {
+    final recorder = ui.PictureRecorder();
+    final canvas = Canvas(
+      recorder,
+      Rect.fromLTWH(0, 0, size.toDouble(), size.toDouble()),
     );
 
-    await _localNotifications.show(
-      senderId.hashCode + 1,
-      '',
-      '',
-      NotificationDetails(
-        android: AndroidNotificationDetails(
-          _messageChannel.id,
-          _messageChannel.name,
-          groupKey: 'chat_$senderId',
-          setAsGroupSummary: true,
-          importance: Importance.low,
-          icon: '@drawable/ic_notification',
+    final Color bgColor = _colorFromString(title);
+
+    final paint = Paint()..color = bgColor;
+    canvas.drawCircle(Offset(size / 2, size / 2), size / 2, paint);
+
+    final String letter =
+        title.trim().isNotEmpty ? title.trim()[0].toUpperCase() : '?';
+
+    final textPainter = TextPainter(
+      text: TextSpan(
+        text: letter,
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: size * 0.5,
+          fontWeight: FontWeight.w600,
         ),
       ),
+      textAlign: TextAlign.center,
+      textDirection: TextDirection.ltr,
     );
+
+    textPainter.layout();
+    final offset = Offset(
+      (size - textPainter.width) / 2,
+      (size - textPainter.height) / 2,
+    );
+    textPainter.paint(canvas, offset);
+
+    final image = await recorder.endRecording().toImage(size, size);
+
+    final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+
+    return byteData!.buffer.asUint8List();
+  }
+
+  Color _colorFromString(String input) {
+    final colors = [
+      const Color(0xFF1E88E5),
+      const Color(0xFF43A047),
+      const Color(0xFFE53935),
+      const Color(0xFF8E24AA),
+      const Color(0xFFF4511E),
+      const Color(0xFF3949AB),
+      const Color(0xFF00897B),
+    ];
+
+    final int hash = input.codeUnits.fold(0, (a, b) => a + b);
+    return colors[hash % colors.length];
   }
 
   @pragma('vm:entry-point')
@@ -356,6 +468,18 @@ class NotificationService {
               'callType': callType,
             },
           );
+        });
+      }
+      return;
+    }
+
+    if (payload.startsWith('group|')) {
+      final parts = payload.split('|');
+      if (parts.length >= 3) {
+        _navigateFromMessage({
+          'notificationType': 'group_message',
+          'groupId': parts[1],
+          'groupName': parts[2],
         });
       }
       return;
@@ -451,8 +575,17 @@ class NotificationService {
     if (_avatarCache.containsKey(senderId)) {
       return _avatarCache[senderId]!;
     }
-    final raw = await _fetchBitmap(imageUrl);
-    final bitmap = await _makeCircularBitmap(raw ?? await _defaultBitmap());
+    Uint8List bitmap;
+    try {
+      final raw = await _fetchBitmap(imageUrl);
+      bitmap = await _makeCircularBitmap(raw ?? await _defaultBitmap());
+
+      if (bitmap.lengthInBytes < 500) {
+        throw Exception('Bitmap too small');
+      }
+    } catch (_) {
+      bitmap = await _buildLetterAvatar(senderId);
+    }
     _avatarCache[senderId] = bitmap;
     return bitmap;
   }
@@ -478,6 +611,7 @@ class NotificationService {
       );
       return data.buffer.asUint8List();
     } catch (_) {
+      // 1×1 transparent PNG fallback
       return Uint8List.fromList([
         0x89,
         0x50,
@@ -548,10 +682,5 @@ class NotificationService {
         0x82,
       ]);
     }
-  }
-
-  Future<Uint8List> _loadFlutterAsset(String path) async {
-    final byteData = await rootBundle.load(path);
-    return byteData.buffer.asUint8List();
   }
 }
