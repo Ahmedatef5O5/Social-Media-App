@@ -44,9 +44,7 @@ class ChatBubbleState extends State<ChatBubble>
 
   @override
   void dispose() {
-    if (mounted) {
-      _dismissPicker();
-    }
+    _dismissPicker(isDisposing: true);
     super.dispose();
   }
 
@@ -72,11 +70,14 @@ class ChatBubbleState extends State<ChatBubble>
     } catch (_) {}
   }
 
-  void _dismissPicker() {
-    if (!mounted) return;
+  void _dismissPicker({bool isDisposing = false}) {
+    if (_overlayEntry == null) return;
     _overlayEntry?.remove();
     _overlayEntry = null;
-    if (mounted) setState(() {});
+
+    if (!isDisposing && mounted) {
+      setState(() {});
+    }
   }
 
   void _applyReaction(String emoji) {

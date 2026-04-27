@@ -29,6 +29,7 @@ class ChatDetailsView extends StatefulWidget {
 class _ChatDetailsViewState extends State<ChatDetailsView>
     with WidgetsBindingObserver, RouteAware {
   late final TextEditingController _messageController;
+  late final ChatDetailsCubit _chatCubit;
 
   late bool _isOnlineCache;
   DateTime? _lastSeenCache;
@@ -55,35 +56,32 @@ class _ChatDetailsViewState extends State<ChatDetailsView>
     _messageController = TextEditingController();
 
     WidgetsBinding.instance.addObserver(this);
-
     ActiveScreenTracker.setActiveChatReceiver(_receiverId);
-
     NotificationService.instance.cancelNotificationsForSender(_receiverId);
 
     _itemPositionsListener.itemPositions.addListener(_scrollListener);
 
-    final cubit = context.read<ChatDetailsCubit>();
+    _chatCubit = context.read<ChatDetailsCubit>();
 
-    cubit.watchReceiverPresence(
+    _chatCubit.watchReceiverPresence(
       _receiverId,
       initial: PresenceSnapshot(
         isOnline: widget.receiverUser.isOnline,
         lastSeen: widget.receiverUser.lastSeen,
       ),
     );
-    cubit.getMessagesStream(receiverId: _receiverId);
-    cubit.updateLastSeen();
-    cubit.watchReceiverTyping(_receiverId);
+    _chatCubit.getMessagesStream(receiverId: _receiverId);
+    _chatCubit.updateLastSeen();
+    _chatCubit.watchReceiverTyping(_receiverId);
+
     _lastSeenTimer = Timer.periodic(const Duration(seconds: 20), (_) {
       if (!mounted) {
         _lastSeenTimer?.cancel();
         return;
       }
-
       try {
-        final cubit = context.read<ChatDetailsCubit>();
-        if (!cubit.isClosed) {
-          cubit.updateLastSeen();
+        if (!_chatCubit.isClosed) {
+          _chatCubit.updateLastSeen();
         } else {
           _lastSeenTimer?.cancel();
         }
@@ -104,72 +102,100 @@ class _ChatDetailsViewState extends State<ChatDetailsView>
 
   @override
   void didPop() {
-    if (mounted) {
-      context.read<ChatDetailsCubit>().markAsRead(senderId: _receiverId);
+    if (mounted && !_chatCubit.isClosed) {
+      _chatCubit.markAsRead(senderId: _receiverId);
     }
   }
 
   @override
   void didPopNext() {
-    if (_isAtBottom()) {
-      context.read<ChatDetailsCubit>().markAsRead(senderId: _receiverId);
+    if (_isAtBottom() && !_chatCubit.isClosed) {
+      _chatCubit.markAsRead(senderId: _receiverId);
     }
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (!mounted) return;
+    if (!mounted || _chatCubit.isClosed) return;
     if (state == AppLifecycleState.resumed) {
       if (_isAtBottom()) {
-        context.read<ChatDetailsCubit>().markAsRead(senderId: _receiverId);
+        _chatCubit.markAsRead(senderId: _receiverId);
       }
-      context.read<ChatDetailsCubit>().updateLastSeen();
+      _chatCubit.updateLastSeen();
     }
   }
 
-  int _lastMinIndex = 0;
+  int? _lastMinIndex;
+  double? _lastLeadingEdge;
+  bool _isCurrentlyAtBottom = true;
+
   void _scrollListener() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
+    if (!mounted) return;
 
-      final positions = _itemPositionsListener.itemPositions.value;
-      if (positions.isEmpty) return;
+    final positions = _itemPositionsListener.itemPositions.value;
+    if (positions.isEmpty) return;
 
-      final minIndex = positions
-          .map((p) => p.index)
-          .reduce((a, b) => a < b ? a : b);
+    final minPosition = positions.reduce((a, b) => a.index < b.index ? a : b);
+    final int minIndex = minPosition.index;
+    final double leadingEdge = minPosition.itemLeadingEdge;
 
-      final bool isAtBottom = minIndex == 0;
+    final bool isAtBottom = minIndex == 0;
 
-      final bool isScrollingDown = minIndex < _lastMinIndex;
-      final bool isScrollingUp = minIndex > _lastMinIndex;
-
-      if (isScrollingDown && !isAtBottom) {
-        _showScrollButtonNotifier.value = true;
-      } else if (isScrollingUp && _unreadCountNotifier.value == 0) {
-        _showScrollButtonNotifier.value = false;
-      } else if (isAtBottom) {
-        _showScrollButtonNotifier.value = false;
-        _unreadCountNotifier.value = 0;
-        if (mounted) {
-          context.read<ChatDetailsCubit>().markAsRead(senderId: _receiverId);
-        }
+    if (isAtBottom) {
+      _isCurrentlyAtBottom = true;
+      _showScrollButtonNotifier.value = false;
+      _unreadCountNotifier.value = 0;
+      if (!_chatCubit.isClosed) {
+        _chatCubit.markAsRead(senderId: _receiverId);
+        _chatCubit.setUserAtBottom(true);
       }
-
-      context.read<ChatDetailsCubit>().setUserAtBottom(isAtBottom);
       _lastMinIndex = minIndex;
-    });
+      _lastLeadingEdge = leadingEdge;
+      return;
+    }
+
+    _isCurrentlyAtBottom = false;
+    if (!_chatCubit.isClosed) {
+      _chatCubit.setUserAtBottom(false);
+    }
+
+    if (_lastMinIndex == null || _lastLeadingEdge == null) {
+      _lastMinIndex = minIndex;
+      _lastLeadingEdge = leadingEdge;
+      return;
+    }
+
+    bool goingTowardNewer = false;
+    bool goingTowardOlder = false;
+
+    if (minIndex < _lastMinIndex!) {
+      goingTowardNewer = true;
+    } else if (minIndex > _lastMinIndex!) {
+      goingTowardOlder = true;
+    } else {
+      if (leadingEdge > _lastLeadingEdge! + 0.01) {
+        goingTowardNewer = true;
+      } else if (leadingEdge < _lastLeadingEdge! - 0.01) {
+        goingTowardOlder = true;
+      }
+    }
+
+    if (goingTowardNewer) {
+      _showScrollButtonNotifier.value = true;
+    } else if (goingTowardOlder) {
+      if (_unreadCountNotifier.value == 0) {
+        _showScrollButtonNotifier.value = false;
+      }
+    }
+
+    _lastMinIndex = minIndex;
+    _lastLeadingEdge = leadingEdge;
   }
 
   bool _isAtBottom() {
     final positions = _itemPositionsListener.itemPositions.value;
     if (positions.isEmpty) return true;
-
-    final minIndex = positions
-        .map((p) => p.index)
-        .reduce((a, b) => a < b ? a : b);
-
-    return minIndex == 0;
+    return positions.map((p) => p.index).reduce((a, b) => a < b ? a : b) == 0;
   }
 
   void _scrollToBottom() {
@@ -184,14 +210,15 @@ class _ChatDetailsViewState extends State<ChatDetailsView>
             if (mounted) {
               _showScrollButtonNotifier.value = false;
               _unreadCountNotifier.value = 0;
-              _itemScrollController.jumpTo(index: 0);
+              _lastMinIndex = 0;
+              _lastLeadingEdge = null;
+              _isCurrentlyAtBottom = true;
             }
           });
       _unreadCountNotifier.value = 0;
     }
   }
 
-  @override
   @override
   void dispose() {
     _lastSeenTimer?.cancel();

@@ -166,36 +166,33 @@ class _MessagesListViewState extends State<MessagesListView> {
       final messages = state.messages;
       final currentUserId = Supabase.instance.client.auth.currentUser!.id;
 
-      bool isNewMessage = messages.length > _lastMessageCount;
-
+      final bool isNewMessage = messages.length > _lastMessageCount;
       final int previousCount = _lastMessageCount;
       _lastMessageCount = messages.length;
 
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!context.mounted) return;
+      if (!isNewMessage || previousCount == 0) return;
 
-        final positions = widget.itemPositionsListener.itemPositions.value;
-        final isAtBottom = positions.any((p) => p.index == 0);
-        final lastMsg = messages.first;
+      final positions = widget.itemPositionsListener.itemPositions.value;
+      final isAtBottom =
+          positions.isEmpty || positions.any((p) => p.index <= 1);
+      final lastMsg = messages.first;
 
-        if (isNewMessage && previousCount != 0) {
-          if (lastMsg.senderId != currentUserId &&
-              _lastPlayedMessageId != lastMsg.id) {
-            _lastPlayedMessageId = lastMsg.id;
-            _playNotificationSound();
-          }
+      if (lastMsg.senderId != currentUserId &&
+          _lastPlayedMessageId != lastMsg.id) {
+        _lastPlayedMessageId = lastMsg.id;
+        _playNotificationSound();
+      }
 
-          if (lastMsg.senderId == currentUserId) {
-            widget.scrollToBottom();
-          } else {
-            if (isAtBottom) {
-              widget.scrollToBottom();
-            } else {
-              widget.unreadCountNotifier.value++;
-            }
-          }
+      if (lastMsg.senderId == currentUserId) {
+        widget.scrollToBottom();
+      } else {
+        if (isAtBottom) {
+          widget.scrollToBottom();
+        } else {
+          widget.unreadCountNotifier.value++;
+          widget.showScrollButtonNotifier.value = true;
         }
-      });
+      }
     }
   }
 
