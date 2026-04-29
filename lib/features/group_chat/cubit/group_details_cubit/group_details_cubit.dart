@@ -15,6 +15,7 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState> {
   final GroupListCubit groupListCubit;
 
   StreamSubscription? _messagesSubscription;
+  StreamSubscription? _readReceiptsSubscription;
   StreamSubscription? _typingSubscription;
   StreamSubscription? _reactionsSubscription;
   Timer? _typingDebounce;
@@ -34,6 +35,7 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState> {
 
   void init() {
     _listenMessages();
+    _listenReadReceipts();
     _listenTyping();
     _listenReactions();
     markRead();
@@ -52,7 +54,76 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState> {
 
       cachedMessages = enriched;
       _emitLoaded();
+
+      if (enriched.isNotEmpty) {
+        final latest = enriched.first;
+        final previewText = _buildPreviewText(
+          text: latest.text,
+          messageType: latest.messageType,
+          senderName: latest.senderName,
+          isMe: latest.senderId == currentUserId,
+        );
+
+        groupListCubit.updateGroupLastMessage(
+          groupId: group.id,
+          message: previewText,
+          messageType: latest.messageType,
+          createdAt: latest.createdAt,
+          lastMessageSenderId: latest.senderId,
+          lastMessageSenderName: latest.senderName,
+        );
+      }
     });
+  }
+
+  void _listenReadReceipts() {
+    _readReceiptsSubscription?.cancel();
+    _readReceiptsSubscription = _services
+        .getReadReceiptsStream(group.id)
+        .listen((receipts) {
+          if (receipts.isEmpty) return;
+
+          final receiptMap = <String, Set<String>>{};
+          for (final r in receipts) {
+            final id = r['id'] as String?;
+            final readByRaw = r['read_by'];
+            if (id == null) continue;
+            Set<String> readBySet = {};
+            if (readByRaw is List) {
+              readBySet = readByRaw.map((e) => e.toString()).toSet();
+            }
+            receiptMap[id] = readBySet;
+          }
+
+          bool changed = false;
+          cachedMessages =
+              cachedMessages.map((msg) {
+                final newReadBy = receiptMap[msg.id];
+                if (newReadBy != null && newReadBy != msg.readBy) {
+                  changed = true;
+                  return msg.copyWith(readBy: newReadBy);
+                }
+                return msg;
+              }).toList();
+
+          if (changed) _emitLoaded();
+        });
+  }
+
+  String _buildPreviewText({
+    required String text,
+    required String messageType,
+    required String senderName,
+    required bool isMe,
+  }) {
+    final prefix = isMe ? 'You' : senderName;
+    final content = switch (messageType) {
+      'image' => '📷 Photo',
+      'video' => '🎥 Video',
+      'voice' => '🎤 Voice message',
+      _ => text,
+    };
+    return '$prefix: $content';
   }
 
   void _listenReactions() {
@@ -276,9 +347,14 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState> {
     });
   }
 
+  GroupModel get currentGroup => group;
+
+  void onGroupAvatarUpdated(String newUrl) {}
+
   @override
   Future<void> close() {
     _messagesSubscription?.cancel();
+    _readReceiptsSubscription?.cancel();
     _typingSubscription?.cancel();
     _reactionsSubscription?.cancel();
     _typingDebounce?.cancel();

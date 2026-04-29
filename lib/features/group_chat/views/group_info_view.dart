@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
@@ -45,17 +46,48 @@ class _GroupInfoViewState extends State<GroupInfoView> {
   }
 
   Future<void> _changeGroupPhoto() async {
-    final picked = await ImagePicker().pickImage(source: ImageSource.gallery);
+    final picked = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 80,
+      maxWidth: 800,
+    );
     if (picked == null || !mounted) return;
 
-    final url = await _services.uploadGroupFile(File(picked.path), 'image');
-    await _services.updateGroup(groupId: widget.group.id, avatarUrl: url);
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
 
-    if (mounted) {
-      setState(() {
-        _currentAvatarUrl = url;
-      });
-      context.read<GroupListCubit>().loadGroups(isRefresh: true);
+    try {
+      final url = await _services.uploadGroupAvatar(File(picked.path));
+      await _services.updateGroup(groupId: widget.group.id, avatarUrl: url);
+
+      if (mounted) {
+        Navigator.pop(context);
+
+        setState(() => _currentAvatarUrl = url);
+
+        context.read<GroupListCubit>().updateGroupAvatar(
+          groupId: widget.group.id,
+          newAvatarUrl: url,
+        );
+
+        if (widget.group.avatarUrl != null &&
+            widget.group.avatarUrl!.isNotEmpty) {
+          await CachedNetworkImage.evictFromCache(widget.group.avatarUrl!);
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to update photo: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 

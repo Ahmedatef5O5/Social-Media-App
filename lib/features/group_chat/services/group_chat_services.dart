@@ -311,11 +311,44 @@ class GroupChatServices {
 
   Future<void> markGroupMessagesRead(String groupId) async {
     try {
-      await _supabase.rpc(
-        'mark_group_messages_read',
-        params: {'p_group_id': groupId, 'p_user_id': currentUserId},
-      );
-    } catch (_) {}
+      final unread = await _supabase
+          .from('group_messages')
+          .select('id, read_by')
+          .eq('group_id', groupId)
+          .neq('sender_id', currentUserId);
+
+      for (final msg in unread as List) {
+        final readByRaw = msg['read_by'];
+        List<String> readBy = [];
+        if (readByRaw is List) {
+          readBy = readByRaw.map((e) => e.toString()).toList();
+        }
+
+        if (!readBy.contains(currentUserId)) {
+          readBy.add(currentUserId);
+          await _supabase
+              .from('group_messages')
+              .update({'read_by': readBy})
+              .eq('id', msg['id'] as String);
+        }
+      }
+    } catch (e) {
+      debugPrint('markGroupMessagesRead error: $e');
+    }
+  }
+
+  Stream<List<Map<String, dynamic>>> getReadReceiptsStream(String groupId) {
+    return _supabase
+        .from('group_messages')
+        .stream(primaryKey: ['id'])
+        .eq('group_id', groupId)
+        .map(
+          (data) =>
+              data
+                  .where((m) => m['sender_id'] == currentUserId)
+                  .map((m) => {'id': m['id'], 'read_by': m['read_by'] ?? []})
+                  .toList(),
+        );
   }
 
   Future<String> uploadGroupFile(
@@ -375,6 +408,53 @@ class GroupChatServices {
     } on dio_pkg.DioException catch (e) {
       debugPrint('Dio Upload Error: ${e.response?.data ?? e.message}');
       throw Exception('Failed to upload file: ${e.message}');
+    }
+  }
+
+  Future<String> uploadGroupAvatar(File file) async {
+    final ext = file.path.split('.').last.toLowerCase();
+    final fileName =
+        'group_avatar_${_supabase.auth.currentUser!.id}_${DateTime.now().millisecondsSinceEpoch}.$ext';
+
+    const bucket = 'avatars';
+    final path = 'groups/$fileName';
+
+    try {
+      final bytes = await file.readAsBytes();
+
+      await _supabase.storage
+          .from(bucket)
+          .uploadBinary(
+            path,
+            bytes,
+            fileOptions: FileOptions(contentType: 'image/$ext', upsert: true),
+          );
+
+      final url = _supabase.storage.from(bucket).getPublicUrl(path);
+      return url;
+    } catch (e) {
+      debugPrint('uploadGroupAvatar bucket=$bucket error: $e');
+
+      try {
+        final bytes = await file.readAsBytes();
+        const fallbackBucket = 'chat-images';
+        final fallbackPath = '${_supabase.auth.currentUser!.id}/$fileName';
+
+        await _supabase.storage
+            .from(fallbackBucket)
+            .uploadBinary(
+              fallbackPath,
+              bytes,
+              fileOptions: FileOptions(contentType: 'image/$ext', upsert: true),
+            );
+
+        return _supabase.storage
+            .from(fallbackBucket)
+            .getPublicUrl(fallbackPath);
+      } catch (e2) {
+        debugPrint('uploadGroupAvatar fallback error: $e2');
+        rethrow;
+      }
     }
   }
 

@@ -6,6 +6,7 @@ String buildGroupLastMessagePreview({
 }) {
   final type = group.lastMessageType ?? 'text';
 
+
   final hasNoMessage =
       (group.lastMessage == null || group.lastMessage!.trim().isEmpty) &&
       type == 'text';
@@ -35,7 +36,7 @@ String buildGroupLastMessagePreview({
     case 'voice':
       return '$senderName: 🎤 Voice message';
     case 'call':
-      return '$senderName: 📞 Call';
+      return '$senderName: 📞 Group Call';
     case 'text':
     default:
       return '$senderName: ${group.lastMessage}';
