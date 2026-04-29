@@ -31,6 +31,11 @@ migrate_working_dir/
 
 master_code.txt
 repomix-output.xml
+repomix-output.md
+
+export_groups_calls.ps1
+group_calls_ai_dump.md
+
 
 
 
