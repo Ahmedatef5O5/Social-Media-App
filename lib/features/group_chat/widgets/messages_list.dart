@@ -15,10 +15,19 @@ class GroupMessagesList extends StatefulWidget {
   final ItemScrollController scrollController;
   final ItemPositionsListener positionsListener;
 
+  final ValueNotifier<bool> showScrollButtonNotifier;
+  final ValueNotifier<int> unreadCountNotifier;
+  final VoidCallback scrollToBottom;
+  final bool Function() isAtBottom;
+
   const GroupMessagesList({
     super.key,
     required this.scrollController,
     required this.positionsListener,
+    required this.showScrollButtonNotifier,
+    required this.unreadCountNotifier,
+    required this.scrollToBottom,
+    required this.isAtBottom,
   });
 
   @override
@@ -26,17 +35,12 @@ class GroupMessagesList extends StatefulWidget {
 }
 
 class _GroupMessagesListState extends State<GroupMessagesList> {
-  // ─── Audio ───────────────────────────────────────────
   static final AudioPlayer _audioPlayer = AudioPlayer();
   static String? _lastPlayedMessageId;
 
-  // ─── Scroll / Unread ─────────────────────────────────
   int _lastMessageCount = 0;
   bool _hasLoadedOnce = false;
-  final ValueNotifier<int> _unreadCountNotifier = ValueNotifier(0);
-  final ValueNotifier<bool> _showScrollButtonNotifier = ValueNotifier(false);
 
-  // ─── Helpers ─────────────────────────────────────────
   Future<void> _playNotificationSound() async {
     try {
       await _audioPlayer.play(
@@ -45,14 +49,6 @@ class _GroupMessagesListState extends State<GroupMessagesList> {
     } catch (e) {
       debugPrint('[GroupChat] Error playing sound: $e');
     }
-  }
-
-  void _scrollToBottom() {
-    if (widget.scrollController.isAttached) {
-      widget.scrollController.jumpTo(index: 0);
-    }
-    _unreadCountNotifier.value = 0;
-    _showScrollButtonNotifier.value = false;
   }
 
   void _handleNewMessages(BuildContext context, GroupDetailsState state) {
@@ -69,10 +65,7 @@ class _GroupMessagesListState extends State<GroupMessagesList> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
 
-      final positions = widget.positionsListener.itemPositions.value;
-      final isAtBottom = positions.any((p) => p.index == 0);
-
-      _showScrollButtonNotifier.value = !isAtBottom;
+      final atBottom = widget.isAtBottom();
 
       if (!isNewMessage || previousCount == 0) return;
 
@@ -85,23 +78,16 @@ class _GroupMessagesListState extends State<GroupMessagesList> {
       }
 
       if (lastMsg.senderId == currentUserId) {
-        _scrollToBottom();
+        widget.scrollToBottom();
       } else {
-        if (isAtBottom) {
-          _scrollToBottom();
+        if (atBottom) {
+          widget.scrollToBottom();
         } else {
-          _unreadCountNotifier.value++;
-          _showScrollButtonNotifier.value = true;
+          widget.unreadCountNotifier.value++;
+          widget.showScrollButtonNotifier.value = true;
         }
       }
     });
-  }
-
-  @override
-  void dispose() {
-    _unreadCountNotifier.dispose();
-    _showScrollButtonNotifier.dispose();
-    super.dispose();
   }
 
   @override
@@ -151,11 +137,12 @@ class _GroupMessagesListState extends State<GroupMessagesList> {
 
               Positioned(
                 bottom: 10,
-                right: 14,
+                left: 14,
+                // right: 14,
                 child: _ScrollToBottomButton(
-                  showNotifier: _showScrollButtonNotifier,
-                  countNotifier: _unreadCountNotifier,
-                  onTap: _scrollToBottom,
+                  showNotifier: widget.showScrollButtonNotifier,
+                  countNotifier: widget.unreadCountNotifier,
+                  onTap: widget.scrollToBottom,
                 ),
               ),
             ],
@@ -198,63 +185,71 @@ class _ScrollToBottomButton extends StatelessWidget {
     return ValueListenableBuilder<bool>(
       valueListenable: showNotifier,
       builder: (context, showButton, _) {
-        if (!showButton) return const SizedBox.shrink();
-
-        return GestureDetector(
-          onTap: onTap,
-          child: ValueListenableBuilder<int>(
-            valueListenable: countNotifier,
-            builder: (context, count, _) {
-              return Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  Material(
-                    elevation: 4,
-                    shape: const CircleBorder(),
-                    color: primary,
-                    child: const Padding(
-                      padding: EdgeInsets.all(10),
-                      child: Icon(
-                        Icons.keyboard_arrow_down_rounded,
-                        color: Colors.white,
-                        size: 22,
-                      ),
+        return AnimatedSwitcher(
+          duration: const Duration(milliseconds: 200),
+          child:
+              showButton
+                  ? GestureDetector(
+                    key: const ValueKey('btn'),
+                    onTap: onTap,
+                    child: ValueListenableBuilder<int>(
+                      valueListenable: countNotifier,
+                      builder: (context, count, _) {
+                        return Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            Material(
+                              elevation: 4,
+                              shape: const CircleBorder(),
+                              color: primary,
+                              child: const Padding(
+                                padding: EdgeInsets.all(10),
+                                child: Icon(
+                                  Icons.keyboard_arrow_down_rounded,
+                                  color: Colors.white,
+                                  size: 22,
+                                ),
+                              ),
+                            ),
+                            if (count > 0)
+                              Positioned(
+                                top: -6,
+                                left: -4,
+                                // right: -4,
+                                child: Container(
+                                  constraints: const BoxConstraints(
+                                    minWidth: 18,
+                                    minHeight: 18,
+                                  ),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 4,
+                                    vertical: 1,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.red,
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(
+                                      color: Colors.white,
+                                      width: 1.5,
+                                    ),
+                                  ),
+                                  child: Text(
+                                    count > 99 ? '99+' : '$count',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 9,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        );
+                      },
                     ),
-                  ),
-
-                  if (count > 0)
-                    Positioned(
-                      top: -6,
-                      right: -4,
-                      child: Container(
-                        constraints: const BoxConstraints(
-                          minWidth: 18,
-                          minHeight: 18,
-                        ),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 4,
-                          vertical: 1,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.red,
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: Colors.white, width: 1.5),
-                        ),
-                        child: Text(
-                          count > 99 ? '99+' : '$count',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 9,
-                            fontWeight: FontWeight.bold,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                    ),
-                ],
-              );
-            },
-          ),
+                  )
+                  : const SizedBox.shrink(key: ValueKey('empty')),
         );
       },
     );
