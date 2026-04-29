@@ -117,15 +117,30 @@ class NotificationService {
   void _listenToForegroundMessages() {
     FirebaseMessaging.onMessage.listen((RemoteMessage message) async {
       final type = message.data['notificationType'] as String? ?? 'chat';
+
       if (type == 'incoming_call') {
         await _handleIncomingCallData(message.data);
         return;
       }
-      final senderId = message.data['senderId'] as String?;
-      if (senderId != null &&
-          !ActiveScreenTracker.isViewingChatWith(senderId)) {
-        await showNotificationFromMessage(message);
+
+      if (type == 'chat') {
+        final senderId = message.data['senderId'] as String?;
+        if (senderId != null &&
+            !ActiveScreenTracker.isViewingChatWith(senderId)) {
+          await showNotificationFromMessage(message);
+        }
+        return;
       }
+
+      if (type == 'group_message') {
+        final groupId = message.data['groupId'] as String?;
+        if (groupId != null && !ActiveScreenTracker.isViewingGroup(groupId)) {
+          await showNotificationFromMessage(message);
+        }
+        return;
+      }
+
+      await showNotificationFromMessage(message);
     });
   }
 
