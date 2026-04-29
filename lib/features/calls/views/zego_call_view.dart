@@ -4,7 +4,7 @@ import 'package:zego_uikit_prebuilt_call/zego_uikit_prebuilt_call.dart';
 import 'package:zego_uikit/zego_uikit.dart';
 import '../../../core/secrets/app_secrets.dart';
 import '../model/call_model.dart';
-import '../cubit/call_cubit.dart';
+import '../cubits/single_call_cubit/call_cubit.dart';
 
 class ZegoCallView extends StatelessWidget {
   final CallModel call;

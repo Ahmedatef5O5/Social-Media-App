@@ -7,7 +7,7 @@ import 'package:social_media_app/features/chats/widgets/custom_icon_btn_widget.d
 import '../../../core/constants/app_images.dart';
 import '../../../core/helpers/formatted_date.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
-import '../../calls/cubit/call_cubit.dart';
+import '../../calls/cubits/single_call_cubit/call_cubit.dart';
 import '../../calls/model/call_model.dart';
 import '../cubit/chat_details_cubit/chat_details_cubit.dart';
 import '../helper/call_actions.dart';

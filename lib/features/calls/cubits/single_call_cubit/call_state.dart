@@ -1,4 +1,4 @@
-import '../model/call_model.dart';
+import '../../model/call_model.dart';
 
 abstract class CallState {}
 

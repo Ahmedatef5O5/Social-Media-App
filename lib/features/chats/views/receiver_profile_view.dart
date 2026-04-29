@@ -9,7 +9,7 @@ import 'package:social_media_app/features/chats/widgets/full_screen_media_view.d
 import '../../../core/router/app_routes.dart';
 import '../../../core/utilities/supabase_constants.dart';
 import '../../../core/widgets/custom_user_profile_image_section.dart';
-import '../../calls/cubit/call_cubit.dart';
+import '../../calls/cubits/single_call_cubit/call_cubit.dart';
 import '../../calls/model/call_model.dart';
 import '../helper/call_actions.dart';
 import '../helper/safe_pop.dart';

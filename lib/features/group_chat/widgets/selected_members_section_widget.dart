@@ -45,7 +45,7 @@ class SelectedMembersSection extends StatelessWidget {
                         children: [
                           CircleAvatar(
                             radius: 22,
-                            backgroundColor: primary.withOpacity(0.12),
+                            backgroundColor: primary.withValues(alpha: 0.12),
                             backgroundImage:
                                 (imageUrl != null && imageUrl.isNotEmpty)
                                     ? CachedNetworkImageProvider(imageUrl)

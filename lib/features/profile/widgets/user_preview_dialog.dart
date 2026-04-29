@@ -5,7 +5,7 @@ import 'package:social_media_app/core/constants/app_images.dart';
 import 'package:social_media_app/core/widgets/custom_loading_indicator.dart';
 import 'package:social_media_app/features/chats/models/chat_user_model.dart';
 import '../../../core/router/app_routes.dart';
-import '../../calls/cubit/call_cubit.dart';
+import '../../calls/cubits/single_call_cubit/call_cubit.dart';
 import '../../calls/model/call_model.dart';
 import '../../chats/helper/call_actions.dart';
 
