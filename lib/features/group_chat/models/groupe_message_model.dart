@@ -17,10 +17,8 @@ class GroupMessageModel {
   final String? replyToSenderName;
   final String? replyToMessageType;
 
-  // Multiple reactions: { userId: emoji }
   final Map<String, String> reactions;
 
-  // Set of userIds who read this message
   final Set<String> readBy;
 
   const GroupMessageModel({
@@ -93,7 +91,6 @@ class GroupMessageModel {
     Map<String, dynamic> map, {
     List<Map<String, dynamic>> reactionsList = const [],
   }) {
-    // Build reactions map from joined data
     final Map<String, String> reactionsMap = {};
     for (final r in reactionsList) {
       final userId = r['user_id'] as String?;
@@ -103,7 +100,6 @@ class GroupMessageModel {
       }
     }
 
-    // read_by may come as a JSON array of user IDs
     final readByRaw = map['read_by'];
     Set<String> readBySet = {};
     if (readByRaw is List) {
