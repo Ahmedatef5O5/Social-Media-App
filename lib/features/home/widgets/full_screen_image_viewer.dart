@@ -2,6 +2,9 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:social_media_app/core/themes/app_colors.dart';
+import 'package:social_media_app/core/widgets/custom_loading_indicator.dart';
+
+import '../../../core/services/gallery_services.dart';
 
 class FullScreenImageViewer extends StatefulWidget {
   const FullScreenImageViewer({super.key});
@@ -15,6 +18,7 @@ class _FullScreenImageViewerState extends State<FullScreenImageViewer> {
       TransformationController();
 
   double _dragOffset = 0;
+  bool _isSaving = false;
 
   void _handleDoubleTap() {
     if (_transformationController.value != Matrix4.identity()) {
@@ -84,14 +88,64 @@ class _FullScreenImageViewerState extends State<FullScreenImageViewer> {
                         ),
                       ),
 
-                      IconButton(
-                        onPressed: () {},
-                        icon: const Icon(
-                          Icons.more_vert,
-                          color: AppColors.white,
-                          size: 28,
-                        ),
-                      ),
+                      if (!isAsset)
+                        _isSaving
+                            ? const Padding(
+                              padding: EdgeInsets.all(12.0),
+                              child: SizedBox(
+                                width: 24,
+                                height: 24,
+                                child: CustomLoadingIndicator(
+                                  color: Colors.white,
+                                ),
+                              ),
+                            )
+                            : PopupMenuButton<String>(
+                              color: Colors.white,
+                              icon: const Icon(
+                                Icons.more_vert,
+                                color: Colors.white,
+                                size: 28,
+                              ),
+                              offset: const Offset(-24, kToolbarHeight - 12),
+                              onSelected: (value) async {
+                                if (value == 'save') {
+                                  setState(() => _isSaving = true);
+
+                                  await GalleryServices.saveMediaToGallery(
+                                    context: context,
+                                    url: imageUrl,
+                                    isVideo: false,
+                                  );
+
+                                  if (mounted) {
+                                    setState(() => _isSaving = false);
+                                  }
+                                }
+                              },
+                              itemBuilder:
+                                  (_) => [
+                                    const PopupMenuItem(
+                                      value: 'save',
+                                      child: Row(
+                                        children: [
+                                          Icon(
+                                            Icons.download,
+                                            size: 18,
+                                            color: Colors.black45,
+                                          ),
+                                          SizedBox(width: 8),
+                                          Text(
+                                            'Save to gallery',
+                                            style: TextStyle(
+                                              color: Colors.black45,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                            ),
                     ],
                   ),
                 ),

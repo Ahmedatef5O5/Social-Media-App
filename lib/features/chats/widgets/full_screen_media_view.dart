@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
+import '../../../core/services/gallery_services.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
 
 class FullScreenMediaView extends StatefulWidget {
@@ -91,6 +92,25 @@ class _FullScreenMediaViewState extends State<FullScreenMediaView> {
     setState(() {});
   }
 
+  bool _isSaving = false;
+
+  Future<void> _saveMediaToGallery() async {
+    final url = widget.imageUrl ?? widget.videoUrl;
+    if (url == null) return;
+
+    setState(() => _isSaving = true);
+
+    await GalleryServices.saveMediaToGallery(
+      context: context,
+      url: url,
+      isVideo: widget.videoUrl != null,
+    );
+
+    if (mounted) {
+      setState(() => _isSaving = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
@@ -117,7 +137,6 @@ class _FullScreenMediaViewState extends State<FullScreenMediaView> {
         if (_showControls) _hideControlsAfterDelay();
       },
       child: Scaffold(
-        // backgroundColor: Colors.transparent,
         backgroundColor: Colors.black.withValues(
           alpha: (.95 - (_dragOffset.abs() / 500)).clamp(0.0, 1.0),
         ),
@@ -128,6 +147,47 @@ class _FullScreenMediaViewState extends State<FullScreenMediaView> {
 
           iconTheme: const IconThemeData(color: Colors.white),
           actions: [
+            if (widget.imageUrl != null)
+              _isSaving
+                  ? const Padding(
+                    padding: EdgeInsets.all(12.0),
+                    child: SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CustomLoadingIndicator(color: Colors.white),
+                    ),
+                  )
+                  : PopupMenuButton<String>(
+                    color: Colors.white,
+                    icon: const Icon(Icons.more_vert, color: Colors.white),
+                    offset: const Offset(-24, kToolbarHeight - 12),
+                    onSelected: (value) {
+                      if (value == 'save') {
+                        _saveMediaToGallery();
+                      }
+                    },
+                    itemBuilder:
+                        (_) => [
+                          const PopupMenuItem(
+                            value: 'save',
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.download,
+                                  size: 18,
+                                  color: Colors.black45,
+                                ),
+                                SizedBox(width: 8),
+                                Text(
+                                  'Save to gallery',
+                                  style: TextStyle(color: Colors.black45),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                  ),
+
             if (widget.videoUrl != null && _showControls)
               Padding(
                 padding: const EdgeInsets.only(right: 10),
