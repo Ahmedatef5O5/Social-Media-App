@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
+import 'package:social_media_app/features/group_chat/helpers/group_preview_dialog.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/helpers/formatted_date.dart';
 import '../../../core/router/app_routes.dart';
@@ -21,22 +22,44 @@ class GroupTileItem extends StatelessWidget {
 
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-      leading: CircleAvatar(
-        radius: 28,
-        backgroundColor: primary.withValues(alpha: 0.12),
-        backgroundImage:
-            hasAvatar ? CachedNetworkImageProvider(group.avatarUrl!) : null,
-        child:
+      leading: GestureDetector(
+        onTap:
             hasAvatar
-                ? null
-                : Text(
-                  group.name.isNotEmpty ? group.name[0].toUpperCase() : 'G',
-                  style: TextStyle(
-                    color: primary,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 20,
-                  ),
-                ),
+                ? () {
+                  showDialog(
+                    context: context,
+                    barrierColor: Colors.black54,
+                    builder: (_) => GroupPreviewDialog(group: group),
+                  );
+                }
+                : null,
+        child: ClipOval(
+          child: Container(
+            width: 52,
+            height: 52,
+            color: primary.withValues(alpha: 0.12),
+            child:
+                hasAvatar
+                    ? CachedNetworkImage(
+                      imageUrl: group.avatarUrl!,
+                      fit: BoxFit.cover,
+                      memCacheWidth: 300,
+                      memCacheHeight: 300,
+                    )
+                    : Center(
+                      child: Text(
+                        group.name.isNotEmpty
+                            ? group.name[0].toUpperCase()
+                            : 'G',
+                        style: TextStyle(
+                          color: primary,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 20,
+                        ),
+                      ),
+                    ),
+          ),
+        ),
       ),
       title: Text(
         group.name,
