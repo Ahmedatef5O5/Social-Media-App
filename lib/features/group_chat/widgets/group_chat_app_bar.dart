@@ -18,7 +18,6 @@ class GroupChatAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   Future<void> _initiateCall(BuildContext context, GroupCallType type) async {
     final navigator = Navigator.of(context);
-
     try {
       final user = Supabase.instance.client.auth.currentUser!;
       final profileData =
@@ -27,11 +26,27 @@ class GroupChatAppBar extends StatelessWidget implements PreferredSizeWidget {
               .select('name')
               .eq('id', user.id)
               .maybeSingle();
-
       final currentUserName =
           (profileData?['name'] as String?) ?? user.email ?? 'Me';
 
       final signaling = GroupCallSignalingService();
+
+      final existingCall = await signaling.getActiveCall(group.id);
+      if (existingCall != null) {
+        final joined = await signaling.acceptCall(existingCall.callId);
+        navigator.push(
+          MaterialPageRoute(
+            builder:
+                (_) => ZegoGroupCallView(
+                  call: joined,
+                  currentUserId: user.id,
+                  currentUserName: currentUserName,
+                ),
+          ),
+        );
+        return;
+      }
+
       await signaling.initiateCall(
         groupId: group.id,
         groupName: group.name,
@@ -60,7 +75,7 @@ class GroupChatAppBar extends StatelessWidget implements PreferredSizeWidget {
   Widget build(BuildContext context) {
     final primary = Theme.of(context).primaryColor;
     final hasAvatar = group.avatarUrl?.isNotEmpty == true;
-    final signalingService = GroupCallSignalingService(); 
+    final signalingService = GroupCallSignalingService();
 
     return BlocBuilder<GroupListCubit, GroupListState>(
       builder: (context, state) {
@@ -102,7 +117,7 @@ class GroupChatAppBar extends StatelessWidget implements PreferredSizeWidget {
                       backgroundColor: primary.withValues(alpha: 0.12),
                       backgroundImage:
                           hasAvatar
-                              ? CachedNetworkImageProvider(avatarUrl! )
+                              ? CachedNetworkImageProvider(avatarUrl!)
                               : null,
                       child:
                           !hasAvatar
@@ -166,7 +181,7 @@ class GroupChatAppBar extends StatelessWidget implements PreferredSizeWidget {
                                           .auth
                                           .currentUser!
                                           .id,
-                                  currentUserName: 'Me', 
+                                  currentUserName: 'Me',
                                 ),
                           ),
                         );
@@ -176,14 +191,14 @@ class GroupChatAppBar extends StatelessWidget implements PreferredSizeWidget {
                 else ...[
                   IconButton(
                     tooltip: 'Voice call',
-                    icon: Icon(Icons.phone_rounded, color: primary, size: 22),
+                    icon: Icon(Icons.phone_outlined, color: primary, size: 22),
                     onPressed:
                         () => _initiateCall(context, GroupCallType.audio),
                   ),
                   IconButton(
                     tooltip: 'Video call',
                     icon: Icon(
-                      Icons.videocam_rounded,
+                      Icons.videocam_outlined,
                       color: primary,
                       size: 22,
                     ),
@@ -191,7 +206,39 @@ class GroupChatAppBar extends StatelessWidget implements PreferredSizeWidget {
                         () => _initiateCall(context, GroupCallType.video),
                   ),
                 ],
-                const Gap(4),
+                PopupMenuButton<String>(
+                  color: Colors.white,
+                  icon: Icon(Icons.more_vert_rounded, color: primary, size: 22),
+                  offset: const Offset(-24, kToolbarHeight - 12),
+                  onSelected: (value) {
+                    if (value == 'info') {
+                      Navigator.of(context).pushNamed(
+                        AppRoutes.groupInfoViewRoute,
+                        arguments: group,
+                      );
+                    }
+                  },
+                  itemBuilder:
+                      (_) => [
+                        const PopupMenuItem(
+                          value: 'info',
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.info_outline,
+                                size: 18,
+                                color: Colors.black45,
+                              ),
+                              SizedBox(width: 8),
+                              Text(
+                                'group info',
+                                style: TextStyle(color: Colors.black45),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                ),
               ],
             );
           },
