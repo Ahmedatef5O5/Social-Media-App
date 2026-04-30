@@ -21,13 +21,10 @@ class GroupCallSignalingService {
             .eq('group_id', groupId)
             .inFilter('status', ['ringing', 'accepted', 'ongoing'])
             .maybeSingle();
-
     if (existing != null) {
       return GroupCallModel.fromMap(existing);
     }
-
     final callId = '${groupId}_${DateTime.now().millisecondsSinceEpoch}';
-
     final model = GroupCallModel(
       callId: callId,
       groupId: groupId,
@@ -40,7 +37,6 @@ class GroupCallSignalingService {
       startedAt: DateTime.now(),
       participantCount: 0,
     );
-
     await _supabase.from('group_calls').insert(model.toMap());
 
     final initiatorProfile =
@@ -64,11 +60,11 @@ class GroupCallSignalingService {
         'initiator_id': currentUserId,
         'initiator_name': currentUserName,
         'initiator_avatar': initiatorAvatar,
-        'duration': '',
+        'group_avatar_url': groupAvatarUrl ?? '',
+        'duration': null,
       }),
       'message_type': 'call',
     });
-
     return model;
   }
 
@@ -118,7 +114,7 @@ class GroupCallSignalingService {
   }
 
   Future<void> rejectCall(String callId) async {
-    //  reject call
+    // reject call
   }
 
   Future<void> endCall(
@@ -135,6 +131,7 @@ class GroupCallSignalingService {
           if (participantCount != null) 'participant_count': participantCount,
         })
         .eq('call_id', callId);
+
     try {
       final existing =
           await _supabase
@@ -153,7 +150,7 @@ class GroupCallSignalingService {
         } catch (_) {}
 
         callData['status'] = 'ended';
-        callData['duration'] = duration ?? '';
+        callData['duration'] = duration?.isNotEmpty == true ? duration : '';
 
         await _supabase
             .from('group_messages')
@@ -166,7 +163,6 @@ class GroupCallSignalingService {
   }
 
   Future<void> markAsMissed(String callId) async {
-    // 1. Update group_calls table
     await _supabase
         .from('group_calls')
         .update({
@@ -194,7 +190,7 @@ class GroupCallSignalingService {
         } catch (_) {}
 
         callData['status'] = 'missed';
-        callData['duration'] = '';
+        callData['duration'] = null;
 
         await _supabase
             .from('group_messages')
@@ -239,11 +235,9 @@ class GroupCallSignalingService {
           return list
               .where((m) {
                 if (m['initiator_id'] == myUserId) return false;
-
                 final started =
                     DateTime.tryParse(m['started_at'] ?? '')?.toUtc();
                 if (started == null) return true;
-
                 return started.isAfter(cutoff);
               })
               .map(GroupCallModel.fromMap)

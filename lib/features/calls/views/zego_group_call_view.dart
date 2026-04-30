@@ -108,33 +108,49 @@ class _ZegoGroupCallViewState extends State<ZegoGroupCallView> {
     ) {
       if (user == null) return const SizedBox.shrink();
 
-      return FutureBuilder(
-        future:
-            Supabase.instance.client
-                .from('users')
-                .select('image_url')
-                .eq('id', user.id)
-                .maybeSingle(),
-        builder: (context, snapshot) {
-          final imageUrl = snapshot.data?['image_url'] as String?;
-          if (imageUrl != null && imageUrl.isNotEmpty) {
-            return ClipOval(
-              child: CachedNetworkImage(
-                imageUrl: imageUrl,
-                fit: BoxFit.cover,
-                placeholder:
-                    (context, url) =>
-                        Container(color: primary.withValues(alpha: 0.3)),
-                errorWidget:
-                    (context, url, error) =>
-                        _buildDefaultAvatar(user.name, primary),
-              ),
-            );
-          }
-          return _buildDefaultAvatar(user.name, primary);
-        },
+      final double diameter =
+          size.width < size.height ? size.width : size.height;
+
+      return SizedBox(
+        width: diameter,
+        height: diameter,
+        child: FutureBuilder(
+          future:
+              Supabase.instance.client
+                  .from('users')
+                  .select('image_url')
+                  .eq('id', user.id)
+                  .maybeSingle(),
+          builder: (context, snapshot) {
+            final imageUrl = snapshot.data?['image_url'] as String?;
+            if (imageUrl != null && imageUrl.isNotEmpty) {
+              return ClipOval(
+                child: CachedNetworkImage(
+                  imageUrl: imageUrl,
+                  width: diameter,
+                  height: diameter,
+                  fit: BoxFit.cover,
+                  placeholder:
+                      (context, url) => Container(
+                        width: diameter,
+                        height: diameter,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: primary.withValues(alpha: 0.3),
+                        ),
+                      ),
+                  errorWidget:
+                      (context, url, error) =>
+                          _buildDefaultAvatar(user.name, primary, diameter),
+                ),
+              );
+            }
+            return _buildDefaultAvatar(user.name, primary, diameter);
+          },
+        ),
       );
     };
+
     config.audioVideoView.showUserNameOnView = false;
     config.audioVideoView.showSoundWavesInAudioMode = true;
 
@@ -220,8 +236,10 @@ class _ZegoGroupCallViewState extends State<ZegoGroupCallView> {
     );
   }
 
-  Widget _buildDefaultAvatar(String name, Color primary) {
+  Widget _buildDefaultAvatar(String name, Color primary, double diameter) {
     return Container(
+      width: diameter,
+      height: diameter,
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.2),
         shape: BoxShape.circle,
@@ -229,9 +247,9 @@ class _ZegoGroupCallViewState extends State<ZegoGroupCallView> {
       child: Center(
         child: Text(
           name.isNotEmpty ? name[0].toUpperCase() : '?',
-          style: const TextStyle(
+          style: TextStyle(
             color: Colors.white,
-            fontSize: 24,
+            fontSize: diameter * 0.38,
             fontWeight: FontWeight.bold,
           ),
         ),
