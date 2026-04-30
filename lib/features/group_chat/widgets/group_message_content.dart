@@ -5,13 +5,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
+import 'package:social_media_app/features/group_chat/widgets/group_voice_message_bubble.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/helpers/modern_circle_progress.dart';
 import '../../../core/themes/app_colors.dart';
 import '../../../core/widgets/reaction_picker_overlay.dart';
 import '../../calls/views/zego_group_call_view.dart';
+import '../../chats/widgets/image_message_widget.dart';
 import '../../chats/widgets/video_message_widget.dart';
-import '../../chats/widgets/voice_message_bubble_widget.dart';
 import '../cubit/group_details_cubit/group_details_cubit.dart';
 import '../cubit/group_details_cubit/group_details_state.dart';
 import '../models/group_call_model.dart';
@@ -51,12 +52,9 @@ class _GroupMessageBubbleState extends State<GroupMessageBubble> {
 
   void _showPicker() {
     if (_overlayEntry != null) return;
-
     final currentUserId = Supabase.instance.client.auth.currentUser!.id;
     final myReaction = widget.message.reactions[currentUserId];
-
-    final isCall = widget.message.messageType == 'call';
-    if (isCall) return;
+    if (widget.message.messageType == 'call') return;
 
     try {
       _overlayEntry = ChatReactionOverlay.create(
@@ -119,6 +117,7 @@ class GroupMessageContent extends StatefulWidget {
 
 class _GroupMessageContentState extends State<GroupMessageContent> {
   final _anchorKey = GlobalKey();
+
   @override
   Widget build(BuildContext context) {
     final primary = Theme.of(context).primaryColor;
@@ -175,14 +174,9 @@ class _GroupMessageContentState extends State<GroupMessageContent> {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               if (!widget.isMe) ...[
-                GroupMessageAvatar(
-                  avatar: widget.message.senderAvatar,
-                  name: widget.message.senderName,
-                  primary: primary,
-                ),
+                GroupMessageAvatar(message: widget.message, primary: primary),
                 const Gap(8),
               ],
-
               Flexible(
                 child: KeyedSubtree(
                   key: _anchorKey,
@@ -202,7 +196,6 @@ class _GroupMessageContentState extends State<GroupMessageContent> {
                         isUploading: isUploading,
                         uploadProgress: uploadProgress,
                       ),
-
                       if (widget.message.reactions.isNotEmpty)
                         Positioned(
                           bottom: 12.0,
@@ -239,19 +232,131 @@ class _GroupMessageContentState extends State<GroupMessageContent> {
     double? uploadProgress,
   }) {
     final hasReaction = widget.message.reactions.isNotEmpty;
+    final hasReactions =
+        widget.message.reactions != null && widget.message.reactions.isNotEmpty;
+
     final timeWidget = GroupTimeRow(message: widget.message, isMe: widget.isMe);
+    final currentUserId = Supabase.instance.client.auth.currentUser!.id;
+    final displayText = widget.message.caption ?? widget.message.text;
+
+    double minBubbleWidth = 0;
+    if (hasReactions) {
+      final uniqueEmojis = widget.message.reactions.values.toSet().length;
+
+      minBubbleWidth = (uniqueEmojis * 36.0) + 24.0;
+
+      final maxWidth = MediaQuery.of(context).size.width * 0.75;
+      minBubbleWidth = minBubbleWidth.clamp(0.0, maxWidth);
+    }
 
     Widget content;
+
     if (isCall) {
       content = _buildCallBubble(context, textColor, timeWidget, primary);
-    } else if (isVoice) {
-      content = _buildVoiceBubble(context, timeWidget);
-    } else if (isImage) {
-      content = _buildImageBubble(context, textColor, timeWidget);
-    } else if (isVideo) {
-      content = _buildVideoBubble(context, textColor, timeWidget);
     } else {
-      content = _buildTextBubble(context, textColor, timeWidget, primary);
+      content = IntrinsicWidth(
+        child: Container(
+          constraints: BoxConstraints(minWidth: minBubbleWidth),
+
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (widget.message.replyToMessageId != null)
+                GestureDetector(
+                  onTap: () {
+                    // _navigateToOriginalMessage(
+                    //   context,
+                    //   widget.message.replyToMessageId!,
+                    // );
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.only(bottom: 6),
+                    child: GroupReplyBubblePreview(
+                      message: widget.message,
+                      isMe: widget.isMe,
+                      currentUserId: currentUserId,
+                    ),
+                  ),
+                ),
+
+              if (!widget.isMe)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 4),
+                  child: Text(
+                    widget.message.senderName,
+                    style: TextStyle(
+                      color: primary,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+
+              if (isImage)
+                SizedBox(
+                  width: 305,
+                  height: 320,
+                  child:
+                      widget.message.imageUrl != null
+                          ? ImageMessageWidget(
+                            imageUrl: widget.message.imageUrl!,
+                            caption: widget.message.caption,
+                            isMe: widget.isMe,
+                          )
+                          : const SizedBox.shrink(),
+                ),
+
+              if (isVideo)
+                SizedBox(
+                  height: 200,
+                  width: 280,
+                  child:
+                      widget.message.videoUrl != null
+                          ? VideoMessageWidget(
+                            videoUrl: widget.message.videoUrl!,
+                            caption: widget.message.caption,
+                            isMe: widget.isMe,
+                          )
+                          : const SizedBox.shrink(),
+                ),
+
+              if (isVoice)
+                GroupVoiceMessageBubbleWidget(
+                  voiceUrl: widget.message.voiceUrl ?? '',
+                  isMe: widget.isMe,
+                  timestamp: widget.message.createdAt,
+                  isUploading: isUploading,
+                ),
+
+              if (displayText.isNotEmpty)
+                Padding(
+                  padding: EdgeInsets.only(top: (isImage || isVideo) ? 8 : 0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        displayText,
+                        style: TextStyle(
+                          color: textColor,
+                          fontSize: 15,
+                          height: 1.3,
+                        ),
+                      ),
+                      Align(
+                        alignment: Alignment.bottomRight,
+                        child: timeWidget,
+                      ),
+                    ],
+                  ),
+                ),
+
+              if (displayText.isEmpty && (isImage || isVideo))
+                Align(alignment: Alignment.bottomRight, child: timeWidget),
+            ],
+          ),
+        ),
+      );
     }
 
     return Stack(
@@ -302,7 +407,7 @@ class _GroupMessageContentState extends State<GroupMessageContent> {
             ),
           ),
         ),
-        // Upload progress overlay
+
         if (isUploading)
           Positioned.fill(
             child: ClipRRect(
@@ -330,203 +435,6 @@ class _GroupMessageContentState extends State<GroupMessageContent> {
     );
   }
 
-  Widget _buildTextBubble(
-    BuildContext context,
-    Color textColor,
-    Widget timeWidget,
-    Color primary,
-  ) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 8, 12, 6),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (!widget.isMe)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 2),
-              child: Text(
-                widget.message.senderName,
-                style: TextStyle(
-                  color: primary,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 12,
-                ),
-              ),
-            ),
-          if (widget.message.replyToMessageId != null)
-            GroupMessageReplyPreview(
-              message: widget.message,
-              isMe: widget.isMe,
-              primary: primary,
-            ),
-          if (widget.message.text.isNotEmpty)
-            Text(
-              widget.message.text,
-              style: TextStyle(color: textColor, fontSize: 15, height: 1.3),
-            ),
-          const Gap(2),
-          Align(alignment: Alignment.bottomRight, child: timeWidget),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildImageBubble(
-    BuildContext context,
-    Color textColor,
-    Widget timeWidget,
-  ) {
-    if (widget.message.imageUrl == null) {
-      return Container(
-        width: 200,
-        height: 200,
-        color: Colors.grey.shade800,
-        child: const Center(
-          child: Icon(Icons.image, color: Colors.white54, size: 48),
-        ),
-      );
-    }
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        GestureDetector(
-          onTap: () => _openFullscreenImage(context, widget.message.imageUrl!),
-          child: CachedNetworkImage(
-            imageUrl: widget.message.imageUrl!,
-            width: 260,
-            height: 260,
-            fit: BoxFit.cover,
-            placeholder:
-                (_, __) => Container(
-                  width: 260,
-                  height: 260,
-                  color: Colors.grey.shade300,
-                  child: const Center(child: CircularProgressIndicator()),
-                ),
-            errorWidget:
-                (_, __, ___) => Container(
-                  width: 260,
-                  height: 260,
-                  color: Colors.grey.shade300,
-                  child: const Icon(Icons.broken_image, size: 48),
-                ),
-          ),
-        ),
-        if (widget.message.caption?.isNotEmpty == true)
-          Padding(
-            padding: const EdgeInsets.fromLTRB(10, 6, 10, 0),
-            child: Text(
-              widget.message.caption!,
-              style: TextStyle(color: textColor, fontSize: 13),
-            ),
-          ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(8, 4, 8, 6),
-          child: Align(alignment: Alignment.bottomRight, child: timeWidget),
-        ),
-      ],
-    );
-  }
-
-  void _openFullscreenImage(BuildContext context, String url) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder:
-            (_) => Scaffold(
-              backgroundColor: Colors.black,
-              appBar: AppBar(backgroundColor: Colors.black),
-              body: Center(
-                child: InteractiveViewer(
-                  child: CachedNetworkImage(imageUrl: url),
-                ),
-              ),
-            ),
-      ),
-    );
-  }
-
-  Widget _buildVideoBubble(
-    BuildContext context,
-    Color textColor,
-    Widget timeWidget,
-  ) {
-    if (widget.message.videoUrl == null) {
-      return Container(
-        width: 200,
-        height: 150,
-        color: Colors.grey.shade800,
-        child: const Center(
-          child: Icon(Icons.videocam, color: Colors.white54, size: 48),
-        ),
-      );
-    }
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SizedBox(
-          height: 200,
-          width: 260,
-          child: VideoMessageWidget(
-            videoUrl: widget.message.videoUrl!,
-            caption: widget.message.caption,
-            isMe: widget.isMe,
-          ),
-        ),
-        if (widget.message.caption?.isNotEmpty == true)
-          Padding(
-            padding: const EdgeInsets.fromLTRB(10, 6, 10, 0),
-            child: Text(
-              widget.message.caption!,
-              style: TextStyle(color: textColor, fontSize: 13),
-            ),
-          ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(8, 4, 8, 6),
-          child: Align(alignment: Alignment.bottomRight, child: timeWidget),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildVoiceBubble(BuildContext context, Widget timeWidget) {
-    if (widget.message.voiceUrl == null) {
-      return const Padding(
-        padding: EdgeInsets.all(12),
-        child: Text(
-          '🎤 Voice message',
-          style: TextStyle(color: Colors.white60),
-        ),
-      );
-    }
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(8, 6, 8, 6),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (!widget.isMe)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 4),
-              child: Text(
-                widget.message.senderName,
-                style: TextStyle(
-                  color: Theme.of(context).primaryColor,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 11,
-                ),
-              ),
-            ),
-          VoiceMessageBubbleWidget(
-            voiceUrl: widget.message.voiceUrl!,
-            isMe: widget.isMe,
-            timestamp: widget.message.createdAt,
-            isRead: false,
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildCallBubble(
     BuildContext context,
     Color textColor,
@@ -535,21 +443,82 @@ class _GroupMessageContentState extends State<GroupMessageContent> {
   ) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    Map<String, dynamic> callData = {};
+    Map<String, dynamic> initialData = {};
     try {
       final txt = widget.message.text.trim();
       if (txt.startsWith('{')) {
-        callData = jsonDecode(txt) as Map<String, dynamic>;
+        initialData = jsonDecode(txt) as Map<String, dynamic>;
       }
     } catch (_) {}
 
+    final isTemp = widget.message.id.startsWith('temp_');
+    if (isTemp) {
+      return _buildCallBubbleContent(
+        context,
+        initialData,
+        textColor,
+        timeWidget,
+        primary,
+        isDark,
+      );
+    }
+
+    return StreamBuilder<Map<String, dynamic>?>(
+      stream: _watchCallData(),
+      initialData: initialData.isNotEmpty ? initialData : null,
+      builder: (context, snapshot) {
+        final callData =
+            snapshot.data ?? (initialData.isNotEmpty ? initialData : {});
+
+        return _buildCallBubbleContent(
+          context,
+          callData,
+          textColor,
+          timeWidget,
+          primary,
+          isDark,
+        );
+      },
+    );
+  }
+
+  Stream<Map<String, dynamic>?> _watchCallData() {
+    return Supabase.instance.client
+        .from('group_messages')
+        .stream(primaryKey: ['id'])
+        .eq('id', widget.message.id)
+        .map((list) {
+          if (list.isEmpty) return null;
+          try {
+            final msgText = list.first['message_text'] as String? ?? '';
+            if (msgText.trim().startsWith('{')) {
+              return jsonDecode(msgText) as Map<String, dynamic>;
+            }
+          } catch (_) {}
+          return null;
+        });
+  }
+
+  Widget _buildCallBubbleContent(
+    BuildContext context,
+    Map<String, dynamic> callData,
+    Color textColor,
+    Widget timeWidget,
+    Color primary,
+    bool isDark,
+  ) {
     final status = callData['status'] as String? ?? 'ended';
     final callType = callData['call_type'] as String? ?? 'audio';
-    final duration = callData['duration'] as String? ?? '';
-    final callId = callData['call_id'] as String? ?? widget.message.text;
+
+    final rawDuration = callData['duration'];
+    final duration =
+        (rawDuration is String && rawDuration.isNotEmpty) ? rawDuration : '';
+
+    final callId = callData['call_id'] as String? ?? '';
     final groupId = callData['group_id'] as String? ?? '';
     final initiatorAvatar = callData['initiator_avatar'] as String?;
     final initiatorName = callData['initiator_name'] as String?;
+    final groupAvatarUrl = callData['group_avatar_url'] as String?;
 
     final isAudio = callType == 'audio';
     final isMissed = status == 'missed';
@@ -561,8 +530,8 @@ class _GroupMessageContentState extends State<GroupMessageContent> {
         widget.isMe
             ? primary
             : (isDark
-                ? Colors.white.withValues(alpha :0.09)
-                : primary.withValues(alpha :0.08));
+                ? Colors.white.withOpacity(0.09)
+                : primary.withOpacity(0.08));
 
     final labelColor =
         widget.isMe ? Colors.white : (isDark ? Colors.white70 : Colors.black87);
@@ -597,7 +566,7 @@ class _GroupMessageContentState extends State<GroupMessageContent> {
         border:
             !widget.isMe
                 ? Border.all(
-                  color: primary.withValues(alpha :isDark ? 0.2 : 0.12),
+                  color: primary.withOpacity(isDark ? 0.2 : 0.12),
                   width: 1,
                 )
                 : null,
@@ -624,7 +593,7 @@ class _GroupMessageContentState extends State<GroupMessageContent> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              _buildInitiatorAvatar(initiatorAvatar, initiatorName, primary),
+              _buildGroupAvatar(groupAvatarUrl, primary),
               const SizedBox(width: 10),
 
               Flexible(
@@ -663,6 +632,30 @@ class _GroupMessageContentState extends State<GroupMessageContent> {
                           ),
                         ],
                       ),
+                    ] else if (isOngoing) ...[
+                      const SizedBox(height: 3),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 6,
+                            height: 6,
+                            decoration: const BoxDecoration(
+                              color: Colors.green,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            'Ongoing',
+                            style: TextStyle(
+                              color: Colors.green,
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
                     ],
                   ],
                 ),
@@ -670,7 +663,7 @@ class _GroupMessageContentState extends State<GroupMessageContent> {
             ],
           ),
 
-          if (isOngoing && groupId.isNotEmpty) ...[
+          if (isOngoing && groupId.isNotEmpty && callId.isNotEmpty) ...[
             const SizedBox(height: 10),
             _buildJoinButton(context, callId, groupId, callType, primary),
           ],
@@ -685,44 +678,41 @@ class _GroupMessageContentState extends State<GroupMessageContent> {
     );
   }
 
-  Widget _buildInitiatorAvatar(String? avatarUrl, String? name, Color primary) {
-    const double size = 38;
+  Widget _buildGroupAvatar(String? groupAvatarUrl, Color primary) {
+    const double size = 40;
+    final hasAvatar = groupAvatarUrl != null && groupAvatarUrl.isNotEmpty;
+
     return Container(
       width: size,
       height: size,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: primary.withValues(alpha :0.2),
-        border: Border.all(color: primary.withValues(alpha :0.4), width: 1.5),
+        color: primary.withOpacity(0.15),
+        border: Border.all(color: primary.withOpacity(0.35), width: 1.5),
       ),
       child: ClipOval(
         child:
-            (avatarUrl != null && avatarUrl.isNotEmpty)
+            hasAvatar
                 ? CachedNetworkImage(
-                  imageUrl: avatarUrl,
+                  imageUrl: groupAvatarUrl,
                   width: size,
                   height: size,
                   fit: BoxFit.cover,
                   errorWidget:
-                      (_, __, ___) => _avatarFallback(name ?? 'G', primary),
+                      (_, __, ___) => _groupAvatarFallback(primary, size),
                 )
-                : _avatarFallback(name ?? 'G', primary),
+                : _groupAvatarFallback(primary, size),
       ),
     );
   }
 
-  Widget _avatarFallback(String name, Color primary) {
+  Widget _groupAvatarFallback(Color primary, double size) {
     return Container(
-      color: primary.withValues(alpha :0.15),
+      width: size,
+      height: size,
+      color: primary.withOpacity(0.12),
       child: Center(
-        child: Text(
-          name.isNotEmpty ? name[0].toUpperCase() : 'G',
-          style: TextStyle(
-            color: primary,
-            fontWeight: FontWeight.bold,
-            fontSize: 16,
-          ),
-        ),
+        child: Icon(Icons.group_rounded, color: primary, size: size * 0.55),
       ),
     );
   }
@@ -731,7 +721,6 @@ class _GroupMessageContentState extends State<GroupMessageContent> {
     final localTime = widget.message.createdAt.toLocal();
     final hour = localTime.hour.toString().padLeft(2, '0');
     final minute = localTime.minute.toString().padLeft(2, '0');
-    final isDark = false;
     return Text(
       '$hour:$minute',
       style: TextStyle(
@@ -753,6 +742,12 @@ class _GroupMessageContentState extends State<GroupMessageContent> {
       builder: (context, snapshot) {
         final activeCall = snapshot.data;
         if (activeCall == null) return const SizedBox.shrink();
+        if (activeCall.callId != callId) return const SizedBox.shrink();
+
+        final currentUserId = Supabase.instance.client.auth.currentUser?.id;
+        if (activeCall.initiatorId == currentUserId) {
+          return const SizedBox.shrink();
+        }
 
         return GestureDetector(
           onTap: () async {
@@ -787,7 +782,7 @@ class _GroupMessageContentState extends State<GroupMessageContent> {
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.green.withValues(alpha :0.3),
+                  color: Colors.green.withOpacity(0.3),
                   blurRadius: 6,
                   offset: const Offset(0, 2),
                 ),
