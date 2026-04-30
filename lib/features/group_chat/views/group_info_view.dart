@@ -61,7 +61,7 @@ class _GroupInfoViewState extends State<GroupInfoView> {
 
     try {
       final url = await _services.uploadGroupAvatar(File(picked.path));
-      await _services.updateGroup(groupId: widget.group.id, avatarUrl: url);
+      await _services.updateGroupAvatarUrl(widget.group.id, url);
 
       if (mounted) {
         Navigator.pop(context);

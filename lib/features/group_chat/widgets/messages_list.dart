@@ -138,7 +138,6 @@ class _GroupMessagesListState extends State<GroupMessagesList> {
               Positioned(
                 bottom: 10,
                 left: 14,
-                // right: 14,
                 child: _ScrollToBottomButton(
                   showNotifier: widget.showScrollButtonNotifier,
                   countNotifier: widget.unreadCountNotifier,

@@ -411,6 +411,24 @@ class GroupChatServices {
     }
   }
 
+  Future<void> updateGroupAvatarUrl(String groupId, String newAvatarUrl) async {
+    try {
+      final response =
+          await _supabase
+              .from('groups')
+              .update({'avatar_url': newAvatarUrl})
+              .eq('id', groupId)
+              .select();
+
+      if (response.isEmpty) {
+        throw Exception('Database update blocked by RLS Policy!');
+      }
+    } catch (e) {
+      debugPrint('Error updating group avatar: $e');
+      rethrow;
+    }
+  }
+
   Future<String> uploadGroupAvatar(File file) async {
     final ext = file.path.split('.').last.toLowerCase();
     final fileName =
