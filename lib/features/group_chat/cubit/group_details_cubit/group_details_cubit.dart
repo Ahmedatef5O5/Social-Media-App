@@ -276,7 +276,7 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState> {
               : text;
       groupListCubit.updateGroupLastMessage(
         groupId: group.id,
-        message: 'You: $previewText',
+        message: previewText,
         messageType: messageType,
         createdAt: DateTime.now(),
         lastMessageSenderId: currentUserId,

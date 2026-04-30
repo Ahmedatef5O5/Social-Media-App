@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../models/group_model.dart';
@@ -8,7 +9,10 @@ part 'group_list_state.dart';
 class GroupListCubit extends Cubit<GroupListState> {
   final GroupChatServices _services;
   RealtimeChannel? _channel;
+  StreamSubscription? _messagesStreamSub;
   List<GroupModel> _cached = [];
+
+  final Map<String, DateTime> _lastUpdateTime = {};
 
   List<GroupModel> get cachedGroupsChats => _cached;
 
@@ -19,6 +23,79 @@ class GroupListCubit extends Cubit<GroupListState> {
   void monitorGroups() {
     loadGroups();
     _subscribeRealtime();
+    _subscribeMessagesStream();
+  }
+
+  void _subscribeMessagesStream() {
+    _messagesStreamSub?.cancel();
+
+    _messagesStreamSub = Supabase.instance.client
+        .from('group_messages')
+        .stream(primaryKey: ['id'])
+        .order('created_at', ascending: false)
+        .limit(100)
+        .listen((data) {
+          if (isClosed) return;
+          if (data.isEmpty) return;
+          if (state is! GroupListLoaded) return;
+
+          final Map<String, Map<String, dynamic>> latestPerGroup = {};
+          for (final row in data) {
+            final gId = row['group_id'] as String?;
+            if (gId == null) continue;
+            if (!latestPerGroup.containsKey(gId)) {
+              latestPerGroup[gId] = row;
+            }
+          }
+
+          for (final entry in latestPerGroup.entries) {
+            _updateGroupFromMessageRow(entry.key, entry.value);
+          }
+        });
+  }
+
+  void _updateGroupFromMessageRow(String groupId, Map<String, dynamic> row) {
+    if (state is! GroupListLoaded) return;
+
+    final createdAtStr = row['created_at'] as String?;
+    final createdAt =
+        createdAtStr != null
+            ? DateTime.tryParse(createdAtStr) ?? DateTime.now()
+            : DateTime.now();
+
+    final lastUpdate = _lastUpdateTime[groupId];
+    if (lastUpdate != null && !createdAt.isAfter(lastUpdate)) return;
+    _lastUpdateTime[groupId] = createdAt;
+
+    final messageType = row['message_type'] as String? ?? 'text';
+    final senderId = row['sender_id'] as String?;
+    final senderName = row['sender_name'] as String? ?? '';
+    final text = row['message_text'] as String? ?? '';
+
+    final isMe = senderId == _currentUserId;
+    final prefix = isMe ? 'You' : senderName;
+
+    String preview;
+    if (messageType == 'call') {
+      preview = _parseGroupCallPreview(text);
+    } else {
+      final content = switch (messageType) {
+        'image' => '📷 Photo',
+        'video' => '🎥 Video',
+        'voice' => '🎤 Voice message',
+        _ => text,
+      };
+      preview = '$prefix: $content';
+    }
+
+    _updateGroupInState(
+      groupId: groupId,
+      lastMessage: preview,
+      lastMessageType: messageType,
+      lastMessageAt: createdAt,
+      lastMessageSenderId: senderId,
+      lastMessageSenderName: senderName,
+    );
   }
 
   void _subscribeRealtime() {
@@ -28,12 +105,6 @@ class GroupListCubit extends Cubit<GroupListState> {
     _channel = Supabase.instance.client.channel(channelName);
 
     _channel!
-        .onPostgresChanges(
-          event: PostgresChangeEvent.insert,
-          schema: 'public',
-          table: 'group_messages',
-          callback: (payload) => _handleNewGroupMessage(payload),
-        )
         .onPostgresChanges(
           event: PostgresChangeEvent.all,
           schema: 'public',
@@ -47,9 +118,7 @@ class GroupListCubit extends Cubit<GroupListState> {
           callback: (payload) {
             final newRow = payload.newRecord;
             final oldRow = payload.oldRecord;
-
             final affectedUserId = newRow['user_id'] ?? oldRow['user_id'];
-
             if (affectedUserId == _currentUserId) {
               loadGroups(isRefresh: true);
             }
@@ -58,8 +127,7 @@ class GroupListCubit extends Cubit<GroupListState> {
         .onPostgresChanges(
           event: PostgresChangeEvent.update,
           schema: 'public',
-          table: 'group_members',
-
+          table: 'groups',
           callback: (payload) {
             final row = payload.newRecord;
             final groupId = row['id'] as String?;
@@ -100,53 +168,9 @@ class GroupListCubit extends Cubit<GroupListState> {
     _updateGroupAvatarInState(groupId: groupId, avatarUrl: newAvatarUrl);
   }
 
-  void _handleNewGroupMessage(PostgresChangePayload payload) {
-    final newRow = payload.newRecord;
-    if (newRow.isEmpty) {
-      loadGroups(isRefresh: true);
-      return;
-    }
-
-    final groupId = newRow['group_id'] as String?;
-    if (groupId == null) return;
-
-    final messageType = newRow['message_type'] as String? ?? 'text';
-    final senderId = newRow['sender_id'] as String?;
-    final senderName = newRow['sender_name'] as String? ?? '';
-    final text = newRow['message_text'] as String? ?? '';
-    final createdAtStr = newRow['created_at'] as String?;
-    final createdAt =
-        createdAtStr != null
-            ? DateTime.tryParse(createdAtStr) ?? DateTime.now()
-            : DateTime.now();
-
-    final isMe = senderId == _currentUserId;
-    final prefix = isMe ? 'You' : senderName;
-    final previewContent = switch (messageType) {
-      'image' => '📷 Photo',
-      'video' => '🎥 Video',
-      'voice' => '🎤 Voice message',
-      'call' => _parseGroupCallPreview(text),
-      _ => text,
-    };
-    final preview = '$prefix: $previewContent';
-
-    _updateGroupInState(
-      groupId: groupId,
-      lastMessage: preview,
-      lastMessageType: messageType,
-      lastMessageAt: createdAt,
-      lastMessageSenderId: senderId,
-      lastMessageSenderName: senderName,
-    );
-  }
-
   void _handleGroupCallChange(PostgresChangePayload payload) {
     final row = payload.newRecord;
-    if (row.isEmpty) {
-      loadGroups(isRefresh: true);
-      return;
-    }
+    if (row.isEmpty) return;
 
     final groupId = row['group_id'] as String?;
     final status = row['status'] as String?;
@@ -163,30 +187,26 @@ class GroupListCubit extends Cubit<GroupListState> {
     if (groupId == null || status == null) return;
 
     final typeIcon = type == 'video' ? '🎥' : '📞';
-    final typeLabel = type == 'video' ? 'Group video call' : 'Group Voice call';
+    final typeLabel = type == 'video' ? 'Group video call' : 'Group voice call';
 
     final preview = switch (status) {
-      'missed' => '$typeIcon $typeLabel missed',
-
-      'ringing' => '$typeIcon $typeLabel ringing…',
-
+      'missed' => '$typeIcon Missed $typeLabel',
+      'ringing' => '$typeIcon $typeLabel',
       'accepted' || 'ongoing' =>
         participants > 0
-            ? '$typeIcon $typeLabel • $participants participants'
-            : '$typeIcon $typeLabel ongoing',
-
+            ? '$typeIcon $typeLabel • $participants'
+            : '$typeIcon $typeLabel',
       'ended' =>
-        duration != null
-            ? '$typeIcon $typeLabel • $participants participants • $duration'
+        duration != null && duration.isNotEmpty
+            ? '$typeIcon $typeLabel • $duration'
             : '$typeIcon $typeLabel ended',
-
       _ => '$typeIcon $typeLabel',
     };
 
     _updateGroupInState(
       groupId: groupId,
       lastMessage: preview,
-      lastMessageType: 'group_call',
+      lastMessageType: 'call',
       lastMessageAt: updatedAt,
     );
   }
@@ -202,10 +222,9 @@ class GroupListCubit extends Cubit<GroupListState> {
     if (state is! GroupListLoaded) return;
 
     final currentState = state as GroupListLoaded;
-
     final newList = List<GroupModel>.from(currentState.groups);
-
     final idx = currentState.groups.indexWhere((g) => g.id == groupId);
+
     if (idx == -1) {
       loadGroups(isRefresh: true);
       return;
@@ -233,17 +252,38 @@ class GroupListCubit extends Cubit<GroupListState> {
 
   String _parseGroupCallPreview(String text) {
     try {
-      if (text.startsWith('{')) {
-        return text;
+      if (text.trim().startsWith('{')) {
+        final data = jsonDecode(text) as Map<String, dynamic>;
+        final callType = data['call_type'] as String? ?? 'audio';
+        final status = data['status'] as String? ?? 'ended';
+        final icon = callType == 'video' ? '🎥' : '📞';
+        final typeLabel =
+            callType == 'video' ? 'Group video call' : 'Group voice call';
+        return switch (status) {
+          'ringing' || 'accepted' || 'ongoing' => '$icon $typeLabel',
+          'missed' => '$icon Missed $typeLabel',
+          'ended' => () {
+            final duration = data['duration'] as String? ?? '';
+            return duration.isNotEmpty
+                ? '$icon $typeLabel • $duration'
+                : '$icon $typeLabel ended';
+          }(),
+          _ => '$icon $typeLabel',
+        };
       }
     } catch (_) {}
-    return 'Group call 📞';
+    return '📞 Group call';
   }
 
   Future<void> loadGroups({bool isRefresh = false}) async {
     if (!isRefresh) emit(GroupListLoading());
     try {
       _cached = await _services.getMyGroups();
+      _cached.sort((a, b) {
+        final aTime = a.lastMessageAt ?? DateTime.fromMillisecondsSinceEpoch(0);
+        final bTime = b.lastMessageAt ?? DateTime.fromMillisecondsSinceEpoch(0);
+        return bTime.compareTo(aTime);
+      });
       emit(GroupListLoaded(_cached));
     } catch (e) {
       emit(GroupListError(e.toString()));
@@ -272,6 +312,7 @@ class GroupListCubit extends Cubit<GroupListState> {
     String? lastMessageSenderId,
     String? lastMessageSenderName,
   }) {
+    _lastUpdateTime[groupId] = createdAt;
     _updateGroupInState(
       groupId: groupId,
       lastMessage: message,
@@ -285,6 +326,7 @@ class GroupListCubit extends Cubit<GroupListState> {
   @override
   Future<void> close() {
     _channel?.unsubscribe();
+    _messagesStreamSub?.cancel();
     return super.close();
   }
 }
