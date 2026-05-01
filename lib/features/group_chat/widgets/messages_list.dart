@@ -131,6 +131,7 @@ class _GroupMessagesListState extends State<GroupMessagesList> {
                       index: index,
                       messages: messages,
                       typing: typing,
+                      itemScrollController: widget.scrollController,
                     ),
                 separatorBuilder: (_, __) => const Gap(4),
               ),
@@ -202,7 +203,7 @@ class _ScrollToBottomButton extends StatelessWidget {
                               shape: const CircleBorder(),
                               color: primary,
                               child: const Padding(
-                                padding: EdgeInsets.all(10),
+                                padding: EdgeInsets.all(6),
                                 child: Icon(
                                   Icons.keyboard_arrow_down_rounded,
                                   color: Colors.white,

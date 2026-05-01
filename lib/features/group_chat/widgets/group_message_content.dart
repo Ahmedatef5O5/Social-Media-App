@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
+import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import 'package:social_media_app/features/group_chat/widgets/group_voice_message_bubble.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/helpers/modern_circle_progress.dart';
@@ -28,12 +29,14 @@ class GroupMessageBubble extends StatefulWidget {
   final GroupMessageModel message;
   final bool isMe;
   final Function(GroupMessageModel) onReply;
+  final ItemScrollController itemScrollController;
 
   const GroupMessageBubble({
     super.key,
     required this.message,
     required this.isMe,
     required this.onReply,
+    required this.itemScrollController,
   });
 
   @override
@@ -92,6 +95,7 @@ class _GroupMessageBubbleState extends State<GroupMessageBubble> {
         isMe: widget.isMe,
         onReply: widget.onReply,
         onLongPress: _showPicker,
+        itemScrollController: widget.itemScrollController,
       ),
     );
   }
@@ -102,6 +106,7 @@ class GroupMessageContent extends StatefulWidget {
   final bool isMe;
   final Function(GroupMessageModel) onReply;
   final VoidCallback? onLongPress;
+  final ItemScrollController itemScrollController;
 
   const GroupMessageContent({
     super.key,
@@ -109,6 +114,7 @@ class GroupMessageContent extends StatefulWidget {
     required this.isMe,
     required this.onReply,
     this.onLongPress,
+    required this.itemScrollController,
   });
 
   @override
@@ -120,6 +126,8 @@ class _GroupMessageContentState extends State<GroupMessageContent> {
 
   @override
   Widget build(BuildContext context) {
+    final cubit = context.read<GroupDetailsCubit>();
+
     final primary = Theme.of(context).primaryColor;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final currentUserId = Supabase.instance.client.auth.currentUser!.id;
@@ -158,61 +166,85 @@ class _GroupMessageContentState extends State<GroupMessageContent> {
                 : null;
         final bool isUploading = uploadProgress != null;
 
-        return GestureDetector(
-          onLongPress:
-              () => GroupChatReactionOverlay.show(
-                context: context,
-                anchorKey: _anchorKey,
-                message: widget.message,
-                onReply: widget.onReply,
-                primary: primary,
-                isMe: widget.isMe,
-              ),
-          child: Row(
-            mainAxisAlignment:
-                widget.isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              if (!widget.isMe) ...[
-                GroupMessageAvatar(message: widget.message, primary: primary),
-                const Gap(8),
-              ],
-              Flexible(
-                child: KeyedSubtree(
-                  key: _anchorKey,
-                  child: Stack(
-                    clipBehavior: Clip.none,
-                    children: [
-                      _buildBubble(
+        return ValueListenableBuilder<String?>(
+          valueListenable: cubit.highlightedMessageId,
+          builder: (context, highlightId, _) {
+            final isHighlighted = highlightId == widget.message.id;
+            final highlightColor = Theme.of(
+              context,
+            ).primaryColor.withValues(alpha: widget.isMe ? 0.12 : 0.2);
+
+            return GestureDetector(
+              onLongPress:
+                  isCall
+                      ? null
+                      : () => GroupChatReactionOverlay.show(
                         context: context,
+                        anchorKey: _anchorKey,
+                        message: widget.message,
+                        onReply: widget.onReply,
                         primary: primary,
-                        isDark: isDark,
-                        bgColor: bgColor,
-                        textColor: textColor,
-                        isImage: isImage,
-                        isVideo: isVideo,
-                        isVoice: isVoice,
-                        isCall: isCall,
-                        isUploading: isUploading,
-                        uploadProgress: uploadProgress,
+                        isMe: widget.isMe,
                       ),
-                      if (widget.message.reactions.isNotEmpty)
-                        Positioned(
-                          bottom: 12.0,
-                          right: widget.isMe ? 4 : null,
-                          left: widget.isMe ? null : 4,
-                          child: GroupReactionsRow(
-                            reactions: widget.message.reactions,
-                            currentUserId: currentUserId,
-                            primary: primary,
-                          ),
-                        ),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                decoration: BoxDecoration(
+                  color: isHighlighted ? highlightColor : Colors.transparent,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  mainAxisAlignment:
+                      widget.isMe
+                          ? MainAxisAlignment.end
+                          : MainAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    if (!widget.isMe) ...[
+                      GroupMessageAvatar(
+                        message: widget.message,
+                        primary: primary,
+                      ),
+                      const Gap(8),
                     ],
-                  ),
+                    Flexible(
+                      child: KeyedSubtree(
+                        key: _anchorKey,
+                        child: Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            _buildBubble(
+                              context: context,
+                              primary: primary,
+                              isDark: isDark,
+                              bgColor: bgColor,
+                              textColor: textColor,
+                              isImage: isImage,
+                              isVideo: isVideo,
+                              isVoice: isVoice,
+                              isCall: isCall,
+                              isUploading: isUploading,
+                              uploadProgress: uploadProgress,
+                            ),
+                            if (widget.message.reactions.isNotEmpty)
+                              Positioned(
+                                bottom: 12.0,
+                                right: widget.isMe ? 4 : null,
+                                left: widget.isMe ? null : 4,
+                                child: GroupReactionsRow(
+                                  reactions: widget.message.reactions,
+                                  currentUserId: currentUserId,
+                                  primary: primary,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ],
-          ),
+            );
+          },
         );
       },
     );
@@ -265,10 +297,13 @@ class _GroupMessageContentState extends State<GroupMessageContent> {
               if (widget.message.replyToMessageId != null)
                 GestureDetector(
                   onTap: () {
-                    // _navigateToOriginalMessage(
-                    //   context,
-                    //   widget.message.replyToMessageId!,
-                    // );
+                    final cubit = context.read<GroupDetailsCubit>();
+                    if (widget.itemScrollController.isAttached) {
+                      cubit.scrollToMessage(
+                        messageId: widget.message.replyToMessageId!,
+                        itemScrollController: widget.itemScrollController,
+                      );
+                    }
                   },
                   child: Padding(
                     padding: const EdgeInsets.only(bottom: 6),
@@ -282,7 +317,10 @@ class _GroupMessageContentState extends State<GroupMessageContent> {
 
               if (!widget.isMe)
                 Padding(
-                  padding: const EdgeInsets.only(bottom: 4),
+                  padding: EdgeInsets.only(
+                    bottom: 4,
+                    left: isVideo || isImage ? 6 : 0,
+                  ),
                   child: Text(
                     widget.message.senderName,
                     style: TextStyle(
@@ -530,8 +568,8 @@ class _GroupMessageContentState extends State<GroupMessageContent> {
         widget.isMe
             ? primary
             : (isDark
-                ? Colors.white.withOpacity(0.09)
-                : primary.withOpacity(0.08));
+                ? Colors.white.withValues(alpha: 0.09)
+                : primary.withValues(alpha: 0.08));
 
     final labelColor =
         widget.isMe ? Colors.white : (isDark ? Colors.white70 : Colors.black87);
@@ -566,7 +604,7 @@ class _GroupMessageContentState extends State<GroupMessageContent> {
         border:
             !widget.isMe
                 ? Border.all(
-                  color: primary.withOpacity(isDark ? 0.2 : 0.12),
+                  color: primary.withValues(alpha: isDark ? 0.2 : 0.12),
                   width: 1,
                 )
                 : null,
@@ -687,8 +725,8 @@ class _GroupMessageContentState extends State<GroupMessageContent> {
       height: size,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: primary.withOpacity(0.15),
-        border: Border.all(color: primary.withOpacity(0.35), width: 1.5),
+        color: primary.withValues(alpha: 0.15),
+        border: Border.all(color: primary.withValues(alpha: 0.35), width: 1.5),
       ),
       child: ClipOval(
         child:
@@ -710,7 +748,7 @@ class _GroupMessageContentState extends State<GroupMessageContent> {
     return Container(
       width: size,
       height: size,
-      color: primary.withOpacity(0.12),
+      color: primary.withValues(alpha: 0.12),
       child: Center(
         child: Icon(Icons.group_rounded, color: primary, size: size * 0.55),
       ),
@@ -719,13 +757,21 @@ class _GroupMessageContentState extends State<GroupMessageContent> {
 
   Widget _buildLocalTimeWidget() {
     final localTime = widget.message.createdAt.toLocal();
-    final hour = localTime.hour.toString().padLeft(2, '0');
-    final minute = localTime.minute.toString().padLeft(2, '0');
+    final period = localTime.hour >= 12 ? 'PM' : 'AM';
+    int hour12 = localTime.hour % 12;
+    hour12 = hour12 == 0 ? 12 : hour12;
+
+    final hourStr = hour12.toString();
+    final minuteStr = localTime.minute.toString().padLeft(2, '0');
+
     return Text(
-      '$hour:$minute',
-      style: TextStyle(
-        fontSize: 10,
-        color: widget.isMe ? Colors.white60 : Colors.black38,
+      '$hourStr:$minuteStr $period',
+      style: Theme.of(context).textTheme.titleMedium!.copyWith(
+        color:
+            widget.isMe
+                ? AppColors.white70
+                : Theme.of(context).colorScheme.onSurface,
+        fontSize: 9,
       ),
     );
   }
@@ -782,7 +828,7 @@ class _GroupMessageContentState extends State<GroupMessageContent> {
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.green.withOpacity(0.3),
+                  color: Colors.green.withValues(alpha: 0.3),
                   blurRadius: 6,
                   offset: const Offset(0, 2),
                 ),
