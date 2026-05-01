@@ -10,6 +10,7 @@ import 'package:social_media_app/features/settings/widgets/theme_picker_sheet_wi
 import '../../../core/router/app_routes.dart';
 import '../../../core/themes/cubit/theme_cubit.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
+import '../../discover/views/search_view.dart';
 import 'drawer_header_widget.dart';
 
 class ProfileDrawer extends StatelessWidget {
@@ -67,6 +68,36 @@ class ProfileDrawer extends StatelessWidget {
                   },
                 ),
                 DrawerItemWidget(
+                  icon: Icons.search,
+                  title: "Search Profile",
+                  onTap: () {
+                    Navigator.of(context, rootNavigator: true).push(
+                      PageRouteBuilder(
+                        pageBuilder: (_, animation, __) => const SearchView(),
+                        transitionsBuilder: (_, anim, __, child) {
+                          return FadeTransition(
+                            opacity: anim,
+                            child: SlideTransition(
+                              position: Tween<Offset>(
+                                begin: const Offset(0, 0.05),
+                                end: Offset.zero,
+                              ).animate(
+                                CurvedAnimation(
+                                  parent: anim,
+                                  curve: Curves.easeOut,
+                                ),
+                              ),
+                              child: child,
+                            ),
+                          );
+                        },
+                        transitionDuration: const Duration(milliseconds: 280),
+                      ),
+                    );
+                  },
+                ),
+
+                DrawerItemWidget(
                   icon: Icons.people_outline,
                   title: "Discover People",
                   onTap: () {
@@ -74,25 +105,20 @@ class ProfileDrawer extends StatelessWidget {
                     navController.jumpToTab(1);
                   },
                 ),
+
                 DrawerItemWidget(
-                  icon: Icons.photo_library_outlined,
-                  title: "Photos/Videos",
-                  onTap: () {},
+                  icon: Icons.message_outlined,
+                  title: "Your Chats",
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    navController.jumpToTab(2);
+                  },
                 ),
-                DrawerItemWidget(
-                  icon: Icons.group_outlined,
-                  title: "Group",
-                  onTap: () {},
-                ),
+
                 DrawerItemWidget(
                   icon: Icons.color_lens_sharp,
                   title: "Your Themes",
                   onTap: () => _showThemeSheet(context),
-                ),
-                DrawerItemWidget(
-                  icon: Icons.search,
-                  title: "Search Profile",
-                  onTap: () {},
                 ),
                 DrawerItemWidget(
                   icon: Icons.settings_outlined,
@@ -106,13 +132,14 @@ class ProfileDrawer extends StatelessWidget {
                 DrawerItemWidget(
                   icon: Icons.info_outline,
                   title: "About Us",
-                  onTap: () {},
+                  onTap: () {
+                    Navigator.of(
+                      context,
+                      rootNavigator: true,
+                    ).pushNamed(AppRoutes.aboutUsViewRoute);
+                  },
                 ),
-                DrawerItemWidget(
-                  icon: Icons.language,
-                  title: "Language",
-                  onTap: () {},
-                ),
+
                 BlocConsumer<AuthCubit, AuthState>(
                   listener: (context, state) {
                     if (state is AuthSignedOut) {
@@ -149,6 +176,7 @@ class ProfileDrawer extends StatelessWidget {
                   builder: (context, state) {
                     return DrawerItemWidget(
                       icon: Icons.logout,
+                      color: Colors.red.withValues(alpha: 0.92),
                       title: "Log Out",
                       onTap:
                           state is AuthLoading
