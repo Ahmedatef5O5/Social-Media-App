@@ -17,6 +17,9 @@ class AppImages {
   static const String loadingDotsLot = 'assets/lotties/LoadingDotsBlue.json';
   static const String loadingBarProgressLot =
       'assets/lotties/LoadingBarProgress.json';
+
+  static const String emptyFindingsLot =
+      'assets/lotties/empty-findings-lotties.json';
   static const String blueError404Lot = 'assets/lotties/blueNotFoundError.json';
   static const String error404Lot = 'assets/lotties/Error404.json';
   static const String exitAnimationLot = 'assets/lotties/exitAnimation.json';
@@ -24,6 +27,8 @@ class AppImages {
       'assets/lotties/DeleteFiles.json';
 
   // local default user images
+  static const String devPersonnalImg = 'assets/images/mypersonnalphoto.jpg';
+
   static const String defaultUserImg = 'assets/images/no_profile_picture.png';
   static const String defaultBackgroundImg =
       'assets/images/default_background_user_image.png';
