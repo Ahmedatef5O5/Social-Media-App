@@ -8,6 +8,9 @@ class AppRoutes {
   static const String chatDetailsViewRoute = '/chatDetailsView';
   static const String receiverProfileViewRoute = '/ReceiverProfileView';
 
+  //
+  static const String aboutUsViewRoute = '/about-us';
+
   // Group chat
   static const String groupChatRoute = '/group-chat';
   static const String groupInfoViewRoute = '/group-info/View';

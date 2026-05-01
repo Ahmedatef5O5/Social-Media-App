@@ -42,6 +42,7 @@ import '../../features/chats/cubit/chats_cubit/chats_cubit.dart';
 import '../../features/group_chat/cubit/group_list_cubit/group_list_cubit.dart';
 import '../../features/group_chat/services/group_chat_services.dart';
 import '../../features/group_chat/views/create_group_view.dart';
+import '../../features/settings/views/about_us_view.dart';
 import '../../features/stories/views/add_story_caption_view.dart';
 import '../../features/stories/views/creat_text_story_view.dart';
 import '../../features/profile/cubits/profile_cubit/profile_cubit.dart';
@@ -319,6 +320,9 @@ class AppRouter {
           ),
           settings: settings,
         );
+
+      case AppRoutes.aboutUsViewRoute:
+        return _buildRoute(AboutUsView(), settings: settings);
 
       case AppRoutes.settingsViewRoute:
         return _buildRoute(SettingsView(), settings: settings);
