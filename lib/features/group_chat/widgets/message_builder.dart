@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
-import 'package:social_media_app/features/group_chat/widgets/date_separator_widget.dart';
+import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/helpers/formatted_date.dart';
+import '../../chats/helper/chat_date_separator_helper.dart';
+import '../../chats/widgets/date_separator_glassmorphism_widget.dart';
 import '../cubit/group_details_cubit/group_details_cubit.dart';
-import '../helpers/group_chat_input_section.dart';
 import '../models/group_call_model.dart';
 import '../models/groupe_message_model.dart';
 import 'group_message_bubble.dart';
@@ -15,12 +16,14 @@ class GroupMessageItemBuilder extends StatelessWidget {
   final int index;
   final List<GroupMessageModel> messages;
   final List<String> typing;
+  final ItemScrollController itemScrollController;
 
   const GroupMessageItemBuilder({
     super.key,
     required this.index,
     required this.messages,
     required this.typing,
+    required this.itemScrollController,
   });
 
   @override
@@ -39,7 +42,11 @@ class GroupMessageItemBuilder extends StatelessWidget {
 
     final isMe = msg.senderId == Supabase.instance.client.auth.currentUser!.id;
 
-    final showDate = GroupChatHelpers.shouldShowDate(messages, msgIndex);
+    final showDate = ChatDateSeparatorHelper.shouldShowDate<GroupMessageModel>(
+      messages: messages,
+      index: msgIndex,
+      getCreatedAt: (m) => m.createdAt,
+    );
 
     if (msg.messageType == 'group_call') {
       return StreamBuilder<GroupCallModel?>(
@@ -117,7 +124,9 @@ class GroupMessageItemBuilder extends StatelessWidget {
       key: ValueKey(msg.id),
       children: [
         if (showDate)
-          DateSeparator(date: FormattedDate.getChatTime(msg.createdAt)),
+          DateSeparatorGlassmorphismWidget(
+            date: FormattedDate.getChatTime(msg.createdAt),
+          ),
 
         GroupMessageBubble(
           message: msg,
@@ -125,6 +134,7 @@ class GroupMessageItemBuilder extends StatelessWidget {
           onReply: (m) {
             context.read<GroupDetailsCubit>().replyToMessage.value = m;
           },
+          itemScrollController: itemScrollController,
         ),
       ],
     );

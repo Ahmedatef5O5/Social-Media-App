@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
-import 'package:social_media_app/features/group_chat/widgets/group_info_action_btn_widget.dart';
+import 'package:social_media_app/features/group_chat/helpers/group_info_action_btn_widget.dart';
 
 class GroupInfoActionsSection extends StatelessWidget {
   final bool isAdmin;

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
-import 'package:social_media_app/features/group_chat/widgets/bar_icon_button.dart';
+import 'package:social_media_app/features/group_chat/helpers/bar_icon_button.dart';
 import '../helpers/mic_button.dart';
 import '../helpers/recording_indicator.dart';
 import '../helpers/send_button.dart';

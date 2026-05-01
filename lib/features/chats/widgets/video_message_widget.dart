@@ -79,7 +79,6 @@ class VideoMessageWidget extends StatelessWidget {
                 right: 10,
                 child: Icon(
                   CupertinoIcons.video_camera,
-                  // Icons.video_chat_outlined,
                   color: Colors.white.withValues(alpha: isDarkMode ? 0.9 : 0.7),
                   size: 16,
                 ),

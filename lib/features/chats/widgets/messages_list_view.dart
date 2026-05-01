@@ -12,6 +12,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/constants/app_images.dart';
 import '../../../core/helpers/formatted_date.dart';
 import '../cubit/chat_details_cubit/chat_details_cubit.dart';
+import '../helper/chat_date_separator_helper.dart';
 import '../models/chat_user_model.dart';
 import '../models/message_model.dart';
 
@@ -120,16 +121,12 @@ class _MessagesListViewState extends State<MessagesListView> {
 
                 final double? currentProgress = cubit.uploadProgressMap[msg.id];
 
-                bool showDateSeparator = false;
-                if (msgIndex == messages.length - 1) {
-                  showDateSeparator = true;
-                } else {
-                  final prevMsg = messages[msgIndex + 1];
-                  if (msg.createdAt.day != prevMsg.createdAt.day) {
-                    showDateSeparator = true;
-                  }
-                }
-
+                final showDateSeparator =
+                    ChatDateSeparatorHelper.shouldShowDate<MessageModel>(
+                      messages: messages,
+                      index: msgIndex,
+                      getCreatedAt: (m) => m.createdAt,
+                    );
                 return Column(
                   key: ValueKey('item_${msg.id}'),
                   children: [
