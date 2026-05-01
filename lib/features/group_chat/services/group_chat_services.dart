@@ -311,27 +311,10 @@ class GroupChatServices {
 
   Future<void> markGroupMessagesRead(String groupId) async {
     try {
-      final unread = await _supabase
-          .from('group_messages')
-          .select('id, read_by')
-          .eq('group_id', groupId)
-          .neq('sender_id', currentUserId);
-
-      for (final msg in unread as List) {
-        final readByRaw = msg['read_by'];
-        List<String> readBy = [];
-        if (readByRaw is List) {
-          readBy = readByRaw.map((e) => e.toString()).toList();
-        }
-
-        if (!readBy.contains(currentUserId)) {
-          readBy.add(currentUserId);
-          await _supabase
-              .from('group_messages')
-              .update({'read_by': readBy})
-              .eq('id', msg['id'] as String);
-        }
-      }
+      await _supabase.rpc(
+        'mark_group_messages_read',
+        params: {'p_group_id': groupId, 'p_user_id': currentUserId},
+      );
     } catch (e) {
       debugPrint('markGroupMessagesRead error: $e');
     }

@@ -77,6 +77,7 @@ class GroupModel {
           map['last_message_at'] != null
               ? DateTime.parse(map['last_message_at'])
               : null,
+      unreadCount: (map['unread_count'] as int?) ?? 0,
     );
   }
 

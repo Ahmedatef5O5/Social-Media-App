@@ -12,13 +12,32 @@ class GroupListCubit extends Cubit<GroupListState> {
   StreamSubscription? _messagesStreamSub;
   List<GroupModel> _cached = [];
 
-  final Map<String, DateTime> _lastUpdateTime = {};
+  Timer? _activeGroupTimer;
+  String? _activeGroupId;
+
+  final Map<String, int> _dbUnreadCounts = {};
 
   List<GroupModel> get cachedGroupsChats => _cached;
 
   String get _currentUserId => Supabase.instance.client.auth.currentUser!.id;
 
   GroupListCubit(this._services) : super(GroupListInitial());
+
+
+  void setActiveGroupId(String? groupId) {
+    _activeGroupTimer?.cancel();
+
+    if (groupId == null) {
+      _activeGroupTimer = Timer(const Duration(milliseconds: 800), () {
+        _activeGroupId = null;
+      });
+    } else {
+      _activeGroupId = groupId;
+      _dbUnreadCounts[groupId] = 0;
+      resetGroupUnreadCount(groupId);
+    }
+  }
+
 
   void monitorGroups() {
     loadGroups();
@@ -39,23 +58,50 @@ class GroupListCubit extends Cubit<GroupListState> {
           if (data.isEmpty) return;
           if (state is! GroupListLoaded) return;
 
+          // Collect latest message per group
           final Map<String, Map<String, dynamic>> latestPerGroup = {};
+          // Count unread per group (not from me, not in read_by)
+          final Map<String, int> unreadPerGroup = {};
+
           for (final row in data) {
             final gId = row['group_id'] as String?;
             if (gId == null) continue;
+
+            // Track latest message per group (first occurrence = most recent)
             if (!latestPerGroup.containsKey(gId)) {
               latestPerGroup[gId] = row;
             }
+
+            // Count unread: not my message AND my ID not in read_by
+            final senderId = row['sender_id'] as String?;
+            if (senderId == _currentUserId) continue;
+            if (_isReadByMe(row['read_by'])) continue;
+            unreadPerGroup[gId] = (unreadPerGroup[gId] ?? 0) + 1;
           }
 
           for (final entry in latestPerGroup.entries) {
-            _updateGroupFromMessageRow(entry.key, entry.value);
+            final groupId = entry.key;
+            final row = entry.value;
+
+            // Use DB-computed unread count, but override to 0 if group is active
+            final isActiveGroup = _activeGroupId == groupId;
+            final computedUnread =
+                isActiveGroup ? 0 : (unreadPerGroup[groupId] ?? 0);
+
+            _processMessageRow(groupId, row, computedUnread);
           }
         });
   }
 
-  void _updateGroupFromMessageRow(String groupId, Map<String, dynamic> row) {
+  void _processMessageRow(
+    String groupId,
+    Map<String, dynamic> row,
+    int unreadCount,
+  ) {
     if (state is! GroupListLoaded) return;
+
+    final messageId = row['id'] as String?;
+    if (messageId == null) return;
 
     final createdAtStr = row['created_at'] as String?;
     final createdAt =
@@ -63,40 +109,43 @@ class GroupListCubit extends Cubit<GroupListState> {
             ? DateTime.tryParse(createdAtStr) ?? DateTime.now()
             : DateTime.now();
 
-    final lastUpdate = _lastUpdateTime[groupId];
-    if (lastUpdate != null && !createdAt.isAfter(lastUpdate)) return;
-    _lastUpdateTime[groupId] = createdAt;
-
     final messageType = row['message_type'] as String? ?? 'text';
     final senderId = row['sender_id'] as String?;
     final senderName = row['sender_name'] as String? ?? '';
     final text = row['message_text'] as String? ?? '';
 
-    final isMe = senderId == _currentUserId;
-    final prefix = isMe ? 'You' : senderName;
-
-    String preview;
-    if (messageType == 'call') {
-      preview = _parseGroupCallPreview(text);
-    } else {
-      final content = switch (messageType) {
-        'image' => '📷 Photo',
-        'video' => '🎥 Video',
-        'voice' => '🎤 Voice message',
-        _ => text,
-      };
-      preview = '$prefix: $content';
-    }
+    final String rawMessage =
+        messageType == 'call' ? _parseGroupCallPreview(text) : text;
 
     _updateGroupInState(
       groupId: groupId,
-      lastMessage: preview,
+      lastMessage: rawMessage,
       lastMessageType: messageType,
       lastMessageAt: createdAt,
       lastMessageSenderId: senderId,
       lastMessageSenderName: senderName,
+      unreadCount: unreadCount,
     );
   }
+
+  bool _isReadByMe(dynamic readByRaw) {
+    if (readByRaw == null) return false;
+    if (readByRaw is List) {
+      return readByRaw.any((e) => e.toString() == _currentUserId);
+    }
+    if (readByRaw is String) {
+      try {
+        final decoded = jsonDecode(readByRaw);
+        if (decoded is List) {
+          return decoded.any((e) => e.toString() == _currentUserId);
+        }
+      } catch (_) {}
+      return readByRaw.contains(_currentUserId);
+    }
+    return false;
+  }
+
+  // ─── Realtime subscriptions ───────────────────────────────────────────────
 
   void _subscribeRealtime() {
     _channel?.unsubscribe();
@@ -141,6 +190,8 @@ class GroupListCubit extends Cubit<GroupListState> {
         )
         .subscribe();
   }
+
+  // ─── State helpers ────────────────────────────────────────────────────────
 
   void _updateGroupAvatarInState({
     required String groupId,
@@ -203,11 +254,17 @@ class GroupListCubit extends Cubit<GroupListState> {
       _ => '$typeIcon $typeLabel',
     };
 
+    if (state is! GroupListLoaded) return;
+    final currentState = state as GroupListLoaded;
+    final idx = currentState.groups.indexWhere((g) => g.id == groupId);
+    if (idx == -1) return;
+
     _updateGroupInState(
       groupId: groupId,
       lastMessage: preview,
       lastMessageType: 'call',
       lastMessageAt: updatedAt,
+      unreadCount: currentState.groups[idx].unreadCount,
     );
   }
 
@@ -218,6 +275,7 @@ class GroupListCubit extends Cubit<GroupListState> {
     required DateTime lastMessageAt,
     String? lastMessageSenderId,
     String? lastMessageSenderName,
+    required int unreadCount,
   }) {
     if (state is! GroupListLoaded) return;
 
@@ -238,6 +296,7 @@ class GroupListCubit extends Cubit<GroupListState> {
           lastMessageSenderId ?? newList[idx].lastMessageSenderId,
       lastMessageSenderName:
           lastMessageSenderName ?? newList[idx].lastMessageSenderName,
+      unreadCount: unreadCount,
     );
 
     newList.sort((a, b) {
@@ -275,10 +334,45 @@ class GroupListCubit extends Cubit<GroupListState> {
     return '📞 Group call';
   }
 
+  // ─── Public API ───────────────────────────────────────────────────────────
+
   Future<void> loadGroups({bool isRefresh = false}) async {
     if (!isRefresh) emit(GroupListLoading());
     try {
-      _cached = await _services.getMyGroups();
+      final fetchedGroups = await _services.getMyGroups();
+
+      _cached =
+          fetchedGroups.map((newGroup) {
+            final existingIndex = _cached.indexWhere(
+              (g) => g.id == newGroup.id,
+            );
+
+            if (existingIndex != -1) {
+              final existingGroup = _cached[existingIndex];
+              final isNewMessageEmpty = newGroup.lastMessage?.isEmpty ?? true;
+              return newGroup.copyWith(
+                unreadCount: existingGroup.unreadCount,
+                lastMessage:
+                    isNewMessageEmpty
+                        ? existingGroup.lastMessage
+                        : newGroup.lastMessage,
+                lastMessageType:
+                    isNewMessageEmpty
+                        ? existingGroup.lastMessageType
+                        : newGroup.lastMessageType,
+                lastMessageAt:
+                    newGroup.lastMessageAt ?? existingGroup.lastMessageAt,
+                lastMessageSenderId:
+                    newGroup.lastMessageSenderId ??
+                    existingGroup.lastMessageSenderId,
+                lastMessageSenderName:
+                    newGroup.lastMessageSenderName ??
+                    existingGroup.lastMessageSenderName,
+              );
+            }
+            return newGroup;
+          }).toList();
+
       _cached.sort((a, b) {
         final aTime = a.lastMessageAt ?? DateTime.fromMillisecondsSinceEpoch(0);
         final bTime = b.lastMessageAt ?? DateTime.fromMillisecondsSinceEpoch(0);
@@ -304,15 +398,24 @@ class GroupListCubit extends Cubit<GroupListState> {
     return group;
   }
 
+  /// Called by GroupDetailsCubit when a new message arrives while inside chat.
+  /// Never changes unread count — user is actively reading.
   void updateGroupLastMessage({
     required String groupId,
     required String message,
+    required String messageId,
     required String messageType,
     required DateTime createdAt,
     String? lastMessageSenderId,
     String? lastMessageSenderName,
   }) {
-    _lastUpdateTime[groupId] = createdAt;
+    if (state is! GroupListLoaded) return;
+    final currentState = state as GroupListLoaded;
+    final idx = currentState.groups.indexWhere((g) => g.id == groupId);
+    if (idx == -1) return;
+
+    final existingUnread = currentState.groups[idx].unreadCount;
+
     _updateGroupInState(
       groupId: groupId,
       lastMessage: message,
@@ -320,13 +423,27 @@ class GroupListCubit extends Cubit<GroupListState> {
       lastMessageAt: createdAt,
       lastMessageSenderId: lastMessageSenderId,
       lastMessageSenderName: lastMessageSenderName,
+      unreadCount: existingUnread,
     );
+  }
+
+  void resetGroupUnreadCount(String groupId) {
+    if (state is! GroupListLoaded) return;
+    final currentState = state as GroupListLoaded;
+    final idx = currentState.groups.indexWhere((g) => g.id == groupId);
+    if (idx == -1) return;
+    final newList = List<GroupModel>.from(currentState.groups);
+    if (newList[idx].unreadCount == 0) return;
+    newList[idx] = newList[idx].copyWith(unreadCount: 0);
+    _cached = newList;
+    emit(GroupListLoaded(newList));
   }
 
   @override
   Future<void> close() {
     _channel?.unsubscribe();
     _messagesStreamSub?.cancel();
+    _activeGroupTimer?.cancel();
     return super.close();
   }
 }

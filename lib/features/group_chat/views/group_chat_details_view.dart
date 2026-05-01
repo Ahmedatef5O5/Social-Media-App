@@ -4,9 +4,8 @@ import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import '../../../core/services/active_screen_tracker.dart';
 import '../../calls/cubits/group_call_cubit/group_call_cubit.dart';
 import '../../calls/cubits/group_call_cubit/group_call_state.dart';
-import '../../calls/views/zego_group_call_view.dart';
 import '../cubit/group_details_cubit/group_details_cubit.dart';
-import '../models/group_call_model.dart';
+import '../cubit/group_list_cubit/group_list_cubit.dart';
 import '../models/group_model.dart';
 import '../services/group_call_signaling_service.dart';
 import '../widgets/group_chat_app_bar.dart';
@@ -49,18 +48,38 @@ class _GroupChatDetailsBodyState extends State<_GroupChatDetailsBody> {
 
   int? _lastMinIndex;
   double? _lastLeadingEdge;
+  // ignore: unused_field
   bool _isCurrentlyAtBottom = true;
+  late GroupListCubit _groupListCubit;
+  late GroupDetailsCubit _groupDetailsCubit;
 
   @override
   void initState() {
     super.initState();
+
+    _groupListCubit = context.read<GroupListCubit>();
+    _groupDetailsCubit = context.read<GroupDetailsCubit>();
+
+    // fix update unRead count
+    context.read<GroupListCubit>().setActiveGroupId(widget.group.id);
+    context.read<GroupDetailsCubit>().markRead();
+
     ActiveScreenTracker.setActiveGroupId(widget.group.id);
     _positionsListener.itemPositions.addListener(_scrollListener);
   }
 
+  void _markAsReadIfNeeded() {
+    _groupDetailsCubit.markRead();
+  }
+
   @override
   void dispose() {
+    _groupDetailsCubit.markRead();
+    _groupListCubit.resetGroupUnreadCount(widget.group.id);
+
+    _groupListCubit.setActiveGroupId(null);
     ActiveScreenTracker.setActiveGroupId(null);
+
     _positionsListener.itemPositions.removeListener(_scrollListener);
     _controller.dispose();
     _showScrollButtonNotifier.dispose();
@@ -86,6 +105,10 @@ class _GroupChatDetailsBodyState extends State<_GroupChatDetailsBody> {
       _unreadCountNotifier.value = 0;
       _lastMinIndex = minIndex;
       _lastLeadingEdge = leadingEdge;
+
+      // update unread count
+      _markAsReadIfNeeded();
+      _groupListCubit.resetGroupUnreadCount(widget.group.id);
       return;
     }
 
@@ -145,27 +168,13 @@ class _GroupChatDetailsBodyState extends State<_GroupChatDetailsBody> {
               _lastMinIndex = 0;
               _lastLeadingEdge = null;
               _isCurrentlyAtBottom = true;
+
+              _groupListCubit.resetGroupUnreadCount(widget.group.id);
+              _markAsReadIfNeeded();
             }
           });
       _unreadCountNotifier.value = 0;
     }
-  }
-
-  void _openGroupCall(GroupCallModel call) {
-    final user = context.read<GroupCallCubit>();
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder:
-            (_) => BlocProvider.value(
-              value: context.read<GroupCallCubit>(),
-              child: ZegoGroupCallView(
-                call: call,
-                currentUserId: 'placeholder',
-                currentUserName: 'placeholder',
-              ),
-            ),
-      ),
-    );
   }
 
   @override

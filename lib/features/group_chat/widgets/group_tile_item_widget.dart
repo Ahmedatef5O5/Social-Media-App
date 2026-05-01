@@ -1,10 +1,12 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 import 'package:social_media_app/features/group_chat/helpers/group_preview_dialog.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/helpers/formatted_date.dart';
 import '../../../core/router/app_routes.dart';
+import '../cubit/group_list_cubit/group_list_cubit.dart';
 import '../helpers/last_message_group_preview.dart';
 import '../models/group_model.dart';
 
@@ -43,8 +45,8 @@ class GroupTileItem extends StatelessWidget {
                     ? CachedNetworkImage(
                       imageUrl: group.avatarUrl!,
                       fit: BoxFit.cover,
-                      memCacheWidth: 300,
-                      memCacheHeight: 300,
+                      memCacheWidth: 600,
+                      memCacheHeight: 600,
                     )
                     : Center(
                       child: Text(
@@ -121,6 +123,8 @@ class GroupTileItem extends StatelessWidget {
         ],
       ),
       onTap: () {
+        context.read<GroupListCubit>().resetGroupUnreadCount(group.id);
+
         Navigator.of(
           context,
           rootNavigator: true,
