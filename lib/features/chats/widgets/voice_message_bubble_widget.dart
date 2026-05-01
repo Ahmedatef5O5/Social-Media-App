@@ -358,10 +358,12 @@ class _VoiceMessageBubbleWidgetState extends State<VoiceMessageBubbleWidget> {
                 children: [
                   Text(
                     _durationText,
-                    style: TextStyle(
+                    style: Theme.of(context).textTheme.titleMedium!.copyWith(
                       color:
-                          widget.isMe ? AppColors.white70 : AppColors.black54,
-                      fontSize: 11,
+                          widget.isMe
+                              ? AppColors.white70
+                              : Theme.of(context).colorScheme.onSurface,
+                      fontSize: 9,
                     ),
                   ),
                   Row(
@@ -370,11 +372,13 @@ class _VoiceMessageBubbleWidgetState extends State<VoiceMessageBubbleWidget> {
                     children: [
                       Text(
                         FormattedDate.getMessageTime(widget.timestamp),
-                        style: TextStyle(
+                        style: Theme.of(
+                          context,
+                        ).textTheme.titleMedium!.copyWith(
                           color:
                               widget.isMe
                                   ? AppColors.white70
-                                  : AppColors.black54,
+                                  : Theme.of(context).colorScheme.onSurface,
                           fontSize: 9,
                         ),
                       ),

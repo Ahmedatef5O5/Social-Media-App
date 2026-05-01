@@ -11,18 +11,28 @@ class GroupTimeRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(
-          FormattedDate.getMessageTime(message.createdAt),
-          style: TextStyle(
-            fontSize: 10,
-            color: isMe ? Colors.white60 : AppColors.black38,
+    return Padding(
+      padding: const EdgeInsets.only(right: 1.0),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            FormattedDate.getMessageTime(message.createdAt),
+
+            style: Theme.of(context).textTheme.titleMedium!.copyWith(
+              color:
+                  isMe
+                      ? AppColors.white70
+                      : Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withValues(alpha: 0.6),
+              fontSize: 9,
+            ),
           ),
-        ),
-        if (isMe) ...[const SizedBox(width: 4), _buildReadReceipt()],
-      ],
+          const SizedBox(width: 4),
+          if (isMe) ...[_buildReadReceipt(), const SizedBox(width: 3.5)],
+        ],
+      ),
     );
   }
 

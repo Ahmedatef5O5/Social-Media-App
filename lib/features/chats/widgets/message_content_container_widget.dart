@@ -69,10 +69,7 @@ class _MessageContentContainerState extends State<MessageContentContainer> {
             Icon(
               widget.message.isRead ? Icons.done_all : Icons.done,
               size: 12,
-              color:
-                  widget.message.isRead
-                      ? Colors.green.shade200
-                      : Theme.of(context).scaffoldBackgroundColor,
+              color: widget.message.isRead ? Colors.green.shade200 : iconColor,
               // color: widget.message.isRead ? Colors.blue[200] : iconColor,
             ),
           ],
