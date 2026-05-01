@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../group_chat/models/group_call_model.dart';
 import '../../../group_chat/services/group_call_signaling_service.dart';
+import '../../../notifications/repository/notifications_repository.dart';
 import 'group_call_state.dart';
 
 class GroupCallCubit extends Cubit<GroupCallState> {
@@ -134,8 +135,16 @@ class GroupCallCubit extends Cubit<GroupCallState> {
     ) {
       if (isClosed) return;
       if (calls.isNotEmpty) {
-        if (state is GroupCallActive || state is GroupCallRinging) return;
-        emit(GroupCallIncoming(calls.first));
+        final call = calls.first;
+
+        if (call.initiatorId == _currentUserId) return;
+        if (state is GroupCallActive ||
+            state is GroupCallRinging ||
+            state is GroupCallOutgoing) {
+          return;
+        }
+
+        emit(GroupCallIncoming(call));
       }
     });
   }
@@ -149,7 +158,25 @@ class GroupCallCubit extends Cubit<GroupCallState> {
         await _service.markAsMissed(call.callId);
         if (!isClosed) emit(GroupCallMissedByInitiator());
       }
+      _notifyGroupMissedCall(call);
     });
+  }
+
+  Future<void> _notifyGroupMissedCall(GroupCallModel call) async {
+    try {
+      final members = await _service.getGroupMemberIds(call.groupId);
+      for (final memberId in members) {
+        if (memberId == _currentUserId) continue;
+        await NotificationRepository.instance.notifyMissedCall(
+          receiverId: memberId,
+          callerId: call.initiatorId,
+          callerName: call.initiatorName,
+          callerImageUrl: call.groupAvatarUrl ?? '',
+          callType: call.type == GroupCallType.video ? 'video' : 'audio',
+          callId: call.callId,
+        );
+      }
+    } catch (_) {}
   }
 
   @override

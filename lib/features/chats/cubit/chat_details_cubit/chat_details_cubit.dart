@@ -6,6 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/services/fcm_services.dart';
+import '../../../notifications/repository/notifications_repository.dart';
 import '../../models/message_model.dart';
 import '../../models/presence_snapshot.dart';
 import '../../services/chat_services.dart';
@@ -199,6 +200,23 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState> {
         replyToMessageType: replyTo?.messageType,
         replyToSenderId: replyTo?.senderId,
       );
+      if (messageType != 'call') {
+        await NotificationRepository.instance.notifyChatMessage(
+          receiverId: receiverId,
+          senderId: currentUserId,
+          senderName:
+              _resolvedCurrentUserName.isNotEmpty
+                  ? _resolvedCurrentUserName
+                  : currentUserName,
+          senderImageUrl:
+              _resolvedSenderImageUrl.isNotEmpty
+                  ? _resolvedSenderImageUrl
+                  : (senderImageUrl ?? ''),
+          messageBody: caption ?? messageText,
+          messageType: messageType,
+          chatReferenceId: currentUserId,
+        );
+      }
       _cancelTokens.remove(tempId);
 
       _sendPushNotification(

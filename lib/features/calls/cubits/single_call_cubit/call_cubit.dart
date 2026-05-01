@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:social_media_app/features/chats/services/chat_services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/services/fcm_services.dart';
+import '../../../notifications/repository/notifications_repository.dart';
 import '../../model/call_model.dart';
 import '../../services/call_signaling_service.dart';
 import 'call_state.dart';
@@ -151,6 +152,21 @@ class CallCubit extends Cubit<CallState> {
         callType: callType,
         duration: durationStr,
       );
+      if (duration == null && _activeCall != null) {
+        final otherUserId =
+            _isCaller(_activeCall!)
+                ? _activeCall!.receiverId
+                : _activeCall!.callerId;
+
+        await NotificationRepository.instance.notifyMissedCall(
+          receiverId: otherUserId,
+          callerId: _activeCall!.callerId,
+          callerName: _activeCall!.callerName,
+          callerImageUrl: _activeCall!.callerAvatar,
+          callType: _activeCall!.type == CallType.video ? 'video' : 'audio',
+          callId: _activeCall!.callId,
+        );
+      }
     }
 
     _callAcceptedAt = null;

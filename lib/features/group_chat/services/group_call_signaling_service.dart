@@ -6,6 +6,20 @@ import '../models/group_call_model.dart';
 class GroupCallSignalingService {
   final _supabase = Supabase.instance.client;
 
+  Future<List<String>> getGroupMemberIds(String groupId) async {
+    try {
+      final response = await _supabase
+          .from('group_members')
+          .select('user_id')
+          .eq('group_id', groupId);
+
+      return (response as List).map((e) => e['user_id'] as String).toList();
+    } catch (e) {
+      debugPrint('getGroupMemberIds error: $e');
+      return [];
+    }
+  }
+
   Future<GroupCallModel> initiateCall({
     required String groupId,
     required String groupName,
@@ -232,15 +246,21 @@ class GroupCallSignalingService {
           final cutoff = DateTime.now().toUtc().subtract(
             const Duration(seconds: 45),
           );
+
           return list
               .where((m) {
-                if (m['initiator_id'] == myUserId) return false;
-                final started =
-                    DateTime.tryParse(m['started_at'] ?? '')?.toUtc();
-                if (started == null) return true;
-                return started.isAfter(cutoff);
+                final initiatorId = m['initiator_id'] ?? m['initiatorId'];
+                if (initiatorId == myUserId) return false;
+
+                final startedStr = m['started_at'];
+                if (startedStr != null) {
+                  final started =
+                      DateTime.tryParse(startedStr.toString())?.toUtc();
+                  if (started != null && started.isBefore(cutoff)) return false;
+                }
+                return true;
               })
-              .map(GroupCallModel.fromMap)
+              .map((m) => GroupCallModel.fromMap(m))
               .toList();
         });
   }

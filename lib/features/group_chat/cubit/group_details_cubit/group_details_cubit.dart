@@ -2,7 +2,9 @@ import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../notifications/repository/notifications_repository.dart';
 import '../../models/group_model.dart';
 import '../../models/groupe_message_model.dart';
 import '../../services/group_chat_services.dart';
@@ -24,6 +26,7 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState> {
   List<String> _typingUserIds = [];
   Map<String, Map<String, String>> _reactionsCache = {};
   final Map<String, double> uploadProgressMap = {};
+  bool _isFirstLoad = true;
 
   final ValueNotifier<GroupMessageModel?> replyToMessage = ValueNotifier(null);
   final ValueNotifier<String?> highlightedMessageId = ValueNotifier(null);
@@ -31,9 +34,11 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState> {
   String get currentUserId => Supabase.instance.client.auth.currentUser!.id;
 
   GroupDetailsCubit(this._services, this.group, this.groupListCubit)
-    : super(GroupDetailsInitial());
+    : super(GroupDetailsLoading());
 
   void init() {
+    emit(GroupDetailsLoading());
+    groupListCubit.setActiveGroupId(group.id);
     _listenMessages();
     _listenReadReceipts();
     _listenTyping();
@@ -53,20 +58,19 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState> {
           }).toList();
 
       cachedMessages = enriched;
+      _isFirstLoad = false;
       _emitLoaded();
+
+      // Mark read in DB
+      markRead();
 
       if (enriched.isNotEmpty) {
         final latest = enriched.first;
-        final previewText = _buildPreviewText(
-          text: latest.text,
-          messageType: latest.messageType,
-          senderName: latest.senderName,
-          isMe: latest.senderId == currentUserId,
-        );
 
         groupListCubit.updateGroupLastMessage(
           groupId: group.id,
-          message: previewText,
+          message: latest.text,
+          messageId: latest.id,
           messageType: latest.messageType,
           createdAt: latest.createdAt,
           lastMessageSenderId: latest.senderId,
@@ -110,22 +114,6 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState> {
         });
   }
 
-  String _buildPreviewText({
-    required String text,
-    required String messageType,
-    required String senderName,
-    required bool isMe,
-  }) {
-    final prefix = isMe ? 'You' : senderName;
-    final content = switch (messageType) {
-      'image' => '📷 Photo',
-      'video' => '🎥 Video',
-      'voice' => '🎤 Voice message',
-      _ => text,
-    };
-    return '$prefix: $content';
-  }
-
   void _listenReactions() {
     _reactionsSubscription?.cancel();
     _reactionsSubscription = _services.getReactionsStream(group.id).listen((
@@ -162,6 +150,7 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState> {
   }
 
   void _emitLoaded() {
+    if (_isFirstLoad) return;
     emit(
       GroupDetailsLoaded(
         messages: cachedMessages,
@@ -200,6 +189,7 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState> {
     replyToMessage.value = null;
 
     final tempId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
+
     final tempMsg = GroupMessageModel(
       id: tempId,
       groupId: group.id,
@@ -264,23 +254,40 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState> {
         caption: caption,
         replyTo: reply,
       );
-      final previewText =
-          messageType == 'text'
-              ? text
-              : messageType == 'image'
-              ? '📷 Photo'
-              : messageType == 'video'
-              ? '🎥 Video'
-              : messageType == 'voice'
-              ? '🎤 Voice message'
-              : text;
+      final memberIds =
+          group.members
+              .map((m) => m.userId)
+              .where((id) => id != currentUserId)
+              .toList();
+
+      for (final memberId in memberIds) {
+        await NotificationRepository.instance.notifyGroupMessage(
+          receiverId: memberId,
+          senderId: currentUserId,
+          senderName: senderName,
+          senderImageUrl: senderAvatar,
+          groupId: group.id,
+          groupName: group.name,
+          messageBody: text.isNotEmpty ? text : (caption ?? ''),
+          messageType: messageType,
+        );
+      }
+
+      final rawPreview = switch (messageType) {
+        'image' => caption ?? '',
+        'video' => caption ?? '',
+        'voice' => '',
+        _ => text,
+      };
+
       groupListCubit.updateGroupLastMessage(
         groupId: group.id,
-        message: previewText,
+        message: rawPreview,
+        messageId: tempId,
         messageType: messageType,
         createdAt: DateTime.now(),
         lastMessageSenderId: currentUserId,
-        lastMessageSenderName: 'You',
+        lastMessageSenderName: senderName,
       );
 
       cachedMessages.removeWhere((m) => m.id == tempId);
@@ -323,7 +330,6 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState> {
       } else {
         _reactionsCache[messageId]![currentUserId] = currentEmoji;
       }
-
       rethrow;
     }
   }
@@ -337,12 +343,31 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState> {
   }
 
   Future<void> markRead() async {
+    groupListCubit.resetGroupUnreadCount(group.id);
     await _services.markGroupMessagesRead(group.id);
   }
 
-  void highlightMessage(String messageId) {
+  int? findMessageIndex(String messageId) {
+    final index = cachedMessages.indexWhere((m) => m.id == messageId);
+    return index == -1 ? null : index;
+  }
+
+  Future<void> scrollToMessage({
+    required String messageId,
+    required ItemScrollController itemScrollController,
+  }) async {
+    final index = cachedMessages.indexWhere((m) => m.id == messageId);
+    if (index == -1) return;
+
+    await itemScrollController.scrollTo(
+      index: index,
+      duration: const Duration(milliseconds: 450),
+      curve: Curves.easeInOutCubic,
+      alignment: 0.3,
+    );
+
     highlightedMessageId.value = messageId;
-    Future.delayed(const Duration(milliseconds: 1200), () {
+    Future.delayed(const Duration(milliseconds: 1500), () {
       if (!isClosed) highlightedMessageId.value = null;
     });
   }
@@ -353,6 +378,16 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState> {
 
   @override
   Future<void> close() {
+    // Mark read and reset count before clearing active group
+    groupListCubit.resetGroupUnreadCount(group.id);
+    _services.markGroupMessagesRead(group.id);
+
+    // ✅ FIX: Update watermark one final time on exit so GroupListCubit
+    // knows everything visible was read before we left.
+    // groupListCubit.markGroupReadUntilNow(group.id);
+
+    groupListCubit.setActiveGroupId(null);
+
     _messagesSubscription?.cancel();
     _readReceiptsSubscription?.cancel();
     _typingSubscription?.cancel();
