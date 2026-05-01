@@ -62,6 +62,7 @@ class GroupChatAppBar extends StatelessWidget implements PreferredSizeWidget {
               (_) => OutgoingGroupCallScreen(
                 groupId: group.id,
                 groupName: group.name,
+                groupAvatarUrl: group.avatarUrl,
                 callType: type,
               ),
         ),

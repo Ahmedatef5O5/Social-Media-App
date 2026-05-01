@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:audioplayers/audioplayers.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -28,11 +30,44 @@ class _IncomingCallViewState extends State<IncomingCallView>
   late Animation<double> _floatAnim;
   late Animation<double> _shakeAnim;
 
+  StreamSubscription? _statusSubscription;
+
   @override
   void initState() {
     super.initState();
     _playRingtone();
     _initAnimations();
+
+    _listenToCallStatus();
+  }
+
+  void _listenToCallStatus() {
+    final signaling = context.read<CallCubit>().signalingService;
+
+    _statusSubscription = signaling.callStatusStream(widget.call.callId).listen(
+      (data) {
+        if (!mounted) return;
+
+        if (data.isEmpty) {
+          _closeScreen();
+          return;
+        }
+
+        final updatedCall = CallModel.fromMap(data.first);
+
+        if (updatedCall.status == CallStatus.ended ||
+            updatedCall.status == CallStatus.rejected) {
+          _closeScreen();
+        }
+      },
+    );
+  }
+
+  void _closeScreen() {
+    _audioPlayer.stop();
+    if (Navigator.canPop(context)) {
+      Navigator.pop(context);
+    }
   }
 
   void _initAnimations() {
@@ -86,6 +121,7 @@ class _IncomingCallViewState extends State<IncomingCallView>
 
   @override
   void dispose() {
+    _statusSubscription?.cancel();
     _audioPlayer.stop();
     _audioPlayer.dispose();
     _ringController.dispose();
@@ -119,7 +155,6 @@ class _IncomingCallViewState extends State<IncomingCallView>
 
                 const SizedBox(height: 24),
 
-                // Name
                 Text(
                   widget.call.callerName,
                   style: const TextStyle(
@@ -143,7 +178,6 @@ class _IncomingCallViewState extends State<IncomingCallView>
 
                 const Spacer(),
 
-                // Accept / Decline
                 _buildActionButtons(context, isVideo),
 
                 const SizedBox(height: 60),

@@ -17,6 +17,7 @@ class GlobalGroupCallListener extends StatefulWidget {
 class _GlobalGroupCallListenerState extends State<GlobalGroupCallListener> {
   StreamSubscription? _incomingCallSub;
   final _signaling = GroupCallSignalingService();
+  String? _currentlyShowingCallId;
 
   @override
   void initState() {
@@ -31,15 +32,24 @@ class _GlobalGroupCallListenerState extends State<GlobalGroupCallListener> {
     _incomingCallSub = _signaling.incomingGroupCallsStream(userId).listen((
       calls,
     ) {
-      if (calls.isNotEmpty && mounted) {
-        final activeCall = calls.first;
-        if (navigatorKey.currentState != null) {
-          navigatorKey.currentState!.push(
-            MaterialPageRoute(
-              builder: (_) => IncomingGroupCallScreen(call: activeCall),
-            ),
-          );
-        }
+      if (!mounted) return;
+      if (calls.isEmpty) return;
+
+      final activeCall = calls.first;
+
+      if (_currentlyShowingCallId == activeCall.callId) return;
+      _currentlyShowingCallId = activeCall.callId;
+
+      if (navigatorKey.currentState != null) {
+        navigatorKey.currentState!
+            .push(
+              MaterialPageRoute(
+                builder: (_) => IncomingGroupCallScreen(call: activeCall),
+              ),
+            )
+            .then((_) {
+              _currentlyShowingCallId = null;
+            });
       }
     });
   }

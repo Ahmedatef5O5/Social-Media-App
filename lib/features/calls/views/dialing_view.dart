@@ -36,7 +36,6 @@ class _DialingViewState extends State<DialingView>
   }
 
   void _initAnimations() {
-    // Pulse rings around avatar
     _pulseController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 2000),
@@ -61,7 +60,6 @@ class _DialingViewState extends State<DialingView>
       ),
     );
 
-    // Floating decoration icons
     _floatController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 3000),
@@ -120,7 +118,6 @@ class _DialingViewState extends State<DialingView>
 
                 const SizedBox(height: 28),
 
-                // Name
                 Text(
                   widget.call.receiverName,
                   style: const TextStyle(
@@ -330,7 +327,6 @@ class _DialingViewState extends State<DialingView>
                   ),
                 ),
               ),
-              // Pulse ring 1 (innermost)
               Opacity(
                 opacity: (1 - _pulseController.value * 0.5).clamp(0.0, 0.35),
                 child: Transform.scale(

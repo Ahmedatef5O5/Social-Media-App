@@ -17,6 +17,7 @@ class _GroupsListViewBodyState extends State<GroupsListViewBody>
   @override
   void initState() {
     super.initState();
+
     WidgetsBinding.instance.addObserver(this);
     final currentState = context.read<GroupListCubit>().state;
     if (currentState is! GroupListLoaded && currentState is! GroupListLoading) {

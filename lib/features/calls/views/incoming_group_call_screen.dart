@@ -21,7 +21,10 @@ class _IncomingGroupCallScreenState extends State<IncomingGroupCallScreen>
     with TickerProviderStateMixin {
   final AudioPlayer _audioPlayer = AudioPlayer();
   final _signaling = GroupCallSignalingService();
+
   String _currentUserName = 'Loading...';
+
+  StreamSubscription? _statusSubscription;
 
   late AnimationController _rippleController;
 
@@ -40,6 +43,23 @@ class _IncomingGroupCallScreenState extends State<IncomingGroupCallScreen>
     _fetchMyName();
     _playRingtone();
     _initAnimations();
+
+    _listenToCallStatus();
+  }
+
+  void _listenToCallStatus() {
+    _statusSubscription = _signaling
+        .activeCallStream(widget.call.groupId)
+        .listen((activeCall) {
+          if (!mounted) return;
+
+          if (activeCall == null ||
+              activeCall.status == GroupCallStatus.ended ||
+              activeCall.status == GroupCallStatus.missed) {
+            _cleanup();
+            Navigator.pop(context);
+          }
+        });
   }
 
   Future<void> _fetchMyName() async {
@@ -105,6 +125,7 @@ class _IncomingGroupCallScreenState extends State<IncomingGroupCallScreen>
   @override
   void dispose() {
     _cleanup();
+    _statusSubscription?.cancel();
     _audioPlayer.dispose();
     _rippleController.dispose();
     _particleController.dispose();
@@ -227,7 +248,6 @@ class _IncomingGroupCallScreenState extends State<IncomingGroupCallScreen>
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // الأفاتار مع النبضات
         AnimatedBuilder(
           animation: _rippleController,
           builder: (context, child) {
@@ -248,7 +268,6 @@ class _IncomingGroupCallScreenState extends State<IncomingGroupCallScreen>
           child: _buildAvatarCircle(),
         ),
         const SizedBox(height: 32),
-        // اسم الجروب مع أنيميشن الظهور
         FadeTransition(
           opacity: _titleFade,
           child: SlideTransition(
@@ -469,7 +488,6 @@ class _IncomingGroupCallScreenState extends State<IncomingGroupCallScreen>
   }
 }
 
-// Painter للجسيمات الطائرة في الخلفية
 class _ParticlePainter extends CustomPainter {
   final double progress;
   final bool isVideo;
