@@ -1,7 +1,9 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 import '../../auth/data/models/user_data.dart';
+import '../../notifications/repository/notifications_repository.dart';
 import '../events/comment_event_bus.dart';
 import '../events/comment_events.dart';
 import '../model/comment_model.dart';
@@ -18,12 +20,11 @@ class CommentsCubit extends Cubit<CommentsState> {
 
   final _eventBus = CommentEventBus.instance;
 
-  /// collapsed / expanded replies
   final Set<String> collapsedComments = {};
 
-  // =========================
-  // UI STATE
-  // =========================
+  final Map<String, String> _resolvedIds = {};
+
+  String resolveId(String id) => _resolvedIds[id] ?? id;
 
   void toggleReplies(String commentId) {
     if (collapsedComments.contains(commentId)) {
@@ -39,9 +40,6 @@ class CommentsCubit extends Cubit<CommentsState> {
     emit(CommentsUiChanged());
   }
 
-  // =========================
-  // ADD COMMENT
-  // =========================
   Future<void> addComment({
     required PostModel post,
     required String commentText,
@@ -52,6 +50,9 @@ class CommentsCubit extends Cubit<CommentsState> {
     final user = Supabase.instance.client.auth.currentUser;
     final tempId = const Uuid().v4();
 
+    final resolvedParentId =
+        parentCommentId != null ? resolveId(parentCommentId) : null;
+
     final newComment = CommentModel(
       id: tempId,
       createdAt: DateTime.now().toIso8601String(),
@@ -60,7 +61,7 @@ class CommentsCubit extends Cubit<CommentsState> {
       authorImageUrl: currentUserData?.imageUrl,
       text: commentText,
       postId: post.id,
-      parentCommentId: parentCommentId,
+      parentCommentId: resolvedParentId,
     );
 
     emit(CommentOptimisticAdded(post.id, newComment, parentCommentId));
@@ -80,30 +81,50 @@ class CommentsCubit extends Cubit<CommentsState> {
         postId: post.id,
         authorId: user.id,
         commentText: commentText,
-        parentCommentId: parentCommentId,
+        parentCommentId: resolvedParentId,
       );
+      _resolvedIds[tempId] = realId;
+
+      if (post.authorId != user.id) {
+        await NotificationRepository.instance.notifyComment(
+          receiverId: post.authorId,
+          commenterId: user.id,
+          commenterName: currentUserData?.name ?? 'unKnown',
+          commenterImageUrl: currentUserData?.imageUrl ?? '',
+          postId: post.id,
+          commentPreview: commentText,
+        );
+      }
 
       emit(
         CommentTempIdResolved(postId: post.id, tempId: tempId, realId: realId),
       );
     } catch (e) {
+      _resolvedIds.remove(tempId);
       emit(CommentError(e.toString()));
     }
   }
 
-  // =========================
-  // REACTIONS
-  // =========================
-
   Future<void> toggleReaction({
     required String postId,
     required String commentId,
+    required String commentOwnerId,
     required String emoji,
   }) async {
+    final resolvedCommentId = resolveId(commentId);
+
+    if (resolvedCommentId == commentId &&
+        commentId.length == 36 &&
+        _resolvedIds.values.contains(commentId) == false &&
+        _isPossiblyTemp(commentId)) {
+      debugPrint('⚠️ Reaction ignored: comment not yet saved to DB');
+      return;
+    }
+
     emit(
       CommentReactionOptimistic(
         postId: postId,
-        commentId: commentId,
+        commentId: resolvedCommentId,
         emoji: emoji,
       ),
     );
@@ -111,12 +132,27 @@ class CommentsCubit extends Cubit<CommentsState> {
     try {
       final userId = Supabase.instance.client.auth.currentUser!.id;
       await homeServices.commentServices.toggleCommentReaction(
-        commentId: commentId,
+        commentId: resolvedCommentId,
         userId: userId,
         emoji: emoji,
       );
+
+      if (commentOwnerId != userId) {
+        NotificationRepository.instance.notifyLike(
+          receiverId: commentId,
+          likerId: userId,
+          likerName: currentUserData?.name ?? 'unKnown',
+          likerImageUrl: currentUserData?.imageUrl ?? '',
+          postId: postId,
+        );
+      }
     } catch (e) {
+      debugPrint('Error toggling comment reaction: $e');
       emit(CommentError(e.toString()));
     }
+  }
+
+  bool _isPossiblyTemp(String id) {
+    return !_resolvedIds.containsValue(id);
   }
 }

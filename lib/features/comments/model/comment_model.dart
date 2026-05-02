@@ -46,9 +46,6 @@ class CommentModel {
   }
 
   factory CommentModel.fromMap(Map<String, dynamic> map) {
-    // final userData = map[SupabaseConstants.users] as Map<String, dynamic>?;
-    // final repliesData = map['replies'] as List<dynamic>?;
-    // final reactionsData = map['reactions'] as List<dynamic>?;
     final authorName = map['users']?['name'] as String?;
     final authorImageUrl = map['users']?['image_url'] as String?;
     final List<CommentModel> replies =

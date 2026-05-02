@@ -116,6 +116,14 @@ class _CommentWidgetState extends State<CommentWidget>
 
   void _applyReaction(String emoji) {
     HapticFeedback.selectionClick();
+
+    final cubit = context.read<CommentsCubit>();
+    final resolvedId = cubit.resolveId(widget.comment.id);
+
+    if (resolvedId == widget.comment.id &&
+        cubit.resolveId(widget.comment.id) == widget.comment.id) {
+    }
+
     setState(() {
       final updated = List<CommentReaction>.from(_reactions);
       final myIdx = updated.indexWhere((r) => r.reactedByMe);
@@ -161,6 +169,7 @@ class _CommentWidgetState extends State<CommentWidget>
 
     context.read<CommentsCubit>().toggleReaction(
       commentId: widget.comment.id,
+      commentOwnerId: widget.comment.authorId,
       emoji: emoji,
       postId: widget.postId,
     );
@@ -237,6 +246,7 @@ class _CommentWidgetState extends State<CommentWidget>
                   SizedBox(width: indentWidth),
                   CommentAvatar(
                     key: widget.lastAvatarKey,
+                    comment: widget.comment,
                     imageUrl: widget.comment.authorImageUrl,
                     radius: aR,
                   ),
