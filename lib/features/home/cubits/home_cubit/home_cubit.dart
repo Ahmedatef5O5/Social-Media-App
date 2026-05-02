@@ -11,6 +11,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:video_player/video_player.dart';
 import '../../../comments/events/comment_event_bus.dart';
 import '../../../comments/model/comment_model.dart';
+import '../../../notifications/repository/notifications_repository.dart';
 import '../../models/post_model.dart';
 import '../../models/post_request_body.dart';
 import '../../../stories/model/story_model.dart';
@@ -618,6 +619,17 @@ class HomeCubit extends Cubit<HomeState> {
         userId: userId,
         isLiked: isCurrentlyLiked,
       );
+
+      // add like notify to notifications view
+      if (post.authorId != userId) {
+        await NotificationRepository.instance.notifyLike(
+          receiverId: post.authorId,
+          likerId: userId,
+          likerName: currentUserData?.name ?? 'unKnown',
+          likerImageUrl: currentUserData?.imageUrl ?? '',
+          postId: post.id,
+        );
+      }
     } catch (e) {
       emit(PostsLoaded(oldState.posts, DateTime.now()));
       debugPrint('Error toggling like: $e');
@@ -635,7 +647,6 @@ class HomeCubit extends Cubit<HomeState> {
     return File(destPath).writeAsBytes(bytes);
   }
 
-  /// Returns the duration of a local video file.
   Future<Duration> _getVideoDuration(File file) async {
     final controller = VideoPlayerController.file(file);
     try {
