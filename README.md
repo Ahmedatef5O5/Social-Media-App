@@ -35,12 +35,6 @@ Whether you're a developer exploring production-grade Flutter architecture or a 
 
 ## 📸 Screenshots
 
-<<<<<<< HEAD
-<!-- > _Add screenshots by placing images under `assets/screenshots/` and updating the paths below._ -->
-=======
-<!-- > _Add screenshots by placing images under `assets/screenshots/` and updating the paths below._  -->
->>>>>>> b4ba5059c9d6760f73f163dc6d20af56d4aaafea
-
 | Authentication | Home Feed | Chat |
 |:-:|:-:|:-:|
 | <img width="374" height="747" alt="Authentication_view_2" src="https://github.com/user-attachments/assets/62f6f67d-d592-49fd-9bee-7140047bc6b3" /> | <img width="386" height="749" alt="Home_feed" src="https://github.com/user-attachments/assets/4a0304d5-f5e1-49ee-a662-f8ebae34650f" /> | <img width="392" height="755" alt="chat_view" src="https://github.com/user-attachments/assets/d0076775-8eff-4832-8061-6092e86c738d" /> |
