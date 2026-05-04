@@ -1,3 +1,4 @@
+
 <div align="center">
 
 <h1>📱 Social Media App</h1>
@@ -34,15 +35,21 @@ Whether you're a developer exploring production-grade Flutter architecture or a 
 
 ## 📸 Screenshots
 
+<<<<<<< HEAD
 <!-- > _Add screenshots by placing images under `assets/screenshots/` and updating the paths below._ -->
+=======
+<!-- > _Add screenshots by placing images under `assets/screenshots/` and updating the paths below._  -->
+>>>>>>> b4ba5059c9d6760f73f163dc6d20af56d4aaafea
 
 | Authentication | Home Feed | Chat |
 |:-:|:-:|:-:|
-| ![Auth](assets/screenshots/auth.png) | ![Feed](assets/screenshots/feed.png) | ![Chat](assets/screenshots/chat.png) |
+| <img width="374" height="747" alt="Authentication_view_2" src="https://github.com/user-attachments/assets/62f6f67d-d592-49fd-9bee-7140047bc6b3" /> | <img width="386" height="749" alt="Home_feed" src="https://github.com/user-attachments/assets/4a0304d5-f5e1-49ee-a662-f8ebae34650f" /> | <img width="392" height="755" alt="chat_view" src="https://github.com/user-attachments/assets/d0076775-8eff-4832-8061-6092e86c738d" /> |
+
+
 
 | Stories | Video Call | Themes |
 |:-:|:-:|:-:|
-| ![Stories](assets/screenshots/stories.png) | ![Calls](assets/screenshots/calls.png) | ![Themes](assets/screenshots/themes.png) |
+| <img width="374" height="754" alt="Stories_view" src="https://github.com/user-attachments/assets/ed7ada97-a913-4d33-bce4-cf41f3e45d7f" /> | <img width="392" height="763" alt="outcoming_voice_call" src="https://github.com/user-attachments/assets/56d089cd-acac-4858-ad2e-dad3e886e9fc" /> | <img width="373" height="758" alt="Themes_view" src="https://github.com/user-attachments/assets/c972665e-158e-4831-949b-7fd0593d1b06" /> |
 
 <!-- <details>
 <summary>📽️ <strong>How to add demo videos / GIFs</strong></summary>
