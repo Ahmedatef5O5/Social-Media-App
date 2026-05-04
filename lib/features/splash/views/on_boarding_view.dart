@@ -39,7 +39,7 @@ class _OnBoardingViewState extends State<OnBoardingView> {
         child: Column(
           children: [
             Padding(
-              padding: const EdgeInsets.only(right: 8.5, top: 18.5),
+              padding: const EdgeInsets.only(right: 8.5, top: 20.0),
               child: Align(
                 alignment: Alignment.topRight,
                 child: TextButton(
