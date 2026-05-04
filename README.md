@@ -34,7 +34,7 @@ Whether you're a developer exploring production-grade Flutter architecture or a 
 
 ## 📸 Screenshots
 
-> _Add screenshots by placing images under `assets/screenshots/` and updating the paths below._
+<!-- > _Add screenshots by placing images under `assets/screenshots/` and updating the paths below._ -->
 
 | Authentication | Home Feed | Chat |
 |:-:|:-:|:-:|
@@ -44,7 +44,7 @@ Whether you're a developer exploring production-grade Flutter architecture or a 
 |:-:|:-:|:-:|
 | ![Stories](assets/screenshots/stories.png) | ![Calls](assets/screenshots/calls.png) | ![Themes](assets/screenshots/themes.png) |
 
-<details>
+<!-- <details>
 <summary>📽️ <strong>How to add demo videos / GIFs</strong></summary>
 
 1. Record a screen demo (tools: [scrcpy](https://github.com/Genymobile/scrcpy), Android Studio screen recorder, or iOS simulator).
@@ -57,7 +57,7 @@ Whether you're a developer exploring production-grade Flutter architecture or a 
    ![Feature Demo](assets/demos/chat_demo.gif)
    ```
 
-</details>
+</details> -->
 
 ---
 
