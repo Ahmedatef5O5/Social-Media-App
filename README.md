@@ -5,12 +5,47 @@
 <!-- ╚══════════════════════════════════════════════╝ -->
 <img src="https://github.com/user-attachments/assets/00deb226-b6fb-4572-b52b-500f54915896" alt="Social Mate Banner" width="100%" style="border-radius:16px;" /> 
 <!-- <img width="1400" height="500" alt="social_mate_banner" src="https://github.com/user-attachments/assets/00deb226-b6fb-4572-b52b-500f54915896" /> -->
+
 <br/><br/>
 
 <!-- <img src="social_mate_icon.png" alt="Social Mate Icon" width="96" height="96" style="border-radius:24px;" /> -->
+<!-- <img width="512" height="512" alt="social_mate_icon" src="https://github.com/user-attachments/assets/a41d174a-a845-40f0-81af-2587eaf0848d" /> -->
 
+<h1 style="
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:12px;
+  line-height:1;
+">
+  <img 
+    src="https://github.com/user-attachments/assets/a41d174a-a845-40f0-81af-2587eaf0848d" 
+    alt="Social Mate Icon" 
+    width="25" 
+    height="25"
+    style="border-radius:10px; display:block;"
+  />
+  <span style="display:block;">Social Mate</span>
+</h1>
 
-<h1>Social Mate</h1>
+<!-- <h1 style="
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:12px;
+  line-height:1;
+">
+  <img 
+    src="https://github.com/user-attachments/assets/a41d174a-a845-40f0-81af-2587eaf0848d" 
+    alt="Social Mate Icon" 
+    width="40" 
+    height="40" 
+    style="border-radius:10px;"
+  />
+  <span>Social Mate</span>
+</h1> -->
+
+<!-- <h1>Social Mate</h1> -->
 
 <p><strong>A production-grade, full-featured social media platform built with Flutter & Supabase</strong></p>
 
