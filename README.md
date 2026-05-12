@@ -1,7 +1,16 @@
-
 <div align="center">
 
-<h1>📱 Social Media App</h1>
+<!-- ╔══════════════════════════════════════════════╗ -->
+<!--            SOCIAL MATE — HERO BANNER           -->
+<!-- ╚══════════════════════════════════════════════╝ -->
+<img src="https://github.com/user-attachments/assets/00deb226-b6fb-4572-b52b-500f54915896" alt="Social Mate Banner" width="100%" style="border-radius:16px;" /> 
+<!-- <img width="1400" height="500" alt="social_mate_banner" src="https://github.com/user-attachments/assets/00deb226-b6fb-4572-b52b-500f54915896" /> -->
+<br/><br/>
+
+<!-- <img src="social_mate_icon.png" alt="Social Mate Icon" width="96" height="96" style="border-radius:24px;" /> -->
+
+
+<h1>Social Mate</h1>
 
 <p><strong>A production-grade, full-featured social media platform built with Flutter & Supabase</strong></p>
 
@@ -25,7 +34,7 @@
 
 ## 📖 Overview
 
-**Social Media App** is a comprehensive, cross-platform social networking application that delivers a seamless, real-time user experience. Built on a clean **Feature-First Architecture**, it brings together messaging, audio/video calling, stories, a social feed, and smart notifications — all under a beautifully themed, highly customizable UI.
+**Social Mate** is a comprehensive, cross-platform social networking application that delivers a seamless, real-time user experience. Built on a clean **Feature-First Architecture**, it brings together messaging, audio/video calling, stories, a social feed, and smart notifications — all under a beautifully themed, highly customizable UI.
 
 Whether you're a developer exploring production-grade Flutter architecture or a technical reviewer evaluating mobile engineering quality, this project demonstrates a thoughtful, scalable approach to building complex consumer applications.
 
@@ -35,30 +44,17 @@ Whether you're a developer exploring production-grade Flutter architecture or a 
 
 ## 📸 Screenshots
 
+<div align="center">
+
 | Authentication | Home Feed | Chat |
 |:-:|:-:|:-:|
-| <img width="374" height="747" alt="Authentication_view_2" src="https://github.com/user-attachments/assets/62f6f67d-d592-49fd-9bee-7140047bc6b3" /> | <img width="386" height="749" alt="Home_feed" src="https://github.com/user-attachments/assets/4a0304d5-f5e1-49ee-a662-f8ebae34650f" /> | <img width="392" height="755" alt="chat_view" src="https://github.com/user-attachments/assets/d0076775-8eff-4832-8061-6092e86c738d" /> |
-
-
+| <img src="https://github.com/user-attachments/assets/62f6f67d-d592-49fd-9bee-7140047bc6b3" width="220" height="440" alt="Authentication View" style="border-radius:12px;object-fit:cover;" /> | <img src="https://github.com/user-attachments/assets/4a0304d5-f5e1-49ee-a662-f8ebae34650f" width="220" height="440" alt="Home Feed" style="border-radius:12px;object-fit:cover;" /> | <img src="https://github.com/user-attachments/assets/d0076775-8eff-4832-8061-6092e86c738d" width="220" height="440" alt="Chat View" style="border-radius:12px;object-fit:cover;" /> |
 
 | Stories | Video Call | Themes |
 |:-:|:-:|:-:|
-| <img width="374" height="754" alt="Stories_view" src="https://github.com/user-attachments/assets/ed7ada97-a913-4d33-bce4-cf41f3e45d7f" /> | <img width="392" height="763" alt="outcoming_voice_call" src="https://github.com/user-attachments/assets/56d089cd-acac-4858-ad2e-dad3e886e9fc" /> | <img width="373" height="758" alt="Themes_view" src="https://github.com/user-attachments/assets/c972665e-158e-4831-949b-7fd0593d1b06" /> |
+| <img src="https://github.com/user-attachments/assets/ed7ada97-a913-4d33-bce4-cf41f3e45d7f" width="220" height="440" alt="Stories View" style="border-radius:12px;object-fit:cover;" /> | <img src="https://github.com/user-attachments/assets/56d089cd-acac-4858-ad2e-dad3e886e9fc" width="220" height="440" alt="Video Call" style="border-radius:12px;object-fit:cover;" /> | <img src="https://github.com/user-attachments/assets/c972665e-158e-4831-949b-7fd0593d1b06" width="220" height="440" alt="Themes View" style="border-radius:12px;object-fit:cover;" /> |
 
-<!-- <details>
-<summary>📽️ <strong>How to add demo videos / GIFs</strong></summary>
-
-1. Record a screen demo (tools: [scrcpy](https://github.com/Genymobile/scrcpy), Android Studio screen recorder, or iOS simulator).
-2. Convert to GIF using [ezgif.com](https://ezgif.com) or `ffmpeg`:
-   ```bash
-   ffmpeg -i demo.mp4 -vf "fps=10,scale=320:-1" demo.gif
-   ```
-3. Place the `.gif` under `assets/demos/` and embed it:
-   ```markdown
-   ![Feature Demo](assets/demos/chat_demo.gif)
-   ```
-
-</details> -->
+</div>
 
 ---
 
@@ -229,8 +225,8 @@ feature/
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/your-username/social-media-app.git
-cd social-media-app
+git clone https://github.com/your-username/social-mate.git
+cd social-mate
 ```
 
 ### 2. Install Dependencies
@@ -315,4 +311,4 @@ See [LICENSE](LICENSE) for details.
 
 Built with ❤️ using **Flutter** · **Supabase** · **Firebase** · **ZEGOCLOUD**
 
-</div>
+</div>![Uploading social_mate_banner.png…]()
