@@ -16,7 +16,7 @@ class MainUserAvatar extends StatelessWidget {
   Widget build(BuildContext context) {
     return AppAvatar(
       imageUrl: imageUrl,
-      size: size ?? 36,
+      size: size ?? 31,
       borderColor:
           showBorder
               ? Theme.of(context).primaryColor.withValues(alpha: 0.8)

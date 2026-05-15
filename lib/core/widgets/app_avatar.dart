@@ -13,6 +13,8 @@ class AppAvatar extends StatelessWidget {
   final String? heroTag;
   final VoidCallback? onTap;
 
+  final String? cacheKey;
+
   const AppAvatar({
     super.key,
     this.imageUrl,
@@ -23,6 +25,7 @@ class AppAvatar extends StatelessWidget {
     this.isOnline = false,
     this.heroTag,
     this.onTap,
+    this.cacheKey,
   });
 
   @override
@@ -85,6 +88,7 @@ class AppAvatar extends StatelessWidget {
 
     return CachedNetworkImage(
       imageUrl: imageUrl!,
+      cacheKey: cacheKey,
       width: size,
       height: size,
       fit: BoxFit.cover,
