@@ -346,4 +346,4 @@ See [LICENSE](LICENSE) for details.
 
 Built with ❤️ using **Flutter** · **Supabase** · **Firebase** · **ZEGOCLOUD**
 
-</div>![Uploading social_mate_banner.png…]()
+</div>
