@@ -651,7 +651,8 @@ class _AboutUsViewState extends State<AboutUsView>
     final links = [
       _SocialLink(
         // icon: Icons.public_rounded,
-        icon: FontAwesomeIcons.globe,
+        // icon: FontAwesomeIcons.globe,
+        icon: Icons.language,
         label: 'Website',
         value: 'www.social-media-app.com',
         url: 'https://github.com/Ahmedatef5O5/Social-Media-App',
@@ -659,7 +660,8 @@ class _AboutUsViewState extends State<AboutUsView>
       ),
       _SocialLink(
         // icon: Icons.mail_outline_rounded,
-        icon: FontAwesomeIcons.envelope,
+        // icon: FontAwesomeIcons.envelope,
+        icon: Icons.email,
         label: 'Email',
         value: 'ahmedateif0@gmail.com',
         url:
@@ -670,7 +672,8 @@ class _AboutUsViewState extends State<AboutUsView>
       ),
       _SocialLink(
         // icon: Icons.code_rounded,
-        icon: FontAwesomeIcons.github,
+        // icon: FontAwesomeIcons.github,
+        icon: Icons.code,
 
         label: 'GitHub',
         value: 'github.com/Ahmedatef5O5',

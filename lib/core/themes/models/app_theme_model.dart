@@ -176,7 +176,7 @@ class AppThemeModel {
         ),
       ),
 
-      tabBarTheme: TabBarTheme(
+      tabBarTheme: TabBarThemeData(
         labelColor: primaryColor,
         unselectedLabelColor: Colors.grey,
         indicatorSize: TabBarIndicatorSize.tab,
