@@ -1,26 +1,10 @@
-import 'package:dio/dio.dart' as dio_pkg;
-import 'package:flutter/material.dart';
-import 'package:social_media_app/core/secrets/app_secrets.dart';
-import 'package:social_media_app/core/services/fcm_payload_builder.dart';
-import 'package:social_media_app/core/services/fcm_token_service.dart';
+import 'package:flutter/foundation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class FcmService {
   FcmService._();
   static final FcmService instance = FcmService._();
 
-  static final String _fcmUrl =
-      'https://fcm.googleapis.com/v1/projects/${AppSecrets.fcmProjectId}/messages:send';
-
-  final _dio = dio_pkg.Dio(
-    dio_pkg.BaseOptions(
-      connectTimeout: const Duration(seconds: 10),
-      receiveTimeout: const Duration(seconds: 10),
-    ),
-  );
-
-  final _tokenService = FcmTokenService();
-
-  // ── Send chat message notification ──
   Future<void> sendChatNotification({
     required String receiverFcmToken,
     required String senderId,
@@ -30,56 +14,37 @@ class FcmService {
     String senderImageUrl = '',
     String? attachmentUrl,
   }) async {
-    try {
-      final accessToken = await _tokenService.getValidToken();
-
-      final payload = FcmPayloadBuilder.buildChatPayload(
-        receiverFcmToken: receiverFcmToken,
-        senderId: senderId,
-        senderName: senderName,
-        messageBody: messageBody,
-        messageType: messageType,
-        senderImageUrl: senderImageUrl,
-        attachmentUrl: attachmentUrl,
-      );
-
-      await _post(payload, accessToken);
-      debugPrint('✅ Chat FCM sent');
-    } catch (e) {
-      debugPrint('❌ Chat FCM failed: $e');
-    }
+    await _sendToEdgeFunction({
+      'type': 'chat',
+      'receiverFcmToken': receiverFcmToken,
+      'senderId': senderId,
+      'senderName': senderName,
+      'messageBody': messageBody,
+      'messageType': messageType,
+      'senderImageUrl': senderImageUrl,
+      if (attachmentUrl != null) 'attachmentUrl': attachmentUrl,
+    });
   }
 
-  // ── Send incoming call notification ──
-  // This wakes the device even when the app is killed
   Future<void> sendCallNotification({
     required String receiverFcmToken,
     required String callerId,
     required String callerName,
     required String callerAvatar,
     required String callId,
-    required String callType, // 'audio' | 'video'
+    required String callType,
   }) async {
-    try {
-      final accessToken = await _tokenService.getValidToken();
-
-      final payload = FcmPayloadBuilder.buildIncomingCallPayload(
-        receiverFcmToken: receiverFcmToken,
-        callerId: callerId,
-        callerName: callerName,
-        callerAvatar: callerAvatar,
-        callId: callId,
-        callType: callType,
-      );
-
-      await _post(payload, accessToken);
-      debugPrint('✅ Call FCM sent → $callerName');
-    } catch (e) {
-      debugPrint('❌ Call FCM failed: $e');
-    }
+    await _sendToEdgeFunction({
+      'type': 'call',
+      'receiverFcmToken': receiverFcmToken,
+      'callerId': callerId,
+      'callerName': callerName,
+      'callerAvatar': callerAvatar,
+      'callId': callId,
+      'callType': callType,
+    });
   }
 
-  // ── Send group message notification ──
   Future<void> sendGroupNotification({
     required String receiverFcmToken,
     required String groupId,
@@ -89,37 +54,30 @@ class FcmService {
     String messageType = 'text',
     String senderImageUrl = '',
   }) async {
-    try {
-      final accessToken = await _tokenService.getValidToken();
-
-      final payload = FcmPayloadBuilder.buildGroupMessagePayload(
-        receiverFcmToken: receiverFcmToken,
-        groupId: groupId,
-        groupName: groupName,
-        senderName: senderName,
-        messageBody: messageBody,
-        messageType: messageType,
-        senderImageUrl: senderImageUrl,
-      );
-
-      await _post(payload, accessToken);
-      debugPrint('✅ Group FCM sent → $groupName');
-    } catch (e) {
-      debugPrint('❌ Group FCM failed: $e');
-    }
+    await _sendToEdgeFunction({
+      'type': 'group',
+      'receiverFcmToken': receiverFcmToken,
+      'groupId': groupId,
+      'groupName': groupName,
+      'senderName': senderName,
+      'messageBody': messageBody,
+      'messageType': messageType,
+      'senderImageUrl': senderImageUrl,
+    });
   }
 
-  Future<void> _post(Map<String, dynamic> payload, String accessToken) async {
-    final response = await _dio.post(
-      _fcmUrl,
-      data: payload,
-      options: dio_pkg.Options(
-        headers: {
-          'Authorization': 'Bearer $accessToken',
-          'Content-Type': 'application/json',
-        },
-      ),
-    );
-    debugPrint('FCM response: ${response.statusCode}');
+  Future<void> _sendToEdgeFunction(Map<String, dynamic> payload) async {
+    try {
+      final response = await Supabase.instance.client.functions.invoke(
+        'send-notification',
+        body: payload,
+      );
+
+      debugPrint('✅ Notification sent via Edge Function: ${response.status}');
+    } on FunctionException catch (e) {
+      debugPrint('❌ Edge Function Error: ${e.reasonPhrase} - ${e.details}');
+    } catch (e) {
+      debugPrint('❌ General FCM Error: $e');
+    }
   }
 }

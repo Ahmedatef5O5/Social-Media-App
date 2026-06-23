@@ -6,7 +6,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:social_media_app/core/router/app_router.dart';
@@ -210,7 +209,7 @@ void _setupAuthListener() {
 
 Future<void> _initializeApp() async {
   await _lockOrientation();
-  await _loadEnv();
+  AppSecrets.assertSecretsLoaded();
   await _initFirebase();
   await _initSupabase();
   await _initNotifications();
@@ -223,10 +222,6 @@ Future<void> _lockOrientation() async {
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
-}
-
-Future<void> _loadEnv() async {
-  await dotenv.load(fileName: '.env');
 }
 
 Future<void> _initFirebase() async {
