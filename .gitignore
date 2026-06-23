@@ -28,8 +28,11 @@ migrate_working_dir/
 **/*.jks
 **/*.jks.old
 .env
+.env.*
+!.env.example
 
 master_code.txt
+merge_code.ps1
 repomix-output.xml
 repomix-output.md
 
