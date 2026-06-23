@@ -25,19 +25,14 @@ android {
     ndkVersion = "27.0.12077973"
     // ndkVersion = flutter.ndkVersion
 
-    compileOptions {
+       compileOptions {
+
         isCoreLibraryDesugaringEnabled = true
-     sourceCompatibility = JavaVersion.VERSION_1_8 
-        targetCompatibility = JavaVersion.VERSION_1_8 
-       // sourceCompatibility = JavaVersion.VERSION_11
-        // targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_21
+        targetCompatibility = JavaVersion.VERSION_21
     }
 
-    kotlinOptions {
-        jvmTarget = "1.8"
-        // jvmTarget = JavaVersion.VERSION_17.toString()
-        // jvmTarget = JavaVersion.VERSION_11.toString()
-    }
+    
     
     signingConfigs {
         create("release") {
@@ -85,6 +80,13 @@ android {
     }
 }
 
+kotlin {
+    compilerOptions {
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21)
+    }
+}
+
+
 flutter {
     source = "../.."
 }
@@ -96,6 +98,6 @@ configurations.all {
     }
 }
 dependencies {
-    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.3")
+   coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
     
 }
