@@ -7,6 +7,7 @@ import 'package:social_media_app/core/services/presence_service.dart';
 import 'package:social_media_app/core/utilities/supabase_constants.dart';
 import 'package:social_media_app/features/chats/models/message_model.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../core/helpers/chat_helper.dart';
 import '../models/chat_user_model.dart';
 import '../models/presence_snapshot.dart';
 
@@ -161,23 +162,14 @@ class ChatServices {
     required String senderId,
     required String receiverId,
   }) {
+    final conversationId = ChatHelper.buildConversationId(senderId, receiverId);
+
     return _supabase
         .from(SupabaseConstants.messages)
         .stream(primaryKey: [MessagesColumns.id])
+        .eq(MessagesColumns.conversationId, conversationId)
         .order(MessagesColumns.createdAt, ascending: false)
-        .map(
-          (data) =>
-              data
-                  .map((map) => MessageModel.fromJson(map))
-                  .where(
-                    (msg) =>
-                        (msg.senderId == senderId &&
-                            msg.receiverId == receiverId) ||
-                        (msg.senderId == receiverId &&
-                            msg.receiverId == senderId),
-                  )
-                  .toList(),
-        );
+        .map((data) => data.map(MessageModel.fromJson).toList());
   }
 
   Future<List<Map<String, dynamic>>> getChatMedia(String receiverId) async {
@@ -509,39 +501,87 @@ class ChatServices {
   }
 
   Stream<List<String>> getTypingUsersStream(String currentUserId) {
-    return _supabase
-        .from(SupabaseConstants.typingStatus)
-        .stream(
-          primaryKey: [TypingStatusColumns.chatId, TypingStatusColumns.userId],
-        )
-        .map((rows) {
-          final now = DateTime.now().toUtc();
+    final controller = StreamController<List<String>>.broadcast();
 
-          return rows
-              .where((row) {
-                if (row[TypingStatusColumns.isTyping] != true) return false;
-                if (!(row[TypingStatusColumns.chatId] as String).contains(
-                  currentUserId,
-                )) {
-                  return false;
-                }
-                if (row[TypingStatusColumns.userId] == currentUserId) {
-                  return false;
+    // Map لتخزين حالة الكتابة لكل محادثة: chatId → (userId, updatedAt)
+    final Map<String, ({String userId, DateTime updatedAt})> typingMap = {};
+
+    const channelName = 'typing_watcher';
+    _supabase.removeChannel(_supabase.channel(channelName));
+
+    Timer? cleanupTimer;
+
+    final channel =
+        _supabase
+            .channel(channelName)
+            .onPostgresChanges(
+              event: PostgresChangeEvent.all,
+              schema: 'public',
+              table: SupabaseConstants.typingStatus,
+              callback: (payload) {
+                if (controller.isClosed) return;
+
+                final record =
+                    payload.eventType == PostgresChangeEvent.delete
+                        ? payload.oldRecord
+                        : payload.newRecord;
+
+                final userId = record[TypingStatusColumns.userId] as String?;
+                final chatId = record[TypingStatusColumns.chatId] as String?;
+
+                if (userId == null || chatId == null) return;
+
+                if (userId == currentUserId) return;
+
+                final ids = chatId.split('_');
+                if (!ids.contains(currentUserId)) return;
+
+                final isTyping =
+                    record[TypingStatusColumns.isTyping] as bool? ?? false;
+                final updatedAtRaw =
+                    record[TypingStatusColumns.updatedAt] as String?;
+                final updatedAt =
+                    updatedAtRaw != null
+                        ? DateTime.tryParse(updatedAtRaw)?.toUtc()
+                        : null;
+
+                if (isTyping && updatedAt != null) {
+                  typingMap[chatId] = (userId: userId, updatedAt: updatedAt);
+                } else {
+                  typingMap.remove(chatId);
                 }
 
-                final updatedAtRaw = row[TypingStatusColumns.updatedAt];
-                if (updatedAtRaw != null) {
-                  final updatedAt =
-                      DateTime.parse(updatedAtRaw.toString()).toUtc();
-                  if (now.difference(updatedAt).inSeconds > 4) {
-                    return false; // الحالة معلقة، تجاهلها
-                  }
-                }
-                return true;
-              })
-              .map((row) => row[TypingStatusColumns.userId] as String)
-              .toList();
-        });
+                controller.add(_getActiveTypers(typingMap));
+              },
+            )
+            .subscribe();
+
+    cleanupTimer = Timer.periodic(const Duration(seconds: 2), (_) {
+      if (controller.isClosed) return;
+      final now = DateTime.now().toUtc();
+      typingMap.removeWhere(
+        (_, v) => now.difference(v.updatedAt).inSeconds > 4,
+      );
+      controller.add(_getActiveTypers(typingMap));
+    });
+
+    controller.onCancel = () {
+      _supabase.removeChannel(channel);
+      cleanupTimer?.cancel();
+      controller.close();
+    };
+
+    return controller.stream;
+  }
+
+  List<String> _getActiveTypers(
+    Map<String, ({String userId, DateTime updatedAt})> map,
+  ) {
+    final now = DateTime.now().toUtc();
+    return map.entries
+        .where((e) => now.difference(e.value.updatedAt).inSeconds <= 4)
+        .map((e) => e.value.userId)
+        .toList();
   }
 
   Future<Map<String, String?>> getCurrentUserInfo(String userId) async {

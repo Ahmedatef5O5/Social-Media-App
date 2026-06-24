@@ -89,6 +89,9 @@ abstract class MessagesColumns {
   static const String replyToText = 'reply_to_text';
   static const String replyToMessageType = 'reply_to_message_type';
   static const String replyToSenderId = 'reply_to_sender_id';
+
+  // Migration for conversation_id column in messages table
+  static const String conversationId = 'conversation_id';
 }
 
 // subClass for users Status column table

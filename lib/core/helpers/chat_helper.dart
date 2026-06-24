@@ -10,4 +10,9 @@ class ChatHelper {
   static TextDirection getTextDirection(String text) {
     return isArabic(text) ? TextDirection.rtl : TextDirection.ltr;
   }
+
+  static String buildConversationId(String userA, String userB) {
+    final sorted = [userA, userB]..sort();
+    return '${sorted[0]}_${sorted[1]}';
+  }
 }
