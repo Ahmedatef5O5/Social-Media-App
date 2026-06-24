@@ -60,7 +60,6 @@ dev_dependencies:
 dependency_overrides:
 
   statemachine: 3.3.1
-  zego_zim: 2.27.0
   file_picker: ^10.3.8
   permission_handler: ^11.3.1
   audio_session: 0.1.25
@@ -81,7 +80,6 @@ flutter:
     - assets/svg/
     - assets/lotties/
     - assets/sounds/
-    - .env
   #   - images/a_dot_ham.jpeg
   # fonts:
   #   - family: Schyler

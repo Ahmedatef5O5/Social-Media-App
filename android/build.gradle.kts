@@ -4,7 +4,6 @@ allprojects {
         mavenCentral()
     }
     
-    // الحل الجذري: toolchain بدل afterEvaluate
     plugins.withId("com.android.library") {
         extensions.configure<com.android.build.gradle.LibraryExtension> {
             compileOptions {
