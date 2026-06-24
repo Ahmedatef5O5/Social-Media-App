@@ -39,28 +39,30 @@ class CustomRefreshIndicatorWidget extends StatelessWidget {
                   Theme.of(context).scaffoldBackgroundColor.withValues(),
 
               child: Center(
-                child: Lottie.asset(
-                  AppImages.trailLoadingLot,
-                  width: 85,
-                  height: 85,
-                  fit: BoxFit.contain,
-                  delegates: LottieDelegates(
-                    values: [
-                      ValueDelegate.colorFilter(
-                        ['**'],
-                        value: ColorFilter.mode(
-                          Theme.of(
-                            context,
-                          ).primaryColor.withValues(alpha: 0.85),
-                          BlendMode.srcATop,
+                child: RepaintBoundary(
+                  child: Lottie.asset(
+                    AppImages.trailLoadingLot,
+                    width: 85,
+                    height: 85,
+                    fit: BoxFit.contain,
+                    delegates: LottieDelegates(
+                      values: [
+                        ValueDelegate.colorFilter(
+                          ['**'],
+                          value: ColorFilter.mode(
+                            Theme.of(
+                              context,
+                            ).primaryColor.withValues(alpha: 0.85),
+                            BlendMode.srcATop,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
+                    animate: animate,
+                    errorBuilder: (context, error, stackTrace) {
+                      return const CustomLoadingIndicator();
+                    },
                   ),
-                  animate: animate,
-                  errorBuilder: (context, error, stackTrace) {
-                    return const CustomLoadingIndicator();
-                  },
                 ),
               ),
             ),

@@ -37,10 +37,12 @@ class _CustomTabWrapperState<T> extends State<CustomTabWrapper<T>> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Lottie.asset(
-              AppImages.blueError404Lot,
-              height: screenSize.height * 0.38,
-              fit: BoxFit.contain,
+            RepaintBoundary(
+              child: Lottie.asset(
+                AppImages.blueError404Lot,
+                height: screenSize.height * 0.38,
+                fit: BoxFit.contain,
+              ),
             ),
             SizedBox(height: _isRetrying ? 0 : 22),
             AnimatedOpacity(

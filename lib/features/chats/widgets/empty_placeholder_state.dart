@@ -46,12 +46,11 @@ class _EmptyPlaceholderStateState extends State<EmptyPlaceholderState>
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: Opacity(
-        opacity: widget.opacity,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Lottie.asset(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          RepaintBoundary(
+            child: Lottie.asset(
               widget.img,
               controller: _controller,
               height: widget.imgHeight,
@@ -63,7 +62,9 @@ class _EmptyPlaceholderStateState extends State<EmptyPlaceholderState>
                       ValueDelegate.colorFilter(
                         ['**'],
                         value: ColorFilter.mode(
-                          Theme.of(context).primaryColor,
+                          Theme.of(
+                            context,
+                          ).primaryColor.withValues(alpha: widget.opacity),
                           BlendMode.srcATop,
                         ),
                       ),
@@ -77,8 +78,11 @@ class _EmptyPlaceholderStateState extends State<EmptyPlaceholderState>
                 );
               },
             ),
-            const Gap(12),
-            Text(
+          ),
+          const Gap(12),
+          Opacity(
+            opacity: widget.opacity,
+            child: Text(
               widget.title,
               style:
                   widget.style ??
@@ -88,9 +92,9 @@ class _EmptyPlaceholderStateState extends State<EmptyPlaceholderState>
                     fontSize: 20,
                   ),
             ),
-            const Gap(20),
-          ],
-        ),
+          ),
+          const Gap(20),
+        ],
       ),
     );
   }
