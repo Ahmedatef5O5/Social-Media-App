@@ -266,9 +266,17 @@ Widget _buildApp(String savedTheme) {
     child: MultiBlocProvider(
       providers: [
         BlocProvider(
-          create: (_) => AuthCubit(SupabaseAuthServices())..checkAuthStatus(),
+          create:
+              (context) =>
+                  AuthCubit(context.read<SupabaseAuthServices>())
+                    ..checkAuthStatus(),
         ),
-        BlocProvider(create: (context) => HomeCubit()..getHomeData()),
+        BlocProvider(
+          create:
+              (context) =>
+                  HomeCubit(homeServices: context.read<HomeServices>())
+                    ..getHomeData(),
+        ),
         BlocProvider(create: (_) => GroupListCubit(GroupChatServices())),
 
         BlocProvider(
