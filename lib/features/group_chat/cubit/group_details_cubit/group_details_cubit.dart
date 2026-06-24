@@ -322,6 +322,7 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState> {
       await _services.toggleReaction(
         messageId: messageId,
         emoji: emoji,
+        groupId: group.id,
         currentEmoji: currentEmoji,
       );
     } catch (e) {
@@ -330,7 +331,9 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState> {
       } else {
         _reactionsCache[messageId]![currentUserId] = currentEmoji;
       }
-      rethrow;
+      _emitLoaded();
+      debugPrint('toggleReaction error: $e');
+      // rethrow;
     }
   }
 

@@ -249,6 +249,7 @@ class GroupChatServices {
   Future<void> toggleReaction({
     required String messageId,
     required String emoji,
+    required String groupId,
     String? currentEmoji,
   }) async {
     final query = _supabase
@@ -267,6 +268,7 @@ class GroupChatServices {
       'message_id': messageId,
       'user_id': currentUserId,
       'reaction': emoji,
+      'group_id': groupId,
     });
   }
 
@@ -274,6 +276,7 @@ class GroupChatServices {
     return _supabase
         .from('group_message_reactions')
         .stream(primaryKey: ['id'])
+        .eq('group_id', groupId)
         .map((data) => data.cast<Map<String, dynamic>>());
   }
 
