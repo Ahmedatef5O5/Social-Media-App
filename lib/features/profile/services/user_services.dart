@@ -23,4 +23,18 @@ class UserService {
       rethrow;
     }
   }
+
+  Future<int> getUserPostsCount(String userId) async {
+    try {
+      final count = await _supabase
+          .from(SupabaseConstants.posts)
+          .count(CountOption.exact)
+          .eq(PostColumns.authorId, userId);
+
+      return count;
+    } catch (e) {
+      debugPrint('getUserPostsCount error: $e');
+      return 0;
+    }
+  }
 }

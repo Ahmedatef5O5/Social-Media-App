@@ -1,26 +1,30 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:social_media_app/features/auth/data/models/user_data.dart';
-import 'package:social_media_app/features/home/services/home_services.dart';
 import 'package:social_media_app/features/profile/models/profile_stats_model.dart';
+import '../../services/user_services.dart';
 part 'profile_state.dart';
 
 class ProfileCubit extends Cubit<ProfileState> {
-  final HomeServices _homeServices;
+  final UserService _userService;
 
-  ProfileCubit(this._homeServices) : super(ProfileInitial());
+  ProfileCubit(this._userService) : super(ProfileInitial());
 
   Future<void> getProfileData(String userId, {bool isRefresh = false}) async {
     if (!isRefresh) emit(ProfileLoading());
     try {
-      final user = await _homeServices.userServices.fetchCurrentUser(userId);
-      final allPosts = await _homeServices.postServices.fetchPosts();
-      final userPostsCount = allPosts.where((p) => p.authorId == userId).length;
+      final results = await Future.wait([
+        _userService.fetchCurrentUser(userId),
+        _userService.getUserPostsCount(userId),
+      ]);
+
+      final user = results[0] as UserData;
+      final postsCount = results[1] as int;
 
       final stats = ProfileStatsModel(
-        postsCount: userPostsCount,
-        photosCount: userPostsCount,
-        followersCount: 10500,
+        postsCount: postsCount,
+        photosCount: postsCount,
+        followersCount: 10500, // TODO:
         followingCount: 65000,
       );
       if (isRefresh) {

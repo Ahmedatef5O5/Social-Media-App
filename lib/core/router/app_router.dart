@@ -20,7 +20,7 @@ import 'package:social_media_app/features/group_chat/models/group_model.dart';
 import 'package:social_media_app/features/group_chat/views/group_chat_details_view.dart';
 import 'package:social_media_app/features/group_chat/views/group_info_view.dart';
 import 'package:social_media_app/features/home/cubits/home_cubit/home_cubit.dart';
-import 'package:social_media_app/features/home/services/home_services.dart';
+import 'package:social_media_app/features/profile/services/user_services.dart';
 import 'package:social_media_app/features/stories/views/add_story_preview_view.dart';
 import 'package:social_media_app/features/home/views/create_post_view.dart';
 import 'package:social_media_app/features/home/views/post_themes_view.dart';
@@ -312,7 +312,8 @@ class AppRouter {
                 BlocProvider(
                   create:
                       (context) =>
-                          ProfileCubit(HomeServices())..getProfileData(userId),
+                          ProfileCubit(context.read<UserService>())
+                            ..getProfileData(userId),
                 ),
               ],
               child: ProfileView(userId: userId),

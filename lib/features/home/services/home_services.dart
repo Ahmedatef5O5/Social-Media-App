@@ -6,10 +6,16 @@ import '../../../core/services/supabase_storage_services.dart';
 import '../../stories/services/stories_services.dart';
 
 class HomeServices {
-  final supabaseServices = SupabaseDatabaseServices.instance;
-  final storage = SupabaseStorageServices.instance;
-  final postServices = PostsServices();
-  final storyServices = StoriesServices();
-  final commentServices = CommentsService();
-  final userServices = UserService();
+  HomeServices._();
+  static final HomeServices instance = HomeServices._();
+
+  final SupabaseDatabaseServices supabaseServices =
+      SupabaseDatabaseServices.instance;
+
+  final SupabaseStorageServices storage = SupabaseStorageServices.instance;
+
+  final PostsServices postServices = PostsServices();
+  final StoriesServices storyServices = StoriesServices();
+  final CommentsService commentServices = CommentsService();
+  final UserService userServices = UserService();
 }

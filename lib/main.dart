@@ -257,10 +257,8 @@ Future<void> _initNotifications() async {
 Widget _buildApp(String savedTheme) {
   return MultiRepositoryProvider(
     providers: [
-      RepositoryProvider(create: (_) => HomeServices()),
       RepositoryProvider(create: (_) => ChatServices()),
       RepositoryProvider(create: (_) => SupabaseAuthServices()),
-
       RepositoryProvider(create: (_) => CallSignalingService()),
     ],
     child: MultiBlocProvider(
@@ -274,8 +272,7 @@ Widget _buildApp(String savedTheme) {
         BlocProvider(
           create:
               (context) =>
-                  HomeCubit(homeServices: context.read<HomeServices>())
-                    ..getHomeData(),
+                  HomeCubit(homeServices: HomeServices.instance)..getHomeData(),
         ),
         BlocProvider(create: (_) => GroupListCubit(GroupChatServices())),
 
