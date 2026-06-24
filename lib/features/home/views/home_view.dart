@@ -26,6 +26,7 @@ class HomeView extends StatefulWidget {
 class _HomeViewState extends State<HomeView> {
   late ScrollController _scrollController;
   bool _showBackToTop = false;
+  bool _isRefreshing = false;
   double _lastOffset = 0;
   bool _isScrollingToTop = false;
 
@@ -99,6 +100,17 @@ class _HomeViewState extends State<HomeView> {
     _isScrollingToTop = false;
   }
 
+  Future<void> _handleRefresh() async {
+    setState(() => _isRefreshing = true);
+    try {
+      await context.read<HomeCubit>().refreshHomeData(isRefresh: true);
+    } finally {
+      if (mounted) {
+        setState(() => _isRefreshing = false);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return PopScope(
@@ -122,10 +134,7 @@ class _HomeViewState extends State<HomeView> {
                     padding: const EdgeInsets.symmetric(horizontal: 16.0),
                     child: CustomPullToRefresh(
                       top: MediaQuery.sizeOf(context).height * 0.068,
-                      onRefresh:
-                          () async => await context
-                              .read<HomeCubit>()
-                              .refreshHomeData(isRefresh: true),
+                      onRefresh: _handleRefresh,
                       child: CustomScrollView(
                         controller: _scrollController,
                         physics: const AlwaysScrollableScrollPhysics(
@@ -153,7 +162,7 @@ class _HomeViewState extends State<HomeView> {
                     ),
                   ),
                 ),
-                if (state is HomeRefreshFeedback)
+                if (_isRefreshing)
                   Positioned.fill(
                     child: IgnorePointer(
                       child: Container(

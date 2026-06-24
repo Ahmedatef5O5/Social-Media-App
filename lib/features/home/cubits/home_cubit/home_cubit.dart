@@ -77,9 +77,18 @@ class HomeCubit extends Cubit<HomeState> {
         if (elapsed < minDuration) {
           await Future.delayed(minDuration - elapsed);
         }
+
+        if (cachedPosts.isNotEmpty) {
+          emit(PostsLoaded(cachedPosts, DateTime.now()));
+        }
       }
     } catch (e) {
       debugPrint('Error refreshing home data: $e');
+      emit(
+        UserDataLoadError(
+          'An error occurred while updating the data. Please try again.',
+        ),
+      );
     }
   }
 
@@ -332,11 +341,17 @@ class HomeCubit extends Cubit<HomeState> {
       return;
     }
 
-    cachedPosts = await homeServices.postServices.fetchPosts();
-    cachedPosts = _fixLikersImages(cachedPosts);
-    emit(PostsLoaded(cachedPosts, DateTime.now()));
+    try {
+      cachedPosts = await homeServices.postServices.fetchPosts();
+      cachedPosts = _fixLikersImages(cachedPosts);
+      emit(PostsLoaded(cachedPosts, DateTime.now()));
 
-    _listenToPosts();
+      _listenToPosts();
+    } catch (e) {
+      debugPrint('Error fetching posts: $e');
+      emit(UserDataLoadError('Failed to load posts.'));
+      rethrow;
+    }
   }
 
   void addCommentLocally(
@@ -627,7 +642,7 @@ class HomeCubit extends Cubit<HomeState> {
   }
 
   void _listenToPosts() {
-    _postsSubscription?.cancel();
+    if (_postsSubscription != null) return;
 
     _postsSubscription = homeServices.postServices.getPostsStream().listen((
       FeedEvent event,
