@@ -3,10 +3,42 @@ import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:social_media_app/features/auth/data/repository/auth_repository.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' as supabase_pkg;
+import '../../../core/utilities/supabase_constants.dart';
 import '../data/models/user_data.dart';
 
 class SupabaseAuthServices implements AuthRepository {
   final _supabase = Supabase.instance.client;
+
+  Stream<AuthState> get authStateStream => _supabase.auth.onAuthStateChange;
+
+  supabase_pkg.User? get currentUser => _supabase.auth.currentUser;
+
+  supabase_pkg.Session? get currentSession => _supabase.auth.currentSession;
+
+  Future<void> ensureUserExistsInDb(supabase_pkg.User user) async {
+    try {
+      final existingUser =
+          await _supabase
+              .from(SupabaseConstants.users)
+              .select()
+              .eq(UserColumns.id, user.id)
+              .maybeSingle();
+
+      if (existingUser == null) {
+        final String userName =
+            user.userMetadata?[UserColumns.name] ??
+            user.userMetadata?['full_name'] ??
+            user.userMetadata?['display_name'] ??
+            'Social User';
+
+        await setUserData(userName, user.email ?? '', user.id);
+      }
+    } catch (e) {
+      debugPrint('Error ensuring user exists: $e');
+      rethrow;
+    }
+  }
 
   @override
   Future<void> signInWithEmail(String email, String password) async {

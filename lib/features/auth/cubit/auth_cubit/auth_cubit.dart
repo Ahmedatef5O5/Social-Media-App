@@ -4,7 +4,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:social_media_app/features/auth/handler/auth_exception_handler.dart';
 import 'package:social_media_app/features/auth/services/supabase_auth_services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../../../core/utilities/supabase_constants.dart';
 part 'auth_state.dart';
 
 class AuthCubit extends Cubit<AuthState> {
@@ -16,9 +15,7 @@ class AuthCubit extends Cubit<AuthState> {
   }
 
   void _monitorAuthState() {
-    _authSubscription = Supabase.instance.client.auth.onAuthStateChange.listen((
-      data,
-    ) async {
+    _authSubscription = _authServices.authStateStream.listen((data) async {
       final session = data.session;
       final event = data.event;
 
@@ -26,31 +23,12 @@ class AuthCubit extends Cubit<AuthState> {
           (event == AuthChangeEvent.signedIn ||
               event == AuthChangeEvent.initialSession)) {
         final user = session.user;
-        await _ensureUserExistsInDb(user);
+        await _authServices.ensureUserExistsInDb(user);
         emit(AuthSuccess());
       } else if (event == AuthChangeEvent.signedOut) {
         emit(AuthSignedOut());
       }
     });
-  }
-
-  Future<void> _ensureUserExistsInDb(User user) async {
-    final existingUser =
-        await Supabase.instance.client
-            .from(SupabaseConstants.users)
-            .select()
-            .eq(UserColumns.id, user.id)
-            .maybeSingle();
-
-    if (existingUser == null) {
-      final String userName =
-          user.userMetadata?[UserColumns.name] ??
-          user.userMetadata?['full_name'] ??
-          user.userMetadata?['display_name'] ??
-          'Social User';
-
-      await _authServices.setUserData(userName, user.email ?? '', user.id);
-    }
   }
 
   void _handleError(Object e) {
@@ -138,8 +116,7 @@ class AuthCubit extends Cubit<AuthState> {
   }
 
   Future<void> checkAuthStatus() async {
-    final session = Supabase.instance.client.auth.currentSession;
-
+    final session = _authServices.currentSession;
     if (session != null) {
       if (session.isExpired) {
         debugPrint('⚠️ Session Expired! Forcing Sign Out...');
