@@ -5,40 +5,46 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../secrets/app_secrets.dart';
 
 class SupabaseStorageServices {
+  SupabaseStorageServices._();
+
+  static final instance = SupabaseStorageServices._();
+
   final _supabase = Supabase.instance.client;
 
-  dio_pkg.CancelToken? _uploadCancelToken;
+  final _dio = dio_pkg.Dio(
+    dio_pkg.BaseOptions(
+      sendTimeout: const Duration(minutes: 3),
+      receiveTimeout: const Duration(minutes: 3),
+    ),
+  );
 
-  Future<String?> uploadFile(
+  Future<String> uploadFile(
     File file,
     String bucket,
-    String folderName, {
-    void Function(double)? onProgress,
+    String folder, {
+    String filePrefix = '',
+    void Function(double progress)? onProgress,
+    dio_pkg.CancelToken? cancelToken,
   }) async {
+    if (!await file.exists()) {
+      throw Exception('file_not_found: ${file.path}');
+    }
+
+    final ext = _extractExtension(file.path);
+    final fileName = '$filePrefix${DateTime.now().millisecondsSinceEpoch}.$ext';
+    final uploadPath = '$folder/$fileName';
+    final contentType = _resolveContentType(ext, folder);
+    final fileLength = await file.length();
+    final accessToken =
+        _supabase.auth.currentSession?.accessToken ??
+        AppSecrets.supabaseAnonKey;
+
+    onProgress?.call(0.0);
+
     try {
-      if (!await file.exists()) {
-        throw Exception('file_not_found');
-      }
-
-      _uploadCancelToken = dio_pkg.CancelToken();
-
-      final ext = file.path.split('.').last.toLowerCase();
-      final fileName = '${DateTime.now().millisecondsSinceEpoch}.$ext';
-      final uploadPath = '$folderName/$fileName';
-      String contentType = _determineContentType(ext);
-
-      final fileLength = await file.length();
-
-      final accessToken =
-          _supabase.auth.currentSession?.accessToken ??
-          AppSecrets.supabaseAnonKey;
-
-      final dioClient = dio_pkg.Dio();
-
-      await dioClient.put(
+      await _dio.put(
         '${AppSecrets.supabaseUrl}/storage/v1/object/$bucket/$uploadPath',
         data: file.openRead(),
-        cancelToken: _uploadCancelToken,
         options: dio_pkg.Options(
           headers: {
             'Authorization': 'Bearer $accessToken',
@@ -49,30 +55,26 @@ class SupabaseStorageServices {
         ),
         onSendProgress: (sent, total) {
           final actualTotal = total > 0 ? total : fileLength;
-          final progress = (sent / actualTotal).clamp(0.0, 1.0);
-          onProgress?.call(progress);
+          onProgress?.call((sent / actualTotal).clamp(0.0, 1.0));
         },
       );
 
+      onProgress?.call(1.0);
+
       return _supabase.storage.from(bucket).getPublicUrl(uploadPath);
-    } catch (e) {
-      if (e is dio_pkg.DioException &&
-          e.type == dio_pkg.DioExceptionType.cancel) {
-        debugPrint('Upload Canceled by User');
-        throw Exception('canceled');
+    } on dio_pkg.DioException catch (e) {
+      if (e.type == dio_pkg.DioExceptionType.cancel) {
+        debugPrint('⚠️ Upload canceled by user');
+        throw const UploadCanceledException();
       }
-      debugPrint('Error uploading file in HomeServices: $e');
+      debugPrint('❌ Upload error: ${e.response?.data ?? e.message}');
       rethrow;
     }
   }
 
-  void cancelCurrentUpload() {
-    if (_uploadCancelToken != null && !_uploadCancelToken!.isCancelled) {
-      _uploadCancelToken?.cancel("Upload Canceled by User");
-    }
-  }
+  String _extractExtension(String path) => path.split('.').last.toLowerCase();
 
-  String _determineContentType(String ext) {
+  String _resolveContentType(String ext, String folder) {
     switch (ext) {
       case 'jpg':
       case 'jpeg':
@@ -81,14 +83,35 @@ class SupabaseStorageServices {
         return 'image/png';
       case 'gif':
         return 'image/gif';
+      case 'webp':
+        return 'image/webp';
       case 'mp4':
         return 'video/mp4';
       case 'mov':
         return 'video/quicktime';
+      case 'm4a':
+      case 'aac':
+        return 'audio/x-m4a';
+      case 'mp3':
+        return 'audio/mpeg';
+      case 'ogg':
+        return 'audio/ogg';
       case 'pdf':
         return 'application/pdf';
       default:
+        if (folder.contains('image')) return 'image/jpeg';
+        if (folder.contains('video')) return 'video/mp4';
+        if (folder.contains('voice') || folder.contains('audio')) {
+          return 'audio/mpeg';
+        }
         return 'application/octet-stream';
     }
   }
+}
+
+class UploadCanceledException implements Exception {
+  const UploadCanceledException();
+
+  @override
+  String toString() => 'UploadCanceledException: upload was canceled by user';
 }
