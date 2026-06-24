@@ -134,8 +134,9 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState> {
 
       if (imageFile != null) {
         if (await imageFile.exists()) {
-          imageUrl = await _chatServices.uploadChatFile(
+          imageUrl = await _chatServices.storage.uploadFile(
             imageFile,
+            'chat_media',
             'image',
             cancelToken: cancelToken,
             onProgress: (progress) {
@@ -157,8 +158,9 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState> {
 
       if (videoFile != null) {
         if (await videoFile.exists()) {
-          videoUrl = await _chatServices.uploadChatFile(
+          videoUrl = await _chatServices.storage.uploadFile(
             videoFile,
+            'chat_media',
             'video',
             cancelToken: cancelToken,
             onProgress: (progress) {
@@ -179,7 +181,12 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState> {
 
       if (voiceFile != null) {
         if (await voiceFile.exists()) {
-          voiceUrl = await _chatServices.uploadChatFile(voiceFile, 'voice');
+          voiceUrl = await _chatServices.storage.uploadFile(
+            voiceFile,
+            'chat_media',
+            'voice',
+            cancelToken: cancelToken,
+          );
         } else {
           emit(MessagesError("Voice file not found."));
           return;
@@ -232,7 +239,17 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState> {
           e.type == dio_pkg.DioExceptionType.cancel) {
         debugPrint("User canceled the upload");
         return;
+      } else {
+        debugPrint('Error uploading file: $e');
+
+        _cancelTokens.remove(tempId);
+        uploadProgressMap.remove(tempId);
+
+        cachedMessages.removeWhere((m) => m.id == tempId);
+
+        emit(MessagesSuccessLoaded(messages: List.from(cachedMessages)));
       }
+
       debugPrint('error sending message: $e');
       emit(
         MessagesError("Failed to send message. Please check your connection."),

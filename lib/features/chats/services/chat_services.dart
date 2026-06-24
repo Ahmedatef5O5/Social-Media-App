@@ -1,18 +1,19 @@
 import 'dart:async';
 import 'dart:io';
-import 'package:dio/dio.dart' as dio_pkg;
 import 'package:flutter/material.dart';
-import 'package:social_media_app/core/secrets/app_secrets.dart';
 import 'package:social_media_app/core/services/presence_service.dart';
 import 'package:social_media_app/core/utilities/supabase_constants.dart';
 import 'package:social_media_app/features/chats/models/message_model.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/helpers/chat_helper.dart';
+import '../../../core/services/supabase_storage_services.dart';
 import '../models/chat_user_model.dart';
 import '../models/presence_snapshot.dart';
 
 class ChatServices {
   final _supabase = Supabase.instance.client;
+
+  SupabaseStorageServices get storage => SupabaseStorageServices.instance;
 
   Future<bool> isConnected() async {
     try {
@@ -267,76 +268,6 @@ class ChatServices {
         .eq(MessagesColumns.isRead, false);
   }
 
-  Future<String> uploadChatFile(
-    File file,
-    String type, {
-    Function(double)? onProgress,
-    dio_pkg.CancelToken? cancelToken,
-  }) async {
-    if (!await file.exists()) {
-      throw Exception('File not found at path: ${file.path}');
-    }
-
-    final ext = file.path.split('.').last.toLowerCase();
-    final fileName = '${DateTime.now().millisecondsSinceEpoch}.$ext';
-    final uploadPath = '$type/$fileName';
-
-    String contentType;
-    if (type == 'image') {
-      contentType = 'image/${(ext == 'jpg' || ext == 'jpeg') ? 'jpeg' : ext}';
-    } else if (type == 'video') {
-      contentType = ext == 'mov' ? 'video/quicktime' : 'video/mp4';
-    } else if (type == 'voice') {
-      contentType =
-          (ext == 'm4a' || ext == 'aac') ? 'audio/x-m4a' : 'audio/mpeg';
-    } else {
-      contentType = 'application/octet-stream';
-    }
-
-    final storageBaseUrl = '${AppSecrets.supabaseUrl}/storage/v1';
-    final accessToken =
-        _supabase.auth.currentSession?.accessToken ??
-        AppSecrets.supabaseAnonKey;
-    final fileLength = await file.length();
-
-    final dioClient = dio_pkg.Dio();
-
-    try {
-      onProgress?.call(0.01);
-
-      await dioClient.put(
-        '$storageBaseUrl/object/chat_media/$uploadPath',
-        data: file.openRead(),
-        cancelToken: cancelToken,
-        options: dio_pkg.Options(
-          headers: {
-            'Authorization': 'Bearer $accessToken',
-            'Content-Type': contentType,
-            'x-upsert': 'false',
-            'Content-Length': fileLength.toString(),
-          },
-        ),
-        onSendProgress: (sent, total) {
-          if (total > 0 && onProgress != null) {
-            final progress = (sent / total).clamp(0.0, 1.0);
-            onProgress(progress);
-          }
-        },
-      );
-
-      onProgress?.call(1.0);
-
-      return _supabase.storage.from('chat_media').getPublicUrl(uploadPath);
-    } catch (e) {
-      if (dio_pkg.DioExceptionType.cancel == (e as dio_pkg.DioException).type) {
-        debugPrint('Upload Canceled by user');
-        throw Exception('CANCELED');
-      }
-
-      throw Exception('Upload failed: $e');
-    }
-  }
-
   Stream<PresenceSnapshot> getPresenceStream(String userId) {
     final controller = StreamController<PresenceSnapshot>();
 
@@ -350,6 +281,7 @@ class ChatServices {
 
         if (controller.isClosed) return;
 
+        // ignore: unnecessary_null_comparison
         if (rows == null || (rows as List).isEmpty) {
           controller.add(
             const PresenceSnapshot(isOnline: false, lastSeen: null),
@@ -357,6 +289,7 @@ class ChatServices {
           return;
         }
 
+        // ignore: unnecessary_cast
         final row = rows.first as Map<String, dynamic>;
 
         final updatedAtRaw = row['updated_at'];
@@ -503,7 +436,6 @@ class ChatServices {
   Stream<List<String>> getTypingUsersStream(String currentUserId) {
     final controller = StreamController<List<String>>.broadcast();
 
-    // Map لتخزين حالة الكتابة لكل محادثة: chatId → (userId, updatedAt)
     final Map<String, ({String userId, DateTime updatedAt})> typingMap = {};
 
     const channelName = 'typing_watcher';
