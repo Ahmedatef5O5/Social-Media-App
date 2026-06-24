@@ -9,9 +9,11 @@ import 'package:social_media_app/core/services/file_picker_services.dart';
 import 'package:social_media_app/features/auth/data/models/user_data.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:video_player/video_player.dart';
+import '../../../../core/services/presence_service.dart';
 import '../../../comments/events/comment_event_bus.dart';
 import '../../../comments/model/comment_model.dart';
 import '../../../notifications/repository/notifications_repository.dart';
+import '../../models/feed_event.dart';
 import '../../models/post_model.dart';
 import '../../models/post_request_body.dart';
 import '../../../stories/model/story_model.dart';
@@ -25,35 +27,29 @@ class HomeCubit extends Cubit<HomeState> {
     _listenToCommentEvents();
   }
 
-  final homeServices = HomeServices();
-  final filePickerServices = FilePickerServices();
-
-  UserData? currentUserData;
-
-  XFile? selectedImage;
-  XFile? selectedVideo;
-  XFile? selectedDocument;
-  File? selectedStoryFile;
-
-  File? _stableVideoFile;
-
-  List<StoryModel> cachedStories = [];
-
   List<PostModel> cachedPosts = [];
-
+  List<StoryModel> cachedStories = [];
+  UserData? currentUserData;
+  final filePickerServices = FilePickerServices();
+  final homeServices = HomeServices();
   PersistentTabController? navController;
-
-  StreamSubscription? _postsSubscription;
+  XFile? selectedDocument;
+  XFile? selectedImage;
+  File? selectedStoryFile;
+  XFile? selectedVideo;
 
   // ignore: unused_field
   StreamSubscription? _commentEventSub;
 
   final _eventBus = CommentEventBus.instance;
+  StreamSubscription? _postsSubscription;
+  File? _stableVideoFile;
 
-  void _listenToCommentEvents() {
-    _commentEventSub = _eventBus.stream.listen((event) {
-      addCommentLocally(event.postId, event.comment, event.parentId);
-    });
+  @override
+  Future<void> close() {
+    _postsSubscription?.cancel();
+    _cleanupStableVideo();
+    return super.close();
   }
 
   // ── Home data ──────────────────────────────────────────────────────────────
@@ -95,18 +91,6 @@ class HomeCubit extends Cubit<HomeState> {
       fetchStories(isRefresh: isRefresh),
       fetchPosts(isRefresh: isRefresh),
     ]);
-  }
-
-  Future<void> _getCurrentUser(String userId, {bool isRefresh = false}) async {
-    try {
-      currentUserData = await homeServices.userServices.fetchCurrentUser(
-        userId,
-      );
-      if (!isRefresh) emit(UserDataLoaded(currentUserData!));
-    } catch (e) {
-      debugPrint("Error fetching user: $e");
-      emit(UserDataLoadError(e.toString()));
-    }
   }
 
   // ── Story actions ──────────────────────────────────────────────────────────
@@ -347,24 +331,12 @@ class HomeCubit extends Cubit<HomeState> {
       emit(UserDataLoadError("No internet connection."));
       return;
     }
-    _listenToPosts();
-  }
 
-  void _listenToPosts() {
-    _postsSubscription?.cancel();
-    _postsSubscription = homeServices.postServices.getPostsStream().listen((
-      _,
-    ) async {
-      try {
-        final posts = await homeServices.postServices.fetchPosts();
-        cachedPosts = _fixLikersImages(posts);
-        if (!isClosed) {
-          emit(PostsLoaded(cachedPosts, DateTime.now()));
-        }
-      } catch (e) {
-        debugPrint("Posts stream error: $e");
-      }
-    });
+    cachedPosts = await homeServices.postServices.fetchPosts();
+    cachedPosts = _fixLikersImages(cachedPosts);
+    emit(PostsLoaded(cachedPosts, DateTime.now()));
+
+    _listenToPosts();
   }
 
   void addCommentLocally(
@@ -636,6 +608,128 @@ class HomeCubit extends Cubit<HomeState> {
     }
   }
 
+  void _listenToCommentEvents() {
+    _commentEventSub = _eventBus.stream.listen((event) {
+      addCommentLocally(event.postId, event.comment, event.parentId);
+    });
+  }
+
+  Future<void> _getCurrentUser(String userId, {bool isRefresh = false}) async {
+    try {
+      currentUserData = await homeServices.userServices.fetchCurrentUser(
+        userId,
+      );
+      if (!isRefresh) emit(UserDataLoaded(currentUserData!));
+    } catch (e) {
+      debugPrint("Error fetching user: $e");
+      emit(UserDataLoadError(e.toString()));
+    }
+  }
+
+  void _listenToPosts() {
+    _postsSubscription?.cancel();
+
+    _postsSubscription = homeServices.postServices.getPostsStream().listen((
+      FeedEvent event,
+    ) async {
+      if (isClosed) return;
+
+      switch (event) {
+        case PostInsertedEvent(:final postId):
+          await _handlePostInserted(postId);
+
+        case PostUpdatedEvent(:final postId):
+          await _handlePostUpdated(postId);
+
+        case PostDeletedEvent(:final postId):
+          _handlePostDeleted(postId);
+
+        case LikeChangedEvent(:final postId, :final changeType):
+          await _handleLikeChanged(postId, changeType);
+
+        case PresenceChangedEvent(
+          :final userId,
+          :final isOnline,
+          :final updatedAt,
+        ):
+          _handlePresenceChanged(userId, isOnline, updatedAt);
+      }
+    });
+  }
+
+  Future<void> _handlePostInserted(String postId) async {
+    final newPost = await homeServices.postServices.fetchPostById(postId);
+    if (newPost == null || isClosed) return;
+
+    final alreadyExists = cachedPosts.any((p) => p.id == postId);
+    if (alreadyExists) return;
+
+    cachedPosts = [newPost, ...cachedPosts];
+
+    cachedPosts = _fixLikersImages(cachedPosts);
+    emit(PostsLoaded(cachedPosts, DateTime.now()));
+    debugPrint('🔥 EVENT TRIGGERED: Inserted Post -> $postId');
+  }
+
+  Future<void> _handlePostUpdated(String postId) async {
+    final updatedPost = await homeServices.postServices.fetchPostById(postId);
+    if (updatedPost == null || isClosed) return;
+
+    cachedPosts =
+        cachedPosts.map((p) {
+          return p.id == postId ? updatedPost : p;
+        }).toList();
+    cachedPosts = _fixLikersImages(cachedPosts);
+    emit(PostsLoaded(cachedPosts, DateTime.now()));
+  }
+
+  void _handlePostDeleted(String postId) {
+    final exists = cachedPosts.any((p) => p.id == postId);
+    if (!exists || isClosed) return;
+
+    cachedPosts = cachedPosts.where((p) => p.id != postId).toList();
+    emit(PostsLoaded(cachedPosts, DateTime.now()));
+    debugPrint('🔥 EVENT TRIGGERED: Deleted Post Locally -> $postId');
+  }
+
+  Future<void> _handleLikeChanged(
+    String postId,
+    PostgresChangeEvent changeType,
+  ) async {
+    final refreshedPost = await homeServices.postServices.fetchPostById(postId);
+    if (refreshedPost == null || isClosed) return;
+
+    cachedPosts =
+        cachedPosts.map((p) {
+          return p.id == postId ? refreshedPost : p;
+        }).toList();
+    cachedPosts = _fixLikersImages(cachedPosts);
+    emit(PostsLoaded(cachedPosts, DateTime.now()));
+  }
+
+  void _handlePresenceChanged(
+    String userId,
+    bool isOnline,
+    DateTime? updatedAt,
+  ) {
+    final isConsideredOnline = PresenceService.isConsideredOnline(
+      isOnline: isOnline,
+      updatedAt: updatedAt,
+    );
+
+    final affectsCurrentFeed = cachedPosts.any((p) => p.authorId == userId);
+    if (!affectsCurrentFeed || isClosed) return;
+
+    cachedPosts =
+        cachedPosts.map((p) {
+          return p.authorId == userId
+              ? p.copyWith(isOnline: isConsideredOnline)
+              : p;
+        }).toList();
+
+    emit(PostsLoaded(cachedPosts, DateTime.now()));
+  }
+
   Future<File> _writeToAppDir({
     required XFile xFile,
     required String extension,
@@ -704,12 +798,5 @@ class HomeCubit extends Cubit<HomeState> {
       return "Storage error: Make sure you have permission to upload.";
     }
     return "Something went wrong. Please try again later.";
-  }
-
-  @override
-  Future<void> close() {
-    _postsSubscription?.cancel();
-    _cleanupStableVideo();
-    return super.close();
   }
 }

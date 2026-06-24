@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:io';
-
 import 'package:flutter/material.dart';
+import 'package:social_media_app/features/home/models/feed_event.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/services/presence_service.dart';
 import '../../../core/services/supabase_database_services.dart';
@@ -42,6 +42,49 @@ class PostsServices {
   ${LikeColumns.userId}, 
   ${SupabaseConstants.users} (${UserColumns.imageUrl}))
 ''';
+
+  Future<PostModel?> fetchPostById(String postId) async {
+    try {
+      final rows = await _supabase
+          .from(SupabaseConstants.posts)
+          .select(_postsQuery)
+          .eq(PostColumns.id, postId)
+          .limit(1);
+      if (rows.isEmpty) return null;
+
+      final data = rows.first as Map<String, dynamic>;
+      final post = PostModel.fromMap(data);
+
+      final flatComments =
+          (data['comments'] as List? ?? [])
+              .map((e) => CommentModel.fromMap(e))
+              .toList();
+      final tree = CommentTreeBuilder.build(flatComments);
+      final postWithComments = post.copyWith(comments: tree);
+
+      final presenceRows = await _supabase
+          .from('user_presence')
+          .select('user_id, is_online, updated_at')
+          .eq('user_id', postWithComments.authorId)
+          .limit(1);
+
+      if (presenceRows.isEmpty) return postWithComments;
+
+      final row = presenceRows.first as Map<String, dynamic>;
+      final isOnline = PresenceService.isConsideredOnline(
+        isOnline: row['is_online'] as bool? ?? false,
+        updatedAt:
+            row['updated_at'] != null
+                ? DateTime.parse(row['updated_at'].toString())
+                : null,
+      );
+
+      return postWithComments.copyWith(isOnline: isOnline);
+    } catch (e) {
+      debugPrint('fetchPostById error: $e');
+      return null;
+    }
+  }
 
   Future<List<PostModel>> fetchPosts() async {
     if (!(await isConnected())) {
@@ -94,12 +137,8 @@ class PostsServices {
     }
   }
 
-  Stream<void> getPostsStream() {
-    final controller = StreamController<void>.broadcast();
-
-    void notify(dynamic _) {
-      if (!controller.isClosed) controller.add(null);
-    }
+  Stream<FeedEvent> getPostsStream() {
+    final controller = StreamController<FeedEvent>.broadcast();
 
     const channelName = 'home_feed_watcher';
     _supabase.removeChannel(_supabase.channel(channelName));
@@ -107,28 +146,72 @@ class PostsServices {
     final channel = _supabase
         .channel(channelName)
         .onPostgresChanges(
-          event: PostgresChangeEvent.all,
+          event: PostgresChangeEvent.insert,
           schema: 'public',
           table: SupabaseConstants.posts,
-          callback: notify,
+          callback: (payload) {
+            final postId = payload.newRecord[PostColumns.id] as String?;
+            if (postId != null && !controller.isClosed) {
+              controller.add(PostInsertedEvent(postId));
+            }
+          },
+        )
+        .onPostgresChanges(
+          event: PostgresChangeEvent.update,
+          schema: 'public',
+          table: SupabaseConstants.posts,
+          callback: (payload) {
+            final postId = payload.newRecord[PostColumns.id] as String?;
+            if (postId != null && !controller.isClosed) {
+              controller.add(PostUpdatedEvent(postId));
+            }
+          },
+        )
+        .onPostgresChanges(
+          event: PostgresChangeEvent.delete,
+          schema: 'public',
+          table: SupabaseConstants.posts,
+          callback: (payload) {
+            final postId = payload.oldRecord[PostColumns.id] as String?;
+            if (postId != null && !controller.isClosed) {
+              controller.add(PostDeletedEvent(postId));
+            }
+          },
         )
         .onPostgresChanges(
           event: PostgresChangeEvent.all,
           schema: 'public',
           table: SupabaseConstants.likes,
-          callback: notify,
+          callback: (payload) {
+            final record =
+                payload.newRecord.isNotEmpty
+                    ? payload.newRecord
+                    : payload.oldRecord;
+            final postId = record[LikeColumns.postId] as String?;
+            if (postId != null && !controller.isClosed) {
+              controller.add(LikeChangedEvent(postId, payload.eventType));
+            }
+          },
         )
         .onPostgresChanges(
           event: PostgresChangeEvent.all,
           schema: 'public',
           table: 'user_presence',
-          callback: notify,
+          callback: (payload) {
+            final record = payload.newRecord;
+            final userId = record['user_id'] as String?;
+            if (userId != null && !controller.isClosed) {
+              final isOnline = record['is_online'] as bool? ?? false;
+              final updatedAtRaw = record['updated_at'] as String?;
+              final updatedAt =
+                  updatedAtRaw != null ? DateTime.tryParse(updatedAtRaw) : null;
+              controller.add(PresenceChangedEvent(userId, isOnline, updatedAt));
+            }
+          },
         )
         .subscribe((status, [error]) {
-          debugPrint('[PostsStream] channel status: $status');
+          debugPrint('[FeedStream] status: $status');
         });
-
-    Future.microtask(() => notify(null));
 
     controller.onCancel = () {
       _supabase.removeChannel(channel);
