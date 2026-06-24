@@ -68,20 +68,27 @@ class PostItemWidget extends StatelessWidget {
               ),
             ],
           ),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                PostHeaderWidget(
-                  post: currentPost,
-                  currentUserId: currentUserId,
-                  homeCubit: homeCubit,
-                ),
-                PostTxtContentWidget(post: currentPost),
-                PostMediaWidget(post: currentPost),
-                PostInteractionsRow(postId: currentPost.id),
-              ],
+          clipBehavior: Clip.antiAlias,
+          child: Material(
+            type: MaterialType.transparency,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 12.0,
+                vertical: 8,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  PostHeaderWidget(
+                    post: currentPost,
+                    currentUserId: currentUserId,
+                    homeCubit: homeCubit,
+                  ),
+                  PostTxtContentWidget(post: currentPost),
+                  PostMediaWidget(post: currentPost),
+                  PostInteractionsRow(postId: currentPost.id),
+                ],
+              ),
             ),
           ),
         );
