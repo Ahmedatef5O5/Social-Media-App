@@ -1,10 +1,9 @@
 import 'dart:async';
 import 'dart:io';
-import 'package:dio/dio.dart' as dio_pkg;
 import 'package:flutter/material.dart';
-import 'package:social_media_app/core/secrets/app_secrets.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/services/fcm_services.dart';
+import '../../../core/services/supabase_storage_services.dart';
 import '../models/group_member_model.dart';
 import '../models/group_model.dart';
 import '../models/groupe_message_model.dart';
@@ -13,6 +12,8 @@ class GroupChatServices {
   final _supabase = Supabase.instance.client;
 
   String get currentUserId => _supabase.auth.currentUser!.id;
+
+  SupabaseStorageServices get storage => SupabaseStorageServices.instance;
 
   Future<GroupModel> createGroup({
     required String name,
@@ -340,66 +341,6 @@ class GroupChatServices {
                   .map((m) => {'id': m['id'], 'read_by': m['read_by'] ?? []})
                   .toList(),
         );
-  }
-
-  Future<String> uploadGroupFile(
-    File file,
-    String type, {
-    Function(double)? onProgress,
-    dio_pkg.CancelToken? cancelToken,
-  }) async {
-    if (!await file.exists()) {
-      throw Exception('File not found: ${file.path}');
-    }
-
-    final ext = file.path.split('.').last.toLowerCase();
-    final fileName = 'group_${DateTime.now().millisecondsSinceEpoch}.$ext';
-    final bucket =
-        type == 'image'
-            ? 'chat-images'
-            : type == 'video'
-            ? 'chat-videos'
-            : 'chat-voices';
-    final path = '$currentUserId/$fileName';
-    final storageUrl =
-        '${AppSecrets.supabaseUrl}/storage/v1/object/$bucket/$path';
-
-    final fileBytes = await file.readAsBytes();
-    final dioInstance = dio_pkg.Dio();
-
-    try {
-      final response = await dioInstance.put(
-        storageUrl,
-        data: fileBytes,
-        cancelToken: cancelToken,
-        options: dio_pkg.Options(
-          sendTimeout: const Duration(minutes: 2),
-          receiveTimeout: const Duration(minutes: 2),
-          headers: {
-            'Authorization':
-                'Bearer ${_supabase.auth.currentSession?.accessToken}',
-            'Content-Type':
-                type == 'image'
-                    ? 'image/$ext'
-                    : type == 'video'
-                    ? 'video/$ext'
-                    : 'audio/$ext',
-          },
-        ),
-        onSendProgress: (sent, total) {
-          if (total > 0) onProgress?.call(sent / total);
-        },
-      );
-
-      if (response.statusCode != 200 && response.statusCode != 201) {
-        throw Exception('Upload failed: ${response.statusMessage}');
-      }
-
-      return '${AppSecrets.supabaseUrl}/storage/v1/object/public/$bucket/$path';
-    } on dio_pkg.DioException catch (e) {
-      debugPrint('Dio Upload Error: ${e.response?.data ?? e.message}');
-      throw Exception('Failed to upload file: ${e.message}');
-    }
   }
 
   Future<void> updateGroupAvatarUrl(String groupId, String newAvatarUrl) async {
