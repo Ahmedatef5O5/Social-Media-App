@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'package:dio/dio.dart' as dio_pkg;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
@@ -26,6 +27,8 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState> {
   List<String> _typingUserIds = [];
   Map<String, Map<String, String>> _reactionsCache = {};
   final Map<String, double> uploadProgressMap = {};
+  final Map<String, dio_pkg.CancelToken> _cancelTokens = {};
+
   bool _isFirstLoad = true;
 
   final ValueNotifier<GroupMessageModel?> replyToMessage = ValueNotifier(null);
@@ -190,6 +193,9 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState> {
 
     final tempId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
 
+    final cancelToken = dio_pkg.CancelToken();
+    _cancelTokens[tempId] = cancelToken;
+
     final tempMsg = GroupMessageModel(
       id: tempId,
       groupId: group.id,
@@ -215,9 +221,12 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState> {
 
       if (imageFile != null) {
         uploadProgressMap[tempId] = 0;
-        uploadedImageUrl = await _services.uploadGroupFile(
+        uploadedImageUrl = await _services.storage.uploadFile(
           imageFile,
-          'image',
+          'chat-images',
+          currentUserId,
+          filePrefix: 'group_',
+          cancelToken: cancelToken,
           onProgress: (p) {
             uploadProgressMap[tempId] = p;
             _emitLoaded();
@@ -228,9 +237,12 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState> {
 
       if (videoFile != null) {
         uploadProgressMap[tempId] = 0;
-        uploadedVideoUrl = await _services.uploadGroupFile(
+        uploadedVideoUrl = await _services.storage.uploadFile(
           videoFile,
-          'video',
+          'chat-videos',
+          currentUserId,
+          filePrefix: 'group_',
+          cancelToken: cancelToken,
           onProgress: (p) {
             uploadProgressMap[tempId] = p;
             _emitLoaded();
@@ -240,7 +252,13 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState> {
       }
 
       if (voiceFile != null) {
-        uploadedVoiceUrl = await _services.uploadGroupFile(voiceFile, 'voice');
+        uploadedVoiceUrl = await _services.storage.uploadFile(
+          voiceFile,
+          'chat-voices',
+          currentUserId,
+          filePrefix: 'group_',
+          cancelToken: cancelToken,
+        );
       }
 
       await _services.sendGroupMessage(
@@ -301,6 +319,20 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState> {
       cachedMessages.removeWhere((m) => m.id == tempId);
       uploadProgressMap.remove(tempId);
       emit(GroupDetailsError(e.toString()));
+
+      if (e is dio_pkg.DioException &&
+          e.type == dio_pkg.DioExceptionType.cancel) {
+        debugPrint('Upload canceled for tempId: $tempId');
+      } else {
+        debugPrint('Error uploading file: $e');
+
+        _cancelTokens.remove(tempId);
+        uploadProgressMap.remove(tempId);
+
+        cachedMessages.removeWhere((m) => m.id == tempId);
+
+        emit(GroupDetailsLoaded(messages: List.from(cachedMessages)));
+      }
     }
   }
 
@@ -308,6 +340,19 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState> {
     cachedMessages.removeWhere((m) => m.id == messageId);
     _emitLoaded();
     await _services.deleteGroupMessage(messageId);
+  }
+
+  void cancelUpload(String tempId) {
+    if (_cancelTokens.containsKey(tempId)) {
+      _cancelTokens[tempId]!.cancel('User canceled upload');
+
+      _cancelTokens.remove(tempId);
+      uploadProgressMap.remove(tempId);
+
+      cachedMessages.removeWhere((m) => m.id == tempId);
+
+      emit(GroupDetailsLoaded(messages: List.from(cachedMessages)));
+    }
   }
 
   Future<void> toggleReaction({
@@ -387,13 +432,8 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState> {
 
   @override
   Future<void> close() {
-    // Mark read and reset count before clearing active group
     groupListCubit.resetGroupUnreadCount(group.id);
     _services.markGroupMessagesRead(group.id);
-
-    // ✅ FIX: Update watermark one final time on exit so GroupListCubit
-    // knows everything visible was read before we left.
-    // groupListCubit.markGroupReadUntilNow(group.id);
 
     groupListCubit.setActiveGroupId(null);
 
