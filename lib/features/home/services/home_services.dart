@@ -7,7 +7,7 @@ import '../../stories/services/stories_services.dart';
 
 class HomeServices {
   final supabaseServices = SupabaseDatabaseServices.instance;
-  final storage = SupabaseStorageServices();
+  final storage = SupabaseStorageServices.instance;
   final postServices = PostsServices();
   final storyServices = StoriesServices();
   final commentServices = CommentsService();

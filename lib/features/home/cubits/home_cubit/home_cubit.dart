@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'package:dio/dio.dart' as dio_pkg;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
@@ -47,6 +48,8 @@ class HomeCubit extends Cubit<HomeState> {
   final _eventBus = CommentEventBus.instance;
   StreamSubscription? _postsSubscription;
   File? _stableVideoFile;
+
+  dio_pkg.CancelToken? _cancelToken;
 
   @override
   Future<void> close() {
@@ -400,6 +403,8 @@ class HomeCubit extends Cubit<HomeState> {
 
     emit(const PostCreating(0.0));
 
+    _cancelToken = dio_pkg.CancelToken();
+
     String? imageUrl;
     String? videoUrl;
     String? fileUrl;
@@ -418,6 +423,7 @@ class HomeCubit extends Cubit<HomeState> {
             imageFile,
             'post_images',
             'images',
+            cancelToken: _cancelToken,
             onProgress: updateProgress,
           );
         } else {
@@ -432,6 +438,7 @@ class HomeCubit extends Cubit<HomeState> {
             videoFile,
             'post_images',
             'videos',
+            cancelToken: _cancelToken,
             onProgress: updateProgress,
           );
         } else {
@@ -446,6 +453,7 @@ class HomeCubit extends Cubit<HomeState> {
             docFile,
             'post_images',
             'documents',
+            cancelToken: _cancelToken,
             onProgress: updateProgress,
           );
         } else {
@@ -477,7 +485,9 @@ class HomeCubit extends Cubit<HomeState> {
   }
 
   void cancelUpload() {
-    _homeServices.storage.cancelCurrentUpload();
+    if (_cancelToken != null && !_cancelToken!.isCancelled) {
+      _cancelToken!.cancel('User canceled post upload');
+    }
     emit(const PostUploadCanceled());
   }
 

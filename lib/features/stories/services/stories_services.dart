@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:dio/dio.dart' as dio_pkg;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/services/supabase_database_services.dart';
 import '../../../core/services/supabase_storage_services.dart';
@@ -8,28 +9,36 @@ import '../model/story_model.dart';
 class StoriesServices {
   final _supabase = Supabase.instance.client;
   final supabaseServices = SupabaseDatabaseServices.instance;
-  final storageServices = SupabaseStorageServices();
+  final storage = SupabaseStorageServices.instance;
 
-  Future<String> uploadStoryFile(File file, String userId) async {
-    final fileName =
-        '${DateTime.now().millisecondsSinceEpoch}_${file.path.split('/').last}';
-    final path = '$userId/$fileName';
-    await _supabase.storage.from(SupabaseConstants.stories).upload(path, file);
-    return _supabase.storage.from(SupabaseConstants.stories).getPublicUrl(path);
+  Future<String> uploadStoryFile(
+    File file,
+    String userId, {
+    void Function(double progress)? onProgress,
+    dio_pkg.CancelToken? cancelToken,
+  }) async {
+    return await storage.uploadFile(
+      file,
+      SupabaseConstants.stories,
+      userId,
+      onProgress: onProgress,
+      cancelToken: cancelToken,
+    );
   }
 
-  Future<String> uploadStoryVideoFile(File file, String userId) async {
-    final fileName =
-        '${DateTime.now().millisecondsSinceEpoch}_${file.path.split('/').last}';
-    final path = '$userId/$fileName';
-
-    await _supabase.storage
-        .from(SupabaseConstants.storyVideos)
-        .upload(path, file);
-
-    return _supabase.storage
-        .from(SupabaseConstants.storyVideos)
-        .getPublicUrl(path);
+  Future<String> uploadStoryVideoFile(
+    File file,
+    String userId, {
+    void Function(double progress)? onProgress,
+    dio_pkg.CancelToken? cancelToken,
+  }) async {
+    return await storage.uploadFile(
+      file,
+      SupabaseConstants.storyVideos,
+      userId,
+      onProgress: onProgress,
+      cancelToken: cancelToken,
+    );
   }
 
   Future<List<StoryModel>> fetchStories() async {
