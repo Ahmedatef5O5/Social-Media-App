@@ -260,8 +260,8 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState> {
               .where((id) => id != currentUserId)
               .toList();
 
-      for (final memberId in memberIds) {
-        await NotificationRepository.instance.notifyGroupMessage(
+      final notificationFutures = memberIds.map(
+        (memberId) => NotificationRepository.instance.notifyGroupMessage(
           receiverId: memberId,
           senderId: currentUserId,
           senderName: senderName,
@@ -270,8 +270,14 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState> {
           groupName: group.name,
           messageBody: text.isNotEmpty ? text : (caption ?? ''),
           messageType: messageType,
-        );
-      }
+        ),
+      );
+      unawaited(
+        Future.wait(notificationFutures, eagerError: false).catchError((e) {
+          debugPrint('Notification batch error: $e');
+          return <void>[];
+        }),
+      );
 
       final rawPreview = switch (messageType) {
         'image' => caption ?? '',

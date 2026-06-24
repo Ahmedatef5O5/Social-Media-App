@@ -222,21 +222,26 @@ class GroupChatServices {
 
       final fcmService = FcmService.instance;
 
+      final futures = <Future<void>>[];
+
       for (final member in membersData as List) {
         final userInfo = member['users'] as Map<String, dynamic>?;
         final token = userInfo?['fcm_token'] as String?;
         if (token == null || token.isEmpty) continue;
 
-        await fcmService.sendGroupNotification(
-          receiverFcmToken: token,
-          groupId: groupId,
-          groupName: groupName,
-          senderName: senderName,
-          messageBody: messageBody,
-          messageType: messageType,
-          senderImageUrl: senderAvatar,
+        futures.add(
+          fcmService.sendGroupNotification(
+            receiverFcmToken: token,
+            groupId: groupId,
+            groupName: groupName,
+            senderName: senderName,
+            messageBody: messageBody,
+            messageType: messageType,
+            senderImageUrl: senderAvatar,
+          ),
         );
       }
+      await Future.wait(futures, eagerError: false);
     } catch (e) {
       debugPrint('Group FCM notify error: $e');
     }

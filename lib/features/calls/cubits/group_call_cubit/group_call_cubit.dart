@@ -165,17 +165,21 @@ class GroupCallCubit extends Cubit<GroupCallState> {
   Future<void> _notifyGroupMissedCall(GroupCallModel call) async {
     try {
       final members = await _service.getGroupMemberIds(call.groupId);
-      for (final memberId in members) {
-        if (memberId == _currentUserId) continue;
-        await NotificationRepository.instance.notifyMissedCall(
-          receiverId: memberId,
-          callerId: call.initiatorId,
-          callerName: call.initiatorName,
-          callerImageUrl: call.groupAvatarUrl ?? '',
-          callType: call.type == GroupCallType.video ? 'video' : 'audio',
-          callId: call.callId,
-        );
-      }
+
+      final futures = members
+          .where((memberId) => memberId != _currentUserId)
+          .map(
+            (memberId) => NotificationRepository.instance.notifyMissedCall(
+              receiverId: memberId,
+              callerId: call.initiatorId,
+              callerName: call.initiatorName,
+              callerImageUrl: call.groupAvatarUrl ?? '',
+              callType: call.type == GroupCallType.video ? 'video' : 'audio',
+              callId: call.callId,
+            ),
+          );
+
+      await Future.wait(futures, eagerError: false);
     } catch (_) {}
   }
 
