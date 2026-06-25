@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
 import '../cubit/group_list_cubit/group_list_cubit.dart';
+import '../cubit/group_members_cubit/group_members_cubit.dart';
 import '../models/group_member_model.dart';
 import '../models/group_model.dart';
 import '../services/group_chat_services.dart';
@@ -23,26 +24,45 @@ class GroupInfoView extends StatefulWidget {
 }
 
 class _GroupInfoViewState extends State<GroupInfoView> {
-  List<GroupMemberModel> _members = [];
-  bool _isLoading = true;
   bool _isEditingName = false;
   String? _currentAvatarUrl;
 
   final _nameController = TextEditingController();
   final _services = GroupChatServices();
 
-  String get _currentUserId => Supabase.instance.client.auth.currentUser!.id;
+  late final GroupMembersCubit _membersCubit;
+  late final ScrollController _scrollController;
 
-  bool get _isAdmin => _members.any(
-    (m) => m.userId == _currentUserId && m.role == GroupMemberRole.admin,
-  );
+  String get _currentUserId => Supabase.instance.client.auth.currentUser!.id;
 
   @override
   void initState() {
     super.initState();
+    _membersCubit = GroupMembersCubit(
+      GroupChatServices(),
+      groupId: widget.group.id,
+    )..loadMembers();
+
+    _scrollController = ScrollController()..addListener(_onScroll);
+
     _nameController.text = widget.group.name;
     _currentAvatarUrl = widget.group.avatarUrl;
-    _loadMembers();
+  }
+
+  // ── Infinite Scroll
+  void _onScroll() {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
+      _membersCubit.loadMoreMembers();
+    }
+  }
+
+  @override
+  void dispose() {
+    _membersCubit.close();
+    _scrollController.dispose();
+    _nameController.dispose();
+    super.dispose();
   }
 
   Future<void> _changeGroupPhoto() async {
@@ -91,27 +111,6 @@ class _GroupInfoViewState extends State<GroupInfoView> {
     }
   }
 
-  @override
-  void dispose() {
-    _nameController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _loadMembers() async {
-    setState(() => _isLoading = true);
-    try {
-      final members = await _services.getGroupMembers(widget.group.id);
-      if (mounted) {
-        setState(() {
-          _members = members;
-          _isLoading = false;
-        });
-      }
-    } catch (_) {
-      if (mounted) setState(() => _isLoading = false);
-    }
-  }
-
   Future<void> _updateGroupName() async {
     final name = _nameController.text.trim();
     if (name.isEmpty || name == widget.group.name) {
@@ -132,7 +131,7 @@ class _GroupInfoViewState extends State<GroupInfoView> {
 
     if (confirm == true) {
       await _services.removeMember(widget.group.id, member.userId);
-      await _loadMembers();
+      await _membersCubit.refresh();
     }
   }
 
@@ -203,45 +202,95 @@ class _GroupInfoViewState extends State<GroupInfoView> {
     final primary = Theme.of(context).primaryColor;
 
     return Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          GroupInfoHeader(
-            group: widget.group.copyWith(avatarUrl: _currentAvatarUrl),
-            isAdmin: _isAdmin,
-            isEditingName: _isEditingName,
-            controller: _nameController,
-            onEditTap: () => setState(() => _isEditingName = true),
-            onSubmit: _updateGroupName,
-            onChangePhoto: _changeGroupPhoto,
-          ),
+      body: BlocBuilder<GroupMembersCubit, GroupMembersState>(
+        bloc: _membersCubit,
+        builder: (context, state) {
+          final bool isLoading =
+              state is GroupMembersLoading || state is GroupMembersInitial;
+          final bool isError = state is GroupMembersError;
 
-          GroupMembersHeaderWidget(
-            count: _members.length,
-            primary: primary,
-            isAdmin: _isAdmin,
-          ),
+          List<GroupMemberModel> membersList = [];
+          int totalCount = 0;
+          bool isLoadingMore = false;
 
-          _isLoading
-              ? const SliverToBoxAdapter(
-                child: Padding(
-                  padding: EdgeInsets.all(40),
-                  child: Center(child: CustomLoadingIndicator()),
-                ),
-              )
-              : GroupInfoMembersList(
-                members: _members,
-                currentUserId: _currentUserId,
-                isAdmin: _isAdmin,
-                primary: primary,
-                onRemove: _removeMember,
+          if (state is GroupMembersLoaded) {
+            membersList = state.members;
+            totalCount = state.totalCount;
+            isLoadingMore = state.isLoadingMore;
+          }
+
+          final bool isAdmin = _membersCubit.isCurrentUserAdmin(_currentUserId);
+
+          return CustomScrollView(
+            controller: _scrollController,
+            slivers: [
+              GroupInfoHeader(
+                group: widget.group.copyWith(avatarUrl: _currentAvatarUrl),
+                isAdmin: isAdmin,
+                isEditingName: _isEditingName,
+                controller: _nameController,
+                onEditTap: () => setState(() => _isEditingName = true),
+                onSubmit: _updateGroupName,
+                onChangePhoto: _changeGroupPhoto,
               ),
 
-          GroupInfoActionsSection(
-            isAdmin: _isAdmin,
-            onLeave: _leaveGroup,
-            onDelete: _deleteGroup,
-          ),
-        ],
+              GroupMembersHeaderWidget(
+                count: totalCount,
+                primary: primary,
+                isAdmin: isAdmin,
+              ),
+
+              if (isLoading)
+                const SliverToBoxAdapter(
+                  child: Padding(
+                    padding: EdgeInsets.all(40),
+                    child: Center(child: CustomLoadingIndicator()),
+                  ),
+                )
+              else if (isError)
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.all(40),
+                    child: Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Text('Failed to load members'),
+                          TextButton(
+                            onPressed: () => _membersCubit.loadMembers(),
+                            child: const Text('Retry'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                )
+              else ...[
+                GroupInfoMembersList(
+                  members: membersList,
+                  currentUserId: _currentUserId,
+                  isAdmin: isAdmin,
+                  primary: primary,
+                  onRemove: _removeMember,
+                ),
+
+                if (isLoadingMore)
+                  const SliverToBoxAdapter(
+                    child: Padding(
+                      padding: EdgeInsets.all(16),
+                      child: Center(child: CustomLoadingIndicator()),
+                    ),
+                  ),
+              ],
+
+              GroupInfoActionsSection(
+                isAdmin: isAdmin,
+                onLeave: _leaveGroup,
+                onDelete: _deleteGroup,
+              ),
+            ],
+          );
+        },
       ),
     );
   }

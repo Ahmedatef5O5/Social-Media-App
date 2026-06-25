@@ -70,23 +70,47 @@ class GroupChatServices {
         .toList();
   }
 
-  Future<List<GroupMemberModel>> getGroupMembers(String groupId) async {
+  static const int _membersPageSize = 20;
+
+  Future<({List<GroupMemberModel> members, int totalCount})>
+  getGroupMembersPaginated(
+    String groupId, {
+    int page = 0,
+    int pageSize = _membersPageSize,
+  }) async {
+    final from = page * pageSize;
+    final to = from + pageSize - 1;
+
     final response = await _supabase
         .from(SupabaseConstants.groupMembers)
         .select(
-          'id, group_id, user_id, role, joined_at, '
-          'users!group_members_user_id_fkey(name, image_url)',
+          'id, ${GroupMemberColumns.groupId}, ${GroupMemberColumns.userId}, '
+          '${GroupMemberColumns.role}, ${GroupMemberColumns.joinedAt}, '
+          'users!${SupabaseConstants.groupMembers}'
+          '_${GroupMemberColumns.userId}_fkey'
+          '(${UserColumns.name}, ${UserColumns.imageUrl})',
         )
-        .eq(GroupMemberColumns.groupId, groupId);
+        .eq(GroupMemberColumns.groupId, groupId)
+        .order(GroupMemberColumns.role, ascending: true)
+        .order(GroupMemberColumns.joinedAt, ascending: false)
+        .range(from, to)
+        .count(CountOption.exact);
 
-    return (response as List).map((e) {
-      final userInfo = e['users'] as Map<String, dynamic>? ?? {};
-      return GroupMemberModel.fromMap({
-        ...e,
-        'user_name': userInfo['name'],
-        'user_avatar': userInfo['image_url'],
-      });
-    }).toList();
+    final dataList = response.data as List;
+
+    final members =
+        dataList.map((e) {
+          final userInfo = e['users'] as Map<String, dynamic>? ?? {};
+          return GroupMemberModel.fromMap({
+            ...e,
+            'user_name': userInfo[UserColumns.name],
+            'user_avatar': userInfo[UserColumns.imageUrl],
+          });
+        }).toList();
+
+    final total = response.count;
+
+    return (members: members, totalCount: total);
   }
 
   Future<void> addMember(String groupId, String userId) async {
