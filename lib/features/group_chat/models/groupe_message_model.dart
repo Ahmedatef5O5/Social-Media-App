@@ -1,3 +1,5 @@
+import '../../../core/utilities/supabase_constants.dart';
+
 class GroupMessageModel {
   final String id;
   final String groupId;
@@ -93,7 +95,7 @@ class GroupMessageModel {
   }) {
     final Map<String, String> reactionsMap = {};
     for (final r in reactionsList) {
-      final userId = r['user_id'] as String?;
+      final userId = r[GroupMemberColumns.userId] as String?;
       final emoji = r['reaction'] as String?;
       if (userId != null && emoji != null) {
         reactionsMap[userId] = emoji;
@@ -108,7 +110,7 @@ class GroupMessageModel {
 
     return GroupMessageModel(
       id: map['id'] as String,
-      groupId: map['group_id'] as String,
+      groupId: map[GroupMemberColumns.groupId] as String,
       senderId: map['sender_id'] as String,
       senderName: (map['sender_name'] ?? 'Unknown') as String,
       senderAvatar: map['sender_avatar'] as String?,
@@ -131,7 +133,7 @@ class GroupMessageModel {
 
   Map<String, dynamic> toInsertMap() {
     return {
-      'group_id': groupId,
+      GroupMemberColumns.groupId: groupId,
       'sender_id': senderId,
       'message_text': text,
       'message_type': messageType,

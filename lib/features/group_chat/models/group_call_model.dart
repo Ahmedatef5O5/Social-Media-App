@@ -1,3 +1,5 @@
+import '../../../core/utilities/supabase_constants.dart';
+
 enum GroupCallStatus { ringing, accepted, ongoing, ended, missed }
 
 enum GroupCallType { audio, video }
@@ -71,7 +73,7 @@ class GroupCallModel {
 
   Map<String, dynamic> toMap() => {
     'call_id': callId,
-    'group_id': groupId,
+    GroupMemberColumns.groupId: groupId,
     'group_name': groupName,
     'group_avatar_url': groupAvatarUrl,
     'initiator_id': initiatorId,
@@ -86,7 +88,7 @@ class GroupCallModel {
 
   factory GroupCallModel.fromMap(Map<String, dynamic> map) => GroupCallModel(
     callId: map['call_id'] as String,
-    groupId: map['group_id'] as String,
+    groupId: map[GroupMemberColumns.groupId] as String,
     groupName: map['group_name'] as String? ?? '',
     groupAvatarUrl: map['group_avatar_url'] as String?,
     initiatorId: map['initiator_id'] as String,

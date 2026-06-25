@@ -1,3 +1,5 @@
+import '../../../core/utilities/supabase_constants.dart';
+
 enum GroupMemberRole { admin, member }
 
 class GroupMemberModel {
@@ -22,8 +24,8 @@ class GroupMemberModel {
   factory GroupMemberModel.fromMap(Map<String, dynamic> map) {
     return GroupMemberModel(
       id: map['id'] as String,
-      groupId: map['group_id'] as String,
-      userId: map['user_id'] as String,
+      groupId: map[GroupMemberColumns.groupId] as String,
+      userId: map[GroupMemberColumns.userId] as String,
       userName: (map['user_name'] ?? map['name'] ?? 'Unknown') as String,
       userAvatar: map['user_avatar'] as String? ?? map['image_url'] as String?,
       role:
@@ -39,8 +41,8 @@ class GroupMemberModel {
   Map<String, dynamic> toMap() {
     return {
       'id': id,
-      'group_id': groupId,
-      'user_id': userId,
+      GroupMemberColumns.groupId: groupId,
+      GroupMemberColumns.userId: userId,
       'role': role.name,
       'joined_at': joinedAt.toIso8601String(),
     };

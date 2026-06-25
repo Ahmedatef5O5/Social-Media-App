@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/widgets.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../utilities/supabase_constants.dart';
 
 class PresenceService with WidgetsBindingObserver {
   PresenceService._();
@@ -103,11 +104,11 @@ class PresenceService with WidgetsBindingObserver {
 
     try {
       final now = DateTime.now().toUtc().toIso8601String();
-      await _supabase.from('user_presence').upsert({
+      await _supabase.from(SupabaseConstants.userPresence).upsert({
         'user_id': uid,
-        'is_online': isOnline,
+        PresenceColumns.isOnline: isOnline,
         'last_seen': now,
-        'updated_at': now,
+        PresenceColumns.updatedAt: now,
       }, onConflict: 'user_id');
     } catch (e) {
       debugPrint('[PresenceService] _setOnline($isOnline) error: $e');

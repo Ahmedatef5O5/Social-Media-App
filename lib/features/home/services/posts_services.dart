@@ -63,19 +63,19 @@ class PostsServices {
       final postWithComments = post.copyWith(comments: tree);
 
       final presenceRows = await _supabase
-          .from('user_presence')
+          .from(SupabaseConstants.userPresence)
           .select('user_id, is_online, updated_at')
-          .eq('user_id', postWithComments.authorId)
+          .eq(GroupMemberColumns.userId, postWithComments.authorId)
           .limit(1);
 
       if (presenceRows.isEmpty) return postWithComments;
 
       final row = presenceRows.first as Map<String, dynamic>;
       final isOnline = PresenceService.isConsideredOnline(
-        isOnline: row['is_online'] as bool? ?? false,
+        isOnline: row[PresenceColumns.isOnline] as bool? ?? false,
         updatedAt:
-            row['updated_at'] != null
-                ? DateTime.parse(row['updated_at'].toString())
+            row[PresenceColumns.updatedAt] != null
+                ? DateTime.parse(row[PresenceColumns.updatedAt].toString())
                 : null,
       );
 
@@ -113,20 +113,20 @@ class PostsServices {
 
       final authorIds = posts.map((p) => p.authorId).toSet().toList();
       final presenceRows = await _supabase
-          .from('user_presence')
+          .from(SupabaseConstants.userPresence)
           .select('user_id, is_online, updated_at')
-          .inFilter('user_id', authorIds);
+          .inFilter(GroupMemberColumns.userId, authorIds);
 
       final onlineSet = <String>{
         for (final row in presenceRows as List)
           if (PresenceService.isConsideredOnline(
-            isOnline: row['is_online'] as bool? ?? false,
+            isOnline: row[PresenceColumns.isOnline] as bool? ?? false,
             updatedAt:
-                row['updated_at'] != null
-                    ? DateTime.parse(row['updated_at'].toString())
+                row[PresenceColumns.updatedAt] != null
+                    ? DateTime.parse(row[PresenceColumns.updatedAt].toString())
                     : null,
           ))
-            row['user_id'] as String,
+            row[GroupMemberColumns.userId] as String,
       };
 
       return posts
@@ -196,13 +196,14 @@ class PostsServices {
         .onPostgresChanges(
           event: PostgresChangeEvent.all,
           schema: 'public',
-          table: 'user_presence',
+          table: SupabaseConstants.userPresence,
           callback: (payload) {
             final record = payload.newRecord;
-            final userId = record['user_id'] as String?;
+            final userId = record[GroupMemberColumns.userId] as String?;
             if (userId != null && !controller.isClosed) {
-              final isOnline = record['is_online'] as bool? ?? false;
-              final updatedAtRaw = record['updated_at'] as String?;
+              final isOnline =
+                  record[PresenceColumns.isOnline] as bool? ?? false;
+              final updatedAtRaw = record[PresenceColumns.updatedAt] as String?;
               final updatedAt =
                   updatedAtRaw != null ? DateTime.tryParse(updatedAtRaw) : null;
               controller.add(PresenceChangedEvent(userId, isOnline, updatedAt));

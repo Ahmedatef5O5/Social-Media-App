@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../core/utilities/supabase_constants.dart';
 import '../models/group_call_model.dart';
 
 class GroupCallSignalingService {
@@ -10,10 +11,12 @@ class GroupCallSignalingService {
     try {
       final response = await _supabase
           .from('group_members')
-          .select('user_id')
-          .eq('group_id', groupId);
+          .select(GroupMemberColumns.userId)
+          .eq(GroupMemberColumns.groupId, groupId);
 
-      return (response as List).map((e) => e['user_id'] as String).toList();
+      return (response as List)
+          .map((e) => e[GroupMemberColumns.userId] as String)
+          .toList();
     } catch (e) {
       debugPrint('getGroupMemberIds error: $e');
       return [];
@@ -32,7 +35,7 @@ class GroupCallSignalingService {
         await _supabase
             .from('group_calls')
             .select()
-            .eq('group_id', groupId)
+            .eq(GroupMemberColumns.groupId, groupId)
             .inFilter('status', ['ringing', 'accepted', 'ongoing'])
             .maybeSingle();
     if (existing != null) {
@@ -61,14 +64,14 @@ class GroupCallSignalingService {
             .maybeSingle();
     final initiatorAvatar = initiatorProfile?['image_url'] as String? ?? '';
 
-    await _supabase.from('group_messages').insert({
-      'group_id': groupId,
+    await _supabase.from(SupabaseConstants.groupMessages).insert({
+      GroupMemberColumns.groupId: groupId,
       'sender_id': currentUserId,
       'sender_name': currentUserName,
       'sender_avatar': initiatorAvatar,
       'message_text': jsonEncode({
         'call_id': callId,
-        'group_id': groupId,
+        GroupMemberColumns.groupId: groupId,
         'call_type': type == GroupCallType.video ? 'video' : 'audio',
         'status': 'ringing',
         'initiator_id': currentUserId,
@@ -149,7 +152,7 @@ class GroupCallSignalingService {
     try {
       final existing =
           await _supabase
-              .from('group_messages')
+              .from(SupabaseConstants.groupMessages)
               .select('id, message_text')
               .eq('message_type', 'call')
               .ilike('message_text', '%$callId%')
@@ -167,7 +170,7 @@ class GroupCallSignalingService {
         callData['duration'] = duration?.isNotEmpty == true ? duration : '';
 
         await _supabase
-            .from('group_messages')
+            .from(SupabaseConstants.groupMessages)
             .update({'message_text': jsonEncode(callData)})
             .eq('id', existing['id'] as String);
       }
@@ -189,7 +192,7 @@ class GroupCallSignalingService {
     try {
       final existing =
           await _supabase
-              .from('group_messages')
+              .from(SupabaseConstants.groupMessages)
               .select('id, message_text')
               .eq('message_type', 'call')
               .ilike('message_text', '%$callId%')
@@ -207,7 +210,7 @@ class GroupCallSignalingService {
         callData['duration'] = null;
 
         await _supabase
-            .from('group_messages')
+            .from(SupabaseConstants.groupMessages)
             .update({'message_text': jsonEncode(callData)})
             .eq('id', existing['id'] as String);
       }
@@ -220,7 +223,7 @@ class GroupCallSignalingService {
     return _supabase
         .from('group_calls')
         .stream(primaryKey: ['call_id'])
-        .eq('group_id', groupId)
+        .eq(GroupMemberColumns.groupId, groupId)
         .map((list) {
           final active =
               list
@@ -270,7 +273,7 @@ class GroupCallSignalingService {
         await _supabase
             .from('group_calls')
             .select()
-            .eq('group_id', groupId)
+            .eq(GroupMemberColumns.groupId, groupId)
             .inFilter('status', ['ringing', 'accepted', 'ongoing'])
             .maybeSingle();
 

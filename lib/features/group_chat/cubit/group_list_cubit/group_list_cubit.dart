@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../../core/utilities/supabase_constants.dart';
 import '../../models/group_model.dart';
 import '../../services/group_chat_services.dart';
 part 'group_list_state.dart';
@@ -23,7 +24,6 @@ class GroupListCubit extends Cubit<GroupListState> {
 
   GroupListCubit(this._services) : super(GroupListInitial());
 
-
   void setActiveGroupId(String? groupId) {
     _activeGroupTimer?.cancel();
 
@@ -38,7 +38,6 @@ class GroupListCubit extends Cubit<GroupListState> {
     }
   }
 
-
   void monitorGroups() {
     loadGroups();
     _subscribeRealtime();
@@ -49,7 +48,7 @@ class GroupListCubit extends Cubit<GroupListState> {
     _messagesStreamSub?.cancel();
 
     _messagesStreamSub = Supabase.instance.client
-        .from('group_messages')
+        .from(SupabaseConstants.groupMessages)
         .stream(primaryKey: ['id'])
         .order('created_at', ascending: false)
         .limit(100)
@@ -64,7 +63,7 @@ class GroupListCubit extends Cubit<GroupListState> {
           final Map<String, int> unreadPerGroup = {};
 
           for (final row in data) {
-            final gId = row['group_id'] as String?;
+            final gId = row[GroupMemberColumns.groupId] as String?;
             if (gId == null) continue;
 
             // Track latest message per group (first occurrence = most recent)
@@ -167,7 +166,9 @@ class GroupListCubit extends Cubit<GroupListState> {
           callback: (payload) {
             final newRow = payload.newRecord;
             final oldRow = payload.oldRecord;
-            final affectedUserId = newRow['user_id'] ?? oldRow['user_id'];
+            final affectedUserId =
+                newRow[GroupMemberColumns.userId] ??
+                oldRow[GroupMemberColumns.userId];
             if (affectedUserId == _currentUserId) {
               loadGroups(isRefresh: true);
             }
@@ -176,7 +177,7 @@ class GroupListCubit extends Cubit<GroupListState> {
         .onPostgresChanges(
           event: PostgresChangeEvent.update,
           schema: 'public',
-          table: 'groups',
+          table: SupabaseConstants.groups,
           callback: (payload) {
             final row = payload.newRecord;
             final groupId = row['id'] as String?;
@@ -223,7 +224,7 @@ class GroupListCubit extends Cubit<GroupListState> {
     final row = payload.newRecord;
     if (row.isEmpty) return;
 
-    final groupId = row['group_id'] as String?;
+    final groupId = row[GroupMemberColumns.groupId] as String?;
     final status = row['status'] as String?;
     final type = row['type'] as String?;
     final duration = row['duration'] as String?;

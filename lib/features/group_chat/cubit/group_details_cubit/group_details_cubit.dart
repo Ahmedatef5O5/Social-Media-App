@@ -6,6 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/services/supabase_storage_services.dart';
+import '../../../../core/utilities/supabase_constants.dart';
 import '../../../notifications/repository/notifications_repository.dart';
 import '../../models/group_model.dart';
 import '../../models/groupe_message_model.dart';
@@ -126,7 +127,7 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState> {
       _reactionsCache = {};
       for (final r in reactionsList) {
         final msgId = r['message_id'] as String?;
-        final userId = r['user_id'] as String?;
+        final userId = r[GroupMemberColumns.userId] as String?;
         final emoji = r['reaction'] as String?;
         if (msgId != null && userId != null && emoji != null) {
           _reactionsCache[msgId] ??= {};

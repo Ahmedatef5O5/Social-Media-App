@@ -93,17 +93,17 @@ class ChatServices {
 
       final userIds = chats.map((c) => c.id).toList();
       final presenceRows = await _supabase
-          .from('user_presence')
+          .from(SupabaseConstants.userPresence)
           .select('user_id, is_online, updated_at')
           .inFilter('user_id', userIds);
 
       final onlineSet = <String>{
         for (final row in presenceRows as List)
           if (PresenceService.isConsideredOnline(
-            isOnline: row['is_online'] as bool? ?? false,
+            isOnline: row[PresenceColumns.isOnline] as bool? ?? false,
             updatedAt:
-                row['updated_at'] != null
-                    ? DateTime.parse(row['updated_at'].toString())
+                row[PresenceColumns.updatedAt] != null
+                    ? DateTime.parse(row[PresenceColumns.updatedAt].toString())
                     : null,
           ))
             row['user_id'] as String,
@@ -145,7 +145,7 @@ class ChatServices {
         )
         .onPostgresChanges(
           schema: 'public',
-          table: 'user_presence',
+          table: SupabaseConstants.userPresence,
           event: PostgresChangeEvent.all,
           callback: notify,
         )
@@ -274,7 +274,7 @@ class ChatServices {
     Future<void> fetchAndEmit() async {
       try {
         final rows = await _supabase
-            .from('user_presence')
+            .from(SupabaseConstants.userPresence)
             .select('is_online, last_seen, updated_at')
             .eq('user_id', userId)
             .limit(1);
@@ -292,13 +292,13 @@ class ChatServices {
         // ignore: unnecessary_cast
         final row = rows.first as Map<String, dynamic>;
 
-        final updatedAtRaw = row['updated_at'];
+        final updatedAtRaw = row[PresenceColumns.updatedAt];
         final updatedAt =
             updatedAtRaw != null
                 ? DateTime.parse(updatedAtRaw.toString())
                 : null;
         final isOnline = PresenceService.isConsideredOnline(
-          isOnline: row['is_online'] as bool? ?? false,
+          isOnline: row[PresenceColumns.isOnline] as bool? ?? false,
           updatedAt: updatedAt,
         );
 
@@ -327,7 +327,7 @@ class ChatServices {
             .onPostgresChanges(
               event: PostgresChangeEvent.all,
               schema: 'public',
-              table: 'user_presence',
+              table: SupabaseConstants.userPresence,
               filter: PostgresChangeFilter(
                 type: PostgresChangeFilterType.eq,
                 column: 'user_id',

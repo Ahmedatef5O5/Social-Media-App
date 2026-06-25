@@ -10,6 +10,7 @@ import 'package:social_media_app/features/group_chat/widgets/group_voice_message
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/helpers/modern_circle_progress.dart';
 import '../../../core/themes/app_colors.dart';
+import '../../../core/utilities/supabase_constants.dart';
 import '../../../core/widgets/reaction_picker_overlay.dart';
 import '../../calls/views/zego_group_call_view.dart';
 import '../../chats/widgets/image_message_widget.dart';
@@ -522,7 +523,7 @@ class _GroupMessageContentState extends State<GroupMessageContent> {
 
   Stream<Map<String, dynamic>?> _watchCallData() {
     return Supabase.instance.client
-        .from('group_messages')
+        .from(SupabaseConstants.groupMessages)
         .stream(primaryKey: ['id'])
         .eq('id', widget.message.id)
         .map((list) {
@@ -553,7 +554,7 @@ class _GroupMessageContentState extends State<GroupMessageContent> {
         (rawDuration is String && rawDuration.isNotEmpty) ? rawDuration : '';
 
     final callId = callData['call_id'] as String? ?? '';
-    final groupId = callData['group_id'] as String? ?? '';
+    final groupId = callData[GroupMemberColumns.groupId] as String? ?? '';
     final initiatorAvatar = callData['initiator_avatar'] as String?;
     final initiatorName = callData['initiator_name'] as String?;
     final groupAvatarUrl = callData['group_avatar_url'] as String?;

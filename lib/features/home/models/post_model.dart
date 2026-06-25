@@ -77,7 +77,7 @@ class PostModel {
     if (map[SupabaseConstants.likes] != null) {
       final likesData = map[SupabaseConstants.likes] as List<dynamic>;
       for (var item in likesData) {
-        likesList.add(item['user_id'].toString());
+        likesList.add(item[GroupMemberColumns.userId].toString());
         if (item['users'] != null && item['users']['image_url'] != null) {
           imagesList.add(item['users']['image_url'].toString());
         }
