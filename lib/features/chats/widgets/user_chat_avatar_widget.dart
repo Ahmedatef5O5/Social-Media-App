@@ -1,37 +1,13 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import '../../../core/constants/app_images.dart';
-import '../../../core/widgets/custom_loading_indicator.dart';
+import 'package:social_media_app/core/widgets/app_avatar.dart';
 
 class UserChatAvatar extends StatelessWidget {
-  const UserChatAvatar({super.key, required this.userImgUrl});
-
   final String? userImgUrl;
+
+  const UserChatAvatar({super.key, required this.userImgUrl});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 28,
-      width: 28,
-      decoration: BoxDecoration(
-        color: Theme.of(context).primaryColor.withValues(alpha: 0.2),
-        shape: BoxShape.circle,
-      ),
-      child: ClipOval(
-        child:
-            (userImgUrl != null && userImgUrl!.isNotEmpty)
-                ? CachedNetworkImage(
-                  imageUrl: userImgUrl!,
-                  fit: BoxFit.cover,
-                  placeholder: (context, url) => const CustomLoadingIndicator(),
-                  errorWidget:
-                      (context, url, error) => Image.asset(
-                        AppImages.defaultUserImg,
-                        fit: BoxFit.cover,
-                      ),
-                )
-                : Image.asset(AppImages.defaultUserImg, fit: BoxFit.cover),
-      ),
-    );
+    return AppAvatar(imageUrl: userImgUrl, size: 28);
   }
 }

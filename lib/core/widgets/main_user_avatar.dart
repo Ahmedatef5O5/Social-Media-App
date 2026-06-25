@@ -1,7 +1,5 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:social_media_app/core/widgets/custom_loading_indicator.dart';
-import '../constants/app_images.dart';
+import 'package:social_media_app/core/widgets/app_avatar.dart';
 
 class MainUserAvatar extends StatelessWidget {
   final String? imageUrl;
@@ -16,38 +14,14 @@ class MainUserAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: size ?? 31,
-      height: size ?? 31,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        border:
-            showBorder
-                ? Border.all(
-                  color: Theme.of(context).primaryColor.withValues(alpha: .8),
-                  width: 2.2,
-                )
-                : null,
-      ),
-      child: ClipOval(
-        child:
-            (imageUrl != null && imageUrl!.isNotEmpty)
-                ? CachedNetworkImage(
-                  imageUrl: imageUrl!,
-                  fit: BoxFit.cover,
-                  placeholder:
-                      (context, url) => CustomLoadingIndicator(
-                        radius: size != null ? size! / 4 : 10,
-                      ),
-
-                  errorWidget:
-                      (context, url, error) => Image.network(
-                        AppImages.defaultUserImg,
-                        fit: BoxFit.cover,
-                      ),
-                )
-                : Image.asset(AppImages.defaultUserImg, fit: BoxFit.cover),
-      ),
+    return AppAvatar(
+      imageUrl: imageUrl,
+      size: size ?? 36,
+      borderColor:
+          showBorder
+              ? Theme.of(context).primaryColor.withValues(alpha: 0.8)
+              : null,
+      borderWidth: 2.2,
     );
   }
 }

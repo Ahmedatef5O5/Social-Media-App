@@ -1,12 +1,10 @@
 import 'dart:convert';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
-import '../../../core/constants/app_images.dart';
 import '../../../core/helpers/chat_helper.dart';
 import '../../../core/helpers/formatted_date.dart';
 import '../../../core/router/app_routes.dart';
-import '../../../core/widgets/custom_loading_indicator.dart';
+import '../../../core/widgets/app_avatar.dart';
 import '../../profile/widgets/user_preview_dialog.dart';
 import '../models/chat_user_model.dart';
 import 'typing_indicator_widget.dart';
@@ -201,9 +199,11 @@ class ChatItemTile extends StatelessWidget {
             ? FormattedDate.getLastSeen(user.lastSeen!)
             : null;
     final isOnline = user.lastSeen == null || lastSeenText == 'Online';
-    // final isOnline = user.isOnline;
 
-    return GestureDetector(
+    return AppAvatar(
+      imageUrl: user.imageUrl,
+      size: 52,
+      heroTag: user.id,
       onTap: () {
         showDialog(
           context: context,
@@ -212,61 +212,11 @@ class ChatItemTile extends StatelessWidget {
                   UserPreviewDialog(user: user, showContactOptions: true),
         );
       },
-      child: Stack(
-        children: [
-          Hero(
-            tag: user.id,
-            child: Container(
-              height: 52,
-              width: 52,
-              decoration: BoxDecoration(
-                color: Theme.of(context).primaryColor.withValues(alpha: 0.2),
-                shape: BoxShape.circle,
-                border:
-                    isOnline
-                        ? Border.all(color: Colors.green, width: 2.2)
-                        : null,
-              ),
-              child: ClipOval(
-                child:
-                    (user.imageUrl != null && user.imageUrl!.isNotEmpty)
-                        ? CachedNetworkImage(
-                          imageUrl: user.imageUrl!,
-                          fit: BoxFit.cover,
-                          placeholder:
-                              (context, url) => const CustomLoadingIndicator(),
-                          errorWidget:
-                              (context, url, error) => Image.asset(
-                                AppImages.defaultUserImg,
-                                fit: BoxFit.cover,
-                              ),
-                        )
-                        : Image.asset(
-                          AppImages.defaultUserImg,
-                          fit: BoxFit.cover,
-                        ),
-              ),
-            ),
-          ),
-          if (isOnline)
-            Positioned(
-              bottom: 2,
-              right: 2,
-              child: Container(
-                width: 13,
-                height: 13,
-                decoration: BoxDecoration(
-                  color: Colors.green,
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: Theme.of(context).scaffoldBackgroundColor,
-                    width: 1.5,
-                  ),
-                ),
-              ),
-            ),
-        ],
-      ),
+      // Online status configuration
+      isOnline: isOnline,
+      showOnlineDot: isOnline,
+      borderColor: isOnline ? Colors.green : null,
+      borderWidth: 2.2,
     );
   }
 }

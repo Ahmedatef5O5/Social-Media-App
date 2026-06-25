@@ -3,6 +3,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:social_media_app/core/router/app_routes.dart';
 import '../../../core/constants/app_images.dart';
+import '../../../core/widgets/app_avatar.dart';
 
 class CustomUserProfileImagesSection extends StatelessWidget {
   final double aspectRatio;
@@ -42,12 +43,11 @@ class CustomUserProfileImagesSection extends StatelessWidget {
     final double screenWidth = MediaQuery.of(context).size.width;
     final double dynamicBackgroundHeight = screenWidth / aspectRatio;
     final double dynamicAvatarSize = screenWidth * avatarSizeFactor;
-
-    final double totalHeight =
+    final double calculatedTotalHeight =
         dynamicBackgroundHeight + (dynamicAvatarSize / 2);
 
     return SizedBox(
-      height: totalHeight,
+      height: totalHeight ?? calculatedTotalHeight,
       child: Stack(
         clipBehavior: Clip.none,
         children: [
@@ -106,6 +106,7 @@ class CustomUserProfileImagesSection extends StatelessWidget {
             ),
           ),
 
+          // ─── Avatar Section ───
           Align(
             alignment: avatarAlignment,
             child: GestureDetector(
@@ -125,35 +126,37 @@ class CustomUserProfileImagesSection extends StatelessWidget {
                   child: Stack(
                     alignment: Alignment.center,
                     children: [
-                      Container(
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border:
-                              !isEditMode
-                                  ? Border.all(
-                                    color: Theme.of(context).primaryColor,
-                                    width: isProfileHeader ? 2.2 : 2,
-                                  )
-                                  : null,
-                          image: DecorationImage(
-                            image: _getAvatarImage(),
-                            fit: BoxFit.cover,
-                            onError: (exception, stackTrace) {
-                              debugPrint("Error loading image: $exception");
-                            },
+                      if (selectedAvatarFile != null)
+                        Container(
+                          width: dynamicAvatarSize,
+                          height: dynamicAvatarSize,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            image: DecorationImage(
+                              image: FileImage(selectedAvatarFile!),
+                              fit: BoxFit.cover,
+                            ),
                           ),
+                        )
+                      else
+                        AppAvatar(
+                          imageUrl: avatarUrl,
+                          size: dynamicAvatarSize,
+                          borderColor:
+                              !isEditMode
+                                  ? Theme.of(context).primaryColor
+                                  : null,
+                          borderWidth: isProfileHeader ? 2.2 : 2.0,
                         ),
-                      ),
 
                       if (isEditMode)
                         CircleAvatar(
-                          radius: 50,
+                          radius: dynamicAvatarSize / 2,
                           backgroundColor: Theme.of(
                             context,
                           ).scaffoldBackgroundColor.withValues(alpha: 0.25),
                           child: Icon(
                             Icons.edit,
-
                             color: Theme.of(
                               context,
                             ).primaryColor.withValues(alpha: 0.9),
@@ -178,17 +181,7 @@ class CustomUserProfileImagesSection extends StatelessWidget {
     if (backgroundUrl != null && backgroundUrl!.startsWith('http')) {
       return CachedNetworkImageProvider(backgroundUrl!);
     }
-
     return const AssetImage(AppImages.defaultBackgroundImg);
-  }
-
-  ImageProvider _getAvatarImage() {
-    if (selectedAvatarFile != null) return FileImage(selectedAvatarFile!);
-    if (avatarUrl != null && avatarUrl!.startsWith('http')) {
-      return CachedNetworkImageProvider(avatarUrl!);
-    }
-
-    return const AssetImage(AppImages.defaultUserImg);
   }
 }
 
