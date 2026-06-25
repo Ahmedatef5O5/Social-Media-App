@@ -3,7 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../group_chat/models/group_call_model.dart';
 import '../../../group_chat/services/group_call_signaling_service.dart';
-import '../../../notifications/repository/notifications_repository.dart';
+import '../../../group_chat/services/group_notification_dispatcher.dart';
 import 'group_call_state.dart';
 
 class GroupCallCubit extends Cubit<GroupCallState> {
@@ -158,29 +158,17 @@ class GroupCallCubit extends Cubit<GroupCallState> {
         await _service.markAsMissed(call.callId);
         if (!isClosed) emit(GroupCallMissedByInitiator());
       }
-      _notifyGroupMissedCall(call);
+      unawaited(
+        GroupNotificationDispatcher.instance.notifyMissedCall(
+          groupId: call.groupId,
+          callerId: call.initiatorId,
+          callerName: call.initiatorName,
+          callerAvatar: call.groupAvatarUrl ?? '',
+          callId: call.callId,
+          callType: call.type == GroupCallType.video ? 'video' : 'audio',
+        ),
+      );
     });
-  }
-
-  Future<void> _notifyGroupMissedCall(GroupCallModel call) async {
-    try {
-      final members = await _service.getGroupMemberIds(call.groupId);
-
-      final futures = members
-          .where((memberId) => memberId != _currentUserId)
-          .map(
-            (memberId) => NotificationRepository.instance.notifyMissedCall(
-              receiverId: memberId,
-              callerId: call.initiatorId,
-              callerName: call.initiatorName,
-              callerImageUrl: call.groupAvatarUrl ?? '',
-              callType: call.type == GroupCallType.video ? 'video' : 'audio',
-              callId: call.callId,
-            ),
-          );
-
-      await Future.wait(futures, eagerError: false);
-    } catch (_) {}
   }
 
   @override
