@@ -1,9 +1,10 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:social_media_app/features/group_chat/services/group_notification_dispatcher.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../../core/services/fcm_services.dart';
 import '../../../core/services/supabase_storage_services.dart';
+import '../../../core/utilities/supabase_constants.dart';
 import '../models/group_member_model.dart';
 import '../models/group_model.dart';
 import '../models/groupe_message_model.dart';
@@ -22,7 +23,7 @@ class GroupChatServices {
   }) async {
     final groupData =
         await _supabase
-            .from('groups')
+            .from(SupabaseConstants.groups)
             .insert({
               'name': name,
               if (avatarUrl != null) 'avatar_url': avatarUrl,
@@ -33,21 +34,21 @@ class GroupChatServices {
 
     final newGroupId = groupData['id'] as String;
 
-    await _supabase.from('group_members').insert({
-      'group_id': newGroupId,
-      'user_id': currentUserId,
+    await _supabase.from(SupabaseConstants.groupMembers).insert({
+      GroupMemberColumns.groupId: newGroupId,
+      GroupMemberColumns.userId: currentUserId,
       'role': 'admin',
     });
 
     if (memberIds.isNotEmpty) {
       await _supabase
-          .from('group_members')
+          .from(SupabaseConstants.groupMembers)
           .insert(
             memberIds
                 .map(
                   (uid) => {
-                    'group_id': newGroupId,
-                    'user_id': uid,
+                    GroupMemberColumns.groupId: newGroupId,
+                    GroupMemberColumns.userId: uid,
                     'role': 'member',
                   },
                 )
@@ -71,12 +72,12 @@ class GroupChatServices {
 
   Future<List<GroupMemberModel>> getGroupMembers(String groupId) async {
     final response = await _supabase
-        .from('group_members')
+        .from(SupabaseConstants.groupMembers)
         .select(
           'id, group_id, user_id, role, joined_at, '
           'users!group_members_user_id_fkey(name, image_url)',
         )
-        .eq('group_id', groupId);
+        .eq(GroupMemberColumns.groupId, groupId);
 
     return (response as List).map((e) {
       final userInfo = e['users'] as Map<String, dynamic>? ?? {};
@@ -89,19 +90,19 @@ class GroupChatServices {
   }
 
   Future<void> addMember(String groupId, String userId) async {
-    await _supabase.from('group_members').insert({
-      'group_id': groupId,
-      'user_id': userId,
+    await _supabase.from(SupabaseConstants.groupMembers).insert({
+      GroupMemberColumns.groupId: groupId,
+      GroupMemberColumns.userId: userId,
       'role': 'member',
     });
   }
 
   Future<void> removeMember(String groupId, String userId) async {
     await _supabase
-        .from('group_members')
+        .from(SupabaseConstants.groupMembers)
         .delete()
-        .eq('group_id', groupId)
-        .eq('user_id', userId);
+        .eq(GroupMemberColumns.groupId, groupId)
+        .eq(GroupMemberColumns.userId, userId);
   }
 
   Future<void> leaveGroup(String groupId) async {
@@ -114,7 +115,7 @@ class GroupChatServices {
     String? avatarUrl,
   }) async {
     await _supabase
-        .from('groups')
+        .from(SupabaseConstants.groups)
         .update({
           if (name != null) 'name': name,
           if (avatarUrl != null) 'avatar_url': avatarUrl,
@@ -123,14 +124,14 @@ class GroupChatServices {
   }
 
   Future<void> deleteGroup(String groupId) async {
-    await _supabase.from('groups').delete().eq('id', groupId);
+    await _supabase.from(SupabaseConstants.groups).delete().eq('id', groupId);
   }
 
   Stream<List<GroupMessageModel>> getGroupMessagesStream(String groupId) {
     return _supabase
-        .from('group_messages')
+        .from(SupabaseConstants.groupMessages)
         .stream(primaryKey: ['id'])
-        .eq('group_id', groupId)
+        .eq(GroupMemberColumns.groupId, groupId)
         .order('created_at', ascending: false)
         .map(
           (data) => data.map((map) => GroupMessageModel.fromMap(map)).toList(),
@@ -161,7 +162,7 @@ class GroupChatServices {
     final senderAvatar = (userProfile?['image_url'] as String?) ?? '';
 
     final insertData = {
-      'group_id': groupId,
+      GroupMemberColumns.groupId: groupId,
       'sender_id': currentUser.id,
       'sender_name': senderName,
       'sender_avatar': senderAvatar,
@@ -183,19 +184,21 @@ class GroupChatServices {
 
     final result =
         await _supabase
-            .from('group_messages')
+            .from(SupabaseConstants.groupMessages)
             .insert(insertData)
             .select()
             .single();
 
-    _notifyGroupMembers(
-      groupId: groupId,
-      groupName: groupName,
-      senderId: currentUser.id,
-      senderName: senderName,
-      senderAvatar: senderAvatar,
-      messageBody: text.isNotEmpty ? text : (caption ?? ''),
-      messageType: messageType,
+    unawaited(
+      GroupNotificationDispatcher.instance.notifyMessage(
+        groupId: groupId,
+        groupName: groupName,
+        senderId: currentUser.id,
+        senderName: senderName,
+        senderAvatar: senderAvatar,
+        messageBody: text,
+        messageType: messageType,
+      ),
     );
 
     return GroupMessageModel.fromMap({
@@ -205,51 +208,11 @@ class GroupChatServices {
     });
   }
 
-  Future<void> _notifyGroupMembers({
-    required String groupId,
-    required String groupName,
-    required String senderId,
-    required String senderName,
-    required String senderAvatar,
-    required String messageBody,
-    required String messageType,
-  }) async {
-    try {
-      final membersData = await _supabase
-          .from('group_members')
-          .select('user_id, users!group_members_user_id_fkey(fcm_token)')
-          .eq('group_id', groupId)
-          .neq('user_id', senderId);
-
-      final fcmService = FcmService.instance;
-
-      final futures = <Future<void>>[];
-
-      for (final member in membersData as List) {
-        final userInfo = member['users'] as Map<String, dynamic>?;
-        final token = userInfo?['fcm_token'] as String?;
-        if (token == null || token.isEmpty) continue;
-
-        futures.add(
-          fcmService.sendGroupNotification(
-            receiverFcmToken: token,
-            groupId: groupId,
-            groupName: groupName,
-            senderName: senderName,
-            messageBody: messageBody,
-            messageType: messageType,
-            senderImageUrl: senderAvatar,
-          ),
-        );
-      }
-      await Future.wait(futures, eagerError: false);
-    } catch (e) {
-      debugPrint('Group FCM notify error: $e');
-    }
-  }
-
   Future<void> deleteGroupMessage(String messageId) async {
-    await _supabase.from('group_messages').delete().eq('id', messageId);
+    await _supabase
+        .from(SupabaseConstants.groupMessages)
+        .delete()
+        .eq('id', messageId);
   }
 
   Future<void> toggleReaction({
@@ -259,10 +222,10 @@ class GroupChatServices {
     String? currentEmoji,
   }) async {
     final query = _supabase
-        .from('group_message_reactions')
+        .from(SupabaseConstants.groupMessageReactions)
         .delete()
         .eq('message_id', messageId)
-        .eq('user_id', currentUserId);
+        .eq(GroupMemberColumns.userId, currentUserId);
 
     await query;
 
@@ -270,50 +233,54 @@ class GroupChatServices {
       return;
     }
 
-    await _supabase.from('group_message_reactions').insert({
+    await _supabase.from(SupabaseConstants.groupMessageReactions).insert({
       'message_id': messageId,
-      'user_id': currentUserId,
+      GroupMemberColumns.userId: currentUserId,
       'reaction': emoji,
-      'group_id': groupId,
+      GroupMemberColumns.groupId: groupId,
     });
   }
 
   Stream<List<Map<String, dynamic>>> getReactionsStream(String groupId) {
     return _supabase
-        .from('group_message_reactions')
+        .from(SupabaseConstants.groupMessageReactions)
         .stream(primaryKey: ['id'])
-        .eq('group_id', groupId)
+        .eq(GroupMemberColumns.groupId, groupId)
         .map((data) => data.cast<Map<String, dynamic>>());
   }
 
   Future<void> setTyping(String groupId, bool isTyping) async {
-    await _supabase.from('group_typing_status').upsert({
-      'group_id': groupId,
-      'user_id': currentUserId,
+    await _supabase.from(SupabaseConstants.groupTypingStatus).upsert({
+      GroupMemberColumns.groupId: groupId,
+      GroupMemberColumns.userId: currentUserId,
       'is_typing': isTyping,
-      'updated_at': DateTime.now().toIso8601String(),
+      PresenceColumns.updatedAt: DateTime.now().toIso8601String(),
     });
   }
 
   Stream<List<String>> getTypingUsersStream(String groupId) {
     return _supabase
-        .from('group_typing_status')
-        .stream(primaryKey: ['group_id', 'user_id'])
-        .eq('group_id', groupId)
+        .from(SupabaseConstants.groupTypingStatus)
+        .stream(
+          primaryKey: [GroupMemberColumns.groupId, GroupMemberColumns.userId],
+        )
+        .eq(GroupMemberColumns.groupId, groupId)
         .map((data) {
           final cutoff = DateTime.now().subtract(const Duration(seconds: 10));
           return data
               .where((row) {
                 final isTyping = row['is_typing'] as bool? ?? false;
                 final updatedAt =
-                    row['updated_at'] != null
-                        ? DateTime.parse(row['updated_at'] as String)
+                    row[PresenceColumns.updatedAt] != null
+                        ? DateTime.parse(
+                          row[PresenceColumns.updatedAt] as String,
+                        )
                         : DateTime.fromMillisecondsSinceEpoch(0);
                 return isTyping &&
                     updatedAt.isAfter(cutoff) &&
-                    row['user_id'] != currentUserId;
+                    row[GroupMemberColumns.userId] != currentUserId;
               })
-              .map((row) => row['user_id'] as String)
+              .map((row) => row[GroupMemberColumns.userId] as String)
               .toList();
         });
   }
@@ -331,9 +298,9 @@ class GroupChatServices {
 
   Stream<List<Map<String, dynamic>>> getReadReceiptsStream(String groupId) {
     return _supabase
-        .from('group_messages')
+        .from(SupabaseConstants.groupMessages)
         .stream(primaryKey: ['id'])
-        .eq('group_id', groupId)
+        .eq(GroupMemberColumns.groupId, groupId)
         .map(
           (data) =>
               data
@@ -347,7 +314,7 @@ class GroupChatServices {
     try {
       final response =
           await _supabase
-              .from('groups')
+              .from(SupabaseConstants.groups)
               .update({'avatar_url': newAvatarUrl})
               .eq('id', groupId)
               .select();
@@ -423,13 +390,13 @@ class GroupChatServices {
         .onPostgresChanges(
           event: PostgresChangeEvent.all,
           schema: 'public',
-          table: 'group_messages',
+          table: SupabaseConstants.groupMessages,
           callback: notify,
         )
         .onPostgresChanges(
           event: PostgresChangeEvent.all,
           schema: 'public',
-          table: 'group_members',
+          table: SupabaseConstants.groupMembers,
           callback: notify,
         )
         .subscribe();
