@@ -19,7 +19,8 @@ class PostVideoPlayer extends StatefulWidget {
 class _PostVideoPlayerState extends State<PostVideoPlayer> {
   VideoPlayerController? _controller;
   bool _isInitialized = false;
-  bool _showControls = false;
+
+  final _showControls = ValueNotifier<bool>(false);
 
   @override
   void initState() {
@@ -54,9 +55,23 @@ class _PostVideoPlayerState extends State<PostVideoPlayer> {
 
   @override
   void dispose() {
-    _controller?.removeListener(_videoListener);
     _controller?.dispose();
+    _showControls.dispose();
     super.dispose();
+  }
+
+  void _togglePlayPause() {
+    if (_controller == null) return;
+    if (_controller!.value.isPlaying) {
+      _controller!.pause();
+    } else {
+      _controller!.play();
+      Future.delayed(const Duration(milliseconds: 1500), () {
+        if (mounted && _controller!.value.isPlaying) {
+          _showControls.value = false;
+        }
+      });
+    }
   }
 
   @override
@@ -73,7 +88,7 @@ class _PostVideoPlayerState extends State<PostVideoPlayer> {
         }
       },
       child: GestureDetector(
-        onTap: () => setState(() => _showControls = !_showControls),
+        onTap: () => _showControls.value = !_showControls.value,
         child: AspectRatio(
           aspectRatio: _controller!.value.aspectRatio,
           child: Container(
@@ -86,7 +101,20 @@ class _PostVideoPlayerState extends State<PostVideoPlayer> {
               alignment: Alignment.center,
               children: [
                 VideoPlayer(_controller!),
-                if (_showControls) _buildMinimalControls(),
+
+                ValueListenableBuilder<bool>(
+                  valueListenable: _showControls,
+                  builder: (context, showControls, _) {
+                    return AnimatedOpacity(
+                      opacity: showControls ? 1.0 : 0.0,
+                      duration: const Duration(milliseconds: 300),
+                      child:
+                          showControls
+                              ? _buildMinimalControls()
+                              : const SizedBox.shrink(),
+                    );
+                  },
+                ),
                 _buildSlimProgressBar(),
               ],
             ),
@@ -97,54 +125,37 @@ class _PostVideoPlayerState extends State<PostVideoPlayer> {
   }
 
   Widget _buildMinimalControls() {
-    return AnimatedOpacity(
-      opacity: _showControls ? 1.0 : 0.0,
-      duration: const Duration(milliseconds: 300),
-      child: Container(
-        color: Colors.black38,
-        child: Stack(
-          children: [
-            Center(
-              child: IconButton(
-                iconSize: 55,
-                icon: Icon(
-                  _controller!.value.isPlaying
-                      ? Icons.pause_circle_filled
-                      : Icons.play_circle_filled,
-                  color: Colors.white,
-                ),
-                onPressed: () {
-                  setState(() {
-                    if (_controller!.value.isPlaying) {
-                      _controller!.pause();
-                      _showControls = true;
-                    } else {
-                      _controller!.play();
-                      Future.delayed(const Duration(milliseconds: 500), () {
-                        if (mounted && _controller!.value.isPlaying) {
-                          setState(() => _showControls = false);
-                        }
-                      });
-                    }
-                  });
-                },
-              ),
+    return Container(
+      color: Colors.black38,
+      child: Stack(
+        children: [
+          Center(
+            child: AnimatedBuilder(
+              animation: _controller!,
+              builder: (context, _) {
+                return IconButton(
+                  iconSize: 55,
+                  icon: Icon(
+                    _controller!.value.isPlaying
+                        ? Icons.pause_circle_filled
+                        : Icons.play_circle_filled,
+                    color: Colors.white,
+                  ),
+                  onPressed: _togglePlayPause,
+                );
+              },
             ),
+          ),
 
-            Positioned(
-              top: 10,
-              right: 10,
-              child: IconButton(
-                icon: const Icon(
-                  Icons.fullscreen,
-                  color: Colors.white,
-                  size: 28,
-                ),
-                onPressed: _goToFullScreen,
-              ),
+          Positioned(
+            top: 10,
+            right: 10,
+            child: IconButton(
+              icon: const Icon(Icons.fullscreen, color: Colors.white, size: 28),
+              onPressed: _goToFullScreen,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -154,15 +165,17 @@ class _PostVideoPlayerState extends State<PostVideoPlayer> {
       bottom: 0,
       left: 0,
       right: 0,
-      child: SizedBox(
-        height: 3,
-        child: VideoProgressIndicator(
-          _controller!,
-          allowScrubbing: true,
-          colors: VideoProgressColors(
-            playedColor: Theme.of(context).primaryColor,
-            bufferedColor: Colors.white24,
-            backgroundColor: Colors.transparent,
+      child: RepaintBoundary(
+        child: SizedBox(
+          height: 3,
+          child: VideoProgressIndicator(
+            _controller!,
+            allowScrubbing: true,
+            colors: VideoProgressColors(
+              playedColor: Theme.of(context).primaryColor,
+              bufferedColor: Colors.white24,
+              backgroundColor: Colors.transparent,
+            ),
           ),
         ),
       ),
@@ -178,7 +191,9 @@ class _PostVideoPlayerState extends State<PostVideoPlayer> {
                 (context) => FullScreenMediaView(videoUrl: widget.videoUrl),
           ),
         )
-        .then((_) => setState(() {}));
+        .then((_) {
+          if (mounted) _controller?.play();
+        });
   }
 
   Widget _buildPlaceholder() {
