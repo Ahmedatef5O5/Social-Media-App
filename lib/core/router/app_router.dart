@@ -94,20 +94,116 @@ class AppRouter {
     }
   }
 
+  /// Safely extracts arguments to prevent casting crashes.
+  static T? _args<T>(RouteSettings settings) {
+    final args = settings.arguments;
+    if (args is T) return args;
+    debugPrint(
+      '[AppRouter] ⚠️ Route "${settings.name}": '
+      'expected ${T.toString()} but got ${args.runtimeType}',
+    );
+    return null;
+  }
+
+  /// Fallback route when argument casting fails.
+  static Route<dynamic> _errorRoute(RouteSettings settings, [String? reason]) {
+    return MaterialPageRoute(
+      settings: settings,
+      builder:
+          (_) => Scaffold(
+            appBar: AppBar(title: const Text('Navigation Error')),
+            body: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.error_outline, size: 64, color: Colors.red),
+                  const SizedBox(height: 16),
+                  Text(
+                    reason ?? 'Unable to open this screen due to missing data',
+                    style: const TextStyle(fontSize: 16),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Route: ${settings.name}',
+                    style: const TextStyle(fontSize: 12, color: Colors.grey),
+                  ),
+                ],
+              ),
+            ),
+          ),
+    );
+  }
+
   static Route<dynamic> generateRoute(RouteSettings settings) {
-    if (_isAuthCallback(settings.name)) {
+    final name = settings.name ?? '';
+
+    if (_isAuthCallback(name)) {
       return _buildRoute(const LoadingScreen());
     }
+
+    // Routing mapped to modular helper functions
+    switch (name) {
+      case AppRoutes.splashViewRoute:
+      case AppRoutes.onBoardingViewRoute:
+      case AppRoutes.authRoute:
+        return _authRoutes(settings);
+
+      case AppRoutes.homeRoute:
+      case AppRoutes.createPostViewRoute:
+      case AppRoutes.postThemesViewRoute:
+      case AppRoutes.fullScreenImageViewRoute:
+        return _homeRoutes(settings);
+
+      case AppRoutes.createTextStoryViewRoute:
+      case AppRoutes.addStoryCaptionViewRoute:
+      case AppRoutes.storyDisplayViewRoute:
+      case AppRoutes.addStoryPreviewViewRoute:
+        return _storyRoutes(settings);
+
+      case AppRoutes.chatsViewRoute:
+      case AppRoutes.chatDetailsViewRoute:
+      case AppRoutes.receiverProfileViewRoute:
+        return _chatRoutes(settings);
+
+      case AppRoutes.createGroupRoute:
+      case AppRoutes.groupChatRoute:
+      case AppRoutes.groupInfoViewRoute:
+        return _groupChatRoutes(settings);
+
+      case AppRoutes.incomingCallRoute:
+      case AppRoutes.dialingRoute:
+      case AppRoutes.callRoute:
+        return _callRoutes(settings);
+
+      case AppRoutes.editProfileViewRoute:
+      case AppRoutes.profileViewRoute:
+      case AppRoutes.aboutUsViewRoute:
+      case AppRoutes.settingsViewRoute:
+        return _profileAndSettingsRoutes(settings);
+
+      default:
+        return _buildRoute(NoRouteScreen(routeName: name));
+    }
+  }
+
+  // ─── Modular Route Handlers ───
+
+  static Route<dynamic> _authRoutes(RouteSettings settings) {
     switch (settings.name) {
       case AppRoutes.splashViewRoute:
         return _buildRoute(const SplashView(), settings: settings);
-
       case AppRoutes.onBoardingViewRoute:
         return _buildRoute(const OnBoardingView(), settings: settings);
-
       case AppRoutes.authRoute:
         return _buildRoute(const AuthView(), settings: settings);
+      default:
+        return _errorRoute(settings, 'Auth route not found');
+    }
+  }
 
+  static Route<dynamic> _homeRoutes(RouteSettings settings) {
+    switch (settings.name) {
       case AppRoutes.homeRoute:
         return _buildRoute(
           MultiBlocProvider(
@@ -131,9 +227,159 @@ class AppRouter {
           ),
           settings: settings,
         );
+      case AppRoutes.createPostViewRoute:
+        final cubit = _args<HomeCubit>(settings);
+        if (cubit == null)
+          return _errorRoute(settings, 'Missing HomeCubit parameter');
+        return _buildRoute(
+          BlocProvider.value(value: cubit, child: const CreatePostView()),
+          settings: settings,
+        );
+      case AppRoutes.postThemesViewRoute:
+        return _buildRoute(const PostThemesView(), settings: settings);
+      case AppRoutes.fullScreenImageViewRoute:
+        return _buildRoute(
+          FullScreenImageViewer(),
+          typeOfRoute: TypeOfRoute.fade,
+          settings: settings,
+        );
+      default:
+        return _errorRoute(settings, 'Home route not found');
+    }
+  }
 
+  static Route<dynamic> _storyRoutes(RouteSettings settings) {
+    switch (settings.name) {
+      case AppRoutes.createTextStoryViewRoute:
+        final cubit = _args<HomeCubit>(settings);
+        if (cubit == null)
+          return _errorRoute(settings, 'Missing HomeCubit parameter');
+        return _buildRoute(
+          BlocProvider.value(value: cubit, child: const CreateTextStoryView()),
+          settings: settings,
+        );
+      case AppRoutes.addStoryCaptionViewRoute:
+        final args = _args<Map<String, dynamic>>(settings);
+        if (args == null ||
+            args['file'] is! File ||
+            args['homeCubit'] is! HomeCubit) {
+          return _errorRoute(settings, 'Invalid arguments for Story Caption');
+        }
+        return _buildRoute(
+          AddStoryCaptionView(file: args['file'], homeCubit: args['homeCubit']),
+          settings: settings,
+        );
+      case AppRoutes.storyDisplayViewRoute:
+        final args = _args<Map<String, dynamic>>(settings);
+        if (args == null)
+          return _errorRoute(settings, 'Missing arguments for Story Display');
+        return _buildRoute(
+          StoryDisplayView(
+            homeCubit: args['homeCubit'],
+            allUserGroups: args['allUserGroups'],
+            initialGroupIndex: args['initialGroupIndex'],
+          ),
+          typeOfRoute: TypeOfRoute.fade,
+          settings: settings,
+        );
+      case AppRoutes.addStoryPreviewViewRoute:
+        final args = _args<Map<String, dynamic>>(settings);
+        if (args == null ||
+            args['file'] is! File ||
+            args['isVideo'] is! bool ||
+            args['homeCubit'] is! HomeCubit) {
+          return _errorRoute(settings, 'Invalid arguments for Story Preview');
+        }
+        return _buildRoute(
+          AddStoryPreviewView(
+            file: args['file'],
+            isVideo: args['isVideo'],
+            videoDuration: args['videoDuration'] as Duration?,
+            homeCubit: args['homeCubit'],
+          ),
+          typeOfRoute: TypeOfRoute.fade,
+          settings: settings,
+        );
+      default:
+        return _errorRoute(settings, 'Story route not found');
+    }
+  }
+
+  static Route<dynamic> _chatRoutes(RouteSettings settings) {
+    switch (settings.name) {
+      case AppRoutes.chatsViewRoute:
+        return _buildRoute(const ChatsView(), settings: settings);
+      case AppRoutes.chatDetailsViewRoute:
+        final user = _args<ChatUserModel>(settings);
+        if (user == null)
+          return _errorRoute(settings, 'Missing ChatUserModel data');
+        return _buildRoute(
+          BlocProvider(
+            create:
+                (context) =>
+                    ChatDetailsCubit(ChatServices(), user.name)
+                      ..loadCurrentUserInfo(),
+            child: ChatDetailsView(receiverUser: user),
+          ),
+          settings: settings,
+        );
+      case AppRoutes.receiverProfileViewRoute:
+        final user = _args<ChatUserModel>(settings);
+        if (user == null)
+          return _errorRoute(settings, 'Missing ChatUserModel data');
+        return _buildRoute(
+          ReceiverProfileView(receiverUser: user),
+          settings: settings,
+        );
+      default:
+        return _errorRoute(settings, 'Chat route not found');
+    }
+  }
+
+  static Route<dynamic> _groupChatRoutes(RouteSettings settings) {
+    switch (settings.name) {
+      case AppRoutes.createGroupRoute:
+        return _buildRoute(
+          BlocProvider(
+            create: (_) => GroupListCubit(GroupChatServices()),
+            child: const CreateGroupView(),
+          ),
+          settings: settings,
+        );
+      case AppRoutes.groupChatRoute:
+        final group = _args<GroupModel>(settings);
+        if (group == null)
+          return _errorRoute(settings, 'Missing GroupModel data');
+        return _buildRoute(
+          BlocProvider(
+            create:
+                (context) => GroupDetailsCubit(
+                  GroupChatServices(),
+                  group,
+                  context.read<GroupListCubit>(),
+                )..init(),
+            child: GroupChatDetailsView(group: group),
+          ),
+          settings: settings,
+        );
+      case AppRoutes.groupInfoViewRoute:
+        final group = _args<GroupModel>(settings);
+        if (group == null)
+          return _errorRoute(settings, 'Missing GroupModel data');
+        return _buildRoute(
+          GroupInfoView(group: group),
+          typeOfRoute: TypeOfRoute.material,
+          settings: settings,
+        );
+      default:
+        return _errorRoute(settings, 'Group chat route not found');
+    }
+  }
+
+  static Route<dynamic> _callRoutes(RouteSettings settings) {
+    switch (settings.name) {
       case AppRoutes.incomingCallRoute:
-        final args = settings.arguments as Map<String, dynamic>? ?? {};
+        final args = _args<Map<String, dynamic>>(settings) ?? {};
         final call = CallModel(
           callId: args['callId'] as String? ?? '',
           callerId: args['callerId'] as String? ?? '',
@@ -155,146 +401,41 @@ class AppRouter {
         );
 
       case AppRoutes.dialingRoute:
-        final call = settings.arguments as CallModel;
+        final call = _args<CallModel>(settings);
+        if (call == null) {
+          return _errorRoute(settings, 'Missing CallModel parameter');
+        }
         return _buildRoute(
-          typeOfRoute: TypeOfRoute.material,
           DialingView(call: call),
+          typeOfRoute: TypeOfRoute.material,
           settings: settings,
         );
 
       case AppRoutes.callRoute:
-        final args = settings.arguments as Map<String, dynamic>;
+        final args = _args<Map<String, dynamic>>(settings);
+        if (args == null || args['call'] is! CallModel) {
+          return _errorRoute(settings, 'Invalid or missing Call data');
+        }
         return _buildRoute(
-          typeOfRoute: TypeOfRoute.material,
           ZegoCallView(
             call: args['call'],
             currentUserId: args['userId'],
             currentUserName: args['userName'],
           ),
-          settings: settings,
-        );
-
-      case AppRoutes.createPostViewRoute:
-        return _buildRoute(
-          BlocProvider.value(
-            value: settings.arguments as HomeCubit,
-            child: const CreatePostView(),
-          ),
-          settings: settings,
-        );
-
-      case AppRoutes.postThemesViewRoute:
-        return _buildRoute(const PostThemesView(), settings: settings);
-
-      case AppRoutes.fullScreenImageViewRoute:
-        return _buildRoute(
-          FullScreenImageViewer(),
-          typeOfRoute: TypeOfRoute.fade,
-          settings: settings,
-        );
-
-      case AppRoutes.createTextStoryViewRoute:
-        final cubit = settings.arguments as HomeCubit;
-        return _buildRoute(
-          BlocProvider.value(value: cubit, child: const CreateTextStoryView()),
-          settings: settings,
-        );
-
-      case AppRoutes.addStoryCaptionViewRoute:
-        final args = settings.arguments as Map<String, dynamic>;
-        return _buildRoute(
-          AddStoryCaptionView(
-            file: args['file'] as File,
-            homeCubit: args['homeCubit'] as HomeCubit,
-          ),
-          settings: settings,
-        );
-
-      case AppRoutes.storyDisplayViewRoute:
-        final args = settings.arguments as Map<String, dynamic>;
-        return _buildRoute(
-          StoryDisplayView(
-            homeCubit: args['homeCubit'],
-            allUserGroups: args['allUserGroups'],
-            initialGroupIndex: args['initialGroupIndex'],
-          ),
-          typeOfRoute: TypeOfRoute.fade,
-          settings: settings,
-        );
-
-      case AppRoutes.addStoryPreviewViewRoute:
-        final args = settings.arguments as Map<String, dynamic>;
-        return _buildRoute(
-          AddStoryPreviewView(
-            file: args['file'] as File,
-            isVideo: args['isVideo'] as bool,
-            videoDuration: args['videoDuration'] as Duration?,
-            homeCubit: args['homeCubit'] as HomeCubit,
-          ),
-          typeOfRoute: TypeOfRoute.fade,
-          settings: settings,
-        );
-
-      case AppRoutes.chatsViewRoute:
-        return _buildRoute(const ChatsView(), settings: settings);
-
-      case AppRoutes.chatDetailsViewRoute:
-        final user = settings.arguments as ChatUserModel;
-
-        return _buildRoute(
-          BlocProvider(
-            create:
-                (context) =>
-                    ChatDetailsCubit(ChatServices(), user.name)
-                      ..loadCurrentUserInfo(),
-            child: ChatDetailsView(receiverUser: user),
-          ),
-          settings: settings,
-        );
-
-      case AppRoutes.receiverProfileViewRoute:
-        final user = settings.arguments as ChatUserModel;
-        return _buildRoute(
-          ReceiverProfileView(receiverUser: user),
-          settings: settings,
-        );
-
-      case AppRoutes.createGroupRoute:
-        return _buildRoute(
-          BlocProvider(
-            create: (_) => GroupListCubit(GroupChatServices()),
-            child: const CreateGroupView(),
-          ),
-
-          settings: settings,
-        );
-
-      case AppRoutes.groupChatRoute:
-        final group = settings.arguments as GroupModel;
-        final services = GroupChatServices();
-        return _buildRoute(
-          BlocProvider(
-            create:
-                (context) => GroupDetailsCubit(
-                  services,
-                  group,
-                  context.read<GroupListCubit>(),
-                )..init(),
-            child: GroupChatDetailsView(group: group),
-          ),
-          settings: settings,
-        );
-
-      case AppRoutes.groupInfoViewRoute:
-        final group = settings.arguments as GroupModel;
-        return _buildRoute(
           typeOfRoute: TypeOfRoute.material,
-          GroupInfoView(group: group),
           settings: settings,
         );
+      default:
+        return _errorRoute(settings, 'Call route not found');
+    }
+  }
 
+  static Route<dynamic> _profileAndSettingsRoutes(RouteSettings settings) {
+    switch (settings.name) {
       case AppRoutes.editProfileViewRoute:
-        final user = settings.arguments as UserData;
+        final user = _args<UserData>(settings);
+        if (user == null)
+          return _errorRoute(settings, 'Missing UserData parameter');
         return _buildRoute(
           BlocProvider(
             create: (context) => EditProfileCubit(EditProfileServices()),
@@ -302,9 +443,10 @@ class AppRouter {
           ),
           settings: settings,
         );
-
       case AppRoutes.profileViewRoute:
-        final userId = settings.arguments as String;
+        final userId = _args<String>(settings);
+        if (userId == null)
+          return _errorRoute(settings, 'Missing User ID parameter');
         return _buildRoute(
           Scaffold(
             body: MultiBlocProvider(
@@ -321,15 +463,12 @@ class AppRouter {
           ),
           settings: settings,
         );
-
       case AppRoutes.aboutUsViewRoute:
         return _buildRoute(AboutUsView(), settings: settings);
-
       case AppRoutes.settingsViewRoute:
         return _buildRoute(SettingsView(), settings: settings);
-
       default:
-        return _buildRoute(NoRouteScreen(routeName: settings.name));
+        return _errorRoute(settings, 'Profile/Settings route not found');
     }
   }
 }
