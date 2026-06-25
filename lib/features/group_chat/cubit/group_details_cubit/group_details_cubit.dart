@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../../core/services/supabase_storage_services.dart';
 import '../../../notifications/repository/notifications_repository.dart';
 import '../../models/group_model.dart';
 import '../../models/groupe_message_model.dart';
@@ -315,6 +316,8 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState> {
       );
 
       cachedMessages.removeWhere((m) => m.id == tempId);
+    } on UploadCanceledException {
+      return;
     } catch (e) {
       cachedMessages.removeWhere((m) => m.id == tempId);
       uploadProgressMap.remove(tempId);
@@ -323,6 +326,12 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState> {
       if (e is dio_pkg.DioException &&
           e.type == dio_pkg.DioExceptionType.cancel) {
         debugPrint('Upload canceled for tempId: $tempId');
+      }
+      if (e.toString().contains('session_expired')) {
+        emit(
+          GroupDetailsError('Your session has expired; please log in again'),
+        );
+        return;
       } else {
         debugPrint('Error uploading file: $e');
 

@@ -11,6 +11,7 @@ import 'package:social_media_app/features/auth/data/models/user_data.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:video_player/video_player.dart';
 import '../../../../core/services/presence_service.dart';
+import '../../../../core/services/supabase_storage_services.dart';
 import '../../../comments/events/comment_event_bus.dart';
 import '../../../comments/model/comment_model.dart';
 import '../../../notifications/repository/notifications_repository.dart';
@@ -317,9 +318,16 @@ class HomeCubit extends Cubit<HomeState> {
       } else {
         emit(StoriesLoaded(cachedStories, DateTime.now()));
       }
+    } on UploadCanceledException {
+      return;
     } catch (e) {
       debugPrint('Error adding video story: $e');
       emit(AddStoryError(e.toString()));
+
+      if (e.toString().contains('session_expired')) {
+        emit(AddStoryError('Your session has expired; please log in again'));
+        return;
+      }
     }
   }
 

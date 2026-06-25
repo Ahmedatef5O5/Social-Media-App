@@ -35,9 +35,12 @@ class SupabaseStorageServices {
     final uploadPath = '$folder/$fileName';
     final contentType = _resolveContentType(ext, folder);
     final fileLength = await file.length();
-    final accessToken =
-        _supabase.auth.currentSession?.accessToken ??
-        AppSecrets.supabaseAnonKey;
+
+    final session = _supabase.auth.currentSession;
+    if (session == null || session.isExpired) {
+      throw Exception('session_expired');
+    }
+    final accessToken = session.accessToken;
 
     onProgress?.call(0.0);
 

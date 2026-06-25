@@ -14,6 +14,8 @@ class PresenceService with WidgetsBindingObserver {
   Timer? _heartbeatTimer;
   static const Duration _heartbeatInterval = Duration(seconds: 30);
 
+  StreamSubscription<AuthState>? _authSub;
+
   Future<void> init() async {
     final user = _supabase.auth.currentUser;
     if (user == null) return;
@@ -27,14 +29,27 @@ class PresenceService with WidgetsBindingObserver {
     await _setOnline(true);
     _startHeartbeat();
 
-    _supabase.auth.onAuthStateChange.listen((data) async {
-      if (data.event == AuthChangeEvent.signedOut) {
-        await _setOnline(false);
-        await dispose();
-      } else if (data.event == AuthChangeEvent.signedIn) {
-        _userId = _supabase.auth.currentUser?.id;
-        _initialised = false;
-        await init();
+    await _authSub?.cancel();
+
+    _authSub = _supabase.auth.onAuthStateChange.listen((data) async {
+      switch (data.event) {
+        case AuthChangeEvent.signedOut:
+          await _setOnline(false);
+          await dispose();
+
+        case AuthChangeEvent.signedIn:
+          final newUserId = data.session?.user.id;
+          if (newUserId != null && newUserId != _userId) {
+            _initialised = false;
+            _userId = null;
+            await init();
+          }
+
+        case AuthChangeEvent.tokenRefreshed:
+          break;
+
+        default:
+          break;
       }
     });
   }
@@ -43,6 +58,9 @@ class PresenceService with WidgetsBindingObserver {
     if (!_initialised) return;
     _stopHeartbeat();
     WidgetsBinding.instance.removeObserver(this);
+    await _authSub?.cancel();
+    _authSub = null;
+
     _initialised = false;
     _userId = null;
   }
@@ -50,7 +68,9 @@ class PresenceService with WidgetsBindingObserver {
   void _startHeartbeat() {
     _heartbeatTimer?.cancel();
     _heartbeatTimer = Timer.periodic(_heartbeatInterval, (_) {
-      _setOnline(true);
+      _setOnline(
+        true,
+      ).catchError((e) => debugPrint('[PresenceService] heartbeat error: $e'));
     });
   }
 

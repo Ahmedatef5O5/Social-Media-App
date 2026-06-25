@@ -6,6 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/services/fcm_services.dart';
+import '../../../../core/services/supabase_storage_services.dart';
 import '../../../notifications/repository/notifications_repository.dart';
 import '../../models/message_model.dart';
 import '../../models/presence_snapshot.dart';
@@ -232,12 +233,18 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState> {
         messageType: messageType,
         attachmentUrl: imageUrl ?? videoUrl,
       );
+    } on UploadCanceledException {
+      return;
     } catch (e) {
       _cancelTokens.remove(tempId);
 
       if (e is dio_pkg.DioException &&
           e.type == dio_pkg.DioExceptionType.cancel) {
         debugPrint("User canceled the upload");
+        return;
+      }
+      if (e.toString().contains('session_expired')) {
+        emit(MessagesError('Your session has expired; please log in again'));
         return;
       } else {
         debugPrint('Error uploading file: $e');
