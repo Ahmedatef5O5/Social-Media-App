@@ -1,15 +1,88 @@
 abstract class SupabaseConstants {
+  // ── Shared / Auth ──
   static const String users = 'users';
+
+  // ── Posts Feature ──
   static const String stories = 'stories';
   static const String storyVideos = 'story_videos';
   static const String posts = 'posts';
   static const String likes = 'post_likes';
   static const String comments = 'comments';
+
+  // ── Chat Feature ──
   static const String messages = 'messages';
   static const String typingStatus = 'typing_status';
 
-  //  RPC (Functions)
+  //  Group Chat Feature
+  static const String groups = 'groups';
+  static const String groupMembers = 'group_members';
+  static const String groupMessages = 'group_messages';
+  static const String groupMessageReactions = 'group_message_reactions';
+  static const String groupTypingStatus = 'group_typing_status';
+
+  //  Presence Feature
+  static const String userPresence = 'user_presence';
+
+  // ── RPC (Stored Functions) ──
   static const String getChatsWithLastMessage = 'get_chats_with_last_message';
+}
+
+// groups
+abstract class GroupColumns {
+  static const String id = 'id';
+  static const String name = 'name';
+  static const String description = 'description';
+  static const String imageUrl = 'image_url';
+  static const String createdAt = 'created_at';
+  static const String createdBy = 'created_by';
+}
+
+// group_members
+abstract class GroupMemberColumns {
+  static const String groupId = 'group_id';
+  static const String userId = 'user_id';
+  static const String role = 'role';
+  static const String joinedAt = 'joined_at';
+}
+
+// group_messages
+abstract class GroupMessageColumns {
+  static const String id = 'id';
+  static const String groupId = 'group_id';
+  static const String senderId = 'sender_id';
+  static const String text = 'text';
+  static const String messageType = 'message_type';
+  static const String imageUrl = 'image_url';
+  static const String videoUrl = 'video_url';
+  static const String voiceUrl = 'voice_url';
+  static const String caption = 'caption';
+  static const String createdAt = 'created_at';
+  static const String replyToId = 'reply_to_id';
+}
+
+// group_message_reactions
+abstract class GroupReactionColumns {
+  static const String id = 'id';
+  static const String messageId = 'message_id';
+  static const String userId = 'user_id';
+  static const String reaction = 'reaction';
+  static const String groupId = 'group_id';
+}
+
+// user_presence
+abstract class PresenceColumns {
+  static const String userId = 'user_id';
+  static const String isOnline = 'is_online';
+  static const String lastSeen = 'last_seen';
+  static const String updatedAt = 'updated_at';
+}
+
+// group_typing_status
+abstract class GroupTypingColumns {
+  static const String groupId = 'group_id';
+  static const String userId = 'user_id';
+  static const String isTyping = 'is_typing';
+  static const String updatedAt = 'updated_at';
 }
 
 // subClass for users column table
