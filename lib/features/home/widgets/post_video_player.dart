@@ -28,10 +28,6 @@ class _PostVideoPlayerState extends State<PostVideoPlayer> {
     _initializeCachedPlayer();
   }
 
-  void _videoListener() {
-    if (mounted) setState(() {});
-  }
-
   Future<void> _initializeCachedPlayer() async {
     try {
       final fileInfo = await DefaultCacheManager().getFileFromCache(
@@ -44,8 +40,6 @@ class _PostVideoPlayerState extends State<PostVideoPlayer> {
       _controller = VideoPlayerController.file(videoFile);
       await _controller!.initialize();
       _controller!.setLooping(true);
-
-      _controller!.addListener(_videoListener);
 
       if (mounted) setState(() => _isInitialized = true);
     } catch (e) {
