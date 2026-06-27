@@ -352,48 +352,31 @@ class GroupChatServices {
     }
   }
 
-  Future<String> uploadGroupAvatar(File file) async {
-    final ext = file.path.split('.').last.toLowerCase();
-    final fileName =
-        'group_avatar_${_supabase.auth.currentUser!.id}_${DateTime.now().millisecondsSinceEpoch}.$ext';
-
-    const bucket = 'avatars';
-    final path = 'groups/$fileName';
-
+  Future<String> uploadGroupAvatar(
+    File file, {
+    void Function(double progress)? onProgress,
+  }) async {
     try {
-      final bytes = await file.readAsBytes();
-
-      await _supabase.storage
-          .from(bucket)
-          .uploadBinary(
-            path,
-            bytes,
-            fileOptions: FileOptions(contentType: 'image/$ext', upsert: true),
-          );
-
-      final url = _supabase.storage.from(bucket).getPublicUrl(path);
-      return url;
+      return await storage.uploadFile(
+        file,
+        'avatars',
+        'groups',
+        filePrefix: 'group_avatar_',
+        onProgress: onProgress,
+      );
     } catch (e) {
-      debugPrint('uploadGroupAvatar bucket=$bucket error: $e');
+      debugPrint('uploadGroupAvatar primary bucket failed: $e');
 
       try {
-        final bytes = await file.readAsBytes();
-        const fallbackBucket = 'chat-images';
-        final fallbackPath = '${_supabase.auth.currentUser!.id}/$fileName';
-
-        await _supabase.storage
-            .from(fallbackBucket)
-            .uploadBinary(
-              fallbackPath,
-              bytes,
-              fileOptions: FileOptions(contentType: 'image/$ext', upsert: true),
-            );
-
-        return _supabase.storage
-            .from(fallbackBucket)
-            .getPublicUrl(fallbackPath);
+        return await storage.uploadFile(
+          file,
+          'chat-images',
+          'avatars',
+          filePrefix: 'group_avatar_',
+          onProgress: onProgress,
+        );
       } catch (e2) {
-        debugPrint('uploadGroupAvatar fallback error: $e2');
+        debugPrint('uploadGroupAvatar fallback bucket failed: $e2');
         rethrow;
       }
     }
