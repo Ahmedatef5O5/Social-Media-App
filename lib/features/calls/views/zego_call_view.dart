@@ -3,10 +3,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:zego_uikit_prebuilt_call/zego_uikit_prebuilt_call.dart';
 import 'package:zego_uikit/zego_uikit.dart';
 import '../../../core/secrets/app_secrets.dart';
+import '../../../core/services/zego_token_service.dart';
 import '../model/call_model.dart';
 import '../cubits/single_call_cubit/call_cubit.dart';
 
-class ZegoCallView extends StatelessWidget {
+class ZegoCallView extends StatefulWidget {
   final CallModel call;
   final String currentUserId;
   final String currentUserName;
@@ -19,8 +20,36 @@ class ZegoCallView extends StatelessWidget {
   });
 
   @override
+  State<ZegoCallView> createState() => _ZegoCallViewState();
+}
+
+class _ZegoCallViewState extends State<ZegoCallView> {
+  String? _zegoToken;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadZegoToken();
+  }
+
+  Future<void> _loadZegoToken() async {
+    try {
+      final token = await ZegoTokenService.instance.generateToken(
+        userId: widget.currentUserId,
+      );
+      if (mounted) setState(() => _zegoToken = token);
+    } catch (e) {
+      if (mounted) Navigator.of(context).pop();
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final isVideo = call.type == CallType.video;
+    if (_zegoToken == null) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
+    final isVideo = widget.call.type == CallType.video;
     final primaryColor = Theme.of(context).primaryColor;
 
     final darkerPrimary =
@@ -135,14 +164,14 @@ class ZegoCallView extends StatelessWidget {
     return SafeArea(
       child: ZegoUIKitPrebuiltCall(
         appID: AppSecrets.zegoAppId,
-        appSign: AppSecrets.zegoAppSign,
-        userID: currentUserId,
-        userName: currentUserName,
-        callID: call.callId,
+        token: _zegoToken!,
+        userID: widget.currentUserId,
+        userName: widget.currentUserName,
+        callID: widget.call.callId,
         config: config,
         events: ZegoUIKitPrebuiltCallEvents(
           onCallEnd: (event, defaultAction) {
-            context.read<CallCubit>().endCall(call.callId);
+            context.read<CallCubit>().endCall(widget.call.callId);
             defaultAction.call();
           },
         ),

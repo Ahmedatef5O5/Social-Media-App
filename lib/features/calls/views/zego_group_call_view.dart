@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:zego_uikit/zego_uikit.dart';
 import 'package:zego_uikit_prebuilt_call/zego_uikit_prebuilt_call.dart';
 import '../../../core/secrets/app_secrets.dart';
+import '../../../core/services/zego_token_service.dart';
 import '../../group_chat/models/group_call_model.dart';
 import '../../group_chat/services/group_call_signaling_service.dart';
 
@@ -26,6 +27,7 @@ class ZegoGroupCallView extends StatefulWidget {
 
 class _ZegoGroupCallViewState extends State<ZegoGroupCallView> {
   final _signaling = GroupCallSignalingService();
+  String? _zegoToken;
   StreamSubscription? _participantSub;
   DateTime? _callStartTime;
   bool _callHasStarted = false;
@@ -34,8 +36,20 @@ class _ZegoGroupCallViewState extends State<ZegoGroupCallView> {
   @override
   void initState() {
     super.initState();
+    _loadZegoToken();
     _callStartTime = DateTime.now();
     _monitorParticipants();
+  }
+
+  Future<void> _loadZegoToken() async {
+    try {
+      final token = await ZegoTokenService.instance.generateToken(
+        userId: widget.currentUserId,
+      );
+      if (mounted) setState(() => _zegoToken = token);
+    } catch (e) {
+      if (mounted) Navigator.of(context).pop();
+    }
   }
 
   void _monitorParticipants() {
@@ -92,6 +106,10 @@ class _ZegoGroupCallViewState extends State<ZegoGroupCallView> {
 
   @override
   Widget build(BuildContext context) {
+    if (_zegoToken == null) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
     final isVideo = widget.call.type == GroupCallType.video;
     final primary = Theme.of(context).primaryColor;
 
@@ -212,7 +230,7 @@ class _ZegoGroupCallViewState extends State<ZegoGroupCallView> {
     return SafeArea(
       child: ZegoUIKitPrebuiltCall(
         appID: AppSecrets.zegoAppId,
-        appSign: AppSecrets.zegoAppSign,
+        token: _zegoToken!,
         userID: widget.currentUserId,
         userName: widget.currentUserName,
         callID: widget.call.callId,
