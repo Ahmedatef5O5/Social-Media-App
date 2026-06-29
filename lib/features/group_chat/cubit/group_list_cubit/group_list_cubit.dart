@@ -162,7 +162,7 @@ class GroupListCubit extends Cubit<GroupListState> {
         .onPostgresChanges(
           event: PostgresChangeEvent.all,
           schema: 'public',
-          table: 'group_members',
+          table: SupabaseConstants.groups,
           callback: (payload) {
             final newRow = payload.newRecord;
             final oldRow = payload.oldRecord;

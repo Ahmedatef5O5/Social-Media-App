@@ -10,7 +10,7 @@ class GroupCallSignalingService {
   Future<List<String>> getGroupMemberIds(String groupId) async {
     try {
       final response = await _supabase
-          .from('group_members')
+          .from(SupabaseConstants.groupMembers)
           .select(GroupMemberColumns.userId)
           .eq(GroupMemberColumns.groupId, groupId);
 
