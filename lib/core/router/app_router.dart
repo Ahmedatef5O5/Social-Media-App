@@ -215,12 +215,16 @@ class AppRouter {
                           ..getDiscoverPeople(),
               ),
               BlocProvider(
-                create: (context) => ChatsCubit(ChatServices())..monitorChats(),
+                create:
+                    (context) =>
+                        ChatsCubit(context.read<ChatServices>())
+                          ..monitorChats(),
               ),
               BlocProvider(
                 create:
                     (context) =>
-                        GroupListCubit(GroupChatServices())..monitorGroups(),
+                        GroupListCubit(context.read<GroupChatServices>())
+                          ..monitorGroups(),
               ),
             ],
             child: const CustomBottomNavBar(),
@@ -229,8 +233,9 @@ class AppRouter {
         );
       case AppRoutes.createPostViewRoute:
         final cubit = _args<HomeCubit>(settings);
-        if (cubit == null)
+        if (cubit == null) {
           return _errorRoute(settings, 'Missing HomeCubit parameter');
+        }
         return _buildRoute(
           BlocProvider.value(value: cubit, child: const CreatePostView()),
           settings: settings,
@@ -252,8 +257,9 @@ class AppRouter {
     switch (settings.name) {
       case AppRoutes.createTextStoryViewRoute:
         final cubit = _args<HomeCubit>(settings);
-        if (cubit == null)
+        if (cubit == null) {
           return _errorRoute(settings, 'Missing HomeCubit parameter');
+        }
         return _buildRoute(
           BlocProvider.value(value: cubit, child: const CreateTextStoryView()),
           settings: settings,
@@ -271,8 +277,9 @@ class AppRouter {
         );
       case AppRoutes.storyDisplayViewRoute:
         final args = _args<Map<String, dynamic>>(settings);
-        if (args == null)
+        if (args == null) {
           return _errorRoute(settings, 'Missing arguments for Story Display');
+        }
         return _buildRoute(
           StoryDisplayView(
             homeCubit: args['homeCubit'],
@@ -311,13 +318,14 @@ class AppRouter {
         return _buildRoute(const ChatsView(), settings: settings);
       case AppRoutes.chatDetailsViewRoute:
         final user = _args<ChatUserModel>(settings);
-        if (user == null)
+        if (user == null) {
           return _errorRoute(settings, 'Missing ChatUserModel data');
+        }
         return _buildRoute(
           BlocProvider(
             create:
                 (context) =>
-                    ChatDetailsCubit(ChatServices(), user.name)
+                    ChatDetailsCubit(context.read<ChatServices>(), user.name)
                       ..loadCurrentUserInfo(),
             child: ChatDetailsView(receiverUser: user),
           ),
@@ -325,8 +333,9 @@ class AppRouter {
         );
       case AppRoutes.receiverProfileViewRoute:
         final user = _args<ChatUserModel>(settings);
-        if (user == null)
+        if (user == null) {
           return _errorRoute(settings, 'Missing ChatUserModel data');
+        }
         return _buildRoute(
           ReceiverProfileView(receiverUser: user),
           settings: settings,
@@ -341,20 +350,22 @@ class AppRouter {
       case AppRoutes.createGroupRoute:
         return _buildRoute(
           BlocProvider(
-            create: (_) => GroupListCubit(GroupChatServices()),
+            create:
+                (context) => GroupListCubit(context.read<GroupChatServices>()),
             child: const CreateGroupView(),
           ),
           settings: settings,
         );
       case AppRoutes.groupChatRoute:
         final group = _args<GroupModel>(settings);
-        if (group == null)
+        if (group == null) {
           return _errorRoute(settings, 'Missing GroupModel data');
+        }
         return _buildRoute(
           BlocProvider(
             create:
                 (context) => GroupDetailsCubit(
-                  GroupChatServices(),
+                  context.read<GroupChatServices>(),
                   group,
                   context.read<GroupListCubit>(),
                 )..init(),
@@ -364,8 +375,9 @@ class AppRouter {
         );
       case AppRoutes.groupInfoViewRoute:
         final group = _args<GroupModel>(settings);
-        if (group == null)
+        if (group == null) {
           return _errorRoute(settings, 'Missing GroupModel data');
+        }
         return _buildRoute(
           GroupInfoView(group: group),
           typeOfRoute: TypeOfRoute.material,
@@ -434,8 +446,9 @@ class AppRouter {
     switch (settings.name) {
       case AppRoutes.editProfileViewRoute:
         final user = _args<UserData>(settings);
-        if (user == null)
+        if (user == null) {
           return _errorRoute(settings, 'Missing UserData parameter');
+        }
         return _buildRoute(
           BlocProvider(
             create: (context) => EditProfileCubit(EditProfileServices()),
@@ -445,8 +458,9 @@ class AppRouter {
         );
       case AppRoutes.profileViewRoute:
         final userId = _args<String>(settings);
-        if (userId == null)
+        if (userId == null) {
           return _errorRoute(settings, 'Missing User ID parameter');
+        }
         return _buildRoute(
           Scaffold(
             body: MultiBlocProvider(

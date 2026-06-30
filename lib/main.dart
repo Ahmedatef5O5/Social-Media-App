@@ -19,8 +19,10 @@ import 'package:social_media_app/features/calls/cubits/single_call_cubit/call_cu
 import 'package:social_media_app/features/calls/cubits/single_call_cubit/call_state.dart';
 import 'package:social_media_app/features/calls/model/call_model.dart';
 import 'package:social_media_app/features/calls/services/call_signaling_service.dart';
+import 'package:social_media_app/features/chats/cubit/chats_cubit/chats_cubit.dart';
 import 'package:social_media_app/features/group_chat/cubit/group_list_cubit/group_list_cubit.dart';
 import 'package:social_media_app/features/group_chat/services/group_chat_services.dart';
+import 'package:social_media_app/features/profile/services/user_services.dart';
 import 'package:social_media_app/firebase_options.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'core/services/global_group_call_listener.dart';
@@ -257,9 +259,11 @@ Future<void> _initNotifications() async {
 Widget _buildApp(String savedTheme) {
   return MultiRepositoryProvider(
     providers: [
-      RepositoryProvider(create: (_) => ChatServices()),
       RepositoryProvider(create: (_) => SupabaseAuthServices()),
+      RepositoryProvider(create: (_) => ChatServices()),
+      RepositoryProvider(create: (_) => GroupChatServices()),
       RepositoryProvider(create: (_) => CallSignalingService()),
+      RepositoryProvider(create: (_) => UserService()),
     ],
     child: MultiBlocProvider(
       providers: [
@@ -274,10 +278,18 @@ Widget _buildApp(String savedTheme) {
               (context) =>
                   HomeCubit(homeServices: HomeServices.instance)..getHomeData(),
         ),
-        BlocProvider(create: (_) => GroupListCubit(GroupChatServices())),
+        BlocProvider(
+          create:
+              (context) => GroupListCubit(context.read<GroupChatServices>()),
+        ),
 
         BlocProvider(
           create: (context) => CallCubit(context.read<CallSignalingService>()),
+        ),
+        BlocProvider(
+          create:
+              (context) =>
+                  ChatsCubit(context.read<ChatServices>())..monitorChats(),
         ),
       ],
       child: DevicePreview(
