@@ -22,6 +22,7 @@ class SupabaseStorageServices {
     File file,
     String bucket,
     String folder, {
+    String? userId,
     String filePrefix = '',
     void Function(double progress)? onProgress,
     dio_pkg.CancelToken? cancelToken,
@@ -30,16 +31,24 @@ class SupabaseStorageServices {
       throw Exception('file_not_found: ${file.path}');
     }
 
-    final ext = _extractExtension(file.path);
-    final fileName = '$filePrefix${DateTime.now().millisecondsSinceEpoch}.$ext';
-    final uploadPath = '$folder/$fileName';
-    final contentType = _resolveContentType(ext, folder);
-    final fileLength = await file.length();
-
     final session = _supabase.auth.currentSession;
     if (session == null || session.isExpired) {
       throw Exception('session_expired');
     }
+
+    final ext = _extractExtension(file.path);
+    final timestamp = DateTime.now().millisecondsSinceEpoch;
+    final fileName = '$filePrefix$timestamp.$ext';
+
+    final effectiveUserId = userId ?? _supabase.auth.currentUser?.id;
+    final uploadPath =
+        effectiveUserId != null
+            ? '$effectiveUserId/$folder/$fileName'
+            : '$folder/$fileName';
+
+    final contentType = _resolveContentType(ext, folder);
+    final fileLength = await file.length();
+
     final accessToken = session.accessToken;
 
     onProgress?.call(0.0);
