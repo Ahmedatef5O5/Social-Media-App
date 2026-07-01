@@ -210,9 +210,9 @@ class AppRouter {
             providers: [
               BlocProvider(
                 create:
-                    (context) =>
-                        DiscoverPeopleCubit(DiscoverPeopleServices())
-                          ..getDiscoverPeople(),
+                    (context) => DiscoverPeopleCubit(
+                      context.read<DiscoverPeopleServices>(),
+                    )..getDiscoverPeople(),
               ),
               BlocProvider(
                 create:

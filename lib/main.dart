@@ -29,6 +29,8 @@ import 'core/services/global_group_call_listener.dart';
 import 'core/services/presence_service.dart';
 import 'features/auth/cubit/auth_cubit/auth_cubit.dart';
 import 'features/chats/services/chat_services.dart';
+import 'features/discover/services/discover_people_services.dart';
+import 'features/group_chat/services/group_call_signaling_service.dart';
 import 'features/home/cubits/home_cubit/home_cubit.dart';
 import 'features/home/services/home_services.dart';
 
@@ -264,6 +266,8 @@ Widget _buildApp(String savedTheme) {
       RepositoryProvider(create: (_) => GroupChatServices()),
       RepositoryProvider(create: (_) => CallSignalingService()),
       RepositoryProvider(create: (_) => UserService()),
+      RepositoryProvider(create: (_) => DiscoverPeopleServices()),
+      RepositoryProvider(create: (_) => GroupCallSignalingService()),
     ],
     child: MultiBlocProvider(
       providers: [
@@ -286,7 +290,7 @@ Widget _buildApp(String savedTheme) {
         BlocProvider(
           create:
               (context) => CallCubit(
-                signalingService: CallSignalingService(),
+                signalingService: context.read<CallSignalingService>(),
                 chatServices: context.read<ChatServices>(),
               ),
         ),
@@ -296,6 +300,7 @@ Widget _buildApp(String savedTheme) {
                   ChatsCubit(context.read<ChatServices>())..monitorChats(),
         ),
       ],
+
       child: DevicePreview(
         enabled: !kReleaseMode,
         builder: (_) => MyApp(savedTheme: savedTheme),
