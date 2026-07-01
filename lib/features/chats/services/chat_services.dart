@@ -1,34 +1,23 @@
 import 'dart:async';
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:social_media_app/core/services/presence_service.dart';
 import 'package:social_media_app/core/utilities/supabase_constants.dart';
 import 'package:social_media_app/features/chats/models/message_model.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/helpers/chat_helper.dart';
+import '../../../core/services/network_status_service.dart';
 import '../../../core/services/supabase_storage_services.dart';
 import '../models/chat_user_model.dart';
 import '../models/presence_snapshot.dart';
 
 class ChatServices {
   final _supabase = Supabase.instance.client;
+  final NetworkStatusService _networkStatus;
+
+  ChatServices({NetworkStatusService? networkStatus})
+    : _networkStatus = networkStatus ?? NetworkStatusService.instance;
 
   SupabaseStorageServices get storage => SupabaseStorageServices.instance;
-
-  Future<bool> isConnected() async {
-    try {
-      final result = await InternetAddress.lookup(
-        'google.com',
-      ).timeout(const Duration(seconds: 5));
-      return result.isNotEmpty && result[0].rawAddress.isNotEmpty;
-    } on SocketException catch (_) {
-      return false;
-    } on TimeoutException catch (_) {
-      return false;
-    } catch (_) {
-      return false;
-    }
-  }
 
   Future<ReceiverPushInfo?> getReceiverPushInfo(String receiverId) async {
     try {
@@ -72,7 +61,7 @@ class ChatServices {
   }
 
   Future<List<ChatUserModel>> getChatsList(String currentUserId) async {
-    if (!(await isConnected())) {
+    if (!(await _networkStatus.isConnected())) {
       throw Exception('no-internet');
     }
 

@@ -1,29 +1,18 @@
 import 'dart:async';
-import 'dart:io';
 import 'package:flutter/cupertino.dart';
+import 'package:social_media_app/core/services/network_status_service.dart';
 import 'package:social_media_app/core/utilities/supabase_constants.dart';
 import 'package:social_media_app/features/auth/data/models/user_data.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class DiscoverPeopleServices {
   final _supabase = Supabase.instance.client;
-  Future<bool> isConnected() async {
-    try {
-      final result = await InternetAddress.lookup(
-        'google.com',
-      ).timeout(const Duration(seconds: 5));
-      return result.isNotEmpty && result[0].rawAddress.isNotEmpty;
-    } on SocketException catch (_) {
-      return false;
-    } on TimeoutException catch (_) {
-      return false;
-    } catch (_) {
-      return false;
-    }
-  }
+  final NetworkStatusService _networkStatus;
+  DiscoverPeopleServices({NetworkStatusService? networkStatus})
+    : _networkStatus = networkStatus ?? NetworkStatusService.instance;
 
   Future<List<UserData>> getAllUsers() async {
-    if (!(await isConnected())) {
+    if (!(await _networkStatus.isConnected())) {
       throw Exception('no-internet');
     }
 

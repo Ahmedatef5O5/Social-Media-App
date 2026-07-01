@@ -7,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:persistent_bottom_nav_bar_v2/persistent_bottom_nav_bar_v2.dart';
 import 'package:social_media_app/core/services/file_picker_services.dart';
+import 'package:social_media_app/core/services/network_status_service.dart';
 import 'package:social_media_app/features/auth/data/models/user_data.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:video_player/video_player.dart';
@@ -26,10 +27,14 @@ const Duration kMaxStoryVideoDuration = Duration(seconds: 60);
 
 class HomeCubit extends Cubit<HomeState> {
   final HomeServices _homeServices;
+  final NetworkStatusService _networkStatus;
 
-  HomeCubit({required HomeServices homeServices})
-    : _homeServices = homeServices,
-      super(HomeInitial()) {
+  HomeCubit({
+    required HomeServices homeServices,
+    NetworkStatusService? networkStatus,
+  }) : _homeServices = homeServices,
+       _networkStatus = networkStatus ?? NetworkStatusService.instance,
+       super(HomeInitial()) {
     _listenToCommentEvents();
   }
 
@@ -62,7 +67,7 @@ class HomeCubit extends Cubit<HomeState> {
   // ── Home data ──────────────────────────────────────────────────────────────
 
   Future<void> refreshHomeData({bool isRefresh = false}) async {
-    bool hasNet = await _homeServices.postServices.isConnected();
+    bool hasNet = await _networkStatus.isConnected();
     if (!hasNet) {
       emit(
         UserDataLoadError("No internet connection. Please check your network."),
@@ -349,7 +354,7 @@ class HomeCubit extends Cubit<HomeState> {
 
   Future<void> fetchPosts({bool isRefresh = false}) async {
     if (!isRefresh) emit(PostsLoading());
-    final hasNet = await _homeServices.postServices.isConnected();
+    final hasNet = await _networkStatus.isConnected();
     if (!hasNet) {
       emit(UserDataLoadError("No internet connection."));
       return;

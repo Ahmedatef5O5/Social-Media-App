@@ -1,8 +1,8 @@
 import 'dart:async';
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:social_media_app/features/home/models/feed_event.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../core/services/network_status_service.dart';
 import '../../../core/services/presence_service.dart';
 import '../../../core/services/supabase_database_services.dart';
 import '../../../core/utilities/supabase_constants.dart';
@@ -14,21 +14,10 @@ import '../models/post_request_body.dart';
 class PostsServices {
   final supabaseServices = SupabaseDatabaseServices.instance;
   final _supabase = Supabase.instance.client;
+  final NetworkStatusService _networkStatus;
 
-  Future<bool> isConnected() async {
-    try {
-      final result = await InternetAddress.lookup(
-        'google.com',
-      ).timeout(const Duration(seconds: 5));
-      return result.isNotEmpty && result[0].rawAddress.isNotEmpty;
-    } on SocketException catch (_) {
-      return false;
-    } on TimeoutException catch (_) {
-      return false;
-    } catch (_) {
-      return false;
-    }
-  }
+  PostsServices({NetworkStatusService? networkStatus})
+    : _networkStatus = networkStatus ?? NetworkStatusService.instance;
 
   static const String _postsQuery = ''' 
   *,
@@ -87,7 +76,7 @@ class PostsServices {
   }
 
   Future<List<PostModel>> fetchPosts() async {
-    if (!(await isConnected())) {
+    if (!(await _networkStatus.isConnected())) {
       throw Exception('no-internet');
     }
     try {
