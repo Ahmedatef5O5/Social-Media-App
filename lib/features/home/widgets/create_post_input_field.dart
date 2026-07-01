@@ -24,6 +24,9 @@ class CreatePostInputField extends StatelessWidget {
       decoration: InputDecoration(
         hintText: "What's on your head?",
         hintStyle: Theme.of(context).textTheme.titleSmall!.copyWith(
+          color: Theme.of(
+            context,
+          ).textTheme.titleSmall!.color?.withValues(alpha: 0.35),
           fontSize: 19,
           fontWeight: FontWeight.w400,
         ),

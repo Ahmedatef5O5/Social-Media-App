@@ -18,6 +18,7 @@ class CreatePostHeaderSection extends StatelessWidget {
     return Row(
       children: [
         IconButton(
+          padding: EdgeInsets.only(right: 12),
           onPressed: () => Navigator.of(context).pop(),
           icon: Icon(
             Icons.close,
@@ -25,7 +26,7 @@ class CreatePostHeaderSection extends StatelessWidget {
             color: Theme.of(context).primaryColor,
           ),
         ),
-        Gap(4),
+        const Gap(1),
         Text(
           'Create a Post',
           style: Theme.of(context).textTheme.titleMedium!.copyWith(
