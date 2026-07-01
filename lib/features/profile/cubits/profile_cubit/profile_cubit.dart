@@ -1,7 +1,7 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:social_media_app/features/auth/data/models/user_data.dart';
 import 'package:social_media_app/features/profile/models/profile_stats_model.dart';
+import '../../../auth/handler/auth_exception_handler.dart';
 import '../../services/user_services.dart';
 part 'profile_state.dart';
 
@@ -33,9 +33,13 @@ class ProfileCubit extends Cubit<ProfileState> {
       }
       emit(ProfileLoaded(stats, user));
     } catch (e) {
-      debugPrint("Error in getProfileData: $e");
-      String errorMessage = e.toString().replaceAll('Exception:', '').trim();
-      emit(ProfileError(errorMessage));
+      if (e.toString().contains('no-internet')) {
+        emit(
+          ProfileError("No internet connection. Please check your network."),
+        );
+      } else {
+        emit(ProfileError(AuthExceptionHandler.handle(e)));
+      }
     }
   }
 }

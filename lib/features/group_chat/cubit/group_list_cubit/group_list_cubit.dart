@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/utilities/supabase_constants.dart';
+import '../../../auth/handler/auth_exception_handler.dart';
 import '../../models/group_model.dart';
 import '../../services/group_chat_services.dart';
 part 'group_list_state.dart';
@@ -381,7 +382,13 @@ class GroupListCubit extends Cubit<GroupListState> {
       });
       emit(GroupListLoaded(_cached));
     } catch (e) {
-      emit(GroupListError(e.toString()));
+      if (e.toString().contains('no-internet')) {
+        emit(
+          GroupListError("No internet connection. Please check your network."),
+        );
+      } else {
+        emit(GroupListError(AuthExceptionHandler.handle(e)));
+      }
     }
   }
 
