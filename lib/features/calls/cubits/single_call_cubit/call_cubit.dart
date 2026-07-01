@@ -12,7 +12,7 @@ import 'call_state.dart';
 
 class CallCubit extends Cubit<CallState> {
   final CallSignalingService signalingService;
-  final _chatServices = ChatServices();
+  final ChatServices _chatServices;
   final _fcmService = FcmService.instance;
 
   StreamSubscription? _callSubscription;
@@ -22,7 +22,11 @@ class CallCubit extends Cubit<CallState> {
   DateTime? _callAcceptedAt;
   CallModel? _activeCall;
 
-  CallCubit(this.signalingService) : super(CallInitial()) {
+  CallCubit({
+    required this.signalingService,
+    required ChatServices chatServices,
+  }) : _chatServices = chatServices,
+       super(CallInitial()) {
     _authSubscription = Supabase.instance.client.auth.onAuthStateChange.listen((
       data,
     ) {

@@ -284,7 +284,11 @@ Widget _buildApp(String savedTheme) {
         ),
 
         BlocProvider(
-          create: (context) => CallCubit(context.read<CallSignalingService>()),
+          create:
+              (context) => CallCubit(
+                signalingService: CallSignalingService(),
+                chatServices: context.read<ChatServices>(),
+              ),
         ),
         BlocProvider(
           create:
