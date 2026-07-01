@@ -15,128 +15,154 @@ import '../helper/call_actions.dart';
 import '../helper/safe_pop.dart';
 import '../services/chat_services.dart';
 
-class ReceiverProfileView extends StatelessWidget {
+class ReceiverProfileView extends StatefulWidget {
   final ChatUserModel receiverUser;
 
   const ReceiverProfileView({super.key, required this.receiverUser});
 
   @override
+  State<ReceiverProfileView> createState() => _ReceiverProfileViewState();
+}
+
+class _ReceiverProfileViewState extends State<ReceiverProfileView> {
+  late final Future<List<Map<String, dynamic>>> _chatMediaFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _chatMediaFuture = context.read<ChatServices>().getChatMedia(
+      widget.receiverUser.id,
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            Stack(
-              children: [
-                CustomUserProfileImagesSection(
-                  avatarUrl: receiverUser.imageUrl,
-                  heroTag: receiverUser.id,
-                  isProfileHeader: true,
-                ),
-                Align(
-                  alignment: Alignment.topLeft,
-                  child: Padding(
-                    padding: const EdgeInsets.only(top: 12.0),
-                    child: GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      onTap: () => safePop(context),
-                      child: Padding(
-                        padding: const EdgeInsets.all(12.0),
-                        child: Container(
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            color: Colors.black.withValues(alpha: 0.3),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            Icons.arrow_back_ios_new,
-                            color: Colors.white,
-                            size: 20,
+    return FutureBuilder<List<Map<String, dynamic>>>(
+      future: _chatMediaFuture,
+      builder:
+          (context, snapshot) => Scaffold(
+            body: SingleChildScrollView(
+              child: Column(
+                children: [
+                  Stack(
+                    children: [
+                      CustomUserProfileImagesSection(
+                        avatarUrl: widget.receiverUser.imageUrl,
+                        heroTag: widget.receiverUser.id,
+                        isProfileHeader: true,
+                      ),
+                      Align(
+                        alignment: Alignment.topLeft,
+                        child: Padding(
+                          padding: const EdgeInsets.only(top: 12.0),
+                          child: GestureDetector(
+                            behavior: HitTestBehavior.opaque,
+                            onTap: () => safePop(context),
+                            child: Padding(
+                              padding: const EdgeInsets.all(12.0),
+                              child: Container(
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withValues(alpha: 0.3),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(
+                                  Icons.arrow_back_ios_new,
+                                  color: Colors.white,
+                                  size: 20,
+                                ),
+                              ),
+                            ),
                           ),
                         ),
                       ),
+                    ],
+                  ),
+
+                  const Gap(10),
+
+                  Text(
+                    widget.receiverUser.name,
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
-                ),
-              ],
-            ),
+                  if (widget.receiverUser.lastSeen != null)
+                    Text(
+                      FormattedDate.getLastSeen(
+                                widget.receiverUser.lastSeen!,
+                              ) ==
+                              'Online'
+                          ? 'Online'
+                          : "Last seen: ${FormattedDate.getLastSeen(widget.receiverUser.lastSeen!)}",
+                      style: const TextStyle(color: Colors.grey),
+                    ),
 
-            const Gap(10),
+                  const Gap(25),
 
-            Text(
-              receiverUser.name,
-              style: Theme.of(
-                context,
-              ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
-            ),
-            if (receiverUser.lastSeen != null)
-              Text(
-                FormattedDate.getLastSeen(receiverUser.lastSeen!) == 'Online'
-                    ? 'Online'
-                    : "Last seen: ${FormattedDate.getLastSeen(receiverUser.lastSeen!)}",
-                style: const TextStyle(color: Colors.grey),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      _buildOptionItem(
+                        context,
+                        Icons.message_outlined,
+                        "Message",
+                        () => safePop(context),
+                      ),
+
+                      _buildOptionItem(
+                        context,
+                        Icons.call_outlined,
+                        "Call",
+                        () async {
+                          final call = await CallActions.buildCall(
+                            type: CallType.audio,
+                            receiverId: widget.receiverUser.id,
+                            receiverName: widget.receiverUser.name,
+                            receiverAvatar: widget.receiverUser.imageUrl ?? '',
+                          );
+                          if (call == null || !context.mounted) return;
+
+                          context.read<CallCubit>().makeAudioCall(call);
+                        },
+                      ),
+
+                      _buildOptionItem(
+                        context,
+                        Icons.videocam_outlined,
+                        "Video",
+                        () async {
+                          final call = await CallActions.buildCall(
+                            type: CallType.video,
+                            receiverId: widget.receiverUser.id,
+                            receiverName: widget.receiverUser.name,
+                            receiverAvatar: widget.receiverUser.imageUrl ?? '',
+                          );
+                          if (call == null || !context.mounted) return;
+
+                          context.read<CallCubit>().makeAudioCall(call);
+                        },
+                      ),
+                      _buildOptionItem(
+                        context,
+                        Icons.notifications_off_outlined,
+                        "Mute",
+                        () {},
+                      ),
+                    ],
+                  ),
+
+                  const Divider(
+                    height: 40,
+                    thickness: 8,
+                    color: Color(0x00fff5f5),
+                  ),
+
+                  _buildMediaSection(context),
+                ],
               ),
-
-            const Gap(25),
-
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                _buildOptionItem(
-                  context,
-                  Icons.message_outlined,
-                  "Message",
-                  () => safePop(context),
-                ),
-
-                _buildOptionItem(
-                  context,
-                  Icons.call_outlined,
-                  "Call",
-                  () async {
-                    final call = await CallActions.buildCall(
-                      type: CallType.audio,
-                      receiverId: receiverUser.id,
-                      receiverName: receiverUser.name,
-                      receiverAvatar: receiverUser.imageUrl ?? '',
-                    );
-                    if (call == null || !context.mounted) return;
-
-                    context.read<CallCubit>().makeAudioCall(call);
-                  },
-                ),
-
-                _buildOptionItem(
-                  context,
-                  Icons.videocam_outlined,
-                  "Video",
-                  () async {
-                    final call = await CallActions.buildCall(
-                      type: CallType.video,
-                      receiverId: receiverUser.id,
-                      receiverName: receiverUser.name,
-                      receiverAvatar: receiverUser.imageUrl ?? '',
-                    );
-                    if (call == null || !context.mounted) return;
-
-                    context.read<CallCubit>().makeAudioCall(call);
-                  },
-                ),
-                _buildOptionItem(
-                  context,
-                  Icons.notifications_off_outlined,
-                  "Mute",
-                  () {},
-                ),
-              ],
             ),
-
-            const Divider(height: 40, thickness: 8, color: Color(0x00fff5f5)),
-
-            _buildMediaSection(context),
-          ],
-        ),
-      ),
+          ),
     );
   }
 
@@ -200,7 +226,7 @@ class ReceiverProfileView extends StatelessWidget {
           ),
         ),
         FutureBuilder<List<Map<String, dynamic>>>(
-          future: ChatServices().getChatMedia(receiverUser.id),
+          future: ChatServices().getChatMedia(widget.receiverUser.id),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const SizedBox(
