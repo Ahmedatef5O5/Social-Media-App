@@ -28,8 +28,7 @@ class _GroupInfoViewState extends State<GroupInfoView> {
   String? _currentAvatarUrl;
 
   final _nameController = TextEditingController();
-  final _services = GroupChatServices();
-
+  late final GroupChatServices _services;
   late final GroupMembersCubit _membersCubit;
   late final ScrollController _scrollController;
 
@@ -38,10 +37,10 @@ class _GroupInfoViewState extends State<GroupInfoView> {
   @override
   void initState() {
     super.initState();
-    _membersCubit = GroupMembersCubit(
-      GroupChatServices(),
-      groupId: widget.group.id,
-    )..loadMembers();
+    _services = context.read<GroupChatServices>();
+
+    _membersCubit = GroupMembersCubit(_services, groupId: widget.group.id)
+      ..loadMembers();
 
     _scrollController = ScrollController()..addListener(_onScroll);
 

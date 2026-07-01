@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:social_media_app/core/router/app_routes.dart';
 import '../../group_chat/cubit/group_list_cubit/group_list_cubit.dart';
 import '../../group_chat/services/group_chat_services.dart';
@@ -45,7 +46,9 @@ class MessagesHeaderSection extends StatelessWidget {
                       if (value == 'create_group') {
                         Navigator.of(context, rootNavigator: true).pushNamed(
                           AppRoutes.createGroupRoute,
-                          arguments: GroupListCubit(GroupChatServices()),
+                          arguments: GroupListCubit(
+                            context.read<GroupChatServices>(),
+                          ),
                         );
                       } else if (value == 'new_chat') {}
                     },
