@@ -9,12 +9,39 @@ class DiscoverPeopleCubit extends Cubit<DiscoverPeopleState> {
   DiscoverPeopleCubit(this._discoverPeopleServices)
     : super(DiscoverPeopleInitial());
 
+  int _currentPage = 0;
+  bool _hasReachedMax = false;
+  bool _isFetchingMore = false;
+  final List<UserData> _users = [];
+
   Future<void> getDiscoverPeople({bool isRefresh = false}) async {
-    if (!isRefresh) emit(DiscoverPeopleLoading());
+    if (isRefresh) {
+      _currentPage = 0;
+      _hasReachedMax = false;
+      _users.clear();
+      emit(DiscoverPeopleLoading());
+    } else if (_currentPage == 0) {
+      emit(DiscoverPeopleLoading());
+    }
+
+    if (_hasReachedMax || _isFetchingMore) return;
+    _isFetchingMore = true;
+
     try {
       final start = DateTime.now();
 
-      final users = await _discoverPeopleServices.getAllUsers();
+      final users = await _discoverPeopleServices.getAllUsers(
+        page: _currentPage,
+        pageSize: 15,
+      );
+
+      if (users.isEmpty || users.length < 15) {
+        _hasReachedMax = true;
+      }
+
+      _users.addAll(users);
+      _currentPage++;
+      _isFetchingMore = false;
 
       if (isRefresh) {
         emit(DiscoverPeopleRefreshFeedback());
@@ -25,8 +52,15 @@ class DiscoverPeopleCubit extends Cubit<DiscoverPeopleState> {
         }
       }
 
-      emit(DiscoverPeopleSuccess(users));
+      emit(
+        DiscoverPeopleSuccess(
+          users: List.from(_users),
+          hasReachedMax: _hasReachedMax,
+        ),
+      );
     } catch (e) {
+      _isFetchingMore = false;
+
       if (e.toString().contains('no-internet')) {
         emit(
           DiscoverPeopleFailure(

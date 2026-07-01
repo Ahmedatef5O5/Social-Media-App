@@ -12,7 +12,11 @@ final class DiscoverPeopleLoading extends DiscoverPeopleState {}
 
 final class DiscoverPeopleSuccess extends DiscoverPeopleState {
   final List<UserData> users;
-  const DiscoverPeopleSuccess(this.users);
+  final bool hasReachedMax;
+  const DiscoverPeopleSuccess({
+    required this.users,
+    required this.hasReachedMax,
+  });
 }
 
 final class DiscoverPeopleFailure extends DiscoverPeopleState {

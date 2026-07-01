@@ -6,11 +6,38 @@ import 'package:social_media_app/core/widgets/custom_pull_to_refresh.dart';
 import 'package:social_media_app/core/widgets/custom_tab_wrapper.dart';
 import 'package:social_media_app/features/discover/cubit/discover_people_cubit.dart';
 import 'package:social_media_app/features/discover/views/discover_skeleton_view.dart';
+import '../../../core/widgets/custom_loading_indicator.dart';
 import '../widgets/discover_people_header_section.dart';
 import '../widgets/discover_person_card_widget.dart';
 
-class DiscoverView extends StatelessWidget {
+class DiscoverView extends StatefulWidget {
   const DiscoverView({super.key});
+
+  @override
+  State<DiscoverView> createState() => _DiscoverViewState();
+}
+
+class _DiscoverViewState extends State<DiscoverView> {
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScroll);
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
+      context.read<DiscoverPeopleCubit>().getDiscoverPeople();
+    }
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -18,6 +45,11 @@ class DiscoverView extends StatelessWidget {
       top: true,
       child: BlocBuilder<DiscoverPeopleCubit, DiscoverPeopleState>(
         builder: (context, state) {
+          bool hasReachedMax = false;
+          if (state is DiscoverPeopleSuccess) {
+            hasReachedMax = state.hasReachedMax;
+          }
+
           return CustomTabWrapper(
             isLoading:
                 state is DiscoverPeopleInitial ||
@@ -35,6 +67,7 @@ class DiscoverView extends StatelessWidget {
                       .getDiscoverPeople(isRefresh: true),
 
               child: CustomScrollView(
+                controller: _scrollController,
                 physics: const AlwaysScrollableScrollPhysics(
                   parent: ClampingScrollPhysics(),
                 ),
@@ -59,14 +92,24 @@ class DiscoverView extends StatelessWidget {
                             right: 12,
                             bottom: 100,
                           ),
-                          sliver: SliverList.separated(
-                            itemCount: state.users.length,
-                            separatorBuilder:
-                                (BuildContext context, int index) =>
-                                    const Gap(16),
+                          sliver: SliverList.builder(
+                            itemCount:
+                                state.users.length + (hasReachedMax ? 0 : 1),
                             itemBuilder: (BuildContext context, int index) {
-                              return DiscoverPersonCardWidget(
-                                userData: state.users[index],
+                              if (index >= state.users.length) {
+                                return const Padding(
+                                  padding: EdgeInsets.symmetric(vertical: 24),
+                                  child: Center(
+                                    child: CustomLoadingIndicator(radius: 12),
+                                  ),
+                                );
+                              }
+
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 16),
+                                child: DiscoverPersonCardWidget(
+                                  userData: state.users[index],
+                                ),
                               );
                             },
                           ),
