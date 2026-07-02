@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:dio/dio.dart' as dio_pkg;
 import 'package:flutter/foundation.dart';
+import 'package:social_media_app/core/services/cloudinary_upload_result.dart';
 import '../secrets/app_secrets.dart';
 
 class CloudinaryStorageServices {
@@ -15,7 +16,7 @@ class CloudinaryStorageServices {
     ),
   );
 
-  Future<String> uploadFile(
+  Future<CloudinaryUploadResult> uploadFile(
     File file,
     String topFolder,
     String subFolder, {
@@ -33,7 +34,7 @@ class CloudinaryStorageServices {
     final resourceType = _resolveResourceType(ext);
 
     final timestamp = DateTime.now().millisecondsSinceEpoch;
-    final publicId = '$filePrefix$timestamp';
+    final publicIdPrefix = '$filePrefix$timestamp';
     final folderPath = '$topFolder/$subFolder';
 
     onProgress?.call(0.0);
@@ -42,10 +43,10 @@ class CloudinaryStorageServices {
       final formData = dio_pkg.FormData.fromMap({
         'upload_preset': uploadPreset,
         'folder': folderPath,
-        'public_id': publicId,
+        'public_id': publicIdPrefix,
         'file': await dio_pkg.MultipartFile.fromFile(
           file.path,
-          filename: '$publicId.$ext',
+          filename: '$publicIdPrefix.$ext',
         ),
       });
 
@@ -63,11 +64,21 @@ class CloudinaryStorageServices {
 
       final data = response.data as Map<String, dynamic>;
       final secureUrl = data['secure_url'] as String?;
-      if (secureUrl == null) {
-        throw Exception('cloudinary_upload_failed: missing secure_url');
+      final publicId = data['public_id'] as String?;
+      if (secureUrl == null || publicId == null) {
+        throw Exception(
+          'cloudinary_upload_failed: missing secure_url/public_id',
+        );
       }
 
-      return buildOptimizedUrl(secureUrl, isVideo: resourceType == 'video');
+      return CloudinaryUploadResult(
+        secureUrl: buildOptimizedUrl(
+          secureUrl,
+          isVideo: resourceType == 'video',
+        ),
+        publicId: publicId,
+        resourceType: resourceType,
+      );
     } on dio_pkg.DioException catch (e) {
       if (e.type == dio_pkg.DioExceptionType.cancel) {
         debugPrint('⚠️ Upload canceled by user');
