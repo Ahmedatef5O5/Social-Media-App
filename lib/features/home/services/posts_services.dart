@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:social_media_app/features/home/models/feed_event.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../core/services/media_cleanup_service.dart';
 import '../../../core/services/network_status_service.dart';
 import '../../../core/services/presence_service.dart';
 import '../../../core/services/supabase_database_services.dart';
@@ -224,10 +225,10 @@ class PostsServices {
 
   Future<void> deletePost(String postId) async {
     try {
-      await _supabase
-          .from(SupabaseConstants.posts)
-          .delete()
-          .eq(PostColumns.id, postId);
+      await MediaCleanupService.instance.deleteWithMedia(
+        table: SupabaseConstants.posts,
+        id: postId,
+      );
     } catch (e) {
       rethrow;
     }

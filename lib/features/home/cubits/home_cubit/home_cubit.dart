@@ -8,11 +8,9 @@ import 'package:path_provider/path_provider.dart';
 import 'package:persistent_bottom_nav_bar_v2/persistent_bottom_nav_bar_v2.dart';
 import 'package:social_media_app/core/services/file_picker_services.dart';
 import 'package:social_media_app/core/services/network_status_service.dart';
-import 'package:social_media_app/core/utilities/supabase_constants.dart';
 import 'package:social_media_app/features/auth/data/models/user_data.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:video_player/video_player.dart';
-import '../../../../core/services/media_cleanup_service.dart';
 import '../../../../core/services/presence_service.dart';
 import '../../../../core/services/supabase_storage_services.dart';
 import '../../../comments/events/comment_event_bus.dart';
@@ -176,10 +174,7 @@ class HomeCubit extends Cubit<HomeState> {
 
   Future<void> deleteStory(String storyId) async {
     try {
-      await MediaCleanupService.instance.deleteWithMedia(
-        table: SupabaseConstants.stories,
-        id: storyId,
-      );
+      await _homeServices.storyServices.deleteStory(storyId);
       cachedStories = cachedStories.where((s) => s.id != storyId).toList();
       if (state is StoriesLoaded) {
         final updateStories =
@@ -507,7 +502,6 @@ class HomeCubit extends Cubit<HomeState> {
       await Future.delayed(const Duration(milliseconds: 2000));
       _resetMedia();
       emit(PostCreated());
-      await fetchPosts(isRefresh: true);
     } catch (e) {
       final errorMessage = _mapExceptionToMessage(e);
       if (errorMessage == "upload_canceled") {
@@ -527,10 +521,7 @@ class HomeCubit extends Cubit<HomeState> {
 
   Future<void> deletePost(String postId) async {
     try {
-      await MediaCleanupService.instance.deleteWithMedia(
-        table: 'posts',
-        id: postId,
-      );
+      await _homeServices.postServices.deletePost(postId);
       if (state is PostsLoaded) {
         final updatePosts =
             (state as PostsLoaded).posts.where((p) => p.id != postId).toList();
@@ -541,6 +532,7 @@ class HomeCubit extends Cubit<HomeState> {
       emit(PostsError(e.toString()));
     }
   }
+
   // ── Media picking (posts) ──────────────────────────────────────────────────
 
   Future<void> pickImageFromGallery() async {
