@@ -23,19 +23,18 @@ class EditProfileCubit extends Cubit<EditProfileState> {
     try {
       String? profileImageUrl;
       String? backgroundImageUrl;
-      final timeStamp = DateTime.now().millisecondsSinceEpoch;
       if (profileImage != null) {
         profileImageUrl = await _editProfileServices.uploadImage(
           file: profileImage,
-          path: '${oldUser.id}/profile_$timeStamp.jpg',
-          bucket: 'avatars',
+          userId: oldUser.id,
+          folder: 'avatars',
         );
       }
       if (backgroundImage != null) {
         backgroundImageUrl = await _editProfileServices.uploadImage(
           file: backgroundImage,
-          path: '${oldUser.id}/background_$timeStamp.jpg',
-          bucket: 'backgrounds',
+          userId: oldUser.id,
+          folder: 'backgrounds',
         );
       }
       final updates = {
@@ -46,7 +45,6 @@ class EditProfileCubit extends Cubit<EditProfileState> {
         if (profileImageUrl != null) 'image_url': profileImageUrl,
         if (backgroundImageUrl != null)
           'background_image_url': backgroundImageUrl,
-        // 'updated_at': DateTime.now().toIso8601String(),
       };
       await _editProfileServices.updateUserData(oldUser.id, updates);
       final updatedUser = oldUser.copyWith(

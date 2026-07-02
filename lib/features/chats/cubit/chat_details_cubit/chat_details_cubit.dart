@@ -137,7 +137,7 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState> {
         if (await imageFile.exists()) {
           imageUrl = await _chatServices.storage.uploadFile(
             imageFile,
-            'chat_media',
+            'chats',
             'image',
             cancelToken: cancelToken,
             onProgress: (progress) {
@@ -161,7 +161,7 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState> {
         if (await videoFile.exists()) {
           videoUrl = await _chatServices.storage.uploadFile(
             videoFile,
-            'chat_media',
+            'chats',
             'video',
             cancelToken: cancelToken,
             onProgress: (progress) {
@@ -184,7 +184,7 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState> {
         if (await voiceFile.exists()) {
           voiceUrl = await _chatServices.storage.uploadFile(
             voiceFile,
-            'chat_media',
+            'chats',
             'voice',
             cancelToken: cancelToken,
           );

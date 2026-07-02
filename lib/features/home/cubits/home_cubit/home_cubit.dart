@@ -434,7 +434,7 @@ class HomeCubit extends Cubit<HomeState> {
         if (await imageFile.exists()) {
           imageUrl = await _homeServices.storage.uploadFile(
             imageFile,
-            'post_images',
+            'posts',
             'images',
             cancelToken: _cancelToken,
             onProgress: updateProgress,
@@ -449,7 +449,7 @@ class HomeCubit extends Cubit<HomeState> {
         if (await videoFile.exists()) {
           videoUrl = await _homeServices.storage.uploadFile(
             videoFile,
-            'post_images',
+            'posts',
             'videos',
             cancelToken: _cancelToken,
             onProgress: updateProgress,
@@ -464,7 +464,7 @@ class HomeCubit extends Cubit<HomeState> {
         if (await docFile.exists()) {
           fileUrl = await _homeServices.storage.uploadFile(
             docFile,
-            'post_images',
+            'posts',
             'documents',
             cancelToken: _cancelToken,
             onProgress: updateProgress,

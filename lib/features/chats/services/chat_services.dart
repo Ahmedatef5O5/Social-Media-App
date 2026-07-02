@@ -1,12 +1,12 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:social_media_app/core/services/cloudinary_storage_services.dart';
 import 'package:social_media_app/core/services/presence_service.dart';
 import 'package:social_media_app/core/utilities/supabase_constants.dart';
 import 'package:social_media_app/features/chats/models/message_model.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/helpers/chat_helper.dart';
 import '../../../core/services/network_status_service.dart';
-import '../../../core/services/supabase_storage_services.dart';
 import '../models/chat_user_model.dart';
 import '../models/presence_snapshot.dart';
 
@@ -17,7 +17,7 @@ class ChatServices {
   ChatServices({NetworkStatusService? networkStatus})
     : _networkStatus = networkStatus ?? NetworkStatusService.instance;
 
-  SupabaseStorageServices get storage => SupabaseStorageServices.instance;
+  CloudinaryStorageServices get storage => CloudinaryStorageServices.instance;
 
   Future<ReceiverPushInfo?> getReceiverPushInfo(String receiverId) async {
     try {

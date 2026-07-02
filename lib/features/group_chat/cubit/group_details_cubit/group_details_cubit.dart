@@ -225,7 +225,7 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState> {
         uploadProgressMap[tempId] = 0;
         uploadedImageUrl = await _services.storage.uploadFile(
           imageFile,
-          'chat-images',
+          'group_chats',
           currentUserId,
           filePrefix: 'group_',
           cancelToken: cancelToken,
@@ -241,7 +241,7 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState> {
         uploadProgressMap[tempId] = 0;
         uploadedVideoUrl = await _services.storage.uploadFile(
           videoFile,
-          'chat-videos',
+          'group_chats',
           currentUserId,
           filePrefix: 'group_',
           cancelToken: cancelToken,

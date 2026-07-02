@@ -1,11 +1,12 @@
 import 'dart:io';
-
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../core/services/cloudinary_storage_services.dart';
 
 class EditProfileServices {
   final _supabase = Supabase.instance.client;
   final _picker = ImagePicker();
+  final CloudinaryStorageServices storage = CloudinaryStorageServices.instance;
 
   Future<void> updateUserData(
     String userId,
@@ -16,13 +17,16 @@ class EditProfileServices {
 
   Future<String> uploadImage({
     required File file,
-    required String path,
-    required String bucket,
+    required String userId,
+    required String folder,
   }) async {
-    await _supabase.storage
-        .from(bucket)
-        .upload(path, file, fileOptions: const FileOptions(upsert: true));
-    return _supabase.storage.from(bucket).getPublicUrl(path);
+    final filePrefix = folder == 'avatars' ? 'profile_' : 'background_';
+    return await storage.uploadFile(
+      file,
+      folder,
+      userId,
+      filePrefix: filePrefix,
+    );
   }
 
   Future<File?> pickImage(ImageSource source) async {

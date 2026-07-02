@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:social_media_app/features/group_chat/services/group_notification_dispatcher.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../../core/services/supabase_storage_services.dart';
+import '../../../core/services/cloudinary_storage_services.dart';
 import '../../../core/utilities/supabase_constants.dart';
 import '../models/group_member_model.dart';
 import '../models/group_model.dart';
@@ -14,7 +14,7 @@ class GroupChatServices {
 
   String get currentUserId => _supabase.auth.currentUser!.id;
 
-  SupabaseStorageServices get storage => SupabaseStorageServices.instance;
+  CloudinaryStorageServices get storage => CloudinaryStorageServices.instance;
 
   Future<GroupModel> createGroup({
     required String name,
@@ -370,7 +370,7 @@ class GroupChatServices {
       try {
         return await storage.uploadFile(
           file,
-          'chat-images',
+          'chat-images', // TODO: Change this to the correct bucket name if needed
           'avatars',
           filePrefix: 'group_avatar_',
           onProgress: onProgress,

@@ -1,15 +1,15 @@
 import 'dart:io';
 import 'package:dio/dio.dart' as dio_pkg;
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../core/services/cloudinary_storage_services.dart';
 import '../../../core/services/supabase_database_services.dart';
-import '../../../core/services/supabase_storage_services.dart';
 import '../../../core/utilities/supabase_constants.dart';
 import '../model/story_model.dart';
 
 class StoriesServices {
   final _supabase = Supabase.instance.client;
   final supabaseServices = SupabaseDatabaseServices.instance;
-  final storage = SupabaseStorageServices.instance;
+  final CloudinaryStorageServices storage = CloudinaryStorageServices.instance;
 
   Future<String> uploadStoryFile(
     File file,
@@ -19,7 +19,7 @@ class StoriesServices {
   }) async {
     return await storage.uploadFile(
       file,
-      SupabaseConstants.stories,
+      'stories',
       userId,
       onProgress: onProgress,
       cancelToken: cancelToken,
@@ -34,7 +34,8 @@ class StoriesServices {
   }) async {
     return await storage.uploadFile(
       file,
-      SupabaseConstants.storyVideos,
+      // SupabaseConstants.storyVideos,
+      'stories',
       userId,
       onProgress: onProgress,
       cancelToken: cancelToken,
