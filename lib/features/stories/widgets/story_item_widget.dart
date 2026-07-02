@@ -33,6 +33,7 @@ class _StoryItemWidgetState extends State<StoryItemWidget> {
   void _showAddStoryOptions(BuildContext context) {
     final homeCubit = context.read<HomeCubit>();
     showModalBottomSheet(
+      isScrollControlled: true,
       useRootNavigator: true,
       backgroundColor: Theme.of(context).scaffoldBackgroundColor.withValues(),
       context: context,
