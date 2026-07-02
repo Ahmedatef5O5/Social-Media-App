@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:social_media_app/core/services/cloudinary_storage_services.dart';
+import 'package:social_media_app/core/services/media_cleanup_service.dart';
 import 'package:social_media_app/core/services/presence_service.dart';
 import 'package:social_media_app/core/utilities/supabase_constants.dart';
 import 'package:social_media_app/features/chats/models/message_model.dart';
@@ -232,10 +233,10 @@ class ChatServices {
   }
 
   Future<void> deleteMessage({required String messageId}) async {
-    await _supabase
-        .from(SupabaseConstants.messages)
-        .delete()
-        .eq(MessagesColumns.id, messageId);
+    await MediaCleanupService.instance.deleteWithMedia(
+      table: SupabaseConstants.messages,
+      id: messageId,
+    );
   }
 
   Future<void> addReaction({

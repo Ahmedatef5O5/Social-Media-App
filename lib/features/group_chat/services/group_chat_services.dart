@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:social_media_app/core/services/media_cleanup_service.dart';
 import 'package:social_media_app/features/group_chat/services/group_notification_dispatcher.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/services/cloudinary_storage_services.dart';
@@ -243,10 +244,10 @@ class GroupChatServices {
   }
 
   Future<void> deleteGroupMessage(String messageId) async {
-    await _supabase
-        .from(SupabaseConstants.groupMessages)
-        .delete()
-        .eq('id', messageId);
+    await MediaCleanupService.instance.deleteWithMedia(
+      table: SupabaseConstants.groupMessages,
+      id: messageId,
+    );
   }
 
   Future<void> toggleReaction({
