@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:social_media_app/core/cache/services/hive_cache_manager.dart';
 import 'package:social_media_app/core/router/app_router.dart';
 import 'package:social_media_app/core/router/app_routes.dart';
 import 'package:social_media_app/core/secrets/app_secrets.dart';
@@ -214,11 +215,16 @@ void _setupAuthListener() {
 Future<void> _initializeApp() async {
   await _lockOrientation();
   AppSecrets.assertSecretsLoaded();
+  await _initHiveCache();
   await _initFirebase();
   await _initSupabase();
   await _initNotifications();
   await PresenceService.instance.init();
   _setupAuthListener();
+}
+
+Future<void> _initHiveCache() async {
+  await HivecacheManager.instance.init();
 }
 
 Future<void> _lockOrientation() async {
