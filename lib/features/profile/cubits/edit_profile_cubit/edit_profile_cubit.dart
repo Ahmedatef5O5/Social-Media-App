@@ -21,21 +21,25 @@ class EditProfileCubit extends Cubit<EditProfileState> {
   }) async {
     emit(EditProfileLoading());
     try {
-      String? profileImageUrl;
-      String? backgroundImageUrl;
+      String? profileImageUrl, backgroundImageUrl;
+      String? profileImagePublicId, backgroundImagePublicId;
       if (profileImage != null) {
-        profileImageUrl = await _editProfileServices.uploadImage(
+        final result = await _editProfileServices.uploadImage(
           file: profileImage,
           userId: oldUser.id,
           folder: 'avatars',
         );
+        profileImageUrl = result.secureUrl;
+        profileImagePublicId = result.publicId;
       }
       if (backgroundImage != null) {
-        backgroundImageUrl = await _editProfileServices.uploadImage(
+        final result = await _editProfileServices.uploadImage(
           file: backgroundImage,
           userId: oldUser.id,
           folder: 'backgrounds',
         );
+        backgroundImageUrl = result.secureUrl;
+        backgroundImagePublicId = result.publicId;
       }
       final updates = {
         'name': name,
@@ -45,6 +49,11 @@ class EditProfileCubit extends Cubit<EditProfileState> {
         if (profileImageUrl != null) 'image_url': profileImageUrl,
         if (backgroundImageUrl != null)
           'background_image_url': backgroundImageUrl,
+
+        if (profileImagePublicId != null)
+          'image_public_id': profileImagePublicId,
+        if (backgroundImagePublicId != null)
+          'background_image_public_id': backgroundImagePublicId,
       };
       await _editProfileServices.updateUserData(oldUser.id, updates);
       final updatedUser = oldUser.copyWith(

@@ -32,9 +32,11 @@ abstract class GroupColumns {
   static const String id = 'id';
   static const String name = 'name';
   static const String description = 'description';
-  static const String imageUrl = 'image_url';
+  static const String avatarUrl = 'avatar_url';
   static const String createdAt = 'created_at';
   static const String createdBy = 'created_by';
+
+  static const String avatarPublicId = 'avatar_public_id';
 }
 
 // group_members
@@ -58,6 +60,10 @@ abstract class GroupMessageColumns {
   static const String caption = 'caption';
   static const String createdAt = 'created_at';
   static const String replyToId = 'reply_to_id';
+
+  static const String imagePublicId = 'image_public_id';
+  static const String videoPublicId = 'video_public_id';
+  static const String voicePublicId = 'voice_public_id';
 }
 
 // group_message_reactions
@@ -96,6 +102,9 @@ abstract class UserColumns {
   static const String isTypingTo = 'is_typing_to';
   static const String theme = 'theme';
   static const String fcmToken = 'fcm_token';
+
+  static const String imagePublicId = 'image_public_id';
+  static const String backgroundImagePublicId = 'background_image_public_id';
 }
 
 // subClass for stories column table
@@ -108,6 +117,9 @@ abstract class StoryColumns {
   static const String backgroundColor = 'background_color';
   static const String authorId = 'author_id';
   static const String storyCaption = 'caption';
+
+  static const String imagePublicId = 'image_public_id';
+  static const String videoPublicId = 'video_public_id';
 }
 
 // subClass for posts column table
@@ -121,6 +133,10 @@ abstract class PostColumns {
   static const String likes = 'likes';
   static const String comments = 'comments';
   static const String shares = 'shares';
+
+  static const String imagePublicId = 'image_public_id';
+  static const String videoPublicId = 'video_public_id';
+  static const String filePublicId = 'file_public_id';
 }
 
 // subClass for likes column table
@@ -165,6 +181,10 @@ abstract class MessagesColumns {
 
   // Migration for conversation_id column in messages table
   static const String conversationId = 'conversation_id';
+
+  static const String imagePublicId = 'image_public_id';
+  static const String videoPublicId = 'video_public_id';
+  static const String voicePublicId = 'voice_public_id';
 }
 
 // subClass for users Status column table

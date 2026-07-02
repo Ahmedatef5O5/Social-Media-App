@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:dio/dio.dart' as dio_pkg;
+import 'package:social_media_app/core/services/cloudinary_upload_result.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/services/cloudinary_storage_services.dart';
 import '../../../core/services/supabase_database_services.dart';
@@ -11,7 +12,7 @@ class StoriesServices {
   final supabaseServices = SupabaseDatabaseServices.instance;
   final CloudinaryStorageServices storage = CloudinaryStorageServices.instance;
 
-  Future<String> uploadStoryFile(
+  Future<CloudinaryUploadResult> uploadStoryFile(
     File file,
     String userId, {
     void Function(double progress)? onProgress,
@@ -26,7 +27,7 @@ class StoriesServices {
     );
   }
 
-  Future<String> uploadStoryVideoFile(
+  Future<CloudinaryUploadResult> uploadStoryVideoFile(
     File file,
     String userId, {
     void Function(double progress)? onProgress,

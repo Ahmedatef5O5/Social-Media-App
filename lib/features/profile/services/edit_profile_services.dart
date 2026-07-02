@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
+import 'package:social_media_app/core/services/cloudinary_upload_result.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/services/cloudinary_storage_services.dart';
 
@@ -15,7 +16,7 @@ class EditProfileServices {
     await _supabase.from('users').update(updates).eq('id', userId);
   }
 
-  Future<String> uploadImage({
+  Future<CloudinaryUploadResult> uploadImage({
     required File file,
     required String userId,
     required String folder,

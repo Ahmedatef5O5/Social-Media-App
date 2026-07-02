@@ -91,16 +91,20 @@ class _CreateGroupViewState extends State<CreateGroupView> {
 
     try {
       String? avatarUrl;
+      String? avatarPublicId;
 
       if (_groupImage != null) {
-        avatarUrl = await context.read<GroupChatServices>().uploadGroupAvatar(
-          _groupImage!,
-        );
+        final result = await context
+            .read<GroupChatServices>()
+            .uploadGroupAvatar(_groupImage!);
+        avatarUrl = result.secureUrl;
+        avatarPublicId = result.publicId;
       }
 
       final group = await context.read<GroupListCubit>().createGroup(
         name: name,
         avatarUrl: avatarUrl,
+        avatarPublicId: avatarPublicId,
         memberIds: _selectedUserIds.toList(),
       );
 

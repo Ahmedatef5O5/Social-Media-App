@@ -79,17 +79,21 @@ class _GroupInfoViewState extends State<GroupInfoView> {
     );
 
     try {
-      final url = await _services.uploadGroupAvatar(File(picked.path));
-      await _services.updateGroupAvatarUrl(widget.group.id, url);
+      final result = await _services.uploadGroupAvatar(File(picked.path));
+      await _services.updateGroupAvatarUrl(
+        widget.group.id,
+        result.secureUrl,
+        result.publicId,
+      );
 
       if (mounted) {
         Navigator.pop(context);
 
-        setState(() => _currentAvatarUrl = url);
+        setState(() => _currentAvatarUrl = result.secureUrl);
 
         context.read<GroupListCubit>().updateGroupAvatar(
           groupId: widget.group.id,
-          newAvatarUrl: url,
+          newAvatarUrl: result.secureUrl,
         );
 
         if (widget.group.avatarUrl != null &&

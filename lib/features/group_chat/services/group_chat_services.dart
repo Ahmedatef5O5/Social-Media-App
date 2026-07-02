@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:social_media_app/features/group_chat/services/group_notification_dispatcher.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/services/cloudinary_storage_services.dart';
+import '../../../core/services/cloudinary_upload_result.dart';
 import '../../../core/utilities/supabase_constants.dart';
 import '../models/group_member_model.dart';
 import '../models/group_model.dart';
@@ -19,15 +20,18 @@ class GroupChatServices {
   Future<GroupModel> createGroup({
     required String name,
     String? avatarUrl,
+    String? avatarPublicId,
     required List<String> memberIds,
   }) async {
     final groupData =
         await _supabase
             .from(SupabaseConstants.groups)
             .insert({
-              'name': name,
-              if (avatarUrl != null) 'avatar_url': avatarUrl,
-              'created_by': currentUserId,
+              GroupColumns.name: name,
+              if (avatarUrl != null) GroupColumns.avatarUrl: avatarUrl,
+              if (avatarPublicId != null)
+                GroupColumns.avatarPublicId: avatarPublicId,
+              GroupColumns.createdBy: currentUserId,
             })
             .select()
             .single();
@@ -172,6 +176,9 @@ class GroupChatServices {
     String? voiceUrl,
     String? caption,
     GroupMessageModel? replyTo,
+    String? imagePublicId,
+    String? videoPublicId,
+    String? voicePublicId,
   }) async {
     final currentUser = _supabase.auth.currentUser!;
 
@@ -196,6 +203,9 @@ class GroupChatServices {
       if (videoUrl != null) 'video_url': videoUrl,
       if (voiceUrl != null) 'voice_url': voiceUrl,
       if (caption != null) 'caption': caption,
+      if (imagePublicId != null) 'image_public_id': imagePublicId,
+      if (videoPublicId != null) 'video_public_id': videoPublicId,
+      if (voicePublicId != null) 'voice_public_id': voicePublicId,
       if (replyTo != null) ...{
         'reply_to_message_id': replyTo.id,
         'reply_to_text':
@@ -334,12 +344,19 @@ class GroupChatServices {
         );
   }
 
-  Future<void> updateGroupAvatarUrl(String groupId, String newAvatarUrl) async {
+  Future<void> updateGroupAvatarUrl(
+    String groupId,
+    String newAvatarUrl,
+    String? avatarPublicId,
+  ) async {
     try {
       final response =
           await _supabase
               .from(SupabaseConstants.groups)
-              .update({'avatar_url': newAvatarUrl})
+              .update({
+                'avatar_url': newAvatarUrl,
+                if (avatarPublicId != null) 'avatar_public_id': avatarPublicId,
+              })
               .eq('id', groupId)
               .select();
 
@@ -352,34 +369,17 @@ class GroupChatServices {
     }
   }
 
-  Future<String> uploadGroupAvatar(
+  Future<CloudinaryUploadResult> uploadGroupAvatar(
     File file, {
     void Function(double progress)? onProgress,
   }) async {
-    try {
-      return await storage.uploadFile(
-        file,
-        'avatars',
-        'groups',
-        filePrefix: 'group_avatar_',
-        onProgress: onProgress,
-      );
-    } catch (e) {
-      debugPrint('uploadGroupAvatar primary bucket failed: $e');
-
-      try {
-        return await storage.uploadFile(
-          file,
-          'chat-images', // TODO: Change this to the correct bucket name if needed
-          'avatars',
-          filePrefix: 'group_avatar_',
-          onProgress: onProgress,
-        );
-      } catch (e2) {
-        debugPrint('uploadGroupAvatar fallback bucket failed: $e2');
-        rethrow;
-      }
-    }
+    return await storage.uploadFile(
+      file,
+      'avatars',
+      'groups',
+      filePrefix: 'group_avatar_',
+      onProgress: onProgress,
+    );
   }
 
   Stream<void> getGroupsListStream() {

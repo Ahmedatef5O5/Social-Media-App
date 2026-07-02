@@ -148,12 +148,13 @@ class HomeCubit extends Cubit<HomeState> {
   Future<void> addStory({required File file, required UserData user}) async {
     emit(AddStoryLoading());
     try {
-      final fileUrl = await _homeServices.storyServices.uploadStoryFile(
+      final result = await _homeServices.storyServices.uploadStoryFile(
         file,
         user.id,
       );
       final newStory = StoryModel(
-        imageUrl: fileUrl,
+        imageUrl: result.secureUrl,
+        imagePublicId: result.publicId,
         authorId: user.id,
         authorName: user.name,
         createdAt: DateTime.now().toIso8601String(),
@@ -207,6 +208,8 @@ class HomeCubit extends Cubit<HomeState> {
     }
   }
 
+  // TODO : Do not repeat this func addStory & addStoryWithCaption ... solve that  DRY
+
   Future<void> addStoryWithCaption({
     required File file,
     required UserData user,
@@ -214,12 +217,13 @@ class HomeCubit extends Cubit<HomeState> {
   }) async {
     emit(AddStoryLoading());
     try {
-      final fileUrl = await _homeServices.storyServices.uploadStoryFile(
+      final result = await _homeServices.storyServices.uploadStoryFile(
         file,
         user.id,
       );
       final newStory = StoryModel(
-        imageUrl: fileUrl,
+        imageUrl: result.secureUrl,
+        imagePublicId: result.publicId,
         authorId: user.id,
         authorName: user.name,
         createdAt: DateTime.now().toIso8601String(),
@@ -301,13 +305,14 @@ class HomeCubit extends Cubit<HomeState> {
                     const OSError('File not found', 2),
                   ));
 
-      final videoUrl = await _homeServices.storyServices.uploadStoryVideoFile(
+      final result = await _homeServices.storyServices.uploadStoryVideoFile(
         uploadFile,
         user.id,
       );
 
       final newStory = StoryModel(
-        videoUrl: videoUrl,
+        videoUrl: result.secureUrl,
+        videoPublicId: result.publicId,
         authorId: user.id,
         authorName: user.name,
         createdAt: DateTime.now().toIso8601String(),
@@ -418,9 +423,9 @@ class HomeCubit extends Cubit<HomeState> {
 
     _cancelToken = dio_pkg.CancelToken();
 
-    String? imageUrl;
-    String? videoUrl;
-    String? fileUrl;
+    String? imageUrl, videoUrl, fileUrl;
+    // ignore: unused_local_variable
+    String? imagePublicId, videoPublicId, filePublicId;
 
     try {
       void updateProgress(double p) {
@@ -432,13 +437,15 @@ class HomeCubit extends Cubit<HomeState> {
       if (selectedImage != null) {
         final imageFile = File(selectedImage!.path);
         if (await imageFile.exists()) {
-          imageUrl = await _homeServices.storage.uploadFile(
+          final result = await _homeServices.storage.uploadFile(
             imageFile,
             'posts',
             'images',
             cancelToken: _cancelToken,
             onProgress: updateProgress,
           );
+          imageUrl = result.secureUrl;
+          imagePublicId = result.publicId;
         } else {
           throw Exception('image_not_found');
         }
@@ -447,13 +454,15 @@ class HomeCubit extends Cubit<HomeState> {
       if (selectedVideo != null) {
         final videoFile = File(selectedVideo!.path);
         if (await videoFile.exists()) {
-          videoUrl = await _homeServices.storage.uploadFile(
+          final result = await _homeServices.storage.uploadFile(
             videoFile,
             'posts',
             'videos',
             cancelToken: _cancelToken,
             onProgress: updateProgress,
           );
+          videoUrl = result.secureUrl;
+          videoPublicId = result.publicId;
         } else {
           throw Exception('video_not_found');
         }
@@ -462,13 +471,16 @@ class HomeCubit extends Cubit<HomeState> {
       if (selectedDocument != null) {
         final docFile = File(selectedDocument!.path);
         if (await docFile.exists()) {
-          fileUrl = await _homeServices.storage.uploadFile(
+          final result = await _homeServices.storage.uploadFile(
             docFile,
             'posts',
             'documents',
             cancelToken: _cancelToken,
             onProgress: updateProgress,
           );
+
+          fileUrl = result.secureUrl;
+          filePublicId = result.publicId;
         } else {
           throw Exception("file_not_found");
         }
@@ -480,6 +492,9 @@ class HomeCubit extends Cubit<HomeState> {
         imageUrl: imageUrl,
         videoUrl: videoUrl,
         fileUrl: fileUrl,
+        imagePublicId: imagePublicId,
+        videoPublicId: videoPublicId,
+        filePublicId: filePublicId,
       );
       await _homeServices.postServices.addPost(postRequest);
 

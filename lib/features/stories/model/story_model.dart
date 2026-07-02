@@ -15,6 +15,9 @@ class StoryModel {
   final String createdAt;
   final String? caption;
   final DateTime? lastSeen;
+
+  final String? imagePublicId;
+  final String? videoPublicId;
   const StoryModel({
     this.id = '',
     this.imageUrl,
@@ -27,6 +30,8 @@ class StoryModel {
     required this.createdAt,
     this.caption,
     this.lastSeen,
+    this.imagePublicId,
+    this.videoPublicId,
   });
 
   StoryType get storyType {
@@ -46,6 +51,9 @@ class StoryModel {
       StoryColumns.createdAt:
           DateTime.parse(createdAt).toUtc().toIso8601String(),
       StoryColumns.storyCaption: caption,
+
+      StoryColumns.imagePublicId: imagePublicId,
+      StoryColumns.videoPublicId: videoPublicId,
     };
   }
 

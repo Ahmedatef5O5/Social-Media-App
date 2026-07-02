@@ -204,6 +204,10 @@ class ChatServices {
     String? replyToText,
     String? replyToMessageType,
     String? replyToSenderId,
+
+    String? imagePublicId,
+    String? videoPublicId,
+    String? voicePublicId,
   }) async {
     await _supabase.from(SupabaseConstants.messages).insert({
       MessagesColumns.senderId: senderId,
@@ -221,6 +225,9 @@ class ChatServices {
         MessagesColumns.replyToMessageType: replyToMessageType,
       if (replyToSenderId != null)
         MessagesColumns.replyToSenderId: replyToSenderId,
+      if (imagePublicId != null) MessagesColumns.imagePublicId: imagePublicId,
+      if (videoPublicId != null) MessagesColumns.videoPublicId: videoPublicId,
+      if (voicePublicId != null) MessagesColumns.voicePublicId: voicePublicId,
     });
   }
 

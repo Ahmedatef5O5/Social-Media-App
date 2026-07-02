@@ -217,13 +217,12 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState> {
     _emitLoaded();
 
     try {
-      String? uploadedImageUrl;
-      String? uploadedVideoUrl;
-      String? uploadedVoiceUrl;
+      String? uploadedImageUrl, uploadedVideoUrl, uploadedVoiceUrl;
+      String? imagePublicId, videoPublicId, voicePublicId;
 
       if (imageFile != null) {
         uploadProgressMap[tempId] = 0;
-        uploadedImageUrl = await _services.storage.uploadFile(
+        final result = await _services.storage.uploadFile(
           imageFile,
           'group_chats',
           currentUserId,
@@ -234,12 +233,14 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState> {
             _emitLoaded();
           },
         );
+        uploadedImageUrl = result.secureUrl;
+        imagePublicId = result.publicId;
         uploadProgressMap.remove(tempId);
       }
 
       if (videoFile != null) {
         uploadProgressMap[tempId] = 0;
-        uploadedVideoUrl = await _services.storage.uploadFile(
+        final result = await _services.storage.uploadFile(
           videoFile,
           'group_chats',
           currentUserId,
@@ -250,17 +251,21 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState> {
             _emitLoaded();
           },
         );
+        uploadedVideoUrl = result.secureUrl;
+        videoPublicId = result.publicId;
         uploadProgressMap.remove(tempId);
       }
 
       if (voiceFile != null) {
-        uploadedVoiceUrl = await _services.storage.uploadFile(
+        final result = await _services.storage.uploadFile(
           voiceFile,
-          'chat-voices',
+          'group_chats',
           currentUserId,
           filePrefix: 'group_',
           cancelToken: cancelToken,
         );
+        uploadedVoiceUrl = result.secureUrl;
+        voicePublicId = result.publicId;
       }
 
       await _services.sendGroupMessage(
@@ -273,6 +278,9 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState> {
         voiceUrl: uploadedVoiceUrl,
         caption: caption,
         replyTo: reply,
+        imagePublicId: imagePublicId,
+        videoPublicId: videoPublicId,
+        voicePublicId: voicePublicId,
       );
       final memberIds =
           group.members

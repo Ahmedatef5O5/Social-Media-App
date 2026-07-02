@@ -129,13 +129,12 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState> {
     final cancelToken = dio_pkg.CancelToken();
     _cancelTokens[tempId] = cancelToken;
     try {
-      String? imageUrl;
-      String? videoUrl;
-      String? voiceUrl;
+      String? imageUrl, videoUrl, voiceUrl;
+      String? imagePublicId, videoPublicId, voicePublicId;
 
       if (imageFile != null) {
         if (await imageFile.exists()) {
-          imageUrl = await _chatServices.storage.uploadFile(
+          final result = await _chatServices.storage.uploadFile(
             imageFile,
             'chats',
             'image',
@@ -145,6 +144,8 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState> {
               emit(MessagesSending(messages: updatedMessages));
             },
           );
+          imageUrl = result.secureUrl;
+          imagePublicId = result.publicId;
           uploadProgressMap[tempId] = 1.0;
           emit(MessagesSending(messages: updatedMessages));
           await Future.delayed(const Duration(milliseconds: 200));
@@ -159,7 +160,7 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState> {
 
       if (videoFile != null) {
         if (await videoFile.exists()) {
-          videoUrl = await _chatServices.storage.uploadFile(
+          final result = await _chatServices.storage.uploadFile(
             videoFile,
             'chats',
             'video',
@@ -169,6 +170,8 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState> {
               emit(MessagesSending(messages: updatedMessages));
             },
           );
+          videoUrl = result.secureUrl;
+          videoPublicId = result.publicId;
           uploadProgressMap[tempId] = 1.0;
           emit(MessagesSending(messages: updatedMessages));
           await Future.delayed(const Duration(milliseconds: 200));
@@ -182,12 +185,14 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState> {
 
       if (voiceFile != null) {
         if (await voiceFile.exists()) {
-          voiceUrl = await _chatServices.storage.uploadFile(
+          final result = await _chatServices.storage.uploadFile(
             voiceFile,
             'chats',
             'voice',
             cancelToken: cancelToken,
           );
+          voiceUrl = result.secureUrl;
+          voicePublicId = result.publicId;
         } else {
           emit(MessagesError("Voice file not found."));
           return;
@@ -207,6 +212,10 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState> {
         replyToText: _getReplyPreviewText(replyTo),
         replyToMessageType: replyTo?.messageType,
         replyToSenderId: replyTo?.senderId,
+
+        imagePublicId: imagePublicId,
+        videoPublicId: videoPublicId,
+        voicePublicId: voicePublicId,
       );
       if (messageType != 'call') {
         await NotificationRepository.instance.notifyChatMessage(

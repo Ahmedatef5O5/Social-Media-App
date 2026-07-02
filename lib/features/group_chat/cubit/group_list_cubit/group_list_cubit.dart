@@ -395,11 +395,13 @@ class GroupListCubit extends Cubit<GroupListState> {
   Future<GroupModel> createGroup({
     required String name,
     String? avatarUrl,
+    String? avatarPublicId,
     required List<String> memberIds,
   }) async {
     final group = await _services.createGroup(
       name: name,
       avatarUrl: avatarUrl,
+      avatarPublicId: avatarPublicId,
       memberIds: memberIds,
     );
     await loadGroups(isRefresh: true);
