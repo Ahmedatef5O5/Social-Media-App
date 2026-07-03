@@ -12,6 +12,7 @@ dependencies:
   audioplayers: ^6.6.0
   cached_network_image: ^3.4.1
   connectivity_plus: 6.1.5
+  crypto: ^3.0.6
   cupertino_icons: ^1.0.8
   custom_refresh_indicator: ^4.0.1
   device_preview: ^1.2.0
