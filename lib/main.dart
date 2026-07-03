@@ -8,6 +8,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:social_media_app/core/cache/datasources/media_local_data_source_impl.dart';
+import 'package:social_media_app/core/cache/eviction/cache_eviction_service.dart';
+import 'package:social_media_app/core/cache/repository/media_cache_repository.dart';
+import 'package:social_media_app/core/cache/repository/media_cache_repository_impl.dart';
 import 'package:social_media_app/core/cache/services/hive_cache_manager.dart';
 import 'package:social_media_app/core/router/app_router.dart';
 import 'package:social_media_app/core/router/app_routes.dart';
@@ -224,7 +228,7 @@ Future<void> _initializeApp() async {
 }
 
 Future<void> _initHiveCache() async {
-  await HivecacheManager.instance.init();
+  await HiveCacheManager.instance.init();
 }
 
 Future<void> _lockOrientation() async {
@@ -274,6 +278,23 @@ Widget _buildApp(String savedTheme) {
       RepositoryProvider(create: (_) => UserService()),
       RepositoryProvider(create: (_) => DiscoverPeopleServices()),
       RepositoryProvider(create: (_) => GroupCallSignalingService()),
+      RepositoryProvider<MediaCacheRepository>(
+        create: (_) {
+          final localDataSource = MediaLocalDataSourceImpl(
+            box: HiveCacheManager.instance.mediaCacheBox,
+            metaBox: HiveCacheManager.instance.cacheMetaBox,
+          );
+
+          final cacheEvictionService = CacheEvictionService(
+            localDataSource: localDataSource,
+            metaBox: HiveCacheManager.instance.cacheMetaBox,
+          );
+          return MediaCacheRepositoryImpl(
+            localDataSource: localDataSource,
+            evictionService: cacheEvictionService,
+          )..initialize();
+        },
+      ),
     ],
     child: MultiBlocProvider(
       providers: [

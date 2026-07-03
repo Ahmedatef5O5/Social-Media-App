@@ -1,13 +1,14 @@
 import 'package:flutter/foundation.dart';
 import 'package:hive_flutter/adapters.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:social_media_app/core/cache/constants/hive_box_names.dart';
 import '../constants/hive_type_ids.dart';
 import '../models/cached_media_model.dart';
 
-class HivecacheManager {
-  HivecacheManager._();
+class HiveCacheManager {
+  HiveCacheManager._();
 
-  static final HivecacheManager instance = HivecacheManager._();
+  static final HiveCacheManager instance = HiveCacheManager._();
 
   static const String _cacheSubDirectory = 'social_media_cache';
   bool _isInitialized = false;
@@ -18,7 +19,8 @@ class HivecacheManager {
   Future<void> init() async {
     if (_isInitialized) return;
 
-    await Hive.initFlutter(_cacheSubDirectory);
+    final cacheDirectory = await getApplicationDocumentsDirectory();
+    Hive.init('${cacheDirectory.path}/$_cacheSubDirectory');
 
     _registerAdapters();
 
