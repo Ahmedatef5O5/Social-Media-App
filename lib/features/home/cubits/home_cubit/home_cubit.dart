@@ -502,6 +502,8 @@ class HomeCubit extends Cubit<HomeState> {
       await Future.delayed(const Duration(milliseconds: 2000));
       _resetMedia();
       emit(PostCreated());
+
+      await fetchPosts(isRefresh: true);
     } catch (e) {
       final errorMessage = _mapExceptionToMessage(e);
       if (errorMessage == "upload_canceled") {

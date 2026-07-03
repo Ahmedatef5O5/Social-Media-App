@@ -1,9 +1,10 @@
-import 'dart:io';
+import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter_cache_manager/flutter_cache_manager.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:video_player/video_player.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 import 'package:social_media_app/core/themes/app_colors.dart';
+import '../../../core/cache/repository/media_cache_repository.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
 import '../../chats/widgets/full_screen_media_view.dart';
 
@@ -30,20 +31,21 @@ class _PostVideoPlayerState extends State<PostVideoPlayer> {
 
   Future<void> _initializeCachedPlayer() async {
     try {
-      final fileInfo = await DefaultCacheManager().getFileFromCache(
-        widget.videoUrl,
+      _controller = VideoPlayerController.networkUrl(
+        Uri.parse(widget.videoUrl),
       );
-      File videoFile =
-          fileInfo?.file ??
-          await DefaultCacheManager().getSingleFile(widget.videoUrl);
 
-      _controller = VideoPlayerController.file(videoFile);
       await _controller!.initialize();
       _controller!.setLooping(true);
 
       if (mounted) setState(() => _isInitialized = true);
-    } catch (e) {
-      debugPrint("Video Cache Error: $e");
+
+      unawaited(
+        context.read<MediaCacheRepository>().resolveLocalPath(widget.videoUrl),
+      );
+    } catch (e, stackTrace) {
+      debugPrint("Video init error: $e");
+      debugPrintStack(stackTrace: stackTrace);
     }
   }
 
