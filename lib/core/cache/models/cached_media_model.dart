@@ -9,6 +9,8 @@ enum CachedMediaType {
   @HiveField(1)
   video,
   @HiveField(2)
+  audio,
+  @HiveField(3)
   raw,
 }
 

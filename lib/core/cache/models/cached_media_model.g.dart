@@ -70,6 +70,8 @@ class CachedMediaTypeAdapter extends TypeAdapter<CachedMediaType> {
       case 1:
         return CachedMediaType.video;
       case 2:
+        return CachedMediaType.audio;
+      case 3:
         return CachedMediaType.raw;
       default:
         return CachedMediaType.image;
@@ -85,8 +87,11 @@ class CachedMediaTypeAdapter extends TypeAdapter<CachedMediaType> {
       case CachedMediaType.video:
         writer.writeByte(1);
         break;
-      case CachedMediaType.raw:
+      case CachedMediaType.audio:
         writer.writeByte(2);
+        break;
+      case CachedMediaType.raw:
+        writer.writeByte(3);
         break;
     }
   }
