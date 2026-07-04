@@ -8,6 +8,8 @@ import 'package:path_provider/path_provider.dart';
 import 'package:persistent_bottom_nav_bar_v2/persistent_bottom_nav_bar_v2.dart';
 import 'package:social_media_app/core/services/file_picker_services.dart';
 import 'package:social_media_app/core/services/network_status_service.dart';
+import 'package:social_media_app/core/cache/constants/snapshot_keys.dart';
+import 'package:social_media_app/core/cache/services/local_snapshot_store.dart';
 import 'package:social_media_app/features/auth/data/models/user_data.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:video_player/video_player.dart';
@@ -24,6 +26,9 @@ import '../../services/home_services.dart';
 part 'home_state.dart';
 
 const Duration kMaxStoryVideoDuration = Duration(seconds: 60);
+
+const int kMaxCachedPostsSnapshot = 30;
+const int kMaxCachedStoriesSnapshot = 30;
 
 class HomeCubit extends Cubit<HomeState> {
   final HomeServices _homeServices;
@@ -89,6 +94,8 @@ class HomeCubit extends Cubit<HomeState> {
       }
     } catch (e) {
       debugPrint('Error refreshing home data: $e');
+      // Cache-first: only show the full error screen when we truly have
+      // nothing cached to fall back on (e.g. offline cold start).
       if (cachedPosts.isEmpty) {
         emit(
           UserDataLoadError(
@@ -346,6 +353,7 @@ class HomeCubit extends Cubit<HomeState> {
       final stories = await _homeServices.storyServices.fetchStories();
       cachedStories = stories;
       emit(StoriesLoaded(stories, DateTime.now()));
+      _persistStoriesSnapshot(stories);
     } catch (e) {
       debugPrint('Error fetching stories: $e');
       if (cachedStories.isNotEmpty) {
@@ -353,7 +361,40 @@ class HomeCubit extends Cubit<HomeState> {
         emit(StoriesLoaded(cachedStories, DateTime.now()));
         return;
       }
+      final diskStories = _readStoriesSnapshot();
+      if (diskStories.isNotEmpty) {
+        debugPrint(
+          'Silent error: no internet, showing stories snapshot from disk.',
+        );
+        cachedStories = diskStories;
+        emit(StoriesLoaded(diskStories, DateTime.now()));
+        return;
+      }
       emit(StoriesError(e.toString()));
+    }
+  }
+
+  void _persistStoriesSnapshot(List<StoryModel> stories) {
+    unawaited(
+      LocalSnapshotStore.instance.saveList(
+        SnapshotKeys.stories,
+        stories
+            .take(kMaxCachedStoriesSnapshot)
+            .map((story) => story.toCacheJson())
+            .toList(),
+      ),
+    );
+  }
+
+  List<StoryModel> _readStoriesSnapshot() {
+    try {
+      return LocalSnapshotStore.instance
+          .readList(SnapshotKeys.stories)
+          .map(StoryModel.fromCacheJson)
+          .toList();
+    } catch (e) {
+      debugPrint('Failed to read stories snapshot from disk: $e');
+      return [];
     }
   }
 
@@ -367,10 +408,20 @@ class HomeCubit extends Cubit<HomeState> {
       emit(PostsLoaded(cachedPosts, DateTime.now()));
 
       _listenToPosts();
+      _persistPostsSnapshot(cachedPosts);
     } catch (e) {
       debugPrint('Error fetching posts: $e');
       if (cachedPosts.isNotEmpty) {
         debugPrint('Silent error: no internet, showing cached posts.');
+        return;
+      }
+      final diskPosts = _readPostsSnapshot();
+      if (diskPosts.isNotEmpty) {
+        debugPrint(
+          'Silent error: no internet, showing posts snapshot from disk.',
+        );
+        cachedPosts = diskPosts;
+        emit(PostsLoaded(diskPosts, DateTime.now()));
         return;
       }
       emit(
@@ -380,6 +431,30 @@ class HomeCubit extends Cubit<HomeState> {
               : 'Failed to load posts.',
         ),
       );
+    }
+  }
+
+  void _persistPostsSnapshot(List<PostModel> posts) {
+    unawaited(
+      LocalSnapshotStore.instance.saveList(
+        SnapshotKeys.posts,
+        posts
+            .take(kMaxCachedPostsSnapshot)
+            .map((post) => post.toCacheJson())
+            .toList(),
+      ),
+    );
+  }
+
+  List<PostModel> _readPostsSnapshot() {
+    try {
+      return LocalSnapshotStore.instance
+          .readList(SnapshotKeys.posts)
+          .map(PostModel.fromCacheJson)
+          .toList();
+    } catch (e) {
+      debugPrint('Failed to read posts snapshot from disk: $e');
+      return [];
     }
   }
 
@@ -685,7 +760,6 @@ class HomeCubit extends Cubit<HomeState> {
       if (!isRefresh) emit(UserDataLoaded(currentUserData!));
     } catch (e) {
       debugPrint("Error fetching user: $e");
-      // (currentUserData still null) should surface as an error.
       if (currentUserData != null) return;
       emit(UserDataLoadError(e.toString()));
     }
