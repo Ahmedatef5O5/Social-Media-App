@@ -98,4 +98,40 @@ class ChatUserModel {
       isOnline: false,
     );
   }
+
+  Map<String, dynamic> toCacheJson() => {
+    'id': id,
+    'name': name,
+    'image_url': imageUrl,
+    'last_message': lastMessage,
+    'last_message_type': lastMessageType,
+    'last_message_time': lastMessageTime?.toIso8601String(),
+    'last_message_is_me': lastMessageIsMe,
+    'last_message_is_read': lastMessageIsRead,
+    'unread_count': unreadCount,
+    'last_seen': lastSeen?.toIso8601String(),
+  };
+
+  factory ChatUserModel.fromCacheJson(Map<String, dynamic> map) {
+    return ChatUserModel(
+      id: map['id'] as String,
+      name: map['name'] as String,
+      imageUrl: map['image_url'] as String?,
+      lastMessage: map['last_message'] as String?,
+      lastMessageType: map['last_message_type'] as String?,
+      lastMessageTime:
+          map['last_message_time'] != null
+              ? DateTime.parse(map['last_message_time'] as String)
+              : null,
+      lastMessageIsMe: map['last_message_is_me'] as bool? ?? false,
+      lastMessageIsRead: map['last_message_is_read'] as bool? ?? false,
+      unreadCount: (map['unread_count'] as num?)?.toInt() ?? 0,
+      lastSeen:
+          map['last_seen'] != null
+              ? DateTime.parse(map['last_seen'] as String)
+              : null,
+      isTyping: false,
+      isOnline: false,
+    );
+  }
 }

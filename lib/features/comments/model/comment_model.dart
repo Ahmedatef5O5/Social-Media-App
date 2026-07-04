@@ -104,6 +104,48 @@ class CommentModel {
       reactions: reactions ?? this.reactions,
     );
   }
+
+  Map<String, dynamic> toCacheJson() => {
+    'id': id,
+    'created_at': createdAt,
+    'author_id': authorId,
+    'text': text,
+    'author_name': authorName,
+    'author_image_url': authorImageUrl,
+    'post_id': postId,
+    'image_url': imageUrl,
+    'parent_comment_id': parentCommentId,
+    'replies': replies.map((reply) => reply.toCacheJson()).toList(),
+    'reactions': reactions.map((reaction) => reaction.toMap()).toList(),
+  };
+
+  factory CommentModel.fromCacheJson(Map<String, dynamic> map) {
+    return CommentModel(
+      id: map['id'] as String,
+      createdAt: map['created_at'] as String,
+      authorId: map['author_id'] as String,
+      text: map['text'] as String,
+      authorName: map['author_name'] as String?,
+      authorImageUrl: map['author_image_url'] as String?,
+      postId: map['post_id'] as String,
+      imageUrl: map['image_url'] as String?,
+      parentCommentId: map['parent_comment_id'] as String?,
+      replies:
+          (map['replies'] as List<dynamic>? ?? [])
+              .map(
+                (reply) =>
+                    CommentModel.fromCacheJson(reply as Map<String, dynamic>),
+              )
+              .toList(),
+      reactions:
+          (map['reactions'] as List<dynamic>? ?? [])
+              .map(
+                (reaction) =>
+                    CommentReaction.fromMap(reaction as Map<String, dynamic>),
+              )
+              .toList(),
+    );
+  }
 }
 
 class CommentReaction {

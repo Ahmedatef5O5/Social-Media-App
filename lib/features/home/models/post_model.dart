@@ -152,4 +152,51 @@ class PostModel {
       isOnline: isOnline ?? this.isOnline,
     );
   }
+
+  Map<String, dynamic> toCacheJson() => {
+    'id': id,
+    'text': text,
+    'author_id': authorId,
+    'created_at': createdAt,
+    'author_name': authorName,
+    'author_image_url': authorImageUrl,
+    'video_url': videoUrl,
+    'file_url': fileUrl,
+    'image_url': imageUrl,
+    'likes': likes,
+    'likers_images': likersImages,
+    'comments': comments?.map((comment) => comment.toCacheJson()).toList(),
+    'shares': shares,
+    'last_seen': lastSeen?.toIso8601String(),
+    'is_online': isOnline,
+  };
+
+  factory PostModel.fromCacheJson(Map<String, dynamic> map) {
+    return PostModel(
+      id: map['id'] as String,
+      text: map['text'] as String,
+      authorId: map['author_id'] as String,
+      createdAt: map['created_at'] as String,
+      authorName: map['author_name'] as String?,
+      authorImageUrl: map['author_image_url'] as String?,
+      videoUrl: map['video_url'] as String?,
+      fileUrl: map['file_url'] as String?,
+      imageUrl: map['image_url'] as String?,
+      likes: (map['likes'] as List<dynamic>?)?.cast<String>(),
+      likersImages: (map['likers_images'] as List<dynamic>?)?.cast<String>(),
+      comments:
+          (map['comments'] as List<dynamic>?)
+              ?.map(
+                (comment) =>
+                    CommentModel.fromCacheJson(comment as Map<String, dynamic>),
+              )
+              .toList(),
+      shares: (map['shares'] as List<dynamic>?)?.cast<String>(),
+      lastSeen:
+          map['last_seen'] != null
+              ? DateTime.parse(map['last_seen'] as String)
+              : null,
+      isOnline: map['is_online'] as bool? ?? false,
+    );
+  }
 }

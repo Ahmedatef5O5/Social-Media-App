@@ -93,4 +93,41 @@ class StoryModel {
       lastSeen: lastSeen,
     );
   }
+
+  Map<String, dynamic> toCacheJson() => {
+    'id': id,
+    'image_url': imageUrl,
+    'video_url': videoUrl,
+    'content_text': contentText,
+    'background_color': backgroundColor,
+    'author_id': authorId,
+    'author_name': authorName,
+    'author_image_url': authorImageUrl,
+    'created_at': createdAt,
+    'caption': caption,
+    'last_seen': lastSeen?.toIso8601String(),
+    'image_public_id': imagePublicId,
+    'video_public_id': videoPublicId,
+  };
+
+  factory StoryModel.fromCacheJson(Map<String, dynamic> map) {
+    return StoryModel(
+      id: map['id'] as String? ?? '',
+      imageUrl: map['image_url'] as String?,
+      videoUrl: map['video_url'] as String?,
+      contentText: map['content_text'] as String?,
+      backgroundColor: map['background_color'] as String?,
+      authorId: map['author_id'] as String? ?? '',
+      authorName: map['author_name'] as String? ?? 'Unknown User',
+      authorImageUrl: map['author_image_url'] as String?,
+      createdAt: map['created_at'] as String? ?? '',
+      caption: map['caption'] as String?,
+      lastSeen:
+          map['last_seen'] != null
+              ? DateTime.parse(map['last_seen'] as String)
+              : null,
+      imagePublicId: map['image_public_id'] as String?,
+      videoPublicId: map['video_public_id'] as String?,
+    );
+  }
 }
