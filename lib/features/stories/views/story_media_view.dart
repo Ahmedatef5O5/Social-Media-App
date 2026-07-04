@@ -1,7 +1,10 @@
-import 'package:cached_network_image/cached_network_image.dart';
+import 'dart:io';
+import 'package:social_media_app/core/widgets/cached_cloudinary_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:story_view/story_view.dart';
 import 'package:video_player/video_player.dart';
+import '../../../core/cache/repository/media_cache_repository.dart';
 import '../model/story_model.dart';
 
 class StoryMediaView extends StatefulWidget {
@@ -43,9 +46,16 @@ class _StoryMediaViewState extends State<StoryMediaView> {
 
   Future<void> _initVideo() async {
     try {
-      final controller = VideoPlayerController.networkUrl(
-        Uri.parse(widget.story.videoUrl!),
-      );
+      final localPath = await context
+          .read<MediaCacheRepository>()
+          .resolveLocalPath(widget.story.videoUrl!);
+
+      final controller =
+          localPath != null
+              ? VideoPlayerController.file(File(localPath))
+              : VideoPlayerController.networkUrl(
+                Uri.parse(widget.story.videoUrl!),
+              );
       await controller.initialize();
       controller.play();
       controller.addListener(_onVideoUpdate);
@@ -89,15 +99,10 @@ class _StoryMediaViewState extends State<StoryMediaView> {
         );
 
       case StoryType.image:
-        return CachedNetworkImage(
-          imageUrl: widget.story.imageUrl!,
+        return CachedCloudinaryImage(
+          secureUrl: widget.story.imageUrl!,
           fit: BoxFit.contain,
-          imageBuilder: (_, img) {
-            WidgetsBinding.instance.addPostFrameCallback(
-              (_) => widget.onMediaReady(null),
-            );
-            return Image(image: img, fit: BoxFit.contain);
-          },
+          onReady: () => widget.onMediaReady(null),
         );
 
       case StoryType.text:

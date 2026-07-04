@@ -1,6 +1,9 @@
-import 'package:cached_network_image/cached_network_image.dart';
+import 'dart:io';
+import 'package:social_media_app/core/widgets/cached_cloudinary_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:video_player/video_player.dart';
+import '../../../core/cache/repository/media_cache_repository.dart';
 import '../../../core/services/gallery_services.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
 
@@ -55,16 +58,26 @@ class _FullScreenMediaViewState extends State<FullScreenMediaView> {
   void initState() {
     super.initState();
     if (widget.videoUrl != null) {
-      _videoController = VideoPlayerController.networkUrl(
-          Uri.parse(widget.videoUrl!),
-        )
-        ..initialize().then((_) {
-          setState(() {});
-
-          _videoController!.play();
-          _hideControlsAfterDelay();
-        });
+      _initializeVideo(widget.videoUrl!);
     }
+  }
+
+  Future<void> _initializeVideo(String videoUrl) async {
+    final localPath = await context
+        .read<MediaCacheRepository>()
+        .resolveLocalPath(videoUrl);
+
+    _videoController =
+        localPath != null
+            ? VideoPlayerController.file(File(localPath))
+            : VideoPlayerController.networkUrl(Uri.parse(videoUrl));
+
+    await _videoController!.initialize();
+    if (!mounted) return;
+    setState(() {});
+
+    _videoController!.play();
+    _hideControlsAfterDelay();
   }
 
   void _hideControlsAfterDelay() {
@@ -235,14 +248,14 @@ class _FullScreenMediaViewState extends State<FullScreenMediaView> {
             transformationController: _transformationController,
             minScale: 0.5,
             maxScale: 4.0,
-            child: CachedNetworkImage(
-              imageUrl: widget.imageUrl!,
+            child: CachedCloudinaryImage(
+              secureUrl: widget.imageUrl!,
               fit: BoxFit.contain,
               width: double.infinity,
               height: double.infinity,
-              placeholder: (context, url) => const CustomLoadingIndicator(),
+              placeholder: (context) => const CustomLoadingIndicator(),
               errorWidget:
-                  (context, url, error) => const Icon(
+                  (context, error) => const Icon(
                     Icons.broken_image,
                     color: Colors.white,
                     size: 50,

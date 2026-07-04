@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:video_player/video_player.dart';
@@ -31,18 +32,19 @@ class _PostVideoPlayerState extends State<PostVideoPlayer> {
 
   Future<void> _initializeCachedPlayer() async {
     try {
-      _controller = VideoPlayerController.networkUrl(
-        Uri.parse(widget.videoUrl),
-      );
+      final localPath = await context
+          .read<MediaCacheRepository>()
+          .resolveLocalPath(widget.videoUrl);
+
+      _controller =
+          localPath != null
+              ? VideoPlayerController.file(File(localPath))
+              : VideoPlayerController.networkUrl(Uri.parse(widget.videoUrl));
 
       await _controller!.initialize();
       _controller!.setLooping(true);
 
       if (mounted) setState(() => _isInitialized = true);
-
-      unawaited(
-        context.read<MediaCacheRepository>().resolveLocalPath(widget.videoUrl),
-      );
     } catch (e, stackTrace) {
       debugPrint("Video init error: $e");
       debugPrintStack(stackTrace: stackTrace);
