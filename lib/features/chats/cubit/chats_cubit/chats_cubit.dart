@@ -1,11 +1,15 @@
 import 'dart:async';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:social_media_app/core/cache/constants/snapshot_keys.dart';
+import 'package:social_media_app/core/cache/services/local_snapshot_store.dart';
 import 'package:social_media_app/features/chats/models/chat_user_model.dart';
 import 'package:social_media_app/features/chats/services/chat_services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../auth/handler/auth_exception_handler.dart';
 part 'chats_state.dart';
+
+const int kMaxCachedChatsSnapshot = 50;
 
 class ChatsCubit extends Cubit<ChatsState> {
   final ChatServices _chatServices;
@@ -87,6 +91,7 @@ class ChatsCubit extends Cubit<ChatsState> {
         }
       }
       _emitWithTyping();
+      _persistChatsSnapshot(chats);
     } catch (e) {
       _showSkeleton = false;
       if (e.toString().contains('no-internet')) {
@@ -94,11 +99,44 @@ class ChatsCubit extends Cubit<ChatsState> {
           debugPrint('Silent error: No internet, but showing cached chats.');
           return;
         }
+        final diskChats = _readChatsSnapshot();
+        if (diskChats.isNotEmpty) {
+          debugPrint(
+            'Silent error: No internet, showing chats snapshot from disk.',
+          );
+          _cachedChats = diskChats;
+          emit(ChatsSuccessloaded(chats: diskChats));
+          return;
+        }
         emit(ChatsError("No internet connection. Please check your network."));
       } else {
         emit(ChatsError(AuthExceptionHandler.handle(e)));
       }
       debugPrint('Error in getChats Cubit: $e');
+    }
+  }
+
+  void _persistChatsSnapshot(List<ChatUserModel> chats) {
+    unawaited(
+      LocalSnapshotStore.instance.saveList(
+        SnapshotKeys.chats,
+        chats
+            .take(kMaxCachedChatsSnapshot)
+            .map((chat) => chat.toCacheJson())
+            .toList(),
+      ),
+    );
+  }
+
+  List<ChatUserModel> _readChatsSnapshot() {
+    try {
+      return LocalSnapshotStore.instance
+          .readList(SnapshotKeys.chats)
+          .map(ChatUserModel.fromCacheJson)
+          .toList();
+    } catch (e) {
+      debugPrint('Failed to read chats snapshot from disk: $e');
+      return [];
     }
   }
 
