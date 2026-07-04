@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import '../../services/network_status_service.dart';
 import '../datasources/media_local_data_source.dart';
@@ -25,8 +26,11 @@ class MediaCacheRepositoryImpl implements MediaCacheRepository {
   }
 
   @override
-  bool isAvailableOffline(String secureUrl) =>
-      _localDataSource.getCachedEntry(secureUrl)?.localFilePath != null;
+  bool isAvailableOffline(String secureUrl) {
+    final path = _localDataSource.getCachedEntry(secureUrl)?.localFilePath;
+    if (path == null) return false;
+    return File(path).existsSync();
+  }
 
   @override
   Future<String?> resolveLocalPath(

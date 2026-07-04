@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:dio/dio.dart' as dio_pkg;
 import 'package:social_media_app/core/services/cloudinary_upload_result.dart';
+import 'package:social_media_app/core/services/network_status_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/services/cloudinary_storage_services.dart';
 import '../../../core/services/media_cleanup_service.dart';
@@ -45,6 +46,10 @@ class StoriesServices {
   }
 
   Future<List<StoryModel>> fetchStories() async {
+    if (!(await NetworkStatusService.instance.isConnected())) {
+      throw Exception('no-internet');
+    }
+
     try {
       return await supabaseServices.fetchRows(
         table: SupabaseConstants.stories,

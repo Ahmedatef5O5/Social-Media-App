@@ -27,6 +27,7 @@ const Duration kMaxStoryVideoDuration = Duration(seconds: 60);
 
 class HomeCubit extends Cubit<HomeState> {
   final HomeServices _homeServices;
+  // ignore: unused_field
   final NetworkStatusService _networkStatus;
 
   HomeCubit({
@@ -67,14 +68,6 @@ class HomeCubit extends Cubit<HomeState> {
   // ── Home data ──────────────────────────────────────────────────────────────
 
   Future<void> refreshHomeData({bool isRefresh = false}) async {
-    bool hasNet = await _networkStatus.isConnected();
-    if (!hasNet) {
-      emit(
-        UserDataLoadError("No internet connection. Please check your network."),
-      );
-      return;
-    }
-
     try {
       final start = DateTime.now();
 
@@ -96,11 +89,15 @@ class HomeCubit extends Cubit<HomeState> {
       }
     } catch (e) {
       debugPrint('Error refreshing home data: $e');
-      emit(
-        UserDataLoadError(
-          'An error occurred while updating the data. Please try again.',
-        ),
-      );
+      if (cachedPosts.isEmpty) {
+        emit(
+          UserDataLoadError(
+            e.toString().contains('no-internet')
+                ? 'No internet connection. Please check your network.'
+                : 'An error occurred while updating the data. Please try again.',
+          ),
+        );
+      }
     }
   }
 
@@ -351,6 +348,11 @@ class HomeCubit extends Cubit<HomeState> {
       emit(StoriesLoaded(stories, DateTime.now()));
     } catch (e) {
       debugPrint('Error fetching stories: $e');
+      if (cachedStories.isNotEmpty) {
+        debugPrint('Silent error: no internet, showing cached stories.');
+        emit(StoriesLoaded(cachedStories, DateTime.now()));
+        return;
+      }
       emit(StoriesError(e.toString()));
     }
   }
@@ -359,12 +361,6 @@ class HomeCubit extends Cubit<HomeState> {
 
   Future<void> fetchPosts({bool isRefresh = false}) async {
     if (!isRefresh) emit(PostsLoading());
-    final hasNet = await _networkStatus.isConnected();
-    if (!hasNet) {
-      emit(UserDataLoadError("No internet connection."));
-      return;
-    }
-
     try {
       cachedPosts = await _homeServices.postServices.fetchPosts();
       cachedPosts = _fixLikersImages(cachedPosts);
@@ -373,8 +369,17 @@ class HomeCubit extends Cubit<HomeState> {
       _listenToPosts();
     } catch (e) {
       debugPrint('Error fetching posts: $e');
-      emit(UserDataLoadError('Failed to load posts.'));
-      rethrow;
+      if (cachedPosts.isNotEmpty) {
+        debugPrint('Silent error: no internet, showing cached posts.');
+        return;
+      }
+      emit(
+        UserDataLoadError(
+          e.toString().contains('no-internet')
+              ? 'No internet connection. Please check your network.'
+              : 'Failed to load posts.',
+        ),
+      );
     }
   }
 
@@ -680,6 +685,8 @@ class HomeCubit extends Cubit<HomeState> {
       if (!isRefresh) emit(UserDataLoaded(currentUserData!));
     } catch (e) {
       debugPrint("Error fetching user: $e");
+      // (currentUserData still null) should surface as an error.
+      if (currentUserData != null) return;
       emit(UserDataLoadError(e.toString()));
     }
   }
