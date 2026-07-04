@@ -1,4 +1,4 @@
-import 'package:cached_network_image/cached_network_image.dart';
+import 'package:social_media_app/core/widgets/cached_cloudinary_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:social_media_app/core/constants/app_images.dart';
@@ -55,20 +55,20 @@ class UserPreviewDialog extends StatelessWidget {
                     ClipRRect(
                       child:
                           (user.imageUrl != null && user.imageUrl!.isNotEmpty)
-                              ? CachedNetworkImage(
-                                imageUrl: user.imageUrl!,
+                              ? CachedCloudinaryImage(
+                                secureUrl: user.imageUrl!,
                                 fit: BoxFit.cover,
                                 height: 300,
                                 width: double.infinity,
                                 placeholder:
-                                    (context, url) => SizedBox(
+                                    (context) => SizedBox(
                                       height: 300,
                                       child: const Center(
                                         child: CustomLoadingIndicator(),
                                       ),
                                     ),
                                 errorWidget:
-                                    (context, url, error) => Image.asset(
+                                    (context, error) => Image.asset(
                                       AppImages.defaultUserImg,
                                       fit: BoxFit.cover,
                                     ),

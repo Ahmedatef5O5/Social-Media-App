@@ -1,4 +1,4 @@
-import 'package:cached_network_image/cached_network_image.dart';
+import 'package:social_media_app/core/widgets/cached_cloudinary_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
@@ -176,18 +176,18 @@ class _CommentsSheetSectionState extends State<CommentsSheetSection> {
                                       child: ClipOval(
                                         child:
                                             isNetworkImage
-                                                ? CachedNetworkImage(
-                                                  imageUrl: imageUrl,
+                                                ? CachedCloudinaryImage(
+                                                  secureUrl: imageUrl,
                                                   fit: BoxFit.cover,
                                                   errorWidget:
-                                                      (context, url, error) =>
+                                                      (context, error) =>
                                                           Image.asset(
                                                             AppImages
                                                                 .defaultUserImg,
                                                             fit: BoxFit.cover,
                                                           ),
                                                   placeholder:
-                                                      (context, url) =>
+                                                      (context) =>
                                                           const CustomLoadingIndicator(),
                                                 )
                                                 : Image.asset(

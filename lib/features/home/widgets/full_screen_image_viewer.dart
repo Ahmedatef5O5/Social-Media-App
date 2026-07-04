@@ -1,9 +1,8 @@
-import 'package:cached_network_image/cached_network_image.dart';
+import 'package:social_media_app/core/widgets/cached_cloudinary_image.dart';
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:social_media_app/core/themes/app_colors.dart';
 import 'package:social_media_app/core/widgets/custom_loading_indicator.dart';
-
 import '../../../core/services/gallery_services.dart';
 
 class FullScreenImageViewer extends StatefulWidget {
@@ -170,8 +169,8 @@ class _FullScreenImageViewerState extends State<FullScreenImageViewer> {
                                     fit: BoxFit.contain,
                                     width: double.infinity,
                                   )
-                                  : CachedNetworkImage(
-                                    imageUrl: imageUrl,
+                                  : CachedCloudinaryImage(
+                                    secureUrl: imageUrl,
                                     fit: BoxFit.contain,
                                     width: double.infinity,
                                   ),

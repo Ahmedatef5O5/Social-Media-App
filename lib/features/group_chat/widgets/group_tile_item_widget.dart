@@ -1,4 +1,4 @@
-import 'package:cached_network_image/cached_network_image.dart';
+import 'package:social_media_app/core/widgets/cached_cloudinary_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
@@ -42,11 +42,9 @@ class GroupTileItem extends StatelessWidget {
             color: primary.withValues(alpha: 0.12),
             child:
                 hasAvatar
-                    ? CachedNetworkImage(
-                      imageUrl: group.avatarUrl!,
+                    ? CachedCloudinaryImage(
+                      secureUrl: group.avatarUrl!,
                       fit: BoxFit.cover,
-                      memCacheWidth: 600,
-                      memCacheHeight: 600,
                     )
                     : Center(
                       child: Text(

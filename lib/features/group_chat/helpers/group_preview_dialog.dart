@@ -1,4 +1,4 @@
-import 'package:cached_network_image/cached_network_image.dart';
+import 'package:social_media_app/core/widgets/cached_cloudinary_image.dart';
 import 'package:flutter/material.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
@@ -43,18 +43,18 @@ class GroupPreviewDialog extends StatelessWidget {
                 child: Stack(
                   children: [
                     hasAvatar
-                        ? CachedNetworkImage(
-                          imageUrl: group.avatarUrl!,
+                        ? CachedCloudinaryImage(
+                          secureUrl: group.avatarUrl!,
                           fit: BoxFit.cover,
                           height: 300,
                           width: double.infinity,
                           placeholder:
-                              (context, url) => const SizedBox(
+                              (context) => const SizedBox(
                                 height: 300,
                                 child: Center(child: CustomLoadingIndicator()),
                               ),
                           errorWidget:
-                              (context, url, error) =>
+                              (context, error) =>
                                   const Icon(Icons.broken_image),
                         )
                         : Container(

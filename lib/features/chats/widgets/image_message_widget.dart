@@ -1,4 +1,4 @@
-import 'package:cached_network_image/cached_network_image.dart';
+import 'package:social_media_app/core/widgets/cached_cloudinary_image.dart';
 import 'package:flutter/material.dart';
 import 'package:social_media_app/features/chats/widgets/full_screen_media_view.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
@@ -38,18 +38,18 @@ class ImageMessageWidget extends StatelessWidget {
           bottomRight: Radius.circular(isMe ? 0 : 18),
         ),
 
-        child: CachedNetworkImage(
-          imageUrl: imageUrl,
+        child: CachedCloudinaryImage(
+          secureUrl: imageUrl,
           fit: BoxFit.cover,
           placeholder:
-              (context, url) => Container(
+              (context) => Container(
                 width: preferredWidth,
                 height: preferredHeight,
                 color: Colors.grey[200],
                 child: const CustomLoadingIndicator(),
               ),
           errorWidget:
-              (context, url, error) => SizedBox(
+              (context, error) => SizedBox(
                 width: preferredWidth,
                 height: preferredHeight,
                 child: Center(child: const Icon(Icons.error)),

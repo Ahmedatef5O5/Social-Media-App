@@ -1,11 +1,11 @@
 import 'dart:async';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:zego_uikit/zego_uikit.dart';
 import 'package:zego_uikit_prebuilt_call/zego_uikit_prebuilt_call.dart';
 import '../../../core/secrets/app_secrets.dart';
 import '../../../core/services/zego_token_service.dart';
+import '../../../core/widgets/cached_cloudinary_image.dart';
 import '../../group_chat/models/group_call_model.dart';
 import '../../group_chat/services/group_call_signaling_service.dart';
 
@@ -143,13 +143,13 @@ class _ZegoGroupCallViewState extends State<ZegoGroupCallView> {
             final imageUrl = snapshot.data?['image_url'] as String?;
             if (imageUrl != null && imageUrl.isNotEmpty) {
               return ClipOval(
-                child: CachedNetworkImage(
-                  imageUrl: imageUrl,
+                child: CachedCloudinaryImage(
+                  secureUrl: imageUrl,
                   width: diameter,
                   height: diameter,
                   fit: BoxFit.cover,
                   placeholder:
-                      (context, url) => Container(
+                      (context) => Container(
                         width: diameter,
                         height: diameter,
                         decoration: BoxDecoration(
@@ -158,7 +158,7 @@ class _ZegoGroupCallViewState extends State<ZegoGroupCallView> {
                         ),
                       ),
                   errorWidget:
-                      (context, url, error) =>
+                      (context, error) =>
                           _buildDefaultAvatar(user.name, primary, diameter),
                 ),
               );

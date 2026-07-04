@@ -1,9 +1,9 @@
 import 'dart:async';
 import 'dart:math' as math;
 import 'package:audioplayers/audioplayers.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../core/widgets/cached_cloudinary_image.dart';
 import '../../group_chat/models/group_call_model.dart';
 import '../../group_chat/services/group_call_signaling_service.dart';
 import '../views/zego_group_call_view.dart';
@@ -364,10 +364,10 @@ class _IncomingGroupCallScreenState extends State<IncomingGroupCallScreen>
       child: ClipOval(
         child:
             widget.call.groupAvatarUrl?.isNotEmpty == true
-                ? CachedNetworkImage(
-                  imageUrl: widget.call.groupAvatarUrl!,
+                ? CachedCloudinaryImage(
+                  secureUrl: widget.call.groupAvatarUrl!,
                   fit: BoxFit.cover,
-                  errorWidget: (_, __, ___) => _defaultAvatar(),
+                  errorWidget: (_, __) => _defaultAvatar(),
                 )
                 : _defaultAvatar(),
       ),

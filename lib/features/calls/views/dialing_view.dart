@@ -1,5 +1,5 @@
 import 'package:audioplayers/audioplayers.dart';
-import 'package:cached_network_image/cached_network_image.dart';
+import 'package:social_media_app/core/widgets/cached_cloudinary_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../cubits/single_call_cubit/call_cubit.dart';
@@ -367,12 +367,11 @@ class _DialingViewState extends State<DialingView>
         child: ClipOval(
           child:
               widget.call.receiverAvatar.isNotEmpty
-                  ? CachedNetworkImage(
-                    imageUrl: widget.call.receiverAvatar,
+                  ? CachedCloudinaryImage(
+                    secureUrl: widget.call.receiverAvatar,
                     fit: BoxFit.cover,
                     errorWidget:
-                        (_, __, ___) =>
-                            _defaultAvatar(widget.call.receiverName),
+                        (_, __) => _defaultAvatar(widget.call.receiverName),
                   )
                   : _defaultAvatar(widget.call.receiverName),
         ),

@@ -1,6 +1,6 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:social_media_app/core/constants/app_images.dart';
+import 'package:social_media_app/core/widgets/cached_cloudinary_image.dart';
 import 'package:social_media_app/core/widgets/custom_loading_indicator.dart';
 
 class AppAvatar extends StatelessWidget {
@@ -12,7 +12,6 @@ class AppAvatar extends StatelessWidget {
   final bool isOnline;
   final String? heroTag;
   final VoidCallback? onTap;
-
   final String? cacheKey;
 
   const AppAvatar({
@@ -86,15 +85,14 @@ class AppAvatar extends StatelessWidget {
       );
     }
 
-    return CachedNetworkImage(
-      imageUrl: imageUrl!,
-      cacheKey: cacheKey,
+    return CachedCloudinaryImage(
+      secureUrl: imageUrl!,
       width: size,
       height: size,
       fit: BoxFit.cover,
-      placeholder: (_, __) => CustomLoadingIndicator(radius: size / 4),
+      placeholder: (_) => CustomLoadingIndicator(radius: size / 4),
       errorWidget:
-          (_, __, ___) => Image.asset(
+          (_, __) => Image.asset(
             AppImages.defaultUserImg,
             width: size,
             height: size,

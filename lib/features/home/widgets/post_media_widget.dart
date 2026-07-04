@@ -1,5 +1,5 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:social_media_app/core/widgets/cached_cloudinary_image.dart';
 import 'package:social_media_app/features/home/widgets/post_video_player.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/themes/app_colors.dart';
@@ -25,32 +25,25 @@ class PostMediaWidget extends StatelessWidget {
                 ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(14),
-              child:
-                  post.imageUrl != null
-                      ? CachedNetworkImage(
-                        imageUrl: post.imageUrl!,
-                        width: double.infinity,
-
-                        fit: BoxFit.cover,
-                        placeholder:
-                            (context, url) => Container(
-                              height: MediaQuery.sizeOf(context).height * 0.3,
-                              decoration: BoxDecoration(
-                                color: AppColors.grey4.withValues(alpha: 0.2),
-                                borderRadius: BorderRadius.circular(15),
-                              ),
-                              child: const CustomLoadingIndicator(),
-                            ),
-                        errorWidget:
-                            (context, url, error) => SizedBox(
-                              height: MediaQuery.sizeOf(context).height * 0.3,
-                              child: const Icon(Icons.error),
-                            ),
-                        filterQuality: FilterQuality.high,
-
-                        memCacheWidth: 800,
-                      )
-                      : null,
+              child: CachedCloudinaryImage(
+                secureUrl: post.imageUrl!,
+                width: double.infinity,
+                fit: BoxFit.cover,
+                placeholder:
+                    (context) => Container(
+                      height: MediaQuery.sizeOf(context).height * 0.3,
+                      decoration: BoxDecoration(
+                        color: AppColors.grey4.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                      child: const CustomLoadingIndicator(),
+                    ),
+                errorWidget:
+                    (context, error) => SizedBox(
+                      height: MediaQuery.sizeOf(context).height * 0.3,
+                      child: const Icon(Icons.error),
+                    ),
+              ),
             ),
           ),
         if (post.videoUrl != null && post.videoUrl!.isNotEmpty)

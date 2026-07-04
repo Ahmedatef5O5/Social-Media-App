@@ -1,4 +1,4 @@
-import 'package:cached_network_image/cached_network_image.dart';
+import 'package:social_media_app/core/widgets/cached_cloudinary_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
@@ -119,19 +119,18 @@ class _ReceiverDetailsHeaderSectionState
                                                 .receiverUser
                                                 .imageUrl!
                                                 .isNotEmpty)
-                                        ? CachedNetworkImage(
-                                          imageUrl:
+                                        ? CachedCloudinaryImage(
+                                          secureUrl:
                                               widget.receiverUser.imageUrl!,
                                           fit: BoxFit.cover,
                                           placeholder:
-                                              (context, url) =>
+                                              (context) =>
                                                   const CustomLoadingIndicator(),
                                           errorWidget:
-                                              (context, url, error) =>
-                                                  Image.asset(
-                                                    AppImages.defaultUserImg,
-                                                    fit: BoxFit.cover,
-                                                  ),
+                                              (context, error) => Image.asset(
+                                                AppImages.defaultUserImg,
+                                                fit: BoxFit.cover,
+                                              ),
                                         )
                                         : Image.asset(
                                           AppImages.defaultUserImg,

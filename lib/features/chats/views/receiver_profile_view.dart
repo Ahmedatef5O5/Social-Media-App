@@ -1,4 +1,4 @@
-import 'package:cached_network_image/cached_network_image.dart';
+import 'package:social_media_app/core/widgets/cached_cloudinary_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
@@ -320,10 +320,10 @@ class _ReceiverProfileViewState extends State<ReceiverProfileView> {
 
   Widget _buildMediaPreview(String type, String? url) {
     if (type == 'image' && url != null) {
-      return CachedNetworkImage(
-        imageUrl: url,
+      return CachedCloudinaryImage(
+        secureUrl: url,
         fit: BoxFit.cover,
-        errorWidget: (context, url, error) => const Icon(Icons.broken_image),
+        errorWidget: (context, error) => const Icon(Icons.broken_image),
       );
     } else if (type == 'video') {
       return Stack(

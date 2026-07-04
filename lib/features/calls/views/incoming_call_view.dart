@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:audioplayers/audioplayers.dart';
-import 'package:cached_network_image/cached_network_image.dart';
+import 'package:social_media_app/core/widgets/cached_cloudinary_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../cubits/single_call_cubit/call_cubit.dart';
@@ -421,11 +421,11 @@ class _IncomingCallViewState extends State<IncomingCallView>
         child: ClipOval(
           child:
               widget.call.callerAvatar.isNotEmpty
-                  ? CachedNetworkImage(
-                    imageUrl: widget.call.callerAvatar,
+                  ? CachedCloudinaryImage(
+                    secureUrl: widget.call.callerAvatar,
                     fit: BoxFit.cover,
                     errorWidget:
-                        (_, __, ___) => _defaultAvatar(widget.call.callerName),
+                        (_, __) => _defaultAvatar(widget.call.callerName),
                   )
                   : _defaultAvatar(widget.call.callerName),
         ),
