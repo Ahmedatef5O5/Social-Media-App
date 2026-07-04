@@ -17,14 +17,18 @@ import 'home_shimmer_skeleton_view.dart';
 
 class HomeView extends StatefulWidget {
   final PersistentTabController navController;
-  const HomeView({super.key, required this.navController});
+  final ScrollController scrollController;
+  const HomeView({
+    super.key,
+    required this.navController,
+    required this.scrollController,
+  });
 
   @override
   State<HomeView> createState() => _HomeViewState();
 }
 
 class _HomeViewState extends State<HomeView> {
-  late ScrollController _scrollController;
   bool _showBackToTop = false;
   bool _isRefreshing = false;
   double _lastOffset = 0;
@@ -35,11 +39,11 @@ class _HomeViewState extends State<HomeView> {
     super.initState();
     updateMyFcmToken();
     context.read<HomeCubit>().navController = widget.navController;
-    _scrollController = ScrollController();
-    _scrollController.addListener(() {
+
+    widget.scrollController.addListener(() {
       if (_isScrollingToTop) return;
 
-      final currentOffset = _scrollController.offset;
+      final currentOffset = widget.scrollController.offset;
       final isScrollingUp = currentOffset < _lastOffset;
 
       if (currentOffset > 450 && isScrollingUp) {
@@ -79,7 +83,6 @@ class _HomeViewState extends State<HomeView> {
 
   @override
   void dispose() {
-    _scrollController.dispose();
     super.dispose();
   }
 
@@ -90,7 +93,7 @@ class _HomeViewState extends State<HomeView> {
       _showBackToTop = false;
     });
 
-    await _scrollController.animateTo(
+    await widget.scrollController.animateTo(
       0,
       duration: const Duration(milliseconds: 600),
       curve: Curves.easeInOut,
@@ -136,7 +139,7 @@ class _HomeViewState extends State<HomeView> {
                       top: MediaQuery.sizeOf(context).height * 0.068,
                       onRefresh: _handleRefresh,
                       child: CustomScrollView(
-                        controller: _scrollController,
+                        controller: widget.scrollController,
                         physics: const AlwaysScrollableScrollPhysics(
                           parent: ClampingScrollPhysics(),
                         ),

@@ -29,6 +29,13 @@ class _CustomBottomNavBarState extends State<CustomBottomNavBar> {
 
   late PersistentTabController _controller;
 
+  final List<ScrollController> _scrollControllers = [
+    ScrollController(), // for Home
+    ScrollController(), // for Discover
+    ScrollController(), // for Chats
+    ScrollController(), // for Profile
+  ];
+
   @override
   void initState() {
     super.initState();
@@ -43,6 +50,9 @@ class _CustomBottomNavBarState extends State<CustomBottomNavBar> {
   @override
   void dispose() {
     _controller.dispose();
+    for (var controller in _scrollControllers) {
+      controller.dispose();
+    }
     super.dispose();
   }
 
@@ -115,19 +125,28 @@ class _CustomBottomNavBarState extends State<CustomBottomNavBar> {
                     navBarBuilder: (config) => const SizedBox.shrink(),
                     tabs: [
                       PersistentTabConfig(
-                        screen: HomeView(navController: _controller),
+                        screen: HomeView(
+                          navController: _controller,
+                          scrollController: _scrollControllers[0],
+                        ),
                         item: ItemConfig(icon: const Icon(Icons.home)),
                       ),
                       PersistentTabConfig(
-                        screen: DiscoverView(),
+                        screen: DiscoverView(
+                          scrollController: _scrollControllers[1],
+                        ),
                         item: ItemConfig(icon: const Icon(Icons.group)),
                       ),
                       PersistentTabConfig(
-                        screen: const ChatsView(),
+                        screen: ChatsView(
+                          scrollController: _scrollControllers[2],
+                        ),
                         item: ItemConfig(icon: const Icon(Icons.chat)),
                       ),
                       PersistentTabConfig(
-                        screen: ProfileView(),
+                        screen: ProfileView(
+                          scrollController: _scrollControllers[3],
+                        ),
                         item: ItemConfig(icon: const Icon(Icons.person)),
                       ),
                     ],
@@ -161,8 +180,19 @@ class _CustomBottomNavBarState extends State<CustomBottomNavBar> {
                                   currentIndex: _controller.index,
 
                                   onTap: (i) {
-                                    _controller.jumpToTab(i);
-
+                                    if (_controller.index == i) {
+                                      if (_scrollControllers[i].hasClients) {
+                                        _scrollControllers[i].animateTo(
+                                          0.0,
+                                          duration: const Duration(
+                                            milliseconds: 400,
+                                          ),
+                                          curve: Curves.easeOutBack,
+                                        );
+                                      }
+                                    } else {
+                                      _controller.jumpToTab(i);
+                                    }
                                     if (i == 3) {
                                       _scaffoldKey.currentState!
                                           .openEndDrawer();

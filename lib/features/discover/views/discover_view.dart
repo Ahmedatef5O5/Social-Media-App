@@ -11,31 +11,29 @@ import '../widgets/discover_people_header_section.dart';
 import '../widgets/discover_person_card_widget.dart';
 
 class DiscoverView extends StatefulWidget {
-  const DiscoverView({super.key});
+  final ScrollController scrollController;
+  const DiscoverView({super.key, required this.scrollController});
 
   @override
   State<DiscoverView> createState() => _DiscoverViewState();
 }
 
 class _DiscoverViewState extends State<DiscoverView> {
-  final ScrollController _scrollController = ScrollController();
-
   @override
   void initState() {
     super.initState();
-    _scrollController.addListener(_onScroll);
+    widget.scrollController.addListener(_onScroll);
   }
 
   void _onScroll() {
-    if (_scrollController.position.pixels >=
-        _scrollController.position.maxScrollExtent - 200) {
+    if (widget.scrollController.position.pixels >=
+        widget.scrollController.position.maxScrollExtent - 200) {
       context.read<DiscoverPeopleCubit>().getDiscoverPeople();
     }
   }
 
   @override
   void dispose() {
-    _scrollController.dispose();
     super.dispose();
   }
 
@@ -67,7 +65,7 @@ class _DiscoverViewState extends State<DiscoverView> {
                       .getDiscoverPeople(isRefresh: true),
 
               child: CustomScrollView(
-                controller: _scrollController,
+                controller: widget.scrollController,
                 physics: const AlwaysScrollableScrollPhysics(
                   parent: ClampingScrollPhysics(),
                 ),

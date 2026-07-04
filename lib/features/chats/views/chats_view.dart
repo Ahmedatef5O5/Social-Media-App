@@ -11,7 +11,8 @@ import '../../group_chat/views/group_list_view_body.dart';
 import 'chats_view_skeleton.dart';
 
 class ChatsView extends StatefulWidget {
-  const ChatsView({super.key});
+  final ScrollController? scrollController;
+  const ChatsView({super.key, this.scrollController});
 
   @override
   State<ChatsView> createState() => _ChatsViewState();
@@ -31,7 +32,7 @@ class _ChatsViewState extends State<ChatsView>
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
-    _scrollController = ScrollController();
+    _scrollController = widget.scrollController ?? ScrollController();
     _scrollController.addListener(() {
       _canRefresh = _scrollController.offset <= 2;
     });
@@ -40,7 +41,9 @@ class _ChatsViewState extends State<ChatsView>
   @override
   void dispose() {
     _tabController.dispose();
-    _scrollController.dispose();
+    if (widget.scrollController == null) {
+      _scrollController.dispose();
+    }
     _refreshProgress.dispose();
     _isRefreshing.dispose();
     isPullRefreshing.dispose();
@@ -168,7 +171,7 @@ class _ChatsViewState extends State<ChatsView>
                       },
 
                       child: NestedScrollView(
-                        controller: _scrollController,
+                        controller: widget.scrollController,
                         headerSliverBuilder: (context, innerBoxIsScrolled) {
                           return [
                             SliverToBoxAdapter(

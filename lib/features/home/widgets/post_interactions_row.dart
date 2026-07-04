@@ -157,7 +157,7 @@ class _CommentButtonWidget extends StatelessWidget {
     return InkWell(
       onTap: () {
         final homeCubit = context.read<HomeCubit>();
-        final homeServices = context.read<HomeServices>();
+        final homeServices = HomeServices.instance;
         final commentsCubit = CommentsCubit(
           homeServices,
           currentUserData: context.read<HomeCubit>().currentUserData,

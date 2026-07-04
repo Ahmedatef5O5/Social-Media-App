@@ -11,7 +11,8 @@ import '../../../core/widgets/global_refresh_indicator.dart';
 
 class ProfileView extends StatefulWidget {
   final String? userId;
-  const ProfileView({super.key, this.userId});
+  final ScrollController? scrollController;
+  const ProfileView({super.key, this.userId, this.scrollController});
 
   @override
   State<ProfileView> createState() => _ProfileViewState();
@@ -34,7 +35,7 @@ class _ProfileViewState extends State<ProfileView> {
     super.initState();
     _loadProfileData();
 
-    _scrollController = ScrollController();
+    _scrollController = widget.scrollController ?? ScrollController();
 
     _canRefresh = true;
     _scrollController.addListener(() {
@@ -49,7 +50,9 @@ class _ProfileViewState extends State<ProfileView> {
 
   @override
   void dispose() {
-    _scrollController.dispose();
+    if (widget.scrollController == null) {
+      _scrollController.dispose();
+    }
     super.dispose();
   }
 
