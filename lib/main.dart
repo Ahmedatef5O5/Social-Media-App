@@ -13,6 +13,7 @@ import 'package:social_media_app/core/cache/eviction/cache_eviction_service.dart
 import 'package:social_media_app/core/cache/repository/media_cache_repository.dart';
 import 'package:social_media_app/core/cache/repository/media_cache_repository_impl.dart';
 import 'package:social_media_app/core/cache/services/hive_cache_manager.dart';
+import 'package:social_media_app/core/cache/services/local_snapshot_store.dart';
 import 'package:social_media_app/core/connectivity/cubit/connectivity_cubit.dart';
 import 'package:social_media_app/core/router/app_router.dart';
 import 'package:social_media_app/core/router/app_routes.dart';
@@ -232,6 +233,7 @@ Future<void> _initializeApp() async {
 
 Future<void> _initHiveCache() async {
   await HiveCacheManager.instance.init();
+  await LocalSnapshotStore.instance.init();
 }
 
 Future<void> _lockOrientation() async {
