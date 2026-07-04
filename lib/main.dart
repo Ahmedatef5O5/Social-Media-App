@@ -13,10 +13,12 @@ import 'package:social_media_app/core/cache/eviction/cache_eviction_service.dart
 import 'package:social_media_app/core/cache/repository/media_cache_repository.dart';
 import 'package:social_media_app/core/cache/repository/media_cache_repository_impl.dart';
 import 'package:social_media_app/core/cache/services/hive_cache_manager.dart';
+import 'package:social_media_app/core/connectivity/cubit/connectivity_cubit.dart';
 import 'package:social_media_app/core/router/app_router.dart';
 import 'package:social_media_app/core/router/app_routes.dart';
 import 'package:social_media_app/core/secrets/app_secrets.dart';
 import 'package:social_media_app/core/services/active_screen_tracker.dart';
+import 'package:social_media_app/core/services/network_status_service.dart';
 import 'package:social_media_app/core/services/notification_services.dart';
 import 'package:social_media_app/core/themes/cubit/theme_cubit.dart';
 import 'package:social_media_app/features/auth/services/supabase_auth_services.dart';
@@ -30,6 +32,7 @@ import 'package:social_media_app/features/group_chat/services/group_chat_service
 import 'package:social_media_app/features/profile/services/user_services.dart';
 import 'package:social_media_app/firebase_options.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'core/connectivity/widgets/connectivity_banner.dart';
 import 'core/services/global_group_call_listener.dart';
 import 'core/services/presence_service.dart';
 import 'features/auth/cubit/auth_cubit/auth_cubit.dart';
@@ -356,77 +359,95 @@ class MyApp extends StatelessWidget {
       },
       child: BlocBuilder<ThemeCubit, ThemeState>(
         builder: (context, state) {
-          return MaterialApp(
-            locale: DevicePreview.locale(context),
-            builder: (ctx, child) {
-              final devicePreviewChild = DevicePreview.appBuilder(ctx, child);
-              return GlobalGroupCallListener(
-                child: BlocListener<CallCubit, CallState>(
-                  listener: (context, callState) async {
-                    final nav = navigatorKey.currentState;
-                    if (nav == null) return;
+          return MultiBlocProvider(
+            providers: [
+              BlocProvider(
+                create:
+                    (context) => ConnectivityCubit(
+                      networkStatus: NetworkStatusService.instance,
+                    ),
+              ),
+            ],
+            child: MaterialApp(
+              locale: DevicePreview.locale(context),
+              builder: (ctx, child) {
+                final devicePreviewChild = DevicePreview.appBuilder(ctx, child);
+                return GlobalGroupCallListener(
+                  child: BlocListener<CallCubit, CallState>(
+                    listener: (context, callState) async {
+                      final nav = navigatorKey.currentState;
+                      if (nav == null) return;
 
-                    if (callState is CallIncomingState) {
-                      nav.pushNamed(
-                        AppRoutes.incomingCallRoute,
-                        arguments: {
-                          'callId': callState.call.callId,
-                          'callerId': callState.call.callerId,
-                          'callerName': callState.call.callerName,
-                          'callerAvatar': callState.call.callerAvatar,
-                          'callType':
-                              callState.call.type == CallType.video
-                                  ? 'video'
-                                  : 'audio',
-                        },
-                      );
-                    } else if (callState is CallDialingState) {
-                      nav.pushNamed(
-                        AppRoutes.dialingRoute,
-                        arguments: callState.call,
-                      );
-                    } else if (callState is CallConnectedState) {
-                      final currentUser =
-                          Supabase.instance.client.auth.currentUser;
-                      if (currentUser == null) return;
+                      if (callState is CallIncomingState) {
+                        nav.pushNamed(
+                          AppRoutes.incomingCallRoute,
+                          arguments: {
+                            'callId': callState.call.callId,
+                            'callerId': callState.call.callerId,
+                            'callerName': callState.call.callerName,
+                            'callerAvatar': callState.call.callerAvatar,
+                            'callType':
+                                callState.call.type == CallType.video
+                                    ? 'video'
+                                    : 'audio',
+                          },
+                        );
+                      } else if (callState is CallDialingState) {
+                        nav.pushNamed(
+                          AppRoutes.dialingRoute,
+                          arguments: callState.call,
+                        );
+                      } else if (callState is CallConnectedState) {
+                        final currentUser =
+                            Supabase.instance.client.auth.currentUser;
+                        if (currentUser == null) return;
 
-                      final userData =
-                          await Supabase.instance.client
-                              .from('users')
-                              .select('name')
-                              .eq('id', currentUser.id)
-                              .maybeSingle();
+                        final userData =
+                            await Supabase.instance.client
+                                .from('users')
+                                .select('name')
+                                .eq('id', currentUser.id)
+                                .maybeSingle();
 
-                      final currentUserName =
-                          (userData?['name'] as String?) ?? 'Unknown';
+                        final currentUserName =
+                            (userData?['name'] as String?) ?? 'Unknown';
 
-                      nav.pushReplacementNamed(
-                        AppRoutes.callRoute,
-                        arguments: {
-                          'call': callState.call,
-                          'userId': currentUser.id,
-                          'userName': currentUserName,
-                        },
-                      );
-                    } else if (callState is CallEndedState) {
-                      nav.popUntil((route) {
-                        return route.settings.name != AppRoutes.callRoute &&
-                            route.settings.name != AppRoutes.dialingRoute;
-                      });
-                    }
-                  },
-                  child: devicePreviewChild,
-                ),
-              );
-            },
-            debugShowCheckedModeBanner: false,
-            title: 'Social Media App',
-            theme: state.theme.themeData,
-            initialRoute: AppRoutes.splashViewRoute,
-            onGenerateRoute: AppRouter.generateRoute,
-            onUnknownRoute: AppRouter.generateRoute,
-            navigatorKey: navigatorKey,
-            navigatorObservers: [_RouteObserver(), routeObserver],
+                        nav.pushReplacementNamed(
+                          AppRoutes.callRoute,
+                          arguments: {
+                            'call': callState.call,
+                            'userId': currentUser.id,
+                            'userName': currentUserName,
+                          },
+                        );
+                      } else if (callState is CallEndedState) {
+                        nav.popUntil((route) {
+                          return route.settings.name != AppRoutes.callRoute &&
+                              route.settings.name != AppRoutes.dialingRoute;
+                        });
+                      }
+                    },
+                    child: Stack(
+                      children: [
+                        devicePreviewChild,
+                        const Directionality(
+                          textDirection: TextDirection.ltr,
+                          child: ConnectivityBanner(),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+              debugShowCheckedModeBanner: false,
+              title: 'Social Media App',
+              theme: state.theme.themeData,
+              initialRoute: AppRoutes.splashViewRoute,
+              onGenerateRoute: AppRouter.generateRoute,
+              onUnknownRoute: AppRouter.generateRoute,
+              navigatorKey: navigatorKey,
+              navigatorObservers: [_RouteObserver(), routeObserver],
+            ),
           );
         },
       ),
