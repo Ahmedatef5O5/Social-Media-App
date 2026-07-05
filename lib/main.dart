@@ -207,16 +207,30 @@ void _setupAuthListener() {
     if (event == AuthChangeEvent.signedIn && session != null) {
       debugPrint('✅ Logged in: ${session.user.email}');
       await PresenceService.instance.init();
-    } else if (event == AuthChangeEvent.signedOut ||
-        event == AuthChangeEvent.tokenRefreshed && session == null) {
-      debugPrint('⚠️ Session expired or signed out. Redirecting to Login...');
-      await PresenceService.instance.dispose();
-
-      navigatorKey.currentState?.pushNamedAndRemoveUntil(
-        AppRoutes.authRoute,
-        (route) => false,
-      );
+      return;
     }
+    final bool looksLikeSignOut =
+        event == AuthChangeEvent.signedOut ||
+        (event == AuthChangeEvent.tokenRefreshed && session == null);
+
+    if (!looksLikeSignOut) {
+      return;
+    }
+    final bool isOnline = await NetworkStatusService.instance.isConnected();
+    if (!isOnline) {
+      debugPrint(
+        '⚠️ Auth event ($event) received while OFFLINE — ignoring, keeping cached session.',
+      );
+      return;
+    }
+
+    debugPrint('⚠️ Session expired or signed out. Redirecting to Login...');
+    await PresenceService.instance.dispose();
+
+    navigatorKey.currentState?.pushNamedAndRemoveUntil(
+      AppRoutes.authRoute,
+      (route) => false,
+    );
   });
 }
 

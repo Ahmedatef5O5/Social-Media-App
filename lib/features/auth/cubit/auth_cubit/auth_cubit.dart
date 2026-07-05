@@ -23,8 +23,15 @@ class AuthCubit extends Cubit<AuthState> {
           (event == AuthChangeEvent.signedIn ||
               event == AuthChangeEvent.initialSession)) {
         final user = session.user;
-        await _authServices.ensureUserExistsInDb(user);
         emit(AuthSuccess());
+
+        unawaited(
+          _authServices.ensureUserExistsInDb(user).catchError((e) {
+            debugPrint(
+              '⚠️ ensureUserExistsInDb failed (likely offline), will retry naturally on next auth event: $e',
+            );
+          }),
+        );
       } else if (event == AuthChangeEvent.signedOut) {
         emit(AuthSignedOut());
       }
