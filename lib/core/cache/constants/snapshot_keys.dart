@@ -5,4 +5,5 @@ class SnapshotKeys {
   static const String stories = 'stories_snapshot';
   static const String chats = 'chats_snapshot';
   static const String currentUser = 'current_user_snapshot';
+  static const String groups = 'groups_snapshot';
 }

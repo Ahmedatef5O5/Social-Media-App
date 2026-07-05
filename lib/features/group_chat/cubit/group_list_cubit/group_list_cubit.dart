@@ -1,12 +1,17 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../../core/cache/constants/snapshot_keys.dart';
+import '../../../../core/cache/services/local_snapshot_store.dart';
 import '../../../../core/utilities/supabase_constants.dart';
 import '../../../auth/handler/auth_exception_handler.dart';
 import '../../models/group_model.dart';
 import '../../services/group_chat_services.dart';
 part 'group_list_state.dart';
+
+const int kMaxCachedGroupsSnapshot = 50;
 
 class GroupListCubit extends Cubit<GroupListState> {
   final GroupChatServices _services;
@@ -381,7 +386,26 @@ class GroupListCubit extends Cubit<GroupListState> {
         return bTime.compareTo(aTime);
       });
       emit(GroupListLoaded(_cached));
+      _persistGroupsSnapshot(_cached);
     } catch (e) {
+      debugPrint('Error loading groups: $e');
+
+      if (_cached.isNotEmpty) {
+        debugPrint('Silent error: no internet, showing cached groups.');
+        emit(GroupListLoaded(_cached));
+        return;
+      }
+
+      final diskGroups = _readGroupsSnapshot();
+      if (diskGroups.isNotEmpty) {
+        debugPrint(
+          'Silent error: no internet, showing groups snapshot from disk.',
+        );
+        _cached = diskGroups;
+        emit(GroupListLoaded(diskGroups));
+        return;
+      }
+
       if (e.toString().contains('no-internet')) {
         emit(
           GroupListError("No internet connection. Please check your network."),
@@ -389,6 +413,30 @@ class GroupListCubit extends Cubit<GroupListState> {
       } else {
         emit(GroupListError(AuthExceptionHandler.handle(e)));
       }
+    }
+  }
+
+  void _persistGroupsSnapshot(List<GroupModel> groups) {
+    unawaited(
+      LocalSnapshotStore.instance.saveList(
+        SnapshotKeys.groups,
+        groups
+            .take(kMaxCachedGroupsSnapshot)
+            .map((group) => group.toCacheJson())
+            .toList(),
+      ),
+    );
+  }
+
+  List<GroupModel> _readGroupsSnapshot() {
+    try {
+      return LocalSnapshotStore.instance
+          .readList(SnapshotKeys.groups)
+          .map(GroupModel.fromCacheJson)
+          .toList();
+    } catch (e) {
+      debugPrint('Failed to read groups snapshot from disk: $e');
+      return [];
     }
   }
 

@@ -90,4 +90,40 @@ class GroupModel {
       'created_at': createdAt.toIso8601String(),
     };
   }
+
+  Map<String, dynamic> toCacheJson() => {
+    'id': id,
+    'name': name,
+    'avatar_url': avatarUrl,
+    'created_by': createdBy,
+    'created_at': createdAt.toIso8601String(),
+    'last_message': lastMessage,
+    'last_message_sender_id': lastMessageSenderId,
+    'last_message_sender_name': lastMessageSenderName,
+    'last_message_type': lastMessageType,
+    'last_message_at': lastMessageAt?.toIso8601String(),
+    'unread_count': unreadCount,
+  };
+
+  factory GroupModel.fromCacheJson(Map<String, dynamic> map) {
+    return GroupModel(
+      id: map['id'] as String,
+      name: map['name'] as String? ?? '',
+      avatarUrl: map['avatar_url'] as String?,
+      createdBy: map['created_by'] as String? ?? '',
+      createdAt:
+          map['created_at'] != null
+              ? DateTime.parse(map['created_at'] as String)
+              : DateTime.now(),
+      lastMessage: map['last_message'] as String?,
+      lastMessageSenderId: map['last_message_sender_id'] as String?,
+      lastMessageSenderName: map['last_message_sender_name'] as String?,
+      lastMessageType: map['last_message_type'] as String?,
+      lastMessageAt:
+          map['last_message_at'] != null
+              ? DateTime.parse(map['last_message_at'] as String)
+              : null,
+      unreadCount: (map['unread_count'] as num?)?.toInt() ?? 0,
+    );
+  }
 }
