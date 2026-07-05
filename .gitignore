@@ -32,6 +32,9 @@ docs/
 .env.*
 !.env.example
 
+scripts/
+
+
 master_code.txt
 merge_code.ps1
 repomix-output.xml

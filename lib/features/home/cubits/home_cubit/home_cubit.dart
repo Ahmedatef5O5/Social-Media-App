@@ -13,6 +13,7 @@ import 'package:social_media_app/core/cache/services/local_snapshot_store.dart';
 import 'package:social_media_app/features/auth/data/models/user_data.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:video_player/video_player.dart';
+import '../../../../core/connectivity/services/connectivity_banner_controller.dart';
 import '../../../../core/services/presence_service.dart';
 import '../../../../core/services/supabase_storage_services.dart';
 import '../../../comments/events/comment_event_bus.dart';
@@ -94,8 +95,11 @@ class HomeCubit extends Cubit<HomeState> {
       }
     } catch (e) {
       debugPrint('Error refreshing home data: $e');
-      // Cache-first: only show the full error screen when we truly have
-      // nothing cached to fall back on (e.g. offline cold start).
+
+      if (e.toString().contains('no-internet')) {
+        ConnectivityBannerController.notifyBlockedByOffline();
+      }
+
       if (cachedPosts.isEmpty) {
         emit(
           UserDataLoadError(
@@ -585,6 +589,8 @@ class HomeCubit extends Cubit<HomeState> {
 
       await fetchPosts(isRefresh: true);
     } catch (e) {
+      unawaited(ConnectivityBannerController.notifyIfOffline());
+
       final errorMessage = _mapExceptionToMessage(e);
       if (errorMessage == "upload_canceled") {
         emit(const PostUploadCanceled());
@@ -743,6 +749,7 @@ class HomeCubit extends Cubit<HomeState> {
     } catch (e) {
       emit(PostsLoaded(oldState.posts, DateTime.now()));
       debugPrint('Error toggling like: $e');
+      unawaited(ConnectivityBannerController.notifyIfOffline());
     }
   }
 
@@ -758,10 +765,45 @@ class HomeCubit extends Cubit<HomeState> {
         userId,
       );
       if (!isRefresh) emit(UserDataLoaded(currentUserData!));
+      _persistCurrentUserSnapshot(currentUserData!);
     } catch (e) {
       debugPrint("Error fetching user: $e");
       if (currentUserData != null) return;
-      emit(UserDataLoadError(e.toString()));
+
+      final diskUser = _readCurrentUserSnapshot();
+      if (diskUser != null) {
+        debugPrint(
+          'Silent error: no internet, showing current user snapshot from disk.',
+        );
+        currentUserData = diskUser;
+        if (!isRefresh) emit(UserDataLoaded(diskUser));
+        return;
+      }
+      if (cachedPosts.isEmpty) {
+        emit(UserDataLoadError(e.toString()));
+      }
+    }
+  }
+
+  void _persistCurrentUserSnapshot(UserData user) {
+    unawaited(
+      LocalSnapshotStore.instance.saveObject(
+        SnapshotKeys.currentUser,
+        user.toCacheJson(),
+      ),
+    );
+  }
+
+  UserData? _readCurrentUserSnapshot() {
+    try {
+      final map = LocalSnapshotStore.instance.readObject(
+        SnapshotKeys.currentUser,
+      );
+      if (map == null) return null;
+      return UserData.fromCacheJson(map);
+    } catch (e) {
+      debugPrint('Failed to read current user snapshot from disk: $e');
+      return null;
     }
   }
 
