@@ -10,6 +10,7 @@ import '../../../../core/connectivity/services/connectivity_banner_controller.da
 import '../../../../core/helpers/chat_helper.dart';
 import '../../../../core/services/fcm_services.dart';
 import '../../../../core/services/supabase_storage_services.dart';
+import '../../../../core/utilities/supabase_constants.dart';
 import '../../../notifications/repository/notifications_repository.dart';
 import '../../models/message_model.dart';
 import '../../models/presence_snapshot.dart';
@@ -29,15 +30,17 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState> {
 
   StreamSubscription? _messageSubscription;
   StreamSubscription? _presenceSubscription;
-
   StreamSubscription? _typingSubscription;
   Timer? _typingDebounce;
   Timer? _lastSeenPollingTimer;
-
   PresenceSnapshot? _lastPresence;
 
   List<MessageModel> cachedMessages = [];
   String? _messagesSnapshotKey;
+
+  StreamSubscription? _reactionsSubscription;
+  Map<String, Map<String, String>> _reactionsCache = {};
+  String? _currentReceiverId;
 
   final currentUserId = Supabase.instance.client.auth.currentUser!.id;
 
@@ -60,6 +63,9 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState> {
   }
 
   void getMessagesStream({required String receiverId}) {
+    _messageSubscription?.cancel();
+    _currentReceiverId = receiverId;
+
     final conversationId = ChatHelper.buildConversationId(
       currentUserId,
       receiverId,
@@ -68,25 +74,86 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState> {
 
     final diskMessages = _readMessagesSnapshot(_messagesSnapshotKey!);
     if (diskMessages.isNotEmpty) {
-      cachedMessages = diskMessages;
-      _registerBubbleKeys(diskMessages);
-      emit(MessagesSuccessLoaded(messages: diskMessages));
+      for (var m in diskMessages) {
+        if (m.reactions.isNotEmpty) {
+          _reactionsCache[m.id] = Map<String, String>.from(m.reactions);
+        }
+      }
+
+      final enrichedDiskMessages =
+          diskMessages.map((m) {
+            final reactions = _reactionsCache[m.id] ?? m.reactions;
+            return m.copyWith(reactions: reactions);
+          }).toList();
+
+      cachedMessages = enrichedDiskMessages;
+
+      _registerBubbleKeys(enrichedDiskMessages);
+
+      emit(MessagesSuccessLoaded(messages: enrichedDiskMessages));
     }
 
-    _messageSubscription?.cancel();
+    _listenReactions(conversationId);
+
     _messageSubscription = _chatServices
         .getMessagesStream(senderId: currentUserId, receiverId: receiverId)
         .listen(
           (messages) {
+            final currentIds = messages.map((m) => m.id).toSet();
+            bubbleKeys.removeWhere((key, _) => !currentIds.contains(key));
+            for (final msg in messages) {
+              if (!bubbleKeys.containsKey(msg.id)) {
+                bubbleKeys[msg.id] = GlobalKey<ChatBubbleState>();
+              }
+            }
             _registerBubbleKeys(messages);
-            cachedMessages = messages;
-            emit(MessagesSuccessLoaded(messages: messages));
-            _persistMessagesSnapshot(_messagesSnapshotKey!, messages);
+
+            final enriched =
+                messages.map((m) {
+                  final reactions = _reactionsCache[m.id] ?? {};
+                  return m.copyWith(reactions: reactions);
+                }).toList();
+
+            cachedMessages = enriched;
+            emit(MessagesSuccessLoaded(messages: enriched));
+
+            _persistMessagesSnapshot(_messagesSnapshotKey!, enriched);
           },
           onError: (e) {
             debugPrint('Messages stream error: $e');
           },
         );
+  }
+
+  void _listenReactions(String conversationId) {
+    _reactionsSubscription?.cancel();
+    _reactionsSubscription = _chatServices
+        .getMessageReactionsStream(conversationId)
+        .listen((reactionsList) {
+          _reactionsCache = {};
+
+          for (final r in reactionsList) {
+            final msgId = r[MessageReactionColumns.messageId] as String?;
+            final userId = r[MessageReactionColumns.userId] as String?;
+            final emoji = r[MessageReactionColumns.reaction] as String?;
+            if (msgId != null && userId != null && emoji != null) {
+              _reactionsCache[msgId] ??= {};
+              _reactionsCache[msgId]![userId] = emoji;
+            }
+          }
+
+          cachedMessages =
+              cachedMessages.map((m) {
+                final reactions = _reactionsCache[m.id] ?? {};
+                return m.copyWith(reactions: reactions);
+              }).toList();
+
+          if (!isClosed) emit(MessagesSuccessLoaded(messages: cachedMessages));
+
+          if (_messagesSnapshotKey != null && cachedMessages.isNotEmpty) {
+            _persistMessagesSnapshot(_messagesSnapshotKey!, cachedMessages);
+          }
+        });
   }
 
   void _registerBubbleKeys(List<MessageModel> messages) {
@@ -453,21 +520,46 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState> {
     }
   }
 
-  Future<void> addReaction({
+  Future<void> toggleReaction({
     required String messageId,
-    required String reaction,
-    required String? currentReaction,
+    required String receiverId,
+    required String emoji,
   }) async {
+    final conversationId = getChatId(currentUserId, receiverId);
+    final currentEmoji = _reactionsCache[messageId]?[currentUserId];
+
+    _reactionsCache[messageId] ??= {};
+    if (currentEmoji == emoji) {
+      _reactionsCache[messageId]!.remove(currentUserId);
+    } else {
+      _reactionsCache[messageId]![currentUserId] = emoji;
+    }
+    _applyReactionsCacheToMessages();
+
     try {
-      await _chatServices.addReaction(
+      await _chatServices.toggleReaction(
         messageId: messageId,
-        reaction: reaction,
-        currentReaction: currentReaction ?? '',
+        conversationId: conversationId,
+        currentReaction: emoji,
       );
     } catch (e) {
-      debugPrint('error adding reaction: $e');
-      emit(MessagesError(e.toString()));
+      if (currentEmoji == null) {
+        _reactionsCache[messageId]!.remove(currentUserId);
+      } else {
+        _reactionsCache[messageId]![currentUserId] = currentEmoji;
+      }
+      _applyReactionsCacheToMessages();
+      debugPrint('toggleReaction error: $e');
     }
+  }
+
+  void _applyReactionsCacheToMessages() {
+    cachedMessages =
+        cachedMessages.map((m) {
+          final reactions = _reactionsCache[m.id] ?? {};
+          return m.copyWith(reactions: reactions);
+        }).toList();
+    if (!isClosed) emit(MessagesSuccessLoaded(messages: cachedMessages));
   }
 
   Future<void> updateLastSeen() async {
@@ -573,6 +665,8 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState> {
     _lastSeenPollingTimer?.cancel();
     _typingSubscription?.cancel();
     _typingDebounce?.cancel();
+    _reactionsSubscription?.cancel();
+
     return super.close();
   }
 }

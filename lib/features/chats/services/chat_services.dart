@@ -239,18 +239,36 @@ class ChatServices {
     );
   }
 
-  Future<void> addReaction({
+  Future<void> toggleReaction({
     required String messageId,
-    required String reaction,
     required String currentReaction,
+    required String conversationId,
   }) async {
+    final userId = _supabase.auth.currentUser!.id;
+
     await _supabase
-        .from(SupabaseConstants.messages)
-        .update({
-          MessagesColumns.reaction:
-              currentReaction == reaction ? null : reaction,
-        })
-        .eq(MessagesColumns.id, messageId);
+        .from(SupabaseConstants.messageReactions)
+        .delete()
+        .eq(MessageReactionColumns.messageId, messageId)
+        .eq(MessageReactionColumns.userId, userId);
+
+    if (currentReaction.isNotEmpty) {
+      await _supabase.from(SupabaseConstants.messageReactions).insert({
+        MessageReactionColumns.messageId: messageId,
+        MessageReactionColumns.userId: userId,
+        MessageReactionColumns.reaction: currentReaction,
+        MessageReactionColumns.conversationId: conversationId,
+      });
+    }
+  }
+
+  Stream<List<Map<String, dynamic>>> getMessageReactionsStream(
+    String conversationId,
+  ) {
+    return _supabase
+        .from(SupabaseConstants.messageReactions)
+        .stream(primaryKey: [MessageReactionColumns.id])
+        .eq(MessageReactionColumns.conversationId, conversationId);
   }
 
   Future<void> markMessagesAsRead({
