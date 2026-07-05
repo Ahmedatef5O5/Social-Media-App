@@ -5,6 +5,8 @@ class ActiveScreenTracker {
   static String? _activeChatReceiverId;
   static String? _activeGroupId;
 
+  static String? get currentRoute => _currentRoute;
+
   static void setCurrentRoute(String route) => _currentRoute = route;
 
   static void setActiveChatReceiver(String? receiverId) =>
