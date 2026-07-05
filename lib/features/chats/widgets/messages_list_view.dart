@@ -222,7 +222,7 @@ class _MessagesListViewState extends State<MessagesListView> {
     final currMsg = messages[i];
     final nxtMsg = messages[i + 1];
     if (currMsg.senderId == nxtMsg.senderId) {
-      return Gap(nxtMsg.reaction != null ? 4 : 3);
+      return Gap(nxtMsg.reactions.isNotEmpty ? 4 : 3);
     } else {
       return const Gap(16);
     }

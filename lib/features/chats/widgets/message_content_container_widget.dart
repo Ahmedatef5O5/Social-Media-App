@@ -7,6 +7,7 @@ import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import 'package:social_media_app/core/widgets/custom_linkify_text.dart';
 import 'package:social_media_app/features/chats/cubit/chat_details_cubit/chat_details_cubit.dart';
 import 'package:social_media_app/features/chats/widgets/image_message_widget.dart';
+import 'package:social_media_app/features/chats/widgets/message_reactions_row_widget.dart';
 import 'package:social_media_app/features/chats/widgets/reply_preview_widget.dart';
 import 'package:social_media_app/features/chats/widgets/video_message_widget.dart';
 import 'package:social_media_app/features/chats/widgets/voice_message_bubble_widget.dart';
@@ -45,8 +46,7 @@ class _MessageContentContainerState extends State<MessageContentContainer> {
     final bool isVideo = widget.message.messageType == 'video';
     final bool isVoice = widget.message.messageType == 'voice';
     final bool isCall = widget.message.messageType == 'call';
-    final bool hasReaction =
-        widget.message.reaction != null && widget.message.reaction!.isNotEmpty;
+    final bool hasReaction = widget.message.reactions.isNotEmpty;
     final String displayDraft = widget.message.caption ?? widget.message.text;
 
     Widget timeAndStatus(Color textColor, Color? iconColor) {
@@ -339,38 +339,13 @@ class _MessageContentContainerState extends State<MessageContentContainer> {
 
         if (hasReaction)
           Positioned(
-            bottom: -12,
+            bottom: -2.5,
             right: widget.isMe ? 8 : null,
             left: widget.isMe ? null : 8,
-            child: Container(
-              margin: EdgeInsets.only(
-                top: 2,
-                bottom:
-                    widget.message.reaction != null &&
-                            widget.message.reaction!.isNotEmpty
-                        ? 18
-                        : 2,
-              ),
-              padding: const EdgeInsets.all(4),
-              decoration: BoxDecoration(
-                color: Theme.of(
-                  context,
-                ).scaffoldBackgroundColor.withValues(alpha: 0.75),
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.1),
-                    blurRadius: 4,
-                  ),
-                ],
-              ),
-
-              child: Text(
-                widget.message.reaction!,
-                style: Theme.of(
-                  context,
-                ).textTheme.titleMedium!.copyWith(fontSize: 14),
-              ),
+            child: MessageReactionsRow(
+              reactions: widget.message.reactions,
+              currentUserId: context.read<ChatDetailsCubit>().currentUserId,
+              primary: Theme.of(context).primaryColor,
             ),
           ),
       ],

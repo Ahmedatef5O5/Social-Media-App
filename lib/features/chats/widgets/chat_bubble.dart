@@ -82,15 +82,19 @@ class ChatBubbleState extends State<ChatBubble>
 
   void _applyReaction(String emoji) {
     HapticFeedback.selectionClick();
-    context.read<ChatDetailsCubit>().addReaction(
+    final receiverId =
+        widget.isMe ? widget.message.receiverId : widget.message.senderId;
+
+    context.read<ChatDetailsCubit>().toggleReaction(
       messageId: widget.message.id,
-      reaction: emoji,
-      currentReaction: widget.message.reaction,
+      receiverId: receiverId,
+      emoji: emoji,
     );
   }
 
   String? get currentUserReactionEmoji {
-    return widget.message.reaction;
+    final currentUserId = context.read<ChatDetailsCubit>().currentUserId;
+    return widget.message.reactions[currentUserId];
   }
 
   void _showDeleteMenu(BuildContext context) {
