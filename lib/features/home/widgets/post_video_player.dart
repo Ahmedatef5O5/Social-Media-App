@@ -6,8 +6,11 @@ import 'package:video_player/video_player.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 import 'package:social_media_app/core/themes/app_colors.dart';
 import '../../../core/cache/repository/media_cache_repository.dart';
+import '../../../core/services/network_status_service.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
 import '../../chats/widgets/full_screen_media_view.dart';
+
+enum _VideoLoadStatus { loading, ready, unavailableOffline, error }
 
 class PostVideoPlayer extends StatefulWidget {
   final String videoUrl;
@@ -20,7 +23,7 @@ class PostVideoPlayer extends StatefulWidget {
 
 class _PostVideoPlayerState extends State<PostVideoPlayer> {
   VideoPlayerController? _controller;
-  bool _isInitialized = false;
+  _VideoLoadStatus _status = _VideoLoadStatus.loading;
 
   final _showControls = ValueNotifier<bool>(false);
 
@@ -31,23 +34,38 @@ class _PostVideoPlayerState extends State<PostVideoPlayer> {
   }
 
   Future<void> _initializeCachedPlayer() async {
+    if (mounted) setState(() => _status = _VideoLoadStatus.loading);
+
     try {
       final localPath = await context
           .read<MediaCacheRepository>()
           .resolveLocalPath(widget.videoUrl);
 
-      _controller =
-          localPath != null
-              ? VideoPlayerController.file(File(localPath))
-              : VideoPlayerController.networkUrl(Uri.parse(widget.videoUrl));
+      if (localPath != null) {
+        _controller = VideoPlayerController.file(File(localPath));
+      } else {
+        final isOnline = await NetworkStatusService.instance.isConnected();
+        if (!isOnline) {
+          if (mounted) {
+            setState(() => _status = _VideoLoadStatus.unavailableOffline);
+          }
+          return;
+        }
+        _controller = VideoPlayerController.networkUrl(
+          Uri.parse(widget.videoUrl),
+        );
+      }
 
-      await _controller!.initialize();
+      await _controller!.initialize().timeout(const Duration(seconds: 15));
       _controller!.setLooping(true);
 
-      if (mounted) setState(() => _isInitialized = true);
+      if (mounted) setState(() => _status = _VideoLoadStatus.ready);
     } catch (e, stackTrace) {
       debugPrint("Video init error: $e");
       debugPrintStack(stackTrace: stackTrace);
+      await _controller?.dispose();
+      _controller = null;
+      if (mounted) setState(() => _status = _VideoLoadStatus.error);
     }
   }
 
@@ -74,8 +92,27 @@ class _PostVideoPlayerState extends State<PostVideoPlayer> {
 
   @override
   Widget build(BuildContext context) {
-    if (!_isInitialized) return _buildPlaceholder();
+    switch (_status) {
+      case _VideoLoadStatus.loading:
+        return _buildPlaceholder();
+      case _VideoLoadStatus.unavailableOffline:
+        return _buildMessageBox(
+          icon: Icons.wifi_off_rounded,
+          message: 'Video unavailable offline',
+          showRetry: true,
+        );
+      case _VideoLoadStatus.error:
+        return _buildMessageBox(
+          icon: Icons.error_outline_rounded,
+          message: "Couldn't load video",
+          showRetry: true,
+        );
+      case _VideoLoadStatus.ready:
+        return _buildPlayer();
+    }
+  }
 
+  Widget _buildPlayer() {
     return VisibilityDetector(
       key: Key(widget.videoUrl),
       onVisibilityChanged: (info) {
@@ -203,6 +240,60 @@ class _PostVideoPlayerState extends State<PostVideoPlayer> {
           borderRadius: BorderRadius.circular(12),
         ),
         child: const Center(child: CustomLoadingIndicator()),
+      ),
+    );
+  }
+
+  Widget _buildMessageBox({
+    required IconData icon,
+    required String message,
+    required bool showRetry,
+  }) {
+    return AspectRatio(
+      aspectRatio: 16 / 9,
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColors.grey4.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, color: AppColors.grey2, size: 30),
+              const SizedBox(height: 8),
+              Text(
+                message,
+                style: TextStyle(
+                  color: AppColors.grey2,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              if (showRetry) ...[
+                const SizedBox(height: 10),
+                InkWell(
+                  onTap: _initializeCachedPlayer,
+                  borderRadius: BorderRadius.circular(8),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 4,
+                    ),
+                    child: Text(
+                      'Retry',
+                      style: TextStyle(
+                        color: Theme.of(context).primaryColor,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
       ),
     );
   }
