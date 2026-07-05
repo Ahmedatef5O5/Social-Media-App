@@ -5,6 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../../core/cache/services/local_snapshot_store.dart';
+import '../../../../core/connectivity/services/connectivity_banner_controller.dart';
+import '../../../../core/helpers/chat_helper.dart';
 import '../../../../core/services/fcm_services.dart';
 import '../../../../core/services/supabase_storage_services.dart';
 import '../../../notifications/repository/notifications_repository.dart';
@@ -13,6 +16,8 @@ import '../../models/presence_snapshot.dart';
 import '../../services/chat_services.dart';
 import '../../widgets/chat_bubble.dart';
 part 'chat_details_state.dart';
+
+const int kMaxCachedMessagesSnapshot = 60;
 
 class ChatDetailsCubit extends Cubit<ChatDetailsState> {
   final ChatServices _chatServices;
@@ -32,6 +37,7 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState> {
   PresenceSnapshot? _lastPresence;
 
   List<MessageModel> cachedMessages = [];
+  String? _messagesSnapshotKey;
 
   final currentUserId = Supabase.instance.client.auth.currentUser!.id;
 
@@ -54,21 +60,65 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState> {
   }
 
   void getMessagesStream({required String receiverId}) {
+    final conversationId = ChatHelper.buildConversationId(
+      currentUserId,
+      receiverId,
+    );
+    _messagesSnapshotKey = 'chat_messages_snapshot_$conversationId';
+
+    final diskMessages = _readMessagesSnapshot(_messagesSnapshotKey!);
+    if (diskMessages.isNotEmpty) {
+      cachedMessages = diskMessages;
+      _registerBubbleKeys(diskMessages);
+      emit(MessagesSuccessLoaded(messages: diskMessages));
+    }
+
     _messageSubscription?.cancel();
     _messageSubscription = _chatServices
         .getMessagesStream(senderId: currentUserId, receiverId: receiverId)
-        .listen((messages) {
-          final currentIds = messages.map((m) => m.id).toSet();
-          bubbleKeys.removeWhere((key, _) => !currentIds.contains(key));
-          for (final msg in messages) {
-            if (!bubbleKeys.containsKey(msg.id)) {
-              bubbleKeys[msg.id] = GlobalKey<ChatBubbleState>();
-            }
-          }
+        .listen(
+          (messages) {
+            _registerBubbleKeys(messages);
+            cachedMessages = messages;
+            emit(MessagesSuccessLoaded(messages: messages));
+            _persistMessagesSnapshot(_messagesSnapshotKey!, messages);
+          },
+          onError: (e) {
+            debugPrint('Messages stream error: $e');
+          },
+        );
+  }
 
-          cachedMessages = messages;
-          emit(MessagesSuccessLoaded(messages: messages));
-        });
+  void _registerBubbleKeys(List<MessageModel> messages) {
+    final currentIds = messages.map((m) => m.id).toSet();
+    bubbleKeys.removeWhere((key, _) => !currentIds.contains(key));
+    for (final msg in messages) {
+      bubbleKeys.putIfAbsent(msg.id, () => GlobalKey<ChatBubbleState>());
+    }
+  }
+
+  void _persistMessagesSnapshot(String key, List<MessageModel> messages) {
+    unawaited(
+      LocalSnapshotStore.instance.saveList(
+        key,
+        messages
+            .take(kMaxCachedMessagesSnapshot)
+            .map((m) => m.toCacheJson())
+            .toList(),
+      ),
+    );
+  }
+
+  List<MessageModel> _readMessagesSnapshot(String key) {
+    try {
+      return LocalSnapshotStore.instance
+          .readList(key)
+          .map(MessageModel.fromJson)
+          .toList();
+    } catch (e) {
+      debugPrint('Failed to read messages snapshot from disk: $e');
+      return [];
+    }
   }
 
   Future<void> markAsRead({required String senderId}) async {
@@ -265,6 +315,8 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState> {
 
         emit(MessagesSuccessLoaded(messages: List.from(cachedMessages)));
       }
+
+      unawaited(ConnectivityBannerController.notifyIfOffline());
 
       debugPrint('error sending message: $e');
       emit(

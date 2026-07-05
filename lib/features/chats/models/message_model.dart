@@ -95,4 +95,25 @@ class MessageModel {
       replyToSenderId: json[MessagesColumns.replyToSenderId],
     );
   }
+
+  Map<String, dynamic> toCacheJson() {
+    return {
+      MessagesColumns.id: id,
+      MessagesColumns.senderId: senderId,
+      MessagesColumns.receiverId: receiverId,
+      MessagesColumns.messageText: text,
+      MessagesColumns.createdAt: createdAt.toIso8601String(),
+      MessagesColumns.isRead: isRead,
+      MessagesColumns.messageType: messageType,
+      MessagesColumns.imageUrl: imageUrl,
+      MessagesColumns.videoUrl: videoUrl,
+      MessagesColumns.voiceUrl: voiceUrl,
+      MessagesColumns.caption: caption,
+      MessagesColumns.reaction: reaction,
+      MessagesColumns.replyToMessageId: replyToMessageId,
+      MessagesColumns.replyToText: replyToText,
+      MessagesColumns.replyToMessageType: replyToMessageType,
+      MessagesColumns.replyToSenderId: replyToSenderId,
+    };
+  }
 }
