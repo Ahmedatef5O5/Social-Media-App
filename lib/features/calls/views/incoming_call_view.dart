@@ -49,7 +49,7 @@ class _IncomingCallViewState extends State<IncomingCallView>
         if (!mounted) return;
 
         if (data.isEmpty) {
-          _closeScreen();
+          // _closeScreen();
           return;
         }
 
