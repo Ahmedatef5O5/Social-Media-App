@@ -11,6 +11,7 @@ abstract class SupabaseConstants {
 
   // ── Chat Feature ──
   static const String messages = 'messages';
+  static const String messageReactions = 'message_reactions';
   static const String typingStatus = 'typing_status';
 
   //  Group Chat Feature
@@ -172,6 +173,10 @@ abstract class MessagesColumns {
   static const String videoUrl = 'video_url';
   static const String voiceUrl = 'voice_url';
   static const String caption = 'caption';
+
+  @Deprecated(
+    'Use the message_reactions table + MessageReactionColumns instead',
+  )
   static const String reaction = 'reaction';
 
   static const String replyToMessageId = 'reply_to_message_id';
@@ -185,6 +190,16 @@ abstract class MessagesColumns {
   static const String imagePublicId = 'image_public_id';
   static const String videoPublicId = 'video_public_id';
   static const String voicePublicId = 'voice_public_id';
+}
+
+// message_reactions
+abstract class MessageReactionColumns {
+  static const String id = 'id';
+  static const String messageId = 'message_id';
+  static const String userId = 'user_id';
+  static const String reaction = 'reaction';
+  static const String conversationId = 'conversation_id';
+  static const String createdAt = 'created_at';
 }
 
 // subClass for users Status column table

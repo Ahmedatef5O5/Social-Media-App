@@ -12,7 +12,7 @@ class MessageModel {
   final String? videoUrl;
   final String? voiceUrl;
   final String? caption;
-  final String? reaction;
+  final Map<String, String> reactions;
   final String? replyToMessageId;
   final String? replyToText;
   final String? replyToMessageType;
@@ -30,7 +30,7 @@ class MessageModel {
     this.videoUrl,
     this.voiceUrl,
     this.caption,
-    this.reaction,
+    this.reactions = const {},
     this.replyToMessageId,
     this.replyToText,
     this.replyToMessageType,
@@ -49,7 +49,7 @@ class MessageModel {
     String? videoUrl,
     String? voiceUrl,
     String? caption,
-    String? reaction,
+    Map<String, String>? reactions,
     String? replyToMessageId,
     String? replyToText,
     String? replyToMessageType,
@@ -67,7 +67,7 @@ class MessageModel {
       videoUrl: videoUrl ?? this.videoUrl,
       voiceUrl: voiceUrl ?? this.voiceUrl,
       caption: caption ?? this.caption,
-      reaction: reaction ?? this.reaction,
+      reactions: reactions ?? this.reactions,
       replyToMessageId: replyToMessageId ?? this.replyToMessageId,
       replyToText: replyToText ?? this.replyToText,
       replyToMessageType: replyToMessageType ?? this.replyToMessageType,
@@ -88,7 +88,6 @@ class MessageModel {
       videoUrl: json[MessagesColumns.videoUrl],
       voiceUrl: json[MessagesColumns.voiceUrl],
       caption: json[MessagesColumns.caption],
-      reaction: json[MessagesColumns.reaction],
       replyToMessageId: json[MessagesColumns.replyToMessageId],
       replyToText: json[MessagesColumns.replyToText],
       replyToMessageType: json[MessagesColumns.replyToMessageType],
@@ -109,7 +108,6 @@ class MessageModel {
       MessagesColumns.videoUrl: videoUrl,
       MessagesColumns.voiceUrl: voiceUrl,
       MessagesColumns.caption: caption,
-      MessagesColumns.reaction: reaction,
       MessagesColumns.replyToMessageId: replyToMessageId,
       MessagesColumns.replyToText: replyToText,
       MessagesColumns.replyToMessageType: replyToMessageType,
