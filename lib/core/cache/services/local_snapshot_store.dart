@@ -44,6 +44,32 @@ class LocalSnapshotStore {
     }
   }
 
+  Future<void> saveObject(String key, Map<String, dynamic> item) async {
+    if (!_isInitialized) return;
+    try {
+      await _box.put(key, jsonEncode(item));
+    } catch (error, stackTrace) {
+      debugPrint('[LocalSnapshotStore] Failed to save "$key": $error');
+      debugPrintStack(stackTrace: stackTrace);
+    }
+  }
+
+  Map<String, dynamic>? readObject(String key) {
+    if (!_isInitialized) return null;
+
+    final raw = _box.get(key);
+    if (raw == null) return null;
+    try {
+      return jsonDecode(raw) as Map<String, dynamic>;
+    } catch (error) {
+      debugPrint(
+        '[LocalSnapshotStore] Failed to decode object "$key", dropping it: $error',
+      );
+      unawaited(_box.delete(key));
+      return null;
+    }
+  }
+
   Future<void> clear(String key) async {
     if (!_isInitialized) return;
     await _box.delete(key);

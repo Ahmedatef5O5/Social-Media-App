@@ -59,6 +59,35 @@ class UserData {
     );
   }
 
+  Map<String, dynamic> toCacheJson() => {
+    'id': id,
+    'name': name,
+    'email': email,
+    'username': userName,
+    'title': title,
+    'bio': bio,
+    'image_url': imageUrl,
+    'background_image_url': backgroundImageUrl,
+    'last_seen': lastSeen?.toIso8601String(),
+  };
+
+  factory UserData.fromCacheJson(Map<String, dynamic> map) {
+    return UserData(
+      id: map['id'] as String? ?? '',
+      name: map['name'] as String? ?? '',
+      email: map['email'] as String? ?? '',
+      userName: map['username'] as String?,
+      title: map['title'] as String?,
+      bio: map['bio'] as String?,
+      imageUrl: map['image_url'] as String?,
+      backgroundImageUrl: map['background_image_url'] as String?,
+      lastSeen:
+          map['last_seen'] != null
+              ? DateTime.parse(map['last_seen'] as String)
+              : null,
+    );
+  }
+
   UserData copyWith({
     String? id,
     String? name,
