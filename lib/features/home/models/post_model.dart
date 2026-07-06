@@ -1,10 +1,21 @@
 import 'package:social_media_app/core/utilities/supabase_constants.dart';
 import 'package:social_media_app/features/chats/models/chat_user_model.dart';
+import 'package:social_media_app/features/home/models/post_reaction_model.dart';
 import '../../comments/model/comment_model.dart';
 
 class PostModel {
   bool isLikedBy(String userId) => likes?.contains(userId) ?? false;
   int get likesCount => likes?.length ?? 0;
+
+  String? get myReactionEmoji {
+    for (final r in reactions) {
+      if (r.reactedByMe) return r.emoji;
+    }
+    return null;
+  }
+
+  String get reactionsSignature =>
+      reactions.map((r) => '${r.emoji}:${r.count}').join(',');
 
   final String id;
   final String text;
@@ -17,6 +28,7 @@ class PostModel {
   final String? imageUrl;
   final List<String>? likes;
   final List<String>? likersImages;
+  final List<PostReactionModel> reactions;
   final List<CommentModel>? comments;
   final List<String>? shares;
   final DateTime? lastSeen;
@@ -34,6 +46,7 @@ class PostModel {
     this.imageUrl,
     this.likes,
     this.likersImages,
+    this.reactions = const [],
     this.comments,
     this.shares,
     this.lastSeen,
@@ -74,6 +87,7 @@ class PostModel {
     final commentsData = map[SupabaseConstants.comments] as List<dynamic>?;
     List<String> likesList = [];
     List<String> imagesList = [];
+    List<PostReactionModel> reactionsList = [];
     if (map[SupabaseConstants.likes] != null) {
       final likesData = map[SupabaseConstants.likes] as List<dynamic>;
       for (var item in likesData) {
@@ -82,6 +96,7 @@ class PostModel {
           imagesList.add(item['users']['image_url'].toString());
         }
       }
+      reactionsList = parsePostReactions(likesData);
     }
     return PostModel(
       id: map['id'] as String? ?? '',
@@ -101,6 +116,7 @@ class PostModel {
 
       likes: likesList,
       likersImages: imagesList,
+      reactions: reactionsList,
       comments:
           commentsData != null
               ? commentsData.map((c) => CommentModel.fromMap(c)).toList()
@@ -129,6 +145,7 @@ class PostModel {
     String? imageUrl,
     List<String>? likes,
     List<String>? likersImages,
+    List<PostReactionModel>? reactions,
     List<CommentModel>? comments,
     List<String>? shares,
     final DateTime? lastSeen,
@@ -146,6 +163,7 @@ class PostModel {
       imageUrl: imageUrl ?? this.imageUrl,
       likes: likes ?? this.likes,
       likersImages: likersImages ?? this.likersImages,
+      reactions: reactions ?? this.reactions,
       comments: comments ?? this.comments,
       shares: shares ?? this.shares,
       lastSeen: lastSeen ?? this.lastSeen,
@@ -165,6 +183,7 @@ class PostModel {
     'image_url': imageUrl,
     'likes': likes,
     'likers_images': likersImages,
+    'reactions': reactions.map((r) => r.toMap()).toList(),
     'comments': comments?.map((comment) => comment.toCacheJson()).toList(),
     'shares': shares,
     'last_seen': lastSeen?.toIso8601String(),
@@ -184,6 +203,10 @@ class PostModel {
       imageUrl: map['image_url'] as String?,
       likes: (map['likes'] as List<dynamic>?)?.cast<String>(),
       likersImages: (map['likers_images'] as List<dynamic>?)?.cast<String>(),
+      reactions:
+          (map['reactions'] as List<dynamic>? ?? [])
+              .map((r) => PostReactionModel.fromMap(r as Map<String, dynamic>))
+              .toList(),
       comments:
           (map['comments'] as List<dynamic>?)
               ?.map(

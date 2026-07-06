@@ -145,6 +145,7 @@ abstract class LikeColumns {
   static const String id = 'id';
   static const String postId = 'post_id';
   static const String userId = 'user_id';
+  static const String reaction = 'reaction';
   static const String createdAt = 'created_at';
 }
 
