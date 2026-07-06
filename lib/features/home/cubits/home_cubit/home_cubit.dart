@@ -21,6 +21,7 @@ import '../../../comments/model/comment_model.dart';
 import '../../../notifications/repository/notifications_repository.dart';
 import '../../models/feed_event.dart';
 import '../../models/post_model.dart';
+import '../../models/post_reaction_model.dart';
 import '../../models/post_request_body.dart';
 import '../../../stories/model/story_model.dart';
 import '../../services/home_services.dart';
@@ -99,7 +100,6 @@ class HomeCubit extends Cubit<HomeState> {
       if (e.toString().contains('no-internet')) {
         ConnectivityBannerController.notifyBlockedByOffline();
       }
-
       if (cachedPosts.isEmpty) {
         emit(
           UserDataLoadError(
@@ -689,55 +689,81 @@ class HomeCubit extends Cubit<HomeState> {
 
   // ── Likes ──────────────────────────────────────────────────────────────────
 
-  Future<void> toggleLike(PostModel post) async {
+  Future<void> toggleReaction(PostModel post, {String emoji = 'like'}) async {
     if (state is! PostsLoaded) return;
     final user = Supabase.instance.client.auth.currentUser;
     final userId = user?.id;
     if (userId == null) return;
 
     final oldState = state as PostsLoaded;
-    final bool isCurrentlyLiked = post.isLikedBy(userId);
+    final String? currentEmoji = post.myReactionEmoji;
+    final bool isRemoving = currentEmoji == emoji;
 
     final List<PostModel> updatedPosts =
         oldState.posts.map((p) {
-          if (p.id == post.id) {
-            final updatedLikes = List<String>.from(p.likes ?? []);
-            final updatedImages = List<String>.from(p.likersImages ?? []);
+          if (p.id != post.id) return p;
 
-            final String imagePlaceholder =
-                (currentUserData?.imageUrl != null &&
-                        currentUserData!.imageUrl!.startsWith('http'))
-                    ? currentUserData!.imageUrl!
-                    : 'asset:default';
+          final updatedLikes = List<String>.from(p.likes ?? []);
+          final updatedImages = List<String>.from(p.likersImages ?? []);
+          final updatedReactions = List<PostReactionModel>.from(p.reactions);
 
-            if (!isCurrentlyLiked) {
-              updatedLikes.insert(0, userId);
-              updatedImages.insert(0, imagePlaceholder);
-            } else {
-              updatedLikes.remove(userId);
-              updatedImages.remove(imagePlaceholder);
-            }
+          final String imagePlaceholder =
+              (currentUserData?.imageUrl != null &&
+                      currentUserData!.imageUrl!.startsWith('http'))
+                  ? currentUserData!.imageUrl!
+                  : 'asset:default';
 
-            return p.copyWith(
-              likes: updatedLikes,
-              likersImages:
-                  updatedImages.where((img) => img.isNotEmpty).toList(),
-            );
+          if (currentEmoji == null) {
+            updatedLikes.insert(0, userId);
+            updatedImages.insert(0, imagePlaceholder);
+          } else if (isRemoving) {
+            updatedLikes.remove(userId);
+            updatedImages.remove(imagePlaceholder);
           }
-          return p;
+          if (currentEmoji != null) {
+            final oldIdx = updatedReactions.indexWhere(
+              (r) => r.emoji == currentEmoji,
+            );
+            if (oldIdx >= 0) {
+              final old = updatedReactions[oldIdx];
+              old.count <= 1
+                  ? updatedReactions.removeAt(oldIdx)
+                  : updatedReactions[oldIdx] = old.copyWith(
+                    count: old.count - 1,
+                    reactedByMe: false,
+                  );
+            }
+          }
+          if (!isRemoving) {
+            final newIdx = updatedReactions.indexWhere((r) => r.emoji == emoji);
+            newIdx >= 0
+                ? updatedReactions[newIdx] = updatedReactions[newIdx].copyWith(
+                  count: updatedReactions[newIdx].count + 1,
+                  reactedByMe: true,
+                )
+                : updatedReactions.add(
+                  PostReactionModel(emoji: emoji, count: 1, reactedByMe: true),
+                );
+          }
+
+          return p.copyWith(
+            likes: updatedLikes,
+            likersImages: updatedImages.where((img) => img.isNotEmpty).toList(),
+            reactions: updatedReactions,
+          );
         }).toList();
 
     emit(PostsLoaded(updatedPosts, DateTime.now()));
 
     try {
-      await _homeServices.postServices.toggleLike(
+      await _homeServices.postServices.toggleReaction(
         postId: post.id,
         userId: userId,
-        isLiked: isCurrentlyLiked,
+        emoji: emoji,
+        currentEmoji: currentEmoji,
       );
 
-      // add like notify to notifications view
-      if (post.authorId != userId) {
+      if (post.authorId != userId && currentEmoji == null) {
         await NotificationRepository.instance.notifyLike(
           receiverId: post.authorId,
           likerId: userId,
@@ -748,8 +774,7 @@ class HomeCubit extends Cubit<HomeState> {
       }
     } catch (e) {
       emit(PostsLoaded(oldState.posts, DateTime.now()));
-      debugPrint('Error toggling like: $e');
-      unawaited(ConnectivityBannerController.notifyIfOffline());
+      debugPrint('Error toggling reaction: $e');
     }
   }
 
@@ -765,45 +790,10 @@ class HomeCubit extends Cubit<HomeState> {
         userId,
       );
       if (!isRefresh) emit(UserDataLoaded(currentUserData!));
-      _persistCurrentUserSnapshot(currentUserData!);
     } catch (e) {
       debugPrint("Error fetching user: $e");
       if (currentUserData != null) return;
-
-      final diskUser = _readCurrentUserSnapshot();
-      if (diskUser != null) {
-        debugPrint(
-          'Silent error: no internet, showing current user snapshot from disk.',
-        );
-        currentUserData = diskUser;
-        if (!isRefresh) emit(UserDataLoaded(diskUser));
-        return;
-      }
-      if (cachedPosts.isEmpty) {
-        emit(UserDataLoadError(e.toString()));
-      }
-    }
-  }
-
-  void _persistCurrentUserSnapshot(UserData user) {
-    unawaited(
-      LocalSnapshotStore.instance.saveObject(
-        SnapshotKeys.currentUser,
-        user.toCacheJson(),
-      ),
-    );
-  }
-
-  UserData? _readCurrentUserSnapshot() {
-    try {
-      final map = LocalSnapshotStore.instance.readObject(
-        SnapshotKeys.currentUser,
-      );
-      if (map == null) return null;
-      return UserData.fromCacheJson(map);
-    } catch (e) {
-      debugPrint('Failed to read current user snapshot from disk: $e');
-      return null;
+      emit(UserDataLoadError(e.toString()));
     }
   }
 

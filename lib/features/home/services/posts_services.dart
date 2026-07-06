@@ -30,6 +30,7 @@ class PostsServices {
   ),
   ${SupabaseConstants.likes} (
   ${LikeColumns.userId}, 
+  ${LikeColumns.reaction},
   ${SupabaseConstants.users} (${UserColumns.imageUrl}))
 ''';
 
@@ -234,25 +235,27 @@ class PostsServices {
     }
   }
 
-  Future<void> toggleLike({
+  Future<void> toggleReaction({
     required String postId,
     required String userId,
-    required bool isLiked,
+    required String emoji,
+    String? currentEmoji,
   }) async {
     try {
-      if (isLiked) {
-        await _supabase.from(SupabaseConstants.likes).delete().match({
-          LikeColumns.postId: postId,
-          LikeColumns.userId: userId,
-        });
-      } else {
-        await _supabase.from(SupabaseConstants.likes).insert({
-          LikeColumns.postId: postId,
-          LikeColumns.userId: userId,
-        });
-      }
+      await _supabase.from(SupabaseConstants.likes).delete().match({
+        LikeColumns.postId: postId,
+        LikeColumns.userId: userId,
+      });
+
+      if (currentEmoji == emoji) return;
+
+      await _supabase.from(SupabaseConstants.likes).insert({
+        LikeColumns.postId: postId,
+        LikeColumns.userId: userId,
+        LikeColumns.reaction: emoji,
+      });
     } catch (e) {
-      debugPrint("Error toggling like in DB: $e");
+      debugPrint("Error toggling reaction in DB: $e");
       rethrow;
     }
   }
