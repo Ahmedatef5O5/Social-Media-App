@@ -17,6 +17,7 @@ class MessageModel {
   final String? replyToText;
   final String? replyToMessageType;
   final String? replyToSenderId;
+  final List<String> deletedFor;
 
   const MessageModel({
     required this.id,
@@ -35,6 +36,7 @@ class MessageModel {
     this.replyToText,
     this.replyToMessageType,
     this.replyToSenderId,
+    this.deletedFor = const [],
   });
 
   MessageModel copyWith({
@@ -54,6 +56,7 @@ class MessageModel {
     String? replyToText,
     String? replyToMessageType,
     String? replyToSenderId,
+    List<String>? deletedFor,
   }) {
     return MessageModel(
       id: id ?? this.id,
@@ -72,6 +75,7 @@ class MessageModel {
       replyToText: replyToText ?? this.replyToText,
       replyToMessageType: replyToMessageType ?? this.replyToMessageType,
       replyToSenderId: replyToSenderId ?? this.replyToSenderId,
+      deletedFor: deletedFor ?? this.deletedFor,
     );
   }
 
@@ -92,6 +96,11 @@ class MessageModel {
       replyToText: json[MessagesColumns.replyToText],
       replyToMessageType: json[MessagesColumns.replyToMessageType],
       replyToSenderId: json[MessagesColumns.replyToSenderId],
+      deletedFor:
+          (json[MessagesColumns.deletedFor] as List<dynamic>?)
+              ?.map((e) => e.toString())
+              .toList() ??
+          const [],
     );
   }
 
@@ -112,6 +121,7 @@ class MessageModel {
       MessagesColumns.replyToText: replyToText,
       MessagesColumns.replyToMessageType: replyToMessageType,
       MessagesColumns.replyToSenderId: replyToSenderId,
+      MessagesColumns.deletedFor: deletedFor,
     };
   }
 }

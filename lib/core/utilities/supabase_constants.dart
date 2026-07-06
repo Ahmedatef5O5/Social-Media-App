@@ -185,6 +185,8 @@ abstract class MessagesColumns {
   static const String replyToMessageType = 'reply_to_message_type';
   static const String replyToSenderId = 'reply_to_sender_id';
 
+  static const String deletedFor = 'deleted_for';
+
   // Migration for conversation_id column in messages table
   static const String conversationId = 'conversation_id';
 
