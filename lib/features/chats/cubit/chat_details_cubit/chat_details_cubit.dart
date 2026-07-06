@@ -41,6 +41,10 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState> {
 
   StreamSubscription? _reactionsSubscription;
   Map<String, Map<String, String>> _reactionsCache = {};
+
+  final ValueNotifier<Set<String>> selectedMessageIds =
+      ValueNotifier<Set<String>>({});
+
   String? _currentReceiverId;
 
   final currentUserId = Supabase.instance.client.auth.currentUser!.id;
@@ -521,6 +525,87 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState> {
     }
   }
 
+  // ── Multi-select ──────────────────────────────────────
+
+  bool get isInSelectionMode => selectedMessageIds.value.isNotEmpty;
+
+  List<MessageModel> get selectedMessages =>
+      cachedMessages
+          .where((m) => selectedMessageIds.value.contains(m.id))
+          .toList();
+
+  bool get canDeleteSelectedForEveryone =>
+      selectedMessages.isNotEmpty &&
+      selectedMessages.every((m) => m.senderId == currentUserId);
+
+  // bool _isCallMessage(String messageId) {
+  //   final index = cachedMessages.indexWhere((m) => m.id == messageId);
+  //   if (index == -1) return false;
+  //   final type = cachedMessages[index].messageType;
+  //   return type == 'call';
+  // }
+
+  void startSelection(String messageId) {
+    // if (_isCallMessage(messageId)) return;
+    selectedMessageIds.value = {messageId};
+  }
+
+  void toggleMessageSelection(String messageId) {
+    // if (_isCallMessage(messageId)) return;
+    final current = Set<String>.from(selectedMessageIds.value);
+    if (current.contains(messageId)) {
+      current.remove(messageId);
+    } else {
+      current.add(messageId);
+    }
+    selectedMessageIds.value = current;
+  }
+
+  void clearSelection() {
+    selectedMessageIds.value = {};
+  }
+
+  Future<void> deleteSelectedForMe() async {
+    final messages = selectedMessages;
+    if (messages.isEmpty) return;
+    clearSelection();
+    try {
+      await _chatServices.deleteMessagesForMe(
+        messages: messages,
+        currentUserId: currentUserId,
+      );
+    } catch (e) {
+      debugPrint('error deleting selected messages for me: $e');
+      emit(MessagesError(e.toString()));
+    }
+  }
+
+  Future<void> deleteSelectedForEveryone() async {
+    final ids = selectedMessageIds.value.toList();
+    if (ids.isEmpty) return;
+
+    cachedMessages.removeWhere((m) => ids.contains(m.id));
+    emit(MessagesSuccessLoaded(messages: List.from(cachedMessages)));
+
+    final realIds = ids.where((id) => !id.startsWith('temp_')).toList();
+    final tempIds = ids.where((id) => id.startsWith('temp_')).toList();
+
+    for (final tempId in tempIds) {
+      cancelUpload(tempId);
+    }
+
+    clearSelection();
+
+    if (realIds.isEmpty) return;
+
+    try {
+      await _chatServices.deleteMessagesForEveryone(realIds);
+    } catch (e) {
+      debugPrint('error deleting selected messages for everyone: $e');
+      emit(MessagesError(e.toString()));
+    }
+  }
+
   Future<void> toggleReaction({
     required String messageId,
     required String receiverId,
@@ -529,6 +614,7 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState> {
     final conversationId = getChatId(currentUserId, receiverId);
     final currentEmoji = _reactionsCache[messageId]?[currentUserId];
 
+    // Optimistic update:
     _reactionsCache[messageId] ??= {};
     if (currentEmoji == emoji) {
       _reactionsCache[messageId]!.remove(currentUserId);
@@ -660,7 +746,7 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState> {
   @override
   Future<void> close() {
     highlightedMessageId.dispose();
-
+    selectedMessageIds.dispose();
     _messageSubscription?.cancel();
     _presenceSubscription?.cancel();
     _lastSeenPollingTimer?.cancel();
