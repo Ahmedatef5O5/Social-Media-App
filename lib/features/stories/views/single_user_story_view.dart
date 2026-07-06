@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
-import '../../home/cubits/home_cubit/home_cubit.dart';
+import '../cubit/stories_cubit.dart';
 import '../model/story_model.dart';
 import '../widgets/story_gesture_layer.dart';
 import '../widgets/story_header.dart';
@@ -8,7 +8,7 @@ import 'story_media_view.dart';
 
 class SingleUserStoryView extends StatefulWidget {
   final StoryModel story;
-  final HomeCubit homeCubit;
+  final StoriesCubit storiesCubit;
   final VoidCallback onNext;
   final VoidCallback onPrev;
   final VoidCallback onLongPressStart;
@@ -19,7 +19,7 @@ class SingleUserStoryView extends StatefulWidget {
   const SingleUserStoryView({
     super.key,
     required this.story,
-    required this.homeCubit,
+    required this.storiesCubit,
     required this.onNext,
     required this.onPrev,
     required this.onLongPressStart,
@@ -68,7 +68,7 @@ class _SingleUserStoryViewState extends State<SingleUserStoryView> {
           right: 20,
           child: StoryHeader(
             story: widget.story,
-            homeCubit: widget.homeCubit,
+            storiesCubit: widget.storiesCubit,
             onClose: widget.onClose,
             onPause: widget.onLongPressStart,
             onResume: widget.onLongPressEnd,

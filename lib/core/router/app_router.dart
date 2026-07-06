@@ -43,6 +43,7 @@ import '../../features/group_chat/cubit/group_list_cubit/group_list_cubit.dart';
 import '../../features/group_chat/services/group_chat_services.dart';
 import '../../features/group_chat/views/create_group_view.dart';
 import '../../features/settings/views/about_us_view.dart';
+import '../../features/stories/cubit/stories_cubit.dart';
 import '../../features/stories/views/add_story_caption_view.dart';
 import '../../features/stories/views/creat_text_story_view.dart';
 import '../../features/profile/cubits/profile_cubit/profile_cubit.dart';
@@ -256,33 +257,48 @@ class AppRouter {
   static Route<dynamic> _storyRoutes(RouteSettings settings) {
     switch (settings.name) {
       case AppRoutes.createTextStoryViewRoute:
-        final cubit = _args<HomeCubit>(settings);
-        if (cubit == null) {
-          return _errorRoute(settings, 'Missing HomeCubit parameter');
+        final args = _args<Map<String, dynamic>>(settings);
+        if (args == null ||
+            args['storiesCubit'] is! StoriesCubit ||
+            args['currentUser'] is! UserData) {
+          return _errorRoute(
+            settings,
+            'Missing StoriesCubit/currentUser parameter',
+          );
         }
         return _buildRoute(
-          BlocProvider.value(value: cubit, child: const CreateTextStoryView()),
+          BlocProvider.value(
+            value: args['storiesCubit'] as StoriesCubit,
+            child: CreateTextStoryView(
+              currentUser: args['currentUser'] as UserData,
+            ),
+          ),
           settings: settings,
         );
       case AppRoutes.addStoryCaptionViewRoute:
         final args = _args<Map<String, dynamic>>(settings);
         if (args == null ||
             args['file'] is! File ||
-            args['homeCubit'] is! HomeCubit) {
+            args['storiesCubit'] is! StoriesCubit ||
+            args['currentUser'] is! UserData) {
           return _errorRoute(settings, 'Invalid arguments for Story Caption');
         }
         return _buildRoute(
-          AddStoryCaptionView(file: args['file'], homeCubit: args['homeCubit']),
+          AddStoryCaptionView(
+            file: args['file'],
+            storiesCubit: args['storiesCubit'],
+            currentUser: args['currentUser'],
+          ),
           settings: settings,
         );
       case AppRoutes.storyDisplayViewRoute:
         final args = _args<Map<String, dynamic>>(settings);
-        if (args == null) {
+        if (args == null || args['storiesCubit'] is! StoriesCubit) {
           return _errorRoute(settings, 'Missing arguments for Story Display');
         }
         return _buildRoute(
           StoryDisplayView(
-            homeCubit: args['homeCubit'],
+            storiesCubit: args['storiesCubit'],
             allUserGroups: args['allUserGroups'],
             initialGroupIndex: args['initialGroupIndex'],
           ),
@@ -294,7 +310,8 @@ class AppRouter {
         if (args == null ||
             args['file'] is! File ||
             args['isVideo'] is! bool ||
-            args['homeCubit'] is! HomeCubit) {
+            args['storiesCubit'] is! StoriesCubit ||
+            args['currentUser'] is! UserData) {
           return _errorRoute(settings, 'Invalid arguments for Story Preview');
         }
         return _buildRoute(
@@ -302,7 +319,8 @@ class AppRouter {
             file: args['file'],
             isVideo: args['isVideo'],
             videoDuration: args['videoDuration'] as Duration?,
-            homeCubit: args['homeCubit'],
+            storiesCubit: args['storiesCubit'],
+            currentUser: args['currentUser'],
           ),
           typeOfRoute: TypeOfRoute.fade,
           settings: settings,

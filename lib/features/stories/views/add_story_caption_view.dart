@@ -1,18 +1,21 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:social_media_app/features/auth/data/models/user_data.dart';
 import '../../../core/themes/app_colors.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
-import '../../home/cubits/home_cubit/home_cubit.dart';
+import '../cubit/stories_cubit.dart';
 
 class AddStoryCaptionView extends StatefulWidget {
   final File file;
-  final HomeCubit homeCubit;
+  final StoriesCubit storiesCubit;
+  final UserData currentUser;
 
   const AddStoryCaptionView({
     super.key,
     required this.file,
-    required this.homeCubit,
+    required this.storiesCubit,
+    required this.currentUser,
   });
 
   @override
@@ -31,8 +34,8 @@ class _AddStoryCaptionViewState extends State<AddStoryCaptionView> {
   @override
   Widget build(BuildContext context) {
     return BlocProvider.value(
-      value: widget.homeCubit,
-      child: BlocConsumer<HomeCubit, HomeState>(
+      value: widget.storiesCubit,
+      child: BlocConsumer<StoriesCubit, StoriesState>(
         listener: (context, state) {
           if (state is AddStorySuccess) {
             Navigator.of(context).pop();
@@ -46,7 +49,7 @@ class _AddStoryCaptionViewState extends State<AddStoryCaptionView> {
                 ),
                 backgroundColor: Colors.green,
                 behavior: SnackBarBehavior.floating,
-                duration: Duration(seconds: 1),
+                duration: Duration(seconds: 2),
               ),
             );
           }
@@ -79,9 +82,9 @@ class _AddStoryCaptionViewState extends State<AddStoryCaptionView> {
                           state is AddStoryLoading
                               ? null
                               : () {
-                                widget.homeCubit.addStoryWithCaption(
+                                widget.storiesCubit.addStoryWithCaption(
                                   file: widget.file,
-                                  user: widget.homeCubit.currentUserData!,
+                                  user: widget.currentUser,
                                   caption:
                                       _captionController.text.trim().isEmpty
                                           ? null

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:social_media_app/features/home/cubits/home_cubit/home_cubit.dart';
 import 'package:social_media_app/features/stories/model/story_model.dart';
 import 'package:social_media_app/features/stories/widgets/story_item_widget.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
+import '../cubit/stories_cubit.dart';
 
 class StoriesListSection extends StatelessWidget {
   const StoriesListSection({super.key});
@@ -11,12 +11,12 @@ class StoriesListSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
-    final homeCubit = BlocProvider.of<HomeCubit>(context);
+    final storiesCubit = BlocProvider.of<StoriesCubit>(context);
 
     return SizedBox(
       height: size.height * 0.12,
-      child: BlocConsumer<HomeCubit, HomeState>(
-        bloc: homeCubit,
+      child: BlocConsumer<StoriesCubit, StoriesState>(
+        bloc: storiesCubit,
         listenWhen:
             (_, current) =>
                 current is StoriesError ||

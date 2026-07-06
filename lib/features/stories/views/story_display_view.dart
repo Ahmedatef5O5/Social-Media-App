@@ -1,19 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:social_media_app/features/home/cubits/home_cubit/home_cubit.dart';
 import 'package:social_media_app/features/stories/model/story_model.dart';
-
+import '../cubit/stories_cubit.dart';
 import '../widgets/user_story_group_container.dart';
 
 class StoryDisplayView extends StatefulWidget {
   final List<List<StoryModel>> allUserGroups;
   final int initialGroupIndex;
-  final HomeCubit homeCubit;
+  final StoriesCubit storiesCubit;
 
   const StoryDisplayView({
     super.key,
     required this.allUserGroups,
     required this.initialGroupIndex,
-    required this.homeCubit,
+    required this.storiesCubit,
   });
 
   @override
@@ -48,7 +47,7 @@ class _StoryDisplayViewState extends State<StoryDisplayView> {
         itemBuilder: (context, index) {
           return UserStoryGroupContainer(
             userStories: widget.allUserGroups[index],
-            homeCubit: widget.homeCubit,
+            storiesCubit: widget.storiesCubit,
             onClose: _safeClose,
             onAllStoriesComplete: () {
               if (index < widget.allUserGroups.length - 1) {

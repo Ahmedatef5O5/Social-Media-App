@@ -6,13 +6,13 @@ import 'package:video_player/video_player.dart';
 import '../../../core/constants/app_images.dart';
 import '../../../core/helpers/formatted_date.dart';
 import '../../../core/router/app_routes.dart';
-import '../../home/cubits/home_cubit/home_cubit.dart';
+import '../cubit/stories_cubit.dart';
 import '../model/story_model.dart';
 import 'story_delete_dialog.dart';
 
 class StoryHeader extends StatelessWidget {
   final StoryModel story;
-  final HomeCubit homeCubit;
+  final StoriesCubit storiesCubit;
   final VoidCallback onClose;
   final VoidCallback onPause;
   final VoidCallback onResume;
@@ -21,7 +21,7 @@ class StoryHeader extends StatelessWidget {
   const StoryHeader({
     super.key,
     required this.story,
-    required this.homeCubit,
+    required this.storiesCubit,
     required this.onClose,
     required this.onPause,
     required this.onResume,
@@ -81,7 +81,7 @@ class StoryHeader extends StatelessWidget {
             onSelected: (_) async {
               final confirm = await showDeleteStoryDialog(context);
               if (confirm == true) {
-                homeCubit.deleteStory(story.id);
+                storiesCubit.deleteStory(story.id);
                 Navigator.pop(context);
               } else {
                 onResume();

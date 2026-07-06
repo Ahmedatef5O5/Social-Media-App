@@ -42,6 +42,7 @@ import 'features/discover/services/discover_people_services.dart';
 import 'features/group_chat/services/group_call_signaling_service.dart';
 import 'features/home/cubits/home_cubit/home_cubit.dart';
 import 'features/home/services/home_services.dart';
+import 'features/stories/cubit/stories_cubit.dart';
 
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -328,6 +329,7 @@ Widget _buildApp(String savedTheme) {
               (context) =>
                   HomeCubit(homeServices: HomeServices.instance)..getHomeData(),
         ),
+        BlocProvider(create: (context) => StoriesCubit()..fetchStories()),
         BlocProvider(
           create:
               (context) => GroupListCubit(context.read<GroupChatServices>()),

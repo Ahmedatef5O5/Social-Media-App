@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../home/cubits/home_cubit/home_cubit.dart';
+import '../cubit/stories_cubit.dart';
 import '../model/story_model.dart';
 import '../views/single_user_story_view.dart';
 
@@ -7,7 +7,7 @@ class UserStoryGroupContainer extends StatefulWidget {
   final List<StoryModel> userStories;
   final VoidCallback onAllStoriesComplete;
   final VoidCallback onPrevGroup;
-  final HomeCubit homeCubit;
+  final StoriesCubit storiesCubit;
   final VoidCallback onClose;
 
   const UserStoryGroupContainer({
@@ -15,7 +15,7 @@ class UserStoryGroupContainer extends StatefulWidget {
     required this.userStories,
     required this.onAllStoriesComplete,
     required this.onPrevGroup,
-    required this.homeCubit,
+    required this.storiesCubit,
     required this.onClose,
   });
 
@@ -128,7 +128,7 @@ class _UserStoryGroupContainerState extends State<UserStoryGroupContainer>
         SingleUserStoryView(
           key: ValueKey(widget.userStories[_currentStoryIndex].id),
           story: widget.userStories[_currentStoryIndex],
-          homeCubit: widget.homeCubit,
+          storiesCubit: widget.storiesCubit,
           onNext: _nextStory,
           onPrev: _prevStory,
           onLongPressStart: _pauseProgress,

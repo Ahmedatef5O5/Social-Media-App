@@ -2,22 +2,25 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:video_player/video_player.dart';
+import 'package:social_media_app/features/auth/data/models/user_data.dart';
 import '../../../core/themes/app_colors.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
-import '../../home/cubits/home_cubit/home_cubit.dart';
+import '../cubit/stories_cubit.dart';
 
 class AddStoryPreviewView extends StatefulWidget {
   final File file;
   final bool isVideo;
   final Duration? videoDuration;
-  final HomeCubit homeCubit;
+  final StoriesCubit storiesCubit;
+  final UserData currentUser;
 
   const AddStoryPreviewView({
     super.key,
     required this.file,
     required this.isVideo,
     this.videoDuration,
-    required this.homeCubit,
+    required this.storiesCubit,
+    required this.currentUser,
   });
 
   @override
@@ -71,7 +74,7 @@ class _AddStoryPreviewViewState extends State<AddStoryPreviewView> {
     });
   }
 
-  void _shareStory(BuildContext context, HomeCubit cubit) {
+  void _shareStory(BuildContext context, StoriesCubit cubit) {
     final caption =
         _captionController.text.trim().isEmpty
             ? null
@@ -80,13 +83,13 @@ class _AddStoryPreviewViewState extends State<AddStoryPreviewView> {
     if (widget.isVideo) {
       cubit.addVideoStoryWithCaption(
         file: widget.file,
-        user: cubit.currentUserData!,
+        user: widget.currentUser,
         caption: caption,
       );
     } else {
       cubit.addStoryWithCaption(
         file: widget.file,
-        user: cubit.currentUserData!,
+        user: widget.currentUser,
         caption: caption,
       );
     }
@@ -102,8 +105,8 @@ class _AddStoryPreviewViewState extends State<AddStoryPreviewView> {
   @override
   Widget build(BuildContext context) {
     return BlocProvider.value(
-      value: widget.homeCubit,
-      child: BlocConsumer<HomeCubit, HomeState>(
+      value: widget.storiesCubit,
+      child: BlocConsumer<StoriesCubit, StoriesState>(
         listener: (context, state) {
           if (state is AddStorySuccess) {
             Navigator.of(context).pop();
@@ -209,7 +212,9 @@ class _AddStoryPreviewViewState extends State<AddStoryPreviewView> {
           padding: const EdgeInsets.only(right: 10),
           child: TextButton(
             onPressed:
-                isLoading ? null : () => _shareStory(context, widget.homeCubit),
+                isLoading
+                    ? null
+                    : () => _shareStory(context, widget.storiesCubit),
             child:
                 isLoading
                     ? const CustomLoadingIndicator(

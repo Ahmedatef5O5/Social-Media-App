@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:social_media_app/features/auth/data/models/user_data.dart';
 import '../../../core/themes/app_colors.dart';
-import '../../home/cubits/home_cubit/home_cubit.dart';
+import '../cubit/stories_cubit.dart';
 import '../widgets/story_color_picker.dart';
 import '../widgets/story_submit_bar.dart';
 import '../widgets/story_text_editor.dart';
 
 class CreateTextStoryView extends StatefulWidget {
-  const CreateTextStoryView({super.key});
+  final UserData currentUser;
+
+  const CreateTextStoryView({super.key, required this.currentUser});
 
   @override
   State<CreateTextStoryView> createState() => _CreateTextStoryViewState();
@@ -56,15 +59,16 @@ class _CreateTextStoryViewState extends State<CreateTextStoryView> {
   void _share(BuildContext context) {
     if (!_hasText) return;
 
-    context.read<HomeCubit>().addTextStory(
+    context.read<StoriesCubit>().addTextStory(
       text: _controller.text.trim(),
       bgColor: _selectedColor,
+      user: widget.currentUser,
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    return BlocConsumer<HomeCubit, HomeState>(
+    return BlocConsumer<StoriesCubit, StoriesState>(
       listener: (context, state) {
         if (state is AddStorySuccess) {
           Navigator.of(context).pop();
@@ -73,6 +77,8 @@ class _CreateTextStoryViewState extends State<CreateTextStoryView> {
             const SnackBar(
               content: Text('Story Added Successfully'),
               backgroundColor: Colors.green,
+              behavior: SnackBarBehavior.floating,
+              duration: Duration(seconds: 2),
             ),
           );
         }

@@ -1,5 +1,4 @@
 import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
@@ -10,6 +9,7 @@ import 'package:social_media_app/features/stories/widgets/story_image_picker_she
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/themes/app_colors.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
+import '../cubit/stories_cubit.dart';
 
 class StoryItemWidget extends StatefulWidget {
   final StoryModel? story;
@@ -31,7 +31,7 @@ class _StoryItemWidgetState extends State<StoryItemWidget> {
   bool _navigationHandled = false;
 
   void _showAddStoryOptions(BuildContext context) {
-    final homeCubit = context.read<HomeCubit>();
+    final storiesCubit = context.read<StoriesCubit>();
     showModalBottomSheet(
       isScrollControlled: true,
       useRootNavigator: true,
@@ -42,7 +42,7 @@ class _StoryItemWidgetState extends State<StoryItemWidget> {
       ),
       builder:
           (context) => BlocProvider.value(
-            value: homeCubit,
+            value: storiesCubit,
             child: StoryImagePickerSheet(
               onSelected: (source, type) {
                 Navigator.pop(context);
@@ -51,14 +51,18 @@ class _StoryItemWidgetState extends State<StoryItemWidget> {
                   case StoryPickType.text:
                     Navigator.of(context, rootNavigator: true).pushNamed(
                       AppRoutes.createTextStoryViewRoute,
-                      arguments: homeCubit,
+                      arguments: {
+                        'storiesCubit': storiesCubit,
+                        'currentUser':
+                            context.read<HomeCubit>().currentUserData,
+                      },
                     );
                     break;
                   case StoryPickType.image:
-                    homeCubit.pickAndAddStory(source: source!);
+                    storiesCubit.pickAndAddStory(source: source!);
                     break;
                   case StoryPickType.video:
-                    homeCubit.pickAndPreviewVideoStory(source: source!);
+                    storiesCubit.pickAndPreviewVideoStory(source: source!);
                     break;
                 }
               },
@@ -83,7 +87,8 @@ class _StoryItemWidgetState extends State<StoryItemWidget> {
             'file': file,
             'isVideo': isVideo,
             if (videoDuration != null) 'videoDuration': videoDuration,
-            'homeCubit': context.read<HomeCubit>(),
+            'storiesCubit': context.read<StoriesCubit>(),
+            'currentUser': context.read<HomeCubit>().currentUserData,
           },
         )
         .whenComplete(() => _navigationHandled = false);
@@ -93,7 +98,7 @@ class _StoryItemWidgetState extends State<StoryItemWidget> {
   Widget build(BuildContext context) {
     final currentUserId = Supabase.instance.client.auth.currentUser?.id;
 
-    return BlocListener<HomeCubit, HomeState>(
+    return BlocListener<StoriesCubit, StoriesState>(
       listenWhen:
           (_, current) =>
               widget.story == null &&
@@ -119,7 +124,7 @@ class _StoryItemWidgetState extends State<StoryItemWidget> {
           if (widget.story == null) {
             _showAddStoryOptions(context);
           } else {
-            final homeCubit = context.read<HomeCubit>();
+            final storiesCubit = context.read<StoriesCubit>();
             final stories = widget.userStroies ?? [widget.story!];
             final groups = widget.allUserGroups ?? [stories];
             final groupIndex = groups.indexWhere(
@@ -128,7 +133,7 @@ class _StoryItemWidgetState extends State<StoryItemWidget> {
             Navigator.of(context, rootNavigator: true).pushNamed(
               AppRoutes.storyDisplayViewRoute,
               arguments: {
-                'homeCubit': homeCubit,
+                'storiesCubit': storiesCubit,
                 'allUserGroups': groups,
                 'initialGroupIndex': groupIndex,
               },
@@ -184,7 +189,7 @@ class _StoryItemWidgetState extends State<StoryItemWidget> {
                             : NetworkImage(widget.story!.imageUrl!),
                     child:
                         widget.story == null
-                            ? BlocBuilder<HomeCubit, HomeState>(
+                            ? BlocBuilder<StoriesCubit, StoriesState>(
                               builder: (context, state) {
                                 if (state is AddStoryLoading) {
                                   return const CustomLoadingIndicator();
