@@ -7,6 +7,7 @@ import 'package:social_media_app/core/themes/background_theme_widget.dart';
 import 'package:social_media_app/features/chats/cubit/chat_details_cubit/chat_details_cubit.dart';
 import 'package:social_media_app/features/chats/models/chat_user_model.dart';
 import 'package:social_media_app/features/chats/models/message_model.dart';
+import 'package:social_media_app/features/chats/widgets/chat_selection_app_bar.dart';
 import 'package:social_media_app/features/chats/widgets/messages_list_view.dart';
 import 'package:social_media_app/features/chats/widgets/receiver_details_header_section.dart';
 import '../../../core/router/app_router.dart';
@@ -232,6 +233,7 @@ class _ChatDetailsViewState extends State<ChatDetailsView>
     _messageController.dispose();
     _showScrollButtonNotifier.dispose();
     _unreadCountNotifier.dispose();
+    if (!_chatCubit.isClosed) _chatCubit.clearSelection();
 
     super.dispose();
   }
@@ -294,6 +296,70 @@ class _ChatDetailsViewState extends State<ChatDetailsView>
     );
   }
 
+  void _showBulkDeleteMenu(BuildContext context, ChatDetailsCubit cubit) {
+    final canDeleteForEveryone = cubit.canDeleteSelectedForEveryone;
+    final count = cubit.selectedMessageIds.value.length;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.transparent,
+      builder:
+          (ctx) => Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Theme.of(context).scaffoldBackgroundColor,
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(16),
+              ),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: Text(
+                    'Delete $count message${count > 1 ? 's' : ''}?',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.person_outline),
+                  title: const Text('Delete for me'),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    cubit.deleteSelectedForMe();
+                  },
+                ),
+                if (canDeleteForEveryone)
+                  ListTile(
+                    leading: const Icon(Icons.delete_outline),
+                    title: Text(
+                      'Delete for everyone',
+                      style: Theme.of(
+                        context,
+                      ).textTheme.titleMedium!.copyWith(color: Colors.red),
+                    ),
+                    onTap: () {
+                      Navigator.pop(ctx);
+                      cubit.deleteSelectedForEveryone();
+                    },
+                  ),
+              ],
+            ),
+          ),
+    );
+  }
+
+  void _showComingSoon(BuildContext context, String feature) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('$feature is coming soon'),
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 1),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return BackgroundThemeWidget(
@@ -304,9 +370,25 @@ class _ChatDetailsViewState extends State<ChatDetailsView>
           backgroundColor: AppColors.transparent,
           body: Column(
             children: [
-              ReceiverDetailsHeaderSection(
-                receiverUser: widget.receiverUser,
-                statusBuilder: (state) => _buildStatusWidget(state),
+              ValueListenableBuilder<Set<String>>(
+                valueListenable: _chatCubit.selectedMessageIds,
+                builder: (context, selectedIds, _) {
+                  if (selectedIds.isEmpty) {
+                    return ReceiverDetailsHeaderSection(
+                      receiverUser: widget.receiverUser,
+                      statusBuilder: (state) => _buildStatusWidget(state),
+                    );
+                  }
+                  return ChatSelectionAppBar(
+                    selectedCount: selectedIds.length,
+                    canDeleteForEveryone:
+                        _chatCubit.canDeleteSelectedForEveryone,
+                    onCancel: _chatCubit.clearSelection,
+                    onDelete: () => _showBulkDeleteMenu(context, _chatCubit),
+                    onForward: () => _showComingSoon(context, 'Forward'),
+                    onInfo: () => _showComingSoon(context, 'Info'),
+                  );
+                },
               ),
               Expanded(
                 child: MessagesListView(
