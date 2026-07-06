@@ -22,68 +22,6 @@ final class UserDataLoadError extends HomeState {
   UserDataLoadError(this.message);
 }
 
-final class StoriesLoading extends HomeState {}
-
-final class StoriesLoaded extends HomeState {
-  final List<StoryModel> stories;
-  final DateTime fetchedAt;
-  const StoriesLoaded(this.stories, this.fetchedAt);
-  List<Object?> get props => [stories, fetchedAt];
-}
-
-final class StoriesError extends HomeState {
-  final String message;
-
-  const StoriesError(this.message);
-}
-
-final class AddStoryLoading extends HomeState {}
-
-final class AddStorySuccess extends HomeState {}
-
-final class AddStoryError extends HomeState {
-  final String message;
-
-  const AddStoryError(this.message);
-}
-
-final class StoryImagePicking extends HomeState {}
-
-final class StoryImagePicked extends HomeState {
-  final File file;
-
-  StoryImagePicked({required this.file});
-}
-
-final class StoryImagePickeError extends HomeState {
-  final String message;
-
-  const StoryImagePickeError(this.message);
-}
-
-final class StoryVideoPicked extends HomeState {
-  final File file;
-  final Duration videoDuration;
-
-  const StoryVideoPicked({required this.file, required this.videoDuration});
-}
-
-final class StoryVideoTooLong extends HomeState {
-  final Duration videoDuration;
-  final Duration maxAllowed;
-
-  const StoryVideoTooLong({
-    required this.videoDuration,
-    required this.maxAllowed,
-  });
-}
-
-final class StoryVideoPickError extends HomeState {
-  final String message;
-
-  const StoryVideoPickError(this.message);
-}
-
 final class PostsLoading extends HomeState {}
 
 final class PostsLoaded extends HomeState {

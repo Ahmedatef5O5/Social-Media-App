@@ -4,7 +4,6 @@ import 'package:dio/dio.dart' as dio_pkg;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:persistent_bottom_nav_bar_v2/persistent_bottom_nav_bar_v2.dart';
 import 'package:social_media_app/core/services/file_picker_services.dart';
 import 'package:social_media_app/core/services/network_status_service.dart';
@@ -12,10 +11,8 @@ import 'package:social_media_app/core/cache/constants/snapshot_keys.dart';
 import 'package:social_media_app/core/cache/services/local_snapshot_store.dart';
 import 'package:social_media_app/features/auth/data/models/user_data.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:video_player/video_player.dart';
 import '../../../../core/connectivity/services/connectivity_banner_controller.dart';
 import '../../../../core/services/presence_service.dart';
-import '../../../../core/services/supabase_storage_services.dart';
 import '../../../comments/events/comment_event_bus.dart';
 import '../../../comments/model/comment_model.dart';
 import '../../../notifications/repository/notifications_repository.dart';
@@ -23,14 +20,10 @@ import '../../models/feed_event.dart';
 import '../../models/post_model.dart';
 import '../../models/post_reaction_model.dart';
 import '../../models/post_request_body.dart';
-import '../../../stories/model/story_model.dart';
 import '../../services/home_services.dart';
 part 'home_state.dart';
 
-const Duration kMaxStoryVideoDuration = Duration(seconds: 60);
-
 const int kMaxCachedPostsSnapshot = 30;
-const int kMaxCachedStoriesSnapshot = 30;
 
 class HomeCubit extends Cubit<HomeState> {
   final HomeServices _homeServices;
@@ -47,13 +40,11 @@ class HomeCubit extends Cubit<HomeState> {
   }
 
   List<PostModel> cachedPosts = [];
-  List<StoryModel> cachedStories = [];
   UserData? currentUserData;
   final filePickerServices = FilePickerServices();
   PersistentTabController? navController;
   XFile? selectedDocument;
   XFile? selectedImage;
-  File? selectedStoryFile;
   XFile? selectedVideo;
 
   // ignore: unused_field
@@ -61,14 +52,12 @@ class HomeCubit extends Cubit<HomeState> {
 
   final _eventBus = CommentEventBus.instance;
   StreamSubscription? _postsSubscription;
-  File? _stableVideoFile;
 
   dio_pkg.CancelToken? _cancelToken;
 
   @override
   Future<void> close() {
     _postsSubscription?.cancel();
-    _cleanupStableVideo();
     return super.close();
   }
 
@@ -117,289 +106,8 @@ class HomeCubit extends Cubit<HomeState> {
     final userId = Supabase.instance.client.auth.currentUser!.id;
     await Future.wait([
       _getCurrentUser(userId),
-      fetchStories(isRefresh: isRefresh),
       fetchPosts(isRefresh: isRefresh),
     ]);
-  }
-
-  // ── Story actions ──────────────────────────────────────────────────────────
-
-  Future<void> addTextStory({
-    required String text,
-    required Color bgColor,
-  }) async {
-    if (currentUserData == null) return;
-    emit(AddStoryLoading());
-    try {
-      final newStory = StoryModel(
-        contentText: text,
-        backgroundColor: bgColor.toARGB32().toRadixString(16),
-        authorId: currentUserData!.id,
-        authorName: currentUserData!.name,
-        createdAt: DateTime.now().toIso8601String(),
-        imageUrl: null,
-      );
-      await _homeServices.storyServices.createStory(newStory);
-      await fetchStories();
-      emit(AddStorySuccess());
-      await Future.delayed(const Duration(milliseconds: 100));
-      emit(StoriesLoaded(cachedStories, DateTime.now()));
-      if (cachedPosts.isNotEmpty) {
-        emit(PostsLoaded(cachedPosts, DateTime.now()));
-      }
-    } catch (e) {
-      debugPrint('Error adding text story: $e');
-      emit(AddStoryError(e.toString()));
-    }
-  }
-
-  Future<void> addStory({required File file, required UserData user}) async {
-    emit(AddStoryLoading());
-    try {
-      final result = await _homeServices.storyServices.uploadStoryFile(
-        file,
-        user.id,
-      );
-      final newStory = StoryModel(
-        imageUrl: result.secureUrl,
-        imagePublicId: result.publicId,
-        authorId: user.id,
-        authorName: user.name,
-        createdAt: DateTime.now().toIso8601String(),
-      );
-      await _homeServices.storyServices.createStory(newStory);
-      await fetchStories();
-      await Future.delayed(const Duration(milliseconds: 100));
-      emit(StoriesLoaded(cachedStories, DateTime.now()));
-      if (cachedPosts.isNotEmpty) {
-        emit(PostsLoaded(cachedPosts, DateTime.now()));
-      }
-    } catch (e) {
-      debugPrint('Error adding story: $e');
-      emit(AddStoryError(e.toString()));
-    }
-  }
-
-  Future<void> deleteStory(String storyId) async {
-    try {
-      await _homeServices.storyServices.deleteStory(storyId);
-      cachedStories = cachedStories.where((s) => s.id != storyId).toList();
-      if (state is StoriesLoaded) {
-        final updateStories =
-            (state as StoriesLoaded).stories
-                .where((s) => s.id != storyId)
-                .toList();
-        emit(StoriesLoaded(updateStories, DateTime.now()));
-      } else {
-        emit(StoriesLoaded(cachedStories, DateTime.now()));
-      }
-    } catch (e) {
-      debugPrint('Error deleting story: $e');
-    }
-  }
-
-  Future<void> pickAndAddStory({required ImageSource source}) async {
-    try {
-      final XFile? pickedFile =
-          source == ImageSource.camera
-              ? await filePickerServices.takePhotoByCamera()
-              : await filePickerServices.pickImageFromGallery();
-
-      if (pickedFile == null) return;
-
-      final file = await _writeToAppDir(xFile: pickedFile, extension: 'jpg');
-      selectedStoryFile = file;
-      emit(StoryImagePicked(file: file));
-    } catch (e) {
-      debugPrint('Error in pickAndAddStory: $e');
-      emit(AddStoryError(e.toString()));
-    }
-  }
-
-  // TODO : Do not repeat this func addStory & addStoryWithCaption ... solve that  DRY
-
-  Future<void> addStoryWithCaption({
-    required File file,
-    required UserData user,
-    String? caption,
-  }) async {
-    emit(AddStoryLoading());
-    try {
-      final result = await _homeServices.storyServices.uploadStoryFile(
-        file,
-        user.id,
-      );
-      final newStory = StoryModel(
-        imageUrl: result.secureUrl,
-        imagePublicId: result.publicId,
-        authorId: user.id,
-        authorName: user.name,
-        createdAt: DateTime.now().toIso8601String(),
-        caption: caption,
-      );
-      await _homeServices.storyServices.createStory(newStory);
-      await fetchStories();
-      emit(AddStorySuccess());
-      await Future.delayed(const Duration(milliseconds: 100));
-      emit(StoriesLoaded(cachedStories, DateTime.now()));
-      if (cachedPosts.isNotEmpty) {
-        emit(PostsLoaded(cachedPosts, DateTime.now()));
-      }
-    } catch (e) {
-      debugPrint('Error adding story with caption: $e');
-      emit(AddStoryError(e.toString()));
-    }
-  }
-
-  Future<void> pickAndPreviewVideoStory({required ImageSource source}) async {
-    if (state is StoryVideoPicked) return;
-
-    try {
-      final XFile? pickedFile =
-          source == ImageSource.camera
-              ? await filePickerServices.takeVideoByCamera()
-              : await filePickerServices.pickVideoFromGallery();
-
-      if (pickedFile == null) return;
-
-      final appDir = await getApplicationDocumentsDirectory();
-      final destPath =
-          '${appDir.path}/${DateTime.now().millisecondsSinceEpoch}.mp4';
-
-      final stableFile = await File(pickedFile.path).copy(destPath);
-
-      if (!await stableFile.exists()) {
-        emit(const StoryVideoPickError('Could not process the video file.'));
-        return;
-      }
-
-      final duration = await _getVideoDuration(stableFile);
-
-      if (duration > kMaxStoryVideoDuration) {
-        // ignore: body_might_complete_normally_catch_error
-        await stableFile.delete().catchError((_) {});
-        emit(
-          StoryVideoTooLong(
-            videoDuration: duration,
-            maxAllowed: kMaxStoryVideoDuration,
-          ),
-        );
-        return;
-      }
-
-      _stableVideoFile = stableFile;
-      selectedStoryFile = stableFile;
-      emit(StoryVideoPicked(file: stableFile, videoDuration: duration));
-    } catch (e) {
-      debugPrint('Error picking video story: $e');
-      emit(StoryVideoPickError(e.toString()));
-    }
-  }
-
-  Future<void> addVideoStoryWithCaption({
-    required File file,
-    required UserData user,
-    String? caption,
-  }) async {
-    emit(AddStoryLoading());
-    try {
-      final File uploadFile =
-          (_stableVideoFile != null && await _stableVideoFile!.exists())
-              ? _stableVideoFile!
-              : (await file.exists()
-                  ? file
-                  : throw PathNotFoundException(
-                    file.path,
-                    const OSError('File not found', 2),
-                  ));
-
-      final result = await _homeServices.storyServices.uploadStoryVideoFile(
-        uploadFile,
-        user.id,
-      );
-
-      final newStory = StoryModel(
-        videoUrl: result.secureUrl,
-        videoPublicId: result.publicId,
-        authorId: user.id,
-        authorName: user.name,
-        createdAt: DateTime.now().toIso8601String(),
-        caption: caption,
-      );
-      await _homeServices.storyServices.createStory(newStory);
-      await fetchStories(isRefresh: true);
-      _cleanupStableVideo();
-      emit(AddStorySuccess());
-      await Future.delayed(const Duration(milliseconds: 300));
-      if (cachedPosts.isNotEmpty) {
-        emit(PostsLoaded(cachedPosts, DateTime.now()));
-      } else {
-        emit(StoriesLoaded(cachedStories, DateTime.now()));
-      }
-    } on UploadCanceledException {
-      return;
-    } catch (e) {
-      debugPrint('Error adding video story: $e');
-      emit(AddStoryError(e.toString()));
-
-      if (e.toString().contains('session_expired')) {
-        emit(AddStoryError('Your session has expired; please log in again'));
-        return;
-      }
-    }
-  }
-
-  // ── Stories fetch ──────────────────────────────────────────────────────────
-
-  Future<void> fetchStories({bool isRefresh = false}) async {
-    if (!isRefresh && state is! StoriesLoading) emit(StoriesLoading());
-    try {
-      final stories = await _homeServices.storyServices.fetchStories();
-      cachedStories = stories;
-      emit(StoriesLoaded(stories, DateTime.now()));
-      _persistStoriesSnapshot(stories);
-    } catch (e) {
-      debugPrint('Error fetching stories: $e');
-      if (cachedStories.isNotEmpty) {
-        debugPrint('Silent error: no internet, showing cached stories.');
-        emit(StoriesLoaded(cachedStories, DateTime.now()));
-        return;
-      }
-      final diskStories = _readStoriesSnapshot();
-      if (diskStories.isNotEmpty) {
-        debugPrint(
-          'Silent error: no internet, showing stories snapshot from disk.',
-        );
-        cachedStories = diskStories;
-        emit(StoriesLoaded(diskStories, DateTime.now()));
-        return;
-      }
-      emit(StoriesError(e.toString()));
-    }
-  }
-
-  void _persistStoriesSnapshot(List<StoryModel> stories) {
-    unawaited(
-      LocalSnapshotStore.instance.saveList(
-        SnapshotKeys.stories,
-        stories
-            .take(kMaxCachedStoriesSnapshot)
-            .map((story) => story.toCacheJson())
-            .toList(),
-      ),
-    );
-  }
-
-  List<StoryModel> _readStoriesSnapshot() {
-    try {
-      return LocalSnapshotStore.instance
-          .readList(SnapshotKeys.stories)
-          .map(StoryModel.fromCacheJson)
-          .toList();
-    } catch (e) {
-      debugPrint('Failed to read stories snapshot from disk: $e');
-      return [];
-    }
   }
 
   // ── Posts ──────────────────────────────────────────────────────────────────
@@ -901,33 +609,6 @@ class HomeCubit extends Cubit<HomeState> {
         }).toList();
 
     emit(PostsLoaded(cachedPosts, DateTime.now()));
-  }
-
-  Future<File> _writeToAppDir({
-    required XFile xFile,
-    required String extension,
-  }) async {
-    final bytes = await xFile.readAsBytes();
-    final appDir = await getApplicationDocumentsDirectory();
-    final destPath =
-        '${appDir.path}/${DateTime.now().millisecondsSinceEpoch}.$extension';
-    return File(destPath).writeAsBytes(bytes);
-  }
-
-  Future<Duration> _getVideoDuration(File file) async {
-    final controller = VideoPlayerController.file(file);
-    try {
-      await controller.initialize();
-      return controller.value.duration;
-    } finally {
-      await controller.dispose();
-    }
-  }
-
-  void _cleanupStableVideo() {
-    // ignore: body_might_complete_normally_catch_error
-    _stableVideoFile?.delete().catchError((_) {});
-    _stableVideoFile = null;
   }
 
   List<PostModel> _fixLikersImages(List<PostModel> posts) {
