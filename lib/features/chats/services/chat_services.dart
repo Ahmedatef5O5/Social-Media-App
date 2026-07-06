@@ -160,7 +160,13 @@ class ChatServices {
         .stream(primaryKey: [MessagesColumns.id])
         .eq(MessagesColumns.conversationId, conversationId)
         .order(MessagesColumns.createdAt, ascending: false)
-        .map((data) => data.map(MessageModel.fromJson).toList());
+        .map(
+          (data) =>
+              data
+                  .map(MessageModel.fromJson)
+                  .where((m) => !m.deletedFor.contains(senderId))
+                  .toList(),
+        );
   }
 
   Future<List<Map<String, dynamic>>> getChatMedia(String receiverId) async {
@@ -237,6 +243,28 @@ class ChatServices {
       table: SupabaseConstants.messages,
       id: messageId,
     );
+  }
+
+  Future<void> deleteMessagesForEveryone(List<String> messageIds) async {
+    for (final id in messageIds) {
+      await MediaCleanupService.instance.deleteWithMedia(
+        table: SupabaseConstants.messages,
+        id: id,
+      );
+    }
+  }
+
+  Future<void> deleteMessagesForMe({
+    required List<MessageModel> messages,
+    required String currentUserId,
+  }) async {
+    for (final m in messages) {
+      final updated = {...m.deletedFor, currentUserId}.toList();
+      await _supabase
+          .from(SupabaseConstants.messages)
+          .update({MessagesColumns.deletedFor: updated})
+          .eq(MessagesColumns.id, m.id);
+    }
   }
 
   Future<void> toggleReaction({
