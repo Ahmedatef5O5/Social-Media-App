@@ -31,6 +31,8 @@ import 'package:social_media_app/features/chats/cubit/chats_cubit/chats_cubit.da
 import 'package:social_media_app/features/group_chat/cubit/group_list_cubit/group_list_cubit.dart';
 import 'package:social_media_app/features/group_chat/services/group_chat_services.dart';
 import 'package:social_media_app/features/profile/services/user_services.dart';
+import 'package:social_media_app/features/settings/repository/settings_repository.dart';
+import 'package:social_media_app/features/settings/widgets/app_lock_gate.dart';
 import 'package:social_media_app/firebase_options.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'core/connectivity/widgets/connectivity_banner.dart';
@@ -238,6 +240,7 @@ void _setupAuthListener() {
 Future<void> _initializeApp() async {
   await _lockOrientation();
   AppSecrets.assertSecretsLoaded();
+  await SettingsRepository.instance.init();
   await _initHiveCache();
   await _initFirebase();
   await _initSupabase();
@@ -390,69 +393,71 @@ class MyApp extends StatelessWidget {
               locale: DevicePreview.locale(context),
               builder: (ctx, child) {
                 final devicePreviewChild = DevicePreview.appBuilder(ctx, child);
-                return GlobalGroupCallListener(
-                  child: BlocListener<CallCubit, CallState>(
-                    listener: (context, callState) async {
-                      final nav = navigatorKey.currentState;
-                      if (nav == null) return;
+                return AppLockGate(
+                  child: GlobalGroupCallListener(
+                    child: BlocListener<CallCubit, CallState>(
+                      listener: (context, callState) async {
+                        final nav = navigatorKey.currentState;
+                        if (nav == null) return;
 
-                      if (callState is CallIncomingState) {
-                        nav.pushNamed(
-                          AppRoutes.incomingCallRoute,
-                          arguments: {
-                            'callId': callState.call.callId,
-                            'callerId': callState.call.callerId,
-                            'callerName': callState.call.callerName,
-                            'callerAvatar': callState.call.callerAvatar,
-                            'callType':
-                                callState.call.type == CallType.video
-                                    ? 'video'
-                                    : 'audio',
-                          },
-                        );
-                      } else if (callState is CallDialingState) {
-                        nav.pushNamed(
-                          AppRoutes.dialingRoute,
-                          arguments: callState.call,
-                        );
-                      } else if (callState is CallConnectedState) {
-                        final currentUser =
-                            Supabase.instance.client.auth.currentUser;
-                        if (currentUser == null) return;
+                        if (callState is CallIncomingState) {
+                          nav.pushNamed(
+                            AppRoutes.incomingCallRoute,
+                            arguments: {
+                              'callId': callState.call.callId,
+                              'callerId': callState.call.callerId,
+                              'callerName': callState.call.callerName,
+                              'callerAvatar': callState.call.callerAvatar,
+                              'callType':
+                                  callState.call.type == CallType.video
+                                      ? 'video'
+                                      : 'audio',
+                            },
+                          );
+                        } else if (callState is CallDialingState) {
+                          nav.pushNamed(
+                            AppRoutes.dialingRoute,
+                            arguments: callState.call,
+                          );
+                        } else if (callState is CallConnectedState) {
+                          final currentUser =
+                              Supabase.instance.client.auth.currentUser;
+                          if (currentUser == null) return;
 
-                        final userData =
-                            await Supabase.instance.client
-                                .from('users')
-                                .select('name')
-                                .eq('id', currentUser.id)
-                                .maybeSingle();
+                          final userData =
+                              await Supabase.instance.client
+                                  .from('users')
+                                  .select('name')
+                                  .eq('id', currentUser.id)
+                                  .maybeSingle();
 
-                        final currentUserName =
-                            (userData?['name'] as String?) ?? 'Unknown';
+                          final currentUserName =
+                              (userData?['name'] as String?) ?? 'Unknown';
 
-                        nav.pushReplacementNamed(
-                          AppRoutes.callRoute,
-                          arguments: {
-                            'call': callState.call,
-                            'userId': currentUser.id,
-                            'userName': currentUserName,
-                          },
-                        );
-                      } else if (callState is CallEndedState) {
-                        nav.popUntil((route) {
-                          return route.settings.name != AppRoutes.callRoute &&
-                              route.settings.name != AppRoutes.dialingRoute;
-                        });
-                      }
-                    },
-                    child: Stack(
-                      children: [
-                        devicePreviewChild,
-                        const Directionality(
-                          textDirection: TextDirection.ltr,
-                          child: ConnectivityBanner(),
-                        ),
-                      ],
+                          nav.pushReplacementNamed(
+                            AppRoutes.callRoute,
+                            arguments: {
+                              'call': callState.call,
+                              'userId': currentUser.id,
+                              'userName': currentUserName,
+                            },
+                          );
+                        } else if (callState is CallEndedState) {
+                          nav.popUntil((route) {
+                            return route.settings.name != AppRoutes.callRoute &&
+                                route.settings.name != AppRoutes.dialingRoute;
+                          });
+                        }
+                      },
+                      child: Stack(
+                        children: [
+                          devicePreviewChild,
+                          const Directionality(
+                            textDirection: TextDirection.ltr,
+                            child: ConnectivityBanner(),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 );

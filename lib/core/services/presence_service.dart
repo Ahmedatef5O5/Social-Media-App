@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/widgets.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../features/settings/repository/settings_repository.dart';
 import '../utilities/supabase_constants.dart';
 
 class PresenceService with WidgetsBindingObserver {
@@ -98,17 +99,30 @@ class PresenceService with WidgetsBindingObserver {
     }
   }
 
+  Future<void> setVisibility(bool visible) async {
+    if (visible) {
+      await _setOnline(true);
+      _startHeartbeat();
+    } else {
+      _stopHeartbeat();
+      await _setOnline(false);
+    }
+  }
+
   Future<void> _setOnline(bool isOnline) async {
     final uid = _userId ?? _supabase.auth.currentUser?.id;
     if (uid == null) return;
 
+    final bool effectiveOnline =
+        isOnline && SettingsRepository.instance.onlineStatus;
+
     try {
       final now = DateTime.now().toUtc().toIso8601String();
       await _supabase.from(SupabaseConstants.userPresence).upsert({
-         PresenceColumns.userId: uid,
-      PresenceColumns.isOnline: isOnline,
-      PresenceColumns.lastSeen: now,
-      PresenceColumns.updatedAt: now,
+        PresenceColumns.userId: uid,
+        PresenceColumns.isOnline: effectiveOnline,
+        PresenceColumns.lastSeen: now,
+        PresenceColumns.updatedAt: now,
       }, onConflict: PresenceColumns.userId);
     } catch (e) {
       debugPrint('[PresenceService] _setOnline($isOnline) error: $e');

@@ -8,6 +8,8 @@ import 'package:social_media_app/core/themes/cubit/theme_cubit.dart';
 import 'package:social_media_app/features/auth/cubit/auth_cubit/auth_cubit.dart';
 import 'package:social_media_app/features/profile/cubits/profile_cubit/profile_cubit.dart';
 import 'package:social_media_app/features/settings/widgets/theme_picker_sheet_widget.dart';
+import '../cubit/settings_state.dart';
+import '../cubit/setttings_cubit.dart';
 
 class SettingsView extends StatefulWidget {
   const SettingsView({super.key});
@@ -19,13 +21,6 @@ class SettingsView extends StatefulWidget {
 class _SettingsViewState extends State<SettingsView>
     with SingleTickerProviderStateMixin {
   late AnimationController _animController;
-
-  bool _notificationsEnabled = true;
-  bool _messagePreviews = true;
-  bool _callNotifications = true;
-  bool _readReceipts = true;
-  bool _onlineStatus = true;
-  bool _twoFactor = false;
 
   @override
   void initState() {
@@ -44,6 +39,38 @@ class _SettingsViewState extends State<SettingsView>
 
   @override
   Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (_) => SettingsCubit(),
+      child: BlocConsumer<SettingsCubit, SettingsState>(
+        listenWhen: (previous, current) => current.errorMessage != null,
+        listener: (context, state) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(state.errorMessage!),
+              backgroundColor: Colors.redAccent,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        },
+        builder: (context, settingsState) {
+          return _buildScaffold(context, settingsState);
+        },
+      ),
+    );
+  }
+
+  void _showComingSoon(BuildContext context, String feature) {
+    HapticFeedback.selectionClick();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('$feature is coming soon'),
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 1),
+      ),
+    );
+  }
+
+  Widget _buildScaffold(BuildContext context, SettingsState settingsState) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final primary = theme.primaryColor;
@@ -94,13 +121,14 @@ class _SettingsViewState extends State<SettingsView>
                         icon: CupertinoIcons.lock_fill,
                         label: 'Change Password',
                         subtitle: 'Update your account password',
-                        onTap: () {},
+                        onTap:
+                            () => _showComingSoon(context, 'Change Password'),
                       ),
                       _SettingsItemData(
                         icon: CupertinoIcons.mail_solid,
                         label: 'Email Address',
                         subtitle: 'Manage linked email',
-                        onTap: () {},
+                        onTap: () => _showComingSoon(context, 'Email Address'),
                       ),
                     ],
                   ),
@@ -117,23 +145,31 @@ class _SettingsViewState extends State<SettingsView>
                         icon: Icons.notifications_active_outlined,
                         label: 'Push Notifications',
                         subtitle: 'Enable all notifications',
-                        toggle: _notificationsEnabled,
+                        toggle: settingsState.pushNotifications,
                         onToggle:
-                            (v) => setState(() => _notificationsEnabled = v),
+                            (v) => context
+                                .read<SettingsCubit>()
+                                .setPushNotifications(v),
                       ),
                       _SettingsItemData(
                         icon: Icons.message_outlined,
                         label: 'Message Previews',
                         subtitle: 'Show content in notifications',
-                        toggle: _messagePreviews,
-                        onToggle: (v) => setState(() => _messagePreviews = v),
+                        toggle: settingsState.messagePreviews,
+                        onToggle:
+                            (v) => context
+                                .read<SettingsCubit>()
+                                .setMessagePreviews(v),
                       ),
                       _SettingsItemData(
                         icon: Icons.call_outlined,
                         label: 'Call Notifications',
                         subtitle: 'Incoming call alerts',
-                        toggle: _callNotifications,
-                        onToggle: (v) => setState(() => _callNotifications = v),
+                        toggle: settingsState.callNotifications,
+                        onToggle:
+                            (v) => context
+                                .read<SettingsCubit>()
+                                .setCallNotifications(v),
                       ),
                     ],
                   ),
@@ -150,28 +186,46 @@ class _SettingsViewState extends State<SettingsView>
                         icon: Icons.done_all_rounded,
                         label: 'Read Receipts',
                         subtitle: 'Show when you\'ve read messages',
-                        toggle: _readReceipts,
-                        onToggle: (v) => setState(() => _readReceipts = v),
+                        toggle: settingsState.readReceipts,
+                        onToggle:
+                            (v) => context
+                                .read<SettingsCubit>()
+                                .setReadReceipts(v),
                       ),
                       _SettingsItemData(
                         icon: Icons.circle_outlined,
                         label: 'Online Status',
                         subtitle: 'Let others see when you\'re active',
-                        toggle: _onlineStatus,
-                        onToggle: (v) => setState(() => _onlineStatus = v),
+                        toggle: settingsState.onlineStatus,
+                        onToggle:
+                            (v) => context
+                                .read<SettingsCubit>()
+                                .setOnlineStatus(v),
+                      ),
+                      _SettingsItemData(
+                        icon: Icons.fingerprint_rounded,
+                        label: 'App Lock',
+                        subtitle: 'Require fingerprint / Face ID to open app',
+                        toggle: settingsState.biometricLock,
+                        onToggle:
+                            (v) => context
+                                .read<SettingsCubit>()
+                                .toggleBiometricLock(v),
                       ),
                       _SettingsItemData(
                         icon: CupertinoIcons.lock_shield_fill,
                         label: 'Two-Factor Auth',
                         subtitle: 'Extra layer of security',
-                        toggle: _twoFactor,
-                        onToggle: (v) => setState(() => _twoFactor = v),
+                        toggle: settingsState.twoFactor,
+                        onToggle:
+                            (v) =>
+                                context.read<SettingsCubit>().setTwoFactor(v),
                       ),
                       _SettingsItemData(
                         icon: Icons.block_outlined,
                         label: 'Blocked Users',
                         subtitle: 'Manage blocked accounts',
-                        onTap: () {},
+                        onTap: () => _showComingSoon(context, 'Blocked Users'),
                       ),
                     ],
                   ),
@@ -194,7 +248,9 @@ class _SettingsViewState extends State<SettingsView>
                         icon: Icons.language_rounded,
                         label: 'Language',
                         subtitle: 'English (US)',
-                        onTap: () {},
+                        onTap:
+                            () =>
+                                _showComingSoon(context, 'Language selection'),
                       ),
                     ],
                   ),
@@ -221,19 +277,19 @@ class _SettingsViewState extends State<SettingsView>
                         icon: Icons.help_outline_rounded,
                         label: 'Help & FAQ',
                         subtitle: 'Get answers to common questions',
-                        onTap: () {},
+                        onTap: () => _showComingSoon(context, 'Help & FAQ'),
                       ),
                       _SettingsItemData(
                         icon: Icons.feedback_outlined,
                         label: 'Send Feedback',
                         subtitle: 'Tell us what you think',
-                        onTap: () {},
+                        onTap: () => _showComingSoon(context, 'Send Feedback'),
                       ),
                       _SettingsItemData(
                         icon: Icons.policy_outlined,
                         label: 'Privacy Policy',
                         subtitle: 'How we handle your data',
-                        onTap: () {},
+                        onTap: () => _showComingSoon(context, 'Privacy Policy'),
                       ),
                     ],
                   ),

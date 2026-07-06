@@ -8,6 +8,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:social_media_app/core/router/app_routes.dart';
 import 'package:social_media_app/core/services/active_screen_tracker.dart';
 import 'package:social_media_app/features/chats/models/chat_user_model.dart';
+import '../../features/settings/repository/settings_repository.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -119,9 +120,12 @@ class NotificationService {
       final type = message.data['notificationType'] as String? ?? 'chat';
 
       if (type == 'incoming_call') {
+        if (!SettingsRepository.instance.callNotifications) return;
         await _handleIncomingCallData(message.data);
         return;
       }
+
+      if (!SettingsRepository.instance.pushNotifications) return;
 
       if (type == 'chat') {
         final senderId = message.data['senderId'] as String?;
@@ -268,10 +272,13 @@ class NotificationService {
     final String conversationTitle =
         isGroup ? (data['groupName'] ?? 'Group') : senderName;
 
-    final String body = _buildStyleBody(
-      data['messageType'] ?? 'text',
-      data['messageBody'] ?? notification?.body ?? '',
-    );
+    final String body =
+        SettingsRepository.instance.messagePreviews
+            ? _buildStyleBody(
+              data['messageType'] ?? 'text',
+              data['messageBody'] ?? notification?.body ?? '',
+            )
+            : 'New message';
 
     final String? avatarUrl = data['senderImageUrl'];
     final String? groupImageUrl = data['groupImageUrl'];
