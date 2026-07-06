@@ -98,5 +98,5 @@ configurations.all {
 }
 dependencies {
    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
-    
+   implementation("androidx.appcompat:appcompat:1.7.0")
 }
