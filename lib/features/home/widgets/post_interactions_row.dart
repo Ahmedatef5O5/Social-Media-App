@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
-import 'package:like_button/like_button.dart';
 import 'package:social_media_app/features/comments/cubit/comments_cubit.dart';
 import '../../../core/constants/app_images.dart';
 import '../../../core/helpers/comment_helper.dart';
@@ -10,6 +10,8 @@ import '../cubits/home_cubit/home_cubit.dart';
 import '../models/post_model.dart';
 import '../services/home_services.dart';
 import '../../comments/widget/comments_sheet_section.dart';
+import 'post_reaction_overlay.dart';
+import 'post_reactions_summary.dart';
 
 class PostInteractionsRow extends StatelessWidget {
   const PostInteractionsRow({super.key, required this.postId});
@@ -91,11 +93,57 @@ class _InteractionsContent extends StatelessWidget {
   }
 }
 
-class _LikeButtonWidget extends StatelessWidget {
+class _LikeButtonWidget extends StatefulWidget {
   const _LikeButtonWidget({required this.post, required this.currUserId});
 
   final PostModel post;
   final String? currUserId;
+
+  @override
+  State<_LikeButtonWidget> createState() => _LikeButtonWidgetState();
+}
+
+class _LikeButtonWidgetState extends State<_LikeButtonWidget> {
+  final GlobalKey _anchorKey = GlobalKey();
+  OverlayEntry? _overlayEntry;
+  bool _pressed = false;
+
+  @override
+  void dispose() {
+    _dismissPicker();
+    super.dispose();
+  }
+
+  void _showPicker(PostModel currentPost) {
+    if (_overlayEntry != null) return;
+
+    final renderBox =
+        _anchorKey.currentContext?.findRenderObject() as RenderBox?;
+    if (renderBox == null) return;
+
+    final overlayBox =
+        Overlay.of(context).context.findRenderObject() as RenderBox;
+    final offset = renderBox.localToGlobal(Offset.zero, ancestor: overlayBox);
+
+    _overlayEntry = PostReactionOverlay.create(
+      context: context,
+      anchorRect: offset & renderBox.size,
+      selectedEmoji: currentPost.myReactionEmoji,
+      onSelect: (emoji) {
+        _dismissPicker();
+        HapticFeedback.selectionClick();
+        context.read<HomeCubit>().toggleReaction(currentPost, emoji: emoji);
+      },
+      onDismiss: _dismissPicker,
+    );
+
+    Overlay.of(context).insert(_overlayEntry!);
+  }
+
+  void _dismissPicker() {
+    _overlayEntry?.remove();
+    _overlayEntry = null;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -104,44 +152,50 @@ class _LikeButtonWidget extends StatelessWidget {
 
     final currentPost =
         (state is PostsLoaded)
-            ? state.posts.firstWhere((p) => p.id == post.id)
-            : post;
+            ? state.posts.firstWhere((p) => p.id == widget.post.id)
+            : widget.post;
 
-    return LikeButton(
-      size: 24,
-      isLiked: currentPost.isLikedBy(currUserId!),
-      likeCount: currentPost.likesCount,
-      circleColor: CircleColor(
-        start: Theme.of(context).primaryColor,
-        end: Theme.of(context).primaryColor.withValues(alpha: 0.5),
-      ),
-      bubblesColor: BubblesColor(
-        dotPrimaryColor: Theme.of(context).primaryColor,
-        dotSecondaryColor: Theme.of(
-          context,
-        ).primaryColor.withValues(alpha: 0.5),
-        dotThirdColor: Theme.of(context).primaryColor.withValues(alpha: 0.15),
-      ),
-      likeBuilder: (isLiked) {
-        return Icon(
-          isLiked ? Icons.thumb_up_alt : Icons.thumb_up_alt_outlined,
-          color: isLiked ? Theme.of(context).primaryColor : AppColors.grey6,
-          size: 24,
-        );
+    final String? myReaction = currentPost.myReactionEmoji;
+    final bool isDefaultLike = myReaction == null || myReaction == 'like';
+
+    return GestureDetector(
+      key: _anchorKey,
+      onTapDown: (_) => setState(() => _pressed = true),
+      onTapCancel: () => setState(() => _pressed = false),
+      onTap: () {
+        setState(() => _pressed = false);
+        HapticFeedback.selectionClick();
+        homeCubit.toggleReaction(currentPost, emoji: myReaction ?? 'like');
       },
-      countBuilder: (count, isLiked, text) {
-        return Padding(
-          padding: const EdgeInsets.only(left: 4),
-          child: Text(
-            '${currentPost.likesCount}',
-            style: Theme.of(context).textTheme.bodyLarge,
+      onLongPress: () {
+        HapticFeedback.mediumImpact();
+        _showPicker(currentPost);
+      },
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          AnimatedScale(
+            scale: _pressed ? 1.3 : 1.0,
+            duration: const Duration(milliseconds: 120),
+            curve: Curves.easeOut,
+            child:
+                isDefaultLike
+                    ? Icon(
+                      myReaction == 'like'
+                          ? Icons.thumb_up_alt
+                          : Icons.thumb_up_alt_outlined,
+                      color:
+                          myReaction == 'like'
+                              ? Theme.of(context).primaryColor
+                              : AppColors.grey6,
+                      size: 24,
+                    )
+                    : Text(myReaction, style: const TextStyle(fontSize: 22)),
           ),
-        );
-      },
-      onTap: (isLiked) async {
-        homeCubit.toggleLike(currentPost);
-        return !isLiked;
-      },
+          const Gap(6),
+          PostReactionsSummary(reactions: currentPost.reactions),
+        ],
+      ),
     );
   }
 }

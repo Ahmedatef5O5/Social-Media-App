@@ -39,6 +39,7 @@ class PostItemWidget extends StatelessWidget {
           return oldPost.likesCount != newPost.likesCount ||
               oldPost.isLikedBy(currentUserId) !=
                   newPost.isLikedBy(currentUserId) ||
+              oldPost.reactionsSignature != newPost.reactionsSignature ||
               oldPost.likersImages?.length != newPost.likersImages?.length;
         }
         return true;
