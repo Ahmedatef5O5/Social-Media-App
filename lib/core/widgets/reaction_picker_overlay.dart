@@ -54,8 +54,8 @@ class ChatReactionOverlay {
             children: [
               // Dismiss tap area
               Positioned.fill(
-                child: GestureDetector(
-                  onTap: onDismiss,
+                child: Listener(
+                  onPointerDown: (_) => onDismiss(),
                   behavior: HitTestBehavior.translucent,
                   child: const SizedBox.expand(),
                 ),

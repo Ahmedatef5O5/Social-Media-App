@@ -611,10 +611,13 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState> {
     required String receiverId,
     required String emoji,
   }) async {
-    final conversationId = getChatId(currentUserId, receiverId);
-    final currentEmoji = _reactionsCache[messageId]?[currentUserId];
+    clearSelection();
 
-    // Optimistic update:
+    final ids = [currentUserId, receiverId];
+    ids.sort();
+    final conversationId = ids.join('_');
+
+    final currentEmoji = _reactionsCache[messageId]?[currentUserId];
     _reactionsCache[messageId] ??= {};
     if (currentEmoji == emoji) {
       _reactionsCache[messageId]!.remove(currentUserId);
@@ -627,7 +630,7 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState> {
       await _chatServices.toggleReaction(
         messageId: messageId,
         conversationId: conversationId,
-        currentReaction: emoji,
+        emoji: emoji,
       );
     } catch (e) {
       if (currentEmoji == null) {
@@ -636,7 +639,7 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState> {
         _reactionsCache[messageId]![currentUserId] = currentEmoji;
       }
       _applyReactionsCacheToMessages();
-      debugPrint('toggleReaction error: $e');
+      debugPrint('error toggling reaction: $e');
     }
   }
 

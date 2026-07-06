@@ -269,25 +269,17 @@ class ChatServices {
 
   Future<void> toggleReaction({
     required String messageId,
-    required String currentReaction,
     required String conversationId,
+    required String emoji,
   }) async {
-    final userId = _supabase.auth.currentUser!.id;
-
-    await _supabase
-        .from(SupabaseConstants.messageReactions)
-        .delete()
-        .eq(MessageReactionColumns.messageId, messageId)
-        .eq(MessageReactionColumns.userId, userId);
-
-    if (currentReaction.isNotEmpty) {
-      await _supabase.from(SupabaseConstants.messageReactions).insert({
-        MessageReactionColumns.messageId: messageId,
-        MessageReactionColumns.userId: userId,
-        MessageReactionColumns.reaction: currentReaction,
-        MessageReactionColumns.conversationId: conversationId,
-      });
-    }
+    await _supabase.rpc(
+      'toggle_message_reaction',
+      params: {
+        'p_message_id': messageId,
+        'p_conversation_id': conversationId,
+        'p_emoji': emoji,
+      },
+    );
   }
 
   Stream<List<Map<String, dynamic>>> getMessageReactionsStream(
