@@ -11,8 +11,8 @@ import 'package:social_media_app/features/home/cubits/home_cubit/home_cubit.dart
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../stories/cubit/stories_cubit.dart';
 import '../widgets/home_view_header_section.dart';
-import '../widgets/post_writing_card.dart';
-import '../widgets/posts_section.dart';
+import '../../posts/widgets/post_writing_card.dart';
+import '../../posts/widgets/posts_section.dart';
 import '../../stories/widgets/stories_list_section.dart';
 import 'home_shimmer_skeleton_view.dart';
 

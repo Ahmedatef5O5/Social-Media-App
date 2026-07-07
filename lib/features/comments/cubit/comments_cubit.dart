@@ -8,7 +8,7 @@ import '../../notifications/repository/notifications_repository.dart';
 import '../events/comment_event_bus.dart';
 import '../events/comment_events.dart';
 import '../model/comment_model.dart';
-import '../../home/models/post_model.dart';
+import '../../posts/model/post_model.dart';
 import '../../home/services/home_services.dart';
 part 'comments_state.dart';
 

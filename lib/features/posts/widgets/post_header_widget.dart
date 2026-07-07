@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:social_media_app/features/home/widgets/post_actions_menu.dart';
+import 'package:social_media_app/features/posts/widgets/post_actions_menu.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/helpers/formatted_date.dart';
 import '../../../core/router/app_routes.dart';
 import '../../profile/widgets/user_preview_dialog.dart';
-import '../cubits/home_cubit/home_cubit.dart';
-import '../models/post_model.dart';
-import 'author_image_widget.dart';
+import '../../home/cubits/home_cubit/home_cubit.dart';
+import '../model/post_model.dart';
+import '../../home/widgets/author_image_widget.dart';
 
 class PostHeaderWidget extends StatelessWidget {
   final PostModel post;

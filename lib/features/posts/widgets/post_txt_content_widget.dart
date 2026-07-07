@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:social_media_app/core/widgets/custom_linkify_text.dart';
-import '../models/post_model.dart';
+import '../model/post_model.dart';
 
 class PostTxtContentWidget extends StatelessWidget {
   const PostTxtContentWidget({super.key, required this.post});

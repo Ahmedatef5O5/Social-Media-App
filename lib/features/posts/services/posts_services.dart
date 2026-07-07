@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:social_media_app/features/home/models/feed_event.dart';
+import 'package:social_media_app/features/posts/model/feed_event.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/services/media_cleanup_service.dart';
 import '../../../core/services/network_status_service.dart';
@@ -9,8 +9,8 @@ import '../../../core/services/supabase_database_services.dart';
 import '../../../core/utilities/supabase_constants.dart';
 import '../../comments/helper/comment_tree_builder.dart';
 import '../../comments/model/comment_model.dart';
-import '../models/post_model.dart';
-import '../models/post_request_body.dart';
+import '../model/post_model.dart';
+import '../model/post_request_body.dart';
 
 class PostsServices {
   final supabaseServices = SupabaseDatabaseServices.instance;

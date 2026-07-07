@@ -22,8 +22,8 @@ import 'package:social_media_app/features/group_chats/views/group_info_view.dart
 import 'package:social_media_app/features/home/cubits/home_cubit/home_cubit.dart';
 import 'package:social_media_app/features/profile/services/user_services.dart';
 import 'package:social_media_app/features/stories/views/add_story_preview_view.dart';
-import 'package:social_media_app/features/home/views/create_post_view.dart';
-import 'package:social_media_app/features/home/views/post_themes_view.dart';
+import 'package:social_media_app/features/posts/views/create_post_view.dart';
+import 'package:social_media_app/features/posts/views/post_themes_view.dart';
 import 'package:social_media_app/features/stories/views/story_display_view.dart';
 import 'package:social_media_app/features/home/widgets/full_screen_image_viewer.dart';
 import 'package:social_media_app/features/profile/cubits/edit_profile_cubit/edit_profile_cubit.dart';

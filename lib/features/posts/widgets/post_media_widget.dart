@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:social_media_app/core/widgets/cached_cloudinary_image.dart';
-import 'package:social_media_app/features/home/widgets/post_video_player.dart';
+import 'package:social_media_app/features/posts/widgets/post_video_player.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/themes/app_colors.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
-import '../models/post_model.dart';
-import 'file_attachment_preview.dart';
+import '../model/post_model.dart';
+import '../../home/widgets/file_attachment_preview.dart';
 
 class PostMediaWidget extends StatelessWidget {
   const PostMediaWidget({super.key, required this.post});

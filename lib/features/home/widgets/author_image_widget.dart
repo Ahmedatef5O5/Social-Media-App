@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../models/post_model.dart';
+import '../../posts/model/post_model.dart';
 import '../../../core/widgets/app_avatar.dart';
 
 class AuthorImageWidget extends StatelessWidget {

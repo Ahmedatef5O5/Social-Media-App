@@ -6,7 +6,7 @@ import 'package:social_media_app/features/comments/cubit/comments_cubit.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/themes/app_colors.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
-import '../../home/models/post_model.dart';
+import '../../posts/model/post_model.dart';
 
 class SendCommentSection extends StatefulWidget {
   final PostModel post;

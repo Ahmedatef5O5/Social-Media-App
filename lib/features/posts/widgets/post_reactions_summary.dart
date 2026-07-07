@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../models/post_reaction_model.dart';
+import '../model/post_reaction_model.dart';
 
 class PostReactionsSummary extends StatelessWidget {
   final List<PostReactionModel> reactions;

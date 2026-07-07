@@ -16,10 +16,10 @@ import '../../../../core/services/presence_service.dart';
 import '../../../comments/events/comment_event_bus.dart';
 import '../../../comments/model/comment_model.dart';
 import '../../../notifications/repository/notifications_repository.dart';
-import '../../models/feed_event.dart';
-import '../../models/post_model.dart';
-import '../../models/post_reaction_model.dart';
-import '../../models/post_request_body.dart';
+import '../../../posts/model/feed_event.dart';
+import '../../../posts/model/post_model.dart';
+import '../../../posts/model/post_reaction_model.dart';
+import '../../../posts/model/post_request_body.dart';
 import '../../services/home_services.dart';
 part 'home_state.dart';
 
