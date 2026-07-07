@@ -53,7 +53,7 @@ class _AddStoryCaptionViewState extends State<AddStoryCaptionView> {
               ),
             );
           }
-          if (state is AddStoryError) {
+          if (state is AddStoryError && !state.isConnectivityError) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(state.message),

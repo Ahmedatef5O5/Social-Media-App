@@ -27,8 +27,8 @@ final class AddStorySuccess extends StoriesState {}
 
 final class AddStoryError extends StoriesState {
   final String message;
-
-  const AddStoryError(this.message);
+  final bool isConnectivityError;
+  const AddStoryError(this.message, {this.isConnectivityError = false});
 }
 
 final class StoryImagePicking extends StoriesState {}

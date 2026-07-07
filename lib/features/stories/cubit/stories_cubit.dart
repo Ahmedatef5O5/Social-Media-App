@@ -11,6 +11,7 @@ import 'package:social_media_app/core/services/cloudinary_storage_services.dart'
 import 'package:social_media_app/core/services/file_picker_services.dart';
 import 'package:social_media_app/features/auth/data/models/user_data.dart';
 
+import '../../../core/connectivity/services/connectivity_banner_controller.dart';
 import '../model/story_model.dart';
 import '../services/stories_services.dart';
 
@@ -61,7 +62,8 @@ class StoriesCubit extends Cubit<StoriesState> {
       emit(StoriesLoaded(cachedStories, DateTime.now()));
     } catch (e) {
       debugPrint('Error adding text story: $e');
-      emit(AddStoryError(e.toString()));
+      final isOffline = await ConnectivityBannerController.notifyIfOffline();
+      emit(AddStoryError(e.toString(), isConnectivityError: isOffline));
     }
   }
 
@@ -82,7 +84,8 @@ class StoriesCubit extends Cubit<StoriesState> {
       emit(StoriesLoaded(cachedStories, DateTime.now()));
     } catch (e) {
       debugPrint('Error adding story: $e');
-      emit(AddStoryError(e.toString()));
+      final isOffline = await ConnectivityBannerController.notifyIfOffline();
+      emit(AddStoryError(e.toString(), isConnectivityError: isOffline));
     }
   }
 
@@ -147,7 +150,8 @@ class StoriesCubit extends Cubit<StoriesState> {
       emit(StoriesLoaded(cachedStories, DateTime.now()));
     } catch (e) {
       debugPrint('Error adding story with caption: $e');
-      emit(AddStoryError(e.toString()));
+      final isOffline = await ConnectivityBannerController.notifyIfOffline();
+      emit(AddStoryError(e.toString(), isConnectivityError: isOffline));
     }
   }
 
@@ -236,7 +240,8 @@ class StoriesCubit extends Cubit<StoriesState> {
       return;
     } catch (e) {
       debugPrint('Error adding video story: $e');
-      emit(AddStoryError(e.toString()));
+      final isOffline = await ConnectivityBannerController.notifyIfOffline();
+      emit(AddStoryError(e.toString(), isConnectivityError: isOffline));
 
       if (e.toString().contains('session_expired')) {
         emit(AddStoryError('Your session has expired; please log in again'));

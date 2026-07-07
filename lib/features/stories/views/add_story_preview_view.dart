@@ -123,7 +123,7 @@ class _AddStoryPreviewViewState extends State<AddStoryPreviewView> {
                 duration: const Duration(seconds: 2),
               ),
             );
-          } else if (state is AddStoryError) {
+          } else if (state is AddStoryError && !state.isConnectivityError) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(state.message),

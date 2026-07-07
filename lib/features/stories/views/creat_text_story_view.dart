@@ -83,7 +83,7 @@ class _CreateTextStoryViewState extends State<CreateTextStoryView> {
           );
         }
 
-        if (state is AddStoryError) {
+        if (state is AddStoryError && !state.isConnectivityError) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(state.message), backgroundColor: Colors.red),
           );
