@@ -97,7 +97,7 @@ class _SendCommentSectionState extends State<SendCommentSection> {
               if (state is CommentOptimisticAdded) {
                 _commentController.clear();
               }
-              if (state is CommentError) {
+              if (state is CommentError && !state.isConnectivityError) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text(state.message),

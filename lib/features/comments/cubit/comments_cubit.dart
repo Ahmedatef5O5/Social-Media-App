@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
+import '../../../core/connectivity/services/connectivity_banner_controller.dart';
 import '../../auth/data/models/user_data.dart';
 import '../../notifications/repository/notifications_repository.dart';
 import '../events/comment_event_bus.dart';
@@ -101,7 +102,8 @@ class CommentsCubit extends Cubit<CommentsState> {
       );
     } catch (e) {
       _resolvedIds.remove(tempId);
-      emit(CommentError(e.toString()));
+      final isOffline = await ConnectivityBannerController.notifyIfOffline();
+      emit(CommentError(e.toString(), isConnectivityError: isOffline));
     }
   }
 
@@ -111,6 +113,8 @@ class CommentsCubit extends Cubit<CommentsState> {
     required String commentOwnerId,
     required String emoji,
   }) async {
+    final isOffline = await ConnectivityBannerController.notifyIfOffline();
+    if (isOffline) return;
     final resolvedCommentId = resolveId(commentId);
 
     if (resolvedCommentId == commentId &&
@@ -148,7 +152,8 @@ class CommentsCubit extends Cubit<CommentsState> {
       }
     } catch (e) {
       debugPrint('Error toggling comment reaction: $e');
-      emit(CommentError(e.toString()));
+      final isOffline = await ConnectivityBannerController.notifyIfOffline();
+      emit(CommentError(e.toString(), isConnectivityError: isOffline));
     }
   }
 

@@ -42,5 +42,6 @@ class CommentReactionOptimistic extends CommentsState {
 
 class CommentError extends CommentsState {
   final String message;
-  CommentError(this.message);
+  final bool isConnectivityError;
+  CommentError(this.message, {this.isConnectivityError = false});
 }
