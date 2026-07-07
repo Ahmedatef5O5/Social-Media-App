@@ -179,6 +179,7 @@ class _CommentsSheetSectionState extends State<CommentsSheetSection> {
                                                 ? CachedCloudinaryImage(
                                                   secureUrl: imageUrl,
                                                   fit: BoxFit.cover,
+                                                  isAvatar: true,
                                                   errorWidget:
                                                       (context, error) =>
                                                           Image.asset(

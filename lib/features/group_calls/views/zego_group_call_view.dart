@@ -148,6 +148,7 @@ class _ZegoGroupCallViewState extends State<ZegoGroupCallView> {
                   width: diameter,
                   height: diameter,
                   fit: BoxFit.cover,
+                  isAvatar: true,
                   placeholder:
                       (context) => Container(
                         width: diameter,

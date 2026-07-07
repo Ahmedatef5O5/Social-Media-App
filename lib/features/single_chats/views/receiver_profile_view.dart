@@ -323,6 +323,8 @@ class _ReceiverProfileViewState extends State<ReceiverProfileView> {
       return CachedCloudinaryImage(
         secureUrl: url,
         fit: BoxFit.cover,
+
+        isAvatar: true,
         errorWidget: (context, error) => const Icon(Icons.broken_image),
       );
     } else if (type == 'video') {

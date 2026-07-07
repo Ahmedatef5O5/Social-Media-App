@@ -60,6 +60,8 @@ class UserPreviewDialog extends StatelessWidget {
                                 fit: BoxFit.cover,
                                 height: 300,
                                 width: double.infinity,
+
+                                isAvatar: true,
                                 placeholder:
                                     (context) => SizedBox(
                                       height: 300,

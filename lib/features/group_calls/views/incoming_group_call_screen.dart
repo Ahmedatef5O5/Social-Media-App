@@ -367,6 +367,7 @@ class _IncomingGroupCallScreenState extends State<IncomingGroupCallScreen>
                 ? CachedCloudinaryImage(
                   secureUrl: widget.call.groupAvatarUrl!,
                   fit: BoxFit.cover,
+                  isAvatar: true,
                   errorWidget: (_, __) => _defaultAvatar(),
                 )
                 : _defaultAvatar(),

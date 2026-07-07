@@ -342,6 +342,7 @@ class _OutgoingGroupCallScreenState extends State<OutgoingGroupCallScreen>
                 ? CachedCloudinaryImage(
                   secureUrl: widget.groupAvatarUrl!,
                   fit: BoxFit.cover,
+                  isAvatar: true,
                   errorWidget: (_, __) => _defaultAvatar(primary),
                 )
                 : _defaultAvatar(primary),

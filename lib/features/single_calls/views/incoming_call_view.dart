@@ -424,6 +424,8 @@ class _IncomingCallViewState extends State<IncomingCallView>
                   ? CachedCloudinaryImage(
                     secureUrl: widget.call.callerAvatar,
                     fit: BoxFit.cover,
+
+                    isAvatar: true,
                     errorWidget:
                         (_, __) => _defaultAvatar(widget.call.callerName),
                   )

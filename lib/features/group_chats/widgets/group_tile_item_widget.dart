@@ -45,6 +45,8 @@ class GroupTileItem extends StatelessWidget {
                     ? CachedCloudinaryImage(
                       secureUrl: group.avatarUrl!,
                       fit: BoxFit.cover,
+
+                      isAvatar: true,
                     )
                     : Center(
                       child: Text(

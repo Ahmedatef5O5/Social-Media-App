@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:shimmer/shimmer.dart';
 import '../cache/repository/media_cache_repository.dart';
 
 class CachedCloudinaryImage extends StatefulWidget {
@@ -12,6 +13,7 @@ class CachedCloudinaryImage extends StatefulWidget {
   final WidgetBuilder? placeholder;
   final Widget Function(BuildContext context, Object error)? errorWidget;
   final VoidCallback? onReady;
+  final bool isAvatar;
 
   const CachedCloudinaryImage({
     super.key,
@@ -22,6 +24,7 @@ class CachedCloudinaryImage extends StatefulWidget {
     this.placeholder,
     this.errorWidget,
     this.onReady,
+    this.isAvatar = false,
   });
 
   @override
@@ -31,6 +34,22 @@ class CachedCloudinaryImage extends StatefulWidget {
 class _CachedCloudinaryImageState extends State<CachedCloudinaryImage> {
   late Future<String?> _localPathFuture;
   String? _syncLocalPath;
+
+  String get _optimizedUrl {
+    if (widget.secureUrl.isEmpty ||
+        !widget.secureUrl.contains('cloudinary.com')) {
+      return widget.secureUrl;
+    }
+
+    if (!widget.secureUrl.contains('q_auto')) {
+      return widget.secureUrl.replaceFirst(
+        '/upload/',
+        '/upload/q_auto,f_auto/',
+      );
+    }
+
+    return widget.secureUrl;
+  }
 
   @override
   void initState() {
@@ -83,12 +102,28 @@ class _CachedCloudinaryImageState extends State<CachedCloudinaryImage> {
         if (localPath != null) {
           return _buildImageFile(localPath);
         }
+
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return widget.placeholder != null
+              ? widget.placeholder!(context)
+              : _buildDefaultPlaceholder();
+        }
+
+        if (!snapshot.hasData || snapshot.data == null) {
+          return _buildNetworkFallback(context);
+        }
+
         if (snapshot.connectionState != ConnectionState.done) {
           return widget.placeholder?.call(context) ??
               SizedBox(width: widget.width, height: widget.height);
         }
-
-        return _buildNetworkFallback(context);
+        return Image.file(
+          File(snapshot.data!),
+          width: widget.width,
+          height: widget.height,
+          fit: widget.fit,
+          errorBuilder: (_, __, ___) => _buildNetworkFallback(context),
+        );
       },
     );
   }
@@ -117,26 +152,29 @@ class _CachedCloudinaryImageState extends State<CachedCloudinaryImage> {
   Widget _buildNetworkFallback(BuildContext context) {
     if (widget.onReady != null) {
       return CachedNetworkImage(
-        imageUrl: widget.secureUrl,
+        imageUrl: _optimizedUrl,
         width: widget.width,
         height: widget.height,
         fit: widget.fit,
         placeholder:
             widget.placeholder != null
                 ? (_, __) => widget.placeholder!(context)
-                : null,
+                : (_, __) => _buildDefaultPlaceholder(),
         errorWidget: (_, __, error) => _buildError(context, error),
-        imageBuilder: (_, imageProvider) {
-          WidgetsBinding.instance.addPostFrameCallback(
-            (_) => widget.onReady?.call(),
-          );
-          return Image(
-            image: imageProvider,
-            width: widget.width,
-            height: widget.height,
-            fit: widget.fit,
-          );
-        },
+        imageBuilder:
+            widget.onReady != null
+                ? (_, imageProvider) {
+                  WidgetsBinding.instance.addPostFrameCallback(
+                    (_) => widget.onReady?.call(),
+                  );
+                  return Image(
+                    image: imageProvider,
+                    width: widget.width,
+                    height: widget.height,
+                    fit: widget.fit,
+                  );
+                }
+                : null,
       );
     }
 
@@ -153,8 +191,45 @@ class _CachedCloudinaryImageState extends State<CachedCloudinaryImage> {
     );
   }
 
+  Widget _buildDefaultPlaceholder() {
+    return Shimmer.fromColors(
+      baseColor: Colors.grey[300]!,
+      highlightColor: Colors.grey[100]!,
+      child: Container(
+        width: widget.width ?? double.infinity,
+        height: widget.height ?? double.infinity,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          shape: widget.isAvatar ? BoxShape.circle : BoxShape.rectangle,
+        ),
+      ),
+    );
+  }
+
   Widget _buildError(BuildContext context, Object error) {
-    return widget.errorWidget?.call(context, error) ??
-        const Icon(Icons.wifi_off_rounded, size: 20);
+    if (widget.errorWidget != null) {
+      return widget.errorWidget!(context, error);
+    }
+
+    double iconSize = 20.0;
+    if (widget.width != null && widget.width!.isFinite) {
+      iconSize = widget.width! * 0.5;
+    } else if (widget.height != null && widget.height!.isFinite) {
+      iconSize = widget.height! * 0.5;
+    }
+
+    return Container(
+      width: widget.width,
+      height: widget.height,
+      decoration: BoxDecoration(
+        color: Colors.grey[200],
+        shape: widget.isAvatar ? BoxShape.circle : BoxShape.rectangle,
+      ),
+      child: Icon(
+        widget.isAvatar ? Icons.person : Icons.image_not_supported,
+        color: Colors.grey[400],
+        size: iconSize,
+      ),
+    );
   }
 }

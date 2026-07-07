@@ -123,6 +123,7 @@ class _ReceiverDetailsHeaderSectionState
                                           secureUrl:
                                               widget.receiverUser.imageUrl!,
                                           fit: BoxFit.cover,
+                                          isAvatar: true,
                                           placeholder:
                                               (context) =>
                                                   const CustomLoadingIndicator(),

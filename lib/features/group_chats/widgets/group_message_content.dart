@@ -737,6 +737,8 @@ class _GroupMessageContentState extends State<GroupMessageContent> {
                   width: size,
                   height: size,
                   fit: BoxFit.cover,
+
+                  isAvatar: true,
                   errorWidget: (_, __) => _groupAvatarFallback(primary, size),
                 )
                 : _groupAvatarFallback(primary, size),

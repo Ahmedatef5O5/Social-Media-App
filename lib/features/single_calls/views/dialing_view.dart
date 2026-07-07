@@ -370,6 +370,8 @@ class _DialingViewState extends State<DialingView>
                   ? CachedCloudinaryImage(
                     secureUrl: widget.call.receiverAvatar,
                     fit: BoxFit.cover,
+
+                    isAvatar: true,
                     errorWidget:
                         (_, __) => _defaultAvatar(widget.call.receiverName),
                   )

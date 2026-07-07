@@ -48,6 +48,8 @@ class GroupPreviewDialog extends StatelessWidget {
                           fit: BoxFit.cover,
                           height: 300,
                           width: double.infinity,
+
+                          isAvatar: true,
                           placeholder:
                               (context) => const SizedBox(
                                 height: 300,
