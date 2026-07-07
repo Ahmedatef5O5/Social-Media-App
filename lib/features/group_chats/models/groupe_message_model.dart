@@ -149,4 +149,63 @@ class GroupMessageModel {
         'reply_to_message_type': replyToMessageType,
     };
   }
+
+  factory GroupMessageModel.fromJson(Map<String, dynamic> json) {
+    final reactionsRaw = json['reactions'];
+    final Map<String, String> reactionsMap =
+        reactionsRaw is Map
+            ? reactionsRaw.map(
+              (key, value) => MapEntry(key.toString(), value.toString()),
+            )
+            : {};
+
+    final readByRaw = json['read_by'];
+    final Set<String> readBySet =
+        readByRaw is List ? readByRaw.map((e) => e.toString()).toSet() : {};
+    return GroupMessageModel(
+      id: json['id'] as String,
+      groupId: json[GroupMemberColumns.groupId] as String,
+      senderId: json['sender_id'] as String,
+      senderName: (json['sender_name'] ?? 'Unknown') as String,
+      senderAvatar: json['sender_avatar'] as String?,
+      text: (json['message_text'] ?? '') as String,
+      createdAt: DateTime.parse(json['created_at'] as String),
+      messageType: (json['message_type'] ?? 'text') as String,
+      imageUrl: json['image_url'] as String?,
+      videoUrl: json['video_url'] as String?,
+      voiceUrl: json['voice_url'] as String?,
+      caption: json['caption'] as String?,
+      replyToMessageId: json['reply_to_message_id'] as String?,
+      replyToText: json['reply_to_text'] as String?,
+      replyToSenderId: json['reply_to_sender_id'] as String?,
+      replyToSenderName: json['reply_to_sender_name'] as String?,
+      replyToMessageType: json['reply_to_message_type'] as String?,
+      reactions: reactionsMap,
+      readBy: readBySet,
+    );
+  }
+
+  Map<String, dynamic> toCacheJson() {
+    return {
+      'id': id,
+      GroupMemberColumns.groupId: groupId,
+      'sender_id': senderId,
+      'sender_name': senderName,
+      'sender_avatar': senderAvatar,
+      'message_text': text,
+      'created_at': createdAt.toIso8601String(),
+      'message_type': messageType,
+      'image_url': imageUrl,
+      'video_url': videoUrl,
+      'voice_url': voiceUrl,
+      'caption': caption,
+      'reply_to_message_id': replyToMessageId,
+      'reply_to_text': replyToText,
+      'reply_to_sender_id': replyToSenderId,
+      'reply_to_sender_name': replyToSenderName,
+      'reply_to_message_type': replyToMessageType,
+      'reactions': reactions,
+      'read_by': readBy.toList(),
+    };
+  }
 }

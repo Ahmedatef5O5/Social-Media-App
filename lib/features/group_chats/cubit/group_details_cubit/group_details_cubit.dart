@@ -4,6 +4,7 @@ import 'package:dio/dio.dart' as dio_pkg;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
+import 'package:social_media_app/core/cache/services/local_snapshot_store.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/services/supabase_storage_services.dart';
 import '../../../../core/utilities/supabase_constants.dart';
@@ -14,10 +15,15 @@ import '../../services/group_chat_services.dart';
 import '../group_list_cubit/group_list_cubit.dart';
 import 'group_details_state.dart';
 
+const int kMaxCachedGroupMessagesSnapshot = 60;
+
 class GroupDetailsCubit extends Cubit<GroupDetailsState> {
   final GroupChatServices _services;
   final GroupModel group;
   final GroupListCubit groupListCubit;
+
+  GroupDetailsCubit(this._services, this.group, this.groupListCubit)
+    : super(GroupDetailsLoading());
 
   StreamSubscription? _messagesSubscription;
   StreamSubscription? _readReceiptsSubscription;
@@ -26,6 +32,7 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState> {
   Timer? _typingDebounce;
 
   List<GroupMessageModel> cachedMessages = [];
+  String? _messagesSnapshotKey;
   List<String> _typingUserIds = [];
   Map<String, Map<String, String>> _reactionsCache = {};
   final Map<String, double> uploadProgressMap = {};
@@ -38,11 +45,29 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState> {
 
   String get currentUserId => Supabase.instance.client.auth.currentUser!.id;
 
-  GroupDetailsCubit(this._services, this.group, this.groupListCubit)
-    : super(GroupDetailsLoading());
-
   void init() {
-    emit(GroupDetailsLoading());
+    _messagesSnapshotKey = 'group_messages_snapshot_${group.id}';
+    final diskMessages = _readMessagesSnapshot(_messagesSnapshotKey!);
+    if (diskMessages.isNotEmpty) {
+      for (var m in diskMessages) {
+        if (m.reactions.isNotEmpty) {
+          _reactionsCache[m.id] = Map<String, String>.from(m.reactions);
+        }
+      }
+
+      cachedMessages = diskMessages;
+      _isFirstLoad = false;
+      emit(
+        GroupDetailsLoaded(
+          messages: cachedMessages,
+          typingUserIds: _typingUserIds,
+          uploadProgress: uploadProgressMap,
+        ),
+      );
+    } else {
+      emit(GroupDetailsLoading());
+    }
+
     groupListCubit.setActiveGroupId(group.id);
     _listenMessages();
     _listenReadReceipts();
@@ -65,6 +90,9 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState> {
       cachedMessages = enriched;
       _isFirstLoad = false;
       _emitLoaded();
+      if (_messagesSnapshotKey != null) {
+        _persistMessagesSnapshot(_messagesSnapshotKey!, enriched);
+      }
 
       // Mark read in DB
       markRead();
@@ -141,6 +169,10 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState> {
             return msg.copyWith(reactions: reactions);
           }).toList();
       _emitLoaded();
+
+      if (_messagesSnapshotKey != null && cachedMessages.isNotEmpty) {
+        _persistMessagesSnapshot(_messagesSnapshotKey!, cachedMessages);
+      }
     });
   }
 
@@ -163,6 +195,30 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState> {
         uploadProgress: uploadProgressMap,
       ),
     );
+  }
+
+  void _persistMessagesSnapshot(String key, List<GroupMessageModel> messages) {
+    unawaited(
+      LocalSnapshotStore.instance.saveList(
+        key,
+        messages
+            .take(kMaxCachedGroupMessagesSnapshot)
+            .map((m) => m.toCacheJson())
+            .toList(),
+      ),
+    );
+  }
+
+  List<GroupMessageModel> _readMessagesSnapshot(String key) {
+    try {
+      return LocalSnapshotStore.instance
+          .readList(key)
+          .map(GroupMessageModel.fromJson)
+          .toList();
+    } catch (e) {
+      debugPrint('Failed to read group messages snapshot from disk: $e');
+      return [];
+    }
   }
 
   Future<void> sendMessage({
