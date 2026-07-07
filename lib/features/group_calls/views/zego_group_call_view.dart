@@ -6,8 +6,8 @@ import 'package:zego_uikit_prebuilt_call/zego_uikit_prebuilt_call.dart';
 import '../../../core/secrets/app_secrets.dart';
 import '../../../core/services/zego_token_service.dart';
 import '../../../core/widgets/cached_cloudinary_image.dart';
-import '../../group_chat/models/group_call_model.dart';
-import '../../group_chat/services/group_call_signaling_service.dart';
+import '../models/group_call_model.dart';
+import '../services/group_call_signaling_service.dart';
 
 class ZegoGroupCallView extends StatefulWidget {
   final GroupCallModel call;

@@ -1,4 +1,4 @@
-import '../../../group_chat/models/group_call_model.dart';
+import '../../models/group_call_model.dart';
 
 abstract class GroupCallState {}
 

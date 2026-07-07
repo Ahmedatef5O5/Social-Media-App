@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../features/calls/views/incoming_group_call_screen.dart';
-import '../../features/group_chat/services/group_call_signaling_service.dart';
+import '../../features/group_calls/views/incoming_group_call_screen.dart';
+import '../../features/group_calls/services/group_call_signaling_service.dart';
 import '../services/notification_services.dart';
 
 class GlobalGroupCallListener extends StatefulWidget {

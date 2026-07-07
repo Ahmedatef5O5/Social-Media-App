@@ -1,9 +1,9 @@
 import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../../group_chat/models/group_call_model.dart';
-import '../../../group_chat/services/group_call_signaling_service.dart';
-import '../../../group_chat/services/group_notification_dispatcher.dart';
+import '../../models/group_call_model.dart';
+import '../../services/group_call_signaling_service.dart';
+import '../../../group_chats/services/group_notification_dispatcher.dart';
 import 'group_call_state.dart';
 
 class GroupCallCubit extends Cubit<GroupCallState> {

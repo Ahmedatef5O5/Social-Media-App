@@ -4,9 +4,9 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/widgets/cached_cloudinary_image.dart';
-import '../../group_chat/models/group_call_model.dart';
-import '../../group_chat/services/group_call_signaling_service.dart';
-import '../views/zego_group_call_view.dart';
+import '../models/group_call_model.dart';
+import '../services/group_call_signaling_service.dart';
+import 'zego_group_call_view.dart';
 
 class OutgoingGroupCallScreen extends StatefulWidget {
   final String groupId;
