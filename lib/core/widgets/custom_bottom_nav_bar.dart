@@ -14,6 +14,9 @@ import 'package:social_media_app/features/settings/widgets/profile_drawer.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../features/home/views/home_view.dart';
 import '../../features/profile/cubits/profile_cubit/profile_cubit.dart';
+import '../connectivity/cubit/connectivity_cubit.dart';
+import '../connectivity/cubit/connectivity_state.dart';
+import '../connectivity/services/connectivity_banner_controller.dart';
 import '../constants/app_images.dart';
 import 'custom_floating_nav_bar.dart';
 
@@ -39,6 +42,13 @@ class _CustomBottomNavBarState extends State<CustomBottomNavBar> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final isOffline =
+          context.read<ConnectivityCubit>().state is ConnectivityOffline;
+      if (isOffline) {
+        ConnectivityBannerController.notifyBlockedByOffline();
+      }
+    });
     _controller = PersistentTabController(initialIndex: 0);
     _controller.addListener(() {
       if (mounted) {

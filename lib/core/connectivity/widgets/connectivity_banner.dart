@@ -65,6 +65,9 @@ class _ConnectivityBannerState extends State<ConnectivityBanner>
   ) {
     if (state is ConnectivityOffline) {
       _wasOffline = true;
+      if (!_isOnSplashScreen) {
+        _show(_BannerMode.offline, _offlineVisibleFor);
+      }
       return;
     }
 

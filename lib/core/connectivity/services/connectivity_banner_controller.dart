@@ -10,8 +10,10 @@ class ConnectivityBannerController {
     offlineFlashTrigger.value++;
   }
 
-  static Future<void> notifyIfOffline() async {
+  static Future<bool> notifyIfOffline() async {
     final isOnline = await NetworkStatusService.instance.isConnected();
-    if (!isOnline) notifyBlockedByOffline();
+    final isOffline = !isOnline;
+    if (isOffline) notifyBlockedByOffline();
+    return isOffline;
   }
 }
