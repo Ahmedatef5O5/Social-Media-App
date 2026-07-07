@@ -8,5 +8,7 @@ abstract class MediaCacheRepository {
 
   bool isAvailableOffline(String secureUrl);
 
+  String? resolveLocalPathSync(String secureUrl);
+
   Future<int> runEvictionSweep();
 }

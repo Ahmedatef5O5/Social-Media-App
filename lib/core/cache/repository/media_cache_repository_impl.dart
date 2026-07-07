@@ -33,6 +33,13 @@ class MediaCacheRepositoryImpl implements MediaCacheRepository {
   }
 
   @override
+  String? resolveLocalPathSync(String secureUrl) {
+    final path = _localDataSource.getCachedEntry(secureUrl)?.localFilePath;
+    if (path == null) return null;
+    return File(path).existsSync() ? path : null;
+  }
+
+  @override
   Future<String?> resolveLocalPath(
     String secureUrl, {
     void Function(double progress)? onProgress,

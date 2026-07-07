@@ -5,6 +5,14 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../cache/repository/media_cache_repository.dart';
 
 class CachedCloudinaryImage extends StatefulWidget {
+  final String secureUrl;
+  final BoxFit fit;
+  final double? width;
+  final double? height;
+  final WidgetBuilder? placeholder;
+  final Widget Function(BuildContext context, Object error)? errorWidget;
+  final VoidCallback? onReady;
+
   const CachedCloudinaryImage({
     super.key,
     required this.secureUrl,
@@ -16,20 +24,13 @@ class CachedCloudinaryImage extends StatefulWidget {
     this.onReady,
   });
 
-  final String secureUrl;
-  final BoxFit fit;
-  final double? width;
-  final double? height;
-  final WidgetBuilder? placeholder;
-  final Widget Function(BuildContext context, Object error)? errorWidget;
-  final VoidCallback? onReady;
-
   @override
   State<CachedCloudinaryImage> createState() => _CachedCloudinaryImageState();
 }
 
 class _CachedCloudinaryImageState extends State<CachedCloudinaryImage> {
   late Future<String?> _localPathFuture;
+  String? _syncLocalPath;
 
   @override
   void initState() {
@@ -46,18 +47,32 @@ class _CachedCloudinaryImageState extends State<CachedCloudinaryImage> {
   }
 
   void _resolve() {
-    _localPathFuture =
-        widget.secureUrl.isEmpty
-            ? Future.value(null)
-            : context.read<MediaCacheRepository>().resolveLocalPath(
-              widget.secureUrl,
-            );
+    if (widget.secureUrl.isEmpty) {
+      _syncLocalPath = null;
+      _localPathFuture = Future.value(null);
+      return;
+    }
+
+    final repo = context.read<MediaCacheRepository>();
+
+    final syncPath = repo.resolveLocalPathSync(widget.secureUrl);
+
+    if (syncPath != null) {
+      _syncLocalPath = syncPath;
+      _localPathFuture = Future.value(syncPath);
+      return;
+    }
+    _syncLocalPath = null;
+    _localPathFuture = repo.resolveLocalPath(widget.secureUrl);
   }
 
   @override
   Widget build(BuildContext context) {
     if (widget.secureUrl.isEmpty) {
       return _buildError(context, StateError('empty secureUrl'));
+    }
+    if (_syncLocalPath != null) {
+      return _buildImageFile(_syncLocalPath!);
     }
 
     return FutureBuilder<String?>(
@@ -66,26 +81,8 @@ class _CachedCloudinaryImageState extends State<CachedCloudinaryImage> {
         final localPath = snapshot.data;
 
         if (localPath != null) {
-          return Image.file(
-            File(localPath),
-            width: widget.width,
-            height: widget.height,
-            fit: widget.fit,
-            frameBuilder:
-                widget.onReady == null
-                    ? null
-                    : (context, child, frame, wasSynchronouslyLoaded) {
-                      if (frame != null) {
-                        WidgetsBinding.instance.addPostFrameCallback(
-                          (_) => widget.onReady?.call(),
-                        );
-                      }
-                      return child;
-                    },
-            errorBuilder: (_, error, __) => _buildNetworkFallback(context),
-          );
+          return _buildImageFile(localPath);
         }
-
         if (snapshot.connectionState != ConnectionState.done) {
           return widget.placeholder?.call(context) ??
               SizedBox(width: widget.width, height: widget.height);
@@ -93,6 +90,27 @@ class _CachedCloudinaryImageState extends State<CachedCloudinaryImage> {
 
         return _buildNetworkFallback(context);
       },
+    );
+  }
+
+  Widget _buildImageFile(String localPath) {
+    return Image.file(
+      File(localPath),
+      width: widget.width,
+      height: widget.height,
+      fit: widget.fit,
+      frameBuilder:
+          widget.onReady == null
+              ? null
+              : (context, child, frame, wasSynchronouslyLoaded) {
+                if (frame != null) {
+                  WidgetsBinding.instance.addPostFrameCallback(
+                    (_) => widget.onReady?.call(),
+                  );
+                }
+                return child;
+              },
+      errorBuilder: (_, error, __) => _buildNetworkFallback(context),
     );
   }
 
