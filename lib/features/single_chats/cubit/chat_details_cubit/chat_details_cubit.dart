@@ -613,6 +613,9 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState> {
   }) async {
     clearSelection();
 
+    final isOffline = await ConnectivityBannerController.notifyIfOffline();
+    if (isOffline) return;
+
     final ids = [currentUserId, receiverId];
     ids.sort();
     final conversationId = ids.join('_');

@@ -1,4 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../core/connectivity/services/connectivity_banner_controller.dart';
 import '../../single_calls/model/call_model.dart';
 
 class CallActions {
@@ -8,6 +9,11 @@ class CallActions {
     required String receiverName,
     required String receiverAvatar,
   }) async {
+    final isOffline = await ConnectivityBannerController.notifyIfOffline();
+    if (isOffline) {
+      return null;
+    }
+
     final currentUser = Supabase.instance.client.auth.currentUser;
     if (currentUser == null) return null;
 

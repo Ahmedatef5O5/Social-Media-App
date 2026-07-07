@@ -297,13 +297,13 @@ class HomeCubit extends Cubit<HomeState> {
 
       await fetchPosts(isRefresh: true);
     } catch (e) {
-      unawaited(ConnectivityBannerController.notifyIfOffline());
+      final isOffline = await ConnectivityBannerController.notifyIfOffline();
 
       final errorMessage = _mapExceptionToMessage(e);
       if (errorMessage == "upload_canceled") {
         emit(const PostUploadCanceled());
       } else {
-        emit(PostCreateError(errorMessage));
+        emit(PostCreateError(errorMessage, isConnectivityError: isOffline));
       }
     }
   }
@@ -464,6 +464,11 @@ class HomeCubit extends Cubit<HomeState> {
     emit(PostsLoaded(updatedPosts, DateTime.now()));
 
     try {
+      final isOffline = await ConnectivityBannerController.notifyIfOffline();
+
+      if (isOffline) {
+        return;
+      }
       await _homeServices.postServices.toggleReaction(
         postId: post.id,
         userId: userId,
@@ -498,10 +503,41 @@ class HomeCubit extends Cubit<HomeState> {
         userId,
       );
       if (!isRefresh) emit(UserDataLoaded(currentUserData!));
+      _persistCurrentUserSnapshot(currentUserData!);
     } catch (e) {
       debugPrint("Error fetching user: $e");
       if (currentUserData != null) return;
+      final diskUser = _readCurrentUserSnapshot();
+      if (diskUser != null) {
+        debugPrint('Silent error: no internet, showing cached user from disk.');
+
+        currentUserData = diskUser;
+        emit(UserDataLoaded(diskUser));
+        return;
+      }
+
       emit(UserDataLoadError(e.toString()));
+    }
+  }
+
+  void _persistCurrentUserSnapshot(UserData user) {
+    unawaited(
+      LocalSnapshotStore.instance.saveObject(
+        SnapshotKeys.currentUser,
+        user.toCacheJson(),
+      ),
+    );
+  }
+
+  UserData? _readCurrentUserSnapshot() {
+    try {
+      final map = LocalSnapshotStore.instance.readObject(
+        SnapshotKeys.currentUser,
+      );
+      return map != null ? UserData.fromCacheJson(map) : null;
+    } catch (e) {
+      debugPrint('Failed to read current user snapshot from disk: $e');
+      return null;
     }
   }
 

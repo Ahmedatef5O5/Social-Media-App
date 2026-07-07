@@ -52,7 +52,8 @@ final class PostCreated extends HomeState {
 
 final class PostCreateError extends HomeState {
   final String message;
-  PostCreateError(this.message);
+  final bool isConnectivityError;
+  PostCreateError(this.message, {this.isConnectivityError = false});
 }
 
 final class MediaPicking extends HomeState {}

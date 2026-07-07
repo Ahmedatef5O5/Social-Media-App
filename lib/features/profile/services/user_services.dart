@@ -2,11 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:social_media_app/core/utilities/supabase_constants.dart';
 import 'package:social_media_app/features/auth/data/models/user_data.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../core/services/network_status_service.dart';
 
 class UserService {
   final _supabase = Supabase.instance.client;
+  final NetworkStatusService _networkStatus;
+
+  UserService({NetworkStatusService? networkStatus})
+    : _networkStatus = networkStatus ?? NetworkStatusService.instance;
 
   Future<UserData> fetchCurrentUser(String userId) async {
+    if (!(await _networkStatus.isConnected())) {
+      throw Exception('no-internet');
+    }
     try {
       final data =
           await _supabase

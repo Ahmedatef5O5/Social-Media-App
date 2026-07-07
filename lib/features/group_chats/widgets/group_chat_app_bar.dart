@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../core/connectivity/services/connectivity_banner_controller.dart';
 import '../../../core/router/app_routes.dart';
 import '../../group_calls/views/outgoing_group_call_screen.dart';
 import '../../group_calls/views/zego_group_call_view.dart';
@@ -19,6 +20,10 @@ class GroupChatAppBar extends StatelessWidget implements PreferredSizeWidget {
   Future<void> _initiateCall(BuildContext context, GroupCallType type) async {
     final navigator = Navigator.of(context);
     try {
+      final isOffline = await ConnectivityBannerController.notifyIfOffline();
+      if (isOffline) {
+        return;
+      }
       final user = Supabase.instance.client.auth.currentUser!;
       final profileData =
           await Supabase.instance.client

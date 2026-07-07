@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import 'package:social_media_app/core/cache/services/local_snapshot_store.dart';
+import 'package:social_media_app/core/connectivity/services/connectivity_banner_controller.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/services/supabase_storage_services.dart';
 import '../../../../core/utilities/supabase_constants.dart';
@@ -229,6 +230,9 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState> {
     File? voiceFile,
     String? caption,
   }) async {
+    final isOffline = await ConnectivityBannerController.notifyIfOffline();
+    if (isOffline) return;
+
     if (text.trim().isEmpty &&
         imageFile == null &&
         videoFile == null &&
@@ -386,7 +390,8 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState> {
     } catch (e) {
       cachedMessages.removeWhere((m) => m.id == tempId);
       uploadProgressMap.remove(tempId);
-      emit(GroupDetailsError(e.toString()));
+
+      final isOffline = await ConnectivityBannerController.notifyIfOffline();
 
       if (e is dio_pkg.DioException &&
           e.type == dio_pkg.DioExceptionType.cancel) {
@@ -404,6 +409,10 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState> {
         uploadProgressMap.remove(tempId);
 
         cachedMessages.removeWhere((m) => m.id == tempId);
+
+        if (!isOffline) {
+          emit(GroupDetailsError(e.toString()));
+        }
 
         emit(GroupDetailsLoaded(messages: List.from(cachedMessages)));
       }
@@ -433,6 +442,9 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState> {
     required String messageId,
     required String emoji,
   }) async {
+    final isOffline = await ConnectivityBannerController.notifyIfOffline();
+    if (isOffline) return;
+
     final currentEmoji = _reactionsCache[messageId]?[currentUserId];
 
     _reactionsCache[messageId] ??= {};

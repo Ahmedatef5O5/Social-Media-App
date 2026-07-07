@@ -208,12 +208,6 @@ class _ZegoCallViewState extends State<ZegoCallView> {
             defaultAction.call();
           },
         ),
-        // events: ZegoUIKitPrebuiltCallEvents(
-        //   onCallEnd: (event, defaultAction) {
-        //     context.read<CallCubit>().endCall(widget.call.callId);
-        //     defaultAction.call();
-        //   },
-        // ),
       ),
     );
   }
