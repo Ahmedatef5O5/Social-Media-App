@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:social_media_app/core/services/network_status_service.dart';
 import 'package:social_media_app/features/auth/handler/auth_exception_handler.dart';
 import 'package:social_media_app/features/auth/services/supabase_auth_services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -124,15 +125,41 @@ class AuthCubit extends Cubit<AuthState> {
 
   Future<void> checkAuthStatus() async {
     final session = _authServices.currentSession;
-    if (session != null) {
-      if (session.isExpired) {
-        debugPrint('⚠️ Session Expired! Forcing Sign Out...');
-        await signOut();
-      } else {
-        emit(AuthSuccess());
-      }
-    } else {
+
+    if (session == null) {
       emit(AuthInitial());
+      return;
+    }
+
+    if (!session.isExpired) {
+      emit(AuthSuccess());
+      return;
+    }
+
+    final isOnline = await NetworkStatusService.instance.isConnected();
+
+    if (!isOnline) {
+      debugPrint(
+        '⚠️ Access token looks expired but device is offline — '
+        'keeping the cached session. It will refresh automatically '
+        'once connectivity returns.',
+      );
+      emit(AuthSuccess());
+      return;
+    }
+    try {
+      final response = await _authServices.refreshSession();
+      if (response.session != null) {
+        emit(AuthSuccess());
+      } else {
+        debugPrint(
+          '⚠️ Session expired and refresh returned no session! Forcing Sign Out...',
+        );
+        await signOut();
+      }
+    } catch (e) {
+      debugPrint('⚠️ Session refresh failed: $e — Forcing Sign Out...');
+      await signOut();
     }
   }
 

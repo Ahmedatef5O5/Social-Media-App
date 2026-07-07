@@ -16,6 +16,9 @@ class SupabaseAuthServices implements AuthRepository {
 
   supabase_pkg.Session? get currentSession => _supabase.auth.currentSession;
 
+  Future<AuthResponse> refreshSession() => _supabase.auth.refreshSession();
+
+
   Future<void> ensureUserExistsInDb(supabase_pkg.User user) async {
     try {
       final existingUser =
