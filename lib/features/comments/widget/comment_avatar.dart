@@ -3,7 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/constants/app_images.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/widgets/app_avatar.dart';
-import '../../chats/models/chat_user_model.dart';
+import '../../single_chats/models/chat_user_model.dart';
 import '../../profile/widgets/user_preview_dialog.dart';
 import '../model/comment_model.dart';
 

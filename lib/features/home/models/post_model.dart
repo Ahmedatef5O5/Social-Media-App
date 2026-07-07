@@ -1,5 +1,5 @@
 import 'package:social_media_app/core/utilities/supabase_constants.dart';
-import 'package:social_media_app/features/chats/models/chat_user_model.dart';
+import 'package:social_media_app/features/single_chats/models/chat_user_model.dart';
 import 'package:social_media_app/features/home/models/post_reaction_model.dart';
 import '../../comments/model/comment_model.dart';
 

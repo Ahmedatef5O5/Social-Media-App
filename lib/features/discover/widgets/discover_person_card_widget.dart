@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:social_media_app/features/auth/data/models/user_data.dart';
-import 'package:social_media_app/features/chats/models/chat_user_model.dart';
+import 'package:social_media_app/features/single_chats/models/chat_user_model.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/themes/app_colors.dart';
 import '../../../core/widgets/custom_elevated_button.dart';

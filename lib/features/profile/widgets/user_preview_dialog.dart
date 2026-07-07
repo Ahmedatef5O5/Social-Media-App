@@ -3,11 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:social_media_app/core/constants/app_images.dart';
 import 'package:social_media_app/core/widgets/custom_loading_indicator.dart';
-import 'package:social_media_app/features/chats/models/chat_user_model.dart';
+import 'package:social_media_app/features/single_chats/models/chat_user_model.dart';
 import '../../../core/router/app_routes.dart';
-import '../../calls/cubits/single_call_cubit/call_cubit.dart';
-import '../../calls/model/call_model.dart';
-import '../../chats/helper/call_actions.dart';
+import '../../single_calls/cubits/single_call_cubit/call_cubit.dart';
+import '../../single_calls/model/call_model.dart';
+import '../../single_chats/helper/call_actions.dart';
 
 class UserPreviewDialog extends StatelessWidget {
   final ChatUserModel user;

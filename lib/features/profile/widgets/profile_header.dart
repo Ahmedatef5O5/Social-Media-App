@@ -9,7 +9,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/constants/app_images.dart';
 import '../../../core/themes/app_colors.dart';
 import '../../../core/widgets/custom_elevated_button.dart';
-import '../../chats/models/chat_user_model.dart';
+import '../../single_chats/models/chat_user_model.dart';
 
 class ProfileHeader extends StatelessWidget {
   const ProfileHeader({super.key, required this.size, required this.user});

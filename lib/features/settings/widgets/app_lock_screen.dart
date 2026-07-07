@@ -95,7 +95,7 @@ class _AppLockScreenState extends State<AppLockScreen> {
                         icon: const Icon(Icons.fingerprint_rounded),
                         label: const Text('Open the app'),
                       ),
-                  const Spacer(flex: 3),
+                  const Spacer(flex: 4),
                 ],
               ),
             ),

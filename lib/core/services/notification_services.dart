@@ -7,7 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:social_media_app/core/router/app_routes.dart';
 import 'package:social_media_app/core/services/active_screen_tracker.dart';
-import 'package:social_media_app/features/chats/models/chat_user_model.dart';
+import 'package:social_media_app/features/single_chats/models/chat_user_model.dart';
 import '../../features/settings/repository/settings_repository.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();

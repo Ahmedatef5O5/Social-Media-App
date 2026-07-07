@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:lottie/lottie.dart';
 import 'package:social_media_app/core/widgets/custom_elevated_button.dart';
-import '../../features/chats/widgets/empty_placeholder_state.dart';
+import '../../features/single_chats/widgets/empty_placeholder_state.dart';
 import '../themes/app_colors.dart';
 
 class CustomConfirmationDialog extends StatelessWidget {

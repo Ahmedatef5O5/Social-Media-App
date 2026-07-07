@@ -8,7 +8,7 @@ import 'package:social_media_app/core/themes/app_colors.dart';
 import '../../../core/cache/repository/media_cache_repository.dart';
 import '../../../core/services/network_status_service.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
-import '../../chats/widgets/full_screen_media_view.dart';
+import '../../single_chats/widgets/full_screen_media_view.dart';
 
 enum _VideoLoadStatus { loading, ready, unavailableOffline, error }
 
