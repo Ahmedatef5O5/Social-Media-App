@@ -3,7 +3,7 @@ import 'dart:ui';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
-import '../../home/widgets/full_screen_image_viewer.dart';
+import '../../../core/widgets/full_screen_image_viewer.dart';
 import '../models/group_model.dart';
 
 class GroupInfoHeader extends StatelessWidget {

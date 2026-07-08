@@ -19,13 +19,12 @@ import 'package:social_media_app/features/group_chats/cubit/group_details_cubit/
 import 'package:social_media_app/features/group_chats/models/group_model.dart';
 import 'package:social_media_app/features/group_chats/views/group_chat_details_view.dart';
 import 'package:social_media_app/features/group_chats/views/group_info_view.dart';
-import 'package:social_media_app/features/home/cubits/home_cubit/home_cubit.dart';
 import 'package:social_media_app/features/profile/services/user_services.dart';
 import 'package:social_media_app/features/stories/views/add_story_preview_view.dart';
 import 'package:social_media_app/features/posts/views/create_post_view.dart';
 import 'package:social_media_app/features/posts/views/post_themes_view.dart';
 import 'package:social_media_app/features/stories/views/story_display_view.dart';
-import 'package:social_media_app/features/home/widgets/full_screen_image_viewer.dart';
+import 'package:social_media_app/core/widgets/full_screen_image_viewer.dart';
 import 'package:social_media_app/features/profile/cubits/edit_profile_cubit/edit_profile_cubit.dart';
 import 'package:social_media_app/features/profile/services/edit_profile_services.dart';
 import 'package:social_media_app/features/profile/views/edit_profile_view.dart';
@@ -34,6 +33,7 @@ import 'package:social_media_app/features/splash/views/on_boarding_view.dart';
 import 'package:social_media_app/features/splash/views/splash_view.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../features/auth/data/models/user_data.dart';
+import '../../features/posts/cubit/posts_cubit.dart';
 import '../../features/single_calls/model/call_model.dart';
 import '../../features/single_calls/views/dialing_view.dart';
 import '../../features/single_calls/views/incoming_call_view.dart';
@@ -233,9 +233,9 @@ class AppRouter {
           settings: settings,
         );
       case AppRoutes.createPostViewRoute:
-        final cubit = _args<HomeCubit>(settings);
+        final cubit = _args<PostsCubit>(settings);
         if (cubit == null) {
-          return _errorRoute(settings, 'Missing HomeCubit parameter');
+          return _errorRoute(settings, 'Missing PostsCubit parameter');
         }
         return _buildRoute(
           BlocProvider.value(value: cubit, child: const CreatePostView()),

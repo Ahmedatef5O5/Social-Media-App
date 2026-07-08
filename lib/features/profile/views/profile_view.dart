@@ -6,8 +6,8 @@ import 'package:social_media_app/features/profile/cubits/profile_cubit/profile_c
 import 'package:social_media_app/features/profile/views/profile_shimmer_view.dart';
 import 'package:social_media_app/features/profile/widgets/profile_body_content.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../home/cubits/home_cubit/home_cubit.dart';
 import '../../../core/widgets/global_refresh_indicator.dart';
+import '../../posts/cubit/posts_cubit.dart';
 
 class ProfileView extends StatefulWidget {
   final String? userId;
@@ -79,7 +79,7 @@ class _ProfileViewState extends State<ProfileView> {
         widget.userId == null || widget.userId == currentUserId;
     final size = MediaQuery.sizeOf(context);
     final profileCubit = context.read<ProfileCubit>();
-    final homeCubit = context.read<HomeCubit>();
+    final postsCubit = context.read<PostsCubit>();
     return Stack(
       children: [
         Listener(
@@ -105,7 +105,7 @@ class _ProfileViewState extends State<ProfileView> {
               if (state is ProfileLoaded) {
                 await Future.wait([
                   profileCubit.getProfileData(state.user.id, isRefresh: true),
-                  homeCubit.fetchPosts(isRefresh: true),
+                  postsCubit.fetchPosts(isRefresh: true),
                 ]);
 
                 await Future.delayed(const Duration(milliseconds: 300));
@@ -187,7 +187,7 @@ class _ProfileViewState extends State<ProfileView> {
                             size: size,
                             refreshProgress: _refreshProgress,
                             isRefreshing: _isRefreshing,
-                            homeCubit: homeCubit,
+                            postsCubit: postsCubit,
                             isCurrentUser: isCurrentUser,
                           ),
                         )

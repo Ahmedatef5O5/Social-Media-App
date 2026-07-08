@@ -1,28 +1,31 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:social_media_app/features/posts/widgets/post_actions_menu.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/helpers/formatted_date.dart';
 import '../../../core/router/app_routes.dart';
 import '../../profile/widgets/user_preview_dialog.dart';
 import '../../home/cubits/home_cubit/home_cubit.dart';
+import '../cubit/posts_cubit.dart';
 import '../model/post_model.dart';
-import '../../home/widgets/author_image_widget.dart';
+import 'author_image_widget.dart';
 
 class PostHeaderWidget extends StatelessWidget {
   final PostModel post;
   final String currentUserId;
-  final HomeCubit homeCubit;
-
+  final PostsCubit postsCubit;
   const PostHeaderWidget({
     super.key,
     required this.post,
     required this.currentUserId,
-    required this.homeCubit,
+    required this.postsCubit,
   });
 
   @override
   Widget build(BuildContext context) {
     final currentUserId = Supabase.instance.client.auth.currentUser!.id;
+    final navController = context.read<HomeCubit>().navController;
+
     final currentRoute = ModalRoute.of(context);
     final currentArgs = currentRoute?.settings.arguments;
 
@@ -42,8 +45,8 @@ class PostHeaderWidget extends StatelessWidget {
                 ? null
                 : () {
                   if (isPostByMe) {
-                    if (homeCubit.navController != null) {
-                      homeCubit.navController!.jumpToTab(3);
+                    if (navController != null) {
+                      navController.jumpToTab(3);
                     }
                   } else {
                     showDialog(
@@ -62,8 +65,8 @@ class PostHeaderWidget extends StatelessWidget {
               ? null
               : () {
                 if (isPostByMe) {
-                  if (homeCubit.navController != null) {
-                    homeCubit.navController!.jumpToTab(3);
+                  if (navController != null) {
+                    navController.jumpToTab(3);
                   }
                 } else {
                   Navigator.of(context, rootNavigator: true).pushNamed(
@@ -91,7 +94,7 @@ class PostHeaderWidget extends StatelessWidget {
       trailing: PostActionsMenu(
         post: post,
         currentUserId: currentUserId,
-        homeCubit: homeCubit,
+        postsCubit: postsCubit,
       ),
     );
   }

@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 import 'package:social_media_app/features/comments/cubit/comments_cubit.dart';
+import 'package:social_media_app/features/posts/cubit/posts_cubit.dart';
 import '../../../core/constants/app_images.dart';
 import '../../../core/helpers/comment_helper.dart';
 import '../../../core/themes/app_colors.dart';
@@ -20,7 +21,7 @@ class PostInteractionsRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<HomeCubit, HomeState>(
+    return BlocBuilder<PostsCubit, PostsState>(
       buildWhen: (prev, curr) {
         if (prev is PostsLoaded && curr is PostsLoaded) {
           final oldPost = prev.posts.firstWhere(
@@ -132,7 +133,7 @@ class _LikeButtonWidgetState extends State<_LikeButtonWidget> {
       onSelect: (emoji) {
         _dismissPicker();
         HapticFeedback.selectionClick();
-        context.read<HomeCubit>().toggleReaction(currentPost, emoji: emoji);
+        context.read<PostsCubit>().toggleReaction(currentPost, emoji: emoji);
       },
       onDismiss: _dismissPicker,
     );
@@ -147,8 +148,8 @@ class _LikeButtonWidgetState extends State<_LikeButtonWidget> {
 
   @override
   Widget build(BuildContext context) {
-    final homeCubit = context.read<HomeCubit>();
-    final state = context.watch<HomeCubit>().state;
+    final postsCubit = context.read<PostsCubit>();
+    final state = context.watch<PostsCubit>().state;
 
     final currentPost =
         (state is PostsLoaded)
@@ -165,7 +166,7 @@ class _LikeButtonWidgetState extends State<_LikeButtonWidget> {
       onTap: () {
         setState(() => _pressed = false);
         HapticFeedback.selectionClick();
-        homeCubit.toggleReaction(currentPost, emoji: myReaction ?? 'like');
+        postsCubit.toggleReaction(currentPost, emoji: myReaction ?? 'like');
       },
       onLongPress: () {
         HapticFeedback.mediumImpact();
@@ -210,12 +211,13 @@ class _CommentButtonWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: () {
-        final homeCubit = context.read<HomeCubit>();
+        final postsCubit = context.read<PostsCubit>();
         final homeServices = HomeServices.instance;
         final commentsCubit = CommentsCubit(
           homeServices,
           currentUserData: context.read<HomeCubit>().currentUserData,
         );
+
         showModalBottomSheet(
           context: context,
           useRootNavigator: true,
@@ -227,7 +229,7 @@ class _CommentButtonWidget extends StatelessWidget {
           builder:
               (_) => MultiBlocProvider(
                 providers: [
-                  BlocProvider.value(value: homeCubit),
+                  BlocProvider.value(value: postsCubit),
                   BlocProvider.value(value: commentsCubit),
                 ],
                 child: CommentsSheetSection(postId: post.id),

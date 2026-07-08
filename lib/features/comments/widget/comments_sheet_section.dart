@@ -4,7 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 import 'package:social_media_app/core/widgets/custom_loading_indicator.dart';
 import 'package:social_media_app/features/comments/cubit/comments_cubit.dart';
-import 'package:social_media_app/features/home/cubits/home_cubit/home_cubit.dart';
+import 'package:social_media_app/features/posts/cubit/posts_cubit.dart';
 import 'package:social_media_app/features/posts/model/post_model.dart';
 import 'package:social_media_app/features/comments/widget/comments_section.dart';
 import '../../../core/constants/app_images.dart';
@@ -72,7 +72,7 @@ class _CommentsSheetSectionState extends State<CommentsSheetSection> {
 
   @override
   Widget build(BuildContext context) {
-    final post = context.select<HomeCubit, PostModel?>((cubit) {
+    final post = context.select<PostsCubit, PostModel?>((cubit) {
       final state = cubit.state;
 
       if (state is PostsLoaded) {

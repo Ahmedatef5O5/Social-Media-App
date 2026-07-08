@@ -6,6 +6,7 @@ import 'package:social_media_app/core/themes/app_colors.dart';
 import 'package:social_media_app/core/widgets/main_user_avatar.dart';
 import 'package:social_media_app/features/home/cubits/home_cubit/home_cubit.dart';
 import '../../../core/constants/app_images.dart';
+import '../cubit/posts_cubit.dart';
 
 class PostWritingCard extends StatelessWidget {
   const PostWritingCard({super.key});
@@ -18,7 +19,7 @@ class PostWritingCard extends StatelessWidget {
 
     navigatorToPost() => Navigator.of(context, rootNavigator: true).pushNamed(
       AppRoutes.createPostViewRoute,
-      arguments: context.read<HomeCubit>(),
+      arguments: context.read<PostsCubit>(),
     );
     return BlocBuilder<HomeCubit, HomeState>(
       builder: (context, state) {

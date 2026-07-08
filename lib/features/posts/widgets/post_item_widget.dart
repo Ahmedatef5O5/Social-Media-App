@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:social_media_app/features/posts/widgets/post_header_widget.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../home/cubits/home_cubit/home_cubit.dart';
+import '../cubit/posts_cubit.dart';
 import '../model/post_model.dart';
 import 'post_interactions_row.dart';
 import 'post_media_widget.dart';
@@ -10,11 +10,11 @@ import 'post_txt_content_widget.dart';
 
 class PostItemWidget extends StatelessWidget {
   final PostModel currPost;
-  final HomeCubit homeCubit;
+  final PostsCubit postsCubit;
   const PostItemWidget({
     super.key,
     required this.currPost,
-    required this.homeCubit,
+    required this.postsCubit,
   });
 
   @override
@@ -25,7 +25,7 @@ class PostItemWidget extends StatelessWidget {
     final currentUserId = Supabase.instance.client.auth.currentUser?.id;
     if (currentUserId == null) return SizedBox.shrink();
 
-    return BlocBuilder<HomeCubit, HomeState>(
+    return BlocBuilder<PostsCubit, PostsState>(
       buildWhen: (previous, current) {
         if (previous is PostsLoaded && current is PostsLoaded) {
           final bool stillExists = current.posts.any(
@@ -83,7 +83,7 @@ class PostItemWidget extends StatelessWidget {
                   PostHeaderWidget(
                     post: currentPost,
                     currentUserId: currentUserId,
-                    homeCubit: homeCubit,
+                    postsCubit: postsCubit,
                   ),
                   PostTxtContentWidget(post: currentPost),
                   PostMediaWidget(post: currentPost),

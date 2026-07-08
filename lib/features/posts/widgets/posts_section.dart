@@ -1,8 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
-import 'package:social_media_app/features/home/cubits/home_cubit/home_cubit.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
+import '../cubit/posts_cubit.dart';
 import 'post_item_widget.dart';
 
 class PostsSection extends StatelessWidget {
@@ -10,9 +10,9 @@ class PostsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final homeCubit = context.read<HomeCubit>();
-    return BlocBuilder<HomeCubit, HomeState>(
-      bloc: homeCubit,
+    final postsCubit = context.read<PostsCubit>();
+    return BlocBuilder<PostsCubit, PostsState>(
+      bloc: postsCubit,
       buildWhen:
           (previous, current) =>
               current is PostsLoading ||
@@ -42,7 +42,7 @@ class PostsSection extends StatelessWidget {
               return PostItemWidget(
                 key: ValueKey(posts[index].id),
                 currPost: post,
-                homeCubit: homeCubit,
+                postsCubit: postsCubit,
               );
             },
             separatorBuilder:

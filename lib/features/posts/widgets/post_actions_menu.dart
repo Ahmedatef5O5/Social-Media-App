@@ -1,20 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:social_media_app/core/themes/app_colors.dart';
+import 'package:social_media_app/features/posts/cubit/posts_cubit.dart';
 import 'package:social_media_app/features/posts/model/post_model.dart';
 import '../../../core/constants/app_images.dart';
 import '../../../core/widgets/custom_confirmation_dialog.dart';
-import '../../home/cubits/home_cubit/home_cubit.dart';
 
 class PostActionsMenu extends StatelessWidget {
   final PostModel post;
   final String currentUserId;
-  final HomeCubit homeCubit;
+  final PostsCubit postsCubit;
   const PostActionsMenu({
     super.key,
     required this.post,
     required this.currentUserId,
-    required this.homeCubit,
+    required this.postsCubit,
   });
 
   @override
@@ -77,7 +77,7 @@ class PostActionsMenu extends StatelessWidget {
               img: AppImages.deleteFilesAnimationLot,
               onConfirm: () async {
                 Navigator.pop(ctx);
-                await homeCubit.deletePost(post.id);
+                await postsCubit.deletePost(post.id);
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(

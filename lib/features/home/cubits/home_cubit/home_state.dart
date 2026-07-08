@@ -6,8 +6,6 @@ sealed class HomeState {
 
 final class HomeInitial extends HomeState {}
 
-class HomeRefreshFeedback extends HomeState {}
-
 final class UserDataLoading extends HomeState {}
 
 final class UserDataLoaded extends HomeState {
@@ -20,50 +18,4 @@ final class UserDataLoadError extends HomeState {
   final String message;
 
   UserDataLoadError(this.message);
-}
-
-final class PostsLoading extends HomeState {}
-
-final class PostsLoaded extends HomeState {
-  final List<PostModel> posts;
-  final DateTime timeStamp;
-  const PostsLoaded(this.posts, this.timeStamp);
-  List<Object?> get props => [posts, timeStamp];
-}
-
-final class PostsError extends HomeState {
-  final String message;
-
-  const PostsError(this.message);
-}
-
-final class PostCreating extends HomeState {
-  final double progress;
-  const PostCreating(this.progress);
-}
-
-final class PostUploadCanceled extends HomeState {
-  const PostUploadCanceled();
-}
-
-final class PostCreated extends HomeState {
-  const PostCreated();
-}
-
-final class PostCreateError extends HomeState {
-  final String message;
-  final bool isConnectivityError;
-  PostCreateError(this.message, {this.isConnectivityError = false});
-}
-
-final class MediaPicking extends HomeState {}
-
-final class MediaPicked extends HomeState {
-  final XFile? image;
-  MediaPicked(this.image);
-}
-
-final class MediaPickingError extends HomeState {
-  final String message;
-  MediaPickingError(this.message);
 }

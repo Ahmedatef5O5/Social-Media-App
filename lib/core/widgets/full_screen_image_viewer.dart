@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:social_media_app/core/themes/app_colors.dart';
 import 'package:social_media_app/core/widgets/custom_loading_indicator.dart';
-import '../../../core/services/gallery_services.dart';
+import '../services/gallery_services.dart';
 
 class FullScreenImageViewer extends StatefulWidget {
   const FullScreenImageViewer({super.key});

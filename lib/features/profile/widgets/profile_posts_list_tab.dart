@@ -2,11 +2,11 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
-import '../../home/cubits/home_cubit/home_cubit.dart';
+import '../../posts/cubit/posts_cubit.dart';
 import '../../posts/widgets/post_item_widget.dart';
 
 class ProfilePostsListTab extends StatefulWidget {
-  final HomeCubit homeCubit;
+  final PostsCubit postsCubit;
   final String userId;
   final ValueNotifier<double> refreshProgress;
   final ValueNotifier<bool> isRefreshing;
@@ -14,10 +14,10 @@ class ProfilePostsListTab extends StatefulWidget {
 
   const ProfilePostsListTab({
     super.key,
+    required this.postsCubit,
     required this.userId,
     required this.refreshProgress,
     required this.isRefreshing,
-    required this.homeCubit,
     required this.isCurrentUser,
   });
 
@@ -29,15 +29,15 @@ class _ProfilePostsListTabState extends State<ProfilePostsListTab> {
   @override
   void initState() {
     super.initState();
-    final homeCubit = context.read<HomeCubit>();
-    if (homeCubit.state is! PostsLoaded) {
-      homeCubit.fetchPosts();
+    final postsCubit = context.read<PostsCubit>();
+    if (postsCubit.state is! PostsLoaded) {
+      postsCubit.fetchPosts();
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<HomeCubit, HomeState>(
+    return BlocBuilder<PostsCubit, PostsState>(
       builder: (context, state) {
         if (state is PostsLoaded) {
           final userPosts =
@@ -61,7 +61,7 @@ class _ProfilePostsListTabState extends State<ProfilePostsListTab> {
                       padding: const EdgeInsets.only(bottom: 20),
                       child: PostItemWidget(
                         currPost: post,
-                        homeCubit: widget.homeCubit,
+                        postsCubit: widget.postsCubit,
                       ),
                     );
                   }, childCount: userPosts.length),

@@ -5,7 +5,7 @@ import '../../../core/router/app_routes.dart';
 import '../../../core/themes/app_colors.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
 import '../model/post_model.dart';
-import '../../home/widgets/file_attachment_preview.dart';
+import 'file_attachment_preview.dart';
 
 class PostMediaWidget extends StatelessWidget {
   const PostMediaWidget({super.key, required this.post});

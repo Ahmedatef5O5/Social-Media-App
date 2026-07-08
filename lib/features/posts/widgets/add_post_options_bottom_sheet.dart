@@ -2,15 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 import 'package:social_media_app/core/router/app_routes.dart';
-import 'package:social_media_app/features/home/widgets/build_option_item.dart';
-import '../../home/cubits/home_cubit/home_cubit.dart';
+import 'package:social_media_app/features/posts/widgets/build_option_item.dart';
+import '../cubit/posts_cubit.dart';
 
 class AddPostOptionsBottomSheet extends StatelessWidget {
   final DraggableScrollableController controller;
   const AddPostOptionsBottomSheet({super.key, required this.controller});
   @override
   Widget build(BuildContext context) {
-    final homeCubit = context.read<HomeCubit>();
+    final postsCubit = context.read<PostsCubit>();
+
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     return DraggableScrollableSheet(
@@ -68,19 +69,19 @@ class AddPostOptionsBottomSheet extends StatelessWidget {
                       Icons.image_outlined,
                       'Add Photo',
                       colorScheme.primary,
-                      onTap: () => homeCubit.pickImageFromGallery(),
+                      onTap: () => postsCubit.pickImageFromGallery(),
                     ),
                     BuildOptionItem(
                       Icons.videocam_outlined,
                       'Add Video',
                       colorScheme.primary,
-                      onTap: () => homeCubit.pickVideo(),
+                      onTap: () => postsCubit.pickVideo(),
                     ),
                     BuildOptionItem(
                       Icons.file_upload_outlined,
                       'Add A Document',
                       colorScheme.primary,
-                      onTap: () => homeCubit.pickDocument(),
+                      onTap: () => postsCubit.pickDocument(),
                     ),
                     BuildOptionItem(
                       Icons.color_lens_outlined,
@@ -105,7 +106,7 @@ class AddPostOptionsBottomSheet extends StatelessWidget {
                       Icons.camera_alt_outlined,
                       'Camera',
                       colorScheme.primary,
-                      onTap: () => homeCubit.takePhotoByCamera(),
+                      onTap: () => postsCubit.takePhotoByCamera(),
                     ),
                   ],
                 ),

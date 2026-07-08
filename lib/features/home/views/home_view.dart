@@ -9,6 +9,7 @@ import 'package:social_media_app/core/widgets/custom_pull_to_refresh.dart';
 import 'package:social_media_app/core/widgets/custom_tab_wrapper.dart';
 import 'package:social_media_app/features/home/cubits/home_cubit/home_cubit.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../posts/cubit/posts_cubit.dart';
 import '../../stories/cubit/stories_cubit.dart';
 import '../widgets/home_view_header_section.dart';
 import '../../posts/widgets/post_writing_card.dart';
@@ -108,7 +109,8 @@ class _HomeViewState extends State<HomeView> {
     setState(() => _isRefreshing = true);
     try {
       await Future.wait([
-        context.read<HomeCubit>().refreshHomeData(isRefresh: true),
+        context.read<HomeCubit>().refreshUserData(isRefresh: true),
+        context.read<PostsCubit>().refreshPosts(isRefresh: true),
         context.read<StoriesCubit>().fetchStories(isRefresh: true),
       ]);
     } finally {
@@ -124,73 +126,91 @@ class _HomeViewState extends State<HomeView> {
       canPop: false,
       child: BlocBuilder<HomeCubit, HomeState>(
         builder: (context, homeState) {
-          return BlocBuilder<StoriesCubit, StoriesState>(
-            builder: (context, storiesState) {
-              return CustomTabWrapper(
-                isLoading:
-                    homeState is HomeInitial ||
-                    homeState is UserDataLoading ||
-                    homeState is PostsLoading ||
-                    storiesState is StoriesLoading,
-                errorMessage:
-                    homeState is UserDataLoadError ? homeState.message : null,
-                onRetry: () => context.read<HomeCubit>().refreshHomeData(),
-                loadingSkeleton: const HomeShimmerSkeleton(),
+          return BlocBuilder<PostsCubit, PostsState>(
+            builder: (context, postsState) {
+              return BlocBuilder<StoriesCubit, StoriesState>(
+                builder: (context, storiesState) {
+                  return CustomTabWrapper(
+                    isLoading:
+                        homeState is HomeInitial ||
+                        homeState is UserDataLoading ||
+                        postsState is PostsInitial ||
+                        postsState is PostsLoading ||
+                        storiesState is StoriesLoading,
+                    errorMessage:
+                        homeState is UserDataLoadError
+                            ? homeState.message
+                            : (postsState is PostsLoadError
+                                ? postsState.message
+                                : null),
 
-                child: Stack(
-                  children: [
-                    Center(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                        child: CustomPullToRefresh(
-                          top: MediaQuery.sizeOf(context).height * 0.068,
-                          onRefresh: _handleRefresh,
-                          child: CustomScrollView(
-                            controller: widget.scrollController,
-                            physics: const AlwaysScrollableScrollPhysics(
-                              parent: ClampingScrollPhysics(),
+                    onRetry: () {
+                      context.read<HomeCubit>().refreshUserData();
+                      context.read<PostsCubit>().refreshPosts();
+                    },
+                    loadingSkeleton: const HomeShimmerSkeleton(),
+
+                    child: Stack(
+                      children: [
+                        Center(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16.0,
                             ),
-                            scrollDirection: Axis.vertical,
-                            slivers: [
-                              const SliverGap(44),
-                              SliverToBoxAdapter(
-                                child: HomeViewHeaderSection(
-                                  navController: widget.navController,
+                            child: CustomPullToRefresh(
+                              top: MediaQuery.sizeOf(context).height * 0.068,
+                              onRefresh: _handleRefresh,
+                              child: CustomScrollView(
+                                controller: widget.scrollController,
+                                physics: const AlwaysScrollableScrollPhysics(
+                                  parent: ClampingScrollPhysics(),
+                                ),
+                                scrollDirection: Axis.vertical,
+                                slivers: [
+                                  const SliverGap(44),
+                                  SliverToBoxAdapter(
+                                    child: HomeViewHeaderSection(
+                                      navController: widget.navController,
+                                    ),
+                                  ),
+                                  const SliverGap(35),
+                                  SliverToBoxAdapter(child: PostWritingCard()),
+                                  const SliverGap(20),
+                                  SliverToBoxAdapter(
+                                    child: StoriesListSection(),
+                                  ),
+                                  const SliverGap(4),
+                                  PostsSection(),
+                                  SliverGap(
+                                    MediaQuery.of(context).padding.bottom + 100,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                        if (_isRefreshing)
+                          Positioned.fill(
+                            child: IgnorePointer(
+                              child: Container(
+                                color:
+                                    Theme.of(context).scaffoldBackgroundColor,
+                                child: AnimatedOpacity(
+                                  duration: const Duration(milliseconds: 200),
+                                  opacity: 1,
+                                  child: const HomeShimmerSkeleton(),
                                 ),
                               ),
-                              const SliverGap(35),
-                              SliverToBoxAdapter(child: PostWritingCard()),
-                              const SliverGap(20),
-                              SliverToBoxAdapter(child: StoriesListSection()),
-                              const SliverGap(4),
-                              PostsSection(),
-                              SliverGap(
-                                MediaQuery.of(context).padding.bottom + 100,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                    if (_isRefreshing)
-                      Positioned.fill(
-                        child: IgnorePointer(
-                          child: Container(
-                            color: Theme.of(context).scaffoldBackgroundColor,
-                            child: AnimatedOpacity(
-                              duration: const Duration(milliseconds: 200),
-                              opacity: 1,
-                              child: const HomeShimmerSkeleton(),
                             ),
                           ),
+                        CustomBackToTopBtn(
+                          isVisible: _showBackToTop,
+                          onTap: _scrollToTop,
                         ),
-                      ),
-                    CustomBackToTopBtn(
-                      isVisible: _showBackToTop,
-                      onTap: _scrollToTop,
+                      ],
                     ),
-                  ],
-                ),
+                  );
+                },
               );
             },
           );

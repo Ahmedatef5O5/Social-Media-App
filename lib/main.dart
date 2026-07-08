@@ -39,6 +39,7 @@ import 'core/connectivity/widgets/connectivity_banner.dart';
 import 'core/services/global_group_call_listener.dart';
 import 'core/services/presence_service.dart';
 import 'features/auth/cubit/auth_cubit/auth_cubit.dart';
+import 'features/posts/cubit/posts_cubit.dart';
 import 'features/single_chats/services/chat_services.dart';
 import 'features/discover/services/discover_people_services.dart';
 import 'features/group_calls/services/group_call_signaling_service.dart';
@@ -330,7 +331,14 @@ Widget _buildApp(String savedTheme) {
         BlocProvider(
           create:
               (context) =>
-                  HomeCubit(homeServices: HomeServices.instance)..getHomeData(),
+                  PostsCubit(homeServices: HomeServices.instance)..fetchPosts(),
+        ),
+        BlocProvider(
+          create:
+              (context) => HomeCubit(
+                homeServices: HomeServices.instance,
+                postsCubit: context.read<PostsCubit>(),
+              )..getCurrentUserData(),
         ),
         BlocProvider(create: (context) => StoriesCubit()..fetchStories()),
         BlocProvider(

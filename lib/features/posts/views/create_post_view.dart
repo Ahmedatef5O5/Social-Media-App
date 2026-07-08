@@ -7,6 +7,7 @@ import 'package:social_media_app/core/widgets/custom_loading_indicator.dart';
 import 'package:social_media_app/features/home/cubits/home_cubit/home_cubit.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/helpers/modern_circle_progress.dart';
+import '../cubit/posts_cubit.dart';
 import '../widgets/add_post_options_bottom_sheet.dart';
 import '../widgets/create_post_file_preview.dart';
 import '../widgets/create_post_header_section.dart';
@@ -68,7 +69,7 @@ class _CreatePostViewState extends State<CreatePostView> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocConsumer<HomeCubit, HomeState>(
+    return BlocConsumer<PostsCubit, PostsState>(
       listenWhen: (previous, current) => previous != current,
       listener: (context, state) {
         if (state is MediaPicking ||
@@ -142,14 +143,16 @@ class _CreatePostViewState extends State<CreatePostView> {
         }
       },
       builder: (context, state) {
-        final homeCubit = context.read<HomeCubit>();
+        final homeCubit =
+            context.read<HomeCubit>(); // TODO: DELETE THIS OR WHAT
+        final postsCubit = context.read<PostsCubit>();
         final user = homeCubit.currentUserData;
         final authUser = Supabase.instance.client.auth.currentUser;
         final bool canPost =
             _textEditingController.text.trim().isNotEmpty ||
-            homeCubit.selectedImage != null ||
-            homeCubit.selectedVideo != null ||
-            homeCubit.selectedDocument != null;
+            postsCubit.selectedImage != null ||
+            postsCubit.selectedVideo != null ||
+            postsCubit.selectedDocument != null;
         final displayName =
             user?.name ?? authUser?.userMetadata?['full_name'] ?? 'User';
         final displayImage =
@@ -176,7 +179,7 @@ class _CreatePostViewState extends State<CreatePostView> {
                             canPost: canPost,
                             onTap: () {
                               if (canPost) {
-                                homeCubit.createPost(
+                                postsCubit.createPost(
                                   text: _textEditingController.text.trim(),
                                 );
                               } else {
@@ -216,35 +219,35 @@ class _CreatePostViewState extends State<CreatePostView> {
                             focusNode: _focusNode,
                           ),
                           Gap(8),
-                          BlocBuilder<HomeCubit, HomeState>(
+                          BlocBuilder<PostsCubit, PostsState>(
                             builder: (context, state) {
-                              if (homeCubit.selectedImage != null) {
+                              if (postsCubit.selectedImage != null) {
                                 return CreatePostImagePreview(
-                                  imagePath: homeCubit.selectedImage!.path,
+                                  imagePath: postsCubit.selectedImage!.path,
                                   onRemove: () {
                                     setState(() {
-                                      homeCubit.selectedImage = null;
+                                      postsCubit.selectedImage = null;
                                     });
                                   },
                                 );
-                              } else if (homeCubit.selectedVideo != null) {
+                              } else if (postsCubit.selectedVideo != null) {
                                 return CreatePostVideoPreview(
-                                  videoPath: homeCubit.selectedVideo!.path,
+                                  videoPath: postsCubit.selectedVideo!.path,
                                   onRemove: () {
                                     setState(() {
-                                      homeCubit.selectedVideo = null;
+                                      postsCubit.selectedVideo = null;
                                     });
                                   },
                                 );
-                              } else if (homeCubit.selectedDocument != null) {
+                              } else if (postsCubit.selectedDocument != null) {
                                 return CreatePostFilePreview(
                                   fileName:
-                                      homeCubit.selectedDocument!.path
+                                      postsCubit.selectedDocument!.path
                                           .split('/')
                                           .last,
                                   onRemove: () {
                                     setState(() {
-                                      homeCubit.selectedDocument = null;
+                                      postsCubit.selectedDocument = null;
                                     });
                                   },
                                 );
@@ -330,7 +333,7 @@ class _CreatePostViewState extends State<CreatePostView> {
                               top: 8,
                               right: 8,
                               child: GestureDetector(
-                                onTap: () => homeCubit.cancelUpload(),
+                                onTap: () => postsCubit.cancelUpload(),
                                 child: Container(
                                   padding: const EdgeInsets.all(8),
                                   decoration: BoxDecoration(
