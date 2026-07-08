@@ -3,13 +3,13 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 import 'package:social_media_app/features/comments/cubit/comments_cubit.dart';
+import 'package:social_media_app/features/comments/services/comments_service.dart';
 import 'package:social_media_app/features/posts/cubit/posts_cubit.dart';
 import '../../../core/constants/app_images.dart';
 import '../../../core/helpers/comment_helper.dart';
 import '../../../core/themes/app_colors.dart';
 import '../../home/cubits/home_cubit/home_cubit.dart';
 import '../model/post_model.dart';
-import '../../home/services/home_services.dart';
 import '../../comments/widget/comments_sheet_section.dart';
 import 'post_reaction_overlay.dart';
 import 'post_reactions_summary.dart';
@@ -104,13 +104,43 @@ class _LikeButtonWidget extends StatefulWidget {
   State<_LikeButtonWidget> createState() => _LikeButtonWidgetState();
 }
 
-class _LikeButtonWidgetState extends State<_LikeButtonWidget> {
+class _LikeButtonWidgetState extends State<_LikeButtonWidget>
+    with SingleTickerProviderStateMixin {
   final GlobalKey _anchorKey = GlobalKey();
   OverlayEntry? _overlayEntry;
   bool _pressed = false;
 
+  late AnimationController _animationController;
+  late Animation<double> _scaleAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 400),
+    );
+    _scaleAnimation = TweenSequence<double>([
+      TweenSequenceItem(
+        tween: Tween<double>(
+          begin: 1.0,
+          end: 1.5,
+        ).chain(CurveTween(curve: Curves.easeOutCubic)),
+        weight: 30,
+      ),
+      TweenSequenceItem(
+        tween: Tween<double>(
+          begin: 1.5,
+          end: 1.0,
+        ).chain(CurveTween(curve: Curves.elasticOut)),
+        weight: 70,
+      ),
+    ]).animate(_animationController);
+  }
+
   @override
   void dispose() {
+    _animationController.dispose();
     _dismissPicker();
     super.dispose();
   }
@@ -132,8 +162,7 @@ class _LikeButtonWidgetState extends State<_LikeButtonWidget> {
       selectedEmoji: currentPost.myReactionEmoji,
       onSelect: (emoji) {
         _dismissPicker();
-        HapticFeedback.selectionClick();
-        context.read<PostsCubit>().toggleReaction(currentPost, emoji: emoji);
+        _handleReactionTap(currentPost, emoji);
       },
       onDismiss: _dismissPicker,
     );
@@ -144,6 +173,13 @@ class _LikeButtonWidgetState extends State<_LikeButtonWidget> {
   void _dismissPicker() {
     _overlayEntry?.remove();
     _overlayEntry = null;
+  }
+
+  void _handleReactionTap(PostModel currentPost, String emoji) {
+    _animationController.forward(from: 0.0);
+    HapticFeedback.lightImpact();
+    SystemSound.play(SystemSoundType.click);
+    context.read<PostsCubit>().toggleReaction(currentPost, emoji: emoji);
   }
 
   @override
@@ -165,8 +201,7 @@ class _LikeButtonWidgetState extends State<_LikeButtonWidget> {
       onTapCancel: () => setState(() => _pressed = false),
       onTap: () {
         setState(() => _pressed = false);
-        HapticFeedback.selectionClick();
-        postsCubit.toggleReaction(currentPost, emoji: myReaction ?? 'like');
+        _handleReactionTap(currentPost, myReaction ?? 'like');
       },
       onLongPress: () {
         HapticFeedback.mediumImpact();
@@ -175,23 +210,35 @@ class _LikeButtonWidgetState extends State<_LikeButtonWidget> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          AnimatedScale(
-            scale: _pressed ? 1.3 : 1.0,
-            duration: const Duration(milliseconds: 120),
-            curve: Curves.easeOut,
-            child:
-                isDefaultLike
-                    ? Icon(
-                      myReaction == 'like'
-                          ? Icons.thumb_up_alt
-                          : Icons.thumb_up_alt_outlined,
-                      color:
-                          myReaction == 'like'
-                              ? Theme.of(context).primaryColor
-                              : AppColors.grey6,
-                      size: 24,
-                    )
-                    : Text(myReaction, style: const TextStyle(fontSize: 22)),
+          ScaleTransition(
+            scale: _scaleAnimation,
+            child: AnimatedScale(
+              scale: _pressed ? 0.85 : 1.0,
+              duration: const Duration(milliseconds: 100),
+              curve: Curves.easeOut,
+              child:
+                  isDefaultLike
+                      ? Icon(
+                        myReaction == 'like'
+                            ? Icons.thumb_up_alt
+                            : Icons.thumb_up_alt_outlined,
+                        color:
+                            myReaction == 'like'
+                                ? Theme.of(context).primaryColor
+                                : AppColors.grey6,
+                        size: 24,
+                      )
+                      : Text(
+                        myReaction,
+                        style: TextStyle(
+                          fontSize: 22,
+                          color:
+                              Theme.of(context).textTheme.bodyLarge?.color
+                                  ?.withValues(alpha: 1.0) ??
+                              Colors.black,
+                        ),
+                      ),
+            ),
           ),
           const Gap(6),
           PostReactionsSummary(reactions: currentPost.reactions),
@@ -212,9 +259,8 @@ class _CommentButtonWidget extends StatelessWidget {
     return InkWell(
       onTap: () {
         final postsCubit = context.read<PostsCubit>();
-        final homeServices = HomeServices.instance;
         final commentsCubit = CommentsCubit(
-          homeServices,
+          commentsService: context.read<CommentsService>(),
           currentUserData: context.read<HomeCubit>().currentUserData,
         );
 

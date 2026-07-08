@@ -22,16 +22,16 @@ class PostReactionsSummary extends StatelessWidget {
         const SizedBox(width: 6),
         SizedBox(
           height: 20,
-          width: 16.0 + (top.length - 1) * 12.0,
+          width: 16.0 + (top.length - 1) * 14.0,
           child: Stack(
             clipBehavior: Clip.none,
             children:
                 List.generate(top.length, (i) {
                   return Positioned(
-                    left: i * 12.0,
+                    left: i * 14.0,
                     child: Container(
-                      width: 20,
-                      height: 20,
+                      width: 18,
+                      height: 18,
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
@@ -49,7 +49,14 @@ class PostReactionsSummary extends StatelessWidget {
                       ),
                       child: Text(
                         reactionGlyph(top[i].emoji),
-                        style: const TextStyle(fontSize: 11, height: 1),
+                        style: TextStyle(
+                          fontSize: 9,
+                          height: 1,
+                          color:
+                              Theme.of(context).textTheme.bodyLarge?.color
+                                  ?.withValues(alpha: 1.0) ??
+                              Colors.black,
+                        ),
                       ),
                     ),
                   );

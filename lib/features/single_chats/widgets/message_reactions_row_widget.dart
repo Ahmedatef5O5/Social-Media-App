@@ -71,7 +71,14 @@ class MessageReactionsRow extends StatelessWidget {
                           padding: const EdgeInsets.all(2.0),
                           child: Text(
                             emoji,
-                            style: const TextStyle(fontSize: 12, height: 1.2),
+                            style: TextStyle(
+                              fontSize: 12,
+                              height: 1.2,
+                              color:
+                                  Theme.of(context).textTheme.bodyLarge?.color
+                                      ?.withValues(alpha: 1.0) ??
+                                  Colors.black,
+                            ),
                           ),
                         ),
                       );
