@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:social_media_app/features/auth/data/models/user_data.dart';
 import '../../../core/themes/app_colors.dart';
-import '../cubit/stories_cubit.dart';
+import '../cubit/stories_cubit/stories_cubit.dart';
 import '../widgets/story_color_picker.dart';
 import '../widgets/story_submit_bar.dart';
 import '../widgets/story_text_editor.dart';

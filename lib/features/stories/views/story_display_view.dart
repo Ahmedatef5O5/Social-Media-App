@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:social_media_app/features/stories/model/story_model.dart';
-import '../cubit/stories_cubit.dart';
+import '../cubit/stories_cubit/stories_cubit.dart';
 import '../widgets/user_story_group_container.dart';
 
 class StoryDisplayView extends StatefulWidget {

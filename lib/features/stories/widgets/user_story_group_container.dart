@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../cubit/stories_cubit.dart';
+import '../cubit/stories_cubit/stories_cubit.dart';
 import '../model/story_model.dart';
 import '../views/single_user_story_view.dart';
 

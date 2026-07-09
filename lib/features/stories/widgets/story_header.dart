@@ -6,7 +6,7 @@ import 'package:video_player/video_player.dart';
 import '../../../core/constants/app_images.dart';
 import '../../../core/helpers/formatted_date.dart';
 import '../../../core/router/app_routes.dart';
-import '../cubit/stories_cubit.dart';
+import '../cubit/stories_cubit/stories_cubit.dart';
 import '../model/story_model.dart';
 import 'story_delete_dialog.dart';
 

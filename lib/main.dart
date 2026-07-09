@@ -47,7 +47,7 @@ import 'features/single_chats/services/chat_services.dart';
 import 'features/discover/services/discover_people_services.dart';
 import 'features/group_calls/services/group_call_signaling_service.dart';
 import 'features/home/cubits/home_cubit/home_cubit.dart';
-import 'features/stories/cubit/stories_cubit.dart';
+import 'features/stories/cubit/stories_cubit/stories_cubit.dart';
 
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {

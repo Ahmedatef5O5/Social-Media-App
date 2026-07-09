@@ -9,7 +9,7 @@ import 'package:social_media_app/features/stories/widgets/story_image_picker_she
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/themes/app_colors.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
-import '../cubit/stories_cubit.dart';
+import '../cubit/stories_cubit/stories_cubit.dart';
 
 class StoryItemWidget extends StatefulWidget {
   final StoryModel? story;

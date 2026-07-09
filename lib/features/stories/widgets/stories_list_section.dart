@@ -3,7 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:social_media_app/features/stories/model/story_model.dart';
 import 'package:social_media_app/features/stories/widgets/story_item_widget.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
-import '../cubit/stories_cubit.dart';
+import '../cubit/stories_cubit/stories_cubit.dart';
 
 class StoriesListSection extends StatelessWidget {
   const StoriesListSection({super.key});

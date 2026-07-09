@@ -43,7 +43,7 @@ import '../../features/group_chats/cubit/group_list_cubit/group_list_cubit.dart'
 import '../../features/group_chats/services/group_chat_services.dart';
 import '../../features/group_chats/views/create_group_view.dart';
 import '../../features/settings/views/about_us_view.dart';
-import '../../features/stories/cubit/stories_cubit.dart';
+import '../../features/stories/cubit/stories_cubit/stories_cubit.dart';
 import '../../features/stories/views/add_story_caption_view.dart';
 import '../../features/stories/views/creat_text_story_view.dart';
 import '../../features/profile/cubits/profile_cubit/profile_cubit.dart';
