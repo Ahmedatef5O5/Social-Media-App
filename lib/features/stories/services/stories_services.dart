@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:dio/dio.dart' as dio_pkg;
+import 'package:flutter/material.dart';
 import 'package:social_media_app/core/services/cloudinary_upload_result.dart';
 import 'package:social_media_app/core/services/network_status_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -65,6 +66,47 @@ class StoriesServices {
     } catch (e) {
       rethrow;
     }
+  }
+
+  Future<String?> getMyReaction(String storyId) async {
+    final userId = _supabase.auth.currentUser!.id;
+    final row =
+        await _supabase
+            .from(SupabaseConstants.storyReactions)
+            .select(StoryReactionColumns.reaction)
+            .eq(StoryReactionColumns.storyId, storyId)
+            .eq(StoryReactionColumns.userId, userId)
+            .maybeSingle();
+    return row?[StoryReactionColumns.reaction] as String?;
+  }
+
+  Future<String?> toggleStoryReaction({
+    required String storyId,
+    required String reaction,
+  }) async {
+    final result = await _supabase.rpc(
+      SupabaseConstants.toggleStoryReactionRpc,
+      params: {'p_story_id': storyId, 'p_reaction': reaction},
+    );
+    return result as String?;
+  }
+
+  Future<void> markStoryViewed(String storyId) async {
+    try {
+      await _supabase.rpc(
+        SupabaseConstants.markStoryViewedRpc,
+        params: {'p_story_id': storyId},
+      );
+    } catch (e) {
+      debugPrint('markStoryViewed silent error: $e');
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getMyStoriesOverview() async {
+    final response = await _supabase.rpc(
+      SupabaseConstants.getMyStoriesOverviewRpc,
+    );
+    return (response as List).cast<Map<String, dynamic>>();
   }
 
   Future<void> createStory(StoryModel story) async {

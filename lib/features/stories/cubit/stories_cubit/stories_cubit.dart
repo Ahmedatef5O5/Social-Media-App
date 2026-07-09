@@ -202,6 +202,7 @@ class StoriesCubit extends Cubit<StoriesState> {
     required File file,
     required UserData user,
     String? caption,
+    Duration? videoDuration,
   }) async {
     emit(AddStoryLoading());
     try {
@@ -227,6 +228,7 @@ class StoriesCubit extends Cubit<StoriesState> {
         authorName: user.name,
         createdAt: DateTime.now().toIso8601String(),
         caption: caption,
+        videoDurationSeconds: videoDuration?.inSeconds,
       );
       await _storiesServices.createStory(newStory);
       await fetchStories(isRefresh: true);
