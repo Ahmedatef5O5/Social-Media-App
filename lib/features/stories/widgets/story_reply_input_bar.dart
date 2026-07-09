@@ -2,9 +2,12 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
+import 'package:social_media_app/core/widgets/custom_loading_indicator.dart';
 import '../../../core/services/file_picker_services.dart';
+import '../../single_chats/widgets/full_screen_media_view.dart';
 import '../cubit/story_reply_cubit/story_reply_cubit.dart';
 import '../model/story_model.dart';
+import 'story_reaction_picker.dart';
 
 class StoryReplyInputBar extends StatefulWidget {
   final StoryModel story;
@@ -32,16 +35,20 @@ class _StoryReplyInputBarState extends State<StoryReplyInputBar> {
   File? _pickedFile;
   String? _pickedType;
 
+  bool get _hasContent =>
+      _controller.text.trim().isNotEmpty || _pickedFile != null;
+
   @override
   void initState() {
     super.initState();
     _focusNode.addListener(() {
       if (_focusNode.hasFocus) {
         widget.onComposingStart();
-      } else if (_controller.text.trim().isEmpty && _pickedFile == null) {
+      } else if (!_hasContent) {
         widget.onComposingEnd();
       }
     });
+    _controller.addListener(() => setState(() {}));
   }
 
   @override
@@ -69,6 +76,21 @@ class _StoryReplyInputBarState extends State<StoryReplyInputBar> {
       _pickedFile = null;
       _pickedType = null;
     });
+  }
+
+  void _openMediaPreview() {
+    if (_pickedFile == null) return;
+    Navigator.of(context, rootNavigator: true).push(
+      MaterialPageRoute(
+        builder:
+            (_) => FullScreenMediaView(
+              imageUrl: _pickedType == 'image' ? _pickedFile!.path : null,
+              videoUrl: _pickedType == 'video' ? _pickedFile!.path : null,
+              isLocal: true,
+              showActions: false,
+            ),
+      ),
+    );
   }
 
   void _showAttachSheet() {
@@ -168,83 +190,25 @@ class _StoryReplyInputBarState extends State<StoryReplyInputBar> {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  Expanded(
-                    child: Container(
-                      constraints: const BoxConstraints(maxHeight: 100),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(24),
-                        border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.4),
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          IconButton(
-                            icon: const Icon(
-                              Icons.add_photo_alternate_outlined,
-                              color: Colors.white,
-                            ),
-                            onPressed: isSending ? null : _showAttachSheet,
-                          ),
-                          Expanded(
-                            child: TextField(
-                              controller: _controller,
-                              focusNode: _focusNode,
-                              enabled: !isSending,
-                              style: const TextStyle(color: Colors.white),
-                              maxLines: null,
-                              textInputAction: TextInputAction.send,
-                              onSubmitted: (_) => _send(),
-                              decoration: InputDecoration(
-                                hintText:
-                                    "Reply to ${widget.story.authorName}'s story…",
-                                hintStyle: TextStyle(
-                                  color: Colors.white.withValues(alpha: 0.6),
-                                ),
-                                border: InputBorder.none,
-                                contentPadding: const EdgeInsets.symmetric(
-                                  vertical: 12,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
+                  Expanded(child: _buildTextField(isSending)),
                   const Gap(8),
-                  ValueListenableBuilder<TextEditingValue>(
-                    valueListenable: _controller,
-                    builder: (context, value, _) {
-                      final canSend =
-                          value.text.trim().isNotEmpty || _pickedFile != null;
-                      return CircleAvatar(
-                        radius: 22,
-                        backgroundColor:
-                            canSend
-                                ? Theme.of(context).primaryColor
-                                : Colors.white24,
-                        child:
-                            isSending
-                                ? const SizedBox(
-                                  width: 18,
-                                  height: 18,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: Colors.white,
-                                  ),
-                                )
-                                : IconButton(
-                                  icon: const Icon(
-                                    Icons.send,
-                                    color: Colors.white,
-                                    size: 18,
-                                  ),
-                                  onPressed: canSend ? _send : null,
-                                ),
-                      );
-                    },
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 250),
+                    transitionBuilder:
+                        (child, animation) =>
+                            ScaleTransition(scale: animation, child: child),
+                    child:
+                        _hasContent
+                            ? _buildSendButton(isSending)
+                            : StoryReactionButton(
+                              key: const ValueKey('react_button'),
+                              onOpen: widget.onComposingStart,
+                              onClose: () {
+                                if (!_hasContent && !_focusNode.hasFocus) {
+                                  widget.onComposingEnd();
+                                }
+                              },
+                            ),
                   ),
                 ],
               ),
@@ -255,47 +219,121 @@ class _StoryReplyInputBarState extends State<StoryReplyInputBar> {
     );
   }
 
-  Widget _buildMediaChip() {
-    final isVideo = _pickedType == 'video';
+  Widget _buildTextField(bool isSending) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      constraints: const BoxConstraints(maxHeight: 96, minHeight: 40),
       decoration: BoxDecoration(
-        color: Colors.black54,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white24),
+        color: Colors.white.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.4)),
       ),
       child: Row(
-        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child:
-                isVideo
-                    ? Container(
-                      width: 40,
-                      height: 40,
-                      color: Colors.grey.shade800,
-                      child: const Icon(Icons.videocam, color: Colors.white70),
-                    )
-                    : Image.file(
-                      _pickedFile!,
-                      width: 40,
-                      height: 40,
-                      fit: BoxFit.cover,
-                    ),
+          IconButton(
+            padding: EdgeInsets.zero,
+
+            constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+            icon: const Icon(
+              Icons.add_photo_alternate_outlined,
+              color: Colors.white,
+              size: 20,
+            ),
+            onPressed: isSending ? null : _showAttachSheet,
           ),
-          const Gap(8),
-          Text(
-            isVideo ? 'Video attached' : 'Photo attached',
-            style: const TextStyle(color: Colors.white70, fontSize: 12),
-          ),
-          const Gap(6),
-          GestureDetector(
-            onTap: _removePickedMedia,
-            child: const Icon(Icons.close, color: Colors.white70, size: 16),
+          Expanded(
+            child: TextField(
+              controller: _controller,
+              focusNode: _focusNode,
+              enabled: !isSending,
+              style: const TextStyle(color: Colors.white),
+              maxLines: null,
+              textInputAction: TextInputAction.send,
+              onSubmitted: (_) => _send(),
+              decoration: InputDecoration(
+                hintText: "Reply to ${widget.story.authorName}'s story…",
+                hintStyle: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.6),
+                  fontSize: 14,
+                ),
+                border: InputBorder.none,
+                contentPadding: const EdgeInsets.symmetric(vertical: 5),
+              ),
+            ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildSendButton(bool isSending) {
+    final canSend = _hasContent;
+    return CircleAvatar(
+      key: const ValueKey('send_button'),
+      radius: 24,
+      backgroundColor:
+          canSend ? Theme.of(context).primaryColor : Colors.white24,
+      child:
+          isSending
+              ? const SizedBox(
+                width: 18,
+                height: 18,
+                child: CustomLoadingIndicator(color: Colors.white),
+              )
+              : IconButton(
+                icon: const Icon(Icons.send, color: Colors.white, size: 24),
+                onPressed: canSend ? _send : null,
+              ),
+    );
+  }
+
+  Widget _buildMediaChip() {
+    final isVideo = _pickedType == 'video';
+    return GestureDetector(
+      onTap: _openMediaPreview,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: Colors.black54,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.white24),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child:
+                  isVideo
+                      ? Container(
+                        width: 40,
+                        height: 40,
+                        color: Colors.grey.shade800,
+                        child: const Icon(
+                          Icons.videocam,
+                          color: Colors.white70,
+                        ),
+                      )
+                      : Image.file(
+                        _pickedFile!,
+                        width: 40,
+                        height: 40,
+                        fit: BoxFit.cover,
+                      ),
+            ),
+            const Gap(8),
+            Text(
+              isVideo ? 'Video • tap to preview' : 'Photo • tap to preview',
+              style: const TextStyle(color: Colors.white70, fontSize: 12),
+            ),
+            const Gap(6),
+            GestureDetector(
+              onTap: _removePickedMedia,
+              child: const Icon(Icons.close, color: Colors.white70, size: 16),
+            ),
+          ],
+        ),
       ),
     );
   }
