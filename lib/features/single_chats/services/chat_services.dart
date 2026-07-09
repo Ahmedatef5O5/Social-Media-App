@@ -211,10 +211,15 @@ class ChatServices {
     String? replyToText,
     String? replyToMessageType,
     String? replyToSenderId,
-
     String? imagePublicId,
     String? videoPublicId,
     String? voicePublicId,
+    String? replyToStoryId,
+    String? replyToStoryAuthorId,
+    String? replyToStoryType,
+    String? replyToStoryMediaUrl,
+    String? replyToStoryText,
+    String? replyToStoryBgColor,
   }) async {
     await _supabase.from(SupabaseConstants.messages).insert({
       MessagesColumns.senderId: senderId,
@@ -235,6 +240,18 @@ class ChatServices {
       if (imagePublicId != null) MessagesColumns.imagePublicId: imagePublicId,
       if (videoPublicId != null) MessagesColumns.videoPublicId: videoPublicId,
       if (voicePublicId != null) MessagesColumns.voicePublicId: voicePublicId,
+      if (replyToStoryId != null)
+        MessagesColumns.replyToStoryId: replyToStoryId,
+      if (replyToStoryAuthorId != null)
+        MessagesColumns.replyToStoryAuthorId: replyToStoryAuthorId,
+      if (replyToStoryType != null)
+        MessagesColumns.replyToStoryType: replyToStoryType,
+      if (replyToStoryMediaUrl != null)
+        MessagesColumns.replyToStoryMediaUrl: replyToStoryMediaUrl,
+      if (replyToStoryText != null)
+        MessagesColumns.replyToStoryText: replyToStoryText,
+      if (replyToStoryBgColor != null)
+        MessagesColumns.replyToStoryBgColor: replyToStoryBgColor,
     });
   }
 

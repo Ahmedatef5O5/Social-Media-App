@@ -19,6 +19,13 @@ class MessageModel {
   final String? replyToSenderId;
   final List<String> deletedFor;
 
+  final String? replyToStoryId;
+  final String? replyToStoryAuthorId;
+  final String? replyToStoryType;
+  final String? replyToStoryMediaUrl;
+  final String? replyToStoryText;
+  final String? replyToStoryBgColor;
+
   const MessageModel({
     required this.id,
     required this.senderId,
@@ -37,7 +44,15 @@ class MessageModel {
     this.replyToMessageType,
     this.replyToSenderId,
     this.deletedFor = const [],
+    this.replyToStoryId,
+    this.replyToStoryAuthorId,
+    this.replyToStoryType,
+    this.replyToStoryMediaUrl,
+    this.replyToStoryText,
+    this.replyToStoryBgColor,
   });
+
+  bool get isStoryReply => replyToStoryType != null;
 
   MessageModel copyWith({
     String? id,
@@ -57,6 +72,12 @@ class MessageModel {
     String? replyToMessageType,
     String? replyToSenderId,
     List<String>? deletedFor,
+    String? replyToStoryId,
+    String? replyToStoryAuthorId,
+    String? replyToStoryType,
+    String? replyToStoryMediaUrl,
+    String? replyToStoryText,
+    String? replyToStoryBgColor,
   }) {
     return MessageModel(
       id: id ?? this.id,
@@ -76,6 +97,12 @@ class MessageModel {
       replyToMessageType: replyToMessageType ?? this.replyToMessageType,
       replyToSenderId: replyToSenderId ?? this.replyToSenderId,
       deletedFor: deletedFor ?? this.deletedFor,
+      replyToStoryId: replyToStoryId ?? this.replyToStoryId,
+      replyToStoryAuthorId: replyToStoryAuthorId ?? this.replyToStoryAuthorId,
+      replyToStoryType: replyToStoryType ?? this.replyToStoryType,
+      replyToStoryMediaUrl: replyToStoryMediaUrl ?? this.replyToStoryMediaUrl,
+      replyToStoryText: replyToStoryText ?? this.replyToStoryText,
+      replyToStoryBgColor: replyToStoryBgColor ?? this.replyToStoryBgColor,
     );
   }
 
@@ -101,6 +128,12 @@ class MessageModel {
               ?.map((e) => e.toString())
               .toList() ??
           const [],
+      replyToStoryId: json[MessagesColumns.replyToStoryId],
+      replyToStoryAuthorId: json[MessagesColumns.replyToStoryAuthorId],
+      replyToStoryType: json[MessagesColumns.replyToStoryType],
+      replyToStoryMediaUrl: json[MessagesColumns.replyToStoryMediaUrl],
+      replyToStoryText: json[MessagesColumns.replyToStoryText],
+      replyToStoryBgColor: json[MessagesColumns.replyToStoryBgColor],
     );
   }
 
@@ -122,6 +155,12 @@ class MessageModel {
       MessagesColumns.replyToMessageType: replyToMessageType,
       MessagesColumns.replyToSenderId: replyToSenderId,
       MessagesColumns.deletedFor: deletedFor,
+      MessagesColumns.replyToStoryId: replyToStoryId,
+      MessagesColumns.replyToStoryAuthorId: replyToStoryAuthorId,
+      MessagesColumns.replyToStoryType: replyToStoryType,
+      MessagesColumns.replyToStoryMediaUrl: replyToStoryMediaUrl,
+      MessagesColumns.replyToStoryText: replyToStoryText,
+      MessagesColumns.replyToStoryBgColor: replyToStoryBgColor,
     };
   }
 }

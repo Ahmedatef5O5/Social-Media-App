@@ -193,6 +193,13 @@ abstract class MessagesColumns {
   static const String imagePublicId = 'image_public_id';
   static const String videoPublicId = 'video_public_id';
   static const String voicePublicId = 'voice_public_id';
+
+  static const String replyToStoryId = 'reply_to_story_id';
+  static const String replyToStoryAuthorId = 'reply_to_story_author_id';
+  static const String replyToStoryType = 'reply_to_story_type';
+  static const String replyToStoryMediaUrl = 'reply_to_story_media_url';
+  static const String replyToStoryText = 'reply_to_story_text';
+  static const String replyToStoryBgColor = 'reply_to_story_bg_color';
 }
 
 // message_reactions
