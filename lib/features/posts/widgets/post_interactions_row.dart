@@ -5,6 +5,7 @@ import 'package:gap/gap.dart';
 import 'package:social_media_app/features/comments/cubit/comments_cubit.dart';
 import 'package:social_media_app/features/comments/services/comments_service.dart';
 import 'package:social_media_app/features/posts/cubit/posts_cubit.dart';
+import 'package:social_media_app/features/posts/widgets/post_reactions_bottom_sheet.dart';
 import '../../../core/constants/app_images.dart';
 import '../../../core/helpers/comment_helper.dart';
 import '../../../core/themes/app_colors.dart';
@@ -184,7 +185,6 @@ class _LikeButtonWidgetState extends State<_LikeButtonWidget>
 
   @override
   Widget build(BuildContext context) {
-    final postsCubit = context.read<PostsCubit>();
     final state = context.watch<PostsCubit>().state;
 
     final currentPost =
@@ -195,22 +195,22 @@ class _LikeButtonWidgetState extends State<_LikeButtonWidget>
     final String? myReaction = currentPost.myReactionEmoji;
     final bool isDefaultLike = myReaction == null || myReaction == 'like';
 
-    return GestureDetector(
-      key: _anchorKey,
-      onTapDown: (_) => setState(() => _pressed = true),
-      onTapCancel: () => setState(() => _pressed = false),
-      onTap: () {
-        setState(() => _pressed = false);
-        _handleReactionTap(currentPost, myReaction ?? 'like');
-      },
-      onLongPress: () {
-        HapticFeedback.mediumImpact();
-        _showPicker(currentPost);
-      },
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          ScaleTransition(
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        GestureDetector(
+          key: _anchorKey,
+          onTapDown: (_) => setState(() => _pressed = true),
+          onTapCancel: () => setState(() => _pressed = false),
+          onTap: () {
+            setState(() => _pressed = false);
+            _handleReactionTap(currentPost, myReaction ?? 'like');
+          },
+          onLongPress: () {
+            HapticFeedback.mediumImpact();
+            _showPicker(currentPost);
+          },
+          child: ScaleTransition(
             scale: _scaleAnimation,
             child: AnimatedScale(
               scale: _pressed ? 0.85 : 1.0,
@@ -240,10 +240,25 @@ class _LikeButtonWidgetState extends State<_LikeButtonWidget>
                       ),
             ),
           ),
-          const Gap(6),
-          PostReactionsSummary(reactions: currentPost.reactions),
-        ],
-      ),
+        ),
+        const Gap(6),
+        GestureDetector(
+          onTap: () {
+            if (currentPost.reactions.isNotEmpty) {
+              showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                backgroundColor: Colors.transparent,
+                builder:
+                    (context) =>
+                        PostReactionsBottomSheet(postId: currentPost.id),
+              );
+            }
+          },
+
+          child: PostReactionsSummary(reactions: currentPost.reactions),
+        ),
+      ],
     );
   }
 }
