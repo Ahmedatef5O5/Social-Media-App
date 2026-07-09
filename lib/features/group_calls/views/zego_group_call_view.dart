@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:zego_uikit/zego_uikit.dart';
 import 'package:zego_uikit_prebuilt_call/zego_uikit_prebuilt_call.dart';
@@ -26,7 +27,7 @@ class ZegoGroupCallView extends StatefulWidget {
 }
 
 class _ZegoGroupCallViewState extends State<ZegoGroupCallView> {
-  final _signaling = GroupCallSignalingService();
+  late final GroupCallSignalingService _signaling;
   String? _zegoToken;
   StreamSubscription? _participantSub;
   DateTime? _callStartTime;
@@ -36,6 +37,7 @@ class _ZegoGroupCallViewState extends State<ZegoGroupCallView> {
   @override
   void initState() {
     super.initState();
+    _signaling = context.read<GroupCallSignalingService>();
     _loadZegoToken();
     _callStartTime = DateTime.now();
     _monitorParticipants();

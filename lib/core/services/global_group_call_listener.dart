@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../features/group_calls/views/incoming_group_call_screen.dart';
 import '../../features/group_calls/services/group_call_signaling_service.dart';
@@ -16,12 +17,13 @@ class GlobalGroupCallListener extends StatefulWidget {
 
 class _GlobalGroupCallListenerState extends State<GlobalGroupCallListener> {
   StreamSubscription? _incomingCallSub;
-  final _signaling = GroupCallSignalingService();
+  late final GroupCallSignalingService _signaling;
   String? _currentlyShowingCallId;
 
   @override
   void initState() {
     super.initState();
+    _signaling = context.read<GroupCallSignalingService>();
     _initListener();
   }
 

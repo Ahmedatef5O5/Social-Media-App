@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/widgets/cached_cloudinary_image.dart';
 import '../models/group_call_model.dart';
@@ -30,13 +31,13 @@ class OutgoingGroupCallScreen extends StatefulWidget {
 class _OutgoingGroupCallScreenState extends State<OutgoingGroupCallScreen>
     with TickerProviderStateMixin {
   final AudioPlayer _audioPlayer = AudioPlayer();
-  final _signaling = GroupCallSignalingService();
 
   StreamSubscription? _callSubscription;
   Timer? _timeoutTimer;
   String? _currentCallId;
   String _currentUserName = 'Loading...';
 
+  late final GroupCallSignalingService _signaling;
   late AnimationController _rippleController;
   late AnimationController _particleController;
   late AnimationController _dotController;
@@ -47,6 +48,7 @@ class _OutgoingGroupCallScreenState extends State<OutgoingGroupCallScreen>
   @override
   void initState() {
     super.initState();
+    _signaling = context.read<GroupCallSignalingService>();
     _fetchMyName();
     _playRingtone();
     _initAnimations();

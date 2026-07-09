@@ -786,7 +786,9 @@ class _GroupMessageContentState extends State<GroupMessageContent> {
     Color primary,
   ) {
     return StreamBuilder<GroupCallModel?>(
-      stream: GroupCallSignalingService().activeCallStream(groupId),
+      stream: context.read<GroupCallSignalingService>().activeCallStream(
+        groupId,
+      ),
       builder: (context, snapshot) {
         final activeCall = snapshot.data;
         if (activeCall == null) return const SizedBox.shrink();
@@ -799,7 +801,7 @@ class _GroupMessageContentState extends State<GroupMessageContent> {
 
         return GestureDetector(
           onTap: () async {
-            final signaling = GroupCallSignalingService();
+            final signaling = context.read<GroupCallSignalingService>();
             final joined = await signaling.acceptCall(activeCall.callId);
             final user = Supabase.instance.client.auth.currentUser!;
             final profile =

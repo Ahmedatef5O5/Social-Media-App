@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/widgets/cached_cloudinary_image.dart';
 import '../models/group_call_model.dart';
@@ -20,11 +21,12 @@ class IncomingGroupCallScreen extends StatefulWidget {
 class _IncomingGroupCallScreenState extends State<IncomingGroupCallScreen>
     with TickerProviderStateMixin {
   final AudioPlayer _audioPlayer = AudioPlayer();
-  final _signaling = GroupCallSignalingService();
 
   String _currentUserName = 'Loading...';
 
   StreamSubscription? _statusSubscription;
+
+  late final GroupCallSignalingService _signaling;
 
   late AnimationController _rippleController;
 
@@ -40,6 +42,7 @@ class _IncomingGroupCallScreenState extends State<IncomingGroupCallScreen>
   @override
   void initState() {
     super.initState();
+    _signaling = context.read<GroupCallSignalingService>();
     _fetchMyName();
     _playRingtone();
     _initAnimations();
@@ -502,7 +505,6 @@ class _ParticlePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()..color = color;
     const count = 14;
     for (int i = 0; i < count; i++) {
       final seed = (i * 137.5) % 360;

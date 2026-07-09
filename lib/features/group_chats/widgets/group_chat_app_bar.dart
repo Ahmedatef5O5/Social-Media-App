@@ -34,7 +34,7 @@ class GroupChatAppBar extends StatelessWidget implements PreferredSizeWidget {
       final currentUserName =
           (profileData?['name'] as String?) ?? user.email ?? 'Me';
 
-      final signaling = GroupCallSignalingService();
+      final signaling = context.read<GroupCallSignalingService>();
 
       final existingCall = await signaling.getActiveCall(group.id);
       if (existingCall != null) {
@@ -81,7 +81,7 @@ class GroupChatAppBar extends StatelessWidget implements PreferredSizeWidget {
   Widget build(BuildContext context) {
     final primary = Theme.of(context).primaryColor;
     final hasAvatar = group.avatarUrl?.isNotEmpty == true;
-    final signalingService = GroupCallSignalingService();
+    final signalingService = context.read<GroupCallSignalingService>();
 
     return BlocBuilder<GroupListCubit, GroupListState>(
       builder: (context, state) {

@@ -21,7 +21,7 @@ class GroupChatDetailsView extends StatelessWidget {
     return BlocProvider(
       create:
           (_) =>
-              GroupCallCubit(GroupCallSignalingService())
+              GroupCallCubit(context.read<GroupCallSignalingService>())
                 ..watchActiveCall(group.id),
       child: _GroupChatDetailsBody(group: group),
     );
@@ -59,8 +59,6 @@ class _GroupChatDetailsBodyState extends State<_GroupChatDetailsBody> {
 
     _groupListCubit = context.read<GroupListCubit>();
     _groupDetailsCubit = context.read<GroupDetailsCubit>();
-
-    // fix update unRead count
     context.read<GroupListCubit>().setActiveGroupId(widget.group.id);
     context.read<GroupDetailsCubit>().markRead();
 
