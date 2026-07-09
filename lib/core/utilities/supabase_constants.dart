@@ -24,8 +24,15 @@ abstract class SupabaseConstants {
   //  Presence Feature
   static const String userPresence = 'user_presence';
 
+  // ── Stories Reactions & Views Feature ──
+  static const String storyViews = 'story_views';
+  static const String storyReactions = 'story_reactions';
+
   // ── RPC (Stored Functions) ──
   static const String getChatsWithLastMessage = 'get_chats_with_last_message';
+  static const String toggleStoryReactionRpc = 'toggle_story_reaction';
+  static const String markStoryViewedRpc = 'mark_story_viewed';
+  static const String getMyStoriesOverviewRpc = 'get_my_stories_overview';
 }
 
 // groups
@@ -121,6 +128,25 @@ abstract class StoryColumns {
 
   static const String imagePublicId = 'image_public_id';
   static const String videoPublicId = 'video_public_id';
+
+  static const String videoDurationSeconds = 'video_duration_seconds';
+}
+
+// subClass for story_views column table
+abstract class StoryViewColumns {
+  static const String id = 'id';
+  static const String storyId = 'story_id';
+  static const String viewerId = 'viewer_id';
+  static const String viewedAt = 'viewed_at';
+}
+
+// subClass for story_reactions column table
+abstract class StoryReactionColumns {
+  static const String id = 'id';
+  static const String storyId = 'story_id';
+  static const String userId = 'user_id';
+  static const String reaction = 'reaction';
+  static const String createdAt = 'created_at';
 }
 
 // subClass for posts column table

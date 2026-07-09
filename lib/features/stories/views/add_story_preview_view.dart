@@ -85,6 +85,7 @@ class _AddStoryPreviewViewState extends State<AddStoryPreviewView> {
         file: widget.file,
         user: widget.currentUser,
         caption: caption,
+        videoDuration: widget.videoDuration,
       );
     } else {
       cubit.addStoryWithCaption(

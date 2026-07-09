@@ -18,6 +18,8 @@ class StoryModel {
 
   final String? imagePublicId;
   final String? videoPublicId;
+  final int? videoDurationSeconds;
+
   const StoryModel({
     this.id = '',
     this.imageUrl,
@@ -32,12 +34,21 @@ class StoryModel {
     this.lastSeen,
     this.imagePublicId,
     this.videoPublicId,
+    this.videoDurationSeconds,
   });
 
   StoryType get storyType {
     if (videoUrl != null) return StoryType.video;
     if (imageUrl != null) return StoryType.image;
     return StoryType.text;
+  }
+
+  static const Duration activeWindow = Duration(days: 200);
+
+  bool get isExpired {
+    final created = DateTime.tryParse(createdAt);
+    if (created == null) return false;
+    return DateTime.now().difference(created) > activeWindow;
   }
 
   Map<String, dynamic> toMap() {
@@ -54,6 +65,7 @@ class StoryModel {
 
       StoryColumns.imagePublicId: imagePublicId,
       StoryColumns.videoPublicId: videoPublicId,
+      StoryColumns.videoDurationSeconds: videoDurationSeconds,
     };
   }
 
@@ -82,6 +94,8 @@ class StoryModel {
           userData != null && userData[UserColumns.lastSeen] != null
               ? DateTime.parse(userData[UserColumns.lastSeen].toString())
               : null,
+      videoDurationSeconds:
+          (map[StoryColumns.videoDurationSeconds] as num?)?.toInt(),
     );
   }
 
@@ -108,6 +122,7 @@ class StoryModel {
     'last_seen': lastSeen?.toIso8601String(),
     'image_public_id': imagePublicId,
     'video_public_id': videoPublicId,
+    'video_duration_seconds': videoDurationSeconds,
   };
 
   factory StoryModel.fromCacheJson(Map<String, dynamic> map) {
@@ -128,6 +143,7 @@ class StoryModel {
               : null,
       imagePublicId: map['image_public_id'] as String?,
       videoPublicId: map['video_public_id'] as String?,
+      videoDurationSeconds: (map['video_duration_seconds'] as num?)?.toInt(),
     );
   }
 }
