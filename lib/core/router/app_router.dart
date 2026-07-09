@@ -44,10 +44,12 @@ import '../../features/group_chats/services/group_chat_services.dart';
 import '../../features/group_chats/views/create_group_view.dart';
 import '../../features/settings/views/about_us_view.dart';
 import '../../features/stories/cubit/stories_cubit/stories_cubit.dart';
+import '../../features/stories/model/story_model.dart';
 import '../../features/stories/views/add_story_caption_view.dart';
 import '../../features/stories/views/creat_text_story_view.dart';
 import '../../features/profile/cubits/profile_cubit/profile_cubit.dart';
 import '../../features/profile/views/profile_view.dart';
+import '../../features/stories/views/my_stories_list_view.dart';
 
 enum TypeOfRoute { material, cupertino, fade }
 
@@ -160,6 +162,7 @@ class AppRouter {
       case AppRoutes.addStoryCaptionViewRoute:
       case AppRoutes.storyDisplayViewRoute:
       case AppRoutes.addStoryPreviewViewRoute:
+      case AppRoutes.myStoriesListViewRoute:
         return _storyRoutes(settings);
 
       case AppRoutes.chatsViewRoute:
@@ -324,6 +327,20 @@ class AppRouter {
             currentUser: args['currentUser'],
           ),
           typeOfRoute: TypeOfRoute.fade,
+          settings: settings,
+        );
+      case AppRoutes.myStoriesListViewRoute:
+        final args = _args<Map<String, dynamic>>(settings);
+        if (args == null ||
+            args['storiesCubit'] is! StoriesCubit ||
+            args['myStories'] is! List<StoryModel>) {
+          return _errorRoute(settings, 'Missing arguments for My Stories');
+        }
+        return _buildRoute(
+          MyStoriesListView(
+            storiesCubit: args['storiesCubit'] as StoriesCubit,
+            myStories: args['myStories'] as List<StoryModel>,
+          ),
           settings: settings,
         );
       default:
