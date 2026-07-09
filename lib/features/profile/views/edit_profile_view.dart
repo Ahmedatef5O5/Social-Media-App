@@ -7,7 +7,6 @@ import 'package:social_media_app/core/themes/app_colors.dart';
 import 'package:social_media_app/core/themes/background_theme_widget.dart';
 import 'package:social_media_app/features/auth/data/models/user_data.dart';
 import 'package:social_media_app/features/profile/cubits/edit_profile_cubit/edit_profile_cubit.dart';
-import 'package:social_media_app/features/profile/services/edit_profile_services.dart';
 import 'package:social_media_app/features/profile/widgets/edit_profile_action_btn.dart';
 import 'package:social_media_app/features/profile/widgets/edit_profile_form.dart';
 import 'package:social_media_app/features/profile/widgets/edit_profile_images_section.dart';
@@ -30,9 +29,10 @@ class _EditProfileViewState extends State<EditProfileView> {
   File? selectedProfileImage;
   File? selectedBackgroundImage;
 
-  final _editProfileServices = EditProfileServices();
   Future<void> _handleImageSelection(bool isProfile, ImageSource source) async {
-    final File? image = await _editProfileServices.pickImage(source);
+    final File? image = await context.read<EditProfileCubit>().pickImage(
+      source,
+    );
     if (image != null) {
       setState(() {
         if (isProfile) {

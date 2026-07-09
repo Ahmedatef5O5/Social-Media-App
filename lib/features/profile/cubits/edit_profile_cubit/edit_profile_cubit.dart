@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:social_media_app/features/auth/data/models/user_data.dart';
 import 'package:social_media_app/features/profile/services/edit_profile_services.dart';
 part 'edit_profile_state.dart';
@@ -9,6 +10,10 @@ class EditProfileCubit extends Cubit<EditProfileState> {
   // Dependency Injection
   final EditProfileServices _editProfileServices;
   EditProfileCubit(this._editProfileServices) : super(EditProfileInitial());
+
+  Future<File?> pickImage(ImageSource source) {
+    return _editProfileServices.pickImage(source);
+  }
 
   Future<void> updateProfile({
     required UserData oldUser,
