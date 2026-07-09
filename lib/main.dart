@@ -23,6 +23,7 @@ import 'package:social_media_app/core/services/network_status_service.dart';
 import 'package:social_media_app/core/services/notification_services.dart';
 import 'package:social_media_app/core/themes/cubit/theme_cubit.dart';
 import 'package:social_media_app/features/auth/services/supabase_auth_services.dart';
+import 'package:social_media_app/features/posts/services/posts_services.dart';
 import 'package:social_media_app/features/single_calls/cubits/single_call_cubit/call_cubit.dart';
 import 'package:social_media_app/features/single_calls/cubits/single_call_cubit/call_state.dart';
 import 'package:social_media_app/features/single_calls/model/call_model.dart';
@@ -36,15 +37,16 @@ import 'package:social_media_app/features/settings/widgets/app_lock_gate.dart';
 import 'package:social_media_app/firebase_options.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'core/connectivity/widgets/connectivity_banner.dart';
+import 'core/services/cloudinary_storage_services.dart';
 import 'core/services/global_group_call_listener.dart';
 import 'core/services/presence_service.dart';
 import 'features/auth/cubit/auth_cubit/auth_cubit.dart';
+import 'features/comments/services/comments_service.dart';
 import 'features/posts/cubit/posts_cubit.dart';
 import 'features/single_chats/services/chat_services.dart';
 import 'features/discover/services/discover_people_services.dart';
 import 'features/group_calls/services/group_call_signaling_service.dart';
 import 'features/home/cubits/home_cubit/home_cubit.dart';
-import 'features/home/services/home_services.dart';
 import 'features/stories/cubit/stories_cubit.dart';
 
 @pragma('vm:entry-point')
@@ -300,6 +302,9 @@ Widget _buildApp(String savedTheme) {
       RepositoryProvider(create: (_) => GroupChatServices()),
       RepositoryProvider(create: (_) => CallSignalingService()),
       RepositoryProvider(create: (_) => UserService()),
+      RepositoryProvider(create: (_) => PostsServices()),
+      RepositoryProvider(create: (_) => CloudinaryStorageServices.instance),
+      RepositoryProvider(create: (_) => CommentsService()),
       RepositoryProvider(create: (_) => DiscoverPeopleServices()),
       RepositoryProvider(create: (_) => GroupCallSignalingService()),
       RepositoryProvider<MediaCacheRepository>(
@@ -330,13 +335,15 @@ Widget _buildApp(String savedTheme) {
         ),
         BlocProvider(
           create:
-              (context) =>
-                  PostsCubit(homeServices: HomeServices.instance)..fetchPosts(),
+              (context) => PostsCubit(
+                postsServices: context.read<PostsServices>(),
+                storage: context.read<CloudinaryStorageServices>(),
+              )..fetchPosts(),
         ),
         BlocProvider(
           create:
               (context) => HomeCubit(
-                homeServices: HomeServices.instance,
+                userService: context.read<UserService>(),
                 postsCubit: context.read<PostsCubit>(),
               )..getCurrentUserData(),
         ),

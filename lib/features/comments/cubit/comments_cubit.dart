@@ -9,15 +9,18 @@ import '../events/comment_event_bus.dart';
 import '../events/comment_events.dart';
 import '../model/comment_model.dart';
 import '../../posts/model/post_model.dart';
-import '../../home/services/home_services.dart';
+import '../services/comments_service.dart';
 part 'comments_state.dart';
 
 class CommentsCubit extends Cubit<CommentsState> {
-  CommentsCubit(this.homeServices, {this.currentUserData})
-    : super(CommentsInitial());
-
-  final HomeServices homeServices;
+  final CommentsService _commentsService;
   final UserData? currentUserData;
+
+  CommentsCubit({
+    required CommentsService commentsService,
+    this.currentUserData,
+  }) : _commentsService = commentsService,
+       super(CommentsInitial());
 
   final _eventBus = CommentEventBus.instance;
 
@@ -78,7 +81,7 @@ class CommentsCubit extends Cubit<CommentsState> {
     );
 
     try {
-      final realId = await homeServices.commentServices.addComment(
+      final realId = await _commentsService.addComment(
         postId: post.id,
         authorId: user.id,
         commentText: commentText,
@@ -135,7 +138,7 @@ class CommentsCubit extends Cubit<CommentsState> {
 
     try {
       final userId = Supabase.instance.client.auth.currentUser!.id;
-      await homeServices.commentServices.toggleCommentReaction(
+      await _commentsService.toggleCommentReaction(
         commentId: resolvedCommentId,
         userId: userId,
         emoji: emoji,

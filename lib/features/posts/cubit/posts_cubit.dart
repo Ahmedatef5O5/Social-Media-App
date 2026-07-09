@@ -1,3 +1,4 @@
+// ignore_for_file: unused_field
 import 'dart:async';
 import 'dart:io';
 import 'package:dio/dio.dart' as dio_pkg;
@@ -11,28 +12,31 @@ import 'package:social_media_app/core/cache/services/local_snapshot_store.dart';
 import 'package:social_media_app/features/auth/data/models/user_data.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/connectivity/services/connectivity_banner_controller.dart';
+import '../../../core/services/cloudinary_storage_services.dart';
 import '../../../core/services/presence_service.dart';
 import '../../comments/events/comment_event_bus.dart';
 import '../../comments/model/comment_model.dart';
 import '../../notifications/repository/notifications_repository.dart';
-import '../../home/services/home_services.dart';
 import '../model/feed_event.dart';
 import '../model/post_model.dart';
 import '../model/post_reaction_model.dart';
 import '../model/post_request_body.dart';
+import '../services/posts_services.dart';
 part 'posts_state.dart';
 
 const int kMaxCachedPostsSnapshot = 30;
 
 class PostsCubit extends Cubit<PostsState> {
-  final HomeServices _homeServices;
-  // ignore: unused_field
+  final PostsServices _postsServices;
+  final CloudinaryStorageServices _storage;
   final NetworkStatusService _networkStatus;
 
   PostsCubit({
-    required HomeServices homeServices,
+    required PostsServices postsServices,
+    required CloudinaryStorageServices storage,
     NetworkStatusService? networkStatus,
-  }) : _homeServices = homeServices,
+  }) : _postsServices = postsServices,
+       _storage = storage,
        _networkStatus = networkStatus ?? NetworkStatusService.instance,
        super(PostsInitial()) {
     _listenToCommentEvents();
@@ -45,7 +49,6 @@ class PostsCubit extends Cubit<PostsState> {
   XFile? selectedImage;
   XFile? selectedVideo;
 
-  // ignore: unused_field
   StreamSubscription? _commentEventSub;
 
   final _eventBus = CommentEventBus.instance;
@@ -53,12 +56,9 @@ class PostsCubit extends Cubit<PostsState> {
 
   dio_pkg.CancelToken? _cancelToken;
 
-  /// تُستدعى من HomeCubit فور تحميل بيانات المستخدم الحالي
   void setCurrentUser(UserData user) {
     currentUserData = user;
   }
-
-  // ── Posts refresh (منقولة من refreshHomeData + getHomeData) ────────────────
 
   Future<void> refreshPosts({bool isRefresh = false}) async {
     try {
@@ -93,13 +93,12 @@ class PostsCubit extends Cubit<PostsState> {
     }
   }
 
-  // ── من هنا: انقل الدوال التالية "كما هي" من home_cubit.dart بدون أي حرف تغيير ──
   // ── Posts ──────────────────────────────────────────────────────────────────
 
   Future<void> fetchPosts({bool isRefresh = false}) async {
     if (!isRefresh) emit(PostsLoading());
     try {
-      cachedPosts = await _homeServices.postServices.fetchPosts();
+      cachedPosts = await _postsServices.fetchPosts();
       cachedPosts = _fixLikersImages(cachedPosts);
       emit(PostsLoaded(cachedPosts, DateTime.now()));
 
@@ -213,7 +212,7 @@ class PostsCubit extends Cubit<PostsState> {
       if (selectedImage != null) {
         final imageFile = File(selectedImage!.path);
         if (await imageFile.exists()) {
-          final result = await _homeServices.storage.uploadFile(
+          final result = await _storage.uploadFile(
             imageFile,
             'posts',
             'images',
@@ -230,7 +229,7 @@ class PostsCubit extends Cubit<PostsState> {
       if (selectedVideo != null) {
         final videoFile = File(selectedVideo!.path);
         if (await videoFile.exists()) {
-          final result = await _homeServices.storage.uploadFile(
+          final result = await _storage.uploadFile(
             videoFile,
             'posts',
             'videos',
@@ -247,7 +246,7 @@ class PostsCubit extends Cubit<PostsState> {
       if (selectedDocument != null) {
         final docFile = File(selectedDocument!.path);
         if (await docFile.exists()) {
-          final result = await _homeServices.storage.uploadFile(
+          final result = await _storage.uploadFile(
             docFile,
             'posts',
             'documents',
@@ -272,7 +271,7 @@ class PostsCubit extends Cubit<PostsState> {
         videoPublicId: videoPublicId,
         filePublicId: filePublicId,
       );
-      await _homeServices.postServices.addPost(postRequest);
+      await _postsServices.addPost(postRequest);
 
       emit(PostCreating(1.0));
       await Future.delayed(const Duration(milliseconds: 2000));
@@ -301,7 +300,7 @@ class PostsCubit extends Cubit<PostsState> {
 
   Future<void> deletePost(String postId) async {
     try {
-      await _homeServices.postServices.deletePost(postId);
+      await _postsServices.deletePost(postId);
       if (state is PostsLoaded) {
         final updatePosts =
             (state as PostsLoaded).posts.where((p) => p.id != postId).toList();
@@ -453,7 +452,7 @@ class PostsCubit extends Cubit<PostsState> {
       if (isOffline) {
         return;
       }
-      await _homeServices.postServices.toggleReaction(
+      await _postsServices.toggleReaction(
         postId: post.id,
         userId: userId,
         emoji: emoji,
@@ -484,7 +483,7 @@ class PostsCubit extends Cubit<PostsState> {
   void _listenToPosts() {
     if (_postsSubscription != null) return;
 
-    _postsSubscription = _homeServices.postServices.getPostsStream().listen((
+    _postsSubscription = _postsServices.getPostsStream().listen((
       FeedEvent event,
     ) async {
       if (isClosed) return;
@@ -513,7 +512,7 @@ class PostsCubit extends Cubit<PostsState> {
   }
 
   Future<void> _handlePostInserted(String postId) async {
-    final newPost = await _homeServices.postServices.fetchPostById(postId);
+    final newPost = await _postsServices.fetchPostById(postId);
     if (newPost == null || isClosed) return;
 
     final alreadyExists = cachedPosts.any((p) => p.id == postId);
@@ -527,7 +526,7 @@ class PostsCubit extends Cubit<PostsState> {
   }
 
   Future<void> _handlePostUpdated(String postId) async {
-    final updatedPost = await _homeServices.postServices.fetchPostById(postId);
+    final updatedPost = await _postsServices.fetchPostById(postId);
     if (updatedPost == null || isClosed) return;
 
     cachedPosts =
@@ -551,9 +550,7 @@ class PostsCubit extends Cubit<PostsState> {
     String postId,
     PostgresChangeEvent changeType,
   ) async {
-    final refreshedPost = await _homeServices.postServices.fetchPostById(
-      postId,
-    );
+    final refreshedPost = await _postsServices.fetchPostById(postId);
     if (refreshedPost == null || isClosed) return;
 
     cachedPosts =

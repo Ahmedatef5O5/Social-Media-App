@@ -9,20 +9,20 @@ import 'package:social_media_app/features/auth/data/models/user_data.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/connectivity/services/connectivity_banner_controller.dart';
 import '../../../posts/cubit/posts_cubit.dart';
-import '../../services/home_services.dart';
+import '../../../profile/services/user_services.dart';
 part 'home_state.dart';
 
 class HomeCubit extends Cubit<HomeState> {
-  final HomeServices _homeServices;
+  final UserService _userService;
   final PostsCubit _postsCubit;
   // ignore: unused_field
   final NetworkStatusService _networkStatus;
 
   HomeCubit({
-    required HomeServices homeServices,
+    required UserService userService,
     NetworkStatusService? networkStatus,
     required PostsCubit postsCubit,
-  }) : _homeServices = homeServices,
+  }) : _userService = userService,
        _postsCubit = postsCubit,
        _networkStatus = networkStatus ?? NetworkStatusService.instance,
        super(HomeInitial());
@@ -60,9 +60,7 @@ class HomeCubit extends Cubit<HomeState> {
 
   Future<void> _getCurrentUser(String userId, {bool isRefresh = false}) async {
     try {
-      currentUserData = await _homeServices.userServices.fetchCurrentUser(
-        userId,
-      );
+      currentUserData = await _userService.fetchCurrentUser(userId);
       if (!isRefresh) emit(UserDataLoaded(currentUserData!));
       _persistCurrentUserSnapshot(currentUserData!);
       _postsCubit.setCurrentUser(currentUserData!);
