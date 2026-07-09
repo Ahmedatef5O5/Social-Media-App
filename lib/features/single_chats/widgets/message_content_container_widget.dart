@@ -9,6 +9,7 @@ import 'package:social_media_app/features/single_chats/cubit/chat_details_cubit/
 import 'package:social_media_app/features/single_chats/widgets/image_message_widget.dart';
 import 'package:social_media_app/features/single_chats/widgets/message_reactions_row_widget.dart';
 import 'package:social_media_app/features/single_chats/widgets/reply_preview_widget.dart';
+import 'package:social_media_app/features/single_chats/widgets/story_reply_preview_bubble.dart';
 import 'package:social_media_app/features/single_chats/widgets/video_message_widget.dart';
 import 'package:social_media_app/features/single_chats/widgets/voice_message_bubble_widget.dart';
 import '../../../core/helpers/formatted_date.dart';
@@ -166,6 +167,12 @@ class _MessageContentContainerState extends State<MessageContentContainer> {
                         ),
                       ),
                     ),
+                  if (widget.message.isStoryReply)
+                    StoryReplyPreviewBubble(
+                      message: widget.message,
+                      isMe: widget.isMe,
+                    ),
+
                   if (isImage)
                     SizedBox(
                       width: 305,
