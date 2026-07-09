@@ -301,6 +301,7 @@ class AppRouter {
             storiesCubit: args['storiesCubit'],
             allUserGroups: args['allUserGroups'],
             initialGroupIndex: args['initialGroupIndex'],
+            initialStoryIndex: args['initialStoryIndex'] as int? ?? 0,
           ),
           typeOfRoute: TypeOfRoute.fade,
           settings: settings,

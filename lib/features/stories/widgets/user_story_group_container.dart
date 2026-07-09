@@ -9,6 +9,7 @@ class UserStoryGroupContainer extends StatefulWidget {
   final VoidCallback onPrevGroup;
   final StoriesCubit storiesCubit;
   final VoidCallback onClose;
+  final int initialStoryIndex;
 
   const UserStoryGroupContainer({
     super.key,
@@ -17,6 +18,7 @@ class UserStoryGroupContainer extends StatefulWidget {
     required this.onPrevGroup,
     required this.storiesCubit,
     required this.onClose,
+    this.initialStoryIndex = 0,
   });
 
   @override
@@ -26,15 +28,18 @@ class UserStoryGroupContainer extends StatefulWidget {
 
 class _UserStoryGroupContainerState extends State<UserStoryGroupContainer>
     with TickerProviderStateMixin {
-  int _currentStoryIndex = 0;
+  late int _currentStoryIndex;
   late AnimationController _progressController;
   bool _isCompleted = false;
-
   bool _mediaReady = false;
 
   @override
   void initState() {
     super.initState();
+    _currentStoryIndex = widget.initialStoryIndex.clamp(
+      0,
+      widget.userStories.length - 1,
+    );
     _initController(autoStart: false);
   }
 

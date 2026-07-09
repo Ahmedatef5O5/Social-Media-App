@@ -7,12 +7,14 @@ class StoryDisplayView extends StatefulWidget {
   final List<List<StoryModel>> allUserGroups;
   final int initialGroupIndex;
   final StoriesCubit storiesCubit;
+  final int initialStoryIndex;
 
   const StoryDisplayView({
     super.key,
     required this.allUserGroups,
     required this.initialGroupIndex,
     required this.storiesCubit,
+    this.initialStoryIndex = 0,
   });
 
   @override
@@ -49,6 +51,10 @@ class _StoryDisplayViewState extends State<StoryDisplayView> {
             userStories: widget.allUserGroups[index],
             storiesCubit: widget.storiesCubit,
             onClose: _safeClose,
+            initialStoryIndex:
+                index == widget.initialGroupIndex
+                    ? widget.initialStoryIndex
+                    : 0,
             onAllStoriesComplete: () {
               if (index < widget.allUserGroups.length - 1) {
                 _groupPageController.nextPage(
