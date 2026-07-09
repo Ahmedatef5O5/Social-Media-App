@@ -11,12 +11,16 @@ class FullScreenMediaView extends StatefulWidget {
   final String? imageUrl;
   final String? videoUrl;
   final String? caption;
+  final bool isLocal;
+  final bool showActions;
 
   const FullScreenMediaView({
     super.key,
     this.imageUrl,
     this.videoUrl,
     this.caption,
+    this.isLocal = false,
+    this.showActions = true,
   });
 
   @override
@@ -63,15 +67,18 @@ class _FullScreenMediaViewState extends State<FullScreenMediaView> {
   }
 
   Future<void> _initializeVideo(String videoUrl) async {
-    final localPath = await context
-        .read<MediaCacheRepository>()
-        .resolveLocalPath(videoUrl);
+    if (widget.isLocal) {
+      _videoController = VideoPlayerController.file(File(videoUrl));
+    } else {
+      final localPath = await context
+          .read<MediaCacheRepository>()
+          .resolveLocalPath(videoUrl);
 
-    _videoController =
-        localPath != null
-            ? VideoPlayerController.file(File(localPath))
-            : VideoPlayerController.networkUrl(Uri.parse(videoUrl));
-
+      _videoController =
+          localPath != null
+              ? VideoPlayerController.file(File(localPath))
+              : VideoPlayerController.networkUrl(Uri.parse(videoUrl));
+    }
     await _videoController!.initialize();
     if (!mounted) return;
     setState(() {});
@@ -160,7 +167,7 @@ class _FullScreenMediaViewState extends State<FullScreenMediaView> {
 
           iconTheme: const IconThemeData(color: Colors.white),
           actions: [
-            if (widget.imageUrl != null)
+            if (widget.showActions && widget.imageUrl != null)
               _isSaving
                   ? const Padding(
                     padding: EdgeInsets.all(12.0),
@@ -201,7 +208,7 @@ class _FullScreenMediaViewState extends State<FullScreenMediaView> {
                         ],
                   ),
 
-            if (widget.videoUrl != null && _showControls)
+            if (widget.showActions && widget.videoUrl != null && _showControls)
               Padding(
                 padding: const EdgeInsets.only(right: 10),
                 child: TextButton(
@@ -248,19 +255,22 @@ class _FullScreenMediaViewState extends State<FullScreenMediaView> {
             transformationController: _transformationController,
             minScale: 0.5,
             maxScale: 4.0,
-            child: CachedCloudinaryImage(
-              secureUrl: widget.imageUrl!,
-              fit: BoxFit.contain,
-              width: double.infinity,
-              height: double.infinity,
-              placeholder: (context) => const CustomLoadingIndicator(),
-              errorWidget:
-                  (context, error) => const Icon(
-                    Icons.broken_image,
-                    color: Colors.white,
-                    size: 50,
-                  ),
-            ),
+            child:
+                widget.isLocal
+                    ? Image.file(File(widget.imageUrl!), fit: BoxFit.contain)
+                    : CachedCloudinaryImage(
+                      secureUrl: widget.imageUrl!,
+                      fit: BoxFit.contain,
+                      width: double.infinity,
+                      height: double.infinity,
+                      placeholder: (context) => const CustomLoadingIndicator(),
+                      errorWidget:
+                          (context, error) => const Icon(
+                            Icons.broken_image,
+                            color: Colors.white,
+                            size: 50,
+                          ),
+                    ),
           ),
         ),
       );
