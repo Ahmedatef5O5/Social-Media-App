@@ -18,10 +18,15 @@ import '../../models/presence_snapshot.dart';
 import '../../services/chat_services.dart';
 import '../../widgets/chat_bubble.dart';
 part 'chat_details_state.dart';
+part 'chat_reactions_mixin.dart';
+part 'chat_selection_mixin.dart';
+part 'chat_presence_mixin.dart';
 
 const int kMaxCachedMessagesSnapshot = 60;
 
-class ChatDetailsCubit extends Cubit<ChatDetailsState> {
+class ChatDetailsCubit extends Cubit<ChatDetailsState>
+    with ChatReactionsMixin, ChatSelectionMixin, ChatPresenceMixin {
+  @override
   final ChatServices _chatServices;
   final String receiverName;
   final String? senderImageUrl;
@@ -30,23 +35,13 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState> {
       ValueNotifier<MessageModel?>(null);
 
   StreamSubscription? _messageSubscription;
-  StreamSubscription? _presenceSubscription;
-  StreamSubscription? _typingSubscription;
-  Timer? _typingDebounce;
-  Timer? _lastSeenPollingTimer;
-  PresenceSnapshot? _lastPresence;
 
+  @override
   List<MessageModel> cachedMessages = [];
+  @override
   String? _messagesSnapshotKey;
 
-  StreamSubscription? _reactionsSubscription;
-  Map<String, Map<String, String>> _reactionsCache = {};
-
-  final ValueNotifier<Set<String>> selectedMessageIds =
-      ValueNotifier<Set<String>>({});
-
-  String? _currentReceiverId;
-
+  @override
   final currentUserId = Supabase.instance.client.auth.currentUser!.id;
 
   final String currentUserName;
@@ -69,7 +64,6 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState> {
 
   void getMessagesStream({required String receiverId}) {
     _messageSubscription?.cancel();
-    _currentReceiverId = receiverId;
 
     final conversationId = ChatHelper.buildConversationId(
       currentUserId,
@@ -130,37 +124,6 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState> {
         );
   }
 
-  void _listenReactions(String conversationId) {
-    _reactionsSubscription?.cancel();
-    _reactionsSubscription = _chatServices
-        .getMessageReactionsStream(conversationId)
-        .listen((reactionsList) {
-          _reactionsCache = {};
-
-          for (final r in reactionsList) {
-            final msgId = r[MessageReactionColumns.messageId] as String?;
-            final userId = r[MessageReactionColumns.userId] as String?;
-            final emoji = r[MessageReactionColumns.reaction] as String?;
-            if (msgId != null && userId != null && emoji != null) {
-              _reactionsCache[msgId] ??= {};
-              _reactionsCache[msgId]![userId] = emoji;
-            }
-          }
-
-          cachedMessages =
-              cachedMessages.map((m) {
-                final reactions = _reactionsCache[m.id] ?? {};
-                return m.copyWith(reactions: reactions);
-              }).toList();
-
-          if (!isClosed) emit(MessagesSuccessLoaded(messages: cachedMessages));
-
-          if (_messagesSnapshotKey != null && cachedMessages.isNotEmpty) {
-            _persistMessagesSnapshot(_messagesSnapshotKey!, cachedMessages);
-          }
-        });
-  }
-
   void _registerBubbleKeys(List<MessageModel> messages) {
     final currentIds = messages.map((m) => m.id).toSet();
     bubbleKeys.removeWhere((key, _) => !currentIds.contains(key));
@@ -169,6 +132,7 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState> {
     }
   }
 
+  @override
   void _persistMessagesSnapshot(String key, List<MessageModel> messages) {
     unawaited(
       LocalSnapshotStore.instance.saveList(
@@ -449,6 +413,7 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState> {
   }
 
   final Map<String, dio_pkg.CancelToken> _cancelTokens = {};
+  @override
   void cancelUpload(String tempId) {
     if (_cancelTokens.containsKey(tempId)) {
       _cancelTokens[tempId]!.cancel();
@@ -525,241 +490,10 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState> {
     }
   }
 
-  // ── Multi-select ──────────────────────────────────────
-
-  bool get isInSelectionMode => selectedMessageIds.value.isNotEmpty;
-
-  List<MessageModel> get selectedMessages =>
-      cachedMessages
-          .where((m) => selectedMessageIds.value.contains(m.id))
-          .toList();
-
-  bool get canDeleteSelectedForEveryone =>
-      selectedMessages.isNotEmpty &&
-      selectedMessages.every((m) => m.senderId == currentUserId);
-
-  // bool _isCallMessage(String messageId) {
-  //   final index = cachedMessages.indexWhere((m) => m.id == messageId);
-  //   if (index == -1) return false;
-  //   final type = cachedMessages[index].messageType;
-  //   return type == 'call';
-  // }
-
-  void startSelection(String messageId) {
-    // if (_isCallMessage(messageId)) return;
-    selectedMessageIds.value = {messageId};
-  }
-
-  void toggleMessageSelection(String messageId) {
-    // if (_isCallMessage(messageId)) return;
-    final current = Set<String>.from(selectedMessageIds.value);
-    if (current.contains(messageId)) {
-      current.remove(messageId);
-    } else {
-      current.add(messageId);
-    }
-    selectedMessageIds.value = current;
-  }
-
-  void clearSelection() {
-    selectedMessageIds.value = {};
-  }
-
-  Future<void> deleteSelectedForMe() async {
-    final messages = selectedMessages;
-    if (messages.isEmpty) return;
-    clearSelection();
-    try {
-      await _chatServices.deleteMessagesForMe(
-        messages: messages,
-        currentUserId: currentUserId,
-      );
-    } catch (e) {
-      debugPrint('error deleting selected messages for me: $e');
-      emit(MessagesError(e.toString()));
-    }
-  }
-
-  Future<void> deleteSelectedForEveryone() async {
-    final ids = selectedMessageIds.value.toList();
-    if (ids.isEmpty) return;
-
-    cachedMessages.removeWhere((m) => ids.contains(m.id));
-    emit(MessagesSuccessLoaded(messages: List.from(cachedMessages)));
-
-    final realIds = ids.where((id) => !id.startsWith('temp_')).toList();
-    final tempIds = ids.where((id) => id.startsWith('temp_')).toList();
-
-    for (final tempId in tempIds) {
-      cancelUpload(tempId);
-    }
-
-    clearSelection();
-
-    if (realIds.isEmpty) return;
-
-    try {
-      await _chatServices.deleteMessagesForEveryone(realIds);
-    } catch (e) {
-      debugPrint('error deleting selected messages for everyone: $e');
-      emit(MessagesError(e.toString()));
-    }
-  }
-
-  Future<void> toggleReaction({
-    required String messageId,
-    required String receiverId,
-    required String emoji,
-  }) async {
-    clearSelection();
-
-    final isOffline = await ConnectivityBannerController.notifyIfOffline();
-    if (isOffline) return;
-
-    final ids = [currentUserId, receiverId];
-    ids.sort();
-    final conversationId = ids.join('_');
-
-    final currentEmoji = _reactionsCache[messageId]?[currentUserId];
-    _reactionsCache[messageId] ??= {};
-    if (currentEmoji == emoji) {
-      _reactionsCache[messageId]!.remove(currentUserId);
-    } else {
-      _reactionsCache[messageId]![currentUserId] = emoji;
-    }
-    _applyReactionsCacheToMessages();
-
-    try {
-      await _chatServices.toggleReaction(
-        messageId: messageId,
-        conversationId: conversationId,
-        emoji: emoji,
-      );
-    } catch (e) {
-      if (currentEmoji == null) {
-        _reactionsCache[messageId]!.remove(currentUserId);
-      } else {
-        _reactionsCache[messageId]![currentUserId] = currentEmoji;
-      }
-      _applyReactionsCacheToMessages();
-      debugPrint('error toggling reaction: $e');
-    }
-  }
-
-  void _applyReactionsCacheToMessages() {
-    cachedMessages =
-        cachedMessages.map((m) {
-          final reactions = _reactionsCache[m.id] ?? {};
-          return m.copyWith(reactions: reactions);
-        }).toList();
-    if (!isClosed) emit(MessagesSuccessLoaded(messages: cachedMessages));
-  }
-
-  Future<void> updateLastSeen() async {
-    try {
-      await _chatServices.updateLastSeen(currentUserId);
-    } catch (e) {
-      debugPrint('error updating last seen: $e');
-      emit(MessagesError(e.toString()));
-    }
-  }
-
-  void watchReceiverPresence(String receiverId, {PresenceSnapshot? initial}) {
-    _presenceSubscription?.cancel();
-
-    if (initial != null) {
-      _lastPresence = initial;
-      Future.microtask(() {
-        if (!isClosed) {
-          emit(
-            ReceiverPresenceUpdated(
-              isOnline: initial.isOnline,
-              lastSeen: initial.lastSeen,
-            ),
-          );
-        }
-      });
-    }
-
-    _presenceSubscription = _chatServices.getPresenceStream(receiverId).listen((
-      snapshot,
-    ) {
-      _lastPresence = snapshot;
-      if (!isClosed) {
-        emit(
-          ReceiverPresenceUpdated(
-            isOnline: snapshot.isOnline,
-            lastSeen: snapshot.lastSeen,
-          ),
-        );
-      }
-    });
-  }
-
-  PresenceSnapshot? get lastPresence => _lastPresence;
-
-  String getChatId(String u1, String u2) {
-    List<String> ids = [u1, u2];
-    ids.sort();
-    return ids.join('_');
-  }
-
-  void watchReceiverTyping(String receiverId) {
-    final chatId = getChatId(currentUserId, receiverId);
-
-    _typingSubscription?.cancel();
-    _typingSubscription = _chatServices
-        .getTypingStream(
-          chatId: chatId,
-          receiverId: receiverId,
-          currentUserId: currentUserId,
-        )
-        .listen((isTyping) {
-          if (!isClosed) emit(ReceiverTypingState(isTyping));
-        });
-  }
-
-  void onUserTyping(String receiverId) {
-    final chatId = getChatId(currentUserId, receiverId);
-
-    _chatServices.setTyping(
-      chatId: chatId,
-      currentUserId: currentUserId,
-      isTyping: true,
-    );
-
-    _typingDebounce?.cancel();
-    _typingDebounce = Timer(const Duration(seconds: 2), () {
-      _chatServices.setTyping(
-        chatId: chatId,
-        currentUserId: currentUserId,
-        isTyping: false,
-      );
-    });
-  }
-
-  void stopTyping(String receiverId) {
-    final chatId = getChatId(currentUserId, receiverId);
-
-    _typingDebounce?.cancel();
-    _chatServices.setTyping(
-      chatId: chatId,
-      currentUserId: currentUserId,
-      isTyping: false,
-    );
-  }
-
   @override
   Future<void> close() {
     highlightedMessageId.dispose();
-    selectedMessageIds.dispose();
     _messageSubscription?.cancel();
-    _presenceSubscription?.cancel();
-    _lastSeenPollingTimer?.cancel();
-    _typingSubscription?.cancel();
-    _typingDebounce?.cancel();
-    _reactionsSubscription?.cancel();
-
     return super.close();
   }
 }
