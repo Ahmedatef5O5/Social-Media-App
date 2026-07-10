@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/cache/utils/cloudinary_url_extensions.dart';
 import '../../../core/helpers/formatted_date.dart';
 import '../../../core/themes/app_colors.dart';
 import '../../../core/widgets/cached_cloudinary_image.dart';
@@ -68,6 +69,7 @@ class MyStoryTile extends StatelessWidget {
             ],
           ),
         ),
+
         trailing:
             isDeleting
                 ? const SizedBox(
@@ -128,13 +130,30 @@ class MyStoryTile extends StatelessWidget {
           fit: BoxFit.cover,
         );
       case StoryType.video:
-        // TODO : ملحوظة: مفيش video thumbnail extraction حالياً وقت الرفع،
-        //     فبنعرض placeholder ثابت. ممكن نضيفها كتحسين مستقبلي منفصل.
-
-        return Container(
-          color: Colors.grey.shade800,
-          child: const Icon(Icons.videocam, color: Colors.white70),
+        final thumbUrl = story.videoUrl?.cloudinaryVideoThumbnailUrl;
+        return Stack(
+          fit: StackFit.expand,
+          children: [
+            thumbUrl != null
+                ? CachedCloudinaryImage(
+                  secureUrl: thumbUrl,
+                  width: 52,
+                  height: 52,
+                  fit: BoxFit.cover,
+                  errorWidget:
+                      (_, __) => Container(color: Colors.grey.shade800),
+                )
+                : Container(color: Colors.grey.shade800),
+            const Center(
+              child: Icon(
+                Icons.play_arrow_rounded,
+                color: Colors.white70,
+                size: 20,
+              ),
+            ),
+          ],
         );
+
       case StoryType.text:
         return Container(
           color:
