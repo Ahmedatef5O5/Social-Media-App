@@ -5,10 +5,12 @@ import 'package:video_player/video_player.dart';
 import '../cubit/stories_cubit/stories_cubit.dart';
 import '../cubit/story_reaction_cubit/story_reaction_cubit.dart';
 import '../cubit/story_reply_cubit/story_reply_cubit.dart';
+import '../cubit/story_views_cubit/story_views_cubit.dart';
 import '../model/story_model.dart';
 import '../widgets/story_gesture_layer.dart';
 import '../widgets/story_header.dart';
 import '../widgets/story_reply_input_bar.dart';
+import '../widgets/story_views_indicator.dart';
 import 'story_media_view.dart';
 
 class SingleUserStoryView extends StatefulWidget {
@@ -61,6 +63,10 @@ class _SingleUserStoryViewState extends State<SingleUserStoryView> {
                   storyId: widget.story.id,
                   storyAuthorId: widget.story.authorId,
                 ),
+          ),
+        if (isMyStory)
+          BlocProvider(
+            create: (_) => StoryViewsCubit(storyId: widget.story.id),
           ),
       ],
       child: Builder(
@@ -140,6 +146,18 @@ class _SingleUserStoryViewState extends State<SingleUserStoryView> {
                           ),
                         ),
                       ),
+                    if (isMyStory)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 24),
+                        child: Align(
+                          alignment: Alignment.center,
+                          child: StoryViewsIndicator(
+                            onOpen: widget.onLongPressStart,
+                            onClose: widget.onLongPressEnd,
+                          ),
+                        ),
+                      ),
+
                     if (!isMyStory)
                       StoryReplyInputBar(
                         story: widget.story,
