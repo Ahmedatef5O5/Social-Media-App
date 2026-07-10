@@ -33,6 +33,7 @@ abstract class SupabaseConstants {
   static const String toggleStoryReactionRpc = 'toggle_story_reaction';
   static const String markStoryViewedRpc = 'mark_story_viewed';
   static const String getMyStoriesOverviewRpc = 'get_my_stories_overview';
+  static const String getStoryViewersRpc = 'get_story_viewers';
 }
 
 // groups
@@ -226,6 +227,8 @@ abstract class MessagesColumns {
   static const String replyToStoryMediaUrl = 'reply_to_story_media_url';
   static const String replyToStoryText = 'reply_to_story_text';
   static const String replyToStoryBgColor = 'reply_to_story_bg_color';
+  static const String replyToStoryDurationSeconds =
+      'reply_to_story_duration_seconds';
 }
 
 // message_reactions

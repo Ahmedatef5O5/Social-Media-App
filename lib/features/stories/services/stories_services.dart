@@ -9,6 +9,7 @@ import '../../../core/services/media_cleanup_service.dart';
 import '../../../core/services/supabase_database_services.dart';
 import '../../../core/utilities/supabase_constants.dart';
 import '../model/story_model.dart';
+import '../model/story_viewer_model.dart';
 
 class StoriesServices {
   final _supabase = Supabase.instance.client;
@@ -107,6 +108,17 @@ class StoriesServices {
       SupabaseConstants.getMyStoriesOverviewRpc,
     );
     return (response as List).cast<Map<String, dynamic>>();
+  }
+
+  Future<List<StoryViewerModel>> getStoryViewers(String storyId) async {
+    final response = await _supabase.rpc(
+      SupabaseConstants.getStoryViewersRpc,
+      params: {'p_story_id': storyId},
+    );
+    return (response as List)
+        .cast<Map<String, dynamic>>()
+        .map(StoryViewerModel.fromMap)
+        .toList();
   }
 
   Future<void> createStory(StoryModel story) async {
