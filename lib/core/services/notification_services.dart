@@ -1,14 +1,13 @@
 import 'dart:typed_data';
-import 'dart:ui' as ui;
 import 'package:dio/dio.dart' as dio_pkg;
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:social_media_app/core/router/app_routes.dart';
 import 'package:social_media_app/core/services/active_screen_tracker.dart';
 import 'package:social_media_app/features/single_chats/models/chat_user_model.dart';
 import '../../features/settings/repository/settings_repository.dart';
+import 'notification_avatar_builder.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -29,7 +28,8 @@ class NotificationService {
   static final NotificationService instance = NotificationService._();
 
   static final Map<String, List<_StoredMessage>> _messagesByConversation = {};
-  static final Map<String, Uint8List> _avatarCache = {};
+
+  final NotificationAvatarBuilder _avatarBuilder = NotificationAvatarBuilder();
 
   final FlutterLocalNotificationsPlugin _localNotifications =
       FlutterLocalNotificationsPlugin();
@@ -91,7 +91,6 @@ class NotificationService {
     }
   }
 
-  // ── Public helpers ───────────────────────────────────────────
   Future<void> cancelNotificationsForSender(String senderId) async {
     await _localNotifications.cancel(senderId.hashCode);
     _messagesByConversation.remove(senderId);
@@ -182,9 +181,12 @@ class NotificationService {
   }) async {
     Uint8List profileBitmap;
     try {
-      profileBitmap = await _getAvatarBitmap(callerId, callerAvatar);
+      profileBitmap = await _avatarBuilder.getAvatarBitmap(
+        callerId,
+        callerAvatar,
+      );
     } catch (_) {
-      profileBitmap = await _defaultBitmap();
+      profileBitmap = await _avatarBuilder.defaultBitmap();
     }
 
     final subtitle =
@@ -288,11 +290,11 @@ class NotificationService {
       String? groupImageUrl,
     ) async {
       if (groupImageUrl != null && groupImageUrl.isNotEmpty) {
-        final bytes = await _fetchBitmap(groupImageUrl);
+        final bytes = await _avatarBuilder.fetchBitmap(groupImageUrl);
         if (bytes != null) return bytes;
       }
 
-      return _buildLetterAvatar(groupName);
+      return await _avatarBuilder.buildLetterAvatar(groupName);
     }
 
     final stored = _messagesByConversation.putIfAbsent(
@@ -308,7 +310,7 @@ class NotificationService {
     );
     if (stored.length > 7) stored.removeAt(0);
 
-    final Uint8List senderBitmap = await _getAvatarBitmap(
+    final Uint8List senderBitmap = await _avatarBuilder.getAvatarBitmap(
       conversationId,
       avatarUrl,
     );
@@ -325,10 +327,8 @@ class NotificationService {
 
     final ByteArrayAndroidIcon senderIcon = ByteArrayAndroidIcon(senderBitmap);
 
-    final Uint8List profileBitmap = await _getAvatarBitmap(
-      conversationId,
-      avatarUrl,
-    );
+    // Profile bitmap is typically the sender's avatar, so we request it from the builder.
+    // final Uint8List profileBitmap = await _avatarBuilder.getAvatarBitmap(conversationId, avatarUrl);
 
     final Person person = Person(
       name: conversationTitle,
@@ -392,63 +392,6 @@ class NotificationService {
       default:
         return body;
     }
-  }
-
-  Future<Uint8List> _buildLetterAvatar(String title, {int size = 128}) async {
-    final recorder = ui.PictureRecorder();
-    final canvas = Canvas(
-      recorder,
-      Rect.fromLTWH(0, 0, size.toDouble(), size.toDouble()),
-    );
-
-    final Color bgColor = _colorFromString(title);
-
-    final paint = Paint()..color = bgColor;
-    canvas.drawCircle(Offset(size / 2, size / 2), size / 2, paint);
-
-    final String letter =
-        title.trim().isNotEmpty ? title.trim()[0].toUpperCase() : '?';
-
-    final textPainter = TextPainter(
-      text: TextSpan(
-        text: letter,
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: size * 0.5,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-      textAlign: TextAlign.center,
-      textDirection: TextDirection.ltr,
-    );
-
-    textPainter.layout();
-    final offset = Offset(
-      (size - textPainter.width) / 2,
-      (size - textPainter.height) / 2,
-    );
-    textPainter.paint(canvas, offset);
-
-    final image = await recorder.endRecording().toImage(size, size);
-
-    final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
-
-    return byteData!.buffer.asUint8List();
-  }
-
-  Color _colorFromString(String input) {
-    final colors = [
-      const Color(0xFF1E88E5),
-      const Color(0xFF43A047),
-      const Color(0xFFE53935),
-      const Color(0xFF8E24AA),
-      const Color(0xFFF4511E),
-      const Color(0xFF3949AB),
-      const Color(0xFF00897B),
-    ];
-
-    final int hash = input.codeUnits.fold(0, (a, b) => a + b);
-    return colors[hash % colors.length];
   }
 
   @pragma('vm:entry-point')
@@ -568,141 +511,5 @@ class NotificationService {
       AppRoutes.chatDetailsViewRoute,
       arguments: user,
     );
-  }
-
-  Future<Uint8List> _makeCircularBitmap(Uint8List imageBytes) async {
-    final codec = await ui.instantiateImageCodec(imageBytes);
-    final frame = await codec.getNextFrame();
-    final image = frame.image;
-    final size = image.width < image.height ? image.width : image.height;
-    final recorder = ui.PictureRecorder();
-    final canvas = Canvas(recorder);
-    final paint = Paint()..isAntiAlias = true;
-    final rect = Rect.fromLTWH(0, 0, size.toDouble(), size.toDouble());
-    canvas.clipPath(Path()..addOval(rect));
-    canvas.drawImage(
-      image,
-      Offset(-(image.width - size) / 2, -(image.height - size) / 2),
-      paint,
-    );
-    final picture = recorder.endRecording();
-    final circularImage = await picture.toImage(size, size);
-    final byteData = await circularImage.toByteData(
-      format: ui.ImageByteFormat.png,
-    );
-    return byteData!.buffer.asUint8List();
-  }
-
-  Future<Uint8List> _getAvatarBitmap(String senderId, String? imageUrl) async {
-    if (_avatarCache.containsKey(senderId)) {
-      return _avatarCache[senderId]!;
-    }
-    Uint8List bitmap;
-    try {
-      final raw = await _fetchBitmap(imageUrl);
-      bitmap = await _makeCircularBitmap(raw ?? await _defaultBitmap());
-
-      if (bitmap.lengthInBytes < 500) {
-        throw Exception('Bitmap too small');
-      }
-    } catch (_) {
-      bitmap = await _buildLetterAvatar(senderId);
-    }
-    _avatarCache[senderId] = bitmap;
-    return bitmap;
-  }
-
-  Future<Uint8List?> _fetchBitmap(String? url) async {
-    if (url == null || url.isEmpty || !url.startsWith('http')) return null;
-    try {
-      final response = await dio_pkg.Dio().get<List<int>>(
-        url,
-        options: dio_pkg.Options(responseType: dio_pkg.ResponseType.bytes),
-      );
-      if (response.data == null) return null;
-      return Uint8List.fromList(response.data!);
-    } catch (_) {
-      return null;
-    }
-  }
-
-  Future<Uint8List> _defaultBitmap() async {
-    try {
-      final data = await rootBundle.load(
-        'assets/images/no_profile_picture.png',
-      );
-      return data.buffer.asUint8List();
-    } catch (_) {
-      // 1×1 transparent PNG fallback
-      return Uint8List.fromList([
-        0x89,
-        0x50,
-        0x4E,
-        0x47,
-        0x0D,
-        0x0A,
-        0x1A,
-        0x0A,
-        0x00,
-        0x00,
-        0x00,
-        0x0D,
-        0x49,
-        0x48,
-        0x44,
-        0x52,
-        0x00,
-        0x00,
-        0x00,
-        0x01,
-        0x00,
-        0x00,
-        0x00,
-        0x01,
-        0x08,
-        0x06,
-        0x00,
-        0x00,
-        0x00,
-        0x1F,
-        0x15,
-        0xC4,
-        0x89,
-        0x00,
-        0x00,
-        0x00,
-        0x0A,
-        0x49,
-        0x44,
-        0x41,
-        0x54,
-        0x78,
-        0x9C,
-        0x62,
-        0x00,
-        0x01,
-        0x00,
-        0x00,
-        0x05,
-        0x00,
-        0x01,
-        0x0D,
-        0x0A,
-        0x2D,
-        0xB4,
-        0x00,
-        0x00,
-        0x00,
-        0x00,
-        0x49,
-        0x45,
-        0x4E,
-        0x44,
-        0xAE,
-        0x42,
-        0x60,
-        0x82,
-      ]);
-    }
   }
 }
