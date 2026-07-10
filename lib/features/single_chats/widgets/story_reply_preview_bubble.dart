@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import '../../../core/cache/utils/cloudinary_url_extensions.dart';
+import '../../../core/helpers/media_duration_badge.dart';
 import '../../../core/helpers/story_reply_navigator.dart';
 import '../../../core/themes/app_colors.dart';
 import '../../../core/widgets/cached_cloudinary_image.dart';
@@ -16,7 +17,7 @@ class StoryReplyPreviewBubble extends StatelessWidget {
     required this.isMe,
   });
 
-  static const double _thumbnailSize = 46;
+  static const double _thumbnailSize = 54;
 
   @override
   Widget build(BuildContext context) {
@@ -28,9 +29,9 @@ class StoryReplyPreviewBubble extends StatelessWidget {
 
     final Color surfaceColor =
         isMe
-            ? Colors.white.withValues(alpha: 0.16)
+            ? Colors.white.withValues(alpha: 0.14)
             : (isDarkMode
-                ? Colors.white.withValues(alpha: 0.06)
+                ? Colors.white.withValues(alpha: 0.05)
                 : AppColors.grey1);
 
     final Color accentColor =
@@ -42,18 +43,25 @@ class StoryReplyPreviewBubble extends StatelessWidget {
 
     return Material(
       color: Colors.transparent,
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: BorderRadius.circular(16),
       child: InkWell(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
         onTap: () => StoryReplyNavigator.openOriginalStory(context, message),
         child: Container(
           width: double.infinity,
           margin: const EdgeInsets.only(bottom: 6),
-          padding: const EdgeInsets.all(7),
+          padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
             color: surfaceColor,
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(16),
             border: Border(left: BorderSide(color: accentColor, width: 3)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: isDarkMode ? 0.18 : 0.05),
+                blurRadius: 6,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
@@ -68,12 +76,19 @@ class StoryReplyPreviewBubble extends StatelessWidget {
                     Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(
-                          Icons.motion_photos_on,
-                          size: 13,
-                          color: accentColor,
+                        Container(
+                          padding: const EdgeInsets.all(3),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: accentColor.withValues(alpha: 0.16),
+                          ),
+                          child: Icon(
+                            Icons.motion_photos_on,
+                            size: 11,
+                            color: accentColor,
+                          ),
                         ),
-                        const Gap(4),
+                        const Gap(5),
                         Text(
                           'Replied to Story',
                           style: TextStyle(
@@ -85,7 +100,7 @@ class StoryReplyPreviewBubble extends StatelessWidget {
                         ),
                       ],
                     ),
-                    const Gap(3),
+                    const Gap(4),
                     Text(
                       _previewLabel(type, storyText),
                       maxLines: 1,
@@ -95,6 +110,8 @@ class StoryReplyPreviewBubble extends StatelessWidget {
                   ],
                 ),
               ),
+              // const Gap(4),
+              // Icon(Icons.chevron_right_rounded, size: 18, color: subTextColor),
             ],
           ),
         ),
@@ -123,15 +140,22 @@ class StoryReplyPreviewBubble extends StatelessWidget {
       return Container(
         width: _thumbnailSize,
         height: _thumbnailSize,
-        padding: const EdgeInsets.all(5),
+        padding: const EdgeInsets.all(6),
         alignment: Alignment.center,
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [bg, bg.withValues(alpha: 0.7)],
+            colors: [bg, bg.withValues(alpha: 0.65)],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: bg.withValues(alpha: 0.4),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         child: Text(
           storyText?.isNotEmpty == true ? storyText! : 'Aa',
@@ -140,7 +164,7 @@ class StoryReplyPreviewBubble extends StatelessWidget {
           overflow: TextOverflow.ellipsis,
           style: const TextStyle(
             color: Colors.white,
-            fontSize: 7,
+            fontSize: 7.5,
             fontWeight: FontWeight.w600,
             height: 1.15,
           ),
@@ -152,7 +176,7 @@ class StoryReplyPreviewBubble extends StatelessWidget {
         type == 'video' ? mediaUrl.cloudinaryVideoThumbnailUrl : mediaUrl;
 
     return ClipRRect(
-      borderRadius: BorderRadius.circular(10),
+      borderRadius: BorderRadius.circular(12),
       child: SizedBox(
         width: _thumbnailSize,
         height: _thumbnailSize,
@@ -170,16 +194,49 @@ class StoryReplyPreviewBubble extends StatelessWidget {
               )
             else
               Container(color: Colors.grey.shade700),
-            if (type == 'video')
-              Container(
-                color: Colors.black26,
-                alignment: Alignment.center,
-                child: const Icon(
-                  Icons.play_arrow_rounded,
-                  color: Colors.white,
-                  size: 20,
+
+            if (type == 'video') ...[
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                height: 22,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.transparent,
+                        Colors.black.withValues(alpha: 0.55),
+                      ],
+                    ),
+                  ),
                 ),
               ),
+              Center(
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.black.withValues(alpha: 0.35),
+                  ),
+                  child: const Icon(
+                    Icons.play_arrow_rounded,
+                    color: Colors.white,
+                    size: 14,
+                  ),
+                ),
+              ),
+              Positioned(
+                right: 3,
+                bottom: 3,
+                child: MediaDurationBadge(
+                  seconds: message.replyToStoryDurationSeconds,
+                  fontSize: 8,
+                ),
+              ),
+            ],
           ],
         ),
       ),

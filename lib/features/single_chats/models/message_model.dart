@@ -18,13 +18,13 @@ class MessageModel {
   final String? replyToMessageType;
   final String? replyToSenderId;
   final List<String> deletedFor;
-
   final String? replyToStoryId;
   final String? replyToStoryAuthorId;
   final String? replyToStoryType;
   final String? replyToStoryMediaUrl;
   final String? replyToStoryText;
   final String? replyToStoryBgColor;
+  final int? replyToStoryDurationSeconds;
 
   const MessageModel({
     required this.id,
@@ -50,6 +50,7 @@ class MessageModel {
     this.replyToStoryMediaUrl,
     this.replyToStoryText,
     this.replyToStoryBgColor,
+    this.replyToStoryDurationSeconds,
   });
 
   bool get isStoryReply => replyToStoryType != null;
@@ -78,6 +79,7 @@ class MessageModel {
     String? replyToStoryMediaUrl,
     String? replyToStoryText,
     String? replyToStoryBgColor,
+    int? replyToStoryDurationSeconds,
   }) {
     return MessageModel(
       id: id ?? this.id,
@@ -103,6 +105,8 @@ class MessageModel {
       replyToStoryMediaUrl: replyToStoryMediaUrl ?? this.replyToStoryMediaUrl,
       replyToStoryText: replyToStoryText ?? this.replyToStoryText,
       replyToStoryBgColor: replyToStoryBgColor ?? this.replyToStoryBgColor,
+      replyToStoryDurationSeconds:
+          replyToStoryDurationSeconds ?? this.replyToStoryDurationSeconds,
     );
   }
 
@@ -134,6 +138,8 @@ class MessageModel {
       replyToStoryMediaUrl: json[MessagesColumns.replyToStoryMediaUrl],
       replyToStoryText: json[MessagesColumns.replyToStoryText],
       replyToStoryBgColor: json[MessagesColumns.replyToStoryBgColor],
+      replyToStoryDurationSeconds:
+          (json[MessagesColumns.replyToStoryDurationSeconds] as num?)?.toInt(),
     );
   }
 
@@ -161,6 +167,7 @@ class MessageModel {
       MessagesColumns.replyToStoryMediaUrl: replyToStoryMediaUrl,
       MessagesColumns.replyToStoryText: replyToStoryText,
       MessagesColumns.replyToStoryBgColor: replyToStoryBgColor,
+      MessagesColumns.replyToStoryDurationSeconds: replyToStoryDurationSeconds,
     };
   }
 }

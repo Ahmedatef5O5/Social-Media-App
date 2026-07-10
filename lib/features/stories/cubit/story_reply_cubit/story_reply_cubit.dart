@@ -24,7 +24,7 @@ class StoryReplyCubit extends Cubit<StoryReplyState> {
     required StoryModel story,
     String text = '',
     File? mediaFile,
-    String? mediaMessageType, 
+    String? mediaMessageType,
   }) async {
     if (text.trim().isEmpty && mediaFile == null) return;
 
@@ -51,7 +51,8 @@ class StoryReplyCubit extends Cubit<StoryReplyState> {
         }
       }
 
-      final resolvedMessageType = mediaFile != null ? mediaMessageType! : 'text';
+      final resolvedMessageType =
+          mediaFile != null ? mediaMessageType! : 'text';
 
       final String? storyPreviewText =
           story.storyType == StoryType.text ? story.contentText : story.caption;
@@ -72,6 +73,10 @@ class StoryReplyCubit extends Cubit<StoryReplyState> {
         replyToStoryMediaUrl: story.imageUrl ?? story.videoUrl,
         replyToStoryText: storyPreviewText,
         replyToStoryBgColor: story.backgroundColor,
+        replyToStoryDurationSeconds:
+            story.storyType == StoryType.video
+                ? story.videoDurationSeconds
+                : null,
       );
 
       emit(StoryReplySent());

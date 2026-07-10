@@ -220,6 +220,7 @@ class ChatServices {
     String? replyToStoryMediaUrl,
     String? replyToStoryText,
     String? replyToStoryBgColor,
+    int? replyToStoryDurationSeconds,
   }) async {
     await _supabase.from(SupabaseConstants.messages).insert({
       MessagesColumns.senderId: senderId,
@@ -252,6 +253,9 @@ class ChatServices {
         MessagesColumns.replyToStoryText: replyToStoryText,
       if (replyToStoryBgColor != null)
         MessagesColumns.replyToStoryBgColor: replyToStoryBgColor,
+      if (replyToStoryDurationSeconds != null)
+        MessagesColumns.replyToStoryDurationSeconds:
+            replyToStoryDurationSeconds,
     });
   }
 
