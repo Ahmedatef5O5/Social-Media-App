@@ -243,6 +243,20 @@ class GroupChatServices {
     });
   }
 
+  Future<Map<String, String?>> getUserInfo(String userId) async {
+    final userProfile =
+        await _supabase
+            .from('users')
+            .select('name, image_url')
+            .eq('id', userId)
+            .maybeSingle();
+
+    return {
+      'name': userProfile?['name'] as String?,
+      'imageUrl': userProfile?['image_url'] as String?,
+    };
+  }
+
   Future<void> deleteGroupMessage(String messageId) async {
     await MediaCleanupService.instance.deleteWithMedia(
       table: SupabaseConstants.groupMessages,
