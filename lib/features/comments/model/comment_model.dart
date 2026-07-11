@@ -1,4 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'comment_type.dart';
 
 class CommentModel {
   final String id;
@@ -8,7 +9,24 @@ class CommentModel {
   final String? authorName;
   final String? authorImageUrl;
   final String postId;
+
+  // ── Rich media (Comments upgrade) ──
+  final CommentType commentType;
   final String? imageUrl;
+  final String? videoUrl;
+  final String? voiceUrl;
+  final String? fileUrl;
+  final String? fileName;
+  final int? fileSizeBytes;
+  final int? durationSeconds;
+
+  final String? imagePublicId;
+  final String? videoPublicId;
+  final String? voicePublicId;
+  final String? filePublicId;
+
+  final int replyCount;
+  final int reactionCount;
 
   final String? parentCommentId; // null = top-level, non-null = reply
   final List<CommentModel> replies;
@@ -22,7 +40,20 @@ class CommentModel {
     this.authorName,
     this.authorImageUrl,
     required this.postId,
+    this.commentType = CommentType.text,
     this.imageUrl,
+    this.videoUrl,
+    this.voiceUrl,
+    this.fileUrl,
+    this.fileName,
+    this.fileSizeBytes,
+    this.durationSeconds,
+    this.imagePublicId,
+    this.videoPublicId,
+    this.voicePublicId,
+    this.filePublicId,
+    this.replyCount = 0,
+    this.reactionCount = 0,
     this.parentCommentId,
     this.replies = const [],
     this.reactions = const [],
@@ -30,6 +61,7 @@ class CommentModel {
 
   bool get isReply => parentCommentId != null;
   int get totalReactions => reactions.fold(0, (sum, r) => sum + r.count);
+  bool get hasMedia => commentType != CommentType.text;
 
   Map<String, dynamic> toMap() {
     return <String, dynamic>{
@@ -40,7 +72,14 @@ class CommentModel {
       'authorName': authorName,
       'authorImageUrl': authorImageUrl,
       'post_id': postId,
-      'image': imageUrl,
+      'comment_type': commentType.value,
+      'image_url': imageUrl,
+      'video_url': videoUrl,
+      'voice_url': voiceUrl,
+      'file_url': fileUrl,
+      'file_name': fileName,
+      'file_size_bytes': fileSizeBytes,
+      'duration_seconds': durationSeconds,
       'parent_comment_id': parentCommentId,
     };
   }
@@ -66,11 +105,24 @@ class CommentModel {
       id: map['id'] as String,
       createdAt: map['created_at'] as String,
       authorId: map['author_id'] as String,
-      text: map['text'] as String,
+      text: map['text'] as String? ?? '',
       authorName: authorName,
       authorImageUrl: authorImageUrl,
       postId: map['post_id'] as String,
-      imageUrl: map['image_url'] != null ? map['image_url'] as String : null,
+      commentType: commentTypeFromString(map['comment_type'] as String?),
+      imageUrl: map['image_url'] as String?,
+      videoUrl: map['video_url'] as String?,
+      voiceUrl: map['voice_url'] as String?,
+      fileUrl: map['file_url'] as String?,
+      fileName: map['file_name'] as String?,
+      fileSizeBytes: map['file_size_bytes'] as int?,
+      durationSeconds: map['duration_seconds'] as int?,
+      imagePublicId: map['image_public_id'] as String?,
+      videoPublicId: map['video_public_id'] as String?,
+      voicePublicId: map['voice_public_id'] as String?,
+      filePublicId: map['file_public_id'] as String?,
+      replyCount: map['reply_count'] as int? ?? 0,
+      reactionCount: map['reaction_count'] as int? ?? 0,
       parentCommentId: map['parent_comment_id'] as String?,
       replies: replies,
       reactions: reactions,
@@ -85,7 +137,20 @@ class CommentModel {
     String? authorName,
     String? authorImageUrl,
     String? postId,
+    CommentType? commentType,
     String? imageUrl,
+    String? videoUrl,
+    String? voiceUrl,
+    String? fileUrl,
+    String? fileName,
+    int? fileSizeBytes,
+    int? durationSeconds,
+    String? imagePublicId,
+    String? videoPublicId,
+    String? voicePublicId,
+    String? filePublicId,
+    int? replyCount,
+    int? reactionCount,
     String? parentCommentId,
     List<CommentModel>? replies,
     List<CommentReaction>? reactions,
@@ -98,7 +163,20 @@ class CommentModel {
       authorName: authorName ?? this.authorName,
       authorImageUrl: authorImageUrl ?? this.authorImageUrl,
       postId: postId ?? this.postId,
+      commentType: commentType ?? this.commentType,
       imageUrl: imageUrl ?? this.imageUrl,
+      videoUrl: videoUrl ?? this.videoUrl,
+      voiceUrl: voiceUrl ?? this.voiceUrl,
+      fileUrl: fileUrl ?? this.fileUrl,
+      fileName: fileName ?? this.fileName,
+      fileSizeBytes: fileSizeBytes ?? this.fileSizeBytes,
+      durationSeconds: durationSeconds ?? this.durationSeconds,
+      imagePublicId: imagePublicId ?? this.imagePublicId,
+      videoPublicId: videoPublicId ?? this.videoPublicId,
+      voicePublicId: voicePublicId ?? this.voicePublicId,
+      filePublicId: filePublicId ?? this.filePublicId,
+      replyCount: replyCount ?? this.replyCount,
+      reactionCount: reactionCount ?? this.reactionCount,
       parentCommentId: parentCommentId ?? this.parentCommentId,
       replies: replies ?? this.replies,
       reactions: reactions ?? this.reactions,
@@ -113,7 +191,20 @@ class CommentModel {
     'author_name': authorName,
     'author_image_url': authorImageUrl,
     'post_id': postId,
+    'comment_type': commentType.value,
     'image_url': imageUrl,
+    'video_url': videoUrl,
+    'voice_url': voiceUrl,
+    'file_url': fileUrl,
+    'file_name': fileName,
+    'file_size_bytes': fileSizeBytes,
+    'duration_seconds': durationSeconds,
+    'image_public_id': imagePublicId,
+    'video_public_id': videoPublicId,
+    'voice_public_id': voicePublicId,
+    'file_public_id': filePublicId,
+    'reply_count': replyCount,
+    'reaction_count': reactionCount,
     'parent_comment_id': parentCommentId,
     'replies': replies.map((reply) => reply.toCacheJson()).toList(),
     'reactions': reactions.map((reaction) => reaction.toMap()).toList(),
@@ -124,11 +215,24 @@ class CommentModel {
       id: map['id'] as String,
       createdAt: map['created_at'] as String,
       authorId: map['author_id'] as String,
-      text: map['text'] as String,
+      text: map['text'] as String? ?? '',
       authorName: map['author_name'] as String?,
       authorImageUrl: map['author_image_url'] as String?,
       postId: map['post_id'] as String,
+      commentType: commentTypeFromString(map['comment_type'] as String?),
       imageUrl: map['image_url'] as String?,
+      videoUrl: map['video_url'] as String?,
+      voiceUrl: map['voice_url'] as String?,
+      fileUrl: map['file_url'] as String?,
+      fileName: map['file_name'] as String?,
+      fileSizeBytes: map['file_size_bytes'] as int?,
+      durationSeconds: map['duration_seconds'] as int?,
+      imagePublicId: map['image_public_id'] as String?,
+      videoPublicId: map['video_public_id'] as String?,
+      voicePublicId: map['voice_public_id'] as String?,
+      filePublicId: map['file_public_id'] as String?,
+      replyCount: map['reply_count'] as int? ?? 0,
+      reactionCount: map['reaction_count'] as int? ?? 0,
       parentCommentId: map['parent_comment_id'] as String?,
       replies:
           (map['replies'] as List<dynamic>? ?? [])

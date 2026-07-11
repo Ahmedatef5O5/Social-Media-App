@@ -34,6 +34,8 @@ abstract class SupabaseConstants {
   static const String markStoryViewedRpc = 'mark_story_viewed';
   static const String getMyStoriesOverviewRpc = 'get_my_stories_overview';
   static const String getStoryViewersRpc = 'get_story_viewers';
+  // comments_upgrade_migration.sql
+  static const String addCommentWithMentionsRpc = 'add_comment_with_mentions';
 }
 
 // groups
@@ -186,6 +188,33 @@ abstract class CommentColumns {
   static const String imageUrl = 'image_url';
   static const String videoUrl = 'video_url';
   static const String parentCommentId = 'parent_comment_id';
+
+  // ── Rich media (Comments upgrade) ──
+  static const String commentType = 'comment_type';
+  static const String voiceUrl = 'voice_url';
+  static const String fileUrl = 'file_url';
+  static const String fileName = 'file_name';
+  static const String fileSizeBytes = 'file_size_bytes';
+  static const String durationSeconds = 'duration_seconds';
+
+  static const String imagePublicId = 'image_public_id';
+  static const String videoPublicId = 'video_public_id';
+  static const String voicePublicId = 'voice_public_id';
+  static const String filePublicId = 'file_public_id';
+
+  // ── Engagement counters, kept in sync by DB triggers ──
+  static const String replyCount = 'reply_count';
+  static const String reactionCount = 'reaction_count';
+}
+
+// subClass for comment_mentions column table
+abstract class CommentMentionColumns {
+  static const String id = 'id';
+  static const String commentId = 'comment_id';
+  static const String mentionedUserId = 'mentioned_user_id';
+  static const String startIndex = 'start_index';
+  static const String endIndex = 'end_index';
+  static const String createdAt = 'created_at';
 }
 
 // subClass for Messages column table
