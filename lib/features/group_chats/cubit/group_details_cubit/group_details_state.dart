@@ -1,4 +1,4 @@
-import '../../models/groupe_message_model.dart';
+part of 'group_details_cubit.dart';
 
 abstract class GroupDetailsState {}
 
