@@ -8,7 +8,6 @@ import '../../../core/constants/app_images.dart';
 import '../../single_chats/widgets/chat_loading_skeleton.dart';
 import '../../single_chats/widgets/empty_placeholder_state.dart';
 import '../cubit/group_details_cubit/group_details_cubit.dart';
-import '../cubit/group_details_cubit/group_details_state.dart';
 import 'message_builder.dart';
 
 class GroupMessagesList extends StatefulWidget {
