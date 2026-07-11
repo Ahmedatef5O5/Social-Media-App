@@ -3,7 +3,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:social_media_app/features/comments/cubit/comments_cubit.dart';
 import 'package:social_media_app/features/comments/model/comment_model.dart';
+import 'package:social_media_app/features/comments/widget/comment_media_bubble.dart';
 import 'package:social_media_app/features/comments/widget/comment_reaction_summary.dart';
+import 'package:social_media_app/features/comments/widget/comment_reactions_bottom_sheet.dart';
 import 'package:social_media_app/features/comments/widget/thread_painter.dart';
 import '../../../core/helpers/comment_helper.dart';
 import '../../../core/widgets/custom_linkify_text.dart';
@@ -108,6 +110,20 @@ class _CommentWidgetState extends State<CommentWidget>
     Overlay.of(context).insert(_overlayEntry!);
   }
 
+  void _showCommentReactions() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder:
+          (context) =>
+              CommentReactionsBottomSheet(commentId: widget.comment.id),
+    );
+  }
+
   void _dismissPicker() {
     _overlayEntry?.remove();
     _overlayEntry = null;
@@ -121,8 +137,7 @@ class _CommentWidgetState extends State<CommentWidget>
     final resolvedId = cubit.resolveId(widget.comment.id);
 
     if (resolvedId == widget.comment.id &&
-        cubit.resolveId(widget.comment.id) == widget.comment.id) {
-    }
+        cubit.resolveId(widget.comment.id) == widget.comment.id) {}
 
     setState(() {
       final updated = List<CommentReaction>.from(_reactions);
@@ -224,6 +239,8 @@ class _CommentWidgetState extends State<CommentWidget>
     final double aR = avatarRadius(visualDepth);
     final double indentWidth = visualDepth * kIndent;
     final double avatarCenterX = indentWidth + aR;
+    final bool isMediaOnlyComment =
+        widget.comment.hasMedia && widget.comment.text.isEmpty;
 
     return AnimatedBuilder(
       animation: _anim,
@@ -257,52 +274,87 @@ class _CommentWidgetState extends State<CommentWidget>
                       children: [
                         GestureDetector(
                           onLongPress: _showPicker,
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color:
-                                  widget.depth > 0
-                                      ? theme
-                                          .colorScheme
-                                          .surfaceContainerHighest
-                                          .withValues(alpha: 0.55)
-                                      : theme
-                                          .colorScheme
-                                          .surfaceContainerHighest
-                                          .withValues(alpha: 0.85),
-                              borderRadius: const BorderRadius.only(
-                                topLeft: Radius.circular(4),
-                                topRight: Radius.circular(16),
-                                bottomLeft: Radius.circular(16),
-                                bottomRight: Radius.circular(16),
-                              ),
-                            ),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 8,
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  widget.comment.authorName ?? 'User',
-                                  style: theme.textTheme.labelMedium?.copyWith(
-                                    fontWeight: FontWeight.w700,
-                                    color: theme.primaryColor,
-                                    fontSize: 13,
+                          child:
+                              isMediaOnlyComment
+                                  ? Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Padding(
+                                        padding: const EdgeInsets.only(
+                                          left: 2,
+                                          bottom: 4,
+                                        ),
+                                        child: Text(
+                                          widget.comment.authorName ?? 'User',
+                                          style: theme.textTheme.labelMedium
+                                              ?.copyWith(
+                                                fontWeight: FontWeight.w700,
+                                                color: theme.primaryColor,
+                                                fontSize: 13,
+                                              ),
+                                        ),
+                                      ),
+                                      CommentMediaBubble(
+                                        comment: widget.comment,
+                                      ),
+                                    ],
+                                  )
+                                  : Container(
+                                    decoration: BoxDecoration(
+                                      color:
+                                          widget.depth > 0
+                                              ? theme
+                                                  .colorScheme
+                                                  .surfaceContainerHighest
+                                                  .withValues(alpha: 0.55)
+                                              : theme
+                                                  .colorScheme
+                                                  .surfaceContainerHighest
+                                                  .withValues(alpha: 0.85),
+                                      borderRadius: const BorderRadius.only(
+                                        topLeft: Radius.circular(4),
+                                        topRight: Radius.circular(16),
+                                        bottomLeft: Radius.circular(16),
+                                        bottomRight: Radius.circular(16),
+                                      ),
+                                    ),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 8,
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          widget.comment.authorName ?? 'User',
+                                          style: theme.textTheme.labelMedium
+                                              ?.copyWith(
+                                                fontWeight: FontWeight.w700,
+                                                color: theme.primaryColor,
+                                                fontSize: 13,
+                                              ),
+                                        ),
+                                        const SizedBox(height: 3),
+                                        if (widget.comment.hasMedia) ...[
+                                          CommentMediaBubble(
+                                            comment: widget.comment,
+                                          ),
+                                          const SizedBox(height: 6),
+                                        ],
+                                        if (widget.comment.text.isNotEmpty)
+                                          CustomLinkifyText(
+                                            text: widget.comment.text,
+                                            style: theme.textTheme.bodyMedium
+                                                ?.copyWith(
+                                                  fontSize: 14,
+                                                  height: 1.4,
+                                                ),
+                                          ),
+                                      ],
+                                    ),
                                   ),
-                                ),
-                                const SizedBox(height: 3),
-
-                                CustomLinkifyText(
-                                  text: widget.comment.text,
-                                  style: theme.textTheme.bodyMedium?.copyWith(
-                                    fontSize: 14,
-                                    height: 1.4,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
                         ),
                         SizedBox(height: _reactions.isNotEmpty ? 16 : 6),
                         Padding(
@@ -355,7 +407,7 @@ class _CommentWidgetState extends State<CommentWidget>
                               const SizedBox(width: 12),
                               CommentReactionsSummary(
                                 reactions: _reactions,
-                                onTap: _showPicker,
+                                onTap: () => _showCommentReactions(),
                               ),
                             ],
                           ),
