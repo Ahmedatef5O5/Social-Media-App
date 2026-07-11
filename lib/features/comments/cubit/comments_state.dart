@@ -45,3 +45,17 @@ class CommentError extends CommentsState {
   final bool isConnectivityError;
   CommentError(this.message, {this.isConnectivityError = false});
 }
+
+class ComposerAttachmentUpdated extends CommentsState {}
+
+class ComposerUploadProgress extends CommentsState {
+  final double progress; // 0.0 to 1.0
+
+  ComposerUploadProgress(this.progress);
+}
+
+class ComposerUploadError extends CommentsState {
+  final String message;
+
+  ComposerUploadError(this.message);
+}
