@@ -42,6 +42,7 @@ class _FullScreenImageViewerState extends State<FullScreenImageViewer> {
     final String imageUrl = args['url'];
     final String heroTag = args['tag'] ?? imageUrl;
     final bool isAsset = args['isAsset'] ?? false;
+    final String? caption = args['caption'];
     return GestureDetector(
       onScaleUpdate: (details) {
         if (_transformationController.value.getMaxScaleOnAxis() <= 1.0) {
@@ -64,125 +65,161 @@ class _FullScreenImageViewerState extends State<FullScreenImageViewer> {
         backgroundColor: AppColors.black.withValues(
           alpha: (.95 - (_dragOffset.abs() / 500)).clamp(0.0, 1.0),
         ),
-        body: SafeArea(
-          child: Column(
-            children: [
-              AnimatedOpacity(
-                duration: const Duration(milliseconds: 200),
-                opacity: _dragOffset == 0 ? 1.0 : 0.0,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 5,
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      IconButton(
-                        onPressed: () => Navigator.pop(context),
-                        icon: const Icon(
-                          Icons.close,
-                          color: AppColors.white,
-                          size: 28,
-                        ),
+        body: Stack(
+          alignment: Alignment.center,
+          children: [
+            SafeArea(
+              child: Column(
+                children: [
+                  AnimatedOpacity(
+                    duration: const Duration(milliseconds: 200),
+                    opacity: _dragOffset == 0 ? 1.0 : 0.0,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 5,
                       ),
-
-                      if (!isAsset)
-                        _isSaving
-                            ? const Padding(
-                              padding: EdgeInsets.all(12.0),
-                              child: SizedBox(
-                                width: 24,
-                                height: 24,
-                                child: CustomLoadingIndicator(
-                                  color: Colors.white,
-                                ),
-                              ),
-                            )
-                            : PopupMenuButton<String>(
-                              color: Colors.white,
-                              icon: const Icon(
-                                Icons.more_vert,
-                                color: Colors.white,
-                                size: 28,
-                              ),
-                              offset: const Offset(-24, kToolbarHeight - 12),
-                              onSelected: (value) async {
-                                if (value == 'save') {
-                                  setState(() => _isSaving = true);
-
-                                  await GalleryServices.saveMediaToGallery(
-                                    context: context,
-                                    url: imageUrl,
-                                    isVideo: false,
-                                  );
-
-                                  if (mounted) {
-                                    setState(() => _isSaving = false);
-                                  }
-                                }
-                              },
-                              itemBuilder:
-                                  (_) => [
-                                    const PopupMenuItem(
-                                      value: 'save',
-                                      child: Row(
-                                        children: [
-                                          Icon(
-                                            Icons.download,
-                                            size: 18,
-                                            color: Colors.black45,
-                                          ),
-                                          SizedBox(width: 8),
-                                          Text(
-                                            'Save to gallery',
-                                            style: TextStyle(
-                                              color: Colors.black45,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          IconButton(
+                            onPressed: () => Navigator.pop(context),
+                            icon: const Icon(
+                              Icons.close,
+                              color: AppColors.white,
+                              size: 28,
                             ),
-                    ],
-                  ),
-                ),
-              ),
-              Expanded(
-                child: Center(
-                  child: Transform.translate(
-                    offset: Offset(0, _dragOffset),
-                    child: GestureDetector(
-                      onDoubleTap: _handleDoubleTap,
-                      child: InteractiveViewer(
-                        transformationController: _transformationController,
-                        clipBehavior: Clip.none,
-                        minScale: 1.0,
-                        maxScale: 4.0,
-                        child: Hero(
-                          tag: heroTag,
-                          child:
-                              isAsset
-                                  ? Image.asset(
-                                    imageUrl,
-                                    fit: BoxFit.contain,
-                                    width: double.infinity,
-                                  )
-                                  : CachedCloudinaryImage(
-                                    secureUrl: imageUrl,
-                                    fit: BoxFit.contain,
-                                    width: double.infinity,
+                          ),
+
+                          if (!isAsset)
+                            _isSaving
+                                ? const Padding(
+                                  padding: EdgeInsets.all(12.0),
+                                  child: SizedBox(
+                                    width: 24,
+                                    height: 24,
+                                    child: CustomLoadingIndicator(
+                                      color: Colors.white,
+                                    ),
                                   ),
+                                )
+                                : PopupMenuButton<String>(
+                                  color: Colors.white,
+                                  icon: const Icon(
+                                    Icons.more_vert,
+                                    color: Colors.white,
+                                    size: 28,
+                                  ),
+                                  offset: const Offset(
+                                    -24,
+                                    kToolbarHeight - 12,
+                                  ),
+                                  onSelected: (value) async {
+                                    if (value == 'save') {
+                                      setState(() => _isSaving = true);
+
+                                      await GalleryServices.saveMediaToGallery(
+                                        context: context,
+                                        url: imageUrl,
+                                        isVideo: false,
+                                      );
+
+                                      if (mounted) {
+                                        setState(() => _isSaving = false);
+                                      }
+                                    }
+                                  },
+                                  itemBuilder:
+                                      (_) => [
+                                        const PopupMenuItem(
+                                          value: 'save',
+                                          child: Row(
+                                            children: [
+                                              Icon(
+                                                Icons.download,
+                                                size: 18,
+                                                color: Colors.black45,
+                                              ),
+                                              SizedBox(width: 8),
+                                              Text(
+                                                'Save to gallery',
+                                                style: TextStyle(
+                                                  color: Colors.black45,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: Center(
+                      child: Transform.translate(
+                        offset: Offset(0, _dragOffset),
+                        child: GestureDetector(
+                          onDoubleTap: _handleDoubleTap,
+                          child: InteractiveViewer(
+                            transformationController: _transformationController,
+                            clipBehavior: Clip.none,
+                            minScale: 1.0,
+                            maxScale: 4.0,
+                            child: Hero(
+                              tag: heroTag,
+                              child:
+                                  isAsset
+                                      ? Image.asset(
+                                        imageUrl,
+                                        fit: BoxFit.contain,
+                                        width: double.infinity,
+                                      )
+                                      : CachedCloudinaryImage(
+                                        secureUrl: imageUrl,
+                                        fit: BoxFit.contain,
+                                        width: double.infinity,
+                                      ),
+                            ),
+                          ),
                         ),
                       ),
                     ),
                   ),
+                  const Gap(20),
+                ],
+              ),
+            ),
+            if (caption != null && caption.isNotEmpty)
+              Positioned(
+                bottom: 40,
+                left: 20,
+                right: 20,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.65),
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: Colors.white24, width: 1),
+                  ),
+                  child: Text(
+                    caption,
+                    textAlign: TextAlign.center,
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
                 ),
               ),
-              const Gap(20),
-            ],
-          ),
+          ],
         ),
       ),
     );

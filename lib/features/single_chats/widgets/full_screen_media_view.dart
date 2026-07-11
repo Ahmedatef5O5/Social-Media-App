@@ -13,6 +13,7 @@ class FullScreenMediaView extends StatefulWidget {
   final String? caption;
   final bool isLocal;
   final bool showActions;
+  final VideoPlayerController? controller;
 
   const FullScreenMediaView({
     super.key,
@@ -21,6 +22,7 @@ class FullScreenMediaView extends StatefulWidget {
     this.caption,
     this.isLocal = false,
     this.showActions = true,
+    this.controller,
   });
 
   @override
@@ -29,6 +31,7 @@ class FullScreenMediaView extends StatefulWidget {
 
 class _FullScreenMediaViewState extends State<FullScreenMediaView> {
   VideoPlayerController? _videoController;
+  bool _isExternalController = false;
   bool _showControls = true;
   double _playbackSpeed = 1.0;
   double _dragOffset = 0;
@@ -62,6 +65,13 @@ class _FullScreenMediaViewState extends State<FullScreenMediaView> {
   void initState() {
     super.initState();
     if (widget.videoUrl != null) {
+      _videoController = widget.controller;
+      _isExternalController = true;
+      if (!_videoController!.value.isPlaying) {
+        _videoController!.play();
+      }
+      _hideControlsAfterDelay();
+    } else if (widget.videoUrl != null) {
       _initializeVideo(widget.videoUrl!);
     }
   }
@@ -97,8 +107,11 @@ class _FullScreenMediaViewState extends State<FullScreenMediaView> {
 
   @override
   void dispose() {
-    _videoController?.pause();
-    _videoController?.dispose();
+    if (!_isExternalController) {
+      _videoController?.pause();
+      _videoController?.dispose();
+    }
+
     _transformationController.dispose();
     super.dispose();
   }
@@ -380,20 +393,24 @@ class _FullScreenMediaViewState extends State<FullScreenMediaView> {
   Widget _buildCaption() {
     return Positioned(
       bottom: widget.videoUrl != null ? 80 : 40,
+      left: 20,
+      right: 20,
       child: Container(
-        width: MediaQuery.of(context).size.width * 0.85,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
-          color: Colors.black54,
-          borderRadius: BorderRadius.circular(15),
+          color: Colors.black.withValues(alpha: 0.65),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: Colors.white24, width: 1),
         ),
         child: Text(
           widget.caption!,
           textAlign: TextAlign.center,
+          maxLines: 3,
+          overflow: TextOverflow.ellipsis,
           style: const TextStyle(
             color: Colors.white,
             fontSize: 15,
-            fontWeight: FontWeight.w400,
+            fontWeight: FontWeight.w500,
           ),
         ),
       ),
