@@ -6,6 +6,7 @@ import 'package:social_media_app/core/widgets/custom_loading_indicator.dart';
 import 'package:video_player/video_player.dart';
 import '../../../core/helpers/formatted_date.dart';
 import '../../../core/themes/app_colors.dart';
+import '../../../core/widgets/waveform_progress_bar.dart';
 
 class GroupVoiceMessageBubbleWidget extends StatefulWidget {
   final String voiceUrl;
@@ -296,27 +297,22 @@ class _GroupVoiceMessageBubbleWidgetState
               Row(
                 children: [
                   Expanded(
-                    child:
-                        _isInitialized && _controller != null
-                            ? VideoProgressIndicator(
-                              _controller!,
-                              allowScrubbing: true,
-                              colors: VideoProgressColors(
-                                playedColor:
-                                    widget.isMe
-                                        ? AppColors.white
-                                        : Theme.of(context).primaryColor,
-                                bufferedColor: Colors.white38,
-                                backgroundColor: Colors.white24,
-                              ),
-                            )
-                            : Container(
-                              height: 4,
-                              decoration: BoxDecoration(
-                                color: Colors.white24,
-                                borderRadius: BorderRadius.circular(2),
-                              ),
-                            ),
+                    child: WaveformProgressBar(
+                      seed: widget.voiceUrl,
+                      position: _controller?.value.position ?? Duration.zero,
+                      duration:
+                          _isInitialized && _controller != null
+                              ? _controller!.value.duration
+                              : (GroupVoiceMessageBubbleWidget
+                                      ._durationCache[widget.voiceUrl] ??
+                                  Duration.zero),
+                      activeColor: activeColor,
+                      inactiveColor: activeColor.withValues(alpha: 0.25),
+                      onSeek:
+                          _isInitialized && _controller != null
+                              ? (target) => _controller!.seekTo(target)
+                              : null,
+                    ),
                   ),
                   const Gap(8),
                   GestureDetector(
