@@ -3,19 +3,18 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 import 'package:social_media_app/core/constants/app_images.dart';
 import 'package:social_media_app/features/comments/cubit/comments_cubit.dart';
+import 'package:social_media_app/features/comments/widget/comment_attachment_picker_sheet.dart';
+import 'package:social_media_app/features/comments/widget/comment_attachment_preview.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/themes/app_colors.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
 import '../../posts/model/post_model.dart';
+import '../model/comment_type.dart';
 
 class SendCommentSection extends StatefulWidget {
   final PostModel post;
-
-  /// When set the comment is sent as a reply to this comment
   final String? replyingToCommentId;
   final String? replyingToAuthorName;
-
-  /// Called after a reply is successfully dispatched so parent can clear state
   final VoidCallback? onReplySent;
 
   const SendCommentSection({
@@ -48,7 +47,6 @@ class _SendCommentSectionState extends State<SendCommentSection> {
   @override
   void didUpdateWidget(SendCommentSection old) {
     super.didUpdateWidget(old);
-    // When a reply target is set, focus the field automatically
     if (widget.replyingToCommentId != null &&
         old.replyingToCommentId != widget.replyingToCommentId) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -64,21 +62,30 @@ class _SendCommentSectionState extends State<SendCommentSection> {
     super.dispose();
   }
 
+  bool _canSend(CommentsCubit cubit) =>
+      _hasText || cubit.pendingAttachment != null;
+
   void _submitComment() {
+    final cubit = context.read<CommentsCubit>();
     final textComment = _commentController.text.trim();
-    if (textComment.isEmpty) return;
+    if (textComment.isEmpty && cubit.pendingAttachment == null) return;
 
     final userId = Supabase.instance.client.auth.currentUser?.id;
     if (userId == null) return;
 
-    if (textComment.isNotEmpty) {
-      context.read<CommentsCubit>().addComment(
-        post: widget.post,
-        commentText: textComment,
-        parentCommentId: widget.replyingToCommentId,
-      );
-      _commentController.clear();
-      widget.onReplySent?.call();
+    cubit.addComment(
+      post: widget.post,
+      commentText: textComment,
+      parentCommentId: widget.replyingToCommentId,
+    );
+    _commentController.clear();
+    widget.onReplySent?.call();
+  }
+
+  Future<void> _openAttachmentPicker() async {
+    final draft = await CommentAttachmentPickerSheet.show(context);
+    if (draft != null && mounted) {
+      context.read<CommentsCubit>().stageAttachment(draft);
     }
   }
 
@@ -87,117 +94,125 @@ class _SendCommentSectionState extends State<SendCommentSection> {
     final theme = Theme.of(context);
     final isReplying = widget.replyingToCommentId != null;
 
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.end,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
 
       children: [
-        Expanded(
-          child: BlocConsumer<CommentsCubit, CommentsState>(
-            listener: (context, state) {
-              if (state is CommentOptimisticAdded) {
-                _commentController.clear();
-              }
-              if (state is CommentError && !state.isConnectivityError) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(state.message),
-                    backgroundColor: Colors.red,
-                  ),
-                );
-              }
-            },
-            builder: (context, state) {
-              final isLoading = state is AddingComment;
-              return Container(
-                padding: const EdgeInsets.symmetric(vertical: 4),
-                child: Row(
-                  children: [
-                    InkWell(
-                      onTap: () {},
-                      child: Image.asset(
-                        AppImages.attachmentIcon,
-                        width: 32,
-                        height: 32,
-                        fit: BoxFit.cover,
-                        color: Theme.of(context).primaryColor,
-                      ),
-                    ),
-                    const Gap(5),
-                    Expanded(
-                      child: TextField(
-                        controller: _commentController,
-                        enabled: !isLoading,
-                        focusNode: _focusNode,
-                        minLines: 1,
-                        maxLines: 4,
-                        textCapitalization: TextCapitalization.sentences,
-                        onSubmitted: (_) => _submitComment(),
+        const CommentAttachmentPreview(),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
 
-                        decoration: InputDecoration(
-                          hintText:
-                              isReplying
-                                  ? 'Reply to @${widget.replyingToAuthorName}...'
-                                  : 'Write a comment...',
-                          hintStyle: theme.textTheme.bodyMedium?.copyWith(
-                            color: AppColors.grey5,
-                            fontWeight: FontWeight.w400,
-                            fontSize: 15,
-                          ),
-                          suffixIcon: InkWell(
-                            splashColor: AppColors.transparent,
-                            onTap: () {},
-                            child: Icon(
-                              Icons.camera_alt_outlined,
-                              color: Theme.of(context).primaryColor,
-                              size: 24,
-                            ),
-                          ),
-                          filled: true,
-                          fillColor: theme.colorScheme.surfaceContainerHighest
-                              .withValues(alpha: 0.4),
-                          // fillColor: Colors.grey[100],
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 8,
-                          ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(25),
-                            borderSide: BorderSide.none,
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(25),
-                            borderSide: BorderSide(
-                              color: Theme.of(context).primaryColor,
-                              width: 1.6,
-                            ),
-                          ),
-                        ),
+          children: [
+            Expanded(
+              child: BlocConsumer<CommentsCubit, CommentsState>(
+                listener: (context, state) {
+                  if (state is CommentOptimisticAdded) {
+                    _commentController.clear();
+                  }
+                  if (state is CommentError && !state.isConnectivityError) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(state.message),
+                        backgroundColor: Colors.red,
                       ),
-                    ),
-                    const Gap(8),
-                    isLoading
-                        ? SizedBox(
-                          height: 24,
-                          width: 24,
-                          child: CustomLoadingIndicator(),
-                        )
-                        : InkWell(
-                          onTap: () {
-                            _submitComment();
-                          },
+                    );
+                  }
+                },
+
+                builder: (context, state) {
+                  final cubit = context.read<CommentsCubit>();
+                  final isLoading = state is AddingComment || cubit.isUploading;
+                  final isStickerOnly =
+                      cubit.pendingAttachment?.type == CommentType.sticker;
+                  final canSend = _canSend(cubit);
+
+                  return Container(
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    child: Row(
+                      children: [
+                        InkWell(
+                          onTap: isLoading ? null : _openAttachmentPicker,
                           child: Image.asset(
-                            AppImages.sendIcon,
-                            width: 24,
-                            height: 24,
+                            AppImages.attachmentIcon,
+                            width: 32,
+                            height: 32,
+                            fit: BoxFit.cover,
                             color: Theme.of(context).primaryColor,
                           ),
                         ),
-                    const Gap(2),
-                  ],
-                ),
-              );
-            },
-          ),
+                        const Gap(5),
+                        Expanded(
+                          child: TextField(
+                            controller: _commentController,
+                            enabled: !isLoading && !isStickerOnly,
+                            focusNode: _focusNode,
+                            minLines: 1,
+                            maxLines: 4,
+                            textCapitalization: TextCapitalization.sentences,
+                            onSubmitted: (_) => _submitComment(),
+
+                            decoration: InputDecoration(
+                              hintText:
+                                  isStickerOnly
+                                      ? 'Sticker ready to send'
+                                      : isReplying
+                                      ? 'Reply to @${widget.replyingToAuthorName}...'
+                                      : 'Write a comment...',
+                              hintStyle: theme.textTheme.bodyMedium?.copyWith(
+                                color: AppColors.grey5,
+                                fontWeight: FontWeight.w400,
+                                fontSize: 15,
+                              ),
+                              filled: true,
+                              fillColor: theme
+                                  .colorScheme
+                                  .surfaceContainerHighest
+                                  .withValues(alpha: 0.4),
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 8,
+                              ),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(25),
+                                borderSide: BorderSide.none,
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(25),
+                                borderSide: BorderSide(
+                                  color: Theme.of(context).primaryColor,
+                                  width: 1.6,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const Gap(8),
+                        isLoading
+                            ? const SizedBox(
+                              height: 24,
+                              width: 24,
+                              child: CustomLoadingIndicator(),
+                            )
+                            : InkWell(
+                              onTap: canSend ? _submitComment : null,
+                              child: Image.asset(
+                                AppImages.sendIcon,
+                                width: 24,
+                                height: 24,
+                                color:
+                                    canSend
+                                        ? Theme.of(context).primaryColor
+                                        : AppColors.grey5,
+                              ),
+                            ),
+                        const Gap(2),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
         ),
       ],
     );
