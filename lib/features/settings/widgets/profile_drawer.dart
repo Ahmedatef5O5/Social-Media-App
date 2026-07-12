@@ -125,10 +125,11 @@ class ProfileDrawer extends StatelessWidget {
                   icon: Icons.settings_outlined,
                   title: "Settings",
                   onTap:
-                      () => Navigator.of(
-                        context,
-                        rootNavigator: true,
-                      ).pushNamed(AppRoutes.settingsViewRoute),
+                      () =>
+                          Navigator.of(context, rootNavigator: true).pushNamed(
+                            AppRoutes.settingsViewRoute,
+                            arguments: context.read<ProfileCubit>(),
+                          ),
                 ),
                 DrawerItemWidget(
                   icon: Icons.info_outline,

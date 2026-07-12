@@ -11,7 +11,6 @@ import 'package:social_media_app/features/profile/widgets/edit_profile_action_bt
 import 'package:social_media_app/features/profile/widgets/edit_profile_form.dart';
 import 'package:social_media_app/features/profile/widgets/edit_profile_images_section.dart';
 import 'package:social_media_app/features/profile/widgets/image_picker_bottom_sheet.dart';
-
 import '../../../core/toast/app_toast.dart';
 
 class EditProfileView extends StatefulWidget {

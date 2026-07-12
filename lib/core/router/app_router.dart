@@ -516,7 +516,14 @@ class AppRouter {
       case AppRoutes.aboutUsViewRoute:
         return _buildRoute(AboutUsView(), settings: settings);
       case AppRoutes.settingsViewRoute:
-        return _buildRoute(SettingsView(), settings: settings);
+        final cubit = _args<ProfileCubit>(settings);
+        if (cubit == null) {
+          return _errorRoute(settings, 'Missing ProfileCubit');
+        }
+        return _buildRoute(
+          BlocProvider.value(value: cubit, child: SettingsView()),
+          settings: settings,
+        );
       default:
         return _errorRoute(settings, 'Profile/Settings route not found');
     }
