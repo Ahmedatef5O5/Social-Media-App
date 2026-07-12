@@ -9,6 +9,7 @@ import 'package:social_media_app/features/posts/widgets/post_reactions_bottom_sh
 import '../../../core/constants/app_images.dart';
 import '../../../core/helpers/comment_helper.dart';
 import '../../../core/themes/app_colors.dart';
+import '../../../core/toast/app_toast.dart';
 import '../../home/cubits/home_cubit/home_cubit.dart';
 import '../model/post_model.dart';
 import '../../comments/widget/comments_sheet_section.dart';
@@ -84,7 +85,7 @@ class _InteractionsContent extends StatelessWidget {
 
             const Spacer(),
 
-            const _SaveButtons(),
+            _SaveButtonWidget(post: post),
 
             const Gap(12),
           ],
@@ -315,19 +316,122 @@ class _ShareButtons extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [Image.asset(AppImages.sharePostIcon, width: 24, height: 24)],
+    return GestureDetector(
+      onTap: () => AppToast.info('this feature is coming soon'),
+      child: Row(
+        children: [Image.asset(AppImages.sharePostIcon, width: 24, height: 24)],
+      ),
     );
   }
 }
 
-class _SaveButtons extends StatelessWidget {
-  const _SaveButtons();
+class _SaveButtonWidget extends StatefulWidget {
+  final PostModel post;
+
+  const _SaveButtonWidget({required this.post});
+
+  @override
+  State<_SaveButtonWidget> createState() => _SaveButtonWidgetState();
+}
+
+class _SaveButtonWidgetState extends State<_SaveButtonWidget>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _animationController;
+  late Animation<double> _scaleAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 400),
+    );
+    _scaleAnimation = TweenSequence<double>([
+      TweenSequenceItem(
+        tween: Tween<double>(
+          begin: 1.0,
+          end: 1.35,
+        ).chain(CurveTween(curve: Curves.easeOutCubic)),
+        weight: 30,
+      ),
+      TweenSequenceItem(
+        tween: Tween<double>(
+          begin: 1.35,
+          end: 1.0,
+        ).chain(CurveTween(curve: Curves.elasticOut)),
+        weight: 70,
+      ),
+    ]).animate(_animationController);
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  void _handleTap(PostModel currentPost) {
+    _animationController.forward(from: 0.0);
+    HapticFeedback.lightImpact();
+
+    final bool wasSaved = currentPost.isSavedByMe;
+
+    context.read<PostsCubit>().toggleSavePost(currentPost);
+    AppToast.save(
+      icon: wasSaved ? Icons.bookmark_remove_rounded : Icons.bookmark_rounded,
+      wasSaved ? 'Post removed from saves' : 'Post saved successfully',
+      iconColor: wasSaved ? AppColors.grey5 : AppColors.goldenYellow,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [Image.asset(AppImages.savePostIcon, width: 24, height: 24)],
+    final state = context.watch<PostsCubit>().state;
+    final currentPost =
+        (state is PostsLoaded)
+            ? state.posts.firstWhere(
+              (p) => p.id == widget.post.id,
+              orElse: () => widget.post,
+            )
+            : widget.post;
+
+    final bool isSaved = currentPost.isSavedByMe;
+
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => _handleTap(currentPost),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ScaleTransition(
+            scale: _scaleAnimation,
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 250),
+              transitionBuilder:
+                  (child, animation) =>
+                      ScaleTransition(scale: animation, child: child),
+              child: Icon(
+                isSaved
+                    ? Icons.bookmark_rounded
+                    : Icons.bookmark_border_rounded,
+                key: ValueKey(isSaved),
+                color: isSaved ? AppColors.goldenYellow : AppColors.grey6,
+                size: 24,
+              ),
+            ),
+          ),
+          if (currentPost.savedCount > 0) ...[
+            const Gap(4),
+            Text(
+              '${currentPost.savedCount}',
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                color: isSaved ? AppColors.goldenYellow : null,
+                fontWeight: isSaved ? FontWeight.w600 : FontWeight.normal,
+              ),
+            ),
+          ],
+        ],
+      ),
     );
   }
 }

@@ -8,7 +8,9 @@ import 'package:social_media_app/features/profile/cubits/profile_cubit/profile_c
 import '../../../core/constants/app_images.dart';
 import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/themes/app_colors.dart';
+import '../../../core/toast/app_toast.dart';
 import '../../../core/widgets/custom_elevated_button.dart';
+import '../../posts/cubit/posts_cubit.dart';
 import '../../single_chats/models/chat_user_model.dart';
 
 class ProfileHeader extends StatelessWidget {
@@ -19,6 +21,10 @@ class ProfileHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final currentUserId = SupabaseProvider.id;
     final isMe = user.id == currentUserId;
+    final theme = Theme.of(context);
+    // Height of the cover/background image area — reused below so the
+    // quick-action buttons line up with the avatar instead of guessing pixels.
+    final double bgHeight = MediaQuery.of(context).size.width / 1.7;
 
     return Column(
       mainAxisAlignment: MainAxisAlignment.start,
@@ -27,10 +33,7 @@ class ProfileHeader extends StatelessWidget {
         Stack(
           clipBehavior: Clip.none,
           children: [
-            SizedBox(
-              height: (MediaQuery.of(context).size.width / 1.7) + 100,
-              width: double.infinity,
-            ),
+            SizedBox(height: bgHeight + 100, width: double.infinity),
             CustomUserProfileImagesSection(
               aspectRatio: 1.7,
               avatarSizeFactor: 0.26,
@@ -45,7 +48,7 @@ class ProfileHeader extends StatelessWidget {
             if (!isMe)
               Positioned(
                 right: 20,
-                top: (MediaQuery.of(context).size.width / 1.7) + 10,
+                top: bgHeight + 10,
                 child: SizedBox(
                   width: 166,
                   child: Column(
@@ -133,6 +136,74 @@ class ProfileHeader extends StatelessWidget {
                   ),
                 ),
               ),
+
+            if (isMe)
+              Positioned(
+                right: 20,
+                top: bgHeight + 10,
+                child: SizedBox(
+                  width: 166,
+                  child: Column(
+                    children: [
+                      _buildSmallActionButton(
+                        context,
+                        label: 'Friends List',
+                        txtColor: theme.primaryColor,
+                        bgColor: theme.scaffoldBackgroundColor.withValues(
+                          alpha: 0.99,
+                        ),
+                        side: BorderSide(
+                          color:
+                              theme.brightness != Brightness.light
+                                  ? theme.primaryColor.withValues(alpha: 0.65)
+                                  : AppColors.grey3,
+                          width: 1,
+                        ),
+                        iconWidget: Icon(
+                          Icons.people_alt_rounded,
+                          color: theme.primaryColor,
+                          size: 19,
+                        ),
+                        onPressed: () {
+                          // TODO: Navigate to the friends list view once it's built.
+                          AppToast.info('this feature is coming soon');
+                        },
+                      ),
+                      const Gap(8),
+                      _buildSmallActionButton(
+                        context,
+                        label: 'Saved Posts',
+                        txtColor: theme.primaryColor,
+                        bgColor: theme.scaffoldBackgroundColor.withValues(
+                          alpha: 0.99,
+                        ),
+                        side: BorderSide(
+                          color:
+                              theme.brightness != Brightness.light
+                                  ? theme.primaryColor.withValues(alpha: 0.65)
+                                  : AppColors.grey3,
+                          width: 1,
+                        ),
+                        iconWidget: Icon(
+                          Icons.bookmark_rounded,
+                          color: theme.primaryColor,
+                          size: 18,
+                        ),
+                        onPressed: () {
+                          final postsCubit = context.read<PostsCubit>();
+                          Navigator.of(context, rootNavigator: true).pushNamed(
+                            AppRoutes.savedPostsViewRoute,
+                            arguments: {
+                              'postsCubit': postsCubit,
+                              'userId': user.id,
+                            },
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ),
           ],
         ),
         Transform.translate(
@@ -173,45 +244,43 @@ class ProfileHeader extends StatelessWidget {
         Gap(size.height * 0.003),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: Row(
-            children: [
-              Expanded(
-                child: CustomElevatedButton(
-                  maximumSize: Size(260, 50),
-                  minimumSize: Size(260, 50),
-                  txtBtn: isMe ? 'EDIT PROFILE' : 'Follow',
-                  txtBtnStyle: Theme.of(
-                    context,
-                  ).textTheme.titleMedium!.copyWith(
-                    color: Theme.of(context).primaryColor,
-                    fontWeight: FontWeight.w500,
-                    fontSize: 20,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  side: BorderSide(color: AppColors.grey3, width: 1.6),
-                  elevation: 0,
-                  bgColor: Theme.of(context).colorScheme.surface,
+          child: CustomElevatedButton(
+            minimumSize: const Size(double.infinity, 46),
+            maximumSize: const Size(double.infinity, 46),
+            txtBtn: isMe ? 'Edit Profile' : 'Follow',
+            txtBtnStyle: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.2,
+              color: isMe ? theme.primaryColor : Colors.white,
+            ),
+            prefixIcon:
+                isMe
+                    ? Icon(
+                      Icons.edit_rounded,
+                      size: 16,
+                      color: theme.primaryColor,
+                    )
+                    : null,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+            side: isMe ? BorderSide(color: AppColors.grey3, width: 1.3) : null,
+            elevation: 0,
+            bgColor: isMe ? theme.colorScheme.surface : theme.primaryColor,
 
-                  onPressed: () async {
-                    if (isMe) {
-                      final profileCubit = context.read<ProfileCubit>();
-                      await Navigator.of(
-                        context,
-                        rootNavigator: true,
-                      ).pushNamed(
-                        AppRoutes.editProfileViewRoute,
-                        arguments: user,
-                      );
-                      if (context.mounted) {
-                        profileCubit.getProfileData(user.id);
-                      }
-                    }
-                  },
-                ),
-              ),
-            ],
+            onPressed: () async {
+              if (isMe) {
+                final profileCubit = context.read<ProfileCubit>();
+                await Navigator.of(
+                  context,
+                  rootNavigator: true,
+                ).pushNamed(AppRoutes.editProfileViewRoute, arguments: user);
+                if (context.mounted) {
+                  profileCubit.getProfileData(user.id);
+                }
+              }
+            },
           ),
         ),
       ],

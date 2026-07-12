@@ -33,6 +33,9 @@ import 'package:social_media_app/features/splash/views/on_boarding_view.dart';
 import 'package:social_media_app/features/splash/views/splash_view.dart';
 import '../../features/auth/data/models/user_data.dart';
 import '../../features/posts/cubit/posts_cubit.dart';
+import '../../features/posts/cubit/saved_posts_cubit/saved_posts_cubit.dart';
+import '../../features/posts/services/posts_services.dart';
+import '../../features/posts/views/saved_posts_view.dart';
 import '../../features/single_calls/model/call_model.dart';
 import '../../features/single_calls/views/dialing_view.dart';
 import '../../features/single_calls/views/incoming_call_view.dart';
@@ -183,6 +186,7 @@ class AppRouter {
       case AppRoutes.editProfileViewRoute:
       case AppRoutes.profileViewRoute:
       case AppRoutes.aboutUsViewRoute:
+      case AppRoutes.savedPostsViewRoute:
       case AppRoutes.settingsViewRoute:
         return _profileAndSettingsRoutes(settings);
 
@@ -510,6 +514,29 @@ class AppRouter {
               ],
               child: ProfileView(userId: userId),
             ),
+          ),
+          settings: settings,
+        );
+      case AppRoutes.savedPostsViewRoute:
+        final args = _args<Map<String, dynamic>>(settings);
+        if (args == null ||
+            args['postsCubit'] is! PostsCubit ||
+            args['userId'] is! String) {
+          return _errorRoute(settings, 'Missing arguments for Saved Posts');
+        }
+        return _buildRoute(
+          MultiBlocProvider(
+            providers: [
+              BlocProvider.value(value: args['postsCubit'] as PostsCubit),
+              BlocProvider(
+                create:
+                    (context) => SavedPostsCubit(
+                      postsServices: context.read<PostsServices>(),
+                      postsCubit: args['postsCubit'] as PostsCubit,
+                    ),
+              ),
+            ],
+            child: SavedPostsView(userId: args['userId'] as String),
           ),
           settings: settings,
         );

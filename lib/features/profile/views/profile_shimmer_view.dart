@@ -43,32 +43,31 @@ class ProfileShimmerLoading extends StatelessWidget {
                         ),
                       ),
                     ),
-                    if (!isCurrentUser)
-                      Positioned(
-                        right: 20,
-                        top: (size.width / 1.7) + 10,
-                        child: Column(
-                          children: [
-                            Container(
-                              width: 166,
-                              height: 42,
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(25),
-                              ),
+                    Positioned(
+                      right: 20,
+                      top: (size.width / 1.7) + 10,
+                      child: Column(
+                        children: [
+                          Container(
+                            width: 166,
+                            height: 42,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(25),
                             ),
-                            const Gap(8),
-                            Container(
-                              width: 166,
-                              height: 42,
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(25),
-                              ),
+                          ),
+                          const Gap(8),
+                          Container(
+                            width: 166,
+                            height: 42,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(25),
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
+                    ),
                   ],
                 ),
                 const Gap(50),
@@ -88,10 +87,10 @@ class ProfileShimmerLoading extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: Container(
                     width: double.infinity,
-                    height: 50,
+                    height: 46,
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius: BorderRadius.circular(6),
+                      borderRadius: BorderRadius.circular(10),
                     ),
                   ),
                 ),
