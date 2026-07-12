@@ -1,10 +1,10 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../features/group_calls/views/incoming_group_call_screen.dart';
 import '../../features/group_calls/services/group_call_signaling_service.dart';
 import '../services/notification_services.dart';
+import '../supabase/supabase_provider.dart';
 
 class GlobalGroupCallListener extends StatefulWidget {
   final Widget child;
@@ -28,8 +28,7 @@ class _GlobalGroupCallListenerState extends State<GlobalGroupCallListener> {
   }
 
   void _initListener() {
-    final userId = Supabase.instance.client.auth.currentUser?.id;
-    if (userId == null) return;
+    final userId = SupabaseProvider.id;
 
     _incomingCallSub = _signaling.incomingGroupCallsStream(userId).listen((
       calls,

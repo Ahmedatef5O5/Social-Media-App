@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:social_media_app/features/posts/widgets/post_actions_menu.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/helpers/formatted_date.dart';
 import '../../../core/router/app_routes.dart';
+import '../../../core/supabase/supabase_provider.dart';
 import '../../profile/widgets/user_preview_dialog.dart';
 import '../../home/cubits/home_cubit/home_cubit.dart';
 import '../cubit/posts_cubit.dart';
@@ -23,7 +23,7 @@ class PostHeaderWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final currentUserId = Supabase.instance.client.auth.currentUser!.id;
+    final currentUserId = SupabaseProvider.id;
     final navController = context.read<HomeCubit>().navController;
 
     final currentRoute = ModalRoute.of(context);

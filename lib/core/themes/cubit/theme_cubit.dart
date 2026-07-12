@@ -2,12 +2,11 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:social_media_app/core/utilities/supabase_constants.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../supabase/supabase_provider.dart';
 import '../models/app_theme_model.dart';
 part 'theme_state.dart';
 
 class ThemeCubit extends Cubit<ThemeState> {
-  final _supabase = Supabase.instance.client;
   static const String _themeKey = 'user_theme';
 
   ThemeCubit({String? initialTheme})
@@ -26,7 +25,7 @@ class ThemeCubit extends Cubit<ThemeState> {
   Future<void> loaderUserTheme(String userId) async {
     try {
       final row =
-          await _supabase
+          await SupabaseProvider.client
               .from(SupabaseConstants.users)
               .select(UserColumns.theme)
               .eq(UserColumns.id, userId)
@@ -47,7 +46,7 @@ class ThemeCubit extends Cubit<ThemeState> {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_themeKey, theme.toStorageString());
-      await _supabase
+      await SupabaseProvider.client
           .from(SupabaseConstants.users)
           .update({UserColumns.theme: theme.toStorageString()})
           .eq(UserColumns.id, userId);

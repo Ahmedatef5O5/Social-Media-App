@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 import 'package:social_media_app/features/group_chats/helpers/group_preview_dialog.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/helpers/formatted_date.dart';
 import '../../../core/router/app_routes.dart';
+import '../../../core/supabase/supabase_provider.dart';
 import '../cubit/group_list_cubit/group_list_cubit.dart';
 import '../helpers/last_message_group_preview.dart';
 import '../models/group_model.dart';
@@ -16,7 +16,7 @@ class GroupTileItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final currentUserId = Supabase.instance.client.auth.currentUser?.id;
+    final currentUserId = SupabaseProvider.id;
     final primary = Theme.of(context).primaryColor;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -74,7 +74,7 @@ class GroupTileItem extends StatelessWidget {
               ? Text(
                 buildGroupLastMessagePreview(
                   group: group,
-                  currentUserId: currentUserId ?? '',
+                  currentUserId: currentUserId,
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,

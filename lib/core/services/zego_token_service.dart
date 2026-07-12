@@ -1,17 +1,15 @@
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:social_media_app/core/supabase/supabase_provider.dart';
 
 class ZegoTokenService {
   ZegoTokenService._();
   static final ZegoTokenService instance = ZegoTokenService._();
-
-  final _supabase = Supabase.instance.client;
 
   Future<String> generateToken({
     required String userId,
     int effectiveTimeInSeconds = 3600,
   }) async {
     try {
-      final response = await _supabase.functions.invoke(
+      final response = await SupabaseProvider.client.functions.invoke(
         'generate-zego-token',
         body: {
           'userId': userId,

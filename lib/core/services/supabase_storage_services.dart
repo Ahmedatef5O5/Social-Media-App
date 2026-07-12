@@ -9,7 +9,7 @@
 
 //   static final instance = SupabaseStorageServices._();
 
-//   final _supabase = Supabase.instance.client;
+//   final _supabase = SupabaseProvider.client;
 
 //   final _dio = dio_pkg.Dio(
 //     dio_pkg.BaseOptions(

@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/themes/app_colors.dart';
 import '../../../core/utilities/supabase_constants.dart';
 import '../../../core/widgets/cached_cloudinary_image.dart';
@@ -52,7 +52,7 @@ class GroupCallMessageContent extends StatelessWidget {
   }
 
   Stream<Map<String, dynamic>?> _watchCallData() {
-    return Supabase.instance.client
+    return SupabaseProvider.client
         .from(SupabaseConstants.groupMessages)
         .stream(primaryKey: ['id'])
         .eq('id', message.id)
@@ -315,7 +315,7 @@ class GroupCallMessageContent extends StatelessWidget {
         if (activeCall == null) return const SizedBox.shrink();
         if (activeCall.callId != callId) return const SizedBox.shrink();
 
-        final currentUserId = Supabase.instance.client.auth.currentUser?.id;
+        final currentUserId = SupabaseProvider.id;
         if (activeCall.initiatorId == currentUserId) {
           return const SizedBox.shrink();
         }
@@ -324,9 +324,9 @@ class GroupCallMessageContent extends StatelessWidget {
           onTap: () async {
             final signaling = context.read<GroupCallSignalingService>();
             final joined = await signaling.acceptCall(activeCall.callId);
-            final user = Supabase.instance.client.auth.currentUser!;
+            final user = SupabaseProvider.user!;
             final profile =
-                await Supabase.instance.client
+                await SupabaseProvider.client
                     .from('users')
                     .select('name')
                     .eq('id', user.id)

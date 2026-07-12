@@ -1,13 +1,12 @@
 import 'package:flutter/foundation.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:social_media_app/core/services/fcm_services.dart';
 import 'package:social_media_app/core/utilities/supabase_constants.dart';
+import '../../../core/supabase/supabase_provider.dart';
 
 class GroupNotificationDispatcher {
   GroupNotificationDispatcher._();
   static final instance = GroupNotificationDispatcher._();
 
-  final _supabase = Supabase.instance.client;
   final _fcm = FcmService.instance;
 
   Future<void> notifyMessage({
@@ -64,7 +63,7 @@ class GroupNotificationDispatcher {
     required Future<void> Function(String token) payloadBuilder,
   }) async {
     try {
-      final rows = await _supabase
+      final rows = await SupabaseProvider.client
           .from(SupabaseConstants.groupMembers)
           .select(
             '${GroupMemberColumns.userId},'

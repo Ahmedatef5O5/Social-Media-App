@@ -14,6 +14,7 @@ import 'package:social_media_app/core/services/active_screen_tracker.dart';
 import 'package:social_media_app/core/services/cloudinary_storage_services.dart';
 import 'package:social_media_app/core/services/network_status_service.dart';
 import 'package:social_media_app/core/services/notification_services.dart';
+import 'package:social_media_app/core/supabase/supabase_provider.dart';
 import 'package:social_media_app/core/themes/cubit/theme_cubit.dart';
 import 'package:social_media_app/features/auth/services/supabase_auth_services.dart';
 import 'package:social_media_app/features/comments/services/comments_service.dart';
@@ -28,7 +29,6 @@ import 'package:social_media_app/features/posts/services/posts_services.dart';
 import 'package:social_media_app/features/profile/services/user_services.dart';
 import 'package:social_media_app/features/settings/widgets/app_lock_gate.dart';
 import 'package:social_media_app/features/stories/cubit/stories_cubit/stories_cubit.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'core/connectivity/widgets/connectivity_banner.dart';
 import 'core/services/global_group_call_listener.dart';
 import 'core/toast/app_toast_overlay.dart';
@@ -130,7 +130,7 @@ class MyApp extends StatelessWidget {
       lazy: false,
       create: (_) {
         final cubit = ThemeCubit(initialTheme: savedTheme);
-        final user = Supabase.instance.client.auth.currentUser;
+        final user = SupabaseProvider.user;
 
         if (user != null) {
           cubit.loaderUserTheme(user.id);
@@ -180,12 +180,11 @@ class MyApp extends StatelessWidget {
                             arguments: callState.call,
                           );
                         } else if (callState is CallConnectedState) {
-                          final currentUser =
-                              Supabase.instance.client.auth.currentUser;
+                          final currentUser = SupabaseProvider.user;
                           if (currentUser == null) return;
 
                           final userData =
-                              await Supabase.instance.client
+                              await SupabaseProvider.client
                                   .from('users')
                                   .select('name')
                                   .eq('id', currentUser.id)

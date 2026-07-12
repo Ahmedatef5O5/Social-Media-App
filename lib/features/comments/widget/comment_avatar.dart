@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/constants/app_images.dart';
 import '../../../core/router/app_routes.dart';
+import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/widgets/app_avatar.dart';
 import '../../single_chats/models/chat_user_model.dart';
 import '../../profile/widgets/user_preview_dialog.dart';
@@ -21,7 +21,7 @@ class CommentAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final currentUserId = Supabase.instance.client.auth.currentUser!.id;
+    final currentUserId = SupabaseProvider.id;
     final isMe = comment.authorId == currentUserId;
 
     return AppAvatar(

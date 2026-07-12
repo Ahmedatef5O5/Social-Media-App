@@ -3,8 +3,8 @@ import 'dart:convert';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:social_media_app/features/single_chats/services/chat_services.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/services/fcm_services.dart';
+import '../../../../core/supabase/supabase_provider.dart';
 import '../../../notifications/repository/notifications_repository.dart';
 import '../../model/call_model.dart';
 import '../../services/call_signaling_service.dart';
@@ -27,9 +27,7 @@ class CallCubit extends Cubit<CallState> {
     required ChatServices chatServices,
   }) : _chatServices = chatServices,
        super(CallInitial()) {
-    _authSubscription = Supabase.instance.client.auth.onAuthStateChange.listen((
-      data,
-    ) {
+    _authSubscription = SupabaseProvider.authChanges.listen((data) {
       if (data.session != null) {
         _initIncomingListener();
       } else {
@@ -37,7 +35,7 @@ class CallCubit extends Cubit<CallState> {
       }
     });
 
-    if (Supabase.instance.client.auth.currentUser != null) {
+    if (SupabaseProvider.user != null) {
       _initIncomingListener();
     }
   }
@@ -112,7 +110,7 @@ class CallCubit extends Cubit<CallState> {
   Future<void> _sendCallFcm(CallModel call) async {
     try {
       final data =
-          await Supabase.instance.client
+          await SupabaseProvider.client
               .from('users')
               .select('fcm_token')
               .eq('id', call.receiverId)
@@ -143,7 +141,7 @@ class CallCubit extends Cubit<CallState> {
     final durationStr = duration != null ? _formatDuration(duration) : '';
     final callType = call.type == CallType.video ? 'video' : 'audio';
 
-    final currentUserId = Supabase.instance.client.auth.currentUser?.id ?? '';
+    final currentUserId = SupabaseProvider.id;
     final otherUserId =
         call.callerId == currentUserId ? call.receiverId : call.callerId;
 
@@ -178,7 +176,7 @@ class CallCubit extends Cubit<CallState> {
   }
 
   bool _isCaller(CallModel call) {
-    final currentUserId = Supabase.instance.client.auth.currentUser?.id;
+    final currentUserId = SupabaseProvider.id;
     return call.callerId == currentUserId;
   }
 
@@ -189,7 +187,7 @@ class CallCubit extends Cubit<CallState> {
     required String duration,
   }) async {
     try {
-      final senderId = Supabase.instance.client.auth.currentUser?.id ?? '';
+      final senderId = SupabaseProvider.id;
 
       final callInfoJson = jsonEncode({
         'status': status,

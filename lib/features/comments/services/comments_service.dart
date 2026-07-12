@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/utilities/supabase_constants.dart';
 import '../helper/comment_tree_builder.dart';
 import '../../../core/mentions/models/mention_ref.dart';
@@ -8,7 +8,7 @@ import '../model/comment_sort_option.dart';
 import '../model/comment_type.dart';
 
 class CommentsService {
-  final _supabase = Supabase.instance.client;
+  final _supabase = SupabaseProvider.client;
   static const String _selectWithRelations =
       '*, users($_authorFields), comment_reactions(*), comment_mentions(${CommentMentionColumns.mentionedUserId},${CommentMentionColumns.startIndex},${CommentMentionColumns.endIndex})';
   static const String _authorFields =
@@ -55,9 +55,7 @@ class CommentsService {
 
       final combined = [...topLevelRows, ...replyRows];
       final flatComments =
-          combined
-              .map((row) => CommentModel.fromMap(row as Map<String, dynamic>))
-              .toList();
+          combined.map((row) => CommentModel.fromMap(row)).toList();
 
       return CommentTreeBuilder.build(flatComments);
     } catch (e) {

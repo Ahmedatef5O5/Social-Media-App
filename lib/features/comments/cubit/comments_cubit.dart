@@ -1,10 +1,10 @@
 import 'package:dio/dio.dart' as dio_pkg;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 import '../../../core/connectivity/services/connectivity_banner_controller.dart';
 import '../../../core/services/cloudinary_storage_services.dart';
+import '../../../core/supabase/supabase_provider.dart';
 import '../../auth/data/models/user_data.dart';
 import '../../notifications/repository/notifications_repository.dart';
 import '../events/comment_event_bus.dart';
@@ -160,7 +160,7 @@ class CommentsCubit extends Cubit<CommentsState> {
 
     emit(AddingComment());
 
-    final user = Supabase.instance.client.auth.currentUser;
+    final user = SupabaseProvider.user;
     final tempId = const Uuid().v4();
     _pendingCommentIds.add(tempId);
 
@@ -352,7 +352,7 @@ class CommentsCubit extends Cubit<CommentsState> {
     );
 
     try {
-      final userId = Supabase.instance.client.auth.currentUser!.id;
+      final userId = SupabaseProvider.id;
       await _commentsService.toggleCommentReaction(
         commentId: resolvedCommentId,
         userId: userId,

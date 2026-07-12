@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../core/supabase/supabase_provider.dart';
 import '../cubit/group_details_cubit/group_details_cubit.dart';
 import '../models/groupe_message_model.dart';
 
@@ -11,7 +11,7 @@ class GroupMessageMenuSheet {
     required Function(GroupMessageModel) onReply,
     required Color primary,
   }) {
-    final currentUserId = Supabase.instance.client.auth.currentUser!.id;
+    final currentUserId = SupabaseProvider.id;
     final cubit = context.read<GroupDetailsCubit>();
     final isCall = message.messageType == 'call';
 

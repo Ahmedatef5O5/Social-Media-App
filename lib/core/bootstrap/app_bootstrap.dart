@@ -13,6 +13,7 @@ import 'package:social_media_app/core/services/presence_service.dart';
 import 'package:social_media_app/features/settings/repository/settings_repository.dart';
 import 'package:social_media_app/firebase_options.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../supabase/supabase_provider.dart';
 
 Future<void> initializeApp() async {
   await _lockOrientation();
@@ -27,7 +28,7 @@ Future<void> initializeApp() async {
 }
 
 void _setupAuthListener() {
-  Supabase.instance.client.auth.onAuthStateChange.listen((data) async {
+  SupabaseProvider.authChanges.listen((data) async {
     final event = data.event;
     final session = data.session;
 

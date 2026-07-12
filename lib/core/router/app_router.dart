@@ -31,7 +31,6 @@ import 'package:social_media_app/features/profile/views/edit_profile_view.dart';
 import 'package:social_media_app/features/settings/views/settings_view.dart';
 import 'package:social_media_app/features/splash/views/on_boarding_view.dart';
 import 'package:social_media_app/features/splash/views/splash_view.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../features/auth/data/models/user_data.dart';
 import '../../features/posts/cubit/posts_cubit.dart';
 import '../../features/single_calls/model/call_model.dart';
@@ -50,6 +49,7 @@ import '../../features/stories/views/creat_text_story_view.dart';
 import '../../features/profile/cubits/profile_cubit/profile_cubit.dart';
 import '../../features/profile/views/profile_view.dart';
 import '../../features/stories/views/my_stories_list_view.dart';
+import '../supabase/supabase_provider.dart';
 
 enum TypeOfRoute { material, cupertino, fade }
 
@@ -433,7 +433,7 @@ class AppRouter {
           callerId: args['callerId'] as String? ?? '',
           callerName: args['callerName'] as String? ?? 'Unknown',
           callerAvatar: args['callerAvatar'] as String? ?? '',
-          receiverId: Supabase.instance.client.auth.currentUser?.id ?? '',
+          receiverId: SupabaseProvider.id,
           receiverName: '',
           receiverAvatar: '',
           status: CallStatus.ringing,

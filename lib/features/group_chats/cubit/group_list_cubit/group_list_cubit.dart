@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/cache/constants/snapshot_keys.dart';
 import '../../../../core/cache/services/local_snapshot_store.dart';
+import '../../../../core/supabase/supabase_provider.dart';
 import '../../../../core/utilities/supabase_constants.dart';
 import '../../../auth/handler/auth_exception_handler.dart';
 import '../../models/group_model.dart';
@@ -26,7 +27,7 @@ class GroupListCubit extends Cubit<GroupListState> {
 
   List<GroupModel> get cachedGroupsChats => _cached;
 
-  String get _currentUserId => Supabase.instance.client.auth.currentUser!.id;
+  String get _currentUserId => SupabaseProvider.id;
 
   GroupListCubit(this._services) : super(GroupListInitial());
 
@@ -53,7 +54,7 @@ class GroupListCubit extends Cubit<GroupListState> {
   void _subscribeMessagesStream() {
     _messagesStreamSub?.cancel();
 
-    _messagesStreamSub = Supabase.instance.client
+    _messagesStreamSub = SupabaseProvider.client
         .from(SupabaseConstants.groupMessages)
         .stream(primaryKey: ['id'])
         .order('created_at', ascending: false)
@@ -63,7 +64,6 @@ class GroupListCubit extends Cubit<GroupListState> {
           if (data.isEmpty) return;
           if (state is! GroupListLoaded) return;
 
-          // Collect latest message per group
           final Map<String, Map<String, dynamic>> latestPerGroup = {};
           // Count unread per group (not from me, not in read_by)
           final Map<String, int> unreadPerGroup = {};
@@ -156,7 +156,7 @@ class GroupListCubit extends Cubit<GroupListState> {
     _channel?.unsubscribe();
 
     final channelName = 'group_list_monitor_$_currentUserId';
-    _channel = Supabase.instance.client.channel(channelName);
+    _channel = SupabaseProvider.client.channel(channelName);
 
     _channel!
         .onPostgresChanges(

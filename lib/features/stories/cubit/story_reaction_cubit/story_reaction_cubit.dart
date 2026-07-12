@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../../core/supabase/supabase_provider.dart';
 import '../../services/stories_services.dart';
 part 'story_reaction_state.dart';
 
@@ -18,7 +18,7 @@ class StoryReactionCubit extends Cubit<StoryReactionState> {
     _loadInitialReaction();
   }
 
-  final String _currentUserId = Supabase.instance.client.auth.currentUser!.id;
+  final String _currentUserId = SupabaseProvider.id;
 
   bool get _isMyStory => storyAuthorId == _currentUserId;
 

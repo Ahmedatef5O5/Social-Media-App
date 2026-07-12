@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../supabase/supabase_provider.dart';
+
 class SupabaseDatabaseServices {
   /// Singleton pattern to ensure a single instance
   SupabaseDatabaseServices._();
   static final instance = SupabaseDatabaseServices._();
 
   /// internal Supabase client reference
-  SupabaseClient get _db => Supabase.instance.client;
+  SupabaseClient get _db => SupabaseProvider.client;
 
   // ----------------
   // Write operations

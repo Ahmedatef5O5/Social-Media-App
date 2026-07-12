@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../core/supabase/supabase_provider.dart';
 import '../../single_chats/widgets/image_message_widget.dart';
 import '../../single_chats/widgets/video_message_widget.dart';
 import '../cubit/group_details_cubit/group_details_cubit.dart';
@@ -34,7 +34,7 @@ class GroupRegularMessageContent extends StatelessWidget {
     final isVideo = message.messageType == 'video';
     final isVoice = message.messageType == 'voice';
 
-    final currentUserId = Supabase.instance.client.auth.currentUser!.id;
+    final currentUserId = SupabaseProvider.id;
     final displayText = message.caption ?? message.text;
     final timeWidget = GroupTimeRow(message: message, isMe: isMe);
 

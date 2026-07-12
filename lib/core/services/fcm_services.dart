@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../supabase/supabase_provider.dart';
+
 class FcmService {
   FcmService._();
   static final FcmService instance = FcmService._();
@@ -68,7 +70,7 @@ class FcmService {
 
   Future<void> _sendToEdgeFunction(Map<String, dynamic> payload) async {
     try {
-      final response = await Supabase.instance.client.functions.invoke(
+      final response = await SupabaseProvider.client.functions.invoke(
         'send-notification',
         body: payload,
       );

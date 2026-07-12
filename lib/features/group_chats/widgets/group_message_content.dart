@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/helpers/modern_circle_progress.dart';
+import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/themes/app_colors.dart';
 import '../cubit/group_details_cubit/group_details_cubit.dart';
 import '../models/groupe_message_model.dart';
@@ -75,7 +75,7 @@ class _GroupMessageContentState extends State<GroupMessageContent> {
 
     final primary = Theme.of(context).primaryColor;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final currentUserId = Supabase.instance.client.auth.currentUser!.id;
+    final currentUserId = SupabaseProvider.id;
 
     final isImage = widget.message.messageType == 'image';
     final isVideo = widget.message.messageType == 'video';

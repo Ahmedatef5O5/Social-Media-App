@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/utilities/supabase_constants.dart';
 import '../../reactions/model/reaction_entry.dart';
 import '../../reactions/widgets/reactions_bottom_sheet.dart';
@@ -10,7 +10,7 @@ class PostReactionsBottomSheet extends StatelessWidget {
   const PostReactionsBottomSheet({super.key, required this.postId});
 
   Future<List<ReactionEntry>> _fetch() async {
-    final response = await Supabase.instance.client
+    final response = await SupabaseProvider.client
         .from(SupabaseConstants.likes)
         .select('''
           ${LikeColumns.reaction},

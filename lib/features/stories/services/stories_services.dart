@@ -3,16 +3,16 @@ import 'package:dio/dio.dart' as dio_pkg;
 import 'package:flutter/material.dart';
 import 'package:social_media_app/core/services/cloudinary_upload_result.dart';
 import 'package:social_media_app/core/services/network_status_service.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/services/cloudinary_storage_services.dart';
 import '../../../core/services/media_cleanup_service.dart';
 import '../../../core/services/supabase_database_services.dart';
+import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/utilities/supabase_constants.dart';
 import '../model/story_model.dart';
 import '../model/story_viewer_model.dart';
 
 class StoriesServices {
-  final _supabase = Supabase.instance.client;
+  final _supabase = SupabaseProvider.client;
   final supabaseServices = SupabaseDatabaseServices.instance;
   final CloudinaryStorageServices storage = CloudinaryStorageServices.instance;
 

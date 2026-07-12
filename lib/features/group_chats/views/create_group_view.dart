@@ -2,7 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/toast/app_toast.dart';
 import '../cubit/group_list_cubit/group_list_cubit.dart';
 import '../services/group_chat_services.dart';
@@ -38,8 +38,8 @@ class _CreateGroupViewState extends State<CreateGroupView> {
   }
 
   Future<void> _loadUsers() async {
-    final currentId = Supabase.instance.client.auth.currentUser!.id;
-    final data = await Supabase.instance.client
+    final currentId = SupabaseProvider.id;
+    final data = await SupabaseProvider.client
         .from('users')
         .select('id, name, image_url')
         .neq('id', currentId);

@@ -2,7 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:social_media_app/core/constants/app_images.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../core/supabase/supabase_provider.dart';
 import '../models/app_notification_model.dart';
 import '../../../core/widgets/empty_findings_animation_widget.dart';
 
@@ -33,8 +33,8 @@ class _NotificationsViewState extends State<NotificationsView>
 
   Future<void> _loadNotifications() async {
     try {
-      final userId = Supabase.instance.client.auth.currentUser!.id;
-      final data = await Supabase.instance.client
+      final userId = SupabaseProvider.id;
+      final data = await SupabaseProvider.client
           .from('notifications')
           .select()
           .eq('receiver_id', userId)
@@ -67,7 +67,7 @@ class _NotificationsViewState extends State<NotificationsView>
 
   Future<void> _markAsRead(String id) async {
     try {
-      await Supabase.instance.client
+      await SupabaseProvider.client
           .from('notifications')
           .update({'is_read': true})
           .eq('id', id);
@@ -83,19 +83,16 @@ class _NotificationsViewState extends State<NotificationsView>
 
   Future<void> _deleteNotification(String id) async {
     try {
-      await Supabase.instance.client
-          .from('notifications')
-          .delete()
-          .eq('id', id);
+      await SupabaseProvider.client.from('notifications').delete().eq('id', id);
     } catch (_) {}
     setState(() => _notifications.removeWhere((n) => n.id == id));
   }
 
   Future<void> _markAllAsRead() async {
     HapticFeedback.lightImpact();
-    final userId = Supabase.instance.client.auth.currentUser!.id;
+    final userId = SupabaseProvider.client.auth.currentUser!.id;
     try {
-      await Supabase.instance.client
+      await SupabaseProvider.client
           .from('notifications')
           .update({'is_read': true})
           .eq('receiver_id', userId)

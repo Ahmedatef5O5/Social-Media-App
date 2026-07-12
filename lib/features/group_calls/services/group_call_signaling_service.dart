@@ -1,11 +1,11 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/utilities/supabase_constants.dart';
 import '../models/group_call_model.dart';
 
 class GroupCallSignalingService {
-  final _supabase = Supabase.instance.client;
+  final _supabase = SupabaseProvider.client;
 
   Future<List<String>> getGroupMemberIds(String groupId) async {
     try {

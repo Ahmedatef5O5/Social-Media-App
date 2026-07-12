@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/helpers/formatted_date.dart';
 import '../../../core/router/app_routes.dart';
+import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/widgets/app_avatar.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
 import '../../home/cubits/home_cubit/home_cubit.dart';
@@ -127,7 +127,7 @@ class _ReactionsBottomSheetState extends State<ReactionsBottomSheet> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final currentUserId = Supabase.instance.client.auth.currentUser?.id;
+    final currentUserId = SupabaseProvider.id;
     final navController = context.read<HomeCubit>().navController;
 
     final emojiCounts = <String, int>{};

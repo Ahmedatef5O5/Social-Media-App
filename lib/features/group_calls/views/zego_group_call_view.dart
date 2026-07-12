@@ -1,11 +1,11 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:zego_uikit/zego_uikit.dart';
 import 'package:zego_uikit_prebuilt_call/zego_uikit_prebuilt_call.dart';
 import '../../../core/secrets/app_secrets.dart';
 import '../../../core/services/zego_token_service.dart';
+import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/widgets/cached_cloudinary_image.dart';
 import '../models/group_call_model.dart';
 import '../services/group_call_signaling_service.dart';
@@ -136,7 +136,7 @@ class _ZegoGroupCallViewState extends State<ZegoGroupCallView> {
         height: diameter,
         child: FutureBuilder(
           future:
-              Supabase.instance.client
+              SupabaseProvider.client
                   .from('users')
                   .select('image_url')
                   .eq('id', user.id)

@@ -3,7 +3,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/toast/app_toast.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
 import '../cubit/group_list_cubit/group_list_cubit.dart';
@@ -33,7 +33,7 @@ class _GroupInfoViewState extends State<GroupInfoView> {
   late final GroupMembersCubit _membersCubit;
   late final ScrollController _scrollController;
 
-  String get _currentUserId => Supabase.instance.client.auth.currentUser!.id;
+  String get _currentUserId => SupabaseProvider.id;
 
   @override
   void initState() {

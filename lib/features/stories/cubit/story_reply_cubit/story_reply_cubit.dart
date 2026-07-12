@@ -2,9 +2,9 @@ import 'dart:async';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/services/cloudinary_storage_services.dart';
 import '../../../../core/services/fcm_services.dart';
+import '../../../../core/supabase/supabase_provider.dart';
 import '../../../notifications/repository/notifications_repository.dart';
 import '../../../single_chats/services/chat_services.dart';
 import '../../model/story_model.dart';
@@ -18,7 +18,7 @@ class StoryReplyCubit extends Cubit<StoryReplyState> {
     : _chatServices = chatServices ?? ChatServices(),
       super(StoryReplyIdle());
 
-  final String currentUserId = Supabase.instance.client.auth.currentUser!.id;
+  final String currentUserId = SupabaseProvider.id;
 
   Future<void> sendReply({
     required StoryModel story,

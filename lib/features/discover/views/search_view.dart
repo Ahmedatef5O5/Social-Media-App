@@ -1,8 +1,8 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/constants/app_images.dart';
 import '../../../core/router/app_routes.dart';
+import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/widgets/empty_findings_animation_widget.dart';
 
 class SearchView extends StatefulWidget {
@@ -40,9 +40,9 @@ class _SearchViewState extends State<SearchView>
   }
 
   Future<void> _loadUsers() async {
-    final currentId = Supabase.instance.client.auth.currentUser!.id;
+    final currentId = SupabaseProvider.id;
     try {
-      final data = await Supabase.instance.client
+      final data = await SupabaseProvider.client
           .from('users')
           .select('id, name, username, image_url, bio')
           .neq('id', currentId)

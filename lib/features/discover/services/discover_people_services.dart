@@ -1,12 +1,11 @@
 import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import 'package:social_media_app/core/services/network_status_service.dart';
+import 'package:social_media_app/core/supabase/supabase_provider.dart';
 import 'package:social_media_app/core/utilities/supabase_constants.dart';
 import 'package:social_media_app/features/auth/data/models/user_data.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 class DiscoverPeopleServices {
-  final _supabase = Supabase.instance.client;
   final NetworkStatusService _networkStatus;
   DiscoverPeopleServices({NetworkStatusService? networkStatus})
     : _networkStatus = networkStatus ?? NetworkStatusService.instance;
@@ -19,9 +18,9 @@ class DiscoverPeopleServices {
     final start = page * pageSize;
     final end = (page + 1) * pageSize - 1;
 
-    final currUserId = _supabase.auth.currentUser!.id;
+    final currUserId = SupabaseProvider.id;
     try {
-      final List<dynamic> data = await _supabase
+      final List<dynamic> data = await SupabaseProvider.client
           .from(SupabaseConstants.users)
           .select()
           .neq(UserColumns.id, currUserId)

@@ -8,9 +8,9 @@ import 'package:social_media_app/features/single_chats/widgets/chat_loading_skel
 import 'package:social_media_app/features/single_chats/widgets/date_separator_glassmorphism_widget.dart';
 import 'package:social_media_app/features/single_chats/widgets/empty_placeholder_state.dart';
 import 'package:social_media_app/features/single_chats/widgets/typing_bubble_widget.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/constants/app_images.dart';
 import '../../../core/helpers/formatted_date.dart';
+import '../../../core/supabase/supabase_provider.dart';
 import '../cubit/chat_details_cubit/chat_details_cubit.dart';
 import '../helper/chat_date_separator_helper.dart';
 import '../models/chat_user_model.dart';
@@ -115,9 +115,7 @@ class _MessagesListViewState extends State<MessagesListView> {
                 }
 
                 final msg = messages[msgIndex];
-                final bool isMe =
-                    msg.senderId ==
-                    Supabase.instance.client.auth.currentUser!.id;
+                final bool isMe = msg.senderId == SupabaseProvider.id;
 
                 final double? currentProgress = cubit.uploadProgressMap[msg.id];
 
@@ -161,7 +159,7 @@ class _MessagesListViewState extends State<MessagesListView> {
     if (state is MessagesSuccessLoaded && state.messages.isNotEmpty) {
       _hasLoadedOnce = true;
       final messages = state.messages;
-      final currentUserId = Supabase.instance.client.auth.currentUser!.id;
+      final currentUserId = SupabaseProvider.id;
 
       final bool isNewMessage = messages.length > _lastMessageCount;
       final int previousCount = _lastMessageCount;

@@ -5,8 +5,8 @@ import 'package:social_media_app/core/router/app_routes.dart';
 import 'package:social_media_app/core/widgets/custom_user_profile_image_section.dart';
 import 'package:social_media_app/features/auth/data/models/user_data.dart';
 import 'package:social_media_app/features/profile/cubits/profile_cubit/profile_cubit.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/constants/app_images.dart';
+import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/themes/app_colors.dart';
 import '../../../core/widgets/custom_elevated_button.dart';
 import '../../single_chats/models/chat_user_model.dart';
@@ -17,7 +17,7 @@ class ProfileHeader extends StatelessWidget {
   final UserData user;
   @override
   Widget build(BuildContext context) {
-    final currentUserId = Supabase.instance.client.auth.currentUser!.id;
+    final currentUserId = SupabaseProvider.id;
     final isMe = user.id == currentUserId;
 
     return Column(

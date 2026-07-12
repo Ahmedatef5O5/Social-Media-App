@@ -6,8 +6,8 @@ import 'package:social_media_app/core/services/network_status_service.dart';
 import 'package:social_media_app/core/cache/constants/snapshot_keys.dart';
 import 'package:social_media_app/core/cache/services/local_snapshot_store.dart';
 import 'package:social_media_app/features/auth/data/models/user_data.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/connectivity/services/connectivity_banner_controller.dart';
+import '../../../../core/supabase/supabase_provider.dart';
 import '../../../posts/cubit/posts_cubit.dart';
 import '../../../profile/services/user_services.dart';
 part 'home_state.dart';
@@ -34,7 +34,7 @@ class HomeCubit extends Cubit<HomeState> {
 
   Future<void> getCurrentUserData({bool isRefresh = false}) async {
     if (!isRefresh) emit(UserDataLoading());
-    final userId = Supabase.instance.client.auth.currentUser!.id;
+    final userId = SupabaseProvider.id;
     await _getCurrentUser(userId, isRefresh: isRefresh);
   }
 

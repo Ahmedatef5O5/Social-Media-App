@@ -5,8 +5,8 @@ import 'package:gap/gap.dart';
 import 'package:social_media_app/core/themes/background_theme_widget.dart';
 import 'package:social_media_app/core/widgets/custom_loading_indicator.dart';
 import 'package:social_media_app/features/home/cubits/home_cubit/home_cubit.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/helpers/modern_circle_progress.dart';
+import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/toast/app_toast.dart';
 import '../cubit/posts_cubit.dart';
 import '../widgets/add_post_options_bottom_sheet.dart';
@@ -111,7 +111,7 @@ class _CreatePostViewState extends State<CreatePostView> {
             context.read<HomeCubit>(); // TODO: DELETE THIS OR WHAT
         final postsCubit = context.read<PostsCubit>();
         final user = homeCubit.currentUserData;
-        final authUser = Supabase.instance.client.auth.currentUser;
+        final authUser = SupabaseProvider.user;
         final bool canPost =
             _textEditingController.text.trim().isNotEmpty ||
             postsCubit.selectedImage != null ||

@@ -5,6 +5,7 @@ import 'package:gap/gap.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/connectivity/services/connectivity_banner_controller.dart';
 import '../../../core/router/app_routes.dart';
+import '../../../core/supabase/supabase_provider.dart';
 import '../../group_calls/views/outgoing_group_call_screen.dart';
 import '../../group_calls/views/zego_group_call_view.dart';
 import '../cubit/group_list_cubit/group_list_cubit.dart';
@@ -24,9 +25,9 @@ class GroupChatAppBar extends StatelessWidget implements PreferredSizeWidget {
       if (isOffline) {
         return;
       }
-      final user = Supabase.instance.client.auth.currentUser!;
+      final user = SupabaseProvider.user!;
       final profileData =
-          await Supabase.instance.client
+          await SupabaseProvider.client
               .from('users')
               .select('name')
               .eq('id', user.id)

@@ -4,7 +4,6 @@ import 'package:gap/gap.dart';
 import 'package:social_media_app/core/constants/app_images.dart';
 import 'package:social_media_app/features/comments/cubit/comments_cubit.dart';
 import 'package:social_media_app/features/comments/model/comment_type.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/themes/app_colors.dart';
 import '../../../core/toast/app_toast.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
@@ -73,9 +72,6 @@ class _SendCommentSectionState extends State<SendCommentSection> {
     final cubit = context.read<CommentsCubit>();
     final textComment = _commentController.text.trim();
     if (textComment.isEmpty && cubit.pendingAttachment == null) return;
-
-    final userId = Supabase.instance.client.auth.currentUser?.id;
-    if (userId == null) return;
     final mentions = _commentController.validMentions;
 
     cubit.addComment(

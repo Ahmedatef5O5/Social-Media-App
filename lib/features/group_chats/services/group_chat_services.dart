@@ -6,13 +6,14 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/services/cloudinary_storage_services.dart';
 import '../../../core/services/cloudinary_upload_result.dart';
 import '../../../core/services/media_cleanup_service.dart';
+import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/utilities/supabase_constants.dart';
 import '../models/group_member_model.dart';
 import '../models/group_model.dart';
 import '../models/groupe_message_model.dart';
 
 class GroupChatServices {
-  final _supabase = Supabase.instance.client;
+  final _supabase = SupabaseProvider.client;
 
   String get currentUserId => _supabase.auth.currentUser!.id;
 

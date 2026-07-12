@@ -1,5 +1,5 @@
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/connectivity/services/connectivity_banner_controller.dart';
+import '../../../core/supabase/supabase_provider.dart';
 import '../../single_calls/model/call_model.dart';
 
 class CallActions {
@@ -14,11 +14,11 @@ class CallActions {
       return null;
     }
 
-    final currentUser = Supabase.instance.client.auth.currentUser;
+    final currentUser = SupabaseProvider.user;
     if (currentUser == null) return null;
 
     final userData =
-        await Supabase.instance.client
+        await SupabaseProvider.client
             .from('users')
             .select('name, image_url')
             .eq('id', currentUser.id)

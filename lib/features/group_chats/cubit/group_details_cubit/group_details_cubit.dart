@@ -6,8 +6,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import 'package:social_media_app/core/cache/services/local_snapshot_store.dart';
 import 'package:social_media_app/core/connectivity/services/connectivity_banner_controller.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/services/supabase_storage_services.dart';
+import '../../../../core/supabase/supabase_provider.dart';
 import '../../../../core/utilities/supabase_constants.dart';
 import '../../../notifications/repository/notifications_repository.dart';
 import '../../models/group_model.dart';
@@ -46,7 +46,7 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState>
   final ValueNotifier<String?> highlightedMessageId = ValueNotifier(null);
 
   @override
-  String get currentUserId => Supabase.instance.client.auth.currentUser!.id;
+  String get currentUserId => SupabaseProvider.id;
 
   void init() {
     _messagesSnapshotKey = 'group_messages_snapshot_${group.id}';

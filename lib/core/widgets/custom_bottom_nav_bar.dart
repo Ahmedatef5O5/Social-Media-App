@@ -11,13 +11,13 @@ import 'package:social_media_app/features/discover/views/discover_view.dart';
 import 'package:social_media_app/features/profile/services/user_services.dart';
 import 'package:social_media_app/features/profile/views/profile_view.dart';
 import 'package:social_media_app/features/settings/widgets/profile_drawer.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../features/home/views/home_view.dart';
 import '../../features/profile/cubits/profile_cubit/profile_cubit.dart';
 import '../connectivity/cubit/connectivity_cubit.dart';
 import '../connectivity/cubit/connectivity_state.dart';
 import '../connectivity/services/connectivity_banner_controller.dart';
 import '../constants/app_images.dart';
+import '../supabase/supabase_provider.dart';
 import 'custom_floating_nav_bar.dart';
 
 class CustomBottomNavBar extends StatefulWidget {
@@ -82,7 +82,7 @@ class _CustomBottomNavBarState extends State<CustomBottomNavBar> {
 
   @override
   Widget build(BuildContext context) {
-    final userId = Supabase.instance.client.auth.currentUser!.id;
+    final userId = SupabaseProvider.id;
 
     return BlocBuilder<ThemeCubit, ThemeState>(
       builder: (context, themeState) {

@@ -5,7 +5,7 @@ import 'package:gap/gap.dart';
 import 'package:social_media_app/core/router/app_routes.dart';
 import 'package:social_media_app/features/home/cubits/home_cubit/home_cubit.dart';
 import 'package:social_media_app/features/stories/model/story_model.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/themes/app_colors.dart';
 import '../../../core/widgets/app_avatar.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
@@ -87,7 +87,7 @@ class _StoryItemWidgetState extends State<StoryItemWidget> {
 
   @override
   Widget build(BuildContext context) {
-    final currentUserId = Supabase.instance.client.auth.currentUser?.id;
+    final currentUserId = SupabaseProvider.id;
 
     return BlocListener<StoriesCubit, StoriesState>(
       listenWhen:

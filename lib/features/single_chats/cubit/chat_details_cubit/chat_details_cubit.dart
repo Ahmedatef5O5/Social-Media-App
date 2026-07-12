@@ -4,12 +4,12 @@ import 'package:dio/dio.dart' as dio_pkg;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/cache/services/local_snapshot_store.dart';
 import '../../../../core/connectivity/services/connectivity_banner_controller.dart';
 import '../../../../core/helpers/chat_helper.dart';
 import '../../../../core/services/fcm_services.dart';
 import '../../../../core/services/supabase_storage_services.dart';
+import '../../../../core/supabase/supabase_provider.dart';
 import '../../../../core/utilities/supabase_constants.dart';
 import '../../../notifications/repository/notifications_repository.dart';
 import '../../../settings/repository/settings_repository.dart';
@@ -42,7 +42,7 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
   String? _messagesSnapshotKey;
 
   @override
-  final currentUserId = Supabase.instance.client.auth.currentUser!.id;
+  final currentUserId = SupabaseProvider.id;
 
   final String currentUserName;
 

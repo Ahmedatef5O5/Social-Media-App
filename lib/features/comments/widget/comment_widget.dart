@@ -7,10 +7,10 @@ import 'package:social_media_app/features/comments/widget/comment_media_bubble.d
 import 'package:social_media_app/features/comments/widget/comment_reaction_summary.dart';
 import 'package:social_media_app/features/comments/widget/comment_reactions_bottom_sheet.dart';
 import 'package:social_media_app/features/comments/widget/thread_painter.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/helpers/comment_helper.dart';
 import '../../../core/mentions/mentions.dart';
 import '../../../core/router/app_routes.dart';
+import '../../../core/supabase/supabase_provider.dart';
 import '../../home/cubits/home_cubit/home_cubit.dart';
 import '../model/comment_type.dart';
 import 'comment_constants.dart';
@@ -194,7 +194,7 @@ class _CommentWidgetState extends State<CommentWidget>
   }
 
   void _openMentionPreview(String userId, String name) {
-    final currentUserId = Supabase.instance.client.auth.currentUser!.id;
+    final currentUserId = SupabaseProvider.id;
     final navController = context.read<HomeCubit>().navController;
 
     if (userId == currentUserId) {
@@ -253,8 +253,7 @@ class _CommentWidgetState extends State<CommentWidget>
     final double avatarCenterX = indentWidth + aR;
     final bool isMediaOnlyComment =
         widget.comment.hasMedia && widget.comment.text.isEmpty;
-
-    final currentUserId = Supabase.instance.client.auth.currentUser?.id;
+    final currentUserId = SupabaseProvider.id;
     final navController = context.read<HomeCubit>().navController;
     final bool isMe = widget.comment.authorId == currentUserId;
 

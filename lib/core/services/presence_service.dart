@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/widgets.dart';
+import 'package:social_media_app/core/supabase/supabase_provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../features/settings/repository/settings_repository.dart';
 import '../utilities/supabase_constants.dart';
@@ -7,8 +8,6 @@ import '../utilities/supabase_constants.dart';
 class PresenceService with WidgetsBindingObserver {
   PresenceService._();
   static final PresenceService instance = PresenceService._();
-
-  final _supabase = Supabase.instance.client;
 
   bool _initialised = false;
   String? _userId;
@@ -19,7 +18,7 @@ class PresenceService with WidgetsBindingObserver {
   StreamSubscription<AuthState>? _authSub;
 
   Future<void> init() async {
-    final user = _supabase.auth.currentUser;
+    final user = SupabaseProvider.user;
     if (user == null) return;
     if (_initialised && _userId == user.id) return;
 
@@ -33,7 +32,7 @@ class PresenceService with WidgetsBindingObserver {
 
     await _authSub?.cancel();
 
-    _authSub = _supabase.auth.onAuthStateChange.listen((data) async {
+    _authSub = SupabaseProvider.authChanges.listen((data) async {
       switch (data.event) {
         case AuthChangeEvent.signedOut:
           await _setOnline(false);
@@ -110,20 +109,21 @@ class PresenceService with WidgetsBindingObserver {
   }
 
   Future<void> _setOnline(bool isOnline) async {
-    final uid = _userId ?? _supabase.auth.currentUser?.id;
-    if (uid == null) return;
+    final uid = _userId ?? SupabaseProvider.id;
 
     final bool effectiveOnline =
         isOnline && SettingsRepository.instance.onlineStatus;
 
     try {
       final now = DateTime.now().toUtc().toIso8601String();
-      await _supabase.from(SupabaseConstants.userPresence).upsert({
-        PresenceColumns.userId: uid,
-        PresenceColumns.isOnline: effectiveOnline,
-        PresenceColumns.lastSeen: now,
-        PresenceColumns.updatedAt: now,
-      }, onConflict: PresenceColumns.userId);
+      await SupabaseProvider.client
+          .from(SupabaseConstants.userPresence)
+          .upsert({
+            PresenceColumns.userId: uid,
+            PresenceColumns.isOnline: effectiveOnline,
+            PresenceColumns.lastSeen: now,
+            PresenceColumns.updatedAt: now,
+          }, onConflict: PresenceColumns.userId);
     } catch (e) {
       debugPrint('[PresenceService] _setOnline($isOnline) error: $e');
     }

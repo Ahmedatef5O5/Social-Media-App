@@ -14,6 +14,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/connectivity/services/connectivity_banner_controller.dart';
 import '../../../core/services/cloudinary_storage_services.dart';
 import '../../../core/services/presence_service.dart';
+import '../../../core/supabase/supabase_provider.dart';
 import '../../comments/events/comment_event_bus.dart';
 import '../../comments/model/comment_model.dart';
 import '../../notifications/repository/notifications_repository.dart';
@@ -190,7 +191,7 @@ class PostsCubit extends Cubit<PostsState> {
   }
 
   Future<void> createPost({required String text}) async {
-    final user = Supabase.instance.client.auth.currentUser;
+    final user = SupabaseProvider.user;
     if (user == null) return;
     final userId = user.id;
 
@@ -382,7 +383,7 @@ class PostsCubit extends Cubit<PostsState> {
 
   Future<void> toggleReaction(PostModel post, {String emoji = 'like'}) async {
     if (state is! PostsLoaded) return;
-    final user = Supabase.instance.client.auth.currentUser;
+    final user = SupabaseProvider.user;
     final userId = user?.id;
     if (userId == null) return;
 

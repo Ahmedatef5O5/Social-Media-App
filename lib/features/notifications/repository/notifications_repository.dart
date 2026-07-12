@@ -1,10 +1,10 @@
-import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../core/supabase/supabase_provider.dart';
 
 class NotificationRepository {
   NotificationRepository._();
   static final NotificationRepository instance = NotificationRepository._();
 
-  final _db = Supabase.instance.client;
+  final _db = SupabaseProvider.client;
 
   Future<void> _insert(Map<String, dynamic> row) async {
     try {

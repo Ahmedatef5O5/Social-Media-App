@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:social_media_app/features/stories/model/story_model.dart';
 import 'package:social_media_app/features/stories/widgets/story_item_widget.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/toast/app_toast.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
 import '../cubit/stories_cubit/stories_cubit.dart';
@@ -14,7 +14,7 @@ class StoriesListSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
     final storiesCubit = BlocProvider.of<StoriesCubit>(context);
-    final currentUserId = Supabase.instance.client.auth.currentUser?.id;
+    final currentUserId = SupabaseProvider.id;
 
     return SizedBox(
       height: size.height * 0.12,

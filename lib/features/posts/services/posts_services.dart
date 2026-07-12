@@ -6,6 +6,7 @@ import '../../../core/services/media_cleanup_service.dart';
 import '../../../core/services/network_status_service.dart';
 import '../../../core/services/presence_service.dart';
 import '../../../core/services/supabase_database_services.dart';
+import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/utilities/supabase_constants.dart';
 import '../../comments/helper/comment_tree_builder.dart';
 import '../../comments/model/comment_model.dart';
@@ -14,7 +15,7 @@ import '../model/post_request_body.dart';
 
 class PostsServices {
   final supabaseServices = SupabaseDatabaseServices.instance;
-  final _supabase = Supabase.instance.client;
+  final _supabase = SupabaseProvider.client;
   final NetworkStatusService _networkStatus;
 
   PostsServices({NetworkStatusService? networkStatus})
@@ -43,7 +44,7 @@ class PostsServices {
           .limit(1);
       if (rows.isEmpty) return null;
 
-      final data = rows.first as Map<String, dynamic>;
+      final data = rows.first;
       final post = PostModel.fromMap(data);
 
       final flatComments =
@@ -61,7 +62,7 @@ class PostsServices {
 
       if (presenceRows.isEmpty) return postWithComments;
 
-      final row = presenceRows.first as Map<String, dynamic>;
+      final row = presenceRows.first;
       final isOnline = PresenceService.isConsideredOnline(
         isOnline: row[PresenceColumns.isOnline] as bool? ?? false,
         updatedAt:

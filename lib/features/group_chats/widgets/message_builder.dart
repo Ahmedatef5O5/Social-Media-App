@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/helpers/formatted_date.dart';
+import '../../../core/supabase/supabase_provider.dart';
 import '../../single_chats/helper/chat_date_separator_helper.dart';
 import '../../single_chats/widgets/date_separator_glassmorphism_widget.dart';
 import '../cubit/group_details_cubit/group_details_cubit.dart';
@@ -40,7 +40,7 @@ class GroupMessageItemBuilder extends StatelessWidget {
 
     final msg = messages[msgIndex];
 
-    final isMe = msg.senderId == Supabase.instance.client.auth.currentUser!.id;
+    final isMe = msg.senderId == SupabaseProvider.id;
 
     final showDate = ChatDateSeparatorHelper.shouldShowDate<GroupMessageModel>(
       messages: messages,
@@ -50,7 +50,7 @@ class GroupMessageItemBuilder extends StatelessWidget {
 
     if (msg.messageType == 'group_call') {
       return StreamBuilder<GroupCallModel?>(
-        stream: Supabase.instance.client
+        stream: SupabaseProvider.client
             .from('group_calls')
             .stream(primaryKey: ['call_id'])
             .eq('call_id', msg.text)

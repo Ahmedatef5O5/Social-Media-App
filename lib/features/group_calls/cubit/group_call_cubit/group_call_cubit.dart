@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../../core/supabase/supabase_provider.dart';
 import '../../models/group_call_model.dart';
 import '../../services/group_call_signaling_service.dart';
 import '../../../group_chats/services/group_notification_dispatcher.dart';
@@ -15,7 +15,7 @@ class GroupCallCubit extends Cubit<GroupCallState> {
 
   static const Duration _ringTimeout = Duration(seconds: 45);
 
-  String get _currentUserId => Supabase.instance.client.auth.currentUser!.id;
+  String get _currentUserId => SupabaseProvider.id;
 
   GroupCallCubit(this._service) : super(GroupCallInitial());
 

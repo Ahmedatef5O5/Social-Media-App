@@ -8,11 +8,12 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/helpers/chat_helper.dart';
 import '../../../core/services/media_cleanup_service.dart';
 import '../../../core/services/network_status_service.dart';
+import '../../../core/supabase/supabase_provider.dart';
 import '../models/chat_user_model.dart';
 import '../models/presence_snapshot.dart';
 
 class ChatServices {
-  final _supabase = Supabase.instance.client;
+  final _supabase = SupabaseProvider.client;
   final NetworkStatusService _networkStatus;
 
   ChatServices({NetworkStatusService? networkStatus})

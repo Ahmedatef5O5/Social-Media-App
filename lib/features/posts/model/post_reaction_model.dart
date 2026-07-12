@@ -1,4 +1,4 @@
-import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/utilities/supabase_constants.dart';
 
 class PostReactionModel {
@@ -36,7 +36,7 @@ class PostReactionModel {
 
 List<PostReactionModel> parsePostReactions(List<dynamic> rows) {
   final Map<String, int> counts = {};
-  final currentUserId = Supabase.instance.client.auth.currentUser?.id;
+  final currentUserId = SupabaseProvider.id;
   String? myEmoji;
 
   for (final row in rows) {

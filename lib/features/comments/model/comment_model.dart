@@ -1,5 +1,5 @@
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/mentions/models/mention_ref.dart';
+import '../../../core/supabase/supabase_provider.dart';
 import 'comment_type.dart';
 
 class CommentModel {
@@ -303,7 +303,7 @@ class CommentReaction {
 
 List<CommentReaction> parseReactions(List<dynamic> data) {
   final Map<String, int> counts = {};
-  final userId = Supabase.instance.client.auth.currentUser?.id;
+  final userId = SupabaseProvider.id;
   final Set<String> myEmojis = {};
 
   for (var row in data) {

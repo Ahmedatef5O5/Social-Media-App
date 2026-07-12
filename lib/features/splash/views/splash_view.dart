@@ -5,7 +5,7 @@ import 'package:social_media_app/core/constants/app_images.dart';
 import 'package:social_media_app/core/router/app_routes.dart';
 import 'package:social_media_app/core/themes/background_theme_widget.dart';
 import 'package:social_media_app/core/themes/dynamic_splash_app.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../core/supabase/supabase_provider.dart';
 
 class SplashView extends StatefulWidget {
   const SplashView({super.key});
@@ -23,7 +23,7 @@ class _SplashViewState extends State<SplashView>
 
   void _navigateToNext() async {
     if (!mounted) return;
-    final session = Supabase.instance.client.auth.currentSession;
+    final session = SupabaseProvider.currentSession;
     final prefs = await SharedPreferences.getInstance();
     final bool hasSeenOnboarding = prefs.getBool('onboarding_seen') ?? false;
     if (mounted) {

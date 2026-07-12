@@ -5,7 +5,7 @@ import 'package:social_media_app/core/widgets/custom_tab_wrapper.dart';
 import 'package:social_media_app/features/profile/cubits/profile_cubit/profile_cubit.dart';
 import 'package:social_media_app/features/profile/views/profile_shimmer_view.dart';
 import 'package:social_media_app/features/profile/widgets/profile_body_content.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/widgets/global_refresh_indicator.dart';
 import '../../posts/cubit/posts_cubit.dart';
 
@@ -19,7 +19,7 @@ class ProfileView extends StatefulWidget {
 }
 
 class _ProfileViewState extends State<ProfileView> {
-  final currentUserId = Supabase.instance.client.auth.currentUser!.id;
+  final currentUserId = SupabaseProvider.id;
   late ScrollController _scrollController;
   final ValueNotifier<double> _refreshProgress = ValueNotifier(0.0);
   final ValueNotifier<bool> _isRefreshing = ValueNotifier(false);

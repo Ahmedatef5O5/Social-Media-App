@@ -1,11 +1,11 @@
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import 'package:social_media_app/core/services/cloudinary_upload_result.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/services/cloudinary_storage_services.dart';
+import '../../../core/supabase/supabase_provider.dart';
 
 class EditProfileServices {
-  final _supabase = Supabase.instance.client;
+  final _supabase = SupabaseProvider.client;
   final _picker = ImagePicker();
   final CloudinaryStorageServices storage = CloudinaryStorageServices.instance;
 

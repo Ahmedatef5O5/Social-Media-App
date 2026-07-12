@@ -1,6 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:local_auth/local_auth.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../core/supabase/supabase_provider.dart';
 import '../repository/settings_repository.dart';
 
 class AppLockService with WidgetsBindingObserver {
@@ -34,8 +34,7 @@ class AppLockService with WidgetsBindingObserver {
     _initialised = false;
   }
 
-  bool _hasActiveSession() =>
-      Supabase.instance.client.auth.currentSession != null;
+  bool _hasActiveSession() => SupabaseProvider.auth.currentSession != null;
 
   bool _shouldEnforceLock() =>
       SettingsRepository.instance.biometricLock && _hasActiveSession();

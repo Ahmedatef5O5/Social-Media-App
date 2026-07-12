@@ -1,17 +1,15 @@
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:social_media_app/core/supabase/supabase_provider.dart';
 
 class MediaCleanupService {
   MediaCleanupService._();
 
   static final MediaCleanupService instance = MediaCleanupService._();
 
-  final _supabase = Supabase.instance.client;
-
   Future<void> deleteWithMedia({
     required String table,
     required String id,
   }) async {
-    final response = await _supabase.functions.invoke(
+    final response = await SupabaseProvider.client.functions.invoke(
       'delete-media-asset',
       body: {'table': table, 'id': id},
     );

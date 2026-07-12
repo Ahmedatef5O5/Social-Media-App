@@ -8,7 +8,7 @@ import 'package:social_media_app/core/widgets/custom_back_to_top_btn.dart';
 import 'package:social_media_app/core/widgets/custom_pull_to_refresh.dart';
 import 'package:social_media_app/core/widgets/custom_tab_wrapper.dart';
 import 'package:social_media_app/features/home/cubits/home_cubit/home_cubit.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../core/supabase/supabase_provider.dart';
 import '../../posts/cubit/posts_cubit.dart';
 import '../../stories/cubit/stories_cubit/stories_cubit.dart';
 import '../widgets/home_view_header_section.dart';
@@ -67,10 +67,10 @@ class _HomeViewState extends State<HomeView> {
       String? token = await FirebaseMessaging.instance.getToken();
 
       if (token != null) {
-        final user = Supabase.instance.client.auth.currentUser;
+        final user = SupabaseProvider.user;
 
         if (user != null) {
-          await Supabase.instance.client
+          await SupabaseProvider.client
               .from(SupabaseConstants.users)
               .update({UserColumns.fcmToken: token})
               .eq(UserColumns.id, user.id);

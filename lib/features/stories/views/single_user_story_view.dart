@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:social_media_app/core/toast/app_toast.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:video_player/video_player.dart';
+import '../../../core/supabase/supabase_provider.dart';
 import '../cubit/stories_cubit/stories_cubit.dart';
 import '../cubit/story_reaction_cubit/story_reaction_cubit.dart';
 import '../cubit/story_reply_cubit/story_reply_cubit.dart';
@@ -65,7 +65,7 @@ class _SingleUserStoryViewState extends State<SingleUserStoryView> {
 
   @override
   Widget build(BuildContext context) {
-    final currentUserId = Supabase.instance.client.auth.currentUser!.id;
+    final currentUserId = SupabaseProvider.id;
     final isMyStory = widget.story.authorId == currentUserId;
 
     return MultiBlocProvider(

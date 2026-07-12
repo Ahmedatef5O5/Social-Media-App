@@ -3,7 +3,7 @@ import 'dart:math' as math;
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/widgets/cached_cloudinary_image.dart';
 import '../models/group_call_model.dart';
 import '../services/group_call_signaling_service.dart';
@@ -57,9 +57,9 @@ class _OutgoingGroupCallScreenState extends State<OutgoingGroupCallScreen>
   }
 
   Future<void> _fetchMyName() async {
-    final user = Supabase.instance.client.auth.currentUser!;
+    final user = SupabaseProvider.user!;
     final data =
-        await Supabase.instance.client
+        await SupabaseProvider.client
             .from('users')
             .select('name')
             .eq('id', user.id)
@@ -122,7 +122,7 @@ class _OutgoingGroupCallScreenState extends State<OutgoingGroupCallScreen>
         builder:
             (_) => ZegoGroupCallView(
               call: call,
-              currentUserId: Supabase.instance.client.auth.currentUser!.id,
+              currentUserId: SupabaseProvider.id,
               currentUserName: _currentUserName,
             ),
       ),

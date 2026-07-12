@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:social_media_app/features/posts/widgets/post_header_widget.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../core/supabase/supabase_provider.dart';
 import '../cubit/posts_cubit.dart';
 import '../model/post_model.dart';
 import 'post_interactions_row.dart';
@@ -22,8 +22,7 @@ class PostItemWidget extends StatelessWidget {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    final currentUserId = Supabase.instance.client.auth.currentUser?.id;
-    if (currentUserId == null) return SizedBox.shrink();
+    final currentUserId = SupabaseProvider.id;
 
     return BlocBuilder<PostsCubit, PostsState>(
       buildWhen: (previous, current) {

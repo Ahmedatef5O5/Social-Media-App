@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/constants/app_images.dart';
+import '../../../core/supabase/supabase_provider.dart';
 import '../../single_chats/widgets/chat_loading_skeleton.dart';
 import '../../single_chats/widgets/empty_placeholder_state.dart';
 import '../cubit/group_details_cubit/group_details_cubit.dart';
@@ -38,6 +38,7 @@ class _GroupMessagesListState extends State<GroupMessagesList> {
   static String? _lastPlayedMessageId;
 
   int _lastMessageCount = 0;
+  // ignore: unused_field
   bool _hasLoadedOnce = false;
 
   Future<void> _playNotificationSound() async {
@@ -55,7 +56,7 @@ class _GroupMessagesListState extends State<GroupMessagesList> {
 
     _hasLoadedOnce = true;
     final messages = state.messages;
-    final currentUserId = Supabase.instance.client.auth.currentUser!.id;
+    final currentUserId = SupabaseProvider.id;
 
     final bool isNewMessage = messages.length > _lastMessageCount;
     final int previousCount = _lastMessageCount;

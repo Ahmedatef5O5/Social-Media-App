@@ -4,11 +4,12 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:social_media_app/features/auth/data/repository/auth_repository.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as supabase_pkg;
+import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/utilities/supabase_constants.dart';
 import '../data/models/user_data.dart';
 
 class SupabaseAuthServices implements AuthRepository {
-  final _supabase = Supabase.instance.client;
+  final _supabase = SupabaseProvider.client;
 
   Stream<AuthState> get authStateStream => _supabase.auth.onAuthStateChange;
 
@@ -17,7 +18,6 @@ class SupabaseAuthServices implements AuthRepository {
   supabase_pkg.Session? get currentSession => _supabase.auth.currentSession;
 
   Future<AuthResponse> refreshSession() => _supabase.auth.refreshSession();
-
 
   Future<void> ensureUserExistsInDb(supabase_pkg.User user) async {
     try {

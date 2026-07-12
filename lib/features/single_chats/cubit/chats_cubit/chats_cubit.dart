@@ -5,7 +5,7 @@ import 'package:social_media_app/core/cache/constants/snapshot_keys.dart';
 import 'package:social_media_app/core/cache/services/local_snapshot_store.dart';
 import 'package:social_media_app/features/single_chats/models/chat_user_model.dart';
 import 'package:social_media_app/features/single_chats/services/chat_services.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../../core/supabase/supabase_provider.dart';
 import '../../../auth/handler/auth_exception_handler.dart';
 part 'chats_state.dart';
 
@@ -13,7 +13,7 @@ const int kMaxCachedChatsSnapshot = 50;
 
 class ChatsCubit extends Cubit<ChatsState> {
   final ChatServices _chatServices;
-  final _currentUserId = Supabase.instance.client.auth.currentUser!.id;
+  final _currentUserId = SupabaseProvider.id;
   StreamSubscription? _chatsSubscription;
   StreamSubscription? _typingSubscription;
   Timer? _refreshDebounce;
