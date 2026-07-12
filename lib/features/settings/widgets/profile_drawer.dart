@@ -154,9 +154,7 @@ class ProfileDrawer extends StatelessWidget {
                         (route) => false,
                       );
                     } else if (state is AuthFailure) {
-                      ScaffoldMessenger.of(
-                        context,
-                      ).showSnackBar(SnackBar(content: Text(state.errMsg)));
+                      AppToast.error(state.errMsg);
                     }
                   },
                   buildWhen:

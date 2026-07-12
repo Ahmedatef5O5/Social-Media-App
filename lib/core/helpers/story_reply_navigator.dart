@@ -88,9 +88,7 @@ class StoryReplyNavigator {
     } catch (e) {
       if (context.mounted) {
         Navigator.of(context, rootNavigator: true).pop();
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Failed to open story: $e')));
+        AppToast.error('Failed to open story: $e');
       }
       await storiesCubit.close();
     }

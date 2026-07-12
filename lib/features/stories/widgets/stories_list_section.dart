@@ -27,9 +27,7 @@ class StoriesListSection extends StatelessWidget {
                 current is StoryVideoPickError,
         listener: (context, state) {
           if (state is StoriesError) {
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(SnackBar(content: Text('Error: ${state.message}')));
+            AppToast.error('Error: ${state.message}');
           }
           if (state is StoryVideoTooLong) {
             AppToast.warning(

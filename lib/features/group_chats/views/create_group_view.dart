@@ -108,9 +108,7 @@ class _CreateGroupViewState extends State<CreateGroupView> {
 
       if (mounted) Navigator.pop(context, group);
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Failed to create group: $e')));
+      AppToast.error('Failed to create group: $e');
     } finally {
       if (mounted) setState(() => _isCreating = false);
     }
