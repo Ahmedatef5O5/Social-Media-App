@@ -10,6 +10,9 @@ import 'package:social_media_app/features/comments/model/comment_attachment_draf
 import 'package:social_media_app/features/comments/model/comment_type.dart';
 import 'package:social_media_app/features/comments/widget/comment_voice_player.dart';
 
+import '../../../core/router/app_routes.dart';
+import '../../single_chats/widgets/full_screen_media_view.dart';
+
 class CommentAttachmentPreview extends StatelessWidget {
   const CommentAttachmentPreview({super.key});
 
@@ -68,18 +71,53 @@ class _PreviewThumbnail extends StatelessWidget {
 
     switch (attachment.type) {
       case CommentType.image:
-        return ClipRRect(
-          borderRadius: BorderRadius.circular(12),
-          child: Image.file(
-            attachment.localFile!,
-            width: size,
-            height: size,
-            fit: BoxFit.cover,
+        final heroTag = 'attachment_preview_${attachment.localFile!.path}';
+
+        return GestureDetector(
+          onTap: () {
+            Navigator.of(context, rootNavigator: true).pushNamed(
+              AppRoutes.fullScreenImageViewRoute,
+              arguments: {
+                'url': attachment.localFile!.path,
+                'tag': heroTag,
+                'isAsset': false,
+                'isLocalFile': true,
+              },
+            );
+          },
+          child: Hero(
+            tag: heroTag,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Image.file(
+                attachment.localFile!,
+                width: size,
+                height: size,
+                fit: BoxFit.cover,
+              ),
+            ),
           ),
         );
 
       case CommentType.video:
-        return _VideoThumbnail(file: attachment.localFile!, size: size);
+        return GestureDetector(
+          onTap: () {
+            final videoPath =
+                attachment.localFile?.path ?? attachment.remoteUrl;
+            if (videoPath != null) {
+              Navigator.of(context, rootNavigator: true).push(
+                MaterialPageRoute(
+                  builder:
+                      (_) => FullScreenMediaView(
+                        videoUrl: videoPath,
+                        isLocal: attachment.localFile != null,
+                      ),
+                ),
+              );
+            }
+          },
+          child: _VideoThumbnail(file: attachment.localFile!, size: size),
+        );
 
       case CommentType.gif:
       case CommentType.sticker:
