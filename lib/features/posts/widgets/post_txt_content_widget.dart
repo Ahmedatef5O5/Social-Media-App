@@ -14,6 +14,7 @@ class PostTxtContentWidget extends StatelessWidget {
         ? Padding(
           padding: const EdgeInsets.symmetric(horizontal: 10),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const Gap(4),
               CustomLinkifyText(

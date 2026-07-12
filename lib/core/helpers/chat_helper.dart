@@ -1,10 +1,10 @@
 import 'dart:ui';
+import 'package:intl/intl.dart' show Bidi;
 
 class ChatHelper {
   static bool isArabic(String text) {
     if (text.trim().isEmpty) return false;
-    final firstCharUnit = text.trim().codeUnitAt(0);
-    return firstCharUnit >= 0x0600 && firstCharUnit <= 0x06FF;
+    return Bidi.detectRtlDirectionality(text);
   }
 
   static TextDirection getTextDirection(String text) {
