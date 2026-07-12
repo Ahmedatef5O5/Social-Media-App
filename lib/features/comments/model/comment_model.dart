@@ -1,4 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../core/mentions/models/mention_ref.dart';
 import 'comment_type.dart';
 
 class CommentModel {
@@ -9,8 +10,6 @@ class CommentModel {
   final String? authorName;
   final String? authorImageUrl;
   final String postId;
-
-  // ── Rich media (Comments upgrade) ──
   final CommentType commentType;
   final String? imageUrl;
   final String? videoUrl;
@@ -19,18 +18,16 @@ class CommentModel {
   final String? fileName;
   final int? fileSizeBytes;
   final int? durationSeconds;
-
   final String? imagePublicId;
   final String? videoPublicId;
   final String? voicePublicId;
   final String? filePublicId;
-
   final int replyCount;
   final int reactionCount;
-
-  final String? parentCommentId; // null = top-level, non-null = reply
+  final String? parentCommentId;
   final List<CommentModel> replies;
   final List<CommentReaction> reactions;
+  final List<MentionRef> mentions;
 
   const CommentModel({
     required this.id,
@@ -57,11 +54,13 @@ class CommentModel {
     this.parentCommentId,
     this.replies = const [],
     this.reactions = const [],
+    this.mentions = const [],
   });
 
   bool get isReply => parentCommentId != null;
   int get totalReactions => reactions.fold(0, (sum, r) => sum + r.count);
   bool get hasMedia => commentType != CommentType.text;
+  bool get hasMentions => mentions.isNotEmpty;
 
   Map<String, dynamic> toMap() {
     return <String, dynamic>{
@@ -87,6 +86,7 @@ class CommentModel {
   factory CommentModel.fromMap(Map<String, dynamic> map) {
     final authorName = map['users']?['name'] as String?;
     final authorImageUrl = map['users']?['image_url'] as String?;
+
     final List<CommentModel> replies =
         map['replies'] != null
             ? List<CommentModel>.from(
@@ -99,6 +99,13 @@ class CommentModel {
     final List<CommentReaction> reactions =
         map['comment_reactions'] != null
             ? parseReactions(map['comment_reactions'] as List<dynamic>)
+            : [];
+
+    final List<MentionRef> mentions =
+        map['comment_mentions'] != null
+            ? (map['comment_mentions'] as List<dynamic>)
+                .map((m) => MentionRef.fromMap(m as Map<String, dynamic>))
+                .toList()
             : [];
 
     return CommentModel(
@@ -126,6 +133,7 @@ class CommentModel {
       parentCommentId: map['parent_comment_id'] as String?,
       replies: replies,
       reactions: reactions,
+      mentions: mentions,
     );
   }
 
@@ -154,6 +162,7 @@ class CommentModel {
     String? parentCommentId,
     List<CommentModel>? replies,
     List<CommentReaction>? reactions,
+    List<MentionRef>? mentions,
   }) {
     return CommentModel(
       id: id ?? this.id,
@@ -180,6 +189,7 @@ class CommentModel {
       parentCommentId: parentCommentId ?? this.parentCommentId,
       replies: replies ?? this.replies,
       reactions: reactions ?? this.reactions,
+      mentions: mentions ?? this.mentions,
     );
   }
 
@@ -208,6 +218,7 @@ class CommentModel {
     'parent_comment_id': parentCommentId,
     'replies': replies.map((reply) => reply.toCacheJson()).toList(),
     'reactions': reactions.map((reaction) => reaction.toMap()).toList(),
+    'mentions': mentions.map((mention) => mention.toCacheJson()).toList(),
   };
 
   factory CommentModel.fromCacheJson(Map<String, dynamic> map) {
@@ -246,6 +257,13 @@ class CommentModel {
               .map(
                 (reaction) =>
                     CommentReaction.fromMap(reaction as Map<String, dynamic>),
+              )
+              .toList(),
+      mentions:
+          (map['mentions'] as List<dynamic>? ?? [])
+              .map(
+                (mention) =>
+                    MentionRef.fromCacheJson(mention as Map<String, dynamic>),
               )
               .toList(),
     );

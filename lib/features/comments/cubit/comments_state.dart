@@ -59,3 +59,9 @@ class ComposerUploadError extends CommentsState {
 
   ComposerUploadError(this.message);
 }
+
+// ── Sorted comments list (Functional Sorting & Filters) ──
+
+class CommentsListLoading extends CommentsState {}
+
+class CommentsListLoaded extends CommentsState {}

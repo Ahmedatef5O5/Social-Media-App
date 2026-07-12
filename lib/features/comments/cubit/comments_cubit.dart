@@ -10,9 +10,11 @@ import '../../notifications/repository/notifications_repository.dart';
 import '../events/comment_event_bus.dart';
 import '../events/comment_events.dart';
 import '../model/comment_attachment_draft.dart';
+import '../../../core/mentions/models/mention_ref.dart';
 import '../model/comment_model.dart';
-import '../../posts/model/post_model.dart';
+import '../model/comment_sort_option.dart';
 import '../model/comment_type.dart';
+import '../../posts/model/post_model.dart';
 import '../services/comments_service.dart';
 part 'comments_state.dart';
 
@@ -78,10 +80,66 @@ class CommentsCubit extends Cubit<CommentsState> {
 
   void cancelUpload() => _uploadCancelToken?.cancel();
 
+  List<CommentModel> comments = [];
+  CommentSortOption currentSort = CommentSortOption.newest;
+  bool isLoadingComments = true;
+
+  Future<void> loadComments({
+    required String postId,
+    CommentSortOption? sort,
+  }) async {
+    final targetSort = sort ?? currentSort;
+    currentSort = targetSort;
+    isLoadingComments = true;
+    emit(CommentsListLoading());
+
+    try {
+      comments = await _commentsService.getComments(
+        postId: postId,
+        sort: targetSort,
+      );
+      isLoadingComments = false;
+      emit(CommentsListLoaded());
+    } catch (e) {
+      isLoadingComments = false;
+      debugPrint('Error loading comments: $e');
+      final isOffline = await ConnectivityBannerController.notifyIfOffline();
+      emit(CommentError(e.toString(), isConnectivityError: isOffline));
+    }
+  }
+
+  void _insertCommentLocally(CommentModel comment, String? parentId) {
+    if (parentId == null) {
+      comments =
+          currentSort == CommentSortOption.newest
+              ? [comment, ...comments]
+              : [...comments, comment];
+    } else {
+      comments =
+          comments.map((c) => _attachReply(c, parentId, comment)).toList();
+    }
+  }
+
+  CommentModel _attachReply(
+    CommentModel node,
+    String parentId,
+    CommentModel reply,
+  ) {
+    if (node.id == parentId) {
+      return node.copyWith(replies: [...node.replies, reply]);
+    }
+    if (node.replies.isEmpty) return node;
+    return node.copyWith(
+      replies:
+          node.replies.map((r) => _attachReply(r, parentId, reply)).toList(),
+    );
+  }
+
   Future<void> addComment({
     required PostModel post,
-    required String commentText,
+    String commentText = '',
     String? parentCommentId,
+    List<MentionRef> mentions = const [],
   }) async {
     final attachment = pendingAttachment;
     final trimmedText = commentText.trim();
@@ -171,9 +229,11 @@ class CommentsCubit extends Cubit<CommentsState> {
         fileName: fileName,
         fileSizeBytes: fileSizeBytes,
         durationSeconds: durationSeconds,
+        mentions: mentions,
       );
 
       clearAttachment();
+      _insertCommentLocally(newComment, resolvedParentId);
       emit(CommentOptimisticAdded(post.id, newComment, parentCommentId));
 
       _eventBus.emit(
@@ -203,6 +263,7 @@ class CommentsCubit extends Cubit<CommentsState> {
         videoPublicId: videoPublicId,
         voicePublicId: voicePublicId,
         filePublicId: filePublicId,
+        mentions: mentions,
       );
       _resolvedIds[tempId] = realId;
       _pendingCommentIds.remove(tempId);
