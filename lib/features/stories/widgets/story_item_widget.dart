@@ -130,8 +130,6 @@ class _StoryItemWidgetState extends State<StoryItemWidget> {
               alignment: Alignment.center,
               children: [
                 _buildAvatarCircle(context, currentUserId),
-                // 🆕 badge الـ "+" — بس لما يكون عندنا استوريهات فعلاً
-                // (لو مفيش، الدايرة نفسها هي زرار الإضافة زي القديم)
                 if (_hasOwnStories)
                   Positioned(
                     right: -2,
@@ -169,7 +167,6 @@ class _StoryItemWidgetState extends State<StoryItemWidget> {
   }
 
   Widget _buildAvatarCircle(BuildContext context, String? currentUserId) {
-    // ── حالة: تايل المستخدم نفسه وعنده استوريهات فعّالة ──
     if (_hasOwnStories) {
       final currentUser = context.read<HomeCubit>().currentUserData;
       return AppAvatar(
@@ -180,7 +177,6 @@ class _StoryItemWidgetState extends State<StoryItemWidget> {
       );
     }
 
-    // ── حالة: "Share Story" (مفيش استوريهات، أو ده تايل مستخدم تاني) ──
     return Container(
       height: 50,
       width: 50,

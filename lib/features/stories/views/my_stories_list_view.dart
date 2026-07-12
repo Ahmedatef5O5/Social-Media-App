@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:gap/gap.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
 import '../cubit/my_stories_cubit/my_stories_cubit.dart';
@@ -9,7 +10,7 @@ import '../model/story_model.dart';
 import '../widgets/my_story_tile.dart';
 import '../widgets/story_delete_dialog.dart';
 
-class MyStoriesListView extends StatelessWidget {
+class MyStoriesListView extends StatefulWidget {
   final StoriesCubit storiesCubit;
   final List<StoryModel> myStories;
 
@@ -20,15 +21,25 @@ class MyStoriesListView extends StatelessWidget {
   });
 
   @override
+  State<MyStoriesListView> createState() => _MyStoriesListViewState();
+}
+
+class _MyStoriesListViewState extends State<MyStoriesListView> {
+  Offset _fabPosition = Offset.zero;
+  bool _isFabPositionInitialized = false;
+
+  @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return BlocProvider(
       create:
           (_) => MyStoriesCubit(
-            initialStories: myStories,
-            storiesCubit: storiesCubit,
+            initialStories: widget.myStories,
+            storiesCubit: widget.storiesCubit,
           ),
       child: BlocListener<StoriesCubit, StoriesState>(
-        bloc: storiesCubit,
+        bloc: widget.storiesCubit,
         listenWhen:
             (_, current) =>
                 current is StoryImagePicked || current is StoryVideoPicked,
@@ -36,14 +47,14 @@ class MyStoriesListView extends StatelessWidget {
           if (state is StoryImagePicked) {
             StoryCreationLauncher.navigateToPreview(
               context: context,
-              storiesCubit: storiesCubit,
+              storiesCubit: widget.storiesCubit,
               file: state.file,
               isVideo: false,
             );
           } else if (state is StoryVideoPicked) {
             StoryCreationLauncher.navigateToPreview(
               context: context,
-              storiesCubit: storiesCubit,
+              storiesCubit: widget.storiesCubit,
               file: state.file,
               isVideo: true,
               videoDuration: state.videoDuration,
@@ -51,59 +62,155 @@ class MyStoriesListView extends StatelessWidget {
           }
         },
         child: Scaffold(
-          appBar: AppBar(title: const Text('My Stories')),
-          body: BlocConsumer<MyStoriesCubit, MyStoriesState>(
-            listener: (context, state) {
-              final loaded = state as MyStoriesLoaded;
-              if (loaded.stories.isEmpty) Navigator.pop(context);
-            },
-            builder: (context, state) {
-              final loaded = state as MyStoriesLoaded;
-
-              if (loaded.stories.isEmpty) {
-                return const Center(child: CustomLoadingIndicator());
+          backgroundColor: theme.scaffoldBackgroundColor,
+          appBar: AppBar(
+            elevation: 0,
+            scrolledUnderElevation: 0,
+            backgroundColor: theme.scaffoldBackgroundColor,
+            leading: InkWell(
+              onTap: () => Navigator.of(context).pop(),
+              borderRadius: BorderRadius.circular(50),
+              child: Icon(
+                Icons.arrow_back_ios_new_rounded,
+                color: theme.primaryColor,
+                size: 22,
+              ),
+            ),
+            title: Text(
+              'My Stories',
+              style: theme.textTheme.titleMedium!.copyWith(
+                color: theme.primaryColor,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 0.5,
+                fontSize: 20,
+              ),
+            ),
+            actions: [
+              IconButton(
+                icon: Icon(Icons.more_vert_rounded, color: theme.primaryColor),
+                onPressed: () {},
+              ),
+              const Gap(8),
+            ],
+          ),
+          body: LayoutBuilder(
+            builder: (context, constraints) {
+              if (!_isFabPositionInitialized) {
+                _fabPosition = Offset(
+                  constraints.maxWidth - 60 - 24,
+                  constraints.maxHeight - 60 - 32,
+                );
+                _isFabPositionInitialized = true;
               }
-
-              return ListView.separated(
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                itemCount: loaded.stories.length,
-                separatorBuilder: (_, __) => const Divider(height: 1),
-                itemBuilder: (context, index) {
-                  final story = loaded.stories[index];
-                  return MyStoryTile(
-                    story: story,
-                    stat: loaded.statsByStoryId[story.id],
-                    isDeleting: loaded.deletingStoryId == story.id,
-                    onTap:
-                        () => Navigator.of(
-                          context,
-                          rootNavigator: true,
-                        ).pushNamed(
-                          AppRoutes.storyDisplayViewRoute,
-                          arguments: {
-                            'storiesCubit': storiesCubit,
-                            'allUserGroups': [loaded.stories],
-                            'initialGroupIndex': 0,
-                            'initialStoryIndex': index,
-                          },
-                        ),
-                    onDelete: () async {
-                      final confirm = await showDeleteStoryDialog(context);
-                      if (confirm == true && context.mounted) {
-                        context.read<MyStoriesCubit>().deleteStory(story.id);
-                      }
+              return Stack(
+                children: [
+                  BlocConsumer<MyStoriesCubit, MyStoriesState>(
+                    listener: (context, state) {
+                      final loaded = state as MyStoriesLoaded;
+                      if (loaded.stories.isEmpty) Navigator.pop(context);
                     },
-                  );
-                },
+                    builder: (context, state) {
+                      final loaded = state as MyStoriesLoaded;
+
+                      if (loaded.stories.isEmpty) {
+                        return const Center(child: CustomLoadingIndicator());
+                      }
+
+                      return ListView.builder(
+                        padding: const EdgeInsets.only(top: 12, bottom: 100),
+                        itemCount: loaded.stories.length,
+                        itemBuilder: (context, index) {
+                          final story = loaded.stories[index];
+                          return MyStoryTile(
+                            story: story,
+                            stat: loaded.statsByStoryId[story.id],
+                            isDeleting: loaded.deletingStoryId == story.id,
+                            onTap:
+                                () => Navigator.of(
+                                  context,
+                                  rootNavigator: true,
+                                ).pushNamed(
+                                  AppRoutes.storyDisplayViewRoute,
+                                  arguments: {
+                                    'storiesCubit': widget.storiesCubit,
+                                    'allUserGroups': [loaded.stories],
+                                    'initialGroupIndex': 0,
+                                    'initialStoryIndex': index,
+                                  },
+                                ),
+                            onDelete: () async {
+                              final confirm = await showDeleteStoryDialog(
+                                context,
+                              );
+                              if (confirm == true && context.mounted) {
+                                context.read<MyStoriesCubit>().deleteStory(
+                                  story.id,
+                                );
+                              }
+                            },
+                          );
+                        },
+                      );
+                    },
+                  ),
+
+                  Positioned(
+                    left: _fabPosition.dx,
+                    top: _fabPosition.dy,
+                    child: GestureDetector(
+                      onPanUpdate: (details) {
+                        setState(() {
+                          _fabPosition = Offset(
+                            (_fabPosition.dx + details.delta.dx).clamp(
+                              16.0,
+                              constraints.maxWidth - 60 - 16.0,
+                            ),
+                            (_fabPosition.dy + details.delta.dy).clamp(
+                              16.0,
+                              constraints.maxHeight - 60 - 16.0,
+                            ),
+                          );
+                        });
+                      },
+                      onTap: () {
+                        StoryCreationLauncher.openPicker(
+                          context,
+                          widget.storiesCubit,
+                        );
+                      },
+                      child: _buildDraggableFAB(theme),
+                    ),
+                  ),
+                ],
               );
             },
           ),
-          floatingActionButton: FloatingActionButton(
-            onPressed:
-                () => StoryCreationLauncher.openPicker(context, storiesCubit),
-            child: const Icon(Icons.add),
-          ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildDraggableFAB(ThemeData theme) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 100),
+      width: 60,
+      height: 60,
+      decoration: BoxDecoration(
+        color: theme.primaryColor,
+        shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(
+            color: theme.primaryColor.withValues(alpha: 0.4),
+            blurRadius: 15,
+            spreadRadius: 2,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: const Icon(
+        Icons.add_to_photos_rounded,
+        color: Colors.white,
+        size: 26,
       ),
     );
   }

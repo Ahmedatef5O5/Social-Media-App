@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:gap/gap.dart';
 import '../../../core/cache/utils/cloudinary_url_extensions.dart';
 import '../../../core/helpers/formatted_date.dart';
 import '../../../core/themes/app_colors.dart';
@@ -24,66 +25,130 @@ class MyStoryTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final viewCount = stat?.viewCount ?? 0;
     final reactions = stat?.reactions ?? const [];
 
-    return Opacity(
+    return AnimatedOpacity(
+      duration: const Duration(milliseconds: 300),
       opacity: isDeleting ? 0.4 : 1.0,
-      child: ListTile(
-        onTap: isDeleting ? null : onTap,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-        leading: _buildThumbnail(),
-        title: Text(
-          _titleFor(story),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: Theme.of(context).textTheme.titleSmall,
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+        decoration: BoxDecoration(
+          color: isDark ? theme.colorScheme.surface : Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
-        subtitle: Padding(
-          padding: const EdgeInsets.only(top: 4),
-          child: Row(
-            children: [
-              Text(
-                FormattedDate.getFormattedDate(story.createdAt, isShort: true),
-                style: Theme.of(
-                  context,
-                ).textTheme.bodySmall?.copyWith(color: Colors.grey),
+        child: Material(
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(18),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(18),
+            onTap: isDeleting ? null : onTap,
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Row(
+                children: [
+                  _buildThumbnail(),
+                  const Gap(14),
+
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          _titleFor(story),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 15,
+                          ),
+                        ),
+                        const Gap(6),
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.access_time_rounded,
+                              size: 14,
+                              color: AppColors.grey5,
+                            ),
+                            const Gap(4),
+                            Text(
+                              FormattedDate.getFormattedDate(
+                                story.createdAt,
+                                isShort: false,
+                              ),
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: AppColors.grey6,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const Gap(6),
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.visibility_rounded,
+                              size: 16,
+                              color: theme.primaryColor,
+                            ),
+                            const Gap(4),
+                            Text(
+                              '$viewCount',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                color: theme.primaryColor,
+                                fontSize: 13,
+                              ),
+                            ),
+                            if (reactions.isNotEmpty) ...[
+                              const Gap(12),
+                              Expanded(child: _buildReactionsChip(reactions)),
+                            ],
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  if (isDeleting)
+                    const Padding(
+                      padding: EdgeInsets.all(12.0),
+                      child: SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                    )
+                  else
+                    IconButton(
+                      onPressed: onDelete,
+                      icon: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.red.withValues(alpha: 0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.delete_outline_rounded,
+                          color: Colors.redAccent,
+                          size: 20,
+                        ),
+                      ),
+                    ),
+                ],
               ),
-              const SizedBox(width: 10),
-              Icon(
-                Icons.remove_red_eye_outlined,
-                size: 14,
-                color: Colors.grey.shade500,
-              ),
-              const SizedBox(width: 3),
-              Text(
-                '$viewCount',
-                style: Theme.of(
-                  context,
-                ).textTheme.bodySmall?.copyWith(color: Colors.grey),
-              ),
-              if (reactions.isNotEmpty) ...[
-                const SizedBox(width: 10),
-                Expanded(child: _buildReactionsChip(reactions)),
-              ],
-            ],
+            ),
           ),
         ),
-
-        trailing:
-            isDeleting
-                ? const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-                : IconButton(
-                  icon: const Icon(
-                    Icons.delete_outline,
-                    color: Colors.redAccent,
-                  ),
-                  onPressed: onDelete,
-                ),
       ),
     );
   }
@@ -100,13 +165,13 @@ class MyStoryTile extends StatelessWidget {
 
   Widget _buildThumbnail() {
     return SizedBox(
-      width: 52,
-      height: 52,
+      width: 60,
+      height: 60,
       child: Stack(
         fit: StackFit.expand,
         children: [
           ClipRRect(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(12),
             child: _buildThumbnailContent(),
           ),
           if (story.storyType == StoryType.video)
@@ -125,8 +190,8 @@ class MyStoryTile extends StatelessWidget {
       case StoryType.image:
         return CachedCloudinaryImage(
           secureUrl: story.imageUrl!,
-          width: 52,
-          height: 52,
+          width: 60,
+          height: 60,
           fit: BoxFit.cover,
         );
       case StoryType.video:
@@ -137,8 +202,8 @@ class MyStoryTile extends StatelessWidget {
             thumbUrl != null
                 ? CachedCloudinaryImage(
                   secureUrl: thumbUrl,
-                  width: 52,
-                  height: 52,
+                  width: 60,
+                  height: 60,
                   fit: BoxFit.cover,
                   errorWidget:
                       (_, __) => Container(color: Colors.grey.shade800),
@@ -148,7 +213,7 @@ class MyStoryTile extends StatelessWidget {
               child: Icon(
                 Icons.play_arrow_rounded,
                 color: Colors.white70,
-                size: 20,
+                size: 22,
               ),
             ),
           ],
@@ -202,12 +267,16 @@ class _DurationBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
       decoration: BoxDecoration(
-        color: Colors.black87,
-        borderRadius: BorderRadius.circular(4),
+        color: Colors.black.withValues(alpha: 0.7),
+        borderRadius: BorderRadius.circular(6),
       ),
       child: Text(
         '$m:$s',
-        style: const TextStyle(color: Colors.white, fontSize: 8),
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 9,
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }
