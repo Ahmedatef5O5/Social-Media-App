@@ -205,6 +205,7 @@ abstract class CommentColumns {
   // ── Engagement counters, kept in sync by DB triggers ──
   static const String replyCount = 'reply_count';
   static const String reactionCount = 'reaction_count';
+  static const String relevanceScore = 'relevance_score';
 }
 
 // subClass for comment_mentions column table

@@ -3,13 +3,14 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 import 'package:social_media_app/core/constants/app_images.dart';
 import 'package:social_media_app/features/comments/cubit/comments_cubit.dart';
-import 'package:social_media_app/features/comments/widget/comment_attachment_picker_sheet.dart';
-import 'package:social_media_app/features/comments/widget/comment_attachment_preview.dart';
+import 'package:social_media_app/features/comments/model/comment_type.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/themes/app_colors.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
 import '../../posts/model/post_model.dart';
-import '../model/comment_type.dart';
+import 'comment_attachment_picker_sheet.dart';
+import 'comment_attachment_preview.dart';
+import '../../../core/mentions/mentions.dart';
 
 class SendCommentSection extends StatefulWidget {
   final PostModel post;
@@ -30,7 +31,8 @@ class SendCommentSection extends StatefulWidget {
 }
 
 class _SendCommentSectionState extends State<SendCommentSection> {
-  final TextEditingController _commentController = TextEditingController();
+  final MentionTextEditingController _commentController =
+      MentionTextEditingController();
 
   final FocusNode _focusNode = FocusNode();
   bool _hasText = false;
@@ -47,6 +49,7 @@ class _SendCommentSectionState extends State<SendCommentSection> {
   @override
   void didUpdateWidget(SendCommentSection old) {
     super.didUpdateWidget(old);
+    // When a reply target is set, focus the field automatically
     if (widget.replyingToCommentId != null &&
         old.replyingToCommentId != widget.replyingToCommentId) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -72,12 +75,15 @@ class _SendCommentSectionState extends State<SendCommentSection> {
 
     final userId = Supabase.instance.client.auth.currentUser?.id;
     if (userId == null) return;
+    final mentions = _commentController.validMentions;
 
     cubit.addComment(
       post: widget.post,
       commentText: textComment,
       parentCommentId: widget.replyingToCommentId,
+      mentions: mentions,
     );
+    _commentController.clearMentions();
     _commentController.clear();
     widget.onReplySent?.call();
   }
@@ -91,17 +97,14 @@ class _SendCommentSectionState extends State<SendCommentSection> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final isReplying = widget.replyingToCommentId != null;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
-
       children: [
         const CommentAttachmentPreview(),
         Row(
           crossAxisAlignment: CrossAxisAlignment.end,
-
           children: [
             Expanded(
               child: BlocConsumer<CommentsCubit, CommentsState>(
@@ -118,7 +121,6 @@ class _SendCommentSectionState extends State<SendCommentSection> {
                     );
                   }
                 },
-
                 builder: (context, state) {
                   final cubit = context.read<CommentsCubit>();
                   final isLoading = state is AddingComment || cubit.isUploading;
@@ -134,56 +136,27 @@ class _SendCommentSectionState extends State<SendCommentSection> {
                           onTap: isLoading ? null : _openAttachmentPicker,
                           child: Image.asset(
                             AppImages.attachmentIcon,
-                            width: 32,
-                            height: 32,
+                            width: 35,
+                            height: 35,
                             fit: BoxFit.cover,
-                            color: Theme.of(context).primaryColor,
+                            color: Theme.of(
+                              context,
+                            ).primaryColor.withValues(alpha: 2),
                           ),
                         ),
                         const Gap(5),
                         Expanded(
-                          child: TextField(
+                          child: MentionAwareTextField(
                             controller: _commentController,
-                            enabled: !isLoading && !isStickerOnly,
                             focusNode: _focusNode,
-                            minLines: 1,
-                            maxLines: 4,
-                            textCapitalization: TextCapitalization.sentences,
+                            enabled: !isLoading && !isStickerOnly,
+                            hintText:
+                                isStickerOnly
+                                    ? 'Sticker ready to send'
+                                    : isReplying
+                                    ? 'Reply to @${widget.replyingToAuthorName}...'
+                                    : 'Write a comment...',
                             onSubmitted: (_) => _submitComment(),
-
-                            decoration: InputDecoration(
-                              hintText:
-                                  isStickerOnly
-                                      ? 'Sticker ready to send'
-                                      : isReplying
-                                      ? 'Reply to @${widget.replyingToAuthorName}...'
-                                      : 'Write a comment...',
-                              hintStyle: theme.textTheme.bodyMedium?.copyWith(
-                                color: AppColors.grey5,
-                                fontWeight: FontWeight.w400,
-                                fontSize: 15,
-                              ),
-                              filled: true,
-                              fillColor: theme
-                                  .colorScheme
-                                  .surfaceContainerHighest
-                                  .withValues(alpha: 0.4),
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 8,
-                              ),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(25),
-                                borderSide: BorderSide.none,
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(25),
-                                borderSide: BorderSide(
-                                  color: Theme.of(context).primaryColor,
-                                  width: 1.6,
-                                ),
-                              ),
-                            ),
                           ),
                         ),
                         const Gap(8),

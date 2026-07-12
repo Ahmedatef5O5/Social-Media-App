@@ -40,6 +40,19 @@ class CommentsCubit extends Cubit<CommentsState> {
 
   String resolveId(String id) => _resolvedIds[id] ?? id;
 
+  void _replaceCommentIdEverywhere(String tempId, String realId) {
+    comments = comments.map((c) => _replaceId(c, tempId, realId)).toList();
+  }
+
+  CommentModel _replaceId(CommentModel node, String tempId, String realId) {
+    final updated = node.id == tempId ? node.copyWith(id: realId) : node;
+    if (updated.replies.isEmpty) return updated;
+    return updated.copyWith(
+      replies:
+          updated.replies.map((r) => _replaceId(r, tempId, realId)).toList(),
+    );
+  }
+
   void toggleReplies(String commentId) {
     if (collapsedComments.contains(commentId)) {
       collapsedComments.remove(commentId);
@@ -266,6 +279,7 @@ class CommentsCubit extends Cubit<CommentsState> {
         mentions: mentions,
       );
       _resolvedIds[tempId] = realId;
+      _replaceCommentIdEverywhere(tempId, realId);
       _pendingCommentIds.remove(tempId);
       final queuedEmoji = _pendingReactions.remove(tempId);
       if (queuedEmoji != null) {

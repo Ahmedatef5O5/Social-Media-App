@@ -7,8 +7,12 @@ import 'package:social_media_app/features/comments/widget/comment_media_bubble.d
 import 'package:social_media_app/features/comments/widget/comment_reaction_summary.dart';
 import 'package:social_media_app/features/comments/widget/comment_reactions_bottom_sheet.dart';
 import 'package:social_media_app/features/comments/widget/thread_painter.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/helpers/comment_helper.dart';
-import '../../../core/widgets/custom_linkify_text.dart';
+import '../../../core/mentions/mentions.dart';
+import '../../../core/router/app_routes.dart';
+import '../../home/cubits/home_cubit/home_cubit.dart';
+import '../model/comment_type.dart';
 import 'comment_constants.dart';
 import 'comment_avatar.dart';
 import 'comment_action_chip.dart';
@@ -114,10 +118,8 @@ class _CommentWidgetState extends State<CommentWidget>
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
+      backgroundColor: Colors.transparent,
+
       builder:
           (context) =>
               CommentReactionsBottomSheet(commentId: widget.comment.id),
@@ -132,13 +134,6 @@ class _CommentWidgetState extends State<CommentWidget>
 
   void _applyReaction(String emoji) {
     HapticFeedback.selectionClick();
-
-    final cubit = context.read<CommentsCubit>();
-    final resolvedId = cubit.resolveId(widget.comment.id);
-
-    if (resolvedId == widget.comment.id &&
-        cubit.resolveId(widget.comment.id) == widget.comment.id) {}
-
     setState(() {
       final updated = List<CommentReaction>.from(_reactions);
       final myIdx = updated.indexWhere((r) => r.reactedByMe);
@@ -198,6 +193,24 @@ class _CommentWidgetState extends State<CommentWidget>
     }
   }
 
+  void _openMentionPreview(String userId, String name) {
+    final currentUserId = Supabase.instance.client.auth.currentUser!.id;
+    final navController = context.read<HomeCubit>().navController;
+
+    if (userId == currentUserId) {
+      if (navController != null) {
+        Navigator.of(context).popUntil((route) => route.isFirst);
+        navController.jumpToTab(3);
+      }
+    } else {
+      Navigator.of(context).pop();
+      Navigator.of(
+        context,
+        rootNavigator: true,
+      ).pushNamed(AppRoutes.profileViewRoute, arguments: userId);
+    }
+  }
+
   @override
   void dispose() {
     _overlayEntry?.remove();
@@ -234,13 +247,16 @@ class _CommentWidgetState extends State<CommentWidget>
     final theme = Theme.of(context);
     final hasReplies = widget.comment.replies.isNotEmpty;
     final replyCount = widget.comment.replies.length;
-
     final int visualDepth = widget.depth > 2 ? 2 : widget.depth;
     final double aR = avatarRadius(visualDepth);
     final double indentWidth = visualDepth * kIndent;
     final double avatarCenterX = indentWidth + aR;
     final bool isMediaOnlyComment =
         widget.comment.hasMedia && widget.comment.text.isEmpty;
+
+    final currentUserId = Supabase.instance.client.auth.currentUser?.id;
+    final navController = context.read<HomeCubit>().navController;
+    final bool isMe = widget.comment.authorId == currentUserId;
 
     return AnimatedBuilder(
       animation: _anim,
@@ -327,14 +343,30 @@ class _CommentWidgetState extends State<CommentWidget>
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
                                       children: [
-                                        Text(
-                                          widget.comment.authorName ?? 'User',
-                                          style: theme.textTheme.labelMedium
-                                              ?.copyWith(
-                                                fontWeight: FontWeight.w700,
-                                                color: theme.primaryColor,
-                                                fontSize: 13,
-                                              ),
+                                        GestureDetector(
+                                          onTap: () {
+                                            if (isMe) {
+                                              navController?.jumpToTab(3);
+                                            } else {
+                                              Navigator.of(
+                                                context,
+                                                rootNavigator: true,
+                                              ).pushNamed(
+                                                AppRoutes.profileViewRoute,
+                                                arguments:
+                                                    widget.comment.authorId,
+                                              );
+                                            }
+                                          },
+                                          child: Text(
+                                            widget.comment.authorName ?? 'User',
+                                            style: theme.textTheme.labelMedium
+                                                ?.copyWith(
+                                                  fontWeight: FontWeight.w700,
+                                                  color: theme.primaryColor,
+                                                  fontSize: 13,
+                                                ),
+                                          ),
                                         ),
                                         const SizedBox(height: 3),
                                         if (widget.comment.hasMedia) ...[
@@ -344,13 +376,30 @@ class _CommentWidgetState extends State<CommentWidget>
                                           const SizedBox(height: 6),
                                         ],
                                         if (widget.comment.text.isNotEmpty)
-                                          CustomLinkifyText(
-                                            text: widget.comment.text,
-                                            style: theme.textTheme.bodyMedium
-                                                ?.copyWith(
-                                                  fontSize: 14,
-                                                  height: 1.4,
-                                                ),
+                                          ConstrainedBox(
+                                            constraints: BoxConstraints(
+                                              minWidth: switch (widget
+                                                  .comment
+                                                  .commentType) {
+                                                CommentType.image ||
+                                                CommentType.video => 180,
+                                                CommentType.gif => 160,
+                                                CommentType.sticker => 96,
+                                                CommentType.voice => 195,
+                                                CommentType.file => 285,
+                                                CommentType.text => 0,
+                                              },
+                                            ),
+                                            child: MentionRichText(
+                                              text: widget.comment.text,
+                                              mentions: widget.comment.mentions,
+                                              onMentionTap: _openMentionPreview,
+                                              style: theme.textTheme.bodyMedium
+                                                  ?.copyWith(
+                                                    fontSize: 14,
+                                                    height: 1.4,
+                                                  ),
+                                            ),
                                           ),
                                       ],
                                     ),
