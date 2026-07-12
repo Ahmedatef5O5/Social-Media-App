@@ -41,18 +41,26 @@ class _CachedCloudinaryImageState extends State<CachedCloudinaryImage> {
       return widget.secureUrl;
     }
 
-    if (!widget.secureUrl.contains('q_auto')) {
-      return widget.secureUrl.replaceFirst(
-        '/upload/',
-        '/upload/q_auto,f_auto/',
-      );
+    String finalUrl = widget.secureUrl;
+
+    if (!finalUrl.contains('q_auto')) {
+      finalUrl = finalUrl.replaceFirst('/upload/', '/upload/q_auto,f_auto/');
     }
 
-    return widget.secureUrl;
+    finalUrl = finalUrl
+        .replaceAll(RegExp(r'\.heic$', caseSensitive: false), '.jpg')
+        .replaceAll(RegExp(r'\.heif$', caseSensitive: false), '.jpg');
+
+    return finalUrl;
   }
 
   @override
   void initState() {
+    if (!widget.secureUrl.startsWith('assets/')) {
+      _localPathFuture = context.read<MediaCacheRepository>().resolveLocalPath(
+        _optimizedUrl,
+      );
+    }
     super.initState();
     _resolve();
   }
@@ -87,6 +95,20 @@ class _CachedCloudinaryImageState extends State<CachedCloudinaryImage> {
 
   @override
   Widget build(BuildContext context) {
+    if (widget.secureUrl.isEmpty || widget.secureUrl == 'asset:default') {
+      return _buildDefaultPlaceholder();
+    }
+
+    if (widget.secureUrl.startsWith('assets/')) {
+      return Image.asset(
+        widget.secureUrl,
+        fit: widget.fit,
+        width: widget.width,
+        height: widget.height,
+        errorBuilder:
+            (context, error, stackTrace) => _buildError(context, error),
+      );
+    }
     if (widget.secureUrl.isEmpty) {
       return _buildError(context, StateError('empty secureUrl'));
     }
