@@ -4,7 +4,7 @@ import 'package:dio/dio.dart' as dio_pkg;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
-import '../../../../core/cache/services/local_snapshot_store.dart';
+import '../../../../core/cache/services/messages_snapshot_cache.dart';
 import '../../../../core/connectivity/services/connectivity_banner_controller.dart';
 import '../../../../core/helpers/chat_helper.dart';
 import '../../../../core/services/fcm_services.dart';
@@ -22,14 +22,17 @@ part 'chat_reactions_mixin.dart';
 part 'chat_selection_mixin.dart';
 part 'chat_presence_mixin.dart';
 
-const int kMaxCachedMessagesSnapshot = 60;
-
 class ChatDetailsCubit extends Cubit<ChatDetailsState>
     with ChatReactionsMixin, ChatSelectionMixin, ChatPresenceMixin {
   @override
   final ChatServices _chatServices;
   final String receiverName;
   final String? senderImageUrl;
+
+  static final _snapshotCache = MessagesSnapshotCache<MessageModel>(
+    toCacheJson: (m) => m.toCacheJson(),
+    fromJson: MessageModel.fromJson,
+  );
 
   final ValueNotifier<MessageModel?> replyToMessage =
       ValueNotifier<MessageModel?>(null);
@@ -134,27 +137,11 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
 
   @override
   void _persistMessagesSnapshot(String key, List<MessageModel> messages) {
-    unawaited(
-      LocalSnapshotStore.instance.saveList(
-        key,
-        messages
-            .take(kMaxCachedMessagesSnapshot)
-            .map((m) => m.toCacheJson())
-            .toList(),
-      ),
-    );
+    _snapshotCache.persist(key, messages);
   }
 
   List<MessageModel> _readMessagesSnapshot(String key) {
-    try {
-      return LocalSnapshotStore.instance
-          .readList(key)
-          .map(MessageModel.fromJson)
-          .toList();
-    } catch (e) {
-      debugPrint('Failed to read messages snapshot from disk: $e');
-      return [];
-    }
+    return _snapshotCache.read(key);
   }
 
   Future<void> markAsRead({required String senderId}) async {

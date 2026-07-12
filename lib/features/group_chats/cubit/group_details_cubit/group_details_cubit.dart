@@ -4,8 +4,8 @@ import 'package:dio/dio.dart' as dio_pkg;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
-import 'package:social_media_app/core/cache/services/local_snapshot_store.dart';
 import 'package:social_media_app/core/connectivity/services/connectivity_banner_controller.dart';
+import '../../../../core/cache/services/messages_snapshot_cache.dart';
 import '../../../../core/services/supabase_storage_services.dart';
 import '../../../../core/supabase/supabase_provider.dart';
 import '../../../../core/utilities/supabase_constants.dart';
@@ -19,8 +19,6 @@ part 'group_messages_stream_mixin.dart';
 part 'group_reactions_mixin.dart';
 part 'group_media_upload_mixin.dart';
 
-const int kMaxCachedGroupMessagesSnapshot = 60;
-
 class GroupDetailsCubit extends Cubit<GroupDetailsState>
     with GroupMessagesStreamMixin, GroupReactionsMixin, GroupMediaUploadMixin {
   @override
@@ -29,6 +27,11 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState>
   final GroupModel group;
   @override
   final GroupListCubit groupListCubit;
+
+  static final _snapshotCache = MessagesSnapshotCache<GroupMessageModel>(
+    toCacheJson: (m) => m.toCacheJson(),
+    fromJson: GroupMessageModel.fromJson,
+  );
 
   GroupDetailsCubit(this._services, this.group, this.groupListCubit)
     : super(GroupDetailsLoading());
@@ -93,27 +96,11 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState>
 
   @override
   void _persistMessagesSnapshot(String key, List<GroupMessageModel> messages) {
-    unawaited(
-      LocalSnapshotStore.instance.saveList(
-        key,
-        messages
-            .take(kMaxCachedGroupMessagesSnapshot)
-            .map((m) => m.toCacheJson())
-            .toList(),
-      ),
-    );
+    return _snapshotCache.persist(key, messages);
   }
 
   List<GroupMessageModel> _readMessagesSnapshot(String key) {
-    try {
-      return LocalSnapshotStore.instance
-          .readList(key)
-          .map(GroupMessageModel.fromJson)
-          .toList();
-    } catch (e) {
-      debugPrint('Failed to read group messages snapshot from disk: $e');
-      return [];
-    }
+    return _snapshotCache.read(key);
   }
 
   @override
