@@ -379,7 +379,7 @@ class PostsCubit extends Cubit<PostsState> {
     }
   }
 
-  // ── Likes ──────────────────────────────────────────────────────────────────
+  // ── Likes & Saved posts ──────────────────────────────────────────────────────────────────
 
   Future<void> toggleReaction(PostModel post, {String emoji = 'like'}) async {
     if (state is! PostsLoaded) return;
@@ -473,6 +473,63 @@ class PostsCubit extends Cubit<PostsState> {
       emit(PostsLoaded(oldState.posts, DateTime.now()));
       debugPrint('Error toggling reaction: $e');
     }
+  }
+
+  Future<void> toggleSavePost(PostModel post) async {
+    if (state is! PostsLoaded) return;
+    final user = Supabase.instance.client.auth.currentUser;
+    final userId = user?.id;
+    if (userId == null) return;
+
+    final oldState = state as PostsLoaded;
+    final bool wasSaved = post.isSavedByMe;
+
+    final List<PostModel> updatedPosts =
+        oldState.posts.map((p) {
+          if (p.id != post.id) return p;
+          final newCount = wasSaved ? p.savedCount - 1 : p.savedCount + 1;
+          return p.copyWith(
+            isSavedByMe: !wasSaved,
+            savedCount: newCount < 0 ? 0 : newCount,
+          );
+        }).toList();
+
+    emit(PostsLoaded(updatedPosts, DateTime.now()));
+
+    try {
+      final isOffline = await ConnectivityBannerController.notifyIfOffline();
+      if (isOffline) {
+        emit(PostsLoaded(oldState.posts, DateTime.now()));
+        return;
+      }
+
+      await _postsServices.toggleSavePost(
+        postId: post.id,
+        userId: userId,
+        isCurrentlySaved: wasSaved,
+      );
+    } catch (e) {
+      emit(PostsLoaded(oldState.posts, DateTime.now()));
+      debugPrint('Error toggling saved post: $e');
+    }
+  }
+
+  void mergePostsIntoCache(List<PostModel> posts) {
+    if (posts.isEmpty || isClosed) return;
+
+    final List<PostModel> basePosts =
+        state is PostsLoaded ? (state as PostsLoaded).posts : cachedPosts;
+
+    final Map<String, PostModel> byId = {for (final p in basePosts) p.id: p};
+    for (final incoming in posts) {
+      byId[incoming.id] = incoming;
+    }
+
+    cachedPosts =
+        byId.values.toList()
+          ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
+    emit(PostsLoaded(cachedPosts, DateTime.now()));
   }
 
   void _listenToCommentEvents() {
