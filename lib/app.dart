@@ -31,6 +31,7 @@ import 'package:social_media_app/features/stories/cubit/stories_cubit/stories_cu
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'core/connectivity/widgets/connectivity_banner.dart';
 import 'core/services/global_group_call_listener.dart';
+import 'core/toast/app_toast_overlay.dart';
 import 'features/auth/cubit/auth_cubit/auth_cubit.dart';
 import 'features/posts/cubit/posts_cubit.dart';
 import 'features/single_chats/services/chat_services.dart';
@@ -215,6 +216,7 @@ class MyApp extends StatelessWidget {
                             textDirection: TextDirection.ltr,
                             child: ConnectivityBanner(),
                           ),
+                          const AppToastOverlay(),
                         ],
                       ),
                     ),
