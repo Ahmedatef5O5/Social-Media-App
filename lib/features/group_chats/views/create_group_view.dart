@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../core/toast/app_toast.dart';
 import '../cubit/group_list_cubit/group_list_cubit.dart';
 import '../services/group_chat_services.dart';
 import '../widgets/group_header_section_widget.dart';
@@ -74,16 +75,12 @@ class _CreateGroupViewState extends State<CreateGroupView> {
     final name = _nameController.text.trim();
 
     if (name.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a group name')),
-      );
+      AppToast.warning('Please enter a group name');
       return;
     }
 
     if (_selectedUserIds.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select at least one member')),
-      );
+      AppToast.warning('Please select at least one member');
       return;
     }
 

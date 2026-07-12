@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../core/toast/app_toast.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
 import '../cubit/group_list_cubit/group_list_cubit.dart';
 import '../cubit/group_members_cubit/group_members_cubit.dart';
@@ -104,12 +105,8 @@ class _GroupInfoViewState extends State<GroupInfoView> {
     } catch (e) {
       if (mounted) {
         Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to update photo: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+
+        AppToast.error('Failed to update photo: $e');
       }
     }
   }

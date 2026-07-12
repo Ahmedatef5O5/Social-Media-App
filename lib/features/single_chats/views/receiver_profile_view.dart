@@ -7,6 +7,7 @@ import 'package:social_media_app/core/widgets/custom_loading_indicator.dart';
 import 'package:social_media_app/features/single_chats/models/chat_user_model.dart';
 import 'package:social_media_app/features/single_chats/widgets/full_screen_media_view.dart';
 import '../../../core/router/app_routes.dart';
+import '../../../core/toast/app_toast.dart';
 import '../../../core/utilities/supabase_constants.dart';
 import '../../../core/widgets/custom_user_profile_image_section.dart';
 import '../../single_calls/cubits/single_call_cubit/call_cubit.dart';
@@ -291,12 +292,7 @@ class _ReceiverProfileViewState extends State<ReceiverProfileView> {
                           ),
                         );
                       } else if (type == 'voice') {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text("Playing audio..."),
-                            duration: Duration(seconds: 1),
-                          ),
-                        );
+                        AppToast.info('this feature is coming soon');
                       }
                     },
                     child: Container(

@@ -179,12 +179,6 @@ class _SingleUserStoryViewState extends State<SingleUserStoryView> {
                         onComposingStart: _pauseStory,
                         onComposingEnd: _resumeStory,
                         onSent: () {
-                          // ScaffoldMessenger.of(context).showSnackBar(
-                          //   const SnackBar(
-                          //     content: Text('Reply sent ✓'),
-                          //     duration: Duration(seconds: 1),
-                          //   ),
-                          // );
                           AppToast.info('Reply sent ✓');
                         },
                       ),

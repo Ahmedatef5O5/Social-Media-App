@@ -8,6 +8,7 @@ import 'package:social_media_app/core/themes/cubit/theme_cubit.dart';
 import 'package:social_media_app/features/auth/cubit/auth_cubit/auth_cubit.dart';
 import 'package:social_media_app/features/profile/cubits/profile_cubit/profile_cubit.dart';
 import 'package:social_media_app/features/settings/widgets/theme_picker_sheet_widget.dart';
+import '../../../core/toast/app_toast.dart';
 import '../cubit/settings_state.dart';
 import '../cubit/setttings_cubit.dart';
 
@@ -44,13 +45,7 @@ class _SettingsViewState extends State<SettingsView>
       child: BlocConsumer<SettingsCubit, SettingsState>(
         listenWhen: (previous, current) => current.errorMessage != null,
         listener: (context, state) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(state.errorMessage!),
-              backgroundColor: Colors.redAccent,
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
+          AppToast.error(state.errorMessage!);
         },
         builder: (context, settingsState) {
           return _buildScaffold(context, settingsState);
@@ -61,13 +56,8 @@ class _SettingsViewState extends State<SettingsView>
 
   void _showComingSoon(BuildContext context, String feature) {
     HapticFeedback.selectionClick();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('$feature is coming soon'),
-        behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 1),
-      ),
-    );
+
+    AppToast.info('$feature is coming soon');
   }
 
   Widget _buildScaffold(BuildContext context, SettingsState settingsState) {
@@ -631,18 +621,7 @@ class _SettingsViewState extends State<SettingsView>
                 BlocConsumer<AuthCubit, AuthState>(
                   listener: (context, state) {
                     if (state is AuthSignedOut) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            'Logged out successfully',
-                            style: Theme.of(context).textTheme.titleSmall!
-                                .copyWith(color: Colors.white),
-                          ),
-                          backgroundColor: Colors.redAccent,
-                          behavior: SnackBarBehavior.floating,
-                          duration: const Duration(seconds: 1),
-                        ),
-                      );
+                      AppToast.warning('Logged out successfully');
                       Navigator.of(
                         context,
                         rootNavigator: true,

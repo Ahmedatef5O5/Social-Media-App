@@ -4,6 +4,7 @@ import 'package:social_media_app/core/themes/app_colors.dart';
 import 'package:social_media_app/features/posts/cubit/posts_cubit.dart';
 import 'package:social_media_app/features/posts/model/post_model.dart';
 import '../../../core/constants/app_images.dart';
+import '../../../core/toast/app_toast.dart';
 import '../../../core/widgets/custom_confirmation_dialog.dart';
 
 class PostActionsMenu extends StatelessWidget {
@@ -79,36 +80,14 @@ class PostActionsMenu extends StatelessWidget {
                 Navigator.pop(ctx);
                 await postsCubit.deletePost(post.id);
                 if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        'Post deleted successfully',
-                        style: Theme.of(
-                          context,
-                        ).textTheme.titleSmall!.copyWith(color: Colors.white),
-                      ),
-                      backgroundColor: Colors.green,
-                      behavior: SnackBarBehavior.floating,
-                    ),
-                  );
+                  AppToast.info('Post deleted successfully');
                 }
               },
             ),
       );
     } else if (value == 'report') {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Post Reported successfully',
-              style: Theme.of(
-                context,
-              ).textTheme.titleSmall!.copyWith(color: Colors.white),
-            ),
-            backgroundColor: Colors.green,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        AppToast.info('Post Reported successfully');
       }
     }
   }

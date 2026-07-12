@@ -7,6 +7,7 @@ import 'package:social_media_app/features/auth/cubit/auth_cubit/auth_cubit.dart'
 import 'package:social_media_app/features/auth/widgets/sign_text_section.dart';
 import 'package:social_media_app/features/auth/widgets/social_sign_section.dart';
 import '../../../core/router/app_routes.dart';
+import '../../../core/toast/app_toast.dart';
 import '../../../core/utilities/app_formatters.dart';
 import '../../../core/utilities/app_validators.dart';
 
@@ -67,19 +68,7 @@ class _LoginViewWidgetState extends State<LoginViewWidget> {
               BlocConsumer<AuthCubit, AuthState>(
                 listener: (context, state) {
                   if (state is AuthSuccess) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          'Login Successfully',
-                          style: Theme.of(
-                            context,
-                          ).textTheme.titleSmall!.copyWith(color: Colors.white),
-                        ),
-                        backgroundColor: Colors.green,
-                        behavior: SnackBarBehavior.floating,
-                        duration: const Duration(seconds: 1),
-                      ),
-                    );
+                    AppToast.success('Login Successfully');
 
                     if (context.mounted) {
                       Navigator.of(
@@ -91,14 +80,7 @@ class _LoginViewWidgetState extends State<LoginViewWidget> {
                       );
                     }
                   } else if (state is AuthFailure) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(state.errMsg),
-                        backgroundColor: Colors.red,
-                        behavior: SnackBarBehavior.floating,
-                        duration: const Duration(seconds: 1),
-                      ),
-                    );
+                    AppToast.error(state.errMsg);
                   }
                 },
                 buildWhen:

@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:gal/gal.dart';
 import 'package:path_provider/path_provider.dart';
 
+import '../toast/app_toast.dart';
+
 class GalleryServices {
   static Future<void> saveMediaToGallery({
     required BuildContext context,
@@ -28,34 +30,14 @@ class GalleryServices {
       }
 
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Saved to gallery successfully! ✅',
-              style: TextStyle(color: Colors.white),
-            ),
-            behavior: SnackBarBehavior.floating,
-            backgroundColor: Colors.green,
-          ),
-        );
+        AppToast.success('Saved to gallery successfully! ✅');
       }
     } catch (e) {
       if (context.mounted) {
         if (e is GalException && e.type == GalExceptionType.accessDenied) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Please allow storage access from settings ⚙️'),
-              backgroundColor: Colors.orange,
-              duration: Duration(seconds: 4),
-            ),
-          );
+          AppToast.warning('Please allow storage access from settings ⚙️');
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Failed to save: $e ❌'),
-              backgroundColor: Colors.red,
-            ),
-          );
+          AppToast.error('Failed to save: $e ❌');
         }
       }
     }

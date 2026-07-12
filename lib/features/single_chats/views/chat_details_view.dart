@@ -14,6 +14,7 @@ import '../../../core/router/app_router.dart';
 import '../../../core/services/active_screen_tracker.dart';
 import '../../../core/services/notification_services.dart';
 import '../../../core/themes/app_colors.dart';
+import '../../../core/toast/app_toast.dart';
 import '../models/presence_snapshot.dart';
 import '../widgets/text_input_area_section.dart';
 import '../widgets/typing_indicator_widget.dart';
@@ -128,6 +129,7 @@ class _ChatDetailsViewState extends State<ChatDetailsView>
 
   int? _lastMinIndex;
   double? _lastLeadingEdge;
+  // ignore: unused_field
   bool _isCurrentlyAtBottom = true;
 
   void _scrollListener() {
@@ -351,13 +353,7 @@ class _ChatDetailsViewState extends State<ChatDetailsView>
   }
 
   void _showComingSoon(BuildContext context, String feature) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('$feature is coming soon'),
-        behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 1),
-      ),
-    );
+    AppToast.info('$feature is coming soon');
   }
 
   @override

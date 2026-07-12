@@ -7,6 +7,7 @@ import 'package:social_media_app/core/widgets/custom_loading_indicator.dart';
 import 'package:social_media_app/features/home/cubits/home_cubit/home_cubit.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/helpers/modern_circle_progress.dart';
+import '../../../core/toast/app_toast.dart';
 import '../cubit/posts_cubit.dart';
 import '../widgets/add_post_options_bottom_sheet.dart';
 import '../widgets/create_post_file_preview.dart';
@@ -84,52 +85,15 @@ class _CreatePostViewState extends State<CreatePostView> {
           }
         }
         if (state is PostUploadCanceled) {
-          final theme = Theme.of(context);
-          final colorScheme = theme.colorScheme;
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                'Upload canceled',
-                style: Theme.of(context).textTheme.titleSmall!.copyWith(
-                  color: colorScheme.onSecondaryContainer.withValues(
-                    alpha: 0.65,
-                  ),
-                ),
-              ),
-              backgroundColor: colorScheme.secondaryContainer,
-              duration: const Duration(milliseconds: 1000),
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
+          AppToast.info('Upload canceled');
         }
         if (state is PostCreated) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                'Post Published Successfully',
-                style: Theme.of(
-                  context,
-                ).textTheme.titleSmall!.copyWith(color: Colors.white),
-              ),
-              backgroundColor: Colors.green,
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
+          AppToast.success('Post Published Successfully');
+
           Navigator.pop(context);
         } else if (state is PostCreateError) {
           if (!state.isConnectivityError) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                  state.message,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleSmall!.copyWith(color: Colors.white),
-                ),
-                backgroundColor: Colors.red,
-                behavior: SnackBarBehavior.floating,
-              ),
-            );
+            AppToast.error(state.message);
           }
         }
         if (state is MediaPickingError) {
@@ -184,25 +148,9 @@ class _CreatePostViewState extends State<CreatePostView> {
                                 );
                               } else {
                                 HapticFeedback.vibrate();
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    elevation: 1,
-                                    content: Text(
-                                      "Write something or attach a file to share your post.",
-                                      style:
-                                          Theme.of(
-                                            context,
-                                          ).textTheme.labelMedium!.copyWith(),
-                                    ),
 
-                                    backgroundColor: Theme.of(context)
-                                        .scaffoldBackgroundColor
-                                        .withValues(alpha: 0.92),
-                                    behavior: SnackBarBehavior.floating,
-                                    duration: const Duration(
-                                      milliseconds: 1400,
-                                    ),
-                                  ),
+                                AppToast.warning(
+                                  "Write something or attach a file to share your post.",
                                 );
                               }
                             },

@@ -12,6 +12,8 @@ import 'package:social_media_app/features/profile/widgets/edit_profile_form.dart
 import 'package:social_media_app/features/profile/widgets/edit_profile_images_section.dart';
 import 'package:social_media_app/features/profile/widgets/image_picker_bottom_sheet.dart';
 
+import '../../../core/toast/app_toast.dart';
+
 class EditProfileView extends StatefulWidget {
   const EditProfileView({super.key, this.userData});
   final UserData? userData;
@@ -88,17 +90,10 @@ class _EditProfileViewState extends State<EditProfileView> {
         if (state is EditProfileSuccess) {
           if (!context.mounted) return;
           Navigator.of(context).pop();
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Profile Updated Successfully'),
-              backgroundColor: Colors.green,
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
+
+          AppToast.success('Profile Updated Successfully');
         } else if (state is EditProfileError) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(state.errMsg), backgroundColor: Colors.red),
-          );
+          AppToast.error(state.errMsg);
         }
       },
       child: GestureDetector(

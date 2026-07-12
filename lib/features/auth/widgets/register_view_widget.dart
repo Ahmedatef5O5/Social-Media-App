@@ -8,6 +8,7 @@ import 'package:social_media_app/features/auth/cubit/auth_cubit/auth_cubit.dart'
 import 'package:social_media_app/features/auth/widgets/password_strength_bar.dart';
 import 'package:social_media_app/features/auth/widgets/sign_text_section.dart';
 import 'package:social_media_app/features/auth/widgets/social_sign_section.dart';
+import '../../../core/toast/app_toast.dart';
 import '../../../core/widgets/custom_elevated_button.dart';
 import '../../../core/widgets/custom_text_form_field.dart';
 
@@ -141,20 +142,7 @@ class _RegisterViewWidgetState extends State<RegisterViewWidget> {
                         current is AuthSuccess || current is AuthFailure,
                 listener: (BuildContext context, AuthState state) {
                   if (state is AuthSuccess) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          'Sign up Successfully',
-                          style:
-                              Theme.of(
-                                context,
-                              ).textTheme.titleSmall!.copyWith(),
-                        ),
-                        backgroundColor: Colors.green,
-                        behavior: SnackBarBehavior.floating,
-                        duration: const Duration(seconds: 1),
-                      ),
-                    );
+                    AppToast.success('Sign up Successfully');
 
                     if (context.mounted) {
                       Navigator.of(
@@ -166,14 +154,7 @@ class _RegisterViewWidgetState extends State<RegisterViewWidget> {
                       );
                     }
                   } else if (state is AuthFailure) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(state.errMsg),
-                        backgroundColor: Colors.red,
-                        behavior: SnackBarBehavior.floating,
-                        duration: const Duration(seconds: 1),
-                      ),
-                    );
+                    AppToast.error(state.errMsg);
                   }
                 },
                 buildWhen:

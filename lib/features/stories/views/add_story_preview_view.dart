@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:video_player/video_player.dart';
 import 'package:social_media_app/features/auth/data/models/user_data.dart';
 import '../../../core/themes/app_colors.dart';
+import '../../../core/toast/app_toast.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
 import '../cubit/stories_cubit/stories_cubit.dart';
 
@@ -111,27 +112,9 @@ class _AddStoryPreviewViewState extends State<AddStoryPreviewView> {
         listener: (context, state) {
           if (state is AddStorySuccess) {
             Navigator.of(context).pop();
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                  'Story added successfully!',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleSmall!.copyWith(color: AppColors.white),
-                ),
-                backgroundColor: Colors.green,
-                behavior: SnackBarBehavior.floating,
-                duration: const Duration(seconds: 2),
-              ),
-            );
+            AppToast.success('Story Added Successfully');
           } else if (state is AddStoryError && !state.isConnectivityError) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.message),
-                backgroundColor: Colors.red,
-                behavior: SnackBarBehavior.floating,
-              ),
-            );
+            AppToast.error(state.message);
           }
         },
         builder: (context, state) {

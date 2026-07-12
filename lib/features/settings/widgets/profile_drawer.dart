@@ -9,6 +9,7 @@ import 'package:social_media_app/features/settings/widgets/drawer_item_widget.da
 import 'package:social_media_app/features/settings/widgets/theme_picker_sheet_widget.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/themes/cubit/theme_cubit.dart';
+import '../../../core/toast/app_toast.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
 import '../../discover/views/search_view.dart';
 import 'drawer_header_widget.dart';
@@ -143,18 +144,8 @@ class ProfileDrawer extends StatelessWidget {
                 BlocConsumer<AuthCubit, AuthState>(
                   listener: (context, state) {
                     if (state is AuthSignedOut) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            'Log out Successfully',
-                            style: Theme.of(context).textTheme.titleSmall!
-                                .copyWith(color: Colors.white),
-                          ),
-                          backgroundColor: Colors.redAccent,
-                          behavior: SnackBarBehavior.floating,
-                          duration: const Duration(seconds: 1),
-                        ),
-                      );
+                      AppToast.warning('Log out Successfully');
+
                       Navigator.of(
                         context,
                         rootNavigator: true,

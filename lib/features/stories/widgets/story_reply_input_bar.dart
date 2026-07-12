@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 import 'package:social_media_app/core/widgets/custom_loading_indicator.dart';
 import '../../../core/services/file_picker_services.dart';
+import '../../../core/toast/app_toast.dart';
 import '../../single_chats/widgets/full_screen_media_view.dart';
 import '../cubit/story_reply_cubit/story_reply_cubit.dart';
 import '../model/story_model.dart';
@@ -167,9 +168,7 @@ class _StoryReplyInputBarState extends State<StoryReplyInputBar> {
           widget.onSent();
           context.read<StoryReplyCubit>().reset();
         } else if (state is StoryReplyFailed) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Failed to send reply: ${state.message}')),
-          );
+          AppToast.error('Failed to send reply: ${state.message}');
           context.read<StoryReplyCubit>().reset();
         }
       },

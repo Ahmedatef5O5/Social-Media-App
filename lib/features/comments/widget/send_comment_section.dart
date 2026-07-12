@@ -6,6 +6,7 @@ import 'package:social_media_app/features/comments/cubit/comments_cubit.dart';
 import 'package:social_media_app/features/comments/model/comment_type.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/themes/app_colors.dart';
+import '../../../core/toast/app_toast.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
 import '../../posts/model/post_model.dart';
 import 'comment_attachment_picker_sheet.dart';
@@ -113,12 +114,7 @@ class _SendCommentSectionState extends State<SendCommentSection> {
                     _commentController.clear();
                   }
                   if (state is CommentError && !state.isConnectivityError) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(state.message),
-                        backgroundColor: Colors.red,
-                      ),
-                    );
+                    AppToast.error(state.message);
                   }
                 },
                 builder: (context, state) {

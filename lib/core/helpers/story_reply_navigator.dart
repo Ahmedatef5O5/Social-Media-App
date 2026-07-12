@@ -4,6 +4,7 @@ import '../../features/stories/cubit/stories_cubit/stories_cubit.dart';
 import '../router/app_routes.dart';
 import '../../features/stories/model/story_model.dart';
 import '../../features/single_chats/models/message_model.dart';
+import '../toast/app_toast.dart';
 
 class StoryReplyNavigator {
   static Future<void> openOriginalStory(
@@ -11,9 +12,7 @@ class StoryReplyNavigator {
     MessageModel message,
   ) async {
     if (message.replyToStoryId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('This story is no longer available')),
-      );
+      AppToast.warning('This story is no longer available');
       return;
     }
 
@@ -67,9 +66,7 @@ class StoryReplyNavigator {
       Navigator.of(context, rootNavigator: true).pop();
 
       if (groupIndex == -1) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('This story is no longer available')),
-        );
+        AppToast.warning('This story is no longer available');
         await storiesCubit.close();
         return;
       }

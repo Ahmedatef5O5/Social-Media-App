@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:social_media_app/features/auth/data/models/user_data.dart';
 import '../../../core/themes/app_colors.dart';
+import '../../../core/toast/app_toast.dart';
 import '../cubit/stories_cubit/stories_cubit.dart';
 import '../widgets/story_color_picker.dart';
 import '../widgets/story_submit_bar.dart';
@@ -73,20 +74,11 @@ class _CreateTextStoryViewState extends State<CreateTextStoryView> {
         if (state is AddStorySuccess) {
           Navigator.of(context).pop();
 
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Story Added Successfully'),
-              backgroundColor: Colors.green,
-              behavior: SnackBarBehavior.floating,
-              duration: Duration(seconds: 2),
-            ),
-          );
+          AppToast.success('Story Added Successfully');
         }
 
         if (state is AddStoryError && !state.isConnectivityError) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(state.message), backgroundColor: Colors.red),
-          );
+          AppToast.error(state.message);
         }
       },
       builder: (context, state) {

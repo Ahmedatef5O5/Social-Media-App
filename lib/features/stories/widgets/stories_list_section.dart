@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:social_media_app/features/stories/model/story_model.dart';
 import 'package:social_media_app/features/stories/widgets/story_item_widget.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../core/toast/app_toast.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
 import '../cubit/stories_cubit/stories_cubit.dart';
 
@@ -31,25 +32,13 @@ class StoriesListSection extends StatelessWidget {
             ).showSnackBar(SnackBar(content: Text('Error: ${state.message}')));
           }
           if (state is StoryVideoTooLong) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                  'Video is ${state.videoDuration.inSeconds}s — '
-                  'max allowed is ${state.maxAllowed.inSeconds}s.',
-                ),
-                backgroundColor: Colors.red,
-                behavior: SnackBarBehavior.floating,
-              ),
+            AppToast.warning(
+              'Video is ${state.videoDuration.inSeconds}s — '
+              'max allowed is ${state.maxAllowed.inSeconds}s.',
             );
           }
           if (state is StoryVideoPickError) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Error: ${state.message}'),
-                backgroundColor: Colors.red,
-                behavior: SnackBarBehavior.floating,
-              ),
-            );
+            AppToast.error('Error: ${state.message}');
           }
         },
         buildWhen:
