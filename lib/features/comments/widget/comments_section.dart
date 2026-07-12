@@ -1,18 +1,24 @@
 import 'package:flutter/material.dart';
-import 'package:social_media_app/features/posts/model/post_model.dart';
+import 'package:social_media_app/features/comments/model/comment_model.dart';
 import 'package:social_media_app/features/comments/widget/comment_widget.dart';
 import '../../../core/constants/app_images.dart';
 import '../../single_chats/widgets/empty_placeholder_state.dart';
 
 class CommentsSection extends StatelessWidget {
-  final PostModel post;
+  final String postId;
+  final List<CommentModel> comments;
   final void Function(String commentId, String authorName)? onReplyTap;
 
-  const CommentsSection({super.key, required this.post, this.onReplyTap});
+  const CommentsSection({
+    super.key,
+    required this.postId,
+    required this.comments,
+    this.onReplyTap,
+  });
 
   @override
   Widget build(BuildContext context) {
-    if (post.comments == null || post.comments!.isEmpty) {
+    if (comments.isEmpty) {
       return SizedBox(
         height: MediaQuery.of(context).size.height * 0.45,
         child: EmptyPlaceholderState(
@@ -27,20 +33,17 @@ class CommentsSection extends StatelessWidget {
         ),
       );
     }
-    final topLevel =
-        post.comments!.where((c) => c.parentCommentId == null).toList();
 
     return ListView.separated(
-      itemCount: topLevel.length,
+      itemCount: comments.length,
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       separatorBuilder: (context, index) => const SizedBox(height: 16),
       itemBuilder: (context, index) {
-        final comment = topLevel[index];
+        final comment = comments[index];
         return CommentWidget(
-          key: ValueKey(comment.id),
           comment: comment,
-          postId: post.id,
+          postId: postId,
           depth: 0,
           onReplyTap: onReplyTap,
         );

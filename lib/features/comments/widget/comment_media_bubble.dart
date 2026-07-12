@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shimmer/shimmer.dart';
 import 'package:social_media_app/core/cache/utils/cloudinary_url_extensions.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:video_player/video_player.dart';
@@ -6,7 +7,6 @@ import 'package:social_media_app/core/helpers/media_duration_badge.dart';
 import 'package:social_media_app/core/router/app_routes.dart';
 import 'package:social_media_app/core/themes/app_colors.dart';
 import 'package:social_media_app/core/widgets/cached_cloudinary_image.dart';
-import 'package:social_media_app/core/widgets/custom_loading_indicator.dart';
 import 'package:social_media_app/features/comments/model/comment_model.dart';
 import 'package:social_media_app/features/comments/model/comment_type.dart';
 import 'package:social_media_app/features/comments/widget/comment_voice_player.dart';
@@ -39,6 +39,22 @@ class CommentMediaBubble extends StatelessWidget {
   }
 }
 
+class _MediaLoadingPlaceholder extends StatelessWidget {
+  final double width;
+  final double height;
+  const _MediaLoadingPlaceholder({required this.width, required this.height});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Shimmer.fromColors(
+      baseColor: isDark ? Colors.grey[800]! : Colors.grey[300]!,
+      highlightColor: isDark ? Colors.grey[700]! : Colors.grey[100]!,
+      child: Container(width: width, height: height, color: Colors.white),
+    );
+  }
+}
+
 class _ImageBubble extends StatelessWidget {
   final CommentModel comment;
   const _ImageBubble({required this.comment});
@@ -68,7 +84,9 @@ class _ImageBubble extends StatelessWidget {
             fit: BoxFit.cover,
             width: 180,
             height: 180,
-            placeholder: (context) => const CustomLoadingIndicator(),
+            placeholder:
+                (context) =>
+                    const _MediaLoadingPlaceholder(width: 180, height: 180),
           ),
         ),
       ),
@@ -204,8 +222,9 @@ class _VideoBubbleState extends State<_VideoBubble> {
                   secureUrl: thumbnailUrl ?? widget.comment.videoUrl!,
                   fit: BoxFit.cover,
                   placeholder:
-                      (context) => Container(
-                        color: AppColors.grey5.withValues(alpha: 0.3),
+                      (context) => const _MediaLoadingPlaceholder(
+                        width: 180,
+                        height: 185,
                       ),
                 ),
               if (_controller == null || !_controller!.value.isPlaying)

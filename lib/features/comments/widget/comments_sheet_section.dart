@@ -1,15 +1,19 @@
+import 'package:shimmer/shimmer.dart';
 import 'package:social_media_app/core/widgets/cached_cloudinary_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 import 'package:social_media_app/core/widgets/custom_loading_indicator.dart';
 import 'package:social_media_app/features/comments/cubit/comments_cubit.dart';
+import 'package:social_media_app/features/comments/model/comment_sort_option.dart';
+import 'package:social_media_app/features/comments/widget/comments_shimmer_skeleton.dart';
 import 'package:social_media_app/features/posts/cubit/posts_cubit.dart';
 import 'package:social_media_app/features/posts/model/post_model.dart';
 import 'package:social_media_app/features/comments/widget/comments_section.dart';
 import '../../../core/constants/app_images.dart';
 import '../../../core/helpers/comment_helper.dart';
 import '../../../core/themes/app_colors.dart';
+import '../../posts/widgets/post_reactions_bottom_sheet.dart';
 import 'send_comment_section.dart';
 
 class CommentsSheetSection extends StatefulWidget {
@@ -25,6 +29,10 @@ class _CommentsSheetSectionState extends State<CommentsSheetSection> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      context.read<CommentsCubit>().loadComments(postId: widget.postId);
+    });
   }
 
   final ScrollController _scrollController = ScrollController();
@@ -62,6 +70,12 @@ class _CommentsSheetSectionState extends State<CommentsSheetSection> {
       _replyingToCommentId = null;
       _replyingToAuthorName = null;
     });
+  }
+
+  void _changeSort(CommentSortOption option) {
+    final cubit = context.read<CommentsCubit>();
+    if (cubit.currentSort == option) return;
+    cubit.loadComments(postId: widget.postId, sort: option);
   }
 
   @override
@@ -120,10 +134,17 @@ class _CommentsSheetSectionState extends State<CommentsSheetSection> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Divider(thickness: 4, indent: 150, endIndent: 150),
+                Container(
+                  height: 4,
+                  margin: const EdgeInsets.only(left: 150, right: 150),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[400],
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
                 const SizedBox(height: 10),
 
-                Flexible(
+                Expanded(
                   child: SingleChildScrollView(
                     controller: _scrollController,
                     keyboardDismissBehavior:
@@ -131,133 +152,179 @@ class _CommentsSheetSectionState extends State<CommentsSheetSection> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          'Likes ${post.likes?.length ?? 0}',
-                          style: Theme.of(context).textTheme.titleMedium!
-                              .copyWith(color: AppColors.grey7),
-                        ),
-                        Gap(2),
-                        if (post.likersImages != null &&
-                            post.likersImages!.isNotEmpty &&
-                            post.likes!.isNotEmpty)
-                          SizedBox(
-                            height: 25,
-                            width: 125,
-                            child: Stack(
-                              children: List.generate(
-                                post.likersImages!.take(6).length,
-                                (index) {
-                                  final String imageUrl =
-                                      post.likersImages![index];
-                                  final bool isNetworkImage =
-                                      imageUrl.isNotEmpty &&
-                                      imageUrl.startsWith('http') &&
-                                      imageUrl != 'asset:default';
-                                  return Positioned(
-                                    key: ValueKey('${post.id}_liker_$index'),
-                                    left: index * 18.0,
-                                    child: Container(
-                                      width: 26,
-                                      height: 26,
-                                      decoration: BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        color:
-                                            Theme.of(
-                                              context,
-                                            ).scaffoldBackgroundColor,
-                                        border: Border.all(
-                                          color:
-                                              Theme.of(
-                                                context,
-                                              ).scaffoldBackgroundColor,
-                                          width: 2,
-                                        ),
-                                      ),
-                                      child: ClipOval(
-                                        child:
-                                            isNetworkImage
-                                                ? CachedCloudinaryImage(
-                                                  secureUrl: imageUrl,
-                                                  fit: BoxFit.cover,
-                                                  isAvatar: true,
-                                                  errorWidget:
-                                                      (context, error) =>
-                                                          Image.asset(
-                                                            AppImages
-                                                                .defaultUserImg,
-                                                            fit: BoxFit.cover,
-                                                          ),
-                                                  placeholder:
-                                                      (context) =>
-                                                          const CustomLoadingIndicator(),
-                                                )
-                                                : Image.asset(
-                                                  AppImages.defaultUserImg,
-                                                  fit: BoxFit.cover,
-                                                ),
-                                      ),
+                        GestureDetector(
+                          onTap: () {
+                            if (post.reactions.isNotEmpty) {
+                              showModalBottomSheet(
+                                context: context,
+                                isScrollControlled: true,
+                                backgroundColor: Colors.transparent,
+                                builder:
+                                    (context) => PostReactionsBottomSheet(
+                                      postId: post.id,
                                     ),
-                                  );
-                                },
-                              ),
-                            ),
-                          ),
+                              );
+                            }
+                          },
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.start,
 
-                        const SizedBox(height: 16),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              'Comments ${countAllComments(post.comments)}',
-                              style: Theme.of(context).textTheme.titleMedium!
-                                  .copyWith(color: AppColors.grey7),
-                            ),
-                            Spacer(),
-                            Text(
-                              'Most Recent',
-                              style: Theme.of(
-                                context,
-                              ).textTheme.titleMedium!.copyWith(
-                                color: AppColors.grey6,
-                                fontWeight: FontWeight.w500,
-                                fontSize: 14,
+                            children: [
+                              Text(
+                                '${post.likes?.length ?? 0} Reactions',
+                                style: Theme.of(context).textTheme.titleMedium!
+                                    .copyWith(color: AppColors.grey7),
                               ),
-                            ),
-                            Padding(
-                              padding: const EdgeInsets.only(bottom: 22.0),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  SizedBox(
-                                    height: 12,
-                                    child: Icon(
-                                      Icons.arrow_drop_up_rounded,
-                                      size: 35,
-                                      color: AppColors.grey7,
+                              Gap(12),
+                              if (post.likersImages != null &&
+                                  post.likersImages!.isNotEmpty &&
+                                  post.likes!.isNotEmpty)
+                                SizedBox(
+                                  height: 25,
+                                  width: 120,
+                                  child: Stack(
+                                    children: List.generate(
+                                      post.likersImages!.take(8).length,
+                                      (index) {
+                                        final String imageUrl =
+                                            post.likersImages![index];
+                                        final bool isNetworkImage =
+                                            imageUrl.isNotEmpty &&
+                                            imageUrl.startsWith('http') &&
+                                            imageUrl != 'asset:default';
+                                        return Positioned(
+                                          key: ValueKey(
+                                            '${post.id}_liker_$index',
+                                          ),
+                                          left: index * 18.0,
+                                          child: Container(
+                                            width: 26,
+                                            height: 26,
+                                            decoration: BoxDecoration(
+                                              shape: BoxShape.circle,
+                                              color:
+                                                  Theme.of(
+                                                    context,
+                                                  ).scaffoldBackgroundColor,
+                                              border: Border.all(
+                                                color:
+                                                    Theme.of(
+                                                      context,
+                                                    ).scaffoldBackgroundColor,
+                                                width: 2,
+                                              ),
+                                            ),
+                                            child: ClipOval(
+                                              child:
+                                                  isNetworkImage
+                                                      ? CachedCloudinaryImage(
+                                                        secureUrl: imageUrl,
+                                                        fit: BoxFit.cover,
+                                                        isAvatar: true,
+                                                        errorWidget:
+                                                            (
+                                                              context,
+                                                              error,
+                                                            ) => Image.asset(
+                                                              AppImages
+                                                                  .defaultUserImg,
+                                                              fit: BoxFit.cover,
+                                                            ),
+                                                        placeholder:
+                                                            (context) =>
+                                                                const CustomLoadingIndicator(),
+                                                      )
+                                                      : Image.asset(
+                                                        AppImages
+                                                            .defaultUserImg,
+                                                        fit: BoxFit.cover,
+                                                      ),
+                                            ),
+                                          ),
+                                        );
+                                      },
                                     ),
                                   ),
-                                  SizedBox(
-                                    height: 12,
-                                    child: Icon(
-                                      Icons.arrow_drop_down_rounded,
-                                      size: 35,
-                                      color: AppColors.grey7,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
+                                ),
+                            ],
+                          ),
                         ),
-                        const SizedBox(height: 16),
-                        CommentsSection(post: post, onReplyTap: _startReply),
+                        const SizedBox(height: 12),
+                        BlocBuilder<CommentsCubit, CommentsState>(
+                          buildWhen:
+                              (previous, current) =>
+                                  current is CommentsListLoading ||
+                                  current is CommentsListLoaded ||
+                                  current is CommentOptimisticAdded ||
+                                  current is CommentTempIdResolved,
+                          builder: (context, state) {
+                            final cubit = context.read<CommentsCubit>();
+                            return Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                AnimatedSwitcher(
+                                  duration: const Duration(milliseconds: 200),
+
+                                  child:
+                                      cubit.isLoadingComments
+                                          ? const _CommentsCountSkeleton(
+                                            key: ValueKey('count_skeleton'),
+                                          )
+                                          : Text(
+                                            key: const ValueKey('count_text'),
+                                            '${countAllComments(cubit.comments)} Comments',
+                                            style: Theme.of(
+                                              context,
+                                            ).textTheme.titleMedium!.copyWith(
+                                              color: AppColors.grey7,
+                                            ),
+                                          ),
+                                ),
+                                _ElegantSortMenu(
+                                  current: cubit.currentSort,
+                                  onChanged: _changeSort,
+                                ),
+                              ],
+                            );
+                          },
+                        ),
+                        const SizedBox(height: 14),
+                        BlocBuilder<CommentsCubit, CommentsState>(
+                          buildWhen:
+                              (previous, current) =>
+                                  current is CommentsListLoading ||
+                                  current is CommentsListLoaded ||
+                                  current is CommentOptimisticAdded ||
+                                  current is CommentTempIdResolved ||
+                                  current is CommentsUiChanged,
+                          builder: (context, state) {
+                            final cubit = context.read<CommentsCubit>();
+                            return AnimatedSwitcher(
+                              duration: const Duration(milliseconds: 220),
+                              child:
+                                  cubit.isLoadingComments
+                                      ? Padding(
+                                        key: ValueKey('comments_loading'),
+                                        padding: EdgeInsets.zero,
+                                        child: CommentsShimmerSkeleton(),
+                                      )
+                                      : CommentsSection(
+                                        key: ValueKey(
+                                          'comments_${cubit.currentSort.name}',
+                                        ),
+                                        postId: post.id,
+                                        comments: cubit.comments,
+                                        onReplyTap: _startReply,
+                                      ),
+                            );
+                          },
+                        ),
                       ],
                     ),
                   ),
                 ),
 
-                const Divider(),
                 if (_replyingToCommentId != null)
                   _ReplyingToBanner(
                     authorName: _replyingToAuthorName ?? '',
@@ -340,6 +407,99 @@ class _ReplyingToBanner extends StatelessWidget {
             child: Icon(Icons.close_rounded, size: 18, color: AppColors.grey6),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _ElegantSortMenu extends StatelessWidget {
+  final CommentSortOption current;
+  final ValueChanged<CommentSortOption> onChanged;
+
+  const _ElegantSortMenu({required this.current, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    return PopupMenuButton<CommentSortOption>(
+      initialValue: current,
+      onSelected: onChanged,
+      elevation: 6,
+      shadowColor: Colors.black.withValues(alpha: 0.2),
+      color: isDark ? Colors.grey[900] : Colors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      offset: const Offset(0, 40),
+      icon: Icon(Icons.sort_rounded, color: AppColors.grey7, size: 26),
+      itemBuilder:
+          (context) =>
+              CommentSortOption.values.map((option) {
+                final isSelected = current == option;
+
+                return PopupMenuItem<CommentSortOption>(
+                  value: option,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        option.icon,
+                        size: 20,
+                        color:
+                            isSelected ? theme.primaryColor : AppColors.grey6,
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        option.label,
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight:
+                              isSelected ? FontWeight.bold : FontWeight.w600,
+                          color:
+                              isSelected
+                                  ? theme.primaryColor
+                                  : (isDark
+                                      ? Colors.grey[300]
+                                      : Colors.grey[800]),
+                        ),
+                      ),
+                      const SizedBox(width: 24),
+                      if (isSelected)
+                        Icon(
+                          Icons.check_circle_rounded,
+                          size: 18,
+                          color: theme.primaryColor,
+                        )
+                      else
+                        const SizedBox(width: 18),
+                    ],
+                  ),
+                );
+              }).toList(),
+    );
+  }
+}
+
+class _CommentsCountSkeleton extends StatelessWidget {
+  const _CommentsCountSkeleton({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Shimmer.fromColors(
+      baseColor: isDark ? Colors.grey[800]! : Colors.grey[300]!,
+      highlightColor: isDark ? Colors.grey[700]! : Colors.grey[100]!,
+      child: Container(
+        width: 92,
+        height: 18,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(6),
+        ),
       ),
     );
   }
