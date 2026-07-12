@@ -1,15 +1,75 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/utilities/supabase_constants.dart';
+import '../helper/comment_tree_builder.dart';
+import '../../../core/mentions/models/mention_ref.dart';
+import '../model/comment_model.dart';
+import '../model/comment_sort_option.dart';
 import '../model/comment_type.dart';
 
 class CommentsService {
   final _supabase = Supabase.instance.client;
+  static const String _selectWithRelations =
+      '*, users($_authorFields), comment_reactions(*), comment_mentions(${CommentMentionColumns.mentionedUserId},${CommentMentionColumns.startIndex},${CommentMentionColumns.endIndex})';
+  static const String _authorFields =
+      '${UserColumns.name},${UserColumns.imageUrl}';
+
+  Future<List<CommentModel>> getComments({
+    required String postId,
+    required CommentSortOption sort,
+  }) async {
+    try {
+      var topLevelQuery = _supabase
+          .from(SupabaseConstants.comments)
+          .select(_selectWithRelations)
+          .eq(CommentColumns.postId, postId)
+          .filter(CommentColumns.parentCommentId, 'is', null);
+
+      final List<Map<String, dynamic>> topLevelRows;
+      switch (sort) {
+        case CommentSortOption.newest:
+          topLevelRows = await topLevelQuery.order(
+            CommentColumns.createdAt,
+            ascending: false,
+          );
+          break;
+        case CommentSortOption.oldest:
+          topLevelRows = await topLevelQuery.order(
+            CommentColumns.createdAt,
+            ascending: true,
+          );
+          break;
+        case CommentSortOption.mostRelevant:
+          topLevelRows = await topLevelQuery
+              .order(CommentColumns.relevanceScore, ascending: false)
+              .order(CommentColumns.createdAt, ascending: false);
+          break;
+      }
+
+      final replyRows = await _supabase
+          .from(SupabaseConstants.comments)
+          .select(_selectWithRelations)
+          .eq(CommentColumns.postId, postId)
+          .not(CommentColumns.parentCommentId, 'is', null)
+          .order(CommentColumns.createdAt, ascending: true);
+
+      final combined = [...topLevelRows, ...replyRows];
+      final flatComments =
+          combined
+              .map((row) => CommentModel.fromMap(row as Map<String, dynamic>))
+              .toList();
+
+      return CommentTreeBuilder.build(flatComments);
+    } catch (e) {
+      debugPrint('❌ Error fetching comments: $e');
+      rethrow;
+    }
+  }
 
   Future<String> addComment({
     required String postId,
     required String authorId,
-    required String? commentText,
+    String? commentText,
     String? parentCommentId,
     CommentType commentType = CommentType.text,
     String? imageUrl,
@@ -23,7 +83,7 @@ class CommentsService {
     String? videoPublicId,
     String? voicePublicId,
     String? filePublicId,
-    List<Map<String, dynamic>> mentions = const [],
+    List<MentionRef> mentions = const [],
   }) async {
     try {
       final response = await _supabase.rpc(
@@ -45,7 +105,7 @@ class CommentsService {
           'p_video_public_id': videoPublicId,
           'p_voice_public_id': voicePublicId,
           'p_file_public_id': filePublicId,
-          'p_mentions': mentions,
+          'p_mentions': mentions.map((m) => m.toRpcMap()).toList(),
         },
       );
 
