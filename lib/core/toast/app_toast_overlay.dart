@@ -128,10 +128,16 @@ class _ToastCard extends StatelessWidget {
               width: 34,
               height: 34,
               decoration: BoxDecoration(
-                color: type.color.withValues(alpha: 0.18),
+                color: (request.iconColor ?? request.type.color).withValues(
+                  alpha: 0.18,
+                ),
                 shape: BoxShape.circle,
               ),
-              child: Icon(type.icon, color: type.color, size: 19),
+              child: Icon(
+                request.icon ?? request.type.icon,
+                color: request.iconColor ?? request.type.color,
+                size: 19,
+              ),
             ),
             const SizedBox(width: 12),
             Expanded(

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import '../themes/app_colors.dart';
 
-enum AppToastType { success, error, warning, info }
+enum AppToastType { success, error, warning, info, save }
 
 extension AppToastTypeStyle on AppToastType {
   Color get color {
@@ -13,6 +14,8 @@ extension AppToastTypeStyle on AppToastType {
         return const Color(0xFFED6C02);
       case AppToastType.info:
         return const Color(0xFF007AFF);
+      case AppToastType.save:
+        return AppColors.goldenYellow;
     }
   }
 
@@ -26,6 +29,8 @@ extension AppToastTypeStyle on AppToastType {
         return Icons.warning_rounded;
       case AppToastType.info:
         return Icons.info_rounded;
+      case AppToastType.save:
+        return Icons.bookmark_rounded;
     }
   }
 }

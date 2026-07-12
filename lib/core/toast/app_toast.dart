@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'app_toast_request.dart';
 import 'app_toast_type.dart';
 
@@ -13,6 +13,8 @@ class AppToast {
   static void _show({
     required String message,
     required AppToastType type,
+    IconData? icon,
+    Color? iconColor,
     Duration? duration,
     String? actionLabel,
     VoidCallback? onAction,
@@ -22,6 +24,8 @@ class AppToast {
       id: 'toast_$_counter',
       message: message,
       type: type,
+      icon: icon,
+      iconColor: iconColor,
       duration: duration ?? _defaultDuration(type),
       actionLabel: actionLabel,
       onAction: onAction,
@@ -38,16 +42,20 @@ class AppToast {
         return const Duration(milliseconds: 2500);
       case AppToastType.info:
         return const Duration(seconds: 2);
+      case AppToastType.save:
+        return const Duration(seconds: 2);
     }
   }
 
   static void success(
     String message, {
+    IconData? icon,
     String? actionLabel,
     VoidCallback? onAction,
     Duration? duration,
   }) => _show(
     message: message,
+    icon: icon,
     type: AppToastType.success,
     actionLabel: actionLabel,
     onAction: onAction,
@@ -91,5 +99,22 @@ class AppToast {
     actionLabel: actionLabel,
     onAction: onAction,
     duration: duration,
+  );
+
+  static void save(
+    String message, {
+    IconData? icon,
+    Color? iconColor,
+    Duration? duration,
+    String? actionLabel,
+    VoidCallback? onAction,
+  }) => _show(
+    message: message,
+    type: AppToastType.save,
+    icon: icon,
+    iconColor: iconColor,
+    duration: duration ?? const Duration(milliseconds: 1800),
+    actionLabel: actionLabel,
+    onAction: onAction,
   );
 }

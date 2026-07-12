@@ -7,6 +7,8 @@ class AppToastRequest {
   final AppToastType type;
   final Duration duration;
   final String? actionLabel;
+  final IconData? icon;
+  final Color? iconColor;
   final VoidCallback? onAction;
 
   AppToastRequest({
@@ -15,6 +17,8 @@ class AppToastRequest {
     required this.type,
     required this.duration,
     this.actionLabel,
+    this.icon,
+    this.iconColor,
     this.onAction,
   });
 }
