@@ -4,6 +4,7 @@ import '../../../core/cache/utils/cloudinary_url_extensions.dart';
 import '../../../core/helpers/formatted_date.dart';
 import '../../../core/themes/app_colors.dart';
 import '../../../core/widgets/cached_cloudinary_image.dart';
+import '../../../core/widgets/custom_loading_indicator.dart';
 import '../model/story_model.dart';
 import '../model/story_stat_model.dart';
 
@@ -125,7 +126,7 @@ class MyStoryTile extends StatelessWidget {
                       child: SizedBox(
                         width: 24,
                         height: 24,
-                        child: CircularProgressIndicator(strokeWidth: 2),
+                        child: CustomLoadingIndicator(),
                       ),
                     )
                   else

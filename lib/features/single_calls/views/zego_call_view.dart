@@ -4,6 +4,7 @@ import 'package:zego_uikit_prebuilt_call/zego_uikit_prebuilt_call.dart';
 import 'package:zego_uikit/zego_uikit.dart';
 import '../../../core/secrets/app_secrets.dart';
 import '../../../core/services/zego_token_service.dart';
+import '../../../core/widgets/custom_loading_indicator.dart';
 import '../model/call_model.dart';
 import '../cubits/single_call_cubit/call_cubit.dart';
 
@@ -78,7 +79,7 @@ class _ZegoCallViewState extends State<ZegoCallView> {
     }
 
     if (_zegoToken == null) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return const Scaffold(body: Center(child: CustomLoadingIndicator()));
     }
 
     final isVideo = widget.call.type == CallType.video;

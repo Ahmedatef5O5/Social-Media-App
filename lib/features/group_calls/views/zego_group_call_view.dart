@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:social_media_app/core/widgets/custom_loading_indicator.dart';
 import 'package:zego_uikit/zego_uikit.dart';
 import 'package:zego_uikit_prebuilt_call/zego_uikit_prebuilt_call.dart';
 import '../../../core/secrets/app_secrets.dart';
@@ -109,7 +110,7 @@ class _ZegoGroupCallViewState extends State<ZegoGroupCallView> {
   @override
   Widget build(BuildContext context) {
     if (_zegoToken == null) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return const Scaffold(body: Center(child: CustomLoadingIndicator()));
     }
 
     final isVideo = widget.call.type == GroupCallType.video;

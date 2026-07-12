@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:social_media_app/core/widgets/custom_loading_indicator.dart';
 import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/toast/app_toast.dart';
 import '../cubit/group_list_cubit/group_list_cubit.dart';
@@ -140,7 +141,7 @@ class _CreateGroupViewState extends State<CreateGroupView> {
                     ? const SizedBox(
                       width: 20,
                       height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
+                      child: CustomLoadingIndicator(),
                     )
                     : Text('Create', style: TextStyle(color: primary)),
           ),

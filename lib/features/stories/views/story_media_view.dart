@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:social_media_app/core/widgets/cached_cloudinary_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:social_media_app/core/widgets/custom_loading_indicator.dart';
 import 'package:story_view/story_view.dart';
 import 'package:video_player/video_player.dart';
 import '../../../core/cache/repository/media_cache_repository.dart';
@@ -118,7 +119,7 @@ class _StoryMediaViewState extends State<StoryMediaView> {
           );
         }
         if (!_videoReady) {
-          return const Center(child: CircularProgressIndicator());
+          return const Center(child: CustomLoadingIndicator());
         }
         return Center(
           child: AspectRatio(

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
+import '../../../core/widgets/custom_loading_indicator.dart';
 import '../cubit/story_views_cubit/story_views_cubit.dart';
 import 'story_views_bottom_sheet.dart';
 
@@ -51,12 +52,6 @@ class StoryViewsIndicator extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(
-                  Icons.remove_red_eye_rounded,
-                  color: Colors.white,
-                  size: 15,
-                ),
-                const Gap(6),
                 if (count != null)
                   Text(
                     '$count',
@@ -70,11 +65,14 @@ class StoryViewsIndicator extends StatelessWidget {
                   const SizedBox(
                     width: 10,
                     height: 10,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 1.5,
-                      valueColor: AlwaysStoppedAnimation(Colors.white70),
-                    ),
+                    child: CustomLoadingIndicator(color: Colors.white70),
                   ),
+                const Gap(6),
+                const Icon(
+                  Icons.remove_red_eye_rounded,
+                  color: Colors.white,
+                  size: 15,
+                ),
               ],
             ),
           ),

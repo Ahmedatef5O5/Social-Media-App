@@ -4,6 +4,7 @@ import 'dart:ui' as ui;
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
+import 'package:social_media_app/core/widgets/custom_loading_indicator.dart';
 
 final StreamController<String> _globalGifPlayController =
     StreamController<String>.broadcast();
@@ -145,11 +146,7 @@ class _LoopLimitedGifState extends State<LoopLimitedGif> {
   Widget build(BuildContext context) {
     if (_isLoading) {
       return _placeholder(
-        const SizedBox(
-          width: 30,
-          height: 30,
-          child: CircularProgressIndicator(strokeWidth: 2),
-        ),
+        const SizedBox(width: 30, height: 30, child: CustomLoadingIndicator()),
       );
     }
     if (_hasError || _thumbnailFrame == null) {

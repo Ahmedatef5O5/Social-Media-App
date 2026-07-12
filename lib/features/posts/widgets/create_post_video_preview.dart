@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
+import '../../../core/widgets/custom_loading_indicator.dart';
 
 class CreatePostVideoPreview extends StatefulWidget {
   final String videoPath;
@@ -54,7 +55,7 @@ class _CreatePostVideoPreviewState extends State<CreatePostVideoPreview> {
             if (_isInitialized)
               VideoPlayer(_controller)
             else
-              const CircularProgressIndicator(),
+              const CustomLoadingIndicator(),
 
             GestureDetector(
               onTap: () {

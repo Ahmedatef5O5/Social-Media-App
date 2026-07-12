@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:video_player/video_player.dart';
 
+import '../../../core/widgets/custom_loading_indicator.dart';
+
 class GroupMediaPreviewScreen extends StatefulWidget {
   final File file;
   final String type;
@@ -90,9 +92,7 @@ class _GroupMediaPreviewScreenState extends State<GroupMediaPreviewScreen> {
                             ),
                           )
                           : const Center(
-                            child: CircularProgressIndicator(
-                              color: Colors.white,
-                            ),
+                            child: CustomLoadingIndicator(color: Colors.white),
                           )),
             ),
           ),

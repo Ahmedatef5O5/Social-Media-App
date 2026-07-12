@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/widgets/custom_loading_indicator.dart';
 import '../services/app_lock_service.dart';
 
 class AppLockScreen extends StatefulWidget {
@@ -74,8 +75,7 @@ class _AppLockScreenState extends State<AppLockScreen> {
                       ? SizedBox(
                         width: 28,
                         height: 28,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2.5,
+                        child: CustomLoadingIndicator(
                           color: theme.primaryColor,
                         ),
                       )

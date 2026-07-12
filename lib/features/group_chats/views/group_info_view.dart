@@ -76,7 +76,7 @@ class _GroupInfoViewState extends State<GroupInfoView> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (_) => const Center(child: CircularProgressIndicator()),
+      builder: (_) => const Center(child: CustomLoadingIndicator()),
     );
 
     try {

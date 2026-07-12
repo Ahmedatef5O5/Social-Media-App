@@ -9,6 +9,7 @@ import 'package:social_media_app/features/auth/cubit/auth_cubit/auth_cubit.dart'
 import 'package:social_media_app/features/profile/cubits/profile_cubit/profile_cubit.dart';
 import 'package:social_media_app/features/settings/widgets/theme_picker_sheet_widget.dart';
 import '../../../core/toast/app_toast.dart';
+import '../../../core/widgets/custom_loading_indicator.dart';
 import '../cubit/settings_state.dart';
 import '../cubit/setttings_cubit.dart';
 
@@ -721,8 +722,9 @@ class _SettingsViewState extends State<SettingsView>
                         child: SizedBox(
                           width: 18,
                           height: 18,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
+
+                          child: CustomLoadingIndicator(
+                           
                             color: color,
                           ),
                         ),
