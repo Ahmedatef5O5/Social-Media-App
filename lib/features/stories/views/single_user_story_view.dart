@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:social_media_app/core/toast/app_toast.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:video_player/video_player.dart';
 import '../cubit/stories_cubit/stories_cubit.dart';
@@ -41,9 +42,23 @@ class SingleUserStoryView extends StatefulWidget {
 
 class _SingleUserStoryViewState extends State<SingleUserStoryView> {
   VideoPlayerController? _videoController;
+  bool _isDisposed = false;
+
+  void _pauseStory() {
+    widget.onLongPressStart();
+    if (_isDisposed || !mounted) return;
+    _videoController?.pause();
+  }
+
+  void _resumeStory() {
+    widget.onLongPressEnd();
+    if (_isDisposed || !mounted) return;
+    _videoController?.play();
+  }
 
   @override
   void dispose() {
+    _isDisposed = true;
     _videoController?.dispose();
     super.dispose();
   }
@@ -91,8 +106,8 @@ class _SingleUserStoryViewState extends State<SingleUserStoryView> {
                   onNext: widget.onNext,
                   onPrev: widget.onPrev,
                   onClose: widget.onClose,
-                  onLongPressStart: widget.onLongPressStart,
-                  onLongPressEnd: widget.onLongPressEnd,
+                  onLongPressStart: _pauseStory,
+                  onLongPressEnd: _resumeStory,
                 ),
               ),
               Positioned(
@@ -103,8 +118,8 @@ class _SingleUserStoryViewState extends State<SingleUserStoryView> {
                   story: widget.story,
                   storiesCubit: widget.storiesCubit,
                   onClose: widget.onClose,
-                  onPause: widget.onLongPressStart,
-                  onResume: widget.onLongPressEnd,
+                  onPause: _pauseStory,
+                  onResume: _resumeStory,
                   videoController: _videoController,
                 ),
               ),
@@ -152,8 +167,8 @@ class _SingleUserStoryViewState extends State<SingleUserStoryView> {
                         child: Align(
                           alignment: Alignment.center,
                           child: StoryViewsIndicator(
-                            onOpen: widget.onLongPressStart,
-                            onClose: widget.onLongPressEnd,
+                            onOpen: _pauseStory,
+                            onClose: _resumeStory,
                           ),
                         ),
                       ),
@@ -161,15 +176,16 @@ class _SingleUserStoryViewState extends State<SingleUserStoryView> {
                     if (!isMyStory)
                       StoryReplyInputBar(
                         story: widget.story,
-                        onComposingStart: widget.onLongPressStart,
-                        onComposingEnd: widget.onLongPressEnd,
+                        onComposingStart: _pauseStory,
+                        onComposingEnd: _resumeStory,
                         onSent: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Reply sent ✓'),
-                              duration: Duration(seconds: 1),
-                            ),
-                          );
+                          // ScaffoldMessenger.of(context).showSnackBar(
+                          //   const SnackBar(
+                          //     content: Text('Reply sent ✓'),
+                          //     duration: Duration(seconds: 1),
+                          //   ),
+                          // );
+                          AppToast.info('Reply sent ✓');
                         },
                       ),
                   ],

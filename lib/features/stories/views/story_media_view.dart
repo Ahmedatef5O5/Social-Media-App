@@ -46,31 +46,60 @@ class _StoryMediaViewState extends State<StoryMediaView> {
 
   Future<void> _initVideo() async {
     try {
-      final localPath = await context
-          .read<MediaCacheRepository>()
-          .resolveLocalPath(widget.story.videoUrl!);
+      final file = await context.read<MediaCacheRepository>().resolveLocalPath(
+        widget.story.videoUrl!,
+      );
+      if (file != null) {
+        _videoController = VideoPlayerController.file(File(file));
+      } else {
+        _videoController = VideoPlayerController.networkUrl(
+          Uri.parse(widget.story.videoUrl!),
+        );
+      }
 
-      final controller =
-          localPath != null
-              ? VideoPlayerController.file(File(localPath))
-              : VideoPlayerController.networkUrl(
-                Uri.parse(widget.story.videoUrl!),
-              );
-      await controller.initialize();
-      controller.play();
-      controller.addListener(_onVideoUpdate);
-      _videoController = controller;
-      widget.onVideoControllerReady(controller);
-      setState(() => _videoReady = true);
-      widget.onMediaReady(controller.value.duration);
-    } catch (_) {
-      setState(() => _videoError = true);
-      widget.onMediaReady(null);
+      _videoController!.addListener(_onVideoUpdate);
+
+      _videoController!
+          .initialize()
+          .then((_) {
+            if (!mounted) return;
+            setState(() {
+              _videoReady = true;
+            });
+            _videoController!.play();
+            widget.onVideoControllerReady(_videoController!);
+
+            Duration reportedDuration = _videoController!.value.duration;
+            int? dbDurationSeconds = widget.story.videoDurationSeconds;
+
+            if (reportedDuration.inMilliseconds < 500 &&
+                dbDurationSeconds != null &&
+                dbDurationSeconds > 0) {
+              widget.onMediaReady(Duration(seconds: dbDurationSeconds));
+            } else {
+              widget.onMediaReady(reportedDuration);
+            }
+          })
+          .catchError((error) {
+            debugPrint('Error initializing video: $error');
+            if (mounted) setState(() => _videoError = true);
+            widget.onMediaReady(const Duration(seconds: 5));
+          });
+    } catch (e) {
+      debugPrint('Error in _initVideo: $e');
+      if (mounted) setState(() => _videoError = true);
+      widget.onMediaReady(const Duration(seconds: 5));
     }
   }
 
   void _onVideoUpdate() {
+    if (_videoController == null) return;
     final v = _videoController!.value;
+
+    if (!v.isInitialized) return;
+
+    if (v.duration.inMilliseconds < 500) return;
+
     if (v.position >= v.duration && !v.isPlaying) {
       widget.onVideoFinished();
     }

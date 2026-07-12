@@ -11,13 +11,11 @@ import '../model/story_viewer_model.dart';
 class StoryViewsBottomSheet extends StatelessWidget {
   const StoryViewsBottomSheet({super.key});
 
-  void _openChatWith(BuildContext context, StoryViewerModel viewer) {
+  void _navigateToProfile(BuildContext context, StoryViewerModel viewer) {
     Navigator.of(context).pop();
-    Navigator.of(context).pop();
-    Navigator.of(context).pushNamed(
-      AppRoutes.chatDetailsViewRoute,
-      arguments: viewer.toChatUserModel(),
-    );
+    Navigator.of(
+      context,
+    ).pushNamed(AppRoutes.profileViewRoute, arguments: viewer.viewerId);
   }
 
   @override
@@ -54,14 +52,19 @@ class StoryViewsBottomSheet extends StatelessWidget {
                     ),
                   ),
                   const Gap(15),
-                  Text(
-                    'Views & Reactions',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+                  BlocBuilder<StoryViewsCubit, StoryViewsState>(
+                    builder: (context, state) {
+                      final count =
+                          state is StoryViewsLoaded ? state.viewers.length : 0;
+                      return Text(
+                        '$count Views',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      );
+                    },
                   ),
                   const Gap(10),
-                  const Divider(height: 1),
                   Expanded(
                     child: BlocBuilder<StoryViewsCubit, StoryViewsState>(
                       builder: (context, state) {
@@ -90,46 +93,53 @@ class StoryViewsBottomSheet extends StatelessWidget {
                             itemBuilder: (context, index) {
                               final viewer = viewers[index];
                               return ListTile(
-                                leading: Stack(
-                                  clipBehavior: Clip.none,
-                                  children: [
-                                    AppAvatar(
-                                      imageUrl: viewer.userImageUrl,
-                                      size: 45,
-                                    ),
-                                    if (viewer.hasReacted)
-                                      Positioned(
-                                        bottom: -4,
-                                        right: -4,
-                                        child: Container(
-                                          padding: const EdgeInsets.all(3),
-                                          decoration: BoxDecoration(
-                                            color: colorScheme.surface,
-                                            shape: BoxShape.circle,
-                                            boxShadow: [
-                                              BoxShadow(
-                                                color: Colors.black.withValues(
-                                                  alpha: 0.1,
+                                leading: GestureDetector(
+                                  onTap:
+                                      () => _navigateToProfile(context, viewer),
+                                  child: Stack(
+                                    clipBehavior: Clip.none,
+                                    children: [
+                                      AppAvatar(
+                                        imageUrl: viewer.userImageUrl,
+                                        size: 45,
+                                      ),
+                                      if (viewer.hasReacted)
+                                        Positioned(
+                                          bottom: -4,
+                                          right: -4,
+                                          child: Container(
+                                            padding: const EdgeInsets.all(3),
+                                            decoration: BoxDecoration(
+                                              color: colorScheme.surface,
+                                              shape: BoxShape.circle,
+                                              boxShadow: [
+                                                BoxShadow(
+                                                  color: Colors.black
+                                                      .withValues(alpha: 0.1),
+                                                  blurRadius: 2,
                                                 ),
-                                                blurRadius: 2,
+                                              ],
+                                            ),
+                                            child: Text(
+                                              viewer.reaction!,
+                                              style: const TextStyle(
+                                                fontSize: 14,
                                               ),
-                                            ],
-                                          ),
-                                          child: Text(
-                                            viewer.reaction!,
-                                            style: const TextStyle(
-                                              fontSize: 14,
                                             ),
                                           ),
                                         ),
-                                      ),
-                                  ],
+                                    ],
+                                  ),
                                 ),
-                                title: Text(
-                                  viewer.userName,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 15,
+                                title: GestureDetector(
+                                  onTap:
+                                      () => _navigateToProfile(context, viewer),
+                                  child: Text(
+                                    viewer.userName,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 15,
+                                    ),
                                   ),
                                 ),
                                 subtitle: Text(
@@ -140,15 +150,6 @@ class StoryViewsBottomSheet extends StatelessWidget {
                                     fontSize: 12,
                                     color: Colors.grey,
                                   ),
-                                ),
-                                trailing: IconButton(
-                                  icon: Icon(
-                                    Icons.chat_bubble_outline_rounded,
-                                    color: theme.primaryColor,
-                                    size: 22,
-                                  ),
-                                  onPressed:
-                                      () => _openChatWith(context, viewer),
                                 ),
                               );
                             },

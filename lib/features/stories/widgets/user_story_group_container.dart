@@ -57,7 +57,10 @@ class _UserStoryGroupContainerState extends State<UserStoryGroupContainer>
   Duration _durationForStory(StoryModel story) {
     switch (story.storyType) {
       case StoryType.video:
-        return const Duration(seconds: 60);
+        final secs = story.videoDurationSeconds;
+        return (secs != null && secs > 0)
+            ? Duration(seconds: secs)
+            : const Duration(seconds: 60);
       case StoryType.image:
       case StoryType.text:
         return const Duration(seconds: 7);
@@ -65,17 +68,31 @@ class _UserStoryGroupContainerState extends State<UserStoryGroupContainer>
   }
 
   void _onMediaReady(Duration? actualDuration) {
-    if (!mounted || _mediaReady) return;
-    _mediaReady = true;
+    if (!mounted) return;
 
-    final duration =
-        actualDuration ??
-        _durationForStory(widget.userStories[_currentStoryIndex]);
+    if (_mediaReady) return;
 
-    _progressController.stop();
-    _progressController.reset();
-    _progressController.duration = duration;
-    _progressController.forward(from: 0.0);
+    setState(() {
+      _mediaReady = true;
+    });
+
+    Duration safeDuration = actualDuration ?? const Duration(seconds: 5);
+    final currentStory = widget.userStories[_currentStoryIndex];
+
+    if (currentStory.storyType == StoryType.video &&
+        safeDuration.inMilliseconds < 500) {
+      if (currentStory.videoDurationSeconds != null &&
+          currentStory.videoDurationSeconds! > 0) {
+        safeDuration = Duration(seconds: currentStory.videoDurationSeconds!);
+      } else {
+        safeDuration = const Duration(seconds: 15);
+      }
+    }
+
+    _progressController.duration = safeDuration;
+    if (!_isCompleted) {
+      _progressController.forward(from: 0);
+    }
   }
 
   void _nextStory() {
