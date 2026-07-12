@@ -23,6 +23,8 @@ class PostsServices {
 
   static const String _postsQuery = ''' 
   *,
+  saved_count,
+  is_post_saved,
   ${SupabaseConstants.users} (${UserColumns.name}, ${UserColumns.imageUrl}, ${UserColumns.lastSeen}),
   ${SupabaseConstants.comments} (
   *,
@@ -257,6 +259,62 @@ class PostsServices {
       });
     } catch (e) {
       debugPrint("Error toggling reaction in DB: $e");
+      rethrow;
+    }
+  }
+
+  Future<void> toggleSavePost({
+    required String postId,
+    required String userId,
+    required bool isCurrentlySaved,
+  }) async {
+    try {
+      if (isCurrentlySaved) {
+        await _supabase.from(SupabaseConstants.savedPosts).delete().match({
+          SavedPostColumns.postId: postId,
+          SavedPostColumns.userId: userId,
+        });
+      } else {
+        await _supabase.from(SupabaseConstants.savedPosts).insert({
+          SavedPostColumns.postId: postId,
+          SavedPostColumns.userId: userId,
+        });
+      }
+    } catch (e) {
+      debugPrint('Error toggling saved post in DB: $e');
+      rethrow;
+    }
+  }
+
+  Future<List<PostModel>> fetchSavedPosts(String userId) async {
+    if (!(await _networkStatus.isConnected())) {
+      throw Exception('no-internet');
+    }
+    try {
+      final rows = await _supabase
+          .from(SupabaseConstants.savedPosts)
+          .select(
+            '${SavedPostColumns.createdAt}, ${SupabaseConstants.posts} ($_postsQuery)',
+          )
+          .eq(SavedPostColumns.userId, userId)
+          .order(SavedPostColumns.createdAt, ascending: false);
+
+      final List<PostModel> savedPosts = [];
+      for (final row in rows as List) {
+        final postData = row[SupabaseConstants.posts] as Map<String, dynamic>?;
+        if (postData == null) continue; // maybe post was deleted
+
+        final post = PostModel.fromMap(postData);
+        final flatComments =
+            (postData['comments'] as List? ?? [])
+                .map((e) => CommentModel.fromMap(e))
+                .toList();
+        final tree = CommentTreeBuilder.build(flatComments);
+        savedPosts.add(post.copyWith(comments: tree));
+      }
+      return savedPosts;
+    } catch (e) {
+      debugPrint('fetchSavedPosts error: $e');
       rethrow;
     }
   }

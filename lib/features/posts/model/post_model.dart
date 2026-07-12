@@ -34,6 +34,9 @@ class PostModel {
   final DateTime? lastSeen;
   final bool isOnline;
 
+  final int savedCount;
+  final bool isSavedByMe;
+
   const PostModel({
     required this.id,
     required this.text,
@@ -51,6 +54,8 @@ class PostModel {
     this.shares,
     this.lastSeen,
     this.isOnline = false,
+    this.savedCount = 0,
+    this.isSavedByMe = false,
   });
 
   Map<String, dynamic> toMap() {
@@ -130,6 +135,8 @@ class PostModel {
               ? DateTime.parse(userData[UserColumns.lastSeen].toString())
               : null,
       isOnline: false,
+      savedCount: map['saved_count'] as int? ?? 0,
+      isSavedByMe: map['is_post_saved'] as bool? ?? false,
     );
   }
 
@@ -150,6 +157,8 @@ class PostModel {
     List<String>? shares,
     final DateTime? lastSeen,
     final bool? isOnline,
+    final int? savedCount,
+    final bool? isSavedByMe,
   }) {
     return PostModel(
       id: id ?? this.id,
@@ -168,6 +177,8 @@ class PostModel {
       shares: shares ?? this.shares,
       lastSeen: lastSeen ?? this.lastSeen,
       isOnline: isOnline ?? this.isOnline,
+      savedCount: savedCount ?? this.savedCount,
+      isSavedByMe: isSavedByMe ?? this.isSavedByMe,
     );
   }
 
@@ -188,6 +199,8 @@ class PostModel {
     'shares': shares,
     'last_seen': lastSeen?.toIso8601String(),
     'is_online': isOnline,
+    'saved_count': savedCount,
+    'is_post_saved': isSavedByMe,
   };
 
   factory PostModel.fromCacheJson(Map<String, dynamic> map) {
@@ -220,6 +233,8 @@ class PostModel {
               ? DateTime.parse(map['last_seen'] as String)
               : null,
       isOnline: map['is_online'] as bool? ?? false,
+      savedCount: map['saved_count'] as int? ?? 0,
+      isSavedByMe: map['is_post_saved'] as bool? ?? false,
     );
   }
 }

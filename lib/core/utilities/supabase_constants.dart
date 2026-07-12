@@ -8,6 +8,7 @@ abstract class SupabaseConstants {
   static const String posts = 'posts';
   static const String likes = 'post_likes';
   static const String comments = 'comments';
+  static const String savedPosts = 'saved_posts';
 
   // ── Chat Feature ──
   static const String messages = 'messages';
@@ -175,6 +176,14 @@ abstract class LikeColumns {
   static const String postId = 'post_id';
   static const String userId = 'user_id';
   static const String reaction = 'reaction';
+  static const String createdAt = 'created_at';
+}
+
+// subClass for saved_posts column table
+abstract class SavedPostColumns {
+  static const String id = 'id';
+  static const String postId = 'post_id';
+  static const String userId = 'user_id';
   static const String createdAt = 'created_at';
 }
 
