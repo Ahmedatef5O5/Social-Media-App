@@ -39,7 +39,6 @@ class StoriesServices {
   }) async {
     return await storage.uploadFile(
       file,
-      // SupabaseConstants.storyVideos,
       'stories',
       userId,
       onProgress: onProgress,
@@ -101,6 +100,13 @@ class StoriesServices {
     } catch (e) {
       debugPrint('markStoryViewed silent error: $e');
     }
+  }
+
+  Stream<List<Map<String, dynamic>>> getStoryViewsStream(String storyId) {
+    return _supabase
+        .from(SupabaseConstants.storyViews)
+        .stream(primaryKey: [StoryColumns.id])
+        .eq(StoryViewColumns.storyId, storyId);
   }
 
   Future<List<Map<String, dynamic>>> getMyStoriesOverview() async {

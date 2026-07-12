@@ -52,4 +52,14 @@ class StoryViewerModel {
       lastSeen: lastSeen,
     );
   }
+
+  Map<String, dynamic> toCacheJson() => {
+    'viewer_id': viewerId,
+    'user_name': userName,
+    'user_image_url': userImageUrl,
+    'reaction': reaction,
+    'viewed_at': viewedAt.toIso8601String(),
+    'is_online': isOnline,
+    'last_seen': lastSeen?.toIso8601String(),
+  };
 }
