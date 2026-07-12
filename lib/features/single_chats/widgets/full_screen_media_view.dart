@@ -64,7 +64,7 @@ class _FullScreenMediaViewState extends State<FullScreenMediaView> {
   @override
   void initState() {
     super.initState();
-    if (widget.videoUrl != null) {
+    if (widget.controller != null) {
       _videoController = widget.controller;
       _isExternalController = true;
       if (!_videoController!.value.isPlaying) {

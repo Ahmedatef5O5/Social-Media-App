@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:social_media_app/core/widgets/cached_cloudinary_image.dart';
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
@@ -42,6 +43,7 @@ class _FullScreenImageViewerState extends State<FullScreenImageViewer> {
     final String imageUrl = args['url'];
     final String heroTag = args['tag'] ?? imageUrl;
     final bool isAsset = args['isAsset'] ?? false;
+    final bool isLocalFile = args['isLocalFile'] ?? false;
     final String? caption = args['caption'];
     return GestureDetector(
       onScaleUpdate: (details) {
@@ -91,7 +93,7 @@ class _FullScreenImageViewerState extends State<FullScreenImageViewer> {
                             ),
                           ),
 
-                          if (!isAsset)
+                          if (!isAsset && !isLocalFile)
                             _isSaving
                                 ? const Padding(
                                   padding: EdgeInsets.all(12.0),
@@ -173,6 +175,12 @@ class _FullScreenImageViewerState extends State<FullScreenImageViewer> {
                                   isAsset
                                       ? Image.asset(
                                         imageUrl,
+                                        fit: BoxFit.contain,
+                                        width: double.infinity,
+                                      )
+                                      : isLocalFile
+                                      ? Image.file(
+                                        File(imageUrl),
                                         fit: BoxFit.contain,
                                         width: double.infinity,
                                       )
