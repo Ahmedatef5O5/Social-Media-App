@@ -50,33 +50,34 @@ class _EmptyPlaceholderStateState extends State<EmptyPlaceholderState>
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           RepaintBoundary(
-            child: Lottie.asset(
-              widget.img,
-              controller: _controller,
-              height: widget.imgHeight,
-              width: widget.imgWidth,
-              delegates:
-                  widget.delegates ??
-                  LottieDelegates(
-                    values: [
-                      ValueDelegate.colorFilter(
-                        ['**'],
-                        value: ColorFilter.mode(
-                          Theme.of(
-                            context,
-                          ).primaryColor.withValues(alpha: widget.opacity),
-                          BlendMode.srcATop,
+            child: Opacity(
+              opacity: widget.opacity,
+              child: Lottie.asset(
+                widget.img,
+                controller: _controller,
+                height: widget.imgHeight,
+                width: widget.imgWidth,
+                delegates:
+                    widget.delegates ??
+                    LottieDelegates(
+                      values: [
+                        ValueDelegate.colorFilter(
+                          ['**'],
+                          value: ColorFilter.mode(
+                            Theme.of(context).primaryColor,
+                            BlendMode.srcIn,
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-              animate: true,
-              onLoaded: (composition) {
-                _controller.duration = composition.duration;
-                _controller.repeat(
-                  period: composition.duration ~/ (widget.periodSpeed ?? 2),
-                );
-              },
+                      ],
+                    ),
+                animate: true,
+                onLoaded: (composition) {
+                  _controller.duration = composition.duration;
+                  _controller.repeat(
+                    period: composition.duration ~/ (widget.periodSpeed ?? 2),
+                  );
+                },
+              ),
             ),
           ),
           const Gap(12),

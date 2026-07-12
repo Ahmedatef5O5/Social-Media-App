@@ -11,7 +11,6 @@ class DrawerHeaderWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
     return Container(
       padding: const EdgeInsets.only(bottom: 20),
       child: Column(
@@ -19,8 +18,7 @@ class DrawerHeaderWidget extends StatelessWidget {
           Stack(
             children: [
               CustomUserProfileImagesSection(
-                totalHeight: size.height * 0.26,
-                backgroundHeight: size.height * 0.22,
+                avatarAlignment: Alignment.bottomCenter,
                 backgroundUrl:
                     user.backgroundImageUrl ?? AppImages.defaultBackgroundImg,
                 avatarUrl: user.imageUrl ?? AppImages.defaultUserImg,

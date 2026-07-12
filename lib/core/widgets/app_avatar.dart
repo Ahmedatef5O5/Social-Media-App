@@ -91,7 +91,7 @@ class AppAvatar extends StatelessWidget {
       height: size,
       fit: BoxFit.cover,
       isAvatar: true,
-      placeholder: (_) => CustomLoadingIndicator(radius: size / 4),
+      placeholder: (_) => CustomLoadingIndicator(radius: size / 7),
       errorWidget:
           (_, __) => Image.asset(
             AppImages.defaultUserImg,
