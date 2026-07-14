@@ -15,7 +15,7 @@ import '../models/groupe_message_model.dart';
 class GroupChatServices {
   final _supabase = SupabaseProvider.client;
 
-  String get currentUserId => _supabase.auth.currentUser!.id;
+  String get currentUserId => SupabaseProvider.id;
 
   CloudinaryStorageServices get storage => CloudinaryStorageServices.instance;
 
@@ -182,7 +182,7 @@ class GroupChatServices {
     String? videoPublicId,
     String? voicePublicId,
   }) async {
-    final currentUser = _supabase.auth.currentUser!;
+    final currentUser = SupabaseProvider.user!;
 
     final userProfile =
         await _supabase

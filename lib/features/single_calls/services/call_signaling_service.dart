@@ -16,7 +16,7 @@ class CallSignalingService {
   }
 
   Stream<List<Map<String, dynamic>>> get incomingCallsStream {
-    final user = _supabase.auth.currentUser;
+    final user = SupabaseProvider.user;
     if (user == null) return const Stream.empty();
 
     return _supabase
