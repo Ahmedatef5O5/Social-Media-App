@@ -43,6 +43,11 @@ class _CachedCloudinaryImageState extends State<CachedCloudinaryImage> {
 
     String finalUrl = widget.secureUrl;
 
+    finalUrl = finalUrl.replaceAll(
+      RegExp(r'\.(heic|heif)$', caseSensitive: false),
+      '.webp',
+    );
+
     if (!finalUrl.contains('q_auto')) {
       finalUrl = finalUrl.replaceFirst('/upload/', '/upload/q_auto,f_auto/');
     }
@@ -74,7 +79,9 @@ class _CachedCloudinaryImageState extends State<CachedCloudinaryImage> {
   }
 
   void _resolve() {
-    if (widget.secureUrl.isEmpty) {
+    final targetUrl = _optimizedUrl;
+
+    if (targetUrl.isEmpty || targetUrl.startsWith('assets/')) {
       _syncLocalPath = null;
       _localPathFuture = Future.value(null);
       return;
@@ -82,7 +89,7 @@ class _CachedCloudinaryImageState extends State<CachedCloudinaryImage> {
 
     final repo = context.read<MediaCacheRepository>();
 
-    final syncPath = repo.resolveLocalPathSync(widget.secureUrl);
+    final syncPath = repo.resolveLocalPathSync(targetUrl);
 
     if (syncPath != null) {
       _syncLocalPath = syncPath;
@@ -90,18 +97,20 @@ class _CachedCloudinaryImageState extends State<CachedCloudinaryImage> {
       return;
     }
     _syncLocalPath = null;
-    _localPathFuture = repo.resolveLocalPath(widget.secureUrl);
+    _localPathFuture = repo.resolveLocalPath(targetUrl);
   }
 
   @override
   Widget build(BuildContext context) {
-    if (widget.secureUrl.isEmpty || widget.secureUrl == 'asset:default') {
+    final targetUrl = _optimizedUrl;
+
+    if (targetUrl.isEmpty || targetUrl == 'asset:default') {
       return _buildDefaultPlaceholder();
     }
 
-    if (widget.secureUrl.startsWith('assets/')) {
+    if (targetUrl.startsWith('assets/')) {
       return Image.asset(
-        widget.secureUrl,
+        targetUrl,
         fit: widget.fit,
         width: widget.width,
         height: widget.height,
@@ -109,9 +118,11 @@ class _CachedCloudinaryImageState extends State<CachedCloudinaryImage> {
             (context, error, stackTrace) => _buildError(context, error),
       );
     }
-    if (widget.secureUrl.isEmpty) {
-      return _buildError(context, StateError('empty secureUrl'));
+
+    if (!targetUrl.startsWith('http')) {
+      return _buildDefaultPlaceholder();
     }
+
     if (_syncLocalPath != null) {
       return _buildImageFile(_syncLocalPath!);
     }
