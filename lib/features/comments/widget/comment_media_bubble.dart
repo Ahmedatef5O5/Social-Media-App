@@ -12,6 +12,7 @@ import 'package:social_media_app/features/comments/model/comment_type.dart';
 import 'package:social_media_app/features/comments/widget/comment_voice_player.dart';
 import '../../../core/widgets/loop_limited_gif.dart';
 import '../../single_chats/widgets/full_screen_media_view.dart';
+import '../../stickers/utils/animated_loop_cloudinary_sticker.dart';
 
 class CommentMediaBubble extends StatelessWidget {
   final CommentModel comment;
@@ -121,7 +122,12 @@ class _StickerBubble extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (comment.imageUrl == null) return const SizedBox.shrink();
-    return Image.asset(comment.imageUrl!, width: 96, height: 96);
+    return AnimatedLoopCloudinarySticker(
+      secureUrl: comment.imageUrl!,
+      maxLoops: 2,
+      width: 140,
+      height: 140,
+    );
   }
 }
 

@@ -9,7 +9,6 @@ import 'package:social_media_app/features/comments/cubit/comments_cubit.dart';
 import 'package:social_media_app/features/comments/model/comment_attachment_draft.dart';
 import 'package:social_media_app/features/comments/model/comment_type.dart';
 import 'package:social_media_app/features/comments/widget/comment_voice_player.dart';
-
 import '../../../core/router/app_routes.dart';
 import '../../single_chats/widgets/full_screen_media_view.dart';
 
@@ -121,23 +120,14 @@ class _PreviewThumbnail extends StatelessWidget {
 
       case CommentType.gif:
       case CommentType.sticker:
-        final isAsset = attachment.type == CommentType.sticker;
         return ClipRRect(
           borderRadius: BorderRadius.circular(12),
-          child:
-              isAsset
-                  ? Image.asset(
-                    attachment.remoteUrl!,
-                    width: size,
-                    height: size,
-                    fit: BoxFit.cover,
-                  )
-                  : Image.network(
-                    attachment.remoteUrl!,
-                    width: size,
-                    height: size,
-                    fit: BoxFit.cover,
-                  ),
+          child: Image.network(
+            attachment.remoteUrl!,
+            width: size,
+            height: size,
+            fit: BoxFit.cover,
+          ),
         );
 
       case CommentType.voice:
