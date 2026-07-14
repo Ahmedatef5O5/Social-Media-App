@@ -343,13 +343,11 @@ class CommentsCubit extends Cubit<CommentsState> {
 
     final resolvedCommentId = resolveId(commentId);
 
-    emit(
-      CommentReactionOptimistic(
-        postId: postId,
-        commentId: resolvedCommentId,
-        emoji: emoji,
-      ),
-    );
+    comments =
+        comments
+            .map((c) => _updateReactionInTree(c, resolvedCommentId, emoji))
+            .toList();
+    emit(CommentsUiChanged());
 
     try {
       final userId = SupabaseProvider.id;
@@ -373,5 +371,68 @@ class CommentsCubit extends Cubit<CommentsState> {
       final isOffline = await ConnectivityBannerController.notifyIfOffline();
       emit(CommentError(e.toString(), isConnectivityError: isOffline));
     }
+  }
+
+  CommentModel _updateReactionInTree(
+    CommentModel node,
+    String commentId,
+    String emoji,
+  ) {
+    if (node.id == commentId) {
+      return node.copyWith(reactions: _toggledReactions(node.reactions, emoji));
+    }
+    if (node.replies.isEmpty) return node;
+    return node.copyWith(
+      replies:
+          node.replies
+              .map((r) => _updateReactionInTree(r, commentId, emoji))
+              .toList(),
+    );
+  }
+
+  List<CommentReaction> _toggledReactions(
+    List<CommentReaction> current,
+    String emoji,
+  ) {
+    final updated = List<CommentReaction>.from(current);
+    final myIdx = updated.indexWhere((r) => r.reactedByMe);
+    if (myIdx >= 0) {
+      final old = updated[myIdx];
+      if (old.emoji == emoji) {
+        old.count <= 1
+            ? updated.removeAt(myIdx)
+            : updated[myIdx] = old.copyWith(
+              count: old.count - 1,
+              reactedByMe: false,
+            );
+      } else {
+        old.count <= 1
+            ? updated.removeAt(myIdx)
+            : updated[myIdx] = old.copyWith(
+              count: old.count - 1,
+              reactedByMe: false,
+            );
+        final ni = updated.indexWhere((r) => r.emoji == emoji);
+        ni >= 0
+            ? updated[ni] = updated[ni].copyWith(
+              count: updated[ni].count + 1,
+              reactedByMe: true,
+            )
+            : updated.add(
+              CommentReaction(emoji: emoji, count: 1, reactedByMe: true),
+            );
+      }
+    } else {
+      final ni = updated.indexWhere((r) => r.emoji == emoji);
+      ni >= 0
+          ? updated[ni] = updated[ni].copyWith(
+            count: updated[ni].count + 1,
+            reactedByMe: true,
+          )
+          : updated.add(
+            CommentReaction(emoji: emoji, count: 1, reactedByMe: true),
+          );
+    }
+    return updated;
   }
 }

@@ -44,7 +44,6 @@ class _CommentWidgetState extends State<CommentWidget>
     with SingleTickerProviderStateMixin {
   OverlayEntry? _overlayEntry;
   final GlobalKey _reactionKey = GlobalKey();
-  late List<CommentReaction> _reactions;
 
   late final AnimationController _stemController;
   late final Animation<double> _anim;
@@ -64,29 +63,6 @@ class _CommentWidgetState extends State<CommentWidget>
       curve: Curves.easeOutCubic,
       reverseCurve: Curves.easeInCubic,
     );
-    _reactions = List<CommentReaction>.from(widget.comment.reactions);
-  }
-
-  @override
-  void didUpdateWidget(CommentWidget old) {
-    super.didUpdateWidget(old);
-    if (!_reactionsEqual(old.comment.reactions, widget.comment.reactions)) {
-      setState(
-        () => _reactions = List<CommentReaction>.from(widget.comment.reactions),
-      );
-    }
-  }
-
-  bool _reactionsEqual(List<CommentReaction> a, List<CommentReaction> b) {
-    if (a.length != b.length) return false;
-    for (int i = 0; i < a.length; i++) {
-      if (a[i].emoji != b[i].emoji ||
-          a[i].count != b[i].count ||
-          a[i].reactedByMe != b[i].reactedByMe) {
-        return false;
-      }
-    }
-    return true;
   }
 
   void _showPicker() {
@@ -134,49 +110,6 @@ class _CommentWidgetState extends State<CommentWidget>
 
   void _applyReaction(String emoji) {
     HapticFeedback.selectionClick();
-    setState(() {
-      final updated = List<CommentReaction>.from(_reactions);
-      final myIdx = updated.indexWhere((r) => r.reactedByMe);
-      if (myIdx >= 0) {
-        final old = updated[myIdx];
-        if (old.emoji == emoji) {
-          old.count <= 1
-              ? updated.removeAt(myIdx)
-              : updated[myIdx] = old.copyWith(
-                count: old.count - 1,
-                reactedByMe: false,
-              );
-        } else {
-          old.count <= 1
-              ? updated.removeAt(myIdx)
-              : updated[myIdx] = old.copyWith(
-                count: old.count - 1,
-                reactedByMe: false,
-              );
-          final ni = updated.indexWhere((r) => r.emoji == emoji);
-          ni >= 0
-              ? updated[ni] = updated[ni].copyWith(
-                count: updated[ni].count + 1,
-                reactedByMe: true,
-              )
-              : updated.add(
-                CommentReaction(emoji: emoji, count: 1, reactedByMe: true),
-              );
-        }
-      } else {
-        final ni = updated.indexWhere((r) => r.emoji == emoji);
-        ni >= 0
-            ? updated[ni] = updated[ni].copyWith(
-              count: updated[ni].count + 1,
-              reactedByMe: true,
-            )
-            : updated.add(
-              CommentReaction(emoji: emoji, count: 1, reactedByMe: true),
-            );
-      }
-      _reactions = updated;
-    });
-
     context.read<CommentsCubit>().toggleReaction(
       commentId: widget.comment.id,
       commentOwnerId: widget.comment.authorId,
@@ -187,7 +120,7 @@ class _CommentWidgetState extends State<CommentWidget>
 
   String? get currentSelectedEmoji {
     try {
-      return _reactions.firstWhere((r) => r.reactedByMe).emoji;
+      return widget.comment.reactions.firstWhere((r) => r.reactedByMe).emoji;
     } catch (_) {
       return null;
     }
@@ -404,7 +337,9 @@ class _CommentWidgetState extends State<CommentWidget>
                                     ),
                                   ),
                         ),
-                        SizedBox(height: _reactions.isNotEmpty ? 16 : 6),
+                        SizedBox(
+                          height: widget.comment.reactions.isNotEmpty ? 16 : 6,
+                        ),
                         Padding(
                           padding: const EdgeInsets.only(left: 4),
                           child: Row(
@@ -423,17 +358,23 @@ class _CommentWidgetState extends State<CommentWidget>
                               CommentActionChip(
                                 key: _reactionKey,
                                 label:
-                                    _reactions.any((r) => r.reactedByMe)
-                                        ? _reactions
+                                    widget.comment.reactions.any(
+                                          (r) => r.reactedByMe,
+                                        )
+                                        ? widget.comment.reactions
                                             .firstWhere((r) => r.reactedByMe)
                                             .emoji
                                         : 'Like',
-                                isActive: _reactions.any((r) => r.reactedByMe),
+                                isActive: widget.comment.reactions.any(
+                                  (r) => r.reactedByMe,
+                                ),
                                 activeColor: theme.primaryColor,
                                 onTap: () {
-                                  if (_reactions.any((r) => r.reactedByMe)) {
+                                  if (widget.comment.reactions.any(
+                                    (r) => r.reactedByMe,
+                                  )) {
                                     _applyReaction(
-                                      _reactions
+                                      widget.comment.reactions
                                           .firstWhere((r) => r.reactedByMe)
                                           .emoji,
                                     );
@@ -454,7 +395,7 @@ class _CommentWidgetState extends State<CommentWidget>
                               ),
                               const SizedBox(width: 12),
                               CommentReactionsSummary(
-                                reactions: _reactions,
+                                reactions: widget.comment.reactions,
                                 onTap: () => _showCommentReactions(),
                               ),
                             ],

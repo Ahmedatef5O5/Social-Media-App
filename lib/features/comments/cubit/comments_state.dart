@@ -28,18 +28,6 @@ class CommentTempIdResolved extends CommentsState {
   });
 }
 
-class CommentReactionOptimistic extends CommentsState {
-  final String postId;
-  final String commentId;
-  final String emoji;
-
-  CommentReactionOptimistic({
-    required this.postId,
-    required this.commentId,
-    required this.emoji,
-  });
-}
-
 class CommentError extends CommentsState {
   final String message;
   final bool isConnectivityError;
