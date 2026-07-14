@@ -13,7 +13,15 @@ class SupabaseProvider {
   static User? get user => auth.currentUser;
 
   /// Current user id
-  static String get id => user!.id;
+  static String get id {
+    final currentUser = user;
+    if (currentUser == null) {
+      throw StateError(
+        'SupabaseProvider.id was accessed while no user is authenticated.',
+      );
+    }
+    return currentUser.id;
+  }
 
   /// Current user id or null
   static String? get idOrNull => user?.id;

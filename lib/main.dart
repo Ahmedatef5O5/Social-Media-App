@@ -6,10 +6,15 @@ import 'core/bootstrap/app_bootstrap.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await initializeApp();
+  try {
+    await initializeApp();
 
-  final prefs = await SharedPreferences.getInstance();
-  final String savedTheme = prefs.getString('user_theme_key') ?? 'ocean';
+    final prefs = await SharedPreferences.getInstance();
+    final savedTheme = prefs.getString('user_theme_key') ?? 'ocean';
 
-  runApp(buildApp(savedTheme));
+    runApp(buildApp(savedTheme));
+  } catch (e, s) {
+    debugPrint(e.toString());
+    debugPrint(s.toString());
+  }
 }

@@ -109,6 +109,9 @@ class PresenceService with WidgetsBindingObserver {
   }
 
   Future<void> _setOnline(bool isOnline) async {
+    final user = SupabaseProvider.user;
+    if (user == null) return;
+
     final uid = _userId ?? SupabaseProvider.id;
 
     final bool effectiveOnline =
