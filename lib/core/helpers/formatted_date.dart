@@ -1,4 +1,5 @@
 import 'package:intl/intl.dart';
+import 'package:social_media_app/core/helpers/date_extensions.dart';
 
 class FormattedDate {
   static DateTime safeParseDate(String dateString) {
@@ -84,11 +85,12 @@ class FormattedDate {
   }
 
   static String getLastSeen(DateTime lastSeen) {
-    final lastSeenUtc = lastSeen.toUtc();
+    final localDate = lastSeen.toString().toLocalFromSupabase();
+
     final nowUtc = DateTime.now().toUtc();
-    final diff = nowUtc.difference(lastSeenUtc);
-    final String time = DateFormat.jm().format(lastSeenUtc);
-    final String longTimeAgo = DateFormat('d/M/y').format(lastSeenUtc);
+    final diff = nowUtc.difference(localDate);
+    final String time = DateFormat.jm().format(localDate);
+    final String longTimeAgo = DateFormat('d/M/y').format(localDate);
     if (diff.inSeconds < 30) return 'Online';
     if (diff.inSeconds < 60) return 'just now';
     if (diff.inMinutes < 60) return 'at ${diff.inMinutes} minutes ago';
@@ -103,7 +105,6 @@ class FormattedDate {
         lastSeen.day == yesterday.day) {
       return 'Yesterday at $time';
     }
-    // if (diff.inDays == 1) return 'yesterday at $time';
     if (diff.inDays < 7) return 'at ${diff.inDays} days ago';
     return 'at $longTimeAgo';
   }
