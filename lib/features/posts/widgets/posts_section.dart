@@ -2,7 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
-import '../cubit/posts_cubit.dart';
+import '../cubit/posts_cubit/posts_cubit.dart';
 import 'post_item_widget.dart';
 
 class PostsSection extends StatelessWidget {

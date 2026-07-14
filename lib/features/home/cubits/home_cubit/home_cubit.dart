@@ -8,7 +8,7 @@ import 'package:social_media_app/core/cache/services/local_snapshot_store.dart';
 import 'package:social_media_app/features/auth/data/models/user_data.dart';
 import '../../../../core/connectivity/services/connectivity_banner_controller.dart';
 import '../../../../core/supabase/supabase_provider.dart';
-import '../../../posts/cubit/posts_cubit.dart';
+import '../../../posts/cubit/posts_cubit/posts_cubit.dart';
 import '../../../profile/services/user_services.dart';
 part 'home_state.dart';
 

@@ -7,7 +7,7 @@ import 'package:social_media_app/core/widgets/custom_loading_indicator.dart';
 import 'package:social_media_app/features/comments/cubit/comments_cubit.dart';
 import 'package:social_media_app/features/comments/model/comment_sort_option.dart';
 import 'package:social_media_app/features/comments/widget/comments_shimmer_skeleton.dart';
-import 'package:social_media_app/features/posts/cubit/posts_cubit.dart';
+import 'package:social_media_app/features/posts/cubit/posts_cubit/posts_cubit.dart';
 import 'package:social_media_app/features/posts/model/post_model.dart';
 import 'package:social_media_app/features/comments/widget/comments_section.dart';
 import '../../../core/constants/app_images.dart';

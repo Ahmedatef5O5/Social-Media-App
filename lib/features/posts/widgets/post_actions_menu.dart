@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:social_media_app/core/themes/app_colors.dart';
-import 'package:social_media_app/features/posts/cubit/posts_cubit.dart';
+import 'package:social_media_app/features/posts/cubit/posts_cubit/posts_cubit.dart';
 import 'package:social_media_app/features/posts/model/post_model.dart';
 import '../../../core/constants/app_images.dart';
 import '../../../core/toast/app_toast.dart';

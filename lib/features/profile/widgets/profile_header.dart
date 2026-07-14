@@ -10,7 +10,7 @@ import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/themes/app_colors.dart';
 import '../../../core/toast/app_toast.dart';
 import '../../../core/widgets/custom_elevated_button.dart';
-import '../../posts/cubit/posts_cubit.dart';
+import '../../posts/cubit/posts_cubit/posts_cubit.dart';
 import '../../single_chats/models/chat_user_model.dart';
 
 class ProfileHeader extends StatelessWidget {

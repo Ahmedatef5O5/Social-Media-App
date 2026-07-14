@@ -9,7 +9,7 @@ import 'package:social_media_app/core/widgets/custom_pull_to_refresh.dart';
 import 'package:social_media_app/core/widgets/custom_tab_wrapper.dart';
 import 'package:social_media_app/features/home/cubits/home_cubit/home_cubit.dart';
 import '../../../core/supabase/supabase_provider.dart';
-import '../../posts/cubit/posts_cubit.dart';
+import '../../posts/cubit/posts_cubit/posts_cubit.dart';
 import '../../stories/cubit/stories_cubit/stories_cubit.dart';
 import '../widgets/home_view_header_section.dart';
 import '../../posts/widgets/post_writing_card.dart';

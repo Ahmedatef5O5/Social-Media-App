@@ -7,7 +7,7 @@ import 'package:social_media_app/features/profile/views/profile_shimmer_view.dar
 import 'package:social_media_app/features/profile/widgets/profile_body_content.dart';
 import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/widgets/global_refresh_indicator.dart';
-import '../../posts/cubit/posts_cubit.dart';
+import '../../posts/cubit/posts_cubit/posts_cubit.dart';
 
 class ProfileView extends StatefulWidget {
   final String? userId;

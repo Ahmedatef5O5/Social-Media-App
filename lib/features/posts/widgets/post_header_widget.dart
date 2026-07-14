@@ -6,7 +6,7 @@ import '../../../core/router/app_routes.dart';
 import '../../../core/supabase/supabase_provider.dart';
 import '../../profile/widgets/user_preview_dialog.dart';
 import '../../home/cubits/home_cubit/home_cubit.dart';
-import '../cubit/posts_cubit.dart';
+import '../cubit/posts_cubit/posts_cubit.dart';
 import '../model/post_model.dart';
 import 'author_image_widget.dart';
 

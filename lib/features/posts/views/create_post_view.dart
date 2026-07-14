@@ -8,7 +8,7 @@ import 'package:social_media_app/features/home/cubits/home_cubit/home_cubit.dart
 import '../../../core/helpers/modern_circle_progress.dart';
 import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/toast/app_toast.dart';
-import '../cubit/posts_cubit.dart';
+import '../cubit/posts_cubit/posts_cubit.dart';
 import '../widgets/add_post_options_bottom_sheet.dart';
 import '../widgets/create_post_file_preview.dart';
 import '../widgets/create_post_header_section.dart';

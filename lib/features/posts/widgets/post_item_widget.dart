@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:social_media_app/features/posts/widgets/post_header_widget.dart';
 import '../../../core/supabase/supabase_provider.dart';
-import '../cubit/posts_cubit.dart';
+import '../cubit/posts_cubit/posts_cubit.dart';
 import '../model/post_model.dart';
 import 'post_interactions_row.dart';
 import 'post_media_widget.dart';

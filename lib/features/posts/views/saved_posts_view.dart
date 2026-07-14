@@ -6,7 +6,7 @@ import '../../../core/toast/app_toast.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
 import '../../../core/widgets/custom_tab_wrapper.dart';
 import '../../../core/widgets/empty_findings_animation_widget.dart';
-import '../cubit/posts_cubit.dart';
+import '../cubit/posts_cubit/posts_cubit.dart';
 import '../cubit/saved_posts_cubit/saved_posts_cubit.dart';
 import '../model/post_model.dart';
 import '../widgets/post_item_widget.dart';

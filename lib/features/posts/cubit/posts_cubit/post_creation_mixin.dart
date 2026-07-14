@@ -1,0 +1,232 @@
+part of 'posts_cubit.dart';
+
+mixin PostCreationMixin on Cubit<PostsState> {
+  CloudinaryStorageServices get _storage;
+  PostsServices get _postsServices;
+  Future<void> fetchPosts({bool isRefresh});
+
+  final filePickerServices = FilePickerServices();
+  XFile? selectedDocument;
+  XFile? selectedImage;
+  XFile? selectedVideo;
+
+  dio_pkg.CancelToken? _cancelToken;
+
+  Future<void> createPost({required String text}) async {
+    final user = SupabaseProvider.user;
+    if (user == null) return;
+    final userId = user.id;
+
+    emit(const PostCreating(0.0));
+
+    _cancelToken = dio_pkg.CancelToken();
+
+    String? imageUrl, videoUrl, fileUrl;
+    // ignore: unused_local_variable
+    String? imagePublicId, videoPublicId, filePublicId;
+
+    try {
+      void updateProgress(double p) {
+        if (state is PostCreating) {
+          emit(PostCreating(p.clamp(0.05, 0.95)));
+        }
+      }
+
+      if (selectedImage != null) {
+        final imageFile = File(selectedImage!.path);
+        if (await imageFile.exists()) {
+          final result = await _storage.uploadFile(
+            imageFile,
+            'posts',
+            'images',
+            cancelToken: _cancelToken,
+            onProgress: updateProgress,
+          );
+          imageUrl = result.secureUrl;
+          imagePublicId = result.publicId;
+        } else {
+          throw Exception('image_not_found');
+        }
+      }
+
+      if (selectedVideo != null) {
+        final videoFile = File(selectedVideo!.path);
+        if (await videoFile.exists()) {
+          final result = await _storage.uploadFile(
+            videoFile,
+            'posts',
+            'videos',
+            cancelToken: _cancelToken,
+            onProgress: updateProgress,
+          );
+          videoUrl = result.secureUrl;
+          videoPublicId = result.publicId;
+        } else {
+          throw Exception('video_not_found');
+        }
+      }
+
+      if (selectedDocument != null) {
+        final docFile = File(selectedDocument!.path);
+        if (await docFile.exists()) {
+          final result = await _storage.uploadFile(
+            docFile,
+            'posts',
+            'documents',
+            cancelToken: _cancelToken,
+            onProgress: updateProgress,
+          );
+
+          fileUrl = result.secureUrl;
+          filePublicId = result.publicId;
+        } else {
+          throw Exception("file_not_found");
+        }
+      }
+
+      final postRequest = PostRequestBody(
+        text: text,
+        authorId: userId,
+        imageUrl: imageUrl,
+        videoUrl: videoUrl,
+        fileUrl: fileUrl,
+        imagePublicId: imagePublicId,
+        videoPublicId: videoPublicId,
+        filePublicId: filePublicId,
+      );
+      await _postsServices.addPost(postRequest);
+
+      emit(PostCreating(1.0));
+      await Future.delayed(const Duration(milliseconds: 2000));
+      _resetMedia();
+      emit(PostCreated());
+
+      await fetchPosts(isRefresh: true);
+    } catch (e) {
+      final isOffline = await ConnectivityBannerController.notifyIfOffline();
+
+      final errorMessage = _mapExceptionToMessage(e);
+      if (errorMessage == "upload_canceled") {
+        emit(const PostUploadCanceled());
+      } else {
+        emit(PostCreateError(errorMessage, isConnectivityError: isOffline));
+      }
+    }
+  }
+
+  void cancelUpload() {
+    if (_cancelToken != null && !_cancelToken!.isCancelled) {
+      _cancelToken!.cancel('User canceled post upload');
+    }
+    emit(const PostUploadCanceled());
+  }
+
+  Future<void> deletePost(String postId) async {
+    try {
+      await _postsServices.deletePost(postId);
+      if (state is PostsLoaded) {
+        final updatePosts =
+            (state as PostsLoaded).posts.where((p) => p.id != postId).toList();
+        emit(PostsLoaded(updatePosts, DateTime.now()));
+      }
+    } catch (e) {
+      debugPrint('Error deleting post: $e');
+      emit(PostsError(e.toString()));
+    }
+  }
+
+  // ── Media picking (posts) ──────────────────────────────────────────────────
+
+  Future<void> pickImageFromGallery() async {
+    emit(MediaPicking());
+    try {
+      final image = await filePickerServices.pickImageFromGallery();
+      if (image != null) {
+        selectedImage = image;
+        emit(MediaPicked(image));
+      } else {
+        _emitPreviousState();
+      }
+    } catch (e) {
+      debugPrint('Error picking image from gallery: $e');
+      emit(MediaPickingError(e.toString()));
+    }
+  }
+
+  Future<void> takePhotoByCamera() async {
+    emit(MediaPicking());
+    try {
+      final image = await filePickerServices.takePhotoByCamera();
+      if (image != null) {
+        selectedImage = image;
+        emit(MediaPicked(image));
+      } else {
+        _emitPreviousState();
+      }
+    } catch (e) {
+      debugPrint('Error taking image by camera: $e');
+      emit(MediaPickingError(e.toString()));
+    }
+  }
+
+  Future<void> pickVideo() async {
+    emit(MediaPicking());
+    try {
+      final video = await filePickerServices.pickVideoFromGallery();
+      if (video != null) {
+        selectedVideo = video;
+        emit(MediaPicked(video));
+      } else {
+        _emitPreviousState();
+      }
+    } catch (e) {
+      debugPrint('Error picking video: $e');
+      emit(MediaPickingError(e.toString()));
+    }
+  }
+
+  Future<void> pickDocument() async {
+    emit(MediaPicking());
+    try {
+      final doc = await filePickerServices.pickFile();
+      if (doc != null) {
+        selectedDocument = doc;
+        emit(MediaPicked(doc));
+      } else {
+        _emitPreviousState();
+      }
+    } catch (e) {
+      debugPrint('Error picking file: $e');
+      emit(MediaPickingError(e.toString()));
+    }
+  }
+
+  void _resetMedia() {
+    selectedImage = null;
+    selectedVideo = null;
+    selectedDocument = null;
+  }
+
+  void _emitPreviousState() {
+    emit(MediaPickingError('Selection Cancelled'));
+  }
+
+  String _mapExceptionToMessage(Object e) {
+    final error = e.toString().toLowerCase();
+    if (error.contains('canceled') || error.contains('cancel')) {
+      return "upload_canceled";
+    }
+    if (error.contains('pathnotfoundexception') ||
+        error.contains('not_found')) {
+      return "The selected file is no longer available. Please re-select it.";
+    } else if (error.contains('socketexception') ||
+        error.contains('connection reset')) {
+      return "Connection lost. Please check your internet and try again.";
+    } else if (error.contains('storage-byte-range-not-satisfiable')) {
+      return "File size is too large or upload was interrupted.";
+    } else if (error.contains('post_images/images')) {
+      return "Storage error: Make sure you have permission to upload.";
+    }
+    return "Something went wrong. Please try again later.";
+  }
+}

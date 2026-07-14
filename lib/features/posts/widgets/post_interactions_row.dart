@@ -4,7 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 import 'package:social_media_app/features/comments/cubit/comments_cubit.dart';
 import 'package:social_media_app/features/comments/services/comments_service.dart';
-import 'package:social_media_app/features/posts/cubit/posts_cubit.dart';
+import 'package:social_media_app/features/posts/cubit/posts_cubit/posts_cubit.dart';
 import 'package:social_media_app/features/posts/widgets/post_reactions_bottom_sheet.dart';
 import '../../../core/constants/app_images.dart';
 import '../../../core/helpers/comment_helper.dart';
