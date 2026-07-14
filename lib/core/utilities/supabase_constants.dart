@@ -29,6 +29,10 @@ abstract class SupabaseConstants {
   static const String storyViews = 'story_views';
   static const String storyReactions = 'story_reactions';
 
+  // ── Stickers Feature ──
+  static const String stickerPacks = 'sticker_packs';
+  static const String stickers = 'stickers';
+
   // ── RPC (Stored Functions) ──
   static const String getChatsWithLastMessage = 'get_chats_with_last_message';
   static const String toggleStoryReactionRpc = 'toggle_story_reaction';
@@ -177,6 +181,32 @@ abstract class LikeColumns {
   static const String userId = 'user_id';
   static const String reaction = 'reaction';
   static const String createdAt = 'created_at';
+}
+
+// subClass for sticker_packs column table
+abstract class StickerPackColumns {
+  static const String id = 'id';
+  static const String title = 'title';
+  static const String coverUrl = 'cover_url';
+  static const String stickerCount = 'sticker_count';
+  static const String sortOrder = 'sort_order';
+  static const String createdAt = 'created_at';
+
+  // Animated StickerPack
+  static const String hasAnimated = 'has_animated';
+}
+
+// subClass for stickers column table
+abstract class StickerColumns {
+  static const String id = 'id';
+  static const String packId = 'pack_id';
+  static const String imageUrl = 'image_url';
+  static const String sortOrder = 'sort_order';
+  static const String createdAt = 'created_at';
+
+  // ── Animation metadata (added for animated sticker support) ──
+  static const String isAnimated = 'is_animated';
+  static const String format = 'format';
 }
 
 // subClass for saved_posts column table
