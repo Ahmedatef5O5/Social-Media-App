@@ -54,7 +54,6 @@ class AppAvatar extends StatelessWidget {
 
   Widget _buildAvatar(BuildContext context) {
     final hasBorder = borderColor != null;
-    final radius = size / 2;
 
     Widget image = ClipOval(child: _buildImage(context));
 

@@ -142,7 +142,7 @@ class ProfileHeader extends StatelessWidget {
                 right: 20,
                 top: bgHeight + 10,
                 child: SizedBox(
-                  width: 166,
+                  width: 164,
                   child: Column(
                     children: [
                       _buildSmallActionButton(
@@ -220,23 +220,26 @@ class ProfileHeader extends StatelessWidget {
                       Text(
                         user.name,
                         style: const TextStyle(
-                          fontSize: 24,
+                          fontSize: 22,
                           fontWeight: FontWeight.bold,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
+                        softWrap: false,
                       ),
                       if (user.userName != null &&
                           user.userName!.isNotEmpty) ...[
                         Text(
                           "@${user.userName?.toLowerCase().replaceAll(' ', '_')}",
-
-                          style: TextStyle(color: AppColors.grey, fontSize: 14),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(color: AppColors.grey, fontSize: 13),
                         ),
                       ],
                     ],
                   ),
                 ),
+                const SizedBox(width: 174),
               ],
             ),
           ),
