@@ -1,4 +1,5 @@
 import '../../../core/supabase/supabase_provider.dart';
+import '../models/app_notification_model.dart';
 
 class NotificationRepository {
   NotificationRepository._();
@@ -20,7 +21,7 @@ class NotificationRepository {
     required String senderName,
     required String senderImageUrl,
     required String messageBody,
-    required String messageType, // text | image | video | voice | call
+    required String messageType,
     required String chatReferenceId,
   }) async {
     final String body = _chatBody(messageBody, messageType);
@@ -64,7 +65,7 @@ class NotificationRepository {
     required String callerId,
     required String callerName,
     required String callerImageUrl,
-    required String callType, // 'audio' | 'video'
+    required String callType,
     required String callId,
   }) async {
     final icon = callType == 'video' ? '🎥' : '📞';
@@ -154,5 +155,43 @@ class NotificationRepository {
       default:
         return text;
     }
+  }
+
+  Future<List<AppNotification>> fetchNotifications({int limit = 60}) async {
+    final userId = SupabaseProvider.id;
+    final data = await _db
+        .from('notifications')
+        .select()
+        .eq('receiver_id', userId)
+        .order('created_at', ascending: false)
+        .limit(limit);
+
+    return (data as List)
+        .cast<Map<String, dynamic>>()
+        .map(AppNotification.fromMap)
+        .toList();
+  }
+
+  Future<void> markAsRead(String id) async {
+    try {
+      await _db.from('notifications').update({'is_read': true}).eq('id', id);
+    } catch (_) {}
+  }
+
+  Future<void> deleteNotification(String id) async {
+    try {
+      await _db.from('notifications').delete().eq('id', id);
+    } catch (_) {}
+  }
+
+  Future<void> markAllAsRead() async {
+    final userId = SupabaseProvider.id;
+    try {
+      await _db
+          .from('notifications')
+          .update({'is_read': true})
+          .eq('receiver_id', userId)
+          .eq('is_read', false);
+    } catch (_) {}
   }
 }
