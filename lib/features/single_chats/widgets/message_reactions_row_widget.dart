@@ -56,6 +56,23 @@ class MessageReactionsRow extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
+                if (reactions.length > 1) ...[
+                  const SizedBox(width: 1),
+                  Text(
+                    '${reactions.length}',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color:
+                          myEmoji != null
+                              ? primary
+                              : Theme.of(context).colorScheme.onSurfaceVariant,
+                      height: 1.2,
+                    ),
+                  ),
+                  const SizedBox(width: 1),
+                ],
+
                 SizedBox(
                   width: stackWidth,
                   height: 18,
@@ -85,22 +102,6 @@ class MessageReactionsRow extends StatelessWidget {
                     }),
                   ),
                 ),
-                if (reactions.length > 1) ...[
-                  const SizedBox(width: 1),
-                  Text(
-                    '${reactions.length}',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      color:
-                          myEmoji != null
-                              ? primary
-                              : Theme.of(context).colorScheme.onSurfaceVariant,
-                      height: 1.2,
-                    ),
-                  ),
-                  const SizedBox(width: 1),
-                ],
               ],
             ),
           ),
