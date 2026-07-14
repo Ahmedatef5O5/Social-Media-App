@@ -165,23 +165,32 @@ class PostsCubit extends Cubit<PostsState> {
     final updatedPosts =
         oldState.posts.map((post) {
           if (post.id != postId) return post;
-          final updatedComments = List<CommentModel>.from(
+
+          List<CommentModel> updatedComments = List<CommentModel>.from(
             post.comments ?? const [],
           );
+
           if (parentId == null) {
             updatedComments.insert(0, comment);
           } else {
-            for (int i = 0; i < updatedComments.length; i++) {
-              if (updatedComments[i].id == parentId) {
-                final replies = List<CommentModel>.from(
-                  updatedComments[i].replies,
-                );
-                replies.add(comment);
-                updatedComments[i] = updatedComments[i].copyWith(
-                  replies: replies,
-                );
-                break;
+            bool isAdded = false;
+
+            CommentModel attach(CommentModel node) {
+              if (node.id == parentId) {
+                isAdded = true;
+                return node.copyWith(replies: [...node.replies, comment]);
               }
+              if (node.replies.isEmpty) return node;
+
+              return node.copyWith(
+                replies: node.replies.map((r) => attach(r)).toList(),
+              );
+            }
+
+            updatedComments = updatedComments.map((c) => attach(c)).toList();
+
+            if (!isAdded) {
+              updatedComments.insert(0, comment);
             }
           }
           return post.copyWith(comments: updatedComments);

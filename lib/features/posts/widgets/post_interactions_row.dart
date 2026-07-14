@@ -303,8 +303,13 @@ class _CommentButtonWidget extends StatelessWidget {
       child: Row(
         children: [
           Image.asset(AppImages.commentAtPostIcon, width: 24, height: 24),
-          const Gap(4),
-          Text('$totalComments', style: Theme.of(context).textTheme.bodyLarge),
+          if (totalComments > 0) ...[
+            const Gap(4),
+            Text(
+              '$totalComments',
+              style: Theme.of(context).textTheme.bodyLarge,
+            ),
+          ],
         ],
       ),
     );
