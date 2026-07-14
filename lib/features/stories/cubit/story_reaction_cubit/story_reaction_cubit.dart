@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/supabase/supabase_provider.dart';
+import '../../local/story_reaction_local_data_source.dart';
 import '../../services/stories_services.dart';
 part 'story_reaction_state.dart';
 
@@ -8,33 +9,51 @@ class StoryReactionCubit extends Cubit<StoryReactionState> {
   final String storyId;
   final String storyAuthorId;
   final StoriesServices _storiesServices;
+  final StoryReactionLocalDataSource _localDataSource;
 
   StoryReactionCubit({
     required this.storyId,
     required this.storyAuthorId,
     StoriesServices? storiesServices,
+    StoryReactionLocalDataSource? localDataSource,
   }) : _storiesServices = storiesServices ?? StoriesServices(),
-       super(const StoryReactionIdle(null)) {
-    _loadInitialReaction();
+       _localDataSource =
+           localDataSource ?? StoryReactionLocalDataSource.instance,
+       super(
+         StoryReactionIdle(
+           (localDataSource ?? StoryReactionLocalDataSource.instance)
+               .getCachedReaction(storyId),
+         ),
+       ) {
+    _syncWithServerSilently();
   }
 
   final String _currentUserId = SupabaseProvider.id;
 
   bool get _isMyStory => storyAuthorId == _currentUserId;
 
-  Future<void> _loadInitialReaction() async {
+  Future<void> _syncWithServerSilently() async {
     if (_isMyStory) return;
     try {
-      final reaction = await _storiesServices.getMyReaction(storyId);
-      if (!isClosed) emit(StoryReactionIdle(reaction));
+      final serverReaction = await _storiesServices.getMyReaction(storyId);
+      final cachedReaction = _localDataSource.getCachedReaction(storyId);
+
+      if (serverReaction != cachedReaction) {
+        await _localDataSource.setCachedReaction(storyId, serverReaction);
+        if (!isClosed) {
+          emit(StoryReactionIdle(serverReaction));
+        }
+      }
     } catch (e) {
-      debugPrint('Error loading story reaction: $e');
+      debugPrint('Error syncing story reaction: $e');
     }
   }
 
   Future<void> toggleReaction(String emoji) async {
     final previous = state.myReaction;
     final optimistic = previous == emoji ? null : emoji;
+
+    await _localDataSource.setCachedReaction(storyId, optimistic);
 
     emit(StoryReactionSaving(optimistic));
 
@@ -43,9 +62,13 @@ class StoryReactionCubit extends Cubit<StoryReactionState> {
         storyId: storyId,
         reaction: emoji,
       );
+      await _localDataSource.setCachedReaction(storyId, result);
+
       if (!isClosed) emit(StoryReactionIdle(result));
     } catch (e) {
       debugPrint('Error toggling story reaction: $e');
+      await _localDataSource.setCachedReaction(storyId, previous);
+
       if (!isClosed) {
         emit(StoryReactionFailed(previous, e.toString()));
         emit(StoryReactionIdle(previous));

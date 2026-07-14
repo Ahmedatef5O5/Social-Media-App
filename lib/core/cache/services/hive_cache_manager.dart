@@ -15,6 +15,7 @@ class HiveCacheManager {
 
   late final Box<CachedMediaModel> mediaCacheBox;
   late final Box<dynamic> cacheMetaBox;
+  late final Box<String> storyReactionsBox;
 
   Future<void> init() async {
     if (_isInitialized) return;
@@ -30,11 +31,16 @@ class HiveCacheManager {
 
     cacheMetaBox = await _openBoxSafely<dynamic>(HiveBoxNames.cacheMeta);
 
+    storyReactionsBox = await _openBoxSafely<String>(
+      HiveBoxNames.storyReactions,
+    );
+
     _isInitialized = true;
 
     debugPrint(
       '[HiveCacheManager] Initialized — '
-      '${mediaCacheBox.length} cached media entries loaded.',
+      '${mediaCacheBox.length} cached media entries, '
+      '${storyReactionsBox.length} cached story reactions.',
     );
   }
 
