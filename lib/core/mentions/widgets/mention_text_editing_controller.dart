@@ -61,6 +61,28 @@ class MentionTextEditingController extends TextEditingController {
     );
   }
 
+  void setMentions(List<MentionRef> refs) {
+    _mentions
+      ..clear()
+      ..addAll(
+        refs
+            .where((r) {
+              return r.startIndex >= 0 &&
+                  r.endIndex <= text.length &&
+                  r.startIndex < r.endIndex;
+            })
+            .map(
+              (r) => _ActiveMention(
+                userId: r.mentionedUserId,
+                name: text.substring(r.startIndex, r.endIndex),
+                start: r.startIndex,
+                end: r.endIndex,
+              ),
+            ),
+      );
+    notifyListeners();
+  }
+
   List<MentionRef> get validMentions {
     _mentions.removeWhere((m) {
       if (m.start < 0 || m.end > text.length || m.start >= m.end) return true;

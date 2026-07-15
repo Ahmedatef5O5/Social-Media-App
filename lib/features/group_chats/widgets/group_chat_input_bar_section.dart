@@ -13,6 +13,7 @@ import '../../gifs/widgets/gif_picker_sheet.dart';
 import '../../stickers/model/sticker_model.dart';
 import '../../stickers/widgets/sticker_send_picker_sheet.dart';
 import '../cubit/group_details_cubit/group_details_cubit.dart';
+import 'group_edit_preview_section.dart';
 import 'reply_preview_section.dart';
 
 class GroupChatInputBarSection extends StatefulWidget {
@@ -37,6 +38,7 @@ class GroupChatInputBarSection extends StatefulWidget {
 class _GroupChatInputBarSectionState extends State<GroupChatInputBarSection> {
   final AudioRecorder _audioRecorder = AudioRecorder();
   final FocusNode _focusNode = FocusNode();
+  late final GroupDetailsCubit _cubit;
 
   bool _isRecording = false;
   bool _hasText = false;
@@ -49,7 +51,9 @@ class _GroupChatInputBarSectionState extends State<GroupChatInputBarSection> {
   @override
   void initState() {
     super.initState();
+    _cubit = context.read<GroupDetailsCubit>();
     widget.controller.addListener(_onTextChanged);
+    _cubit.editingMessage.addListener(_onEditingMessageChanged);
     _loadMemberIds();
   }
 
@@ -59,6 +63,34 @@ class _GroupChatInputBarSectionState extends State<GroupChatInputBarSection> {
     if (notEmpty) widget.onTyping();
   }
   // ── Voice recording ─────────────────────────────────────────
+
+  void _onEditingMessageChanged() {
+    final editing = _cubit.editingMessage.value;
+    if (editing == null) return;
+    final text =
+        editing.text.isNotEmpty ? editing.text : (editing.caption ?? '');
+    widget.controller.text = text;
+    widget.controller.setMentions(editing.mentions);
+    widget.controller.selection = TextSelection.collapsed(offset: text.length);
+    setState(() => _hasText = text.trim().isNotEmpty);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _focusNode.requestFocus();
+    });
+  }
+
+  void _handleSend(String text, List<MentionRef> mentions) {
+    final editing = _cubit.editingMessage.value;
+    if (editing != null) {
+      _cubit.editMessage(
+        messageId: editing.id,
+        newText: text,
+        mentions: mentions,
+      );
+      _cubit.editingMessage.value = null;
+    } else {
+      widget.onSend(text, mentions);
+    }
+  }
 
   Future<void> _loadMemberIds() async {
     try {
@@ -339,6 +371,7 @@ class _GroupChatInputBarSectionState extends State<GroupChatInputBarSection> {
   @override
   void dispose() {
     widget.controller.removeListener(_onTextChanged);
+    _cubit.editingMessage.removeListener(_onEditingMessageChanged);
     _focusNode.dispose();
     _recordTimer?.cancel();
     if (_isRecording) _audioRecorder.stop();
@@ -351,7 +384,8 @@ class _GroupChatInputBarSectionState extends State<GroupChatInputBarSection> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        GroupReplyPreviewSection(cubit: context.read<GroupDetailsCubit>()),
+        GroupEditPreviewSection(cubit: _cubit, controller: widget.controller),
+        GroupReplyPreviewSection(cubit: _cubit),
 
         InputBar(
           isRecording: _isRecording,
@@ -361,7 +395,7 @@ class _GroupChatInputBarSectionState extends State<GroupChatInputBarSection> {
           focusNode: _focusNode,
           mentionCandidateIds: _membersIds ?? widget.mentionCandidateIds,
           onTyping: widget.onTyping,
-          onSend: widget.onSend,
+          onSend: _handleSend,
           onShowMedia: _showMediaOptions,
           onStartRecording: _startRecording,
           onStopRecording: _stopRecording,
