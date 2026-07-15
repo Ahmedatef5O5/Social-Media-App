@@ -75,13 +75,16 @@ class _GroupMessageContentState extends State<GroupMessageContent> {
 
     final primary = Theme.of(context).primaryColor;
     final isDark = Theme.of(context).brightness == Brightness.dark;
+
     final currentUserId = SupabaseProvider.id;
 
     final isImage = widget.message.messageType == 'image';
     final isVideo = widget.message.messageType == 'video';
     final isVoice = widget.message.messageType == 'voice';
     final isCall = widget.message.messageType == 'call';
-
+    final bool isStickerOrGif =
+        widget.message.messageType == 'gif' ||
+        widget.message.messageType == 'sticker';
     final bgColor =
         widget.isMe
             ? primary
@@ -167,6 +170,7 @@ class _GroupMessageContentState extends State<GroupMessageContent> {
                               isVideo: isVideo,
                               isVoice: isVoice,
                               isCall: isCall,
+                              isStickerOrGif: isStickerOrGif,
                               isUploading: isUploading,
                               uploadProgress: uploadProgress,
                             ),
@@ -205,6 +209,7 @@ class _GroupMessageContentState extends State<GroupMessageContent> {
     required bool isVideo,
     required bool isVoice,
     required bool isCall,
+    required bool isStickerOrGif,
     required bool isUploading,
     double? uploadProgress,
   }) {
@@ -239,7 +244,9 @@ class _GroupMessageContentState extends State<GroupMessageContent> {
             ),
             decoration: BoxDecoration(
               color:
-                  (isImage || isVideo) &&
+                  isStickerOrGif
+                      ? Colors.transparent
+                      : (isImage || isVideo) &&
                           !isUploading &&
                           (widget.message.imageUrl == null &&
                               widget.message.videoUrl == null)
@@ -261,7 +268,9 @@ class _GroupMessageContentState extends State<GroupMessageContent> {
               ),
               child: Padding(
                 padding:
-                    (isImage || isVideo)
+                    isStickerOrGif
+                        ? EdgeInsets.zero
+                        : (isImage || isVideo)
                         ? const EdgeInsets.all(3)
                         : const EdgeInsets.only(
                           left: 10,

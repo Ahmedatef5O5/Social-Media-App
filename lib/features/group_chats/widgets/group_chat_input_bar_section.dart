@@ -5,21 +5,28 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
+import 'package:social_media_app/core/mentions/mentions.dart';
 import 'package:social_media_app/features/group_chats/widgets/group_input_bar.dart';
 import 'package:social_media_app/features/group_chats/widgets/group_media_preview_screen.dart';
+import '../../gifs/model/gif_result_model.dart';
+import '../../gifs/widgets/gif_picker_sheet.dart';
+import '../../stickers/model/sticker_model.dart';
+import '../../stickers/widgets/sticker_send_picker_sheet.dart';
 import '../cubit/group_details_cubit/group_details_cubit.dart';
 import 'reply_preview_section.dart';
 
 class GroupChatInputBarSection extends StatefulWidget {
-  final TextEditingController controller;
-  final Function(String) onSend;
+  final MentionTextEditingController controller;
+  final void Function(String text, List<MentionRef> mentions) onSend;
   final VoidCallback onTyping;
+  final List<String>? mentionCandidateIds;
 
   const GroupChatInputBarSection({
     super.key,
     required this.controller,
     required this.onSend,
     required this.onTyping,
+    this.mentionCandidateIds,
   });
 
   @override
@@ -29,9 +36,12 @@ class GroupChatInputBarSection extends StatefulWidget {
 
 class _GroupChatInputBarSectionState extends State<GroupChatInputBarSection> {
   final AudioRecorder _audioRecorder = AudioRecorder();
+  final FocusNode _focusNode = FocusNode();
 
   bool _isRecording = false;
   bool _hasText = false;
+
+  List<String>? _membersIds;
 
   int _recordSeconds = 0;
   Timer? _recordTimer;
@@ -40,6 +50,7 @@ class _GroupChatInputBarSectionState extends State<GroupChatInputBarSection> {
   void initState() {
     super.initState();
     widget.controller.addListener(_onTextChanged);
+    _loadMemberIds();
   }
 
   void _onTextChanged() {
@@ -48,6 +59,18 @@ class _GroupChatInputBarSectionState extends State<GroupChatInputBarSection> {
     if (notEmpty) widget.onTyping();
   }
   // ── Voice recording ─────────────────────────────────────────
+
+  Future<void> _loadMemberIds() async {
+    try {
+      final ids =
+          await context.read<GroupDetailsCubit>().getMemberIdsForMentions();
+      if (mounted) {
+        setState(() {
+          _membersIds = ids;
+        });
+      }
+    } catch (_) {}
+  }
 
   Future<void> _startRecording() async {
     if (!await _audioRecorder.hasPermission()) return;
@@ -110,6 +133,38 @@ class _GroupChatInputBarSectionState extends State<GroupChatInputBarSection> {
     }
   }
 
+  Future<void> _pickAndSendGif() async {
+    final gif = await showModalBottomSheet<GifResult?>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => const GifPickerSheet(),
+    );
+    if (gif != null && mounted) {
+      context.read<GroupDetailsCubit>().sendMessage(
+        text: '',
+        messageType: 'gif',
+        remoteImageUrl: gif.sendUrl,
+      );
+    }
+  }
+
+  Future<void> _pickAndSendSticker() async {
+    final sticker = await showModalBottomSheet<StickerModel?>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => const StickerSendPickerSheet(),
+    );
+    if (sticker != null && mounted) {
+      context.read<GroupDetailsCubit>().sendMessage(
+        text: '',
+        messageType: 'sticker',
+        remoteImageUrl: sticker.imageUrl,
+      );
+    }
+  }
+
   void _showMediaOptions() {
     showModalBottomSheet(
       context: context,
@@ -163,6 +218,28 @@ class _GroupChatInputBarSectionState extends State<GroupChatInputBarSection> {
                   onTap: () async {
                     Navigator.pop(ctx);
                     await _takePhoto();
+                  },
+                ),
+                ListTile(
+                  leading: Icon(
+                    Icons.gif_box_rounded,
+                    color: Theme.of(context).primaryColor,
+                  ),
+                  title: const Text('Send GIF'),
+                  onTap: () async {
+                    Navigator.pop(ctx);
+                    await _pickAndSendGif();
+                  },
+                ),
+                ListTile(
+                  leading: Icon(
+                    Icons.emoji_emotions_rounded,
+                    color: Theme.of(context).primaryColor,
+                  ),
+                  title: const Text('Send Sticker'),
+                  onTap: () async {
+                    Navigator.pop(ctx);
+                    await _pickAndSendSticker();
                   },
                 ),
                 const SizedBox(height: 8),
@@ -262,6 +339,7 @@ class _GroupChatInputBarSectionState extends State<GroupChatInputBarSection> {
   @override
   void dispose() {
     widget.controller.removeListener(_onTextChanged);
+    _focusNode.dispose();
     _recordTimer?.cancel();
     if (_isRecording) _audioRecorder.stop();
     _audioRecorder.dispose();
@@ -280,6 +358,8 @@ class _GroupChatInputBarSectionState extends State<GroupChatInputBarSection> {
           hasText: _hasText,
           seconds: _recordSeconds,
           controller: widget.controller,
+          focusNode: _focusNode,
+          mentionCandidateIds: _membersIds ?? widget.mentionCandidateIds,
           onTyping: widget.onTyping,
           onSend: widget.onSend,
           onShowMedia: _showMediaOptions,
