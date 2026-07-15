@@ -128,6 +128,13 @@ class CommentsService {
         .eq(CommentColumns.id, commentId);
   }
 
+  Future<void> deleteComment({required String commentId}) async {
+    await _supabase
+        .from(SupabaseConstants.comments)
+        .delete()
+        .eq(CommentColumns.id, commentId);
+  }
+
   Stream<List<Map<String, dynamic>>> getCommentsStream() {
     return _supabase
         .from(SupabaseConstants.comments)

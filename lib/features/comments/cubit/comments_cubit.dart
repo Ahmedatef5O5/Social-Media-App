@@ -342,6 +342,37 @@ class CommentsCubit extends Cubit<CommentsState> {
     }
   }
 
+  Future<void> deleteComment({required String commentId}) async {
+    final resolvedId = resolveId(commentId);
+    final previousComments = comments;
+
+    comments =
+        comments
+            .where((c) => c.id != resolvedId)
+            .map((c) => _removeReplyById(c, resolvedId))
+            .toList();
+    emit(CommentsUiChanged());
+
+    try {
+      await _commentsService.deleteComment(commentId: resolvedId);
+    } catch (e) {
+      debugPrint('Error deleting comment: $e');
+      comments = previousComments;
+      emit(CommentsUiChanged());
+    }
+  }
+
+  CommentModel _removeReplyById(CommentModel node, String commentId) {
+    if (node.replies.isEmpty) return node;
+    return node.copyWith(
+      replies:
+          node.replies
+              .where((r) => r.id != commentId)
+              .map((r) => _removeReplyById(r, commentId))
+              .toList(),
+    );
+  }
+
   CommentModel _applyEdit(CommentModel node, String commentId, String newText) {
     final updated =
         node.id == commentId
