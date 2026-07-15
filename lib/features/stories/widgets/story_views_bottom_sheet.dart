@@ -12,7 +12,6 @@ class StoryViewsBottomSheet extends StatelessWidget {
   const StoryViewsBottomSheet({super.key});
 
   void _navigateToProfile(BuildContext context, StoryViewerModel viewer) {
-    Navigator.of(context).pop();
     Navigator.of(
       context,
     ).pushNamed(AppRoutes.profileViewRoute, arguments: viewer.viewerId);

@@ -40,38 +40,49 @@ class StoryHeader extends StatelessWidget {
           child: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
         ),
         const Gap(10),
-        CircleAvatar(
-          backgroundImage:
-              story.authorImageUrl?.isNotEmpty == true
-                  ? CachedNetworkImageProvider(story.authorImageUrl!)
-                  : const AssetImage(AppImages.defaultUserImg) as ImageProvider,
-        ),
-        const Gap(10),
         GestureDetector(
           onTap:
               isMyStory
                   ? null
-                  : () => Navigator.pushNamed(
-                    context,
-                    AppRoutes.profileViewRoute,
-                    arguments: story.authorId,
-                  ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+                  : () {
+                    Navigator.pop(context);
+                    Navigator.pushNamed(
+                      context,
+                      AppRoutes.profileViewRoute,
+                      arguments: story.authorId,
+                    );
+                  },
+          child: Row(
             children: [
-              Text(
-                isMyStory ? 'You' : story.authorName,
-                style: const TextStyle(color: Colors.white),
+              CircleAvatar(
+                backgroundImage:
+                    story.authorImageUrl?.isNotEmpty == true
+                        ? CachedNetworkImageProvider(story.authorImageUrl!)
+                        : const AssetImage(AppImages.defaultUserImg)
+                            as ImageProvider,
               ),
-              Text(
-                FormattedDate.getFormattedDate(
-                  DateTime.parse(story.createdAt).toLocal().toIso8601String(),
-                ),
-                style: const TextStyle(color: Colors.white70, fontSize: 12),
+              const Gap(10),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    isMyStory ? 'You' : story.authorName,
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                  Text(
+                    FormattedDate.getFormattedDate(
+                      DateTime.parse(
+                        story.createdAt,
+                      ).toLocal().toIso8601String(),
+                    ),
+                    style: const TextStyle(color: Colors.white70, fontSize: 11),
+                  ),
+                ],
               ),
             ],
           ),
         ),
+
         const Spacer(),
         if (isMyStory)
           PopupMenuButton(
