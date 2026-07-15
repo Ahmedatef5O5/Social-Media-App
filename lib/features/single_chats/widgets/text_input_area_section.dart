@@ -7,6 +7,10 @@ import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
 import '../../../core/constants/app_images.dart';
 import '../../../core/themes/app_colors.dart';
+import '../../gifs/model/gif_result_model.dart';
+import '../../gifs/widgets/gif_picker_sheet.dart';
+import '../../stickers/model/sticker_model.dart';
+import '../../stickers/widgets/sticker_send_picker_sheet.dart';
 import '../cubit/chat_details_cubit/chat_details_cubit.dart';
 import '../models/chat_user_model.dart';
 import '../models/message_model.dart';
@@ -107,6 +111,44 @@ class _TextInputAreaSectionState extends State<TextInputAreaSection> {
         messageText: '',
         messageType: 'voice',
         voiceFile: file,
+        replyTo: widget.replyTo,
+      );
+      widget.onCancelReply?.call();
+    }
+  }
+
+  Future<void> _pickAndSendGif(BuildContext context) async {
+    final gif = await showModalBottomSheet<GifResult?>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => const GifPickerSheet(),
+    );
+    if (gif != null && context.mounted) {
+      context.read<ChatDetailsCubit>().sendMessage(
+        receiverId: widget.receiverUser.id,
+        messageText: '',
+        messageType: 'gif',
+        remoteImageUrl: gif.sendUrl,
+        replyTo: widget.replyTo,
+      );
+      widget.onCancelReply?.call();
+    }
+  }
+
+  Future<void> _pickAndSendSticker(BuildContext context) async {
+    final sticker = await showModalBottomSheet<StickerModel?>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => const StickerSendPickerSheet(),
+    );
+    if (sticker != null && context.mounted) {
+      context.read<ChatDetailsCubit>().sendMessage(
+        receiverId: widget.receiverUser.id,
+        messageText: '',
+        messageType: 'sticker',
+        remoteImageUrl: sticker.imageUrl,
         replyTo: widget.replyTo,
       );
       widget.onCancelReply?.call();
@@ -347,6 +389,30 @@ class _TextInputAreaSectionState extends State<TextInputAreaSection> {
                   );
                   widget.onCancelReply?.call();
                 }
+              },
+            ),
+
+            ListTile(
+              leading: Icon(
+                Icons.gif_box_rounded,
+                color: Theme.of(context).primaryColor,
+              ),
+              title: const Text('Send GIF'),
+              onTap: () async {
+                Navigator.pop(context);
+                await _pickAndSendGif(context);
+              },
+            ),
+
+            ListTile(
+              leading: Icon(
+                Icons.emoji_emotions_rounded,
+                color: Theme.of(context).primaryColor,
+              ),
+              title: const Text('Send Sticker'),
+              onTap: () async {
+                Navigator.pop(context);
+                await _pickAndSendSticker(context);
               },
             ),
           ],

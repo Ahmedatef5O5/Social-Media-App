@@ -71,6 +71,10 @@ class ChatItemTile extends StatelessWidget {
         return '🎥 Video';
       case 'voice':
         return '🎤 Voice message';
+      case 'gif':
+        return '🎞️ GIF';
+      case 'sticker':
+        return '😊 Sticker';
       default:
         return (user.lastMessage == null || user.lastMessage!.isEmpty)
             ? 'Tap to start chatting'
