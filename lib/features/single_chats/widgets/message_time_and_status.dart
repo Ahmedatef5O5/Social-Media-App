@@ -37,7 +37,7 @@ class MessageTimeAndStatus extends StatelessWidget {
           Icon(
             message.isRead ? Icons.done_all : Icons.done,
             size: 12,
-            color: message.isRead ? Colors.green.shade200 : iconColor,
+            color: message.isRead ? Colors.green.shade200 : AppColors.white70,
           ),
         ],
       ],

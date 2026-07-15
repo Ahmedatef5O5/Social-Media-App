@@ -6,7 +6,6 @@ String buildGroupLastMessagePreview({
 }) {
   final type = group.lastMessageType ?? 'text';
 
-
   final hasNoMessage =
       (group.lastMessage == null || group.lastMessage!.trim().isEmpty) &&
       type == 'text';
@@ -33,6 +32,10 @@ String buildGroupLastMessagePreview({
       return '$senderName: 📷 Photo';
     case 'video':
       return '$senderName: 🎬 Video';
+    case 'gif':
+      return '$senderName: 🎞️ GIF';
+    case 'sticker':
+      return '$senderName: 😊 Sticker';
     case 'voice':
       return '$senderName: 🎤 Voice message';
     case 'call':

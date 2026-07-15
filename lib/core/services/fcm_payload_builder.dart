@@ -10,7 +10,7 @@ class FcmPayloadBuilder {
     required String senderImageUrl,
     String? attachmentUrl,
   }) {
-    final displayBody = _buildDisplayBody(messageBody, messageType);
+    final displayBody = buildDisplayBody(messageBody, messageType);
 
     return {
       'message': {
@@ -81,7 +81,7 @@ class FcmPayloadBuilder {
     required String messageType,
     required String senderImageUrl,
   }) {
-    final displayBody = _buildDisplayBody(messageBody, messageType);
+    final displayBody = buildDisplayBody(messageBody, messageType);
 
     return {
       'message': {
@@ -100,7 +100,7 @@ class FcmPayloadBuilder {
     };
   }
 
-  static String _buildDisplayBody(String text, String type) {
+  static String buildDisplayBody(String text, String type) {
     switch (type) {
       case 'image':
         return text.isNotEmpty ? '📷 $text' : '📷 Photo';
@@ -108,6 +108,10 @@ class FcmPayloadBuilder {
         return text.isNotEmpty ? '🎥 $text' : '🎥 Video';
       case 'voice':
         return '🎤 Voice message';
+      case 'gif':
+        return text.isNotEmpty ? '🎞️ $text' : '🎞️ GIF';
+      case 'sticker':
+        return text.isNotEmpty ? '😊 $text' : '😊 Sticker';
       case 'call':
         return '📞 Missed call';
       default:
