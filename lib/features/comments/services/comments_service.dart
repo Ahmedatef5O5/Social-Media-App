@@ -114,6 +114,20 @@ class CommentsService {
     }
   }
 
+  Future<void> editComment({
+    required String commentId,
+    required String newText,
+  }) async {
+    await _supabase
+        .from(SupabaseConstants.comments)
+        .update({
+          CommentColumns.text: newText,
+          CommentColumns.isEdited: true,
+          CommentColumns.updatedAt: DateTime.now().toIso8601String(),
+        })
+        .eq(CommentColumns.id, commentId);
+  }
+
   Stream<List<Map<String, dynamic>>> getCommentsStream() {
     return _supabase
         .from(SupabaseConstants.comments)
