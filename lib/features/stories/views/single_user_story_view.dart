@@ -8,6 +8,7 @@ import '../cubit/story_reaction_cubit/story_reaction_cubit.dart';
 import '../cubit/story_reply_cubit/story_reply_cubit.dart';
 import '../cubit/story_views_cubit/story_views_cubit.dart';
 import '../model/story_model.dart';
+import '../widgets/reaction_fountain_widget.dart';
 import '../widgets/story_gesture_layer.dart';
 import '../widgets/story_header.dart';
 import '../widgets/story_reply_input_bar.dart';
@@ -123,6 +124,27 @@ class _SingleUserStoryViewState extends State<SingleUserStoryView> {
                   videoController: _videoController,
                 ),
               ),
+
+              if (isMyStory)
+                Positioned.fill(
+                  child: BlocBuilder<StoryViewsCubit, StoryViewsState>(
+                    builder: (context, state) {
+                      if (state is! StoryViewsLoaded) {
+                        return const SizedBox.shrink();
+                      }
+                      final reactedViewers =
+                          state.viewers.where((v) => v.hasReacted).toList()
+                            ..sort((a, b) => a.viewedAt.compareTo(b.viewedAt));
+
+                      final reactionEmojis =
+                          reactedViewers.map((v) => v.reaction!).toList();
+
+                      return ReactionFountainWidget(
+                        reactionEmojis: reactionEmojis,
+                      );
+                    },
+                  ),
+                ),
 
               Positioned(
                 left: 0,
