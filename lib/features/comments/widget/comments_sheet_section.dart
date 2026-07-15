@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 import 'package:social_media_app/core/widgets/custom_loading_indicator.dart';
 import 'package:social_media_app/features/comments/cubit/comments_cubit.dart';
+import 'package:social_media_app/features/comments/model/comment_model.dart';
 import 'package:social_media_app/features/comments/model/comment_sort_option.dart';
 import 'package:social_media_app/features/comments/widget/comments_shimmer_skeleton.dart';
 import 'package:social_media_app/features/posts/cubit/posts_cubit/posts_cubit.dart';
@@ -62,6 +63,7 @@ class _CommentsSheetSectionState extends State<CommentsSheetSection> {
     setState(() {
       _replyingToCommentId = commentId;
       _replyingToAuthorName = authorName;
+      _editingComment = null;
     });
   }
 
@@ -76,6 +78,21 @@ class _CommentsSheetSectionState extends State<CommentsSheetSection> {
     final cubit = context.read<CommentsCubit>();
     if (cubit.currentSort == option) return;
     cubit.loadComments(postId: widget.postId, sort: option);
+  }
+
+  CommentModel? _editingComment;
+  void _startEdit(CommentModel comment) {
+    setState(() {
+      _editingComment = comment;
+      _replyingToCommentId = null;
+      _replyingToAuthorName = null;
+    });
+  }
+
+  void _cancleEdit() {
+    setState(() {
+      _editingComment = null;
+    });
   }
 
   @override
@@ -316,6 +333,7 @@ class _CommentsSheetSectionState extends State<CommentsSheetSection> {
                                         postId: post.id,
                                         comments: cubit.comments,
                                         onReplyTap: _startReply,
+                                        onEditTap: _startEdit,
                                       ),
                             );
                           },
@@ -330,7 +348,11 @@ class _CommentsSheetSectionState extends State<CommentsSheetSection> {
                     authorName: _replyingToAuthorName ?? '',
                     onCancel: _cancelReply,
                   ),
-
+                if (_editingComment != null)
+                  _EditingCommentBanner(
+                    commentText: _editingComment!.text,
+                    onCancel: _cancleEdit,
+                  ),
                 Row(
                   children: [
                     Expanded(
@@ -344,6 +366,8 @@ class _CommentsSheetSectionState extends State<CommentsSheetSection> {
                             _replyingToAuthorName = null;
                           });
                         },
+                        editingComment: _editingComment,
+                        onEditSaved: _cancleEdit,
                       ),
                     ),
                   ],
@@ -400,6 +424,64 @@ class _ReplyingToBanner extends StatelessWidget {
                   ),
                 ],
               ),
+            ),
+          ),
+          GestureDetector(
+            onTap: onCancel,
+            child: Icon(Icons.close_rounded, size: 18, color: AppColors.grey6),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _EditingCommentBanner extends StatelessWidget {
+  final String commentText;
+  final VoidCallback onCancel;
+
+  const _EditingCommentBanner({
+    required this.commentText,
+    required this.onCancel,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final primary = Theme.of(context).primaryColor;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      margin: const EdgeInsets.only(bottom: 4),
+      decoration: BoxDecoration(
+        color: primary.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(8),
+        border: Border(left: BorderSide(color: primary, width: 3)),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.edit_outlined, size: 16, color: primary),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Editing comment',
+                  style: TextStyle(
+                    color: primary,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 12,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  commentText,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(color: AppColors.grey7, fontSize: 12),
+                ),
+              ],
             ),
           ),
           GestureDetector(

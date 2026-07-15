@@ -8,12 +8,14 @@ class CommentsSection extends StatelessWidget {
   final String postId;
   final List<CommentModel> comments;
   final void Function(String commentId, String authorName)? onReplyTap;
+  final void Function(CommentModel)? onEditTap;
 
   const CommentsSection({
     super.key,
     required this.postId,
     required this.comments,
     this.onReplyTap,
+    this.onEditTap,
   });
 
   @override
@@ -46,6 +48,7 @@ class CommentsSection extends StatelessWidget {
           postId: postId,
           depth: 0,
           onReplyTap: onReplyTap,
+          onEditTap: onEditTap,
         );
       },
     );

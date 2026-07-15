@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:social_media_app/features/comments/helper/comment_menu_action.dart';
+import 'comment_action_menu.dart';
 import 'comment_reactions_picker_bubble.dart';
 
 class PickerPosition {
@@ -15,6 +17,7 @@ class CommentOverlayPicker {
     required void Function(String emoji) onSelect,
     required VoidCallback onDismiss,
     String? selectedEmoji,
+    List<CommentMenuAction> actions = const [],
     double bubbleWidth = 220,
     double offsetRight = 80,
   }) {
@@ -39,10 +42,18 @@ class CommentOverlayPicker {
               Positioned(
                 left: x,
                 top: y,
-                child: ReactionsPickerBubble(
-                  onReactionSelected: onSelect,
-                  onDismiss: onDismiss,
-                  selectedEmoji: selectedEmoji,
+                child: Column(
+                  children: [
+                    ReactionsPickerBubble(
+                      onReactionSelected: onSelect,
+                      onDismiss: onDismiss,
+                      selectedEmoji: selectedEmoji,
+                    ),
+                    if (actions.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      CommentActionMenu(actions: actions),
+                    ],
+                  ],
                 ),
               ),
             ],

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:social_media_app/features/comments/cubit/comments_cubit.dart';
+import 'package:social_media_app/features/comments/helper/comment_menu_action.dart';
 import 'package:social_media_app/features/comments/model/comment_model.dart';
 import 'package:social_media_app/features/comments/widget/comment_media_bubble.dart';
 import 'package:social_media_app/features/comments/widget/comment_reaction_summary.dart';
@@ -26,6 +27,7 @@ class CommentWidget extends StatefulWidget {
   final int depth;
   final void Function(String commentId, String authorName)? onReplyTap;
   final GlobalKey? lastAvatarKey;
+  final void Function(CommentModel)? onEditTap;
 
   const CommentWidget({
     super.key,
@@ -34,6 +36,7 @@ class CommentWidget extends StatefulWidget {
     this.depth = 0,
     this.onReplyTap,
     this.lastAvatarKey,
+    this.onEditTap,
   });
 
   @override
@@ -76,6 +79,20 @@ class _CommentWidgetState extends State<CommentWidget>
         Overlay.of(context).context.findRenderObject() as RenderBox;
     final offset = renderBox.localToGlobal(Offset.zero, ancestor: overlayBox);
 
+    final isMyComment = widget.comment.authorId == SupabaseProvider.id;
+
+    final actions = <CommentMenuAction>[
+      if (isMyComment)
+        CommentMenuAction(
+          icon: Icons.edit_outlined,
+          label: 'Edit',
+          onTap: () {
+            _dismissPicker();
+            widget.onEditTap?.call(widget.comment);
+          },
+        ),
+    ];
+
     _overlayEntry = CommentOverlayPicker.create(
       context: context,
       anchorRect: offset & renderBox.size,
@@ -85,6 +102,7 @@ class _CommentWidgetState extends State<CommentWidget>
       },
       onDismiss: _dismissPicker,
       selectedEmoji: currentSelectedEmoji,
+      actions: actions,
     );
 
     Overlay.of(context).insert(_overlayEntry!);
@@ -353,6 +371,17 @@ class _CommentWidgetState extends State<CommentWidget>
                                   fontSize: 11,
                                 ),
                               ),
+                              if (widget.comment.isEdited) ...[
+                                const SizedBox(width: 4),
+                                Text(
+                                  '· Edited',
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: AppColors.grey6,
+                                    fontSize: 11,
+                                    fontStyle: FontStyle.italic,
+                                  ),
+                                ),
+                              ],
                               const SizedBox(width: 12),
                               CommentActionChip(
                                 key: _reactionKey,
@@ -482,6 +511,7 @@ class _CommentWidgetState extends State<CommentWidget>
                                             postId: widget.postId,
                                             depth: widget.depth + 1,
                                             onReplyTap: widget.onReplyTap,
+                                            onEditTap: widget.onEditTap,
                                             lastAvatarKey:
                                                 isLast
                                                     ? _lastReplyAvatarKey

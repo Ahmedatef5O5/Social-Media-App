@@ -8,6 +8,7 @@ import '../../../core/themes/app_colors.dart';
 import '../../../core/toast/app_toast.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
 import '../../posts/model/post_model.dart';
+import '../model/comment_model.dart';
 import 'comment_attachment_picker_sheet.dart';
 import 'comment_attachment_preview.dart';
 import '../../../core/mentions/mentions.dart';
@@ -17,6 +18,8 @@ class SendCommentSection extends StatefulWidget {
   final String? replyingToCommentId;
   final String? replyingToAuthorName;
   final VoidCallback? onReplySent;
+  final CommentModel? editingComment;
+  final VoidCallback? onEditSaved;
 
   const SendCommentSection({
     super.key,
@@ -24,6 +27,8 @@ class SendCommentSection extends StatefulWidget {
     this.replyingToCommentId,
     this.replyingToAuthorName,
     this.onReplySent,
+    this.editingComment,
+    this.onEditSaved,
   });
 
   @override
@@ -47,11 +52,29 @@ class _SendCommentSectionState extends State<SendCommentSection> {
   }
 
   @override
-  void didUpdateWidget(SendCommentSection old) {
-    super.didUpdateWidget(old);
+  void didUpdateWidget(covariant SendCommentSection oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // When a edit target is select
+    if (widget.editingComment != null &&
+        widget.editingComment?.id != oldWidget.editingComment?.id) {
+      _commentController.text = widget.editingComment!.text;
+      _commentController.setMentions(widget.editingComment!.mentions);
+      _commentController.selection = TextSelection.collapsed(
+        offset: _commentController.text.length,
+      );
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _focusNode.requestFocus();
+      });
+    }
+
+    if (oldWidget.editingComment != null && widget.editingComment == null) {
+      _commentController.clear();
+      _commentController.clearMentions();
+    }
+
     // When a reply target is set, focus the field automatically
     if (widget.replyingToCommentId != null &&
-        old.replyingToCommentId != widget.replyingToCommentId) {
+        oldWidget.replyingToCommentId != widget.replyingToCommentId) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _focusNode.requestFocus();
       });
@@ -74,6 +97,14 @@ class _SendCommentSectionState extends State<SendCommentSection> {
     if (textComment.isEmpty && cubit.pendingAttachment == null) return;
     final mentions = _commentController.validMentions;
 
+    final text = _commentController.text.trim();
+    if (text.isEmpty) return;
+    if (widget.editingComment != null) {
+      cubit.editComment(commentId: widget.editingComment!.id, newText: text);
+      _commentController.clear();
+      widget.onEditSaved?.call();
+      return;
+    }
     cubit.addComment(
       post: widget.post,
       commentText: textComment,
