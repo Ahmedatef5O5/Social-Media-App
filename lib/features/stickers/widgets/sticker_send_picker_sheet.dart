@@ -1,35 +1,34 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
-import 'package:social_media_app/core/themes/app_colors.dart';
-import 'package:social_media_app/core/widgets/custom_loading_indicator.dart';
-import 'package:social_media_app/features/comments/model/comment_attachment_draft.dart';
-import 'package:social_media_app/features/comments/model/comment_type.dart';
-import 'package:social_media_app/features/stickers/cubit/sticker_send_picker_cubit/sticker_send_picker_cubit.dart';
-import 'package:social_media_app/features/stickers/cubit/sticker_send_picker_cubit/sticker_send_picker_state.dart';
-import '../../stickers/widgets/sticker_packs_browser_sheet.dart';
-import '../../stickers/widgets/sticker_thumbnail.dart';
+import '../../../core/themes/app_colors.dart';
+import '../../../core/widgets/custom_loading_indicator.dart';
+import '../cubit/sticker_send_picker_cubit/sticker_send_picker_cubit.dart';
+import '../cubit/sticker_send_picker_cubit/sticker_send_picker_state.dart';
+import '../views/empty_downloads_sheet_view.dart';
+import '../views/sticker_packs_browser_view.dart';
+import 'sticker_grid_item.dart';
 
-class CommentStickerPickerSheet extends StatelessWidget {
-  const CommentStickerPickerSheet({super.key});
+class StickerSendPickerSheet extends StatelessWidget {
+  const StickerSendPickerSheet({super.key});
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (_) => StickerSendPickerCubit(),
-      child: const _CommentStickerPickerSheetBody(),
+      child: const _StickerSendPickerSheetBody(),
     );
   }
 }
 
-class _CommentStickerPickerSheetBody extends StatelessWidget {
-  const _CommentStickerPickerSheetBody();
+class _StickerSendPickerSheetBody extends StatelessWidget {
+  const _StickerSendPickerSheetBody();
 
   void _openBrowser(BuildContext context) {
     Navigator.of(context).pop();
     Navigator.of(
       context,
-    ).push(MaterialPageRoute(builder: (_) => const StickerPacksBrowserSheet()));
+    ).push(MaterialPageRoute(builder: (_) => const StickerPacksBrowserView()));
   }
 
   @override
@@ -79,7 +78,7 @@ class _CommentStickerPickerSheetBody extends StatelessWidget {
                     return Center(child: Text(state.message));
                   }
                   if (state is StickerSendPickerEmpty) {
-                    return _EmptyDownloadsView(
+                    return EmptyDownloadsSheetView(
                       onBrowse: () => _openBrowser(context),
                     );
                   }
@@ -168,105 +167,11 @@ class _CommentStickerPickerSheetBody extends StatelessWidget {
                         child:
                             loaded.isLoadingSelectedPack
                                 ? const Center(child: CustomLoadingIndicator())
-                                : GridView.builder(
-                                  physics: const BouncingScrollPhysics(),
-                                  itemCount: loaded.selectedStickers.length,
-                                  gridDelegate:
-                                      const SliverGridDelegateWithFixedCrossAxisCount(
-                                        crossAxisCount: 4,
-                                        mainAxisSpacing: 16,
-                                        crossAxisSpacing: 16,
-                                      ),
-                                  itemBuilder: (context, index) {
-                                    final sticker =
-                                        loaded.selectedStickers[index];
-                                    return InkWell(
-                                      borderRadius: BorderRadius.circular(16),
-                                      onTap:
-                                          () => Navigator.of(context).pop(
-                                            CommentAttachmentDraft(
-                                              type: CommentType.sticker,
-                                              remoteUrl: sticker.imageUrl,
-                                            ),
-                                          ),
-                                      child: StickerThumbnail(sticker: sticker),
-                                    );
-                                  },
-                                ),
+                                : StickerGridItem(loaded: loaded),
                       ),
                     ],
                   );
                 },
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _EmptyDownloadsView extends StatelessWidget {
-  final VoidCallback onBrowse;
-  const _EmptyDownloadsView({required this.onBrowse});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: theme.primaryColor.withValues(alpha: 0.1),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Icons.auto_awesome_mosaic_rounded,
-                size: 56,
-                color: theme.primaryColor,
-              ),
-            ),
-            const Gap(24),
-
-            Text(
-              'No Stickers Yet',
-              style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-                letterSpacing: -0.5,
-              ),
-            ),
-            const Gap(10),
-
-            Text(
-              'Discover and download amazing sticker packs from the library to express yourself.',
-              textAlign: TextAlign.center,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: AppColors.grey6,
-                height: 1.4,
-              ),
-            ),
-            const Gap(32),
-
-            FilledButton.icon(
-              onPressed: onBrowse,
-              style: FilledButton.styleFrom(
-                backgroundColor: theme.primaryColor,
-                minimumSize: const Size(double.infinity, 54),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                elevation: 0,
-              ),
-              icon: const Icon(Icons.storefront_rounded, size: 22),
-              label: const Text(
-                'Explore Library',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
               ),
             ),
           ],

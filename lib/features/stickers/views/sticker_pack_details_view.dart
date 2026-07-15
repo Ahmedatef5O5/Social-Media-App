@@ -5,11 +5,11 @@ import 'package:social_media_app/core/widgets/custom_loading_indicator.dart';
 import '../cubit/sticker_pack_detail_cubit/sticker_pack_detail_cubit.dart';
 import '../cubit/sticker_pack_detail_cubit/sticker_pack_detail_state.dart';
 import '../model/sticker_pack_model.dart';
-import 'sticker_thumbnail.dart';
+import '../widgets/sticker_thumbnail.dart';
 
-class StickerPackDetailSheet extends StatelessWidget {
+class StickerPackDetailView extends StatelessWidget {
   final StickerPackModel pack;
-  const StickerPackDetailSheet({super.key, required this.pack});
+  const StickerPackDetailView({super.key, required this.pack});
 
   @override
   Widget build(BuildContext context) {

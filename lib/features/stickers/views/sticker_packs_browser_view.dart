@@ -7,10 +7,10 @@ import 'package:social_media_app/core/widgets/custom_loading_indicator.dart';
 import '../cubit/sticker_packs_cubit/sticker_packs_cubit.dart';
 import '../cubit/sticker_packs_cubit/sticker_packs_state.dart';
 import '../model/sticker_pack_model.dart';
-import 'sticker_pack_details_sheet.dart';
+import 'sticker_pack_details_view.dart';
 
-class StickerPacksBrowserSheet extends StatelessWidget {
-  const StickerPacksBrowserSheet({super.key});
+class StickerPacksBrowserView extends StatelessWidget {
+  const StickerPacksBrowserView({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -75,7 +75,7 @@ class _StickerPacksBrowserSheetBody extends StatelessWidget {
                   final cubit = context.read<StickerPacksCubit>();
                   await Navigator.of(context).push(
                     MaterialPageRoute(
-                      builder: (_) => StickerPackDetailSheet(pack: pack),
+                      builder: (_) => StickerPackDetailView(pack: pack),
                     ),
                   );
                   cubit.loadPacks();
