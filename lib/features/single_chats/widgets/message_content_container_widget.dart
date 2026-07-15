@@ -38,9 +38,15 @@ class _MessageContentContainerState extends State<MessageContentContainer> {
     final bool isUploading = widget.isMe && widget.uploadProgress != null;
     final bool isImage = widget.message.messageType == 'image';
     final bool isVideo = widget.message.messageType == 'video';
+    final bool isGif = widget.message.messageType == 'gif';
+    final bool isSticker = widget.message.messageType == 'sticker';
     final bool isVoice = widget.message.messageType == 'voice';
     final bool isCall = widget.message.messageType == 'call';
+
     final bool hasReaction = widget.message.reactions.isNotEmpty;
+    final bool isStickerOrGif =
+        widget.message.messageType == 'gif' ||
+        widget.message.messageType == 'sticker';
 
     if (isCall) {
       return CallMessageContent(
@@ -62,7 +68,9 @@ class _MessageContentContainerState extends State<MessageContentContainer> {
             bottom: hasReaction ? 28 : 2,
           ),
           padding:
-              (isImage || isVideo)
+              isStickerOrGif
+                  ? EdgeInsets.zero
+                  : (isImage || isVideo)
                   ? const EdgeInsets.all(3)
                   : const EdgeInsets.only(
                     left: 10,
@@ -79,7 +87,9 @@ class _MessageContentContainerState extends State<MessageContentContainer> {
           ),
           decoration: BoxDecoration(
             color:
-                (isImage || isVideo) &&
+                isStickerOrGif
+                    ? Colors.transparent
+                    : (isImage || isVideo) &&
                         (isUploading ||
                             widget.message.imageUrl == null &&
                                 widget.message.videoUrl == null)
@@ -96,7 +106,7 @@ class _MessageContentContainerState extends State<MessageContentContainer> {
               bottomRight: Radius.circular(widget.isMe ? 0 : 20),
             ),
             boxShadow:
-                isUploading
+                isUploading || isStickerOrGif
                     ? []
                     : [
                       BoxShadow(color: AppColors.grey1.withValues(alpha: 0.8)),
@@ -109,6 +119,8 @@ class _MessageContentContainerState extends State<MessageContentContainer> {
               isMe: widget.isMe,
               isImage: isImage,
               isVideo: isVideo,
+              isGif: isGif,
+              isSticker: isSticker,
               itemScrollController: widget.itemScrollController,
             ),
           ),

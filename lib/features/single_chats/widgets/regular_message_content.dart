@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:gap/gap.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import 'package:social_media_app/core/widgets/custom_linkify_text.dart';
 import 'package:social_media_app/features/single_chats/cubit/chat_details_cubit/chat_details_cubit.dart';
@@ -8,6 +9,8 @@ import 'package:social_media_app/features/single_chats/widgets/reply_preview_wid
 import 'package:social_media_app/features/single_chats/widgets/story_reply_preview_bubble.dart';
 import 'package:social_media_app/features/single_chats/widgets/video_message_widget.dart';
 import 'package:social_media_app/features/single_chats/widgets/voice_message_bubble_widget.dart';
+import '../../gifs/widgets/gif_message_bubble.dart';
+import '../../stickers/widgets/sticker_message_bubble.dart';
 import '../models/message_model.dart';
 import 'message_time_and_status.dart';
 
@@ -16,6 +19,8 @@ class RegularMessageContent extends StatelessWidget {
   final bool isMe;
   final bool isImage;
   final bool isVideo;
+  final bool isGif;
+  final bool isSticker;
   final ItemScrollController itemScrollController;
 
   const RegularMessageContent({
@@ -24,6 +29,8 @@ class RegularMessageContent extends StatelessWidget {
     required this.isMe,
     required this.isImage,
     required this.isVideo,
+    required this.isGif,
+    required this.isSticker,
     required this.itemScrollController,
   });
 
@@ -80,6 +87,7 @@ class RegularMessageContent extends StatelessWidget {
                       )
                       : const SizedBox.shrink(),
             ),
+
           if (message.messageType == 'voice' && message.voiceUrl != null)
             VoiceMessageBubbleWidget(
               voiceUrl: message.voiceUrl!,
@@ -135,7 +143,86 @@ class RegularMessageContent extends StatelessWidget {
                 ],
               ),
             ),
+
+          if (isGif)
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: SizedBox(
+                    width: 200,
+                    height: 200,
+                    child:
+                        message.imageUrl != null
+                            ? GifMessageBubble(
+                              url: message.imageUrl!,
+                              isMe: isMe,
+                            )
+                            : const SizedBox.shrink(),
+                  ),
+                ),
+                const Gap(2.8),
+                Align(
+                  alignment:
+                      isMe ? Alignment.centerRight : Alignment.centerLeft,
+                  child: _buildMediaTimeOverlay(context),
+                ),
+              ],
+            ),
+
+          if (isSticker)
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: SizedBox(
+                    width: 150,
+                    height: 150,
+                    child:
+                        message.imageUrl != null
+                            ? StickerMessageBubble(url: message.imageUrl!)
+                            : const SizedBox.shrink(),
+                  ),
+                ),
+                const Gap(2.8),
+                Align(
+                  alignment:
+                      isMe ? Alignment.centerRight : Alignment.centerLeft,
+                  child: _buildMediaTimeOverlay(context),
+                ),
+              ],
+            ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildMediaTimeOverlay(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.32),
+        borderRadius: BorderRadius.only(
+          topLeft: const Radius.circular(10),
+          topRight: const Radius.circular(10),
+          bottomLeft: isMe ? const Radius.circular(10) : Radius.zero,
+          bottomRight: isMe ? Radius.zero : const Radius.circular(10),
+        ),
+      ),
+      child: Theme(
+        data: Theme.of(context).copyWith(
+          brightness: Brightness.dark,
+          colorScheme: Theme.of(
+            context,
+          ).colorScheme.copyWith(onSurface: Colors.white),
+        ),
+        child: MessageTimeAndStatus(
+          message: message,
+          isMe: isMe,
+          iconColor: Colors.white,
+        ),
       ),
     );
   }

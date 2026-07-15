@@ -166,13 +166,17 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
     File? imageFile,
     File? videoFile,
     File? voiceFile,
+    String?
+    remoteImageUrl, // Already-hosted URL (GIF / Sticker) — no upload needed
+
     String? caption,
     MessageModel? replyTo,
   }) async {
     if (messageText.trim().isEmpty &&
         imageFile == null &&
         videoFile == null &&
-        voiceFile == null) {
+        voiceFile == null &&
+        remoteImageUrl == null) {
       return;
     }
 
@@ -188,6 +192,7 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
       messageType: messageType,
       createdAt: DateTime.now(),
       isRead: false,
+      imageUrl: remoteImageUrl,
       voiceUrl: voiceFile?.path,
       replyToMessageId: replyToMessage.value?.id,
       replyToText: replyToMessage.value?.text,
@@ -205,7 +210,9 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
       String? imageUrl, videoUrl, voiceUrl;
       String? imagePublicId, videoPublicId, voicePublicId;
 
-      if (imageFile != null) {
+      if (remoteImageUrl != null) {
+        imageUrl = remoteImageUrl;
+      } else if (imageFile != null) {
         if (await imageFile.exists()) {
           final result = await _chatServices.storage.uploadFile(
             imageFile,
