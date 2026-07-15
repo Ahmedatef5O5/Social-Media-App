@@ -1,3 +1,4 @@
+// lib/core/mentions/widgets/mention_rich_text.dart
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:linkify/linkify.dart';
@@ -10,8 +11,11 @@ class MentionRichText extends StatefulWidget {
   final List<MentionRef> mentions;
   final void Function(String userId, String name) onMentionTap;
   final TextStyle? style;
+  final Color? mentionColor;
   final int? maxLines;
+  final int collapsedMaxLines;
   final TextOverflow? overflow;
+  final double? maxTextWidth;
 
   const MentionRichText({
     super.key,
@@ -19,8 +23,11 @@ class MentionRichText extends StatefulWidget {
     required this.mentions,
     required this.onMentionTap,
     this.style,
+    this.mentionColor,
     this.maxLines,
+    this.collapsedMaxLines = 10,
     this.overflow,
+    this.maxTextWidth,
   });
 
   @override
@@ -29,6 +36,7 @@ class MentionRichText extends StatefulWidget {
 
 class _MentionRichTextState extends State<MentionRichText> {
   final List<TapGestureRecognizer> _recognizers = [];
+  bool _expanded = false;
 
   void _disposeRecognizers() {
     for (final r in _recognizers) {
@@ -56,28 +64,11 @@ class _MentionRichTextState extends State<MentionRichText> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    _disposeRecognizers();
-
+  List<InlineSpan> _buildSpans({
+    required TextStyle defaultStyle,
+    required TextStyle mentionStyle,
+  }) {
     final text = widget.text;
-    final defaultStyle =
-        widget.style ??
-        Theme.of(
-          context,
-        ).textTheme.bodyMedium!.copyWith(fontSize: 14, height: 1.4);
-    final mentionStyle = defaultStyle.copyWith(
-      color: Theme.of(context).primaryColor,
-      fontWeight: FontWeight.w700,
-    );
-    const linkStyle = TextStyle(
-      color: Colors.blue,
-      fontWeight: FontWeight.w600,
-      decoration: TextDecoration.underline,
-      decorationColor: Colors.blue,
-      decorationThickness: 0.8,
-    );
-
     final mentions = List.of(widget.mentions)
       ..sort((a, b) => a.startIndex.compareTo(b.startIndex));
 
@@ -91,7 +82,12 @@ class _MentionRichTextState extends State<MentionRichText> {
           spans.add(
             TextSpan(
               text: element.text,
-              style: linkStyle,
+              style: defaultStyle.copyWith(
+                color: Colors.blue,
+                fontWeight: FontWeight.w600,
+                decoration: TextDecoration.underline,
+                decorationColor: Colors.blue,
+              ),
               recognizer: _recognizerFor(() => _openLink(element.url)),
             ),
           );
@@ -128,13 +124,109 @@ class _MentionRichTextState extends State<MentionRichText> {
       cursor = mention.endIndex;
     }
     addLinkifiedSegment(text.substring(cursor));
+    return spans;
+  }
 
-    return Text.rich(
-      TextSpan(children: spans),
-      style: defaultStyle,
-      maxLines: widget.maxLines,
-      overflow: widget.overflow ?? TextOverflow.ellipsis,
-      textDirection: ChatHelper.getTextDirection(text),
+  @override
+  Widget build(BuildContext context) {
+    _disposeRecognizers();
+
+    final defaultStyle =
+        widget.style ??
+        Theme.of(
+          context,
+        ).textTheme.bodyMedium!.copyWith(fontSize: 14, height: 1.4);
+
+    final resolvedMentionColor =
+        widget.mentionColor ?? Theme.of(context).primaryColor;
+
+    final mentionStyle = defaultStyle.copyWith(
+      color: resolvedMentionColor,
+      fontWeight: FontWeight.w700,
+      decoration: TextDecoration.underline,
+      decorationColor: resolvedMentionColor.withValues(alpha: 0.5),
+      decorationThickness: 1,
+    );
+
+    final spans = _buildSpans(
+      defaultStyle: defaultStyle,
+      mentionStyle: mentionStyle,
+    );
+    final direction = ChatHelper.getTextDirection(widget.text);
+    final span = TextSpan(children: spans);
+
+    if (widget.maxLines != null) {
+      return Text.rich(
+        span,
+        style: defaultStyle,
+        maxLines: widget.maxLines,
+        overflow: widget.overflow ?? TextOverflow.ellipsis,
+        textDirection: direction,
+      );
+    }
+    final effectiveMaxWidth =
+        widget.maxTextWidth ?? MediaQuery.of(context).size.width * 0.75;
+
+    final painter = TextPainter(
+      text: span,
+      maxLines: widget.collapsedMaxLines,
+      textDirection: direction,
+    )..layout(maxWidth: effectiveMaxWidth);
+
+    final isOverflowing = painter.didExceedMaxLines;
+
+    if (!isOverflowing) {
+      return Text.rich(span, style: defaultStyle, textDirection: direction);
+    }
+
+    if (_expanded) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text.rich(span, style: defaultStyle, textDirection: direction),
+          GestureDetector(
+            onTap: () => setState(() => _expanded = false),
+            child: Padding(
+              padding: const EdgeInsets.only(top: 2),
+              child: Text(
+                'Show less',
+                style: defaultStyle.copyWith(
+                  color: resolvedMentionColor,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text.rich(
+          span,
+          style: defaultStyle,
+          maxLines: widget.collapsedMaxLines,
+          overflow: TextOverflow.ellipsis,
+          textDirection: direction,
+        ),
+        GestureDetector(
+          onTap: () => setState(() => _expanded = true),
+          child: Padding(
+            padding: const EdgeInsets.only(top: 2),
+            child: Text(
+              'Read more',
+              style: defaultStyle.copyWith(
+                color: resolvedMentionColor,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

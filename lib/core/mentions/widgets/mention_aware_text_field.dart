@@ -13,6 +13,9 @@ class MentionAwareTextField extends StatefulWidget {
   final bool enabled;
   final String hintText;
   final ValueChanged<String>? onSubmitted;
+  final List<String>? restrictSuggestionsToUserIds;
+  final EdgeInsetsGeometry? contentPadding;
+  final InputBorder? border, focusedBorder;
 
   const MentionAwareTextField({
     super.key,
@@ -21,6 +24,10 @@ class MentionAwareTextField extends StatefulWidget {
     required this.enabled,
     required this.hintText,
     this.onSubmitted,
+    this.restrictSuggestionsToUserIds,
+    this.contentPadding,
+    this.border,
+    this.focusedBorder,
   });
 
   @override
@@ -41,11 +48,19 @@ class _MentionAwareTextFieldState extends State<MentionAwareTextField> {
   void initState() {
     super.initState();
     widget.controller.addListener(_onTextChanged);
+    widget.focusNode.addListener(_onFocusChanged);
+  }
+
+  void _onFocusChanged() {
+    if (!widget.focusNode.hasFocus) {
+      _removeOverlay();
+    }
   }
 
   @override
   void dispose() {
     widget.controller.removeListener(_onTextChanged);
+    widget.focusNode.removeListener(_onFocusChanged);
     _debounce?.cancel();
     _removeOverlay();
     super.dispose();
@@ -76,18 +91,16 @@ class _MentionAwareTextFieldState extends State<MentionAwareTextField> {
   }
 
   void _searchMentions(String query) {
-    if (widget.focusNode.hasFocus) {
-      widget.focusNode.unfocus();
-      Future.delayed(const Duration(milliseconds: 260), _syncOverlay);
-    }
-
     _showOverlay();
     setState(() => _isSearching = true);
     _syncOverlay();
 
     _debounce?.cancel();
     _debounce = Timer(const Duration(milliseconds: 300), () async {
-      final results = await _mentionsService.search(query);
+      final results = await _mentionsService.search(
+        query,
+        restrictToUserIds: widget.restrictSuggestionsToUserIds,
+      );
       if (!mounted || _triggerStart == null) return;
       setState(() {
         _results = results;
@@ -130,14 +143,17 @@ class _MentionAwareTextFieldState extends State<MentionAwareTextField> {
       left: fieldTopLeft.dx,
       width: fieldSize.width,
       bottom: screenHeight - fieldTopLeft.dy + 8,
-      child: Material(
-        color: Colors.transparent,
-        child: _MentionSuggestionsCard(
-          width: fieldSize.width,
-          results: _results,
-          isLoading: _isSearching,
-          onSelect: _selectMention,
-          onClose: _closeMentionSearch,
+      child: TapRegion(
+        groupId: _fieldKey,
+        child: Material(
+          color: Colors.transparent,
+          child: _MentionSuggestionsCard(
+            width: fieldSize.width,
+            results: _results,
+            isLoading: _isSearching,
+            onSelect: _selectMention,
+            onClose: _closeMentionSearch,
+          ),
         ),
       ),
     );
@@ -168,34 +184,46 @@ class _MentionAwareTextFieldState extends State<MentionAwareTextField> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return TextField(
-      key: _fieldKey,
-      controller: widget.controller,
-      focusNode: widget.focusNode,
-      enabled: widget.enabled,
-      minLines: 1,
-      maxLines: 4,
-      textCapitalization: TextCapitalization.sentences,
-      onSubmitted: widget.onSubmitted,
-      decoration: InputDecoration(
-        hintText: widget.hintText,
-        hintStyle: theme.textTheme.bodyMedium?.copyWith(
-          color: AppColors.grey5,
-          fontWeight: FontWeight.w400,
-          fontSize: 15,
-        ),
-        filled: true,
-        fillColor: theme.colorScheme.surfaceContainerHighest.withValues(
-          alpha: 0.4,
-        ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(25),
-          borderSide: BorderSide.none,
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(25),
-          borderSide: BorderSide(color: theme.primaryColor, width: 1.6),
+    return TapRegion(
+      groupId: _fieldKey,
+      onTapOutside: (event) {
+        widget.focusNode.unfocus();
+      },
+      child: TextField(
+        key: _fieldKey,
+        controller: widget.controller,
+        focusNode: widget.focusNode,
+        enabled: widget.enabled,
+        minLines: 1,
+        maxLines: 4,
+        textCapitalization: TextCapitalization.sentences,
+        onSubmitted: widget.onSubmitted,
+        decoration: InputDecoration(
+          hintText: widget.hintText,
+          hintStyle: theme.textTheme.bodyMedium?.copyWith(
+            color: AppColors.grey5,
+            fontWeight: FontWeight.w400,
+            fontSize: 15,
+          ),
+          filled: true,
+          fillColor: theme.colorScheme.surfaceContainerHighest.withValues(
+            alpha: 0.4,
+          ),
+          contentPadding:
+              widget.contentPadding ??
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          border:
+              widget.border ??
+              OutlineInputBorder(
+                borderRadius: BorderRadius.circular(25),
+                borderSide: BorderSide.none,
+              ),
+          focusedBorder:
+              widget.focusedBorder ??
+              OutlineInputBorder(
+                borderRadius: BorderRadius.circular(25),
+                borderSide: BorderSide(color: theme.primaryColor, width: 1.6),
+              ),
         ),
       ),
     );

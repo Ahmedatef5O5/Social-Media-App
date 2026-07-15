@@ -4,10 +4,18 @@ import '../../utilities/supabase_constants.dart';
 import '../models/mention_suggestion.dart';
 
 class MentionSearchService {
-  Future<List<MentionSuggestion>> search(String query, {int limit = 8}) async {
+  Future<List<MentionSuggestion>> search(
+    String query, {
+    int limit = 20,
+    List<String>? restrictToUserIds,
+  }) async {
     try {
       final currentUserId = SupabaseProvider.id;
       final trimmed = query.trim();
+
+      if (restrictToUserIds != null && restrictToUserIds.isEmpty) {
+        return []; // no members to suggest — short-circuit
+      }
 
       var builder = SupabaseProvider.client
           .from(SupabaseConstants.users)
@@ -19,6 +27,10 @@ class MentionSearchService {
         builder = builder.ilike(UserColumns.name, '%$trimmed%');
       }
       builder = builder.neq(UserColumns.id, currentUserId);
+
+      if (restrictToUserIds != null) {
+        builder = builder.inFilter(UserColumns.id, restrictToUserIds);
+      }
 
       final rows = await builder.order(UserColumns.name).limit(limit);
 
