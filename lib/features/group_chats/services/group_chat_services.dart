@@ -277,6 +277,47 @@ class GroupChatServices {
     }).copyWith(mentions: mentions);
   }
 
+  Future<void> editGroupMessage({
+    required String messageId,
+    required String newText,
+    required bool isCaptionEdit,
+    required String groupId,
+    List<MentionRef> mentions = const [],
+  }) async {
+    await _supabase
+        .from(SupabaseConstants.groupMessages)
+        .update({
+          if (isCaptionEdit) 'caption': newText else 'message_text': newText,
+          'is_edited': true,
+          'updated_at': DateTime.now().toIso8601String(),
+        })
+        .eq('id', messageId);
+
+    await _supabase
+        .from(SupabaseConstants.groupMessageMentions)
+        .delete()
+        .eq(GroupMessageMentionColumns.groupMessageId, messageId);
+
+    if (mentions.isNotEmpty) {
+      await _supabase
+          .from(SupabaseConstants.groupMessageMentions)
+          .insert(
+            mentions
+                .map(
+                  (m) => {
+                    GroupMessageMentionColumns.groupMessageId: messageId,
+                    GroupMessageMentionColumns.groupId: groupId,
+                    GroupMessageMentionColumns.mentionedUserId:
+                        m.mentionedUserId,
+                    GroupMessageMentionColumns.startIndex: m.startIndex,
+                    GroupMessageMentionColumns.endIndex: m.endIndex,
+                  },
+                )
+                .toList(),
+          );
+    }
+  }
+
   Future<Map<String, String?>> getUserInfo(String userId) async {
     final userProfile =
         await _supabase

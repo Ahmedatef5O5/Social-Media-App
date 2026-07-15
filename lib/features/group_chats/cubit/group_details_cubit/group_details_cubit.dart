@@ -20,12 +20,14 @@ part 'group_messages_stream_mixin.dart';
 part 'group_mentions_mixin.dart';
 part 'group_reactions_mixin.dart';
 part 'group_media_upload_mixin.dart';
+part 'group_edit_mixin.dart';
 
 class GroupDetailsCubit extends Cubit<GroupDetailsState>
     with
         GroupMessagesStreamMixin,
         GroupMentionsMixin,
         GroupReactionsMixin,
+        GroupEditMixin,
         GroupMediaUploadMixin {
   @override
   final GroupChatServices _services;
@@ -52,6 +54,7 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState>
 
   @override
   final ValueNotifier<GroupMessageModel?> replyToMessage = ValueNotifier(null);
+  final ValueNotifier<GroupMessageModel?> editingMessage = ValueNotifier(null);
   final ValueNotifier<String?> highlightedMessageId = ValueNotifier(null);
 
   @override
@@ -160,6 +163,7 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState>
     groupListCubit.setActiveGroupId(null);
 
     replyToMessage.dispose();
+    editingMessage.dispose();
     highlightedMessageId.dispose();
     return super.close();
   }
