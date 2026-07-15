@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:social_media_app/core/mentions/mentions.dart';
 import 'package:social_media_app/features/group_chats/services/group_notification_dispatcher.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/services/cloudinary_storage_services.dart';
@@ -119,6 +120,16 @@ class GroupChatServices {
     return (members: members, totalCount: total);
   }
 
+  Future<List<String>> getGroupMemberIds(String groupId) async {
+    final response = await _supabase
+        .from(SupabaseConstants.groupMembers)
+        .select(GroupMemberColumns.userId)
+        .eq(GroupMemberColumns.groupId, groupId);
+    return (response as List)
+        .map((row) => row[GroupMemberColumns.userId] as String)
+        .toList();
+  }
+
   Future<void> addMember(String groupId, String userId) async {
     await _supabase.from(SupabaseConstants.groupMembers).insert({
       GroupMemberColumns.groupId: groupId,
@@ -181,6 +192,7 @@ class GroupChatServices {
     String? imagePublicId,
     String? videoPublicId,
     String? voicePublicId,
+    List<MentionRef> mentions = const [],
   }) async {
     final currentUser = SupabaseProvider.user!;
 
@@ -225,6 +237,27 @@ class GroupChatServices {
             .select()
             .single();
 
+    final newMessageId = result['id'] as String;
+
+    if (mentions.isNotEmpty) {
+      await _supabase
+          .from(SupabaseConstants.groupMessageMentions)
+          .insert(
+            mentions
+                .map(
+                  (m) => {
+                    GroupMessageMentionColumns.groupMessageId: newMessageId,
+                    GroupMessageMentionColumns.groupId: groupId,
+                    GroupMessageMentionColumns.mentionedUserId:
+                        m.mentionedUserId,
+                    GroupMessageMentionColumns.startIndex: m.startIndex,
+                    GroupMessageMentionColumns.endIndex: m.endIndex,
+                  },
+                )
+                .toList(),
+          );
+    }
+
     unawaited(
       GroupNotificationDispatcher.instance.notifyMessage(
         groupId: groupId,
@@ -241,7 +274,7 @@ class GroupChatServices {
       ...result,
       'sender_name': senderName,
       'sender_avatar': senderAvatar,
-    });
+    }).copyWith(mentions: mentions);
   }
 
   Future<Map<String, String?>> getUserInfo(String userId) async {
@@ -294,6 +327,14 @@ class GroupChatServices {
   Stream<List<Map<String, dynamic>>> getReactionsStream(String groupId) {
     return _supabase
         .from(SupabaseConstants.groupMessageReactions)
+        .stream(primaryKey: ['id'])
+        .eq(GroupMemberColumns.groupId, groupId)
+        .map((data) => data.cast<Map<String, dynamic>>());
+  }
+
+  Stream<List<Map<String, dynamic>>> getMentionsStream(String groupId) {
+    return _supabase
+        .from(SupabaseConstants.groupMessageMentions)
         .stream(primaryKey: ['id'])
         .eq(GroupMemberColumns.groupId, groupId)
         .map((data) => data.cast<Map<String, dynamic>>());
