@@ -15,12 +15,14 @@ class StoryViewsCubit extends Cubit<StoryViewsState> {
   static final Map<String, List<StoryViewerModel>> _memoryCache = {};
 
   StreamSubscription? _liveViewsSub;
+  StreamSubscription? _liveReactionsSub;
 
   StoryViewsCubit({required this.storyId, StoriesServices? storiesServices})
     : _storiesServices = storiesServices ?? StoriesServices(),
       super(StoryViewsLoaded(_memoryCache[storyId] ?? _readSnapshot(storyId))) {
     _loadViewers();
     _listenForNewViews();
+    _listenForReactionChanges();
   }
 
   static List<StoryViewerModel> _readSnapshot(String storyId) {
@@ -69,11 +71,18 @@ class StoryViewsCubit extends Cubit<StoryViewsState> {
     });
   }
 
+  void _listenForReactionChanges() {
+    _liveReactionsSub = _storiesServices
+        .getStoryReactionsStream(storyId)
+        .listen((_) => _loadViewers());
+  }
+
   Future<void> refresh() => _loadViewers();
 
   @override
   Future<void> close() {
     _liveViewsSub?.cancel();
+    _liveReactionsSub?.cancel();
     return super.close();
   }
 }

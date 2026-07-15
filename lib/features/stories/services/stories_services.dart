@@ -109,6 +109,13 @@ class StoriesServices {
         .eq(StoryViewColumns.storyId, storyId);
   }
 
+  Stream<List<Map<String, dynamic>>> getStoryReactionsStream(String storyId) {
+    return _supabase
+        .from(SupabaseConstants.storyReactions)
+        .stream(primaryKey: [StoryReactionColumns.id])
+        .eq(StoryReactionColumns.storyId, storyId);
+  }
+
   Future<List<Map<String, dynamic>>> getMyStoriesOverview() async {
     final response = await _supabase.rpc(
       SupabaseConstants.getMyStoriesOverviewRpc,
