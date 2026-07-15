@@ -16,6 +16,23 @@ class GroupTimeRow extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
+          if (message.isEdited) ...[
+            Text(
+              'Edited',
+              style: Theme.of(context).textTheme.titleMedium!.copyWith(
+                color:
+                    isMe
+                        ? AppColors.white70
+                        : Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withValues(alpha: 0.6),
+                fontSize: 9,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+            const SizedBox(width: 4),
+          ],
+
           Text(
             FormattedDate.getMessageTime(message.createdAt),
 

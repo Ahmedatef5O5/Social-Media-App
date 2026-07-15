@@ -8,6 +8,7 @@ class GroupMessageBubble extends StatelessWidget {
   final GroupMessageModel message;
   final bool isMe;
   final Function(GroupMessageModel) onReply;
+  final Function(GroupMessageModel)? onEdit;
   final ItemScrollController itemScrollController;
 
   const GroupMessageBubble({
@@ -15,6 +16,7 @@ class GroupMessageBubble extends StatelessWidget {
     required this.message,
     required this.isMe,
     required this.onReply,
+    this.onEdit,
     required this.itemScrollController,
   });
 
@@ -30,7 +32,7 @@ class GroupMessageBubble extends StatelessWidget {
         message: message,
         isMe: isMe,
         onReply: onReply,
-
+        onEdit: onEdit,
         itemScrollController: itemScrollController,
       ),
     );

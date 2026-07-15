@@ -132,7 +132,15 @@ class GroupMessageItemBuilder extends StatelessWidget {
           message: msg,
           isMe: isMe,
           onReply: (m) {
-            context.read<GroupDetailsCubit>().replyToMessage.value = m;
+            final cubit = context.read<GroupDetailsCubit>();
+            cubit.editingMessage.value = null;
+            cubit.replyToMessage.value = m;
+          },
+          onEdit: (m) {
+            // NEW
+            final cubit = context.read<GroupDetailsCubit>();
+            cubit.replyToMessage.value = null;
+            cubit.editingMessage.value = m;
           },
           itemScrollController: itemScrollController,
         ),

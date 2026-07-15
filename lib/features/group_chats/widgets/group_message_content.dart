@@ -14,42 +14,11 @@ import 'group_message_avatar.dart';
 import 'group_reactions_row_widget.dart';
 import 'group_regular_message_content.dart';
 
-class GroupMessageBubble extends StatefulWidget {
-  final GroupMessageModel message;
-  final bool isMe;
-  final Function(GroupMessageModel) onReply;
-  final ItemScrollController itemScrollController;
-
-  const GroupMessageBubble({
-    super.key,
-    required this.message,
-    required this.isMe,
-    required this.onReply,
-    required this.itemScrollController,
-  });
-
-  @override
-  State<GroupMessageBubble> createState() => _GroupMessageBubbleState();
-}
-
-class _GroupMessageBubbleState extends State<GroupMessageBubble> {
-  @override
-  Widget build(BuildContext context) {
-    return KeyedSubtree(
-      child: GroupMessageContent(
-        message: widget.message,
-        isMe: widget.isMe,
-        onReply: widget.onReply,
-        itemScrollController: widget.itemScrollController,
-      ),
-    );
-  }
-}
-
 class GroupMessageContent extends StatefulWidget {
   final GroupMessageModel message;
   final bool isMe;
   final Function(GroupMessageModel) onReply;
+  final Function(GroupMessageModel)? onEdit;
   final VoidCallback? onLongPress;
   final ItemScrollController itemScrollController;
 
@@ -58,6 +27,7 @@ class GroupMessageContent extends StatefulWidget {
     required this.message,
     required this.isMe,
     required this.onReply,
+    this.onEdit,
     this.onLongPress,
     required this.itemScrollController,
   });
@@ -131,6 +101,13 @@ class _GroupMessageContentState extends State<GroupMessageContent> {
                         anchorKey: _anchorKey,
                         message: widget.message,
                         onReply: widget.onReply,
+                        onEdit:
+                            (widget.isMe &&
+                                        widget.message.messageType == 'text' ||
+                                    widget.message.caption != null)
+                                ? widget.onEdit
+                                : null,
+
                         primary: primary,
                         isMe: widget.isMe,
                       ),
