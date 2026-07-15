@@ -12,24 +12,29 @@ import '../../gifs/widgets/gif_picker_sheet.dart';
 import '../../stickers/model/sticker_model.dart';
 import '../../stickers/widgets/sticker_send_picker_sheet.dart';
 import '../cubit/chat_details_cubit/chat_details_cubit.dart';
+import '../helper/edit_preview_bar.dart';
+import '../helper/reply_preview_bar.dart';
 import '../models/chat_user_model.dart';
 import '../models/message_model.dart';
 import '../views/media_preview_screen.dart';
 import 'custom_icon_btn_widget.dart';
-import 'reply_preview_widget.dart';
 
 class TextInputAreaSection extends StatefulWidget {
   final TextEditingController messageController;
   final ChatUserModel receiverUser;
   final MessageModel? replyTo;
+  final MessageModel? editingMessage;
   final VoidCallback? onCancelReply;
+  final VoidCallback? onEditCancelled;
 
   const TextInputAreaSection({
     super.key,
     required this.messageController,
     required this.receiverUser,
     this.replyTo,
+    this.editingMessage,
     this.onCancelReply,
+    this.onEditCancelled,
   });
 
   @override
@@ -38,6 +43,7 @@ class TextInputAreaSection extends StatefulWidget {
 
 class _TextInputAreaSectionState extends State<TextInputAreaSection> {
   final AudioRecorder _audioRecorder = AudioRecorder();
+  final FocusNode _focusNode = FocusNode();
   bool _isRecording = false;
   bool _isTextNotEmpty = false;
 
@@ -48,6 +54,24 @@ class _TextInputAreaSectionState extends State<TextInputAreaSection> {
   void initState() {
     super.initState();
     widget.messageController.addListener(_onTextChanged);
+  }
+
+  @override
+  void didUpdateWidget(covariant TextInputAreaSection oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    if (widget.editingMessage != null &&
+        widget.editingMessage?.id != oldWidget.editingMessage?.id) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _focusNode.requestFocus();
+      });
+    }
+
+    if (widget.replyTo != null && oldWidget.replyTo != widget.replyTo) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _focusNode.requestFocus();
+      });
+    }
   }
 
   void _onTextChanged() {
@@ -161,6 +185,7 @@ class _TextInputAreaSectionState extends State<TextInputAreaSection> {
     if (_isRecording) _audioRecorder.stop();
     _audioRecorder.dispose();
     widget.messageController.removeListener(_onTextChanged);
+    _focusNode.dispose();
     try {
       context.read<ChatDetailsCubit>().stopTyping(widget.receiverUser.id);
     } catch (_) {}
@@ -172,6 +197,12 @@ class _TextInputAreaSectionState extends State<TextInputAreaSection> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
+        if (widget.editingMessage != null)
+          EditPreviewBar(
+            editingMessage: widget.editingMessage!,
+            onCancel: widget.onEditCancelled ?? () {},
+          ),
+
         if (widget.replyTo != null)
           ReplyPreviewBar(
             replyTo: widget.replyTo!,
@@ -226,6 +257,7 @@ class _TextInputAreaSectionState extends State<TextInputAreaSection> {
                               ? _RecordingIndicator(seconds: _recordSeconds)
                               : TextField(
                                 controller: widget.messageController,
+                                focusNode: _focusNode,
                                 minLines: 1,
                                 maxLines: 5,
                                 cursorColor: Colors.blueGrey.shade400,
@@ -250,6 +282,20 @@ class _TextInputAreaSectionState extends State<TextInputAreaSection> {
                       ? InkWell(
                         splashColor: AppColors.transparent,
                         onTap: () {
+                          if (widget.editingMessage != null) {
+                            final text = widget.messageController.text.trim();
+                            if (text.isEmpty) return;
+
+                            context.read<ChatDetailsCubit>().editMessage(
+                              messageId: widget.editingMessage!.id,
+                              newText: text,
+                            );
+
+                            widget.messageController.clear();
+                            widget.onEditCancelled?.call();
+                            return;
+                          }
+
                           final text = widget.messageController.text.trim();
                           if (text.isNotEmpty) {
                             context.read<ChatDetailsCubit>().sendMessage(

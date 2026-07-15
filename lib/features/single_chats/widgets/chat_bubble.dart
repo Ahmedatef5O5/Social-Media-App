@@ -14,6 +14,7 @@ class ChatBubble extends StatefulWidget {
   final bool isMe;
   final MessageModel message;
   final ValueChanged<MessageModel>? onReply;
+  final ValueChanged<MessageModel>? onEdit;
   final String? userImgUrl;
   final double? uploadProgress;
   final bool isHighlighted;
@@ -23,6 +24,7 @@ class ChatBubble extends StatefulWidget {
     super.key,
     required this.message,
     this.onReply,
+    this.onEdit,
     required this.isMe,
     this.userImgUrl,
     this.uploadProgress,
@@ -139,6 +141,17 @@ class ChatBubbleState extends State<ChatBubble>
                     onTap: () {
                       Navigator.pop(ctx);
                       widget.onReply?.call(widget.message);
+                    },
+                  ),
+                if (widget.isMe &&
+                    (widget.message.messageType == 'text' ||
+                        widget.message.caption != null))
+                  ListTile(
+                    leading: const Icon(Icons.edit_outlined),
+                    title: const Text('Edit message'),
+                    onTap: () {
+                      Navigator.pop(ctx);
+                      widget.onEdit?.call(widget.message);
                     },
                   ),
                 if (widget.isMe)

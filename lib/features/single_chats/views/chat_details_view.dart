@@ -49,6 +49,8 @@ class _ChatDetailsViewState extends State<ChatDetailsView>
 
   late final String _receiverId;
 
+  MessageModel? _editingMessage;
+
   @override
   void initState() {
     super.initState();
@@ -392,7 +394,25 @@ class _ChatDetailsViewState extends State<ChatDetailsView>
                   itemScrollController: _itemScrollController,
                   itemPositionsListener: _itemPositionsListener,
                   onReply: (msg) {
-                    if (mounted) setState(() => _replyTo = msg);
+                    if (mounted) {
+                      setState(() {
+                        _replyTo = msg;
+                        if (_editingMessage != null) {
+                          _editingMessage = null;
+                          _messageController.clear();
+                        }
+                      });
+                    }
+                  },
+                  onEdit: (msg) {
+                    setState(() {
+                      _editingMessage = msg;
+                      _replyTo = null;
+                      _messageController.text = msg.caption ?? msg.text;
+                      _messageController.selection = TextSelection.collapsed(
+                        offset: _messageController.text.length,
+                      );
+                    });
                   },
                   showScrollButtonNotifier: _showScrollButtonNotifier,
                   unreadCountNotifier: _unreadCountNotifier,
@@ -403,8 +423,15 @@ class _ChatDetailsViewState extends State<ChatDetailsView>
                 receiverUser: widget.receiverUser,
                 messageController: _messageController,
                 replyTo: _replyTo,
+                editingMessage: _editingMessage,
                 onCancelReply: () {
                   if (mounted) setState(() => _replyTo = null);
+                },
+                onEditCancelled: () {
+                  if (mounted) {
+                    setState(() => _editingMessage = null);
+                    _messageController.clear();
+                  }
                 },
               ),
             ],

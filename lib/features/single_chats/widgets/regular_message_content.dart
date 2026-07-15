@@ -5,7 +5,7 @@ import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import 'package:social_media_app/core/widgets/custom_linkify_text.dart';
 import 'package:social_media_app/features/single_chats/cubit/chat_details_cubit/chat_details_cubit.dart';
 import 'package:social_media_app/features/single_chats/widgets/image_message_widget.dart';
-import 'package:social_media_app/features/single_chats/widgets/reply_preview_widget.dart';
+import 'package:social_media_app/features/single_chats/widgets/reply_bubble_preview_widget.dart';
 import 'package:social_media_app/features/single_chats/widgets/story_reply_preview_bubble.dart';
 import 'package:social_media_app/features/single_chats/widgets/video_message_widget.dart';
 import 'package:social_media_app/features/single_chats/widgets/voice_message_bubble_widget.dart';

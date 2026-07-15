@@ -21,6 +21,7 @@ class MessagesListView extends StatefulWidget {
   final ItemScrollController itemScrollController;
   final ItemPositionsListener itemPositionsListener;
   final Function(MessageModel) onReply;
+  final Function(MessageModel) onEdit;
   final ValueNotifier<bool> showScrollButtonNotifier;
   final ValueNotifier<int> unreadCountNotifier;
   final VoidCallback scrollToBottom;
@@ -30,6 +31,7 @@ class MessagesListView extends StatefulWidget {
     required this.itemScrollController,
     required this.itemPositionsListener,
     required this.onReply,
+    required this.onEdit,
     required this.showScrollButtonNotifier,
     required this.unreadCountNotifier,
     required this.scrollToBottom,
@@ -137,6 +139,7 @@ class _MessagesListViewState extends State<MessagesListView> {
                       userImgUrl: isMe ? null : widget.receiverUser.imageUrl,
                       message: msg,
                       onReply: widget.onReply,
+                      onEdit: widget.onEdit,
                       itemScrollController: widget.itemScrollController,
                       isMe: isMe,
                       uploadProgress: currentProgress,

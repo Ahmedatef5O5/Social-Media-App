@@ -22,6 +22,20 @@ class MessageTimeAndStatus extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       textDirection: TextDirection.ltr,
       children: [
+        if (message.isEdited) ...[
+          Text(
+            'Edited',
+            style: Theme.of(context).textTheme.titleMedium!.copyWith(
+              color:
+                  isMe
+                      ? AppColors.white70
+                      : Theme.of(context).colorScheme.onSurface,
+              fontSize: 9,
+              fontStyle: FontStyle.italic,
+            ),
+          ),
+          const Gap(4),
+        ],
         Text(
           FormattedDate.getMessageTime(message.createdAt),
           style: Theme.of(context).textTheme.titleMedium!.copyWith(
