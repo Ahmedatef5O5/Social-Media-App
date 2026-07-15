@@ -179,7 +179,12 @@ class CustomUserProfileImagesSection extends StatelessWidget {
       return FileImage(selectedBackgroundFile!);
     }
     if (backgroundUrl != null && backgroundUrl!.startsWith('http')) {
-      return CachedNetworkImageProvider(backgroundUrl!);
+      String safeUrl = backgroundUrl!;
+      safeUrl = safeUrl.replaceAll(
+        RegExp(r'\.heic$', caseSensitive: false),
+        '.jpg',
+      );
+      return CachedNetworkImageProvider(safeUrl);
     }
     return const AssetImage(AppImages.defaultBackgroundImg);
   }
