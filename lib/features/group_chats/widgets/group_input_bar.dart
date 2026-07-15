@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
+import 'package:social_media_app/core/mentions/widgets/mention_aware_text_field.dart';
 import 'package:social_media_app/features/group_chats/helpers/bar_icon_button.dart';
+import '../../../core/mentions/models/mention_ref.dart';
+import '../../../core/mentions/widgets/mention_text_editing_controller.dart';
 import '../helpers/mic_button.dart';
 import '../helpers/recording_indicator.dart';
 import '../helpers/send_button.dart';
@@ -9,9 +12,12 @@ class InputBar extends StatelessWidget {
   final bool isRecording;
   final bool hasText;
   final int seconds;
-  final TextEditingController controller;
+  final MentionTextEditingController controller;
+  final FocusNode focusNode;
+  final List<String>? mentionCandidateIds;
+
   final VoidCallback onTyping;
-  final Function(String) onSend;
+  final void Function(String text, List<MentionRef> mentions) onSend;
   final VoidCallback onShowMedia;
   final Future<void> Function() onStartRecording;
   final Future<void> Function() onStopRecording;
@@ -22,12 +28,22 @@ class InputBar extends StatelessWidget {
     required this.hasText,
     required this.seconds,
     required this.controller,
+    required this.focusNode,
+    this.mentionCandidateIds,
     required this.onTyping,
     required this.onSend,
     required this.onShowMedia,
     required this.onStartRecording,
     required this.onStopRecording,
   });
+
+  void _send() {
+    final text = controller.text.trim();
+    if (text.isEmpty) return;
+    onSend(text, controller.validMentions);
+    controller.clear();
+    controller.clearMentions();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -44,7 +60,7 @@ class InputBar extends StatelessWidget {
 
           Expanded(
             child: AnimatedContainer(
-              padding: const EdgeInsets.symmetric(horizontal: 10),
+              // padding: const EdgeInsets.symmetric(horizontal: 10),
               duration: const Duration(milliseconds: 200),
               decoration: BoxDecoration(
                 color:
@@ -58,22 +74,14 @@ class InputBar extends StatelessWidget {
               child:
                   isRecording
                       ? RecordingIndicator(seconds: seconds)
-                      : TextField(
+                      : MentionAwareTextField(
                         controller: controller,
-                        onChanged: (_) => onTyping(),
-                        minLines: 1,
-                        maxLines: 5,
-                        cursorColor: Colors.blueGrey.shade400,
-                        textInputAction: TextInputAction.newline,
-                        decoration: const InputDecoration(
-                          hoverColor: Colors.white,
-                          hintText: 'Type a message...',
-                          border: InputBorder.none,
-                          contentPadding: EdgeInsets.symmetric(
-                            vertical: 14,
-                            horizontal: 2,
-                          ),
-                        ),
+                        focusNode: focusNode,
+                        enabled: true,
+                        hintText: 'Type a message...',
+
+                        restrictSuggestionsToUserIds: mentionCandidateIds,
+                        onSubmitted: (_) => _send(),
                       ),
             ),
           ),
@@ -81,15 +89,7 @@ class InputBar extends StatelessWidget {
           const Gap(8),
 
           hasText
-              ? SendButton(
-                primary: primary,
-                onTap: () {
-                  final text = controller.text.trim();
-                  if (text.isEmpty) return;
-                  onSend(text);
-                  controller.clear();
-                },
-              )
+              ? SendButton(primary: primary, onTap: _send)
               : MicButton(
                 isRecording: isRecording,
                 primary: primary,

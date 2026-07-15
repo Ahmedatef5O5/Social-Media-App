@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
+import 'package:social_media_app/core/mentions/widgets/mention_text_editing_controller.dart';
 import '../../../core/services/active_screen_tracker.dart';
 import '../../group_calls/cubit/group_call_cubit/group_call_cubit.dart';
 import '../../group_calls/cubit/group_call_cubit/group_call_state.dart';
@@ -37,7 +38,7 @@ class _GroupChatDetailsBody extends StatefulWidget {
 }
 
 class _GroupChatDetailsBodyState extends State<_GroupChatDetailsBody> {
-  final _controller = TextEditingController();
+  final _controller = MentionTextEditingController();
 
   final ItemScrollController _scrollController = ItemScrollController();
   final ItemPositionsListener _positionsListener =
@@ -206,9 +207,11 @@ class _GroupChatDetailsBodyState extends State<_GroupChatDetailsBody> {
                   top: false,
                   child: GroupChatInputBarSection(
                     controller: _controller,
-                    onSend: (text) {
-                      cubit.sendMessage(text: text);
-                      _controller.clear();
+                    mentionCandidateIds:
+                        widget.group.members.map((m) => m.userId).toList(),
+                    onSend: (text, mentions) {
+                      cubit.sendMessage(text: text, mentions: mentions);
+                      // _controller.clear();
                       _scrollToBottom();
                     },
                     onTyping: cubit.onTyping,
