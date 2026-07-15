@@ -6,6 +6,7 @@ mixin GroupMessagesStreamMixin on Cubit<GroupDetailsState> {
   GroupListCubit get groupListCubit;
   List<GroupMessageModel> get cachedMessages;
   set cachedMessages(List<GroupMessageModel> value);
+  Map<String, List<MentionRef>> get _mentionsCache;
   Map<String, Map<String, String>> get _reactionsCache;
   bool _isFirstLoad = true;
   List<String> _typingUserIds = [];
@@ -24,10 +25,19 @@ mixin GroupMessagesStreamMixin on Cubit<GroupDetailsState> {
     _messagesSubscription = _services.getGroupMessagesStream(group.id).listen((
       messages,
     ) {
+      final existingById = {for (final c in cachedMessages) c.id: c};
+
       final enriched =
           messages.map((msg) {
-            final reactions = _reactionsCache[msg.id] ?? {};
-            return msg.copyWith(reactions: reactions);
+            final existing = existingById[msg.id];
+
+            final mentions =
+                _mentionsCache[msg.id] ??
+                existing?.mentions ??
+                const <MentionRef>[];
+            final reactions =
+                _reactionsCache[msg.id] ?? existing?.reactions ?? {};
+            return msg.copyWith(mentions: mentions, reactions: reactions);
           }).toList();
 
       cachedMessages = enriched;
