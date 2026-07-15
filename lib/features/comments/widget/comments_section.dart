@@ -6,6 +6,7 @@ import '../../single_chats/widgets/empty_placeholder_state.dart';
 
 class CommentsSection extends StatelessWidget {
   final String postId;
+  final String postAuthorId;
   final List<CommentModel> comments;
   final void Function(String commentId, String authorName)? onReplyTap;
   final void Function(CommentModel)? onEditTap;
@@ -13,6 +14,7 @@ class CommentsSection extends StatelessWidget {
   const CommentsSection({
     super.key,
     required this.postId,
+    required this.postAuthorId,
     required this.comments,
     this.onReplyTap,
     this.onEditTap,
@@ -46,6 +48,7 @@ class CommentsSection extends StatelessWidget {
         return CommentWidget(
           comment: comment,
           postId: postId,
+          postAuthorId: postAuthorId,
           depth: 0,
           onReplyTap: onReplyTap,
           onEditTap: onEditTap,

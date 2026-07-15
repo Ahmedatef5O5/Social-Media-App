@@ -8,10 +8,13 @@ import 'package:social_media_app/features/comments/widget/comment_media_bubble.d
 import 'package:social_media_app/features/comments/widget/comment_reaction_summary.dart';
 import 'package:social_media_app/features/comments/widget/comment_reactions_bottom_sheet.dart';
 import 'package:social_media_app/features/comments/widget/thread_painter.dart';
+import '../../../core/constants/app_images.dart';
 import '../../../core/helpers/comment_helper.dart';
 import '../../../core/mentions/mentions.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/supabase/supabase_provider.dart';
+import '../../../core/toast/app_toast.dart';
+import '../../../core/widgets/custom_confirmation_dialog.dart';
 import '../../home/cubits/home_cubit/home_cubit.dart';
 import '../model/comment_type.dart';
 import 'comment_constants.dart';
@@ -24,6 +27,7 @@ import '../../../core/themes/app_colors.dart';
 class CommentWidget extends StatefulWidget {
   final CommentModel comment;
   final String postId;
+  final String postAuthorId;
   final int depth;
   final void Function(String commentId, String authorName)? onReplyTap;
   final GlobalKey? lastAvatarKey;
@@ -33,6 +37,7 @@ class CommentWidget extends StatefulWidget {
     super.key,
     required this.comment,
     required this.postId,
+    required this.postAuthorId,
     this.depth = 0,
     this.onReplyTap,
     this.lastAvatarKey,
@@ -78,8 +83,10 @@ class _CommentWidgetState extends State<CommentWidget>
     final overlayBox =
         Overlay.of(context).context.findRenderObject() as RenderBox;
     final offset = renderBox.localToGlobal(Offset.zero, ancestor: overlayBox);
-
-    final isMyComment = widget.comment.authorId == SupabaseProvider.id;
+    final currentUserId = SupabaseProvider.id;
+    final isMyComment = widget.comment.authorId == currentUserId;
+    final isPostAuthor = widget.postAuthorId == currentUserId;
+    final canDelete = isMyComment || isPostAuthor;
 
     final actions = <CommentMenuAction>[
       if (isMyComment)
@@ -89,6 +96,17 @@ class _CommentWidgetState extends State<CommentWidget>
           onTap: () {
             _dismissPicker();
             widget.onEditTap?.call(widget.comment);
+          },
+        ),
+
+      if (canDelete)
+        CommentMenuAction(
+          icon: Icons.delete_outline,
+          label: 'Delete',
+          color: Colors.red,
+          onTap: () {
+            _dismissPicker();
+            _confirmDelete(context);
           },
         ),
     ];
@@ -106,6 +124,26 @@ class _CommentWidgetState extends State<CommentWidget>
     );
 
     Overlay.of(context).insert(_overlayEntry!);
+  }
+
+  void _confirmDelete(BuildContext context) {
+    showDialog(
+      context: context,
+      builder:
+          (ctx) => CustomConfirmationDialog(
+            title: 'Delete this comment ?',
+            img: AppImages.deleteFilesAnimationLot,
+            onConfirm: () async {
+              Navigator.pop(ctx);
+              context.read<CommentsCubit>().deleteComment(
+                commentId: widget.comment.id,
+              );
+              if (context.mounted) {
+                AppToast.info('Comment deleted successfully');
+              }
+            },
+          ),
+    );
   }
 
   void _showCommentReactions() {
@@ -509,6 +547,7 @@ class _CommentWidgetState extends State<CommentWidget>
                                             ),
                                             comment: entry.value,
                                             postId: widget.postId,
+                                            postAuthorId: widget.postAuthorId,
                                             depth: widget.depth + 1,
                                             onReplyTap: widget.onReplyTap,
                                             onEditTap: widget.onEditTap,

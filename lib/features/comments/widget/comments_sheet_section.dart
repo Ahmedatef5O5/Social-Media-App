@@ -331,6 +331,7 @@ class _CommentsSheetSectionState extends State<CommentsSheetSection> {
                                           'comments_${cubit.currentSort.name}',
                                         ),
                                         postId: post.id,
+                                        postAuthorId: post.authorId,
                                         comments: cubit.comments,
                                         onReplyTap: _startReply,
                                         onEditTap: _startEdit,
