@@ -7,6 +7,7 @@ class MessageModel {
   final String text;
   final DateTime createdAt;
   final bool isRead;
+  final bool isEdited;
   final String messageType;
   final String? imageUrl;
   final String? videoUrl;
@@ -33,6 +34,7 @@ class MessageModel {
     required this.text,
     required this.createdAt,
     this.isRead = false,
+    this.isEdited = false,
     this.messageType = 'text',
     this.imageUrl,
     this.videoUrl,
@@ -62,6 +64,7 @@ class MessageModel {
     String? text,
     DateTime? createdAt,
     bool? isRead,
+    bool? isEdited,
     String? messageType,
     String? imageUrl,
     String? videoUrl,
@@ -88,6 +91,7 @@ class MessageModel {
       text: text ?? this.text,
       createdAt: createdAt ?? this.createdAt,
       isRead: isRead ?? this.isRead,
+      isEdited: isEdited ?? this.isEdited,
       messageType: messageType ?? this.messageType,
       imageUrl: imageUrl ?? this.imageUrl,
       videoUrl: videoUrl ?? this.videoUrl,
@@ -118,6 +122,7 @@ class MessageModel {
       text: json[MessagesColumns.messageText],
       createdAt: DateTime.parse(json[MessagesColumns.createdAt]),
       isRead: json[MessagesColumns.isRead] ?? false,
+      isEdited: json[MessagesColumns.isEdited] ?? false,
       messageType: json[MessagesColumns.messageType] ?? 'text',
       imageUrl: json[MessagesColumns.imageUrl],
       videoUrl: json[MessagesColumns.videoUrl],
@@ -151,6 +156,7 @@ class MessageModel {
       MessagesColumns.messageText: text,
       MessagesColumns.createdAt: createdAt.toIso8601String(),
       MessagesColumns.isRead: isRead,
+      MessagesColumns.isEdited: isEdited,
       MessagesColumns.messageType: messageType,
       MessagesColumns.imageUrl: imageUrl,
       MessagesColumns.videoUrl: videoUrl,

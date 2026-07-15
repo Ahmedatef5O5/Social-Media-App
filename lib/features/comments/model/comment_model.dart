@@ -28,6 +28,7 @@ class CommentModel {
   final List<CommentModel> replies;
   final List<CommentReaction> reactions;
   final List<MentionRef> mentions;
+  final bool isEdited;
 
   const CommentModel({
     required this.id,
@@ -55,6 +56,7 @@ class CommentModel {
     this.replies = const [],
     this.reactions = const [],
     this.mentions = const [],
+    this.isEdited = false,
   });
 
   bool get isReply => parentCommentId != null;
@@ -80,6 +82,7 @@ class CommentModel {
       'file_size_bytes': fileSizeBytes,
       'duration_seconds': durationSeconds,
       'parent_comment_id': parentCommentId,
+      'is_edited;': isEdited,
     };
   }
 
@@ -134,6 +137,7 @@ class CommentModel {
       replies: replies,
       reactions: reactions,
       mentions: mentions,
+      isEdited: map['is_edited'],
     );
   }
 
@@ -163,6 +167,7 @@ class CommentModel {
     List<CommentModel>? replies,
     List<CommentReaction>? reactions,
     List<MentionRef>? mentions,
+    bool? isEdited,
   }) {
     return CommentModel(
       id: id ?? this.id,
@@ -190,6 +195,7 @@ class CommentModel {
       replies: replies ?? this.replies,
       reactions: reactions ?? this.reactions,
       mentions: mentions ?? this.mentions,
+      isEdited: isEdited ?? this.isEdited,
     );
   }
 
@@ -219,6 +225,7 @@ class CommentModel {
     'replies': replies.map((reply) => reply.toCacheJson()).toList(),
     'reactions': reactions.map((reaction) => reaction.toMap()).toList(),
     'mentions': mentions.map((mention) => mention.toCacheJson()).toList(),
+    'is_edited': isEdited,
   };
 
   factory CommentModel.fromCacheJson(Map<String, dynamic> map) {
@@ -245,6 +252,7 @@ class CommentModel {
       replyCount: map['reply_count'] as int? ?? 0,
       reactionCount: map['reaction_count'] as int? ?? 0,
       parentCommentId: map['parent_comment_id'] as String?,
+      isEdited: map['is_edited'] as bool,
       replies:
           (map['replies'] as List<dynamic>? ?? [])
               .map(

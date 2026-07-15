@@ -9,7 +9,7 @@ class GroupMessageModel {
   final String? senderAvatar;
   final String text;
   final DateTime createdAt;
-  final String messageType; // text | image | video | voice | call
+  final String messageType;
   final String? imageUrl;
   final String? videoUrl;
   final String? voiceUrl;
@@ -21,8 +21,8 @@ class GroupMessageModel {
   final String? replyToMessageType;
   final List<MentionRef> mentions;
   final Map<String, String> reactions;
-
   final Set<String> readBy;
+  final bool isEdited;
 
   const GroupMessageModel({
     required this.id,
@@ -45,6 +45,7 @@ class GroupMessageModel {
     this.mentions = const [],
     this.reactions = const {},
     this.readBy = const {},
+    this.isEdited = false,
   });
 
   GroupMessageModel copyWith({
@@ -68,6 +69,7 @@ class GroupMessageModel {
     List<MentionRef>? mentions,
     Map<String, String>? reactions,
     Set<String>? readBy,
+    bool? isEdited,
   }) {
     return GroupMessageModel(
       id: id ?? this.id,
@@ -90,6 +92,7 @@ class GroupMessageModel {
       mentions: mentions ?? this.mentions,
       reactions: reactions ?? this.reactions,
       readBy: readBy ?? this.readBy,
+      isEdited: isEdited ?? this.isEdited,
     );
   }
 
@@ -134,6 +137,7 @@ class GroupMessageModel {
       mentions: mentions,
       reactions: reactionsMap,
       readBy: readBySet,
+      isEdited: (map[GroupMessageColumns.isEdited] as bool?) ?? false,
     );
   }
 
@@ -197,6 +201,7 @@ class GroupMessageModel {
       mentions: mentionsList,
       reactions: reactionsMap,
       readBy: readBySet,
+      isEdited: (json['is_edited'] as bool?) ?? false,
     );
   }
 
@@ -222,6 +227,7 @@ class GroupMessageModel {
       'mentions': mentions.map((m) => m.toCacheJson()).toList(),
       'reactions': reactions,
       'read_by': readBy.toList(),
+      'is_edited': isEdited,
     };
   }
 }

@@ -77,6 +77,8 @@ abstract class GroupMessageColumns {
   static const String caption = 'caption';
   static const String createdAt = 'created_at';
   static const String replyToId = 'reply_to_id';
+  static const String isEdited = 'is_edited';
+  static const String updatedAt = 'updated_at';
 
   static const String imagePublicId = 'image_public_id';
   static const String videoPublicId = 'video_public_id';
@@ -239,7 +241,8 @@ abstract class CommentColumns {
   static const String imageUrl = 'image_url';
   static const String videoUrl = 'video_url';
   static const String parentCommentId = 'parent_comment_id';
-
+  static const String isEdited = 'is_edited';
+  static const String updatedAt = 'updated_at';
   // ── Rich media (Comments upgrade) ──
   static const String commentType = 'comment_type';
   static const String voiceUrl = 'voice_url';
@@ -277,6 +280,8 @@ abstract class MessagesColumns {
   static const String receiverId = 'receiver_id';
   static const String createdAt = 'created_at';
   static const String isRead = 'is_read';
+  static const String isEdited = 'is_edited';
+  static const String updatedAt = 'updated_at';
   static const String messageType = 'message_type';
   static const String imageUrl = 'image_url';
   static const String videoUrl = 'video_url';
