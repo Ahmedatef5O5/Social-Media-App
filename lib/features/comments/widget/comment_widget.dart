@@ -136,7 +136,6 @@ class _CommentWidgetState extends State<CommentWidget>
         navController.jumpToTab(3);
       }
     } else {
-      Navigator.of(context).pop();
       Navigator.of(
         context,
         rootNavigator: true,

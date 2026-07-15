@@ -5,9 +5,12 @@ import 'package:social_media_app/core/services/file_picker_services.dart';
 import 'package:social_media_app/core/themes/app_colors.dart';
 import 'package:social_media_app/features/comments/model/comment_attachment_draft.dart';
 import 'package:social_media_app/features/comments/model/comment_type.dart';
-import 'package:social_media_app/features/comments/widget/comment_gif_picker_sheet.dart';
-import 'package:social_media_app/features/comments/widget/comment_sticker_picker_sheet.dart';
 import 'package:social_media_app/features/comments/widget/comment_voice_recorder_sheet.dart';
+
+import '../../gifs/model/gif_result_model.dart';
+import '../../gifs/widgets/gif_picker_sheet.dart';
+import '../../stickers/model/sticker_model.dart';
+import '../../stickers/widgets/sticker_send_picker_sheet.dart';
 
 class CommentAttachmentPickerSheet extends StatelessWidget {
   const CommentAttachmentPickerSheet({super.key});
@@ -188,24 +191,35 @@ class CommentAttachmentPickerSheet extends StatelessWidget {
 
   Future<void> _pickGif(BuildContext context) async {
     final nav = Navigator.of(context);
-    final draft = await showModalBottomSheet<CommentAttachmentDraft?>(
+    final gif = await showModalBottomSheet<GifResult?>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => const CommentGifPickerSheet(),
+      builder: (_) => const GifPickerSheet(),
     );
-    if (draft != null) nav.pop(draft);
+    if (gif != null) {
+      nav.pop(
+        CommentAttachmentDraft(type: CommentType.gif, remoteUrl: gif.sendUrl),
+      );
+    }
   }
 
   Future<void> _pickSticker(BuildContext context) async {
     final nav = Navigator.of(context);
-    final draft = await showModalBottomSheet<CommentAttachmentDraft?>(
+    final sticker = await showModalBottomSheet<StickerModel?>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => const CommentStickerPickerSheet(),
+      builder: (_) => const StickerSendPickerSheet(),
     );
-    if (draft != null) nav.pop(draft);
+    if (sticker != null) {
+      nav.pop(
+        CommentAttachmentDraft(
+          type: CommentType.sticker,
+          remoteUrl: sticker.imageUrl,
+        ),
+      );
+    }
   }
 }
 

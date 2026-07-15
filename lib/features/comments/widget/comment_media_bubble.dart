@@ -10,7 +10,7 @@ import 'package:social_media_app/core/widgets/cached_cloudinary_image.dart';
 import 'package:social_media_app/features/comments/model/comment_model.dart';
 import 'package:social_media_app/features/comments/model/comment_type.dart';
 import 'package:social_media_app/features/comments/widget/comment_voice_player.dart';
-import '../../../core/widgets/loop_limited_gif.dart';
+import '../../gifs/utils/loop_limited_gif.dart';
 import '../../single_chats/widgets/full_screen_media_view.dart';
 import '../../stickers/utils/animated_loop_cloudinary_sticker.dart';
 
