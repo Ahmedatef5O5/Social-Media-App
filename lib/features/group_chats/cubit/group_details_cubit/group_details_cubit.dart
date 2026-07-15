@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import 'package:social_media_app/core/connectivity/services/connectivity_banner_controller.dart';
+import 'package:social_media_app/core/mentions/mentions.dart';
 import '../../../../core/cache/services/messages_snapshot_cache.dart';
 import '../../../../core/services/supabase_storage_services.dart';
 import '../../../../core/supabase/supabase_provider.dart';
@@ -16,11 +17,16 @@ import '../../services/group_chat_services.dart';
 import '../group_list_cubit/group_list_cubit.dart';
 part 'group_details_state.dart';
 part 'group_messages_stream_mixin.dart';
+part 'group_mentions_mixin.dart';
 part 'group_reactions_mixin.dart';
 part 'group_media_upload_mixin.dart';
 
 class GroupDetailsCubit extends Cubit<GroupDetailsState>
-    with GroupMessagesStreamMixin, GroupReactionsMixin, GroupMediaUploadMixin {
+    with
+        GroupMessagesStreamMixin,
+        GroupMentionsMixin,
+        GroupReactionsMixin,
+        GroupMediaUploadMixin {
   @override
   final GroupChatServices _services;
   @override
@@ -56,6 +62,10 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState>
     final diskMessages = _readMessagesSnapshot(_messagesSnapshotKey!);
     if (diskMessages.isNotEmpty) {
       for (var m in diskMessages) {
+        if (m.mentions.isNotEmpty) {
+          _mentionsCache[m.id] = List<MentionRef>.from(m.mentions);
+        }
+
         if (m.reactions.isNotEmpty) {
           _reactionsCache[m.id] = Map<String, String>.from(m.reactions);
         }
@@ -75,10 +85,11 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState>
     }
 
     groupListCubit.setActiveGroupId(group.id);
+    _listenMentions();
+    _listenReactions();
     _listenMessages();
     _listenReadReceipts();
     _listenTyping();
-    _listenReactions();
     markRead();
   }
 
@@ -93,6 +104,9 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState>
       ),
     );
   }
+
+  Future<List<String>> getMemberIdsForMentions() =>
+      _services.getGroupMemberIds(group.id);
 
   @override
   void _persistMessagesSnapshot(String key, List<GroupMessageModel> messages) {

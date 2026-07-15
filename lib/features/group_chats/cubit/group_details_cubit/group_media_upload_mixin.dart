@@ -19,6 +19,9 @@ mixin GroupMediaUploadMixin on Cubit<GroupDetailsState> {
     File? imageFile,
     File? videoFile,
     File? voiceFile,
+    String?
+    remoteImageUrl, // Already-hosted URL (GIF / Sticker) — no upload needed
+    List<MentionRef> mentions = const [],
     String? caption,
   }) async {
     final isOffline = await ConnectivityBannerController.notifyIfOffline();
@@ -27,7 +30,8 @@ mixin GroupMediaUploadMixin on Cubit<GroupDetailsState> {
     if (text.trim().isEmpty &&
         imageFile == null &&
         videoFile == null &&
-        voiceFile == null) {
+        voiceFile == null &&
+        remoteImageUrl == null) {
       return;
     }
 
@@ -53,6 +57,8 @@ mixin GroupMediaUploadMixin on Cubit<GroupDetailsState> {
       text: text,
       createdAt: DateTime.now(),
       messageType: messageType,
+      imageUrl: remoteImageUrl,
+      mentions: mentions,
       replyToMessageId: reply?.id,
       replyToText: reply?.text,
       replyToSenderId: reply?.senderId,
@@ -66,7 +72,9 @@ mixin GroupMediaUploadMixin on Cubit<GroupDetailsState> {
       String? uploadedImageUrl, uploadedVideoUrl, uploadedVoiceUrl;
       String? imagePublicId, videoPublicId, voicePublicId;
 
-      if (imageFile != null) {
+      if (remoteImageUrl != null) {
+        uploadedImageUrl = remoteImageUrl;
+      } else if (imageFile != null) {
         uploadProgressMap[tempId] = 0;
         final result = await _services.storage.uploadFile(
           imageFile,
@@ -127,6 +135,7 @@ mixin GroupMediaUploadMixin on Cubit<GroupDetailsState> {
         imagePublicId: imagePublicId,
         videoPublicId: videoPublicId,
         voicePublicId: voicePublicId,
+        mentions: mentions,
       );
       final memberIds =
           group.members
