@@ -22,9 +22,12 @@ class StoryGestureLayer extends StatefulWidget {
 
 class _StoryGestureLayerState extends State<StoryGestureLayer> {
   double x = 0, y = 0, t = 0;
+  double _screenWidth = 0;
 
   @override
   Widget build(BuildContext context) {
+    _screenWidth = MediaQuery.sizeOf(context).width;
+
     return Listener(
       behavior: HitTestBehavior.translucent,
       onPointerDown: (e) {
@@ -33,6 +36,8 @@ class _StoryGestureLayerState extends State<StoryGestureLayer> {
         t = e.timeStamp.inMilliseconds.toDouble();
       },
       onPointerUp: (e) {
+        if (!mounted) return;
+
         final dx = e.position.dx - x;
         final dy = e.position.dy - y;
         final dt = e.timeStamp.inMilliseconds - t;
@@ -52,10 +57,12 @@ class _StoryGestureLayerState extends State<StoryGestureLayer> {
           return;
         }
 
-        final half = MediaQuery.of(context).size.width / 2;
+        final half = _screenWidth / 2;
         e.position.dx < half ? widget.onPrev() : widget.onNext();
       },
       onPointerMove: (e) {
+        if (!mounted) return;
+
         final dx = e.position.dx - x;
         final dy = e.position.dy - y;
         final dt = e.timeStamp.inMilliseconds - t;
