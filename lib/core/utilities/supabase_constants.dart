@@ -20,6 +20,7 @@ abstract class SupabaseConstants {
   static const String groupMembers = 'group_members';
   static const String groupMessages = 'group_messages';
   static const String groupMessageReactions = 'group_message_reactions';
+  static const String groupMessageMentions = 'group_message_mentions';
   static const String groupTypingStatus = 'group_typing_status';
 
   //  Presence Feature
@@ -89,6 +90,17 @@ abstract class GroupReactionColumns {
   static const String userId = 'user_id';
   static const String reaction = 'reaction';
   static const String groupId = 'group_id';
+}
+
+// group_message_mentions
+abstract class GroupMessageMentionColumns {
+  static const String id = 'id';
+  static const String groupMessageId = 'group_message_id';
+  static const String groupId = 'group_id';
+  static const String mentionedUserId = 'mentioned_user_id';
+  static const String startIndex = 'start_index';
+  static const String endIndex = 'end_index';
+  static const String createdAt = 'created_at';
 }
 
 // user_presence

@@ -1,3 +1,4 @@
+import '../../../core/mentions/models/mention_ref.dart';
 import '../../../core/utilities/supabase_constants.dart';
 
 class GroupMessageModel {
@@ -18,7 +19,7 @@ class GroupMessageModel {
   final String? replyToSenderId;
   final String? replyToSenderName;
   final String? replyToMessageType;
-
+  final List<MentionRef> mentions;
   final Map<String, String> reactions;
 
   final Set<String> readBy;
@@ -41,6 +42,7 @@ class GroupMessageModel {
     this.replyToSenderId,
     this.replyToSenderName,
     this.replyToMessageType,
+    this.mentions = const [],
     this.reactions = const {},
     this.readBy = const {},
   });
@@ -63,6 +65,7 @@ class GroupMessageModel {
     String? replyToSenderId,
     String? replyToSenderName,
     String? replyToMessageType,
+    List<MentionRef>? mentions,
     Map<String, String>? reactions,
     Set<String>? readBy,
   }) {
@@ -84,6 +87,7 @@ class GroupMessageModel {
       replyToSenderId: replyToSenderId ?? this.replyToSenderId,
       replyToSenderName: replyToSenderName ?? this.replyToSenderName,
       replyToMessageType: replyToMessageType ?? this.replyToMessageType,
+      mentions: mentions ?? this.mentions,
       reactions: reactions ?? this.reactions,
       readBy: readBy ?? this.readBy,
     );
@@ -91,6 +95,7 @@ class GroupMessageModel {
 
   factory GroupMessageModel.fromMap(
     Map<String, dynamic> map, {
+    List<MentionRef> mentions = const [],
     List<Map<String, dynamic>> reactionsList = const [],
   }) {
     final Map<String, String> reactionsMap = {};
@@ -126,6 +131,7 @@ class GroupMessageModel {
       replyToSenderId: map['reply_to_sender_id'] as String?,
       replyToSenderName: map['reply_to_sender_name'] as String?,
       replyToMessageType: map['reply_to_message_type'] as String?,
+      mentions: mentions,
       reactions: reactionsMap,
       readBy: readBySet,
     );
@@ -151,6 +157,14 @@ class GroupMessageModel {
   }
 
   factory GroupMessageModel.fromJson(Map<String, dynamic> json) {
+    final mentionsRaw = json['mentions'];
+    final List<MentionRef> mentionsList =
+        mentionsRaw is List
+            ? mentionsRaw
+                .map((m) => MentionRef.fromCacheJson(m as Map<String, dynamic>))
+                .toList()
+            : const [];
+
     final reactionsRaw = json['reactions'];
     final Map<String, String> reactionsMap =
         reactionsRaw is Map
@@ -180,6 +194,7 @@ class GroupMessageModel {
       replyToSenderId: json['reply_to_sender_id'] as String?,
       replyToSenderName: json['reply_to_sender_name'] as String?,
       replyToMessageType: json['reply_to_message_type'] as String?,
+      mentions: mentionsList,
       reactions: reactionsMap,
       readBy: readBySet,
     );
@@ -204,6 +219,7 @@ class GroupMessageModel {
       'reply_to_sender_id': replyToSenderId,
       'reply_to_sender_name': replyToSenderName,
       'reply_to_message_type': replyToMessageType,
+      'mentions': mentions.map((m) => m.toCacheJson()).toList(),
       'reactions': reactions,
       'read_by': readBy.toList(),
     };
