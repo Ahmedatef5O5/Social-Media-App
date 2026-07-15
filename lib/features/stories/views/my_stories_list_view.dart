@@ -193,17 +193,17 @@ class _MyStoriesListViewState extends State<MyStoriesListView> {
   Widget _buildDraggableFAB(ThemeData theme) {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 100),
-      width: 60,
-      height: 60,
+      width: 50,
+      height: 50,
       decoration: BoxDecoration(
         color: theme.primaryColor,
         shape: BoxShape.circle,
         boxShadow: [
           BoxShadow(
-            color: theme.primaryColor.withValues(alpha: 0.4),
-            blurRadius: 15,
+            color: theme.primaryColor.withValues(alpha: 0.25),
+            blurRadius: 12,
             spreadRadius: 2,
-            offset: const Offset(0, 6),
+            offset: const Offset(0, 3),
           ),
         ],
       ),
