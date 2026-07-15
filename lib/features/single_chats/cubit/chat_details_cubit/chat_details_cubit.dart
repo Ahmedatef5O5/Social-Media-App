@@ -166,9 +166,7 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
     File? imageFile,
     File? videoFile,
     File? voiceFile,
-    String?
-    remoteImageUrl, // Already-hosted URL (GIF / Sticker) — no upload needed
-
+    String? remoteImageUrl,
     String? caption,
     MessageModel? replyTo,
   }) async {
@@ -356,6 +354,41 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
       emit(MessagesSuccessLoaded(messages: currentMessages));
 
       uploadProgressMap.remove(tempId);
+    }
+  }
+
+  Future<void> editMessage({
+    required String messageId,
+    required String newText,
+  }) async {
+    final trimmed = newText.trim();
+    if (trimmed.isEmpty) return;
+
+    final target = cachedMessages.firstWhere(
+      (m) => m.id == messageId,
+      orElse: () => cachedMessages.first,
+    );
+    final isCaptionEdit =
+        target.messageType == 'image' || target.messageType == 'video';
+
+    cachedMessages =
+        cachedMessages.map((m) {
+          if (m.id != messageId) return m;
+          return isCaptionEdit
+              ? m.copyWith(caption: trimmed, isEdited: true)
+              : m.copyWith(text: trimmed, isEdited: true);
+        }).toList();
+    // _emitLoaded();
+    emit(MessagesSuccessLoaded(messages: cachedMessages));
+
+    try {
+      await _chatServices.editMessage(
+        messageId: messageId,
+        newText: trimmed,
+        isCaptionEdit: isCaptionEdit,
+      );
+    } catch (e) {
+      debugPrint('Error editing message: $e');
     }
   }
 

@@ -7,15 +7,8 @@ import 'chat_list_service.dart';
 import 'chat_messages_service.dart';
 import 'chat_presence_service.dart';
 import 'chat_reactions_service.dart';
-
 export 'chat_list_service.dart' show ReceiverPushInfo;
 
-/// Facade over the 4 focused chat services below. Every public method here
-/// has the exact same name and signature it always had — this file used to
-/// contain all of this logic directly (612 lines), split apart by concern
-/// (list/discovery, per-conversation messages, reactions,
-/// presence & typing) without changing the public API, so
-/// `ChatDetailsCubit` and its 3 mixins need zero changes.
 class ChatServices {
   final NetworkStatusService _networkStatus;
 
@@ -97,6 +90,16 @@ class ChatServices {
     replyToStoryText: replyToStoryText,
     replyToStoryBgColor: replyToStoryBgColor,
     replyToStoryDurationSeconds: replyToStoryDurationSeconds,
+  );
+
+  Future<void> editMessage({
+    required String messageId,
+    required String newText,
+    required bool isCaptionEdit,
+  }) => _messages.editMessage(
+    messageId: messageId,
+    newText: newText,
+    isCaptionEdit: isCaptionEdit,
   );
 
   Future<void> deleteMessage({required String messageId}) =>

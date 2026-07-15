@@ -5,12 +5,6 @@ import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/utilities/supabase_constants.dart';
 import '../models/message_model.dart';
 
-/// Per-conversation message concerns: the messages stream, media gallery,
-/// sending/deleting messages, marking read, and looking up a user's
-/// name/avatar for a message's sender snapshot.
-///
-/// Extracted from the monolithic `ChatServices`. Logic is unchanged — this
-/// is a pure structural extraction.
 class ChatMessagesService {
   final _supabase = SupabaseProvider.client;
 
@@ -122,6 +116,21 @@ class ChatMessagesService {
         MessagesColumns.replyToStoryDurationSeconds:
             replyToStoryDurationSeconds,
     });
+  }
+
+  Future<void> editMessage({
+    required String messageId,
+    required String newText,
+    required bool isCaptionEdit,
+  }) async {
+    await _supabase
+        .from('messages')
+        .update({
+          if (isCaptionEdit) 'caption': newText else 'text': newText,
+          'is_edited': true,
+          'updated_at': DateTime.now().toIso8601String(),
+        })
+        .eq('id', messageId);
   }
 
   Future<void> deleteMessage({required String messageId}) async {
