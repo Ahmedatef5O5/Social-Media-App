@@ -3,10 +3,12 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:social_media_app/features/posts/widgets/post_header_widget.dart';
 import '../../../core/supabase/supabase_provider.dart';
 import '../cubit/posts_cubit/posts_cubit.dart';
+import '../helper/header_trailing_action.dart';
 import '../model/post_model.dart';
 import 'post_interactions_row.dart';
 import 'post_media_widget.dart';
 import 'post_txt_content_widget.dart';
+import 'shared_post_header_widget.dart';
 
 class PostItemWidget extends StatelessWidget {
   final PostModel currPost;
@@ -21,7 +23,6 @@ class PostItemWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-
     final currentUserId = SupabaseProvider.id;
 
     return BlocBuilder<PostsCubit, PostsState>(
@@ -39,7 +40,11 @@ class PostItemWidget extends StatelessWidget {
               oldPost.isLikedBy(currentUserId) !=
                   newPost.isLikedBy(currentUserId) ||
               oldPost.reactionsSignature != newPost.reactionsSignature ||
-              oldPost.likersImages?.length != newPost.likersImages?.length;
+              oldPost.likersImages?.length != newPost.likersImages?.length ||
+              oldPost.displayPost.sharesCount !=
+                  newPost.displayPost.sharesCount ||
+              oldPost.displayPost.isSharedByMe !=
+                  newPost.displayPost.isSharedByMe;
         }
         return true;
       },
@@ -52,19 +57,29 @@ class PostItemWidget extends StatelessWidget {
             return const SizedBox.shrink();
           }
         }
+
+        final bool isSharedPost = currentPost.isSharedPost;
+        final PostModel? displayPost =
+            isSharedPost ? currentPost.originalPost : currentPost;
+
+        if (isSharedPost && displayPost == null) {
+          return const SizedBox.shrink();
+        }
+
         return Container(
+          margin: const EdgeInsets.symmetric(horizontal: 4),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(16),
             color: colorScheme.surface,
             border: Border.all(
               width: 1,
-              color: colorScheme.outlineVariant.withValues(alpha: 0.35),
+              color: colorScheme.outlineVariant.withValues(alpha: 0.25),
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.03),
-                blurRadius: 4,
-                offset: const Offset(0, 2),
+                color: Colors.black.withValues(alpha: 0.02),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
               ),
             ],
           ),
@@ -72,21 +87,63 @@ class PostItemWidget extends StatelessWidget {
           child: Material(
             type: MaterialType.transparency,
             child: Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 12.0,
-                vertical: 8,
-              ),
+              padding: const EdgeInsets.all(12.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  PostHeaderWidget(
-                    post: currentPost,
-                    currentUserId: currentUserId,
-                    postsCubit: postsCubit,
+                  if (isSharedPost) ...[
+                    SharedPostHeaderWidget(
+                      sharedPost: currentPost,
+                      currentUserId: currentUserId,
+                      postsCubit: postsCubit,
+                    ),
+                    const SizedBox(height: 10),
+                  ],
+                  Container(
+                    padding:
+                        isSharedPost
+                            ? const EdgeInsets.all(12)
+                            : EdgeInsets.zero,
+                    decoration:
+                        isSharedPost
+                            ? BoxDecoration(
+                              borderRadius: BorderRadius.circular(14),
+                              gradient: LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [
+                                  colorScheme.onSurface.withValues(alpha: 0.03),
+                                  colorScheme.onSurface.withValues(alpha: 0.01),
+                                ],
+                              ),
+                              border: Border.all(
+                                color: colorScheme.outlineVariant.withValues(
+                                  alpha: 0.2,
+                                ),
+                                width: 1,
+                              ),
+                            )
+                            : null,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        PostHeaderWidget(
+                          post: displayPost!,
+                          currentUserId: currentUserId,
+                          postsCubit: postsCubit,
+                          trailingAction:
+                              isSharedPost
+                                  ? HeaderTrailingAction.openOriginal
+                                  : HeaderTrailingAction.moreActions,
+                        ),
+                        const SizedBox(height: 8),
+                        PostTxtContentWidget(post: displayPost),
+                        PostMediaWidget(post: displayPost),
+                      ],
+                    ),
                   ),
-                  PostTxtContentWidget(post: currentPost),
-                  PostMediaWidget(post: currentPost),
-                  PostInteractionsRow(postId: currentPost.id),
+                  const SizedBox(height: 4),
+                  PostInteractionsRow(postId: displayPost.id),
                 ],
               ),
             ),

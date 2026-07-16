@@ -108,7 +108,7 @@ class _CommentsSheetSectionState extends State<CommentsSheetSection> {
 
       if (state is PostsLoaded) {
         try {
-          return state.posts.firstWhere((p) => p.id == widget.postId);
+          return state.posts.findById(widget.postId);
         } catch (_) {
           return null;
         }

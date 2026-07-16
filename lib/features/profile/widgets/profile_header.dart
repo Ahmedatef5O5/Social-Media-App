@@ -22,8 +22,6 @@ class ProfileHeader extends StatelessWidget {
     final currentUserId = SupabaseProvider.id;
     final isMe = user.id == currentUserId;
     final theme = Theme.of(context);
-    // Height of the cover/background image area — reused below so the
-    // quick-action buttons line up with the avatar instead of guessing pixels.
     final double bgHeight = MediaQuery.of(context).size.width / 1.7;
 
     return Column(
@@ -64,7 +62,9 @@ class ProfileHeader extends StatelessWidget {
                           height: 20,
                           color: Theme.of(context).scaffoldBackgroundColor,
                         ),
-                        onPressed: () {},
+                        onPressed: () {
+                          AppToast.info("This feature Comming soon.");
+                        },
                       ),
                       const Gap(8),
                       _buildSmallActionButton(
@@ -116,7 +116,7 @@ class ProfileHeader extends StatelessWidget {
                     padding: const EdgeInsets.only(top: 12.0),
                     child: GestureDetector(
                       behavior: HitTestBehavior.opaque,
-                      onTap: () => Navigator.of(context).pop(),
+                      onTap: () => Navigator.maybePop(context),
                       child: Padding(
                         padding: const EdgeInsets.all(12.0),
                         child: Container(
