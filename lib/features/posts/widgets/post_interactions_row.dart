@@ -4,13 +4,13 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 import 'package:social_media_app/features/comments/cubit/comments_cubit.dart';
 import 'package:social_media_app/features/comments/services/comments_service.dart';
-import 'package:social_media_app/features/posts/cubit/posts_cubit/posts_cubit.dart';
 import 'package:social_media_app/features/posts/widgets/post_reactions_bottom_sheet.dart';
 import '../../../core/constants/app_images.dart';
 import '../../../core/helpers/comment_helper.dart';
 import '../../../core/themes/app_colors.dart';
 import '../../../core/toast/app_toast.dart';
 import '../../home/cubits/home_cubit/home_cubit.dart';
+import '../cubit/posts_cubit/posts_cubit.dart';
 import '../model/post_model.dart';
 import '../../comments/widget/comments_sheet_section.dart';
 import 'post_reaction_overlay.dart';
@@ -26,14 +26,9 @@ class PostInteractionsRow extends StatelessWidget {
     return BlocBuilder<PostsCubit, PostsState>(
       buildWhen: (prev, curr) {
         if (prev is PostsLoaded && curr is PostsLoaded) {
-          final oldPost = prev.posts.firstWhere(
-            (p) => p.id == postId,
-            orElse: () => prev.posts.first,
-          );
-          final newPost = curr.posts.firstWhere(
-            (p) => p.id == postId,
-            orElse: () => curr.posts.first,
-          );
+          final oldPost = prev.posts.findById(postId);
+          final newPost = curr.posts.findById(postId);
+          if (oldPost == null || newPost == null) return true;
 
           return countAllComments(oldPost.comments) !=
               countAllComments(newPost.comments);
@@ -45,7 +40,8 @@ class PostInteractionsRow extends StatelessWidget {
           return const SizedBox.shrink();
         }
 
-        final post = state.posts.firstWhere((p) => p.id == postId);
+        final post = state.posts.findById(postId);
+        if (post == null) return const SizedBox.shrink();
 
         final totalComments = countAllComments(post.comments);
 
@@ -81,7 +77,7 @@ class _InteractionsContent extends StatelessWidget {
 
             const Gap(20),
 
-            const _ShareButtons(),
+            _ShareButtonWidget(post: post),
 
             const Spacer(),
 
@@ -190,7 +186,7 @@ class _LikeButtonWidgetState extends State<_LikeButtonWidget>
 
     final currentPost =
         (state is PostsLoaded)
-            ? state.posts.firstWhere((p) => p.id == widget.post.id)
+            ? state.posts.findById(widget.post.id) ?? widget.post
             : widget.post;
 
     final String? myReaction = currentPost.myReactionEmoji;
@@ -303,6 +299,7 @@ class _CommentButtonWidget extends StatelessWidget {
       child: Row(
         children: [
           Image.asset(AppImages.commentAtPostIcon, width: 24, height: 24),
+
           if (totalComments > 0) ...[
             const Gap(4),
             Text(
@@ -316,15 +313,108 @@ class _CommentButtonWidget extends StatelessWidget {
   }
 }
 
-class _ShareButtons extends StatelessWidget {
-  const _ShareButtons();
+class _ShareButtonWidget extends StatefulWidget {
+  const _ShareButtonWidget({required this.post});
+
+  final PostModel post;
+
+  @override
+  State<_ShareButtonWidget> createState() => _ShareButtonWidgetState();
+}
+
+class _ShareButtonWidgetState extends State<_ShareButtonWidget>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _animationController;
+  late Animation<double> _scaleAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 400),
+    );
+    _scaleAnimation = TweenSequence<double>([
+      TweenSequenceItem(
+        tween: Tween<double>(
+          begin: 1.0,
+          end: 1.35,
+        ).chain(CurveTween(curve: Curves.easeOutCubic)),
+        weight: 30,
+      ),
+      TweenSequenceItem(
+        tween: Tween<double>(
+          begin: 1.35,
+          end: 1.0,
+        ).chain(CurveTween(curve: Curves.elasticOut)),
+        weight: 70,
+      ),
+    ]).animate(_animationController);
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  void _handleTap(PostModel currentPost) {
+    _animationController.forward(from: 0.0);
+    HapticFeedback.lightImpact();
+
+    final bool wasShared = currentPost.isSharedByMe;
+
+    context.read<PostsCubit>().toggleSharePost(currentPost);
+    AppToast.save(
+      wasShared ? 'Share removed' : 'Post shared successfully',
+      icon: Icons.repeat_rounded,
+      iconColor: wasShared ? AppColors.grey5 : Theme.of(context).primaryColor,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
+    final state = context.watch<PostsCubit>().state;
+    final currentPost =
+        (state is PostsLoaded)
+            ? state.posts.findById(widget.post.id) ?? widget.post
+            : widget.post;
+
+    final bool isShared = currentPost.isSharedByMe;
+
     return GestureDetector(
-      onTap: () => AppToast.info('this feature is coming soon'),
+      behavior: HitTestBehavior.opaque,
+      onTap: () => _handleTap(currentPost),
       child: Row(
-        children: [Image.asset(AppImages.sharePostIcon, width: 24, height: 24)],
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ScaleTransition(
+            scale: _scaleAnimation,
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 250),
+              transitionBuilder:
+                  (child, animation) =>
+                      ScaleTransition(scale: animation, child: child),
+              child: Icon(
+                Icons.repeat_rounded,
+                key: ValueKey(isShared),
+                color:
+                    isShared ? Theme.of(context).primaryColor : AppColors.grey6,
+                size: 24,
+              ),
+            ),
+          ),
+          if (currentPost.sharesCount > 0) ...[
+            const Gap(4),
+            Text(
+              '${currentPost.sharesCount}',
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                color: isShared ? Theme.of(context).primaryColor : null,
+                fontWeight: isShared ? FontWeight.w600 : FontWeight.normal,
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }
@@ -394,10 +484,7 @@ class _SaveButtonWidgetState extends State<_SaveButtonWidget>
     final state = context.watch<PostsCubit>().state;
     final currentPost =
         (state is PostsLoaded)
-            ? state.posts.firstWhere(
-              (p) => p.id == widget.post.id,
-              orElse: () => widget.post,
-            )
+            ? state.posts.findById(widget.post.id) ?? widget.post
             : widget.post;
 
     final bool isSaved = currentPost.isSavedByMe;
