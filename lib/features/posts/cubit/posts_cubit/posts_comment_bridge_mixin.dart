@@ -18,39 +18,32 @@ mixin PostsCommentBridgeMixin on Cubit<PostsState> {
     if (state is! PostsLoaded) return;
     final oldState = state as PostsLoaded;
 
-    final updatedPosts =
-        oldState.posts.map((post) {
-          if (post.id != postId) return post;
+    final updatedPosts = oldState.posts.updatePostById(postId, (post) {
+      List<CommentModel> updatedComments = List<CommentModel>.from(
+        post.comments ?? const [],
+      );
 
-          List<CommentModel> updatedComments = List<CommentModel>.from(
-            post.comments ?? const [],
-          );
+      if (parentId == null) {
+        updatedComments.insert(0, comment);
+      } else {
+        bool isAdded = false;
 
-          if (parentId == null) {
-            updatedComments.insert(0, comment);
-          } else {
-            bool isAdded = false;
-
-            CommentModel attach(CommentModel node) {
-              if (node.id == parentId) {
-                isAdded = true;
-                return node.copyWith(replies: [...node.replies, comment]);
-              }
-              if (node.replies.isEmpty) return node;
-
-              return node.copyWith(
-                replies: node.replies.map((r) => attach(r)).toList(),
-              );
-            }
-
-            updatedComments = updatedComments.map((c) => attach(c)).toList();
-
-            if (!isAdded) {
-              updatedComments.insert(0, comment);
-            }
+        CommentModel attach(CommentModel node) {
+          if (node.id == parentId) {
+            isAdded = true;
+            return node.copyWith(replies: [...node.replies, comment]);
           }
-          return post.copyWith(comments: updatedComments);
-        }).toList();
+          if (node.replies.isEmpty) return node;
+          return node.copyWith(
+            replies: node.replies.map((r) => attach(r)).toList(),
+          );
+        }
+
+        updatedComments = updatedComments.map((c) => attach(c)).toList();
+        if (!isAdded) updatedComments.insert(0, comment);
+      }
+      return post.copyWith(comments: updatedComments);
+    });
 
     emit(PostsLoaded(updatedPosts, DateTime.now()));
   }

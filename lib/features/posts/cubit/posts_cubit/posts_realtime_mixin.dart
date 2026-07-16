@@ -29,6 +29,9 @@ mixin PostsRealtimeMixin on Cubit<PostsState> {
         case LikeChangedEvent(:final postId, :final changeType):
           await _handleLikeChanged(postId, changeType);
 
+        case ShareChangedEvent(:final postId, :final changeType):
+          await _handleShareChanged(postId, changeType);
+
         case PresenceChangedEvent(
           :final userId,
           :final isOnline,
@@ -57,19 +60,20 @@ mixin PostsRealtimeMixin on Cubit<PostsState> {
     final updatedPost = await _postsServices.fetchPostById(postId);
     if (updatedPost == null || isClosed) return;
 
-    cachedPosts =
-        cachedPosts.map((p) {
-          return p.id == postId ? updatedPost : p;
-        }).toList();
+    cachedPosts = _mergeUpdatedPost(cachedPosts, updatedPost);
     cachedPosts = _fixLikersImages(cachedPosts);
     emit(PostsLoaded(cachedPosts, DateTime.now()));
   }
 
   void _handlePostDeleted(String postId) {
-    final exists = cachedPosts.any((p) => p.id == postId);
-    if (!exists || isClosed) return;
+    final existsDirectly = cachedPosts.any((p) => p.id == postId);
+    final hasWrapperCards = cachedPosts.any((p) => p.sharedPostId == postId);
+    if ((!existsDirectly && !hasWrapperCards) || isClosed) return;
 
-    cachedPosts = cachedPosts.where((p) => p.id != postId).toList();
+    cachedPosts =
+        cachedPosts
+            .where((p) => p.id != postId && p.sharedPostId != postId)
+            .toList();
     emit(PostsLoaded(cachedPosts, DateTime.now()));
     debugPrint('🔥 EVENT TRIGGERED: Deleted Post Locally -> $postId');
   }
@@ -81,12 +85,31 @@ mixin PostsRealtimeMixin on Cubit<PostsState> {
     final refreshedPost = await _postsServices.fetchPostById(postId);
     if (refreshedPost == null || isClosed) return;
 
-    cachedPosts =
-        cachedPosts.map((p) {
-          return p.id == postId ? refreshedPost : p;
-        }).toList();
+    cachedPosts = _mergeUpdatedPost(cachedPosts, refreshedPost);
     cachedPosts = _fixLikersImages(cachedPosts);
     emit(PostsLoaded(cachedPosts, DateTime.now()));
+  }
+
+  Future<void> _handleShareChanged(
+    String postId,
+    PostgresChangeEvent changeType,
+  ) async {
+    final refreshedPost = await _postsServices.fetchPostById(postId);
+    if (refreshedPost == null || isClosed) return;
+
+    cachedPosts = _mergeUpdatedPost(cachedPosts, refreshedPost);
+    cachedPosts = _fixLikersImages(cachedPosts);
+    emit(PostsLoaded(cachedPosts, DateTime.now()));
+  }
+
+  List<PostModel> _mergeUpdatedPost(List<PostModel> posts, PostModel updated) {
+    return posts.map((p) {
+      if (p.id == updated.id) return updated;
+      if (p.originalPost?.id == updated.id) {
+        return p.copyWith(originalPost: updated);
+      }
+      return p;
+    }).toList();
   }
 
   void _handlePresenceChanged(

@@ -14,75 +14,71 @@ mixin PostReactionsMixin on Cubit<PostsState> {
     final String? currentEmoji = post.myReactionEmoji;
     final bool isRemoving = currentEmoji == emoji;
 
-    final List<PostModel> updatedPosts =
-        oldState.posts.map((p) {
-          if (p.id != post.id) return p;
+    final List<PostModel> updatedPosts = oldState.posts.updatePostById(
+      post.id,
+      (p) {
+        final updatedLikes = List<String>.from(p.likes ?? []);
+        final updatedImages = List<String>.from(p.likersImages ?? []);
+        final updatedReactions = List<PostReactionModel>.from(p.reactions);
 
-          final updatedLikes = List<String>.from(p.likes ?? []);
-          final updatedImages = List<String>.from(p.likersImages ?? []);
-          final updatedReactions = List<PostReactionModel>.from(p.reactions);
+        final String imagePlaceholder =
+            (currentUserData?.imageUrl != null &&
+                    currentUserData!.imageUrl!.startsWith('http'))
+                ? currentUserData!.imageUrl!
+                : 'asset:default';
 
-          final String imagePlaceholder =
-              (currentUserData?.imageUrl != null &&
-                      currentUserData!.imageUrl!.startsWith('http'))
-                  ? currentUserData!.imageUrl!
-                  : 'asset:default';
-
-          if (currentEmoji == null) {
-            updatedLikes.insert(0, userId);
-            updatedImages.insert(0, imagePlaceholder);
-          } else if (isRemoving) {
-            updatedLikes.remove(userId);
-            updatedImages.remove(imagePlaceholder);
-          }
-          if (currentEmoji != null) {
-            final oldIdx = updatedReactions.indexWhere(
-              (r) => r.emoji == currentEmoji,
-            );
-            if (oldIdx >= 0) {
-              final old = updatedReactions[oldIdx];
-              old.count <= 1
-                  ? updatedReactions.removeAt(oldIdx)
-                  : updatedReactions[oldIdx] = old.copyWith(
-                    count: old.count - 1,
-                    reactedByMe: false,
-                  );
-            }
-          }
-          if (!isRemoving) {
-            final newIdx = updatedReactions.indexWhere((r) => r.emoji == emoji);
-            newIdx >= 0
-                ? updatedReactions[newIdx] = updatedReactions[newIdx].copyWith(
-                  count: updatedReactions[newIdx].count + 1,
-                  reactedByMe: true,
-                )
-                : updatedReactions.add(
-                  PostReactionModel(emoji: emoji, count: 1, reactedByMe: true),
+        if (currentEmoji == null) {
+          updatedLikes.insert(0, userId);
+          updatedImages.insert(0, imagePlaceholder);
+        } else if (isRemoving) {
+          updatedLikes.remove(userId);
+          updatedImages.remove(imagePlaceholder);
+        }
+        if (currentEmoji != null) {
+          final oldIdx = updatedReactions.indexWhere(
+            (r) => r.emoji == currentEmoji,
+          );
+          if (oldIdx >= 0) {
+            final old = updatedReactions[oldIdx];
+            old.count <= 1
+                ? updatedReactions.removeAt(oldIdx)
+                : updatedReactions[oldIdx] = old.copyWith(
+                  count: old.count - 1,
+                  reactedByMe: false,
                 );
           }
+        }
+        if (!isRemoving) {
+          final newIdx = updatedReactions.indexWhere((r) => r.emoji == emoji);
+          newIdx >= 0
+              ? updatedReactions[newIdx] = updatedReactions[newIdx].copyWith(
+                count: updatedReactions[newIdx].count + 1,
+                reactedByMe: true,
+              )
+              : updatedReactions.add(
+                PostReactionModel(emoji: emoji, count: 1, reactedByMe: true),
+              );
+        }
 
-          return p.copyWith(
-            likes: updatedLikes,
-            likersImages: updatedImages.where((img) => img.isNotEmpty).toList(),
-            reactions: updatedReactions,
-          );
-        }).toList();
+        return p.copyWith(
+          likes: updatedLikes,
+          likersImages: updatedImages.where((img) => img.isNotEmpty).toList(),
+          reactions: updatedReactions,
+        );
+      },
+    );
 
     emit(PostsLoaded(updatedPosts, DateTime.now()));
 
     try {
       final isOffline = await ConnectivityBannerController.notifyIfOffline();
-
-      if (isOffline) {
-        return;
-      }
+      if (isOffline) return;
       await _postsServices.toggleReaction(
         postId: post.id,
         userId: userId,
         emoji: emoji,
         currentEmoji: currentEmoji,
       );
-
       if (post.authorId != userId && currentEmoji == null) {
         await NotificationRepository.instance.notifyLike(
           receiverId: post.authorId,
@@ -107,15 +103,16 @@ mixin PostReactionsMixin on Cubit<PostsState> {
     final oldState = state as PostsLoaded;
     final bool wasSaved = post.isSavedByMe;
 
-    final List<PostModel> updatedPosts =
-        oldState.posts.map((p) {
-          if (p.id != post.id) return p;
-          final newCount = wasSaved ? p.savedCount - 1 : p.savedCount + 1;
-          return p.copyWith(
-            isSavedByMe: !wasSaved,
-            savedCount: newCount < 0 ? 0 : newCount,
-          );
-        }).toList();
+    final List<PostModel> updatedPosts = oldState.posts.updatePostById(
+      post.id,
+      (p) {
+        final newCount = wasSaved ? p.savedCount - 1 : p.savedCount + 1;
+        return p.copyWith(
+          isSavedByMe: !wasSaved,
+          savedCount: newCount < 0 ? 0 : newCount,
+        );
+      },
+    );
 
     emit(PostsLoaded(updatedPosts, DateTime.now()));
 
@@ -125,7 +122,6 @@ mixin PostReactionsMixin on Cubit<PostsState> {
         emit(PostsLoaded(oldState.posts, DateTime.now()));
         return;
       }
-
       await _postsServices.toggleSavePost(
         postId: post.id,
         userId: userId,

@@ -58,8 +58,6 @@ class PostsCubit extends Cubit<PostsState>
   }
 
   @override
-  List<PostModel> cachedPosts = [];
-  @override
   UserData? currentUserData;
 
   void setCurrentUser(UserData user) {
@@ -68,7 +66,7 @@ class PostsCubit extends Cubit<PostsState>
 
   @override
   List<PostModel> _fixLikersImages(List<PostModel> posts) {
-    return posts.map((post) {
+    PostModel fixSingle(PostModel post) {
       if (post.likes == null || post.likes!.isEmpty) return post;
       final likersImages = post.likersImages ?? [];
       if (likersImages.length >= post.likes!.length) return post;
@@ -78,6 +76,16 @@ class PostsCubit extends Cubit<PostsState>
         fixedImages.add('asset:default');
       }
       return post.copyWith(likersImages: fixedImages);
+    }
+
+    return posts.map((post) {
+      final fixedPost = fixSingle(post);
+      final original = fixedPost.originalPost;
+      if (original == null) return fixedPost;
+      final fixedOriginal = fixSingle(original);
+      return identical(fixedOriginal, original)
+          ? fixedPost
+          : fixedPost.copyWith(originalPost: fixedOriginal);
     }).toList();
   }
 }
