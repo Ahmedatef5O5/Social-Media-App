@@ -4,7 +4,8 @@ mixin PostCreationMixin on Cubit<PostsState> {
   CloudinaryStorageServices get _storage;
   PostsServices get _postsServices;
   Future<void> fetchPosts({bool isRefresh});
-
+  UserData? get currentUserData;
+  List<PostModel> cachedPosts = [];
   final filePickerServices = FilePickerServices();
   XFile? selectedDocument;
   XFile? selectedImage;
@@ -114,6 +115,111 @@ mixin PostCreationMixin on Cubit<PostsState> {
     }
   }
 
+  Future<void> toggleSharePost(PostModel post) async {
+    if (state is! PostsLoaded) return;
+    final userId = SupabaseProvider.idOrNull;
+    if (userId == null) return;
+
+    final oldState = state as PostsLoaded;
+
+    final PostModel targetPost = post.displayPost;
+    final bool wasShared = targetPost.isSharedByMe;
+    final int rawCount =
+        wasShared ? targetPost.sharesCount - 1 : targetPost.sharesCount + 1;
+    final int newCount = rawCount < 0 ? 0 : rawCount;
+
+    final PostModel updatedTarget = targetPost.copyWith(
+      isSharedByMe: !wasShared,
+      sharesCount: newCount,
+    );
+
+    final String tempWrapperId =
+        'temp_share_${DateTime.now().microsecondsSinceEpoch}';
+
+    List<PostModel> updatedPosts =
+        oldState.posts.map((p) {
+          if (p.id == targetPost.id) return updatedTarget;
+          if (p.originalPost?.id == targetPost.id) {
+            return p.copyWith(originalPost: updatedTarget);
+          }
+          return p;
+        }).toList();
+
+    if (!wasShared) {
+      final wrapperCard = PostModel(
+        id: tempWrapperId,
+        text: '',
+        authorId: userId,
+        createdAt: DateTime.now().toUtc().toIso8601String(),
+        authorName: currentUserData?.name,
+        authorImageUrl: currentUserData?.imageUrl,
+        sharedPostId: targetPost.id,
+        originalPost: updatedTarget,
+      );
+      updatedPosts = [wrapperCard, ...updatedPosts];
+    } else {
+      updatedPosts =
+          updatedPosts
+              .where(
+                (p) =>
+                    !(p.sharedPostId == targetPost.id && p.authorId == userId),
+              )
+              .toList();
+    }
+
+    cachedPosts = updatedPosts;
+    emit(PostsLoaded(updatedPosts, DateTime.now()));
+
+    try {
+      final isOffline = await ConnectivityBannerController.notifyIfOffline();
+      if (isOffline) {
+        cachedPosts = oldState.posts;
+        emit(PostsLoaded(oldState.posts, DateTime.now()));
+        return;
+      }
+
+      final result = await _postsServices.toggleSharePost(
+        postId: targetPost.id,
+      );
+      final bool isSharedNow = result['is_shared'] as bool? ?? !wasShared;
+      final String? realWrapperId = result['share_post_id'] as String?;
+
+      if (isSharedNow && realWrapperId != null) {
+        // Edge case: ممكن الـ Realtime يكون سبقنا وضاف الكارت الحقيقي بالفعل
+        final bool realCardAlreadyArrived = cachedPosts.any(
+          (p) => p.id == realWrapperId,
+        );
+
+        cachedPosts =
+            realCardAlreadyArrived
+                ? cachedPosts.where((p) => p.id != tempWrapperId).toList()
+                : cachedPosts
+                    .map(
+                      (p) =>
+                          p.id == tempWrapperId
+                              ? p.copyWith(id: realWrapperId)
+                              : p,
+                    )
+                    .toList();
+        emit(PostsLoaded(cachedPosts, DateTime.now()));
+      }
+
+      if (isSharedNow && targetPost.authorId != userId) {
+        await NotificationRepository.instance.notifyShare(
+          receiverId: targetPost.authorId,
+          sharerId: userId,
+          sharerName: currentUserData?.name ?? 'unKnown',
+          sharerImageUrl: currentUserData?.imageUrl ?? '',
+          postId: targetPost.id,
+        );
+      }
+    } catch (e) {
+      cachedPosts = oldState.posts;
+      emit(PostsLoaded(oldState.posts, DateTime.now()));
+      debugPrint('Error toggling share: $e');
+    }
+  }
+
   void cancelUpload() {
     if (_cancelToken != null && !_cancelToken!.isCancelled) {
       _cancelToken!.cancel('User canceled post upload');
@@ -126,7 +232,10 @@ mixin PostCreationMixin on Cubit<PostsState> {
       await _postsServices.deletePost(postId);
       if (state is PostsLoaded) {
         final updatePosts =
-            (state as PostsLoaded).posts.where((p) => p.id != postId).toList();
+            (state as PostsLoaded).posts
+                .where((p) => p.id != postId && p.sharedPostId != postId)
+                .toList();
+        cachedPosts = updatePosts;
         emit(PostsLoaded(updatePosts, DateTime.now()));
       }
     } catch (e) {
