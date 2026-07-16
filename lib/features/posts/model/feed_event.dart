@@ -24,6 +24,13 @@ final class LikeChangedEvent extends FeedEvent {
   final PostgresChangeEvent changeType;
   const LikeChangedEvent(this.postId, this.changeType);
 }
+
+final class ShareChangedEvent extends FeedEvent {
+  final String postId;
+  final PostgresChangeEvent changeType;
+  const ShareChangedEvent(this.postId, this.changeType);
+}
+
 // TODO:
 // final class SavedChangedEvent extends FeedEvent {
 //   final String postId;

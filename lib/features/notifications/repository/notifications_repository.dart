@@ -124,6 +124,25 @@ class NotificationRepository {
     });
   }
 
+  Future<void> notifyShare({
+    required String receiverId,
+    required String sharerId,
+    required String sharerName,
+    required String sharerImageUrl,
+    required String postId,
+  }) async {
+    await _insert({
+      'receiver_id': receiverId,
+      'sender_id': sharerId,
+      'type': 'share',
+      'title': sharerName,
+      'body': '🔁 shared your post',
+      'sender_image_url': sharerImageUrl,
+      'reference_id': postId,
+      'is_read': false,
+    });
+  }
+
   Future<void> notifyFollow({
     required String receiverId,
     required String followerId,
