@@ -7,6 +7,7 @@ import '../../../core/supabase/supabase_provider.dart';
 import '../../profile/widgets/user_preview_dialog.dart';
 import '../../home/cubits/home_cubit/home_cubit.dart';
 import '../cubit/posts_cubit/posts_cubit.dart';
+import '../helper/header_trailing_action.dart';
 import '../model/post_model.dart';
 import 'author_image_widget.dart';
 
@@ -14,11 +15,14 @@ class PostHeaderWidget extends StatelessWidget {
   final PostModel post;
   final String currentUserId;
   final PostsCubit postsCubit;
+  final HeaderTrailingAction trailingAction;
+
   const PostHeaderWidget({
     super.key,
     required this.post,
     required this.currentUserId,
     required this.postsCubit,
+    this.trailingAction = HeaderTrailingAction.moreActions,
   });
 
   @override
@@ -35,6 +39,49 @@ class PostHeaderWidget extends StatelessWidget {
         (currentArgs == post.authorId || (currentArgs == null && isPostByMe));
 
     bool shouldDisableTap = isAlreadyOnSameProfile;
+
+    Widget? buildTrailingWidget() {
+      final colorScheme = Theme.of(context).colorScheme;
+
+      switch (trailingAction) {
+        case HeaderTrailingAction.moreActions:
+          return PostActionsMenu(
+            post: post,
+            currentUserId: currentUserId,
+            postsCubit: postsCubit,
+          );
+
+        case HeaderTrailingAction.openOriginal:
+          return IconButton(
+            icon: Icon(
+              Icons.open_in_new_rounded,
+              color: colorScheme.primary.withValues(alpha: 0.8),
+              size: 22,
+            ),
+            tooltip: 'Open original post',
+            onPressed: () {
+              Navigator.of(
+                context,
+                rootNavigator: true,
+              ).pushNamed(AppRoutes.postDetailsViewRoute, arguments: post);
+            },
+          );
+
+        case HeaderTrailingAction.closeScreen:
+          return IconButton(
+            icon: Icon(
+              Icons.close_rounded,
+              color: colorScheme.onSurface.withValues(alpha: 0.8),
+              size: 26,
+            ),
+            tooltip: 'Close',
+            onPressed: () => Navigator.of(context).pop(),
+          );
+
+        case HeaderTrailingAction.none:
+          return const SizedBox.shrink();
+      }
+    }
 
     return ListTile(
       contentPadding: EdgeInsets.zero,
@@ -91,11 +138,7 @@ class PostHeaderWidget extends StatelessWidget {
           fontSize: 12,
         ),
       ),
-      trailing: PostActionsMenu(
-        post: post,
-        currentUserId: currentUserId,
-        postsCubit: postsCubit,
-      ),
+      trailing: buildTrailingWidget(),
     );
   }
 }

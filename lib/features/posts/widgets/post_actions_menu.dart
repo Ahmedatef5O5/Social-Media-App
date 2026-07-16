@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:social_media_app/core/themes/app_colors.dart';
-import 'package:social_media_app/features/posts/cubit/posts_cubit/posts_cubit.dart';
 import 'package:social_media_app/features/posts/model/post_model.dart';
 import '../../../core/constants/app_images.dart';
 import '../../../core/toast/app_toast.dart';
 import '../../../core/widgets/custom_confirmation_dialog.dart';
+import '../cubit/posts_cubit/posts_cubit.dart';
 
 class PostActionsMenu extends StatelessWidget {
   final PostModel post;
@@ -20,6 +20,8 @@ class PostActionsMenu extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bool isShareWrapper = post.isSharedPost;
+
     return PopupMenuButton<String?>(
       icon: Icon(Icons.more_vert),
       color: AppColors.white,
@@ -34,10 +36,15 @@ class PostActionsMenu extends StatelessWidget {
                 value: 'delete',
                 child: Row(
                   children: [
-                    Icon(Icons.delete_outline, color: Colors.red),
+                    Icon(
+                      isShareWrapper
+                          ? Icons.repeat_rounded
+                          : Icons.delete_outline,
+                      color: Colors.red,
+                    ),
                     Gap(8),
                     Text(
-                      'Delete',
+                      isShareWrapper ? 'Remove Share' : 'Delete',
                       style: Theme.of(
                         context,
                       ).textTheme.titleSmall!.copyWith(color: Colors.red),
@@ -69,18 +76,31 @@ class PostActionsMenu extends StatelessWidget {
   }
 
   void _handleMenuSelection(BuildContext context, String value) {
+    final bool isShareWrapper = post.isSharedPost;
+
     if (value == 'delete') {
       showDialog(
         context: context,
         builder:
             (ctx) => CustomConfirmationDialog(
-              title: 'Are you sure you want to delete this post?',
+              title:
+                  isShareWrapper
+                      ? 'Remove this share from your profile?'
+                      : 'Are you sure you want to delete this post?',
               img: AppImages.deleteFilesAnimationLot,
               onConfirm: () async {
                 Navigator.pop(ctx);
-                await postsCubit.deletePost(post.id);
+                if (isShareWrapper) {
+                  await postsCubit.toggleSharePost(post);
+                } else {
+                  await postsCubit.deletePost(post.id);
+                }
                 if (context.mounted) {
-                  AppToast.info('Post deleted successfully');
+                  AppToast.info(
+                    isShareWrapper
+                        ? 'Share removed'
+                        : 'Post deleted successfully',
+                  );
                 }
               },
             ),
