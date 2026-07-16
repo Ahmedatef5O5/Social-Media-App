@@ -21,10 +21,12 @@ class PostsServices {
   PostsServices({NetworkStatusService? networkStatus})
     : _networkStatus = networkStatus ?? NetworkStatusService.instance;
 
-  static const String _postsQuery = ''' 
+  static const String _postFields = ''' 
   *,
   saved_count,
   is_post_saved,
+  shares_count,
+  is_post_shared,
   ${SupabaseConstants.users} (${UserColumns.name}, ${UserColumns.imageUrl}, ${UserColumns.lastSeen}),
   ${SupabaseConstants.comments} (
   *,
@@ -37,6 +39,103 @@ class PostsServices {
   ${SupabaseConstants.users} (${UserColumns.imageUrl}))
 ''';
 
+  static const String _postsQuery = _postFields;
+
+  PostModel _hydratePost(Map<String, dynamic> data) {
+    final post = PostModel.fromMap(data);
+
+    final flatComments =
+        (data['comments'] as List? ?? [])
+            .map((e) => CommentModel.fromMap(e))
+            .toList();
+    final tree = CommentTreeBuilder.build(flatComments);
+
+    PostModel? hydratedOriginal;
+    final originalData =
+        data[PostColumns.originalPostRelation] as Map<String, dynamic>?;
+    if (originalData != null) {
+      hydratedOriginal = _hydratePost(originalData);
+    }
+    return post.copyWith(
+      comments: tree,
+      originalPost: hydratedOriginal ?? post.originalPost,
+    );
+  }
+
+  Future<List<PostModel>> _resolveSharedPostsAndHydrate(
+    List<Map<String, dynamic>> rawPostsData,
+  ) async {
+    if (rawPostsData.isEmpty) return [];
+
+    final Set<String> sharedPostIds =
+        rawPostsData
+            .map((p) => p['shared_post_id'] as String?)
+            .whereType<String>()
+            .toSet();
+
+    final Map<String, Map<String, dynamic>> originalsDataMap = {};
+
+    if (sharedPostIds.isNotEmpty) {
+      try {
+        final originalsResponse = await _supabase
+            .from(SupabaseConstants.posts)
+            .select(_postsQuery)
+            .inFilter(PostColumns.id, sharedPostIds.toList());
+
+        for (final org in originalsResponse as List) {
+          originalsDataMap[org[PostColumns.id] as String] =
+              org as Map<String, dynamic>;
+        }
+      } catch (e) {
+        debugPrint('Error fetching original posts batch: $e');
+      }
+    }
+
+    return rawPostsData.map((data) {
+      final mutableData = Map<String, dynamic>.from(data);
+      final sharedId = mutableData['shared_post_id'] as String?;
+
+      if (sharedId != null && originalsDataMap.containsKey(sharedId)) {
+        mutableData[PostColumns.originalPostRelation] =
+            originalsDataMap[sharedId];
+      }
+      return _hydratePost(mutableData);
+    }).toList();
+  }
+
+  Future<Map<String, bool>> _fetchOnlineMap(List<String> authorIds) async {
+    if (authorIds.isEmpty) return {};
+    final presenceRows = await _supabase
+        .from(SupabaseConstants.userPresence)
+        .select('user_id, is_online, updated_at')
+        .inFilter(GroupMemberColumns.userId, authorIds);
+
+    final onlineSet = <String>{
+      for (final row in presenceRows as List)
+        if (PresenceService.isConsideredOnline(
+          isOnline: row[PresenceColumns.isOnline] as bool? ?? false,
+          updatedAt:
+              row[PresenceColumns.updatedAt] != null
+                  ? DateTime.parse(row[PresenceColumns.updatedAt].toString())
+                  : null,
+        ))
+          row[GroupMemberColumns.userId] as String,
+    };
+    return {for (final id in authorIds) id: onlineSet.contains(id)};
+  }
+
+  PostModel _applyOnline(PostModel post, Map<String, bool> onlineMap) {
+    final withOnline = post.copyWith(
+      isOnline: onlineMap[post.authorId] ?? false,
+    );
+    if (withOnline.originalPost == null) return withOnline;
+    return withOnline.copyWith(
+      originalPost: withOnline.originalPost!.copyWith(
+        isOnline: onlineMap[withOnline.originalPost!.authorId] ?? false,
+      ),
+    );
+  }
+
   Future<PostModel?> fetchPostById(String postId) async {
     try {
       final rows = await _supabase
@@ -44,36 +143,24 @@ class PostsServices {
           .select(_postsQuery)
           .eq(PostColumns.id, postId)
           .limit(1);
+
       if (rows.isEmpty) return null;
 
-      final data = rows.first;
-      final post = PostModel.fromMap(data);
-
-      final flatComments =
-          (data['comments'] as List? ?? [])
-              .map((e) => CommentModel.fromMap(e))
-              .toList();
-      final tree = CommentTreeBuilder.build(flatComments);
-      final postWithComments = post.copyWith(comments: tree);
-
-      final presenceRows = await _supabase
-          .from(SupabaseConstants.userPresence)
-          .select('user_id, is_online, updated_at')
-          .eq(GroupMemberColumns.userId, postWithComments.authorId)
-          .limit(1);
-
-      if (presenceRows.isEmpty) return postWithComments;
-
-      final row = presenceRows.first;
-      final isOnline = PresenceService.isConsideredOnline(
-        isOnline: row[PresenceColumns.isOnline] as bool? ?? false,
-        updatedAt:
-            row[PresenceColumns.updatedAt] != null
-                ? DateTime.parse(row[PresenceColumns.updatedAt].toString())
-                : null,
+      final hydratedList = await _resolveSharedPostsAndHydrate(
+        List<Map<String, dynamic>>.from(rows),
       );
+      if (hydratedList.isEmpty) return null;
 
-      return postWithComments.copyWith(isOnline: isOnline);
+      final postWithComments = hydratedList.first;
+      final authorIds =
+          <String>{
+            postWithComments.authorId,
+            if (postWithComments.originalPost != null)
+              postWithComments.originalPost!.authorId,
+          }.toList();
+
+      final onlineMap = await _fetchOnlineMap(authorIds);
+      return _applyOnline(postWithComments, onlineMap);
     } catch (e) {
       debugPrint('fetchPostById error: $e');
       return null;
@@ -85,47 +172,29 @@ class PostsServices {
       throw Exception('no-internet');
     }
     try {
-      final posts = await supabaseServices.fetchRows(
-        table: SupabaseConstants.posts,
-        filter:
-            (query) => query
-                .select(_postsQuery)
-                .order(PostColumns.createdAt, ascending: false),
-        builder: (Map<String, dynamic> data, String id) {
-          final post = PostModel.fromMap(data);
-          final flatComments =
-              (data['comments'] as List? ?? [])
-                  .map((e) => CommentModel.fromMap(e))
-                  .toList();
-          final tree = CommentTreeBuilder.build(flatComments);
-          return post.copyWith(comments: tree);
-        },
-        primaryKey: PostColumns.id,
-      );
+      final response = await _supabase
+          .from(SupabaseConstants.posts)
+          .select(_postsQuery)
+          .order(PostColumns.createdAt, ascending: false);
+
+      final List<Map<String, dynamic>> rawPosts =
+          List<Map<String, dynamic>>.from(response);
+
+      final posts = await _resolveSharedPostsAndHydrate(rawPosts);
 
       if (posts.isEmpty) return posts;
 
-      final authorIds = posts.map((p) => p.authorId).toSet().toList();
-      final presenceRows = await _supabase
-          .from(SupabaseConstants.userPresence)
-          .select('user_id, is_online, updated_at')
-          .inFilter(GroupMemberColumns.userId, authorIds);
+      final authorIds =
+          <String>{
+            for (final p in posts) ...[
+              p.authorId,
+              if (p.originalPost != null) p.originalPost!.authorId,
+            ],
+          }.toList();
 
-      final onlineSet = <String>{
-        for (final row in presenceRows as List)
-          if (PresenceService.isConsideredOnline(
-            isOnline: row[PresenceColumns.isOnline] as bool? ?? false,
-            updatedAt:
-                row[PresenceColumns.updatedAt] != null
-                    ? DateTime.parse(row[PresenceColumns.updatedAt].toString())
-                    : null,
-          ))
-            row[GroupMemberColumns.userId] as String,
-      };
+      final onlineMap = await _fetchOnlineMap(authorIds);
 
-      return posts
-          .map((p) => p.copyWith(isOnline: onlineSet.contains(p.authorId)))
-          .toList();
+      return posts.map((p) => _applyOnline(p, onlineMap)).toList();
     } catch (e) {
       rethrow;
     }
@@ -184,6 +253,21 @@ class PostsServices {
             final postId = record[LikeColumns.postId] as String?;
             if (postId != null && !controller.isClosed) {
               controller.add(LikeChangedEvent(postId, payload.eventType));
+            }
+          },
+        )
+        .onPostgresChanges(
+          event: PostgresChangeEvent.all,
+          schema: 'public',
+          table: SupabaseConstants.postShares,
+          callback: (payload) {
+            final record =
+                payload.newRecord.isNotEmpty
+                    ? payload.newRecord
+                    : payload.oldRecord;
+            final postId = record[PostShareColumns.postId] as String?;
+            if (postId != null && !controller.isClosed) {
+              controller.add(ShareChangedEvent(postId, payload.eventType));
             }
           },
         )
@@ -263,6 +347,23 @@ class PostsServices {
     }
   }
 
+  Future<Map<String, dynamic>> toggleSharePost({required String postId}) async {
+    try {
+      final response = await _supabase.rpc(
+        SupabaseConstants.togglePostShareRpc,
+        params: {'p_post_id': postId},
+      );
+      final rows = response as List;
+      if (rows.isEmpty) {
+        throw Exception('toggle_post_share returned no rows');
+      }
+      return rows.first as Map<String, dynamic>;
+    } catch (e) {
+      debugPrint('Error toggling share in DB: $e');
+      rethrow;
+    }
+  }
+
   Future<void> toggleSavePost({
     required String postId,
     required String userId,
@@ -299,19 +400,15 @@ class PostsServices {
           .eq(SavedPostColumns.userId, userId)
           .order(SavedPostColumns.createdAt, ascending: false);
 
-      final List<PostModel> savedPosts = [];
+      final List<Map<String, dynamic>> rawPostsData = [];
       for (final row in rows as List) {
         final postData = row[SupabaseConstants.posts] as Map<String, dynamic>?;
-        if (postData == null) continue; // maybe post was deleted
-
-        final post = PostModel.fromMap(postData);
-        final flatComments =
-            (postData['comments'] as List? ?? [])
-                .map((e) => CommentModel.fromMap(e))
-                .toList();
-        final tree = CommentTreeBuilder.build(flatComments);
-        savedPosts.add(post.copyWith(comments: tree));
+        if (postData != null) {
+          rawPostsData.add(postData);
+        }
       }
+
+      final savedPosts = await _resolveSharedPostsAndHydrate(rawPostsData);
       return savedPosts;
     } catch (e) {
       debugPrint('fetchSavedPosts error: $e');
