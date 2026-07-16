@@ -9,6 +9,7 @@ abstract class SupabaseConstants {
   static const String likes = 'post_likes';
   static const String comments = 'comments';
   static const String savedPosts = 'saved_posts';
+  static const String postShares = 'post_shares';
 
   // ── Chat Feature ──
   static const String messages = 'messages';
@@ -40,6 +41,7 @@ abstract class SupabaseConstants {
   static const String markStoryViewedRpc = 'mark_story_viewed';
   static const String getMyStoriesOverviewRpc = 'get_my_stories_overview';
   static const String getStoryViewersRpc = 'get_story_viewers';
+  static const String togglePostShareRpc = 'toggle_post_share';
   // comments_upgrade_migration.sql
   static const String addCommentWithMentionsRpc = 'add_comment_with_mentions';
 }
@@ -181,11 +183,22 @@ abstract class PostColumns {
   static const String videoUrl = 'video_url';
   static const String likes = 'likes';
   static const String comments = 'comments';
-  static const String shares = 'shares';
-
   static const String imagePublicId = 'image_public_id';
   static const String videoPublicId = 'video_public_id';
   static const String filePublicId = 'file_public_id';
+  // ── Shared Post feature ──
+  static const String sharedPostId = 'shared_post_id';
+
+  /// Alias used in the Supabase join query for the nested original post
+  static const String originalPostRelation = 'original_post';
+}
+
+// subClass for post_shares column table
+abstract class PostShareColumns {
+  static const String id = 'id';
+  static const String postId = 'post_id';
+  static const String userId = 'user_id';
+  static const String createdAt = 'created_at';
 }
 
 // subClass for likes column table

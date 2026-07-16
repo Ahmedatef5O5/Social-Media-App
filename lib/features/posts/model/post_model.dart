@@ -17,6 +17,11 @@ class PostModel {
   String get reactionsSignature =>
       reactions.map((r) => '${r.emoji}:${r.count}').join(',');
 
+  bool get isSharedPost => sharedPostId != null;
+
+  PostModel get displayPost =>
+      (isSharedPost && originalPost != null) ? originalPost! : this;
+
   final String id;
   final String text;
   final String authorId;
@@ -30,12 +35,20 @@ class PostModel {
   final List<String>? likersImages;
   final List<PostReactionModel> reactions;
   final List<CommentModel>? comments;
-  final List<String>? shares;
   final DateTime? lastSeen;
   final bool isOnline;
 
   final int savedCount;
   final bool isSavedByMe;
+
+  // ── Shared Post feature ──────────────────────────────────────────────
+  final String? sharedPostId;
+
+  final PostModel? originalPost;
+
+  final int sharesCount;
+
+  final bool isSharedByMe;
 
   const PostModel({
     required this.id,
@@ -51,11 +64,14 @@ class PostModel {
     this.likersImages,
     this.reactions = const [],
     this.comments,
-    this.shares,
     this.lastSeen,
     this.isOnline = false,
     this.savedCount = 0,
     this.isSavedByMe = false,
+    this.sharedPostId,
+    this.originalPost,
+    this.sharesCount = 0,
+    this.isSharedByMe = false,
   });
 
   Map<String, dynamic> toMap() {
@@ -72,7 +88,7 @@ class PostModel {
       'likes': likes,
       'likers_images': likersImages,
       'comments': comments,
-      'shares': shares,
+      PostColumns.sharedPostId: sharedPostId,
       UserColumns.lastSeen: lastSeen,
     };
   }
@@ -103,6 +119,10 @@ class PostModel {
       }
       reactionsList = parsePostReactions(likesData);
     }
+
+    final originalPostData =
+        map[PostColumns.originalPostRelation] as Map<String, dynamic>?;
+
     return PostModel(
       id: map['id'] as String? ?? '',
       text: map[PostColumns.text] as String? ?? '',
@@ -126,10 +146,6 @@ class PostModel {
           commentsData != null
               ? commentsData.map((c) => CommentModel.fromMap(c)).toList()
               : [],
-      shares:
-          map[PostColumns.shares] != null
-              ? List<String>.from(map[PostColumns.shares])
-              : [],
       lastSeen:
           userData != null && userData[UserColumns.lastSeen] != null
               ? DateTime.parse(userData[UserColumns.lastSeen].toString())
@@ -137,6 +153,11 @@ class PostModel {
       isOnline: false,
       savedCount: map['saved_count'] as int? ?? 0,
       isSavedByMe: map['is_post_saved'] as bool? ?? false,
+      sharedPostId: map[PostColumns.sharedPostId] as String?,
+      originalPost:
+          originalPostData != null ? PostModel.fromMap(originalPostData) : null,
+      sharesCount: map['shares_count'] as int? ?? 0,
+      isSharedByMe: map['is_post_shared'] as bool? ?? false,
     );
   }
 
@@ -154,11 +175,14 @@ class PostModel {
     List<String>? likersImages,
     List<PostReactionModel>? reactions,
     List<CommentModel>? comments,
-    List<String>? shares,
     final DateTime? lastSeen,
     final bool? isOnline,
     final int? savedCount,
     final bool? isSavedByMe,
+    String? sharedPostId,
+    PostModel? originalPost,
+    int? sharesCount,
+    bool? isSharedByMe,
   }) {
     return PostModel(
       id: id ?? this.id,
@@ -174,11 +198,14 @@ class PostModel {
       likersImages: likersImages ?? this.likersImages,
       reactions: reactions ?? this.reactions,
       comments: comments ?? this.comments,
-      shares: shares ?? this.shares,
       lastSeen: lastSeen ?? this.lastSeen,
       isOnline: isOnline ?? this.isOnline,
       savedCount: savedCount ?? this.savedCount,
       isSavedByMe: isSavedByMe ?? this.isSavedByMe,
+      sharedPostId: sharedPostId ?? this.sharedPostId,
+      originalPost: originalPost ?? this.originalPost,
+      sharesCount: sharesCount ?? this.sharesCount,
+      isSharedByMe: isSharedByMe ?? this.isSharedByMe,
     );
   }
 
@@ -196,11 +223,14 @@ class PostModel {
     'likers_images': likersImages,
     'reactions': reactions.map((r) => r.toMap()).toList(),
     'comments': comments?.map((comment) => comment.toCacheJson()).toList(),
-    'shares': shares,
     'last_seen': lastSeen?.toIso8601String(),
     'is_online': isOnline,
     'saved_count': savedCount,
     'is_post_saved': isSavedByMe,
+    'shared_post_id': sharedPostId,
+    'original_post': originalPost?.toCacheJson(),
+    'shares_count': sharesCount,
+    'is_post_shared': isSharedByMe,
   };
 
   factory PostModel.fromCacheJson(Map<String, dynamic> map) {
@@ -227,7 +257,6 @@ class PostModel {
                     CommentModel.fromCacheJson(comment as Map<String, dynamic>),
               )
               .toList(),
-      shares: (map['shares'] as List<dynamic>?)?.cast<String>(),
       lastSeen:
           map['last_seen'] != null
               ? DateTime.parse(map['last_seen'] as String)
@@ -235,6 +264,40 @@ class PostModel {
       isOnline: map['is_online'] as bool? ?? false,
       savedCount: map['saved_count'] as int? ?? 0,
       isSavedByMe: map['is_post_saved'] as bool? ?? false,
+      sharedPostId: map['shared_post_id'] as String?,
+      originalPost:
+          map['original_post'] != null
+              ? PostModel.fromCacheJson(
+                map['original_post'] as Map<String, dynamic>,
+              )
+              : null,
+      sharesCount: map['shares_count'] as int? ?? 0,
+      isSharedByMe: map['is_post_shared'] as bool? ?? false,
     );
+  }
+}
+
+extension PostListLookup on List<PostModel> {
+  PostModel? findById(String id) {
+    for (final p in this) {
+      if (p.id == id) return p;
+      if (p.originalPost?.id == id) return p.originalPost;
+    }
+    return null;
+  }
+}
+
+extension PostListUpdater on List<PostModel> {
+  List<PostModel> updatePostById(
+    String targetId,
+    PostModel Function(PostModel current) transform,
+  ) {
+    return map((p) {
+      if (p.id == targetId) return transform(p);
+      if (p.originalPost?.id == targetId) {
+        return p.copyWith(originalPost: transform(p.originalPost!));
+      }
+      return p;
+    }).toList();
   }
 }
