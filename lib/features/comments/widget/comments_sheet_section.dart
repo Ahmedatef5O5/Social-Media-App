@@ -1,5 +1,3 @@
-import 'package:shimmer/shimmer.dart';
-import 'package:social_media_app/core/widgets/cached_cloudinary_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
@@ -11,10 +9,14 @@ import 'package:social_media_app/features/comments/widget/comments_shimmer_skele
 import 'package:social_media_app/features/posts/cubit/posts_cubit/posts_cubit.dart';
 import 'package:social_media_app/features/posts/model/post_model.dart';
 import 'package:social_media_app/features/comments/widget/comments_section.dart';
-import '../../../core/constants/app_images.dart';
 import '../../../core/helpers/comment_helper.dart';
 import '../../../core/themes/app_colors.dart';
 import '../../posts/widgets/post_reactions_bottom_sheet.dart';
+import '../helper/comment_sheet_shared_widgets.dart';
+import '../helper/comments_count_skeleton.dart';
+import '../helper/editing_comment_banner.dart';
+import '../helper/reactor_avatar_stack.dart';
+import '../helper/replying_to_banner.dart';
 import 'send_comment_section.dart';
 
 class CommentsSheetSection extends StatefulWidget {
@@ -193,76 +195,9 @@ class _CommentsSheetSectionState extends State<CommentsSheetSection> {
                                     .copyWith(color: AppColors.grey7),
                               ),
                               Gap(12),
-                              if (post.likersImages != null &&
-                                  post.likersImages!.isNotEmpty &&
-                                  post.likes!.isNotEmpty)
-                                SizedBox(
-                                  height: 25,
-                                  width: 120,
-                                  child: Stack(
-                                    children: List.generate(
-                                      post.likersImages!.take(8).length,
-                                      (index) {
-                                        final String imageUrl =
-                                            post.likersImages![index];
-                                        final bool isNetworkImage =
-                                            imageUrl.isNotEmpty &&
-                                            imageUrl.startsWith('http') &&
-                                            imageUrl != 'asset:default';
-                                        return Positioned(
-                                          key: ValueKey(
-                                            '${post.id}_liker_$index',
-                                          ),
-                                          left: index * 18.0,
-                                          child: Container(
-                                            width: 26,
-                                            height: 26,
-                                            decoration: BoxDecoration(
-                                              shape: BoxShape.circle,
-                                              color:
-                                                  Theme.of(
-                                                    context,
-                                                  ).scaffoldBackgroundColor,
-                                              border: Border.all(
-                                                color:
-                                                    Theme.of(
-                                                      context,
-                                                    ).scaffoldBackgroundColor,
-                                                width: 2,
-                                              ),
-                                            ),
-                                            child: ClipOval(
-                                              child:
-                                                  isNetworkImage
-                                                      ? CachedCloudinaryImage(
-                                                        secureUrl: imageUrl,
-                                                        fit: BoxFit.cover,
-                                                        isAvatar: true,
-                                                        errorWidget:
-                                                            (
-                                                              context,
-                                                              error,
-                                                            ) => Image.asset(
-                                                              AppImages
-                                                                  .defaultUserImg,
-                                                              fit: BoxFit.cover,
-                                                            ),
-                                                        placeholder:
-                                                            (context) =>
-                                                                const CustomLoadingIndicator(),
-                                                      )
-                                                      : Image.asset(
-                                                        AppImages
-                                                            .defaultUserImg,
-                                                        fit: BoxFit.cover,
-                                                      ),
-                                            ),
-                                          ),
-                                        );
-                                      },
-                                    ),
-                                  ),
-                                ),
+                              ReactorsAvatarStack(
+                                imageUrls: post.likersImages ?? [],
+                              ),
                             ],
                           ),
                         ),
@@ -285,7 +220,7 @@ class _CommentsSheetSectionState extends State<CommentsSheetSection> {
 
                                   child:
                                       cubit.isLoadingComments
-                                          ? const _CommentsCountSkeleton(
+                                          ? const CommentsCountSkeleton(
                                             key: ValueKey('count_skeleton'),
                                           )
                                           : Text(
@@ -298,7 +233,7 @@ class _CommentsSheetSectionState extends State<CommentsSheetSection> {
                                             ),
                                           ),
                                 ),
-                                _ElegantSortMenu(
+                                CommentSortMenu(
                                   current: cubit.currentSort,
                                   onChanged: _changeSort,
                                 ),
@@ -345,12 +280,12 @@ class _CommentsSheetSectionState extends State<CommentsSheetSection> {
                 ),
 
                 if (_replyingToCommentId != null)
-                  _ReplyingToBanner(
+                  ReplyingToBanner(
                     authorName: _replyingToAuthorName ?? '',
                     onCancel: _cancelReply,
                   ),
                 if (_editingComment != null)
-                  _EditingCommentBanner(
+                  EditingCommentBanner(
                     commentText: _editingComment!.text,
                     onCancel: _cancleEdit,
                   ),
@@ -377,211 +312,6 @@ class _CommentsSheetSectionState extends State<CommentsSheetSection> {
               ],
             ),
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class _ReplyingToBanner extends StatelessWidget {
-  final String authorName;
-  final VoidCallback onCancel;
-
-  const _ReplyingToBanner({required this.authorName, required this.onCancel});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      margin: const EdgeInsets.only(bottom: 4),
-      decoration: BoxDecoration(
-        color: Theme.of(context).primaryColor.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            Icons.reply_rounded,
-            size: 16,
-            color: Theme.of(context).primaryColor,
-          ),
-          const SizedBox(width: 6),
-          Expanded(
-            child: Text.rich(
-              TextSpan(
-                text: 'Replying to ',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppColors.grey7,
-                  fontSize: 12,
-                ),
-                children: [
-                  TextSpan(
-                    text: '@$authorName',
-                    style: TextStyle(
-                      color: Theme.of(context).primaryColor,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          GestureDetector(
-            onTap: onCancel,
-            child: Icon(Icons.close_rounded, size: 18, color: AppColors.grey6),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _EditingCommentBanner extends StatelessWidget {
-  final String commentText;
-  final VoidCallback onCancel;
-
-  const _EditingCommentBanner({
-    required this.commentText,
-    required this.onCancel,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final primary = Theme.of(context).primaryColor;
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      margin: const EdgeInsets.only(bottom: 4),
-      decoration: BoxDecoration(
-        color: primary.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(8),
-        border: Border(left: BorderSide(color: primary, width: 3)),
-      ),
-      child: Row(
-        children: [
-          Icon(Icons.edit_outlined, size: 16, color: primary),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'Editing comment',
-                  style: TextStyle(
-                    color: primary,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 12,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  commentText,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(color: AppColors.grey7, fontSize: 12),
-                ),
-              ],
-            ),
-          ),
-          GestureDetector(
-            onTap: onCancel,
-            child: Icon(Icons.close_rounded, size: 18, color: AppColors.grey6),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ElegantSortMenu extends StatelessWidget {
-  final CommentSortOption current;
-  final ValueChanged<CommentSortOption> onChanged;
-
-  const _ElegantSortMenu({required this.current, required this.onChanged});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-
-    return PopupMenuButton<CommentSortOption>(
-      initialValue: current,
-      onSelected: onChanged,
-      elevation: 6,
-      shadowColor: Colors.black.withValues(alpha: 0.2),
-      color: isDark ? Colors.grey[900] : Colors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      offset: const Offset(0, 40),
-      icon: Icon(Icons.sort_rounded, color: AppColors.grey7, size: 26),
-      itemBuilder:
-          (context) =>
-              CommentSortOption.values.map((option) {
-                final isSelected = current == option;
-
-                return PopupMenuItem<CommentSortOption>(
-                  value: option,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        option.icon,
-                        size: 20,
-                        color:
-                            isSelected ? theme.primaryColor : AppColors.grey6,
-                      ),
-                      const SizedBox(width: 12),
-                      Text(
-                        option.label,
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight:
-                              isSelected ? FontWeight.bold : FontWeight.w600,
-                          color:
-                              isSelected
-                                  ? theme.primaryColor
-                                  : (isDark
-                                      ? Colors.grey[300]
-                                      : Colors.grey[800]),
-                        ),
-                      ),
-                      const SizedBox(width: 24),
-                      if (isSelected)
-                        Icon(
-                          Icons.check_circle_rounded,
-                          size: 18,
-                          color: theme.primaryColor,
-                        )
-                      else
-                        const SizedBox(width: 18),
-                    ],
-                  ),
-                );
-              }).toList(),
-    );
-  }
-}
-
-class _CommentsCountSkeleton extends StatelessWidget {
-  const _CommentsCountSkeleton({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Shimmer.fromColors(
-      baseColor: isDark ? Colors.grey[800]! : Colors.grey[300]!,
-      highlightColor: isDark ? Colors.grey[700]! : Colors.grey[100]!,
-      child: Container(
-        width: 92,
-        height: 18,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(6),
         ),
       ),
     );
