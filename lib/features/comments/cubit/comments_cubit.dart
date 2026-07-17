@@ -250,7 +250,7 @@ class CommentsCubit extends Cubit<CommentsState> {
       emit(CommentOptimisticAdded(post.id, newComment, parentCommentId));
 
       _eventBus.emit(
-        CommentEvent(
+        CommentAddedEvent(
           postId: post.id,
           comment: newComment,
           parentId: parentCommentId,
@@ -342,7 +342,10 @@ class CommentsCubit extends Cubit<CommentsState> {
     }
   }
 
-  Future<void> deleteComment({required String commentId}) async {
+  Future<void> deleteComment({
+    required String commentId,
+    required String postId,
+  }) async {
     final resolvedId = resolveId(commentId);
     final previousComments = comments;
 
@@ -352,6 +355,8 @@ class CommentsCubit extends Cubit<CommentsState> {
             .map((c) => _removeReplyById(c, resolvedId))
             .toList();
     emit(CommentsUiChanged());
+
+    _eventBus.emit(CommentDeletedEvent(postId: postId, commentId: resolvedId));
 
     try {
       await _commentsService.deleteComment(commentId: resolvedId);

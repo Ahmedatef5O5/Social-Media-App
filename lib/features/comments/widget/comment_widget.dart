@@ -137,6 +137,7 @@ class _CommentWidgetState extends State<CommentWidget>
               Navigator.pop(ctx);
               context.read<CommentsCubit>().deleteComment(
                 commentId: widget.comment.id,
+                postId: widget.comment.postId,
               );
               if (context.mounted) {
                 AppToast.info('Comment deleted successfully');

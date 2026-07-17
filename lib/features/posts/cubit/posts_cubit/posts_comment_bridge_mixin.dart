@@ -6,7 +6,12 @@ mixin PostsCommentBridgeMixin on Cubit<PostsState> {
 
   void _listenToCommentEvents() {
     _commentEventSub = _eventBus.stream.listen((event) {
-      addCommentLocally(event.postId, event.comment, event.parentId);
+      switch (event) {
+        case CommentAddedEvent():
+          addCommentLocally(event.postId, event.comment, event.parentId);
+        case CommentDeletedEvent():
+          removeCommentLocally(event.postId, event.commentId);
+      }
     });
   }
 
@@ -46,6 +51,38 @@ mixin PostsCommentBridgeMixin on Cubit<PostsState> {
     });
 
     emit(PostsLoaded(updatedPosts, DateTime.now()));
+  }
+
+  void removeCommentLocally(String postId, String commentId) {
+    if (state is! PostsLoaded) return;
+    final oldState = state as PostsLoaded;
+
+    final updatedPosts = oldState.posts.updatePostById(postId, (post) {
+      final updatedComments = _removeCommentById(
+        List<CommentModel>.from(post.comments ?? const []),
+        commentId,
+      );
+      return post.copyWith(comments: updatedComments);
+    });
+
+    emit(PostsLoaded(updatedPosts, DateTime.now()));
+  }
+
+  List<CommentModel> _removeCommentById(
+    List<CommentModel> comments,
+    String commentId,
+  ) {
+    return comments
+        .where((c) => c.id != commentId)
+        .map(
+          (c) =>
+              c.replies.isEmpty
+                  ? c
+                  : c.copyWith(
+                    replies: _removeCommentById(c.replies, commentId),
+                  ),
+        )
+        .toList();
   }
 
   @override

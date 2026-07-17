@@ -1,17 +1,27 @@
 import '../model/comment_model.dart';
 
-class CommentEvent {
+sealed class CommentEvent {
   final String postId;
+  const CommentEvent({required this.postId});
+}
+
+class CommentAddedEvent extends CommentEvent {
   final CommentModel comment;
   final String? parentId;
   final String authorName;
   final String authorImageUrl;
 
-  CommentEvent({
-    required this.postId,
+  const CommentAddedEvent({
+    required super.postId,
     required this.comment,
     this.parentId,
     required this.authorName,
     required this.authorImageUrl,
   });
+}
+
+class CommentDeletedEvent extends CommentEvent {
+  final String commentId;
+
+  const CommentDeletedEvent({required super.postId, required this.commentId});
 }

@@ -16,6 +16,7 @@ import '../../../../core/services/cloudinary_storage_services.dart';
 import '../../../../core/services/presence_service.dart';
 import '../../../../core/supabase/supabase_provider.dart';
 import '../../../comments/events/comment_event_bus.dart';
+import '../../../comments/events/comment_events.dart';
 import '../../../comments/model/comment_model.dart';
 import '../../../notifications/repository/notifications_repository.dart';
 import '../../model/feed_event.dart';
