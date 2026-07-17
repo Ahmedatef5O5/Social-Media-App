@@ -67,7 +67,6 @@ class PostItemWidget extends StatelessWidget {
         }
 
         return Container(
-          margin: const EdgeInsets.symmetric(horizontal: 4),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
             color: colorScheme.surface,
@@ -134,7 +133,8 @@ class PostItemWidget extends StatelessWidget {
                           trailingAction:
                               isSharedPost
                                   ? HeaderTrailingAction.openOriginal
-                                  : HeaderTrailingAction.moreActions,
+                                  : HeaderTrailingAction
+                                      .moreActionsAndOpenOriginal,
                         ),
                         const SizedBox(height: 8),
                         PostTxtContentWidget(post: displayPost),

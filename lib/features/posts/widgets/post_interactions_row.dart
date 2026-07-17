@@ -17,9 +17,16 @@ import 'post_reaction_overlay.dart';
 import 'post_reactions_summary.dart';
 
 class PostInteractionsRow extends StatelessWidget {
-  const PostInteractionsRow({super.key, required this.postId});
-
   final String postId;
+  final VoidCallback? onCommentsTap;
+  final VoidCallback? onReactionsTap;
+
+  const PostInteractionsRow({
+    super.key,
+    required this.postId,
+    this.onCommentsTap,
+    this.onReactionsTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -45,17 +52,29 @@ class PostInteractionsRow extends StatelessWidget {
 
         final totalComments = countAllComments(post.comments);
 
-        return _InteractionsContent(post: post, totalComments: totalComments);
+        return _InteractionsContent(
+          post: post,
+          totalComments: totalComments,
+          onCommentsTap: onCommentsTap,
+          onReactionsTap: onReactionsTap,
+        );
       },
     );
   }
 }
 
 class _InteractionsContent extends StatelessWidget {
-  const _InteractionsContent({required this.post, required this.totalComments});
-
   final PostModel post;
   final int totalComments;
+  final VoidCallback? onCommentsTap;
+  final VoidCallback? onReactionsTap;
+
+  const _InteractionsContent({
+    required this.post,
+    required this.totalComments,
+    this.onCommentsTap,
+    this.onReactionsTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -69,11 +88,19 @@ class _InteractionsContent extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
             const Gap(18),
-            _LikeButtonWidget(post: post, currUserId: currUserId),
+            _LikeButtonWidget(
+              post: post,
+              currUserId: currUserId,
+              onReactionsTap: onReactionsTap,
+            ),
 
             const Gap(20),
 
-            _CommentButtonWidget(post: post, totalComments: totalComments),
+            _CommentButtonWidget(
+              post: post,
+              totalComments: totalComments,
+              onTap: onCommentsTap,
+            ),
 
             const Gap(20),
 
@@ -93,10 +120,15 @@ class _InteractionsContent extends StatelessWidget {
 }
 
 class _LikeButtonWidget extends StatefulWidget {
-  const _LikeButtonWidget({required this.post, required this.currUserId});
-
   final PostModel post;
   final String? currUserId;
+  final VoidCallback? onReactionsTap;
+
+  const _LikeButtonWidget({
+    required this.post,
+    required this.currUserId,
+    this.onReactionsTap,
+  });
 
   @override
   State<_LikeButtonWidget> createState() => _LikeButtonWidgetState();
@@ -242,14 +274,18 @@ class _LikeButtonWidgetState extends State<_LikeButtonWidget>
         GestureDetector(
           onTap: () {
             if (currentPost.reactions.isNotEmpty) {
-              showModalBottomSheet(
-                context: context,
-                isScrollControlled: true,
-                backgroundColor: Colors.transparent,
-                builder:
-                    (context) =>
-                        PostReactionsBottomSheet(postId: currentPost.id),
-              );
+              if (widget.onReactionsTap != null) {
+                widget.onReactionsTap!.call();
+              } else {
+                showModalBottomSheet(
+                  context: context,
+                  isScrollControlled: true,
+                  backgroundColor: Colors.transparent,
+                  builder:
+                      (context) =>
+                          PostReactionsBottomSheet(postId: currentPost.id),
+                );
+              }
             }
           },
 
@@ -261,15 +297,25 @@ class _LikeButtonWidgetState extends State<_LikeButtonWidget>
 }
 
 class _CommentButtonWidget extends StatelessWidget {
-  const _CommentButtonWidget({required this.post, required this.totalComments});
-
   final PostModel post;
   final int totalComments;
+  final VoidCallback? onTap;
+
+  const _CommentButtonWidget({
+    required this.post,
+    required this.totalComments,
+    this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
     return InkWell(
       onTap: () {
+        if (onTap != null) {
+          onTap!.call();
+          return;
+        }
+
         final postsCubit = context.read<PostsCubit>();
         final commentsCubit = CommentsCubit(
           commentsService: context.read<CommentsService>(),

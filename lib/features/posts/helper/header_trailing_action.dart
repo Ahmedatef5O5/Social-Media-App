@@ -1,1 +1,7 @@
-enum HeaderTrailingAction { moreActions, openOriginal, closeScreen, none }
+enum HeaderTrailingAction {
+  moreActions,
+  openOriginal,
+  moreActionsAndOpenOriginal,
+  closeScreen,
+  none,
+}

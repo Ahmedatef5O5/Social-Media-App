@@ -25,6 +25,23 @@ class PostHeaderWidget extends StatelessWidget {
     this.trailingAction = HeaderTrailingAction.moreActions,
   });
 
+  Widget _buildOpenOriginalButton(BuildContext context) {
+    return IconButton(
+      icon: Icon(
+        Icons.open_in_new_rounded,
+        color: Theme.of(context).primaryColor.withValues(alpha: 0.75),
+        size: 19,
+      ),
+      tooltip: 'Open original post',
+      onPressed: () {
+        Navigator.of(
+          context,
+          rootNavigator: true,
+        ).pushNamed(AppRoutes.postDetailsViewRoute, arguments: post);
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final currentUserId = SupabaseProvider.id;
@@ -52,19 +69,19 @@ class PostHeaderWidget extends StatelessWidget {
           );
 
         case HeaderTrailingAction.openOriginal:
-          return IconButton(
-            icon: Icon(
-              Icons.open_in_new_rounded,
-              color: colorScheme.primary.withValues(alpha: 0.8),
-              size: 22,
-            ),
-            tooltip: 'Open original post',
-            onPressed: () {
-              Navigator.of(
-                context,
-                rootNavigator: true,
-              ).pushNamed(AppRoutes.postDetailsViewRoute, arguments: post);
-            },
+          return _buildOpenOriginalButton(context);
+
+        case HeaderTrailingAction.moreActionsAndOpenOriginal:
+          return Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildOpenOriginalButton(context),
+              PostActionsMenu(
+                post: post,
+                currentUserId: currentUserId,
+                postsCubit: postsCubit,
+              ),
+            ],
           );
 
         case HeaderTrailingAction.closeScreen:
@@ -126,7 +143,7 @@ class PostHeaderWidget extends StatelessWidget {
         post.authorName ?? 'Unknown',
         style: Theme.of(context).textTheme.titleSmall!.copyWith(
           fontWeight: FontWeight.w500,
-          fontSize: 18,
+          fontSize: 16,
         ),
       ),
       subtitle: Text(
@@ -134,8 +151,9 @@ class PostHeaderWidget extends StatelessWidget {
           DateTime.parse(post.createdAt).toLocal().toIso8601String(),
         ),
         style: Theme.of(context).textTheme.titleSmall!.copyWith(
-          fontWeight: FontWeight.w400,
-          fontSize: 12,
+          fontWeight: FontWeight.w500,
+          fontSize: 10.3,
+          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
         ),
       ),
       trailing: buildTrailingWidget(),
