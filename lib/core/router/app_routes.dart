@@ -3,6 +3,7 @@ class AppRoutes {
   static const String onBoardingViewRoute = '/on-boarding-view';
   static const String authRoute = '/auth-view';
   static const String homeRoute = '/home-view';
+  static const String postDetailsViewRoute = '/post-details-view';
   static const String fullScreenImageViewRoute = '/full-screen-image-view';
   static const String chatsViewRoute = '/chats-view';
   static const String chatDetailsViewRoute = '/chatDetailsView';

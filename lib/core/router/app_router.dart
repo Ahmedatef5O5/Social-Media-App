@@ -7,6 +7,7 @@ import 'package:social_media_app/core/views/loading_screen.dart';
 import 'package:social_media_app/core/views/no_route_screen.dart';
 import 'package:social_media_app/core/widgets/custom_bottom_nav_bar.dart';
 import 'package:social_media_app/features/auth/views/auth_view.dart';
+import 'package:social_media_app/features/home/cubits/home_cubit/home_cubit.dart';
 import 'package:social_media_app/features/single_chats/cubit/chat_details_cubit/chat_details_cubit.dart';
 import 'package:social_media_app/features/single_chats/models/chat_user_model.dart';
 import 'package:social_media_app/features/single_chats/services/chat_services.dart';
@@ -20,6 +21,8 @@ import 'package:social_media_app/features/group_chats/models/group_model.dart';
 import 'package:social_media_app/features/group_chats/views/group_chat_details_view.dart';
 import 'package:social_media_app/features/group_chats/views/group_info_view.dart';
 import 'package:social_media_app/features/profile/services/user_services.dart';
+import 'package:social_media_app/features/social_graph/services/follow_services.dart';
+import 'package:social_media_app/features/social_graph/services/friendship_services.dart';
 import 'package:social_media_app/features/stories/views/add_story_preview_view.dart';
 import 'package:social_media_app/features/posts/views/create_post_view.dart';
 import 'package:social_media_app/features/posts/views/post_themes_view.dart';
@@ -34,7 +37,9 @@ import 'package:social_media_app/features/splash/views/splash_view.dart';
 import '../../features/auth/data/models/user_data.dart';
 import '../../features/posts/cubit/posts_cubit/posts_cubit.dart';
 import '../../features/posts/cubit/saved_posts_cubit/saved_posts_cubit.dart';
+import '../../features/posts/model/post_model.dart';
 import '../../features/posts/services/posts_services.dart';
+import '../../features/posts/views/post_details_view.dart';
 import '../../features/posts/views/saved_posts_view.dart';
 import '../../features/single_calls/model/call_model.dart';
 import '../../features/single_calls/views/dialing_view.dart';
@@ -159,6 +164,7 @@ class AppRouter {
       case AppRoutes.createPostViewRoute:
       case AppRoutes.postThemesViewRoute:
       case AppRoutes.fullScreenImageViewRoute:
+      case AppRoutes.postDetailsViewRoute:
         return _homeRoutes(settings);
 
       case AppRoutes.createTextStoryViewRoute:
@@ -256,6 +262,9 @@ class AppRouter {
           typeOfRoute: TypeOfRoute.fade,
           settings: settings,
         );
+      case AppRoutes.postDetailsViewRoute:
+        final post = settings.arguments as PostModel;
+        return MaterialPageRoute(builder: (_) => PostDetailsView(post: post));
       default:
         return _errorRoute(settings, 'Home route not found');
     }
