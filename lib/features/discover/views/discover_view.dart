@@ -85,7 +85,7 @@ class _DiscoverViewState extends State<DiscoverView> {
                       if (state is DiscoverPeopleSuccess) {
                         return SliverPadding(
                           padding: const EdgeInsets.only(
-                            top: 14,
+                            top: 16,
                             left: 12,
                             right: 12,
                             bottom: 100,
@@ -106,7 +106,8 @@ class _DiscoverViewState extends State<DiscoverView> {
                               return Padding(
                                 padding: const EdgeInsets.only(bottom: 16),
                                 child: DiscoverPersonCardWidget(
-                                  userData: state.users[index],
+                                  key: ValueKey(state.users[index].user.id),
+                                  personData: state.users[index],
                                 ),
                               );
                             },

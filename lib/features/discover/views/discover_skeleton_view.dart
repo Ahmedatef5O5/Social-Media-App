@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:gap/gap.dart';
+import '../../../core/widgets/skeleton_shapes.dart';
 
 class DiscoverPeopleSkeleton extends StatelessWidget {
   const DiscoverPeopleSkeleton({super.key});
@@ -14,7 +15,9 @@ class DiscoverPeopleSkeleton extends StatelessWidget {
     final highlightColor = isDark ? Colors.grey.shade700 : Colors.grey.shade100;
 
     final cardColor = theme.colorScheme.surface;
-    final borderColor = theme.colorScheme.outlineVariant.withValues(alpha: 0.5);
+    final borderColor = theme.colorScheme.outlineVariant.withValues(
+      alpha: 0.12,
+    );
 
     final screenWidth = MediaQuery.sizeOf(context).width;
 
@@ -29,8 +32,15 @@ class DiscoverPeopleSkeleton extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                _SkeletonBox(height: 26, width: screenWidth * 0.43),
-                const _SkeletonCircle(size: 26),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SkeletonBox(height: 22, width: screenWidth * 0.4),
+                    const Gap(8),
+                    SkeletonBox(height: 12, width: screenWidth * 0.3),
+                  ],
+                ),
+                const SkeletonCircle(size: 40),
               ],
             ),
           ),
@@ -39,52 +49,66 @@ class DiscoverPeopleSkeleton extends StatelessWidget {
         Expanded(
           child: ListView.separated(
             physics: const NeverScrollableScrollPhysics(),
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            itemCount: 8,
-            separatorBuilder: (_, __) => const Gap(16),
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            itemCount: 6,
+            separatorBuilder: (_, __) => const Gap(14),
             itemBuilder: (_, __) {
               return Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
                   color: cardColor,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(18),
                   border: Border.all(color: borderColor),
-                  boxShadow: [
-                    BoxShadow(
-                      color:
-                          isDark
-                              ? Colors.black54
-                              : Colors.grey.withValues(alpha: 0.2),
-                      blurRadius: 4,
-                      offset: const Offset(0, 1),
-                    ),
-                  ],
                 ),
                 child: Shimmer.fromColors(
                   baseColor: baseColor,
                   highlightColor: highlightColor,
                   period: const Duration(milliseconds: 1200),
-                  child: Row(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Avatar
-                      const _SkeletonCircle(size: 48),
-                      const Gap(12),
-
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _SkeletonBox(height: 14, width: screenWidth * 0.35),
-                            const Gap(10),
-                            _SkeletonBox(height: 10, width: screenWidth * 0.2),
-                          ],
-                        ),
+                      Row(
+                        children: [
+                          const SkeletonCircle(size: 52),
+                          const Gap(12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                SkeletonBox(
+                                  height: 15,
+                                  width: screenWidth * 0.34,
+                                ),
+                                const Gap(8),
+                                SkeletonBox(
+                                  height: 11,
+                                  width: screenWidth * 0.2,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
-
-                      const Gap(12),
-
-                      // Follow button
-                      const _SkeletonBox(height: 34, width: 95, radius: 18),
+                      const Gap(14),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: SkeletonBox(
+                              height: 38,
+                              width: double.infinity,
+                              radius: 19,
+                            ),
+                          ),
+                          const Gap(10),
+                          Expanded(
+                            child: SkeletonBox(
+                              height: 38,
+                              width: double.infinity,
+                              radius: 19,
+                            ),
+                          ),
+                        ],
+                      ),
                     ],
                   ),
                 ),
@@ -93,48 +117,6 @@ class DiscoverPeopleSkeleton extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-class _SkeletonBox extends StatelessWidget {
-  final double height;
-  final double width;
-  final double radius;
-
-  const _SkeletonBox({
-    required this.height,
-    required this.width,
-    this.radius = 8,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: height,
-      width: width,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(radius),
-      ),
-    );
-  }
-}
-
-class _SkeletonCircle extends StatelessWidget {
-  final double size;
-
-  const _SkeletonCircle({required this.size});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: size,
-      width: size,
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        shape: BoxShape.circle,
-      ),
     );
   }
 }
