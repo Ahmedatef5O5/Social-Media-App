@@ -4,6 +4,7 @@ import 'package:social_media_app/features/auth/data/models/user_data.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/services/network_status_service.dart';
 import '../../../core/supabase/supabase_provider.dart';
+import '../models/profile_overview_model.dart';
 
 class UserService {
   final _supabase = SupabaseProvider.client;
@@ -45,5 +46,17 @@ class UserService {
       debugPrint('getUserPostsCount error: $e');
       return 0;
     }
+  }
+
+  Future<ProfileOverviewModel> getProfileOverview(String viewedUserId) async {
+    final data = await _supabase.rpc(
+      SupabaseConstants.getProfileOverviewRpc,
+      params: {
+        'p_viewed_user_id': viewedUserId,
+        'p_current_user_id': SupabaseProvider.id,
+      },
+    );
+    final row = (data as List).first as Map<String, dynamic>;
+    return ProfileOverviewModel.fromMap(row);
   }
 }

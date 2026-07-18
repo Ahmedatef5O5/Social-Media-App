@@ -12,11 +12,14 @@ import '../../../core/toast/app_toast.dart';
 import '../../../core/widgets/custom_elevated_button.dart';
 import '../../posts/cubit/posts_cubit/posts_cubit.dart';
 import '../../single_chats/models/chat_user_model.dart';
+import '../../social_graph/models/friendship_status.dart';
 
 class ProfileHeader extends StatelessWidget {
-  const ProfileHeader({super.key, required this.size, required this.user});
+  const ProfileHeader({super.key, required this.size, required this.state});
   final Size size;
-  final UserData user;
+  final ProfileLoaded state;
+  UserData get user => state.user;
+
   @override
   Widget build(BuildContext context) {
     final currentUserId = SupabaseProvider.id;
@@ -53,19 +56,39 @@ class ProfileHeader extends StatelessWidget {
                     children: [
                       _buildSmallActionButton(
                         context,
-                        label: 'Add friend\t\t\t\t\t\t\t',
-                        txtColor: Theme.of(context).scaffoldBackgroundColor,
-
+                        label: switch (state.friendshipStatus) {
+                          FriendshipStatus.none => 'Add friend',
+                          FriendshipStatus.pendingSent => 'Cancel request',
+                          FriendshipStatus.pendingReceived => 'Respond',
+                          FriendshipStatus.accepted => 'Friends',
+                        },
+                        txtColor: theme.scaffoldBackgroundColor,
                         iconWidget: Image.asset(
                           AppImages.addUserIcon,
                           width: 18,
                           height: 20,
-                          color: Theme.of(context).scaffoldBackgroundColor,
+                          color: theme.scaffoldBackgroundColor,
                         ),
-                        onPressed: () {
-                          AppToast.info("This feature Comming soon.");
+                        onPressed: () async {
+                          final cubit = context.read<ProfileCubit>();
+                          switch (state.friendshipStatus) {
+                            case FriendshipStatus.none:
+                              await cubit.sendFriendRequest();
+                              break;
+                            case FriendshipStatus.pendingSent:
+                              await cubit.cancelFriendRequest();
+                              break;
+                            case FriendshipStatus.pendingReceived:
+                              AppToast.info(
+                                'Check your notifications to respond to this request',
+                              );
+                              break;
+                            case FriendshipStatus.accepted:
+                              break;
+                          }
                         },
                       ),
+
                       const Gap(8),
                       _buildSmallActionButton(
                         context,
@@ -165,8 +188,11 @@ class ProfileHeader extends StatelessWidget {
                           size: 19,
                         ),
                         onPressed: () {
-                          // TODO: Navigate to the friends list view once it's built.
-                          AppToast.info('this feature is coming soon');
+                          Navigator.of(context, rootNavigator: true).pushNamed(
+                            AppRoutes.friendsListViewRoute,
+                            arguments: user.id,
+                          );
+                          // AppToast.info('this feature is coming soon');
                         },
                       ),
                       const Gap(8),
@@ -250,7 +276,10 @@ class ProfileHeader extends StatelessWidget {
           child: CustomElevatedButton(
             minimumSize: const Size(double.infinity, 46),
             maximumSize: const Size(double.infinity, 46),
-            txtBtn: isMe ? 'Edit Profile' : 'Follow',
+            txtBtn:
+                isMe
+                    ? 'Edit Profile'
+                    : (state.isFollowing ? 'Following' : 'Follow'),
             txtBtnStyle: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w600,
@@ -282,6 +311,8 @@ class ProfileHeader extends StatelessWidget {
                 if (context.mounted) {
                   profileCubit.getProfileData(user.id);
                 }
+              } else {
+                await context.read<ProfileCubit>().toggleFollow();
               }
             },
           ),

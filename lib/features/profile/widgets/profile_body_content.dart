@@ -46,7 +46,7 @@ class ProfileBodyContent extends StatelessWidget {
               SliverToBoxAdapter(
                 child: Column(
                   children: [
-                    ProfileHeader(size: size, user: state.user),
+                    ProfileHeader(size: size, state: state),
                     Gap(20),
                     ProfileStatsWidget(stats: state.stats),
                     Gap(20),
