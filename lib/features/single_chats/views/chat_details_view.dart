@@ -16,6 +16,7 @@ import '../../../core/services/notification_services.dart';
 import '../../../core/themes/app_colors.dart';
 import '../../../core/toast/app_toast.dart';
 import '../models/presence_snapshot.dart';
+import '../services/chat_permission_service.dart';
 import '../widgets/text_input_area_section.dart';
 import '../widgets/typing_indicator_widget.dart';
 
@@ -74,6 +75,7 @@ class _ChatDetailsViewState extends State<ChatDetailsView>
         lastSeen: widget.receiverUser.lastSeen,
       ),
     );
+    _chatCubit.resolveChatPermission(_receiverId);
     _chatCubit.getMessagesStream(receiverId: _receiverId);
     _chatCubit.updateLastSeen();
     _chatCubit.watchReceiverTyping(_receiverId);
@@ -418,6 +420,52 @@ class _ChatDetailsViewState extends State<ChatDetailsView>
                   unreadCountNotifier: _unreadCountNotifier,
                   scrollToBottom: _scrollToBottom,
                 ),
+              ),
+
+              ValueListenableBuilder<ChatPermissionResult>(
+                valueListenable: _chatCubit.chatPermission,
+                builder: (context, result, _) {
+                  if (result.permission == ChatPermission.allowed) {
+                    return const SizedBox.shrink();
+                  }
+                  final isAwaitingMe =
+                      result.permission == ChatPermission.awaitingMyResponse;
+                  return Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 10,
+                    ),
+                    color:
+                        Theme.of(context).colorScheme.surfaceContainerHighest,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          isAwaitingMe
+                              ? '${widget.receiverUser} sent you a message request. Reply to accept, or decline.'
+                              : 'You are not friends or followers. Sending a message will send a message request.',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                        if (isAwaitingMe) ...[
+                          const SizedBox(height: 6),
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: TextButton(
+                              onPressed: () async {
+                                await _chatCubit.declineMessageRequest();
+                                if (context.mounted) {
+                                  Navigator.of(context).pop();
+                                }
+                              },
+                              child: const Text('Decline'),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  );
+                },
               ),
               TextInputAreaSection(
                 receiverUser: widget.receiverUser,

@@ -15,6 +15,7 @@ import '../../../notifications/repository/notifications_repository.dart';
 import '../../../settings/repository/settings_repository.dart';
 import '../../models/message_model.dart';
 import '../../models/presence_snapshot.dart';
+import '../../services/chat_permission_service.dart';
 import '../../services/chat_services.dart';
 import '../../widgets/chat_bubble.dart';
 part 'chat_details_state.dart';
@@ -26,12 +27,17 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
     with ChatReactionsMixin, ChatSelectionMixin, ChatPresenceMixin {
   @override
   final ChatServices _chatServices;
+  final ChatPermissionService _chatPermissionService;
   final String receiverName;
   final String? senderImageUrl;
 
   static final _snapshotCache = MessagesSnapshotCache<MessageModel>(
     toCacheJson: (m) => m.toCacheJson(),
     fromJson: MessageModel.fromJson,
+  );
+
+  final ValueNotifier<ChatPermissionResult> chatPermission = ValueNotifier(
+    const ChatPermissionResult(permission: ChatPermission.allowed),
   );
 
   final ValueNotifier<MessageModel?> replyToMessage =
@@ -56,7 +62,67 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
     this.receiverName, {
     this.senderImageUrl,
     this.currentUserName = 'Someone',
-  }) : super(ChatDetailsInitial());
+    ChatPermissionService? chatPermissionService,
+  }) : _chatPermissionService =
+           chatPermissionService ?? ChatPermissionService(),
+       super(ChatDetailsInitial());
+
+  Future<void> resolveChatPermission(String receiverId) async {
+    try {
+      chatPermission.value = await _chatPermissionService.resolve(
+        currentUserId: currentUserId,
+        otherUserId: receiverId,
+      );
+    } catch (e) {
+      debugPrint('resolveChatPermission error: $e');
+    }
+  }
+
+  Future<void> _ensureAllowedToSend(String receiverId) async {
+    final current = chatPermission.value;
+    switch (current.permission) {
+      case ChatPermission.allowed:
+        return;
+      case ChatPermission.needsRequest:
+        try {
+          final requestId = await _chatPermissionService.createRequest(
+            senderId: currentUserId,
+            receiverId: receiverId,
+          );
+          chatPermission.value = ChatPermissionResult(
+            permission: ChatPermission.allowed,
+            messageRequestId: requestId,
+          );
+        } catch (e) {
+          debugPrint('createRequest error: $e');
+        }
+        return;
+      case ChatPermission.awaitingMyResponse:
+        final requestId = current.messageRequestId;
+        if (requestId != null) {
+          try {
+            await _chatPermissionService.acceptRequest(requestId);
+          } catch (e) {
+            debugPrint('acceptRequest error: $e');
+          }
+        }
+        chatPermission.value = ChatPermissionResult(
+          permission: ChatPermission.allowed,
+          messageRequestId: requestId,
+        );
+        return;
+    }
+  }
+
+  Future<void> declineMessageRequest() async {
+    final requestId = chatPermission.value.messageRequestId;
+    if (requestId == null) return;
+    try {
+      await _chatPermissionService.declineRequest(requestId);
+    } catch (e) {
+      debugPrint('declineRequest error: $e');
+    }
+  }
 
   // ignore: unused_field
   bool _isUserAtBottom = true;
@@ -177,6 +243,7 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
         remoteImageUrl == null) {
       return;
     }
+    await _ensureAllowedToSend(receiverId);
 
     final List<MessageModel> currentMessages = List.from(cachedMessages);
 
@@ -519,6 +586,7 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
 
   @override
   Future<void> close() {
+    chatPermission.dispose();
     highlightedMessageId.dispose();
     _messageSubscription?.cancel();
     return super.close();
