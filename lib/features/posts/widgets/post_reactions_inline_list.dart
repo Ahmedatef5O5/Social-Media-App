@@ -27,6 +27,8 @@ class PostReactionsInlineList extends StatefulWidget {
 
 class _PostReactionsInlineListState extends State<PostReactionsInlineList> {
   late Future<List<ReactionEntry>> _future;
+  List<ReactionEntry>? _entries;
+  PostsState? _pendingPrevious;
 
   @override
   void initState() {
@@ -50,18 +52,22 @@ class _PostReactionsInlineListState extends State<PostReactionsInlineList> {
         .eq(LikeColumns.postId, widget.postId)
         .order(LikeColumns.createdAt, ascending: false);
 
-    return List<Map<String, dynamic>>.from(response).map((r) {
-      final user = r[SupabaseConstants.users] as Map<String, dynamic>?;
-      final lastSeenStr = user?[UserColumns.lastSeen] as String?;
-      return ReactionEntry(
-        userId: user?[UserColumns.id] ?? '',
-        userName: user?[UserColumns.name] ?? 'Unknown User',
-        userImageUrl: user?[UserColumns.imageUrl],
-        lastSeen: lastSeenStr != null ? DateTime.tryParse(lastSeenStr) : null,
-        emoji: reactionGlyph(r[LikeColumns.reaction] as String? ?? 'like'),
-        createdAt: r[LikeColumns.createdAt] as String?,
-      );
-    }).toList();
+    final entries =
+        List<Map<String, dynamic>>.from(response).map((r) {
+          final user = r[SupabaseConstants.users] as Map<String, dynamic>?;
+          final lastSeenStr = user?[UserColumns.lastSeen] as String?;
+          return ReactionEntry(
+            userId: user?[UserColumns.id] ?? '',
+            userName: user?[UserColumns.name] ?? 'Unknown User',
+            userImageUrl: user?[UserColumns.imageUrl],
+            lastSeen:
+                lastSeenStr != null ? DateTime.tryParse(lastSeenStr) : null,
+            emoji: reactionGlyph(r[LikeColumns.reaction] as String? ?? 'like'),
+            createdAt: r[LikeColumns.createdAt] as String?,
+          );
+        }).toList();
+    _entries = entries;
+    return entries;
   }
 
   void _refetch() {
@@ -69,6 +75,60 @@ class _PostReactionsInlineListState extends State<PostReactionsInlineList> {
     setState(() {
       _future = _fetch();
     });
+  }
+
+  void _applyLocalReactionChange(String? newEmoji) {
+    if (!mounted || _entries == null) return;
+    final currentUserId = SupabaseProvider.id;
+    final updated = List<ReactionEntry>.from(_entries!)
+      ..removeWhere((e) => e.userId == currentUserId);
+
+    if (newEmoji != null) {
+      final userData = context.read<HomeCubit>().currentUserData;
+      updated.insert(
+        0,
+        ReactionEntry(
+          userId: currentUserId,
+          userName: userData?.name ?? 'You',
+          userImageUrl: userData?.imageUrl,
+          lastSeen: null,
+          emoji: reactionGlyph(newEmoji),
+          createdAt: DateTime.now().toIso8601String(),
+        ),
+      );
+    }
+
+    setState(() {
+      _entries = updated;
+      _future = Future.value(updated);
+    });
+  }
+
+  void _handleStateChange(PostsState? previous, PostsState current) {
+    PostModel? prevPost;
+    PostModel? currPost;
+    try {
+      if (previous is PostsLoaded) {
+        prevPost = previous.posts.findById(widget.postId);
+      }
+      if (current is PostsLoaded) {
+        currPost = current.posts.findById(widget.postId);
+      }
+    } catch (_) {}
+
+    if (currPost == null) {
+      _refetch();
+      return;
+    }
+
+    final bool myReactionChanged =
+        prevPost?.myReactionEmoji != currPost.myReactionEmoji;
+
+    if (myReactionChanged && _entries != null) {
+      _applyLocalReactionChange(currPost.myReactionEmoji);
+    } else {
+      _refetch();
+    }
   }
 
   int _reactionsSignature(PostsState state) {
@@ -85,10 +145,13 @@ class _PostReactionsInlineListState extends State<PostReactionsInlineList> {
   @override
   Widget build(BuildContext context) {
     return BlocListener<PostsCubit, PostsState>(
-      listenWhen:
-          (previous, current) =>
-              _reactionsSignature(previous) != _reactionsSignature(current),
-      listener: (context, state) => _refetch(),
+      listenWhen: (previous, current) {
+        final changed =
+            _reactionsSignature(previous) != _reactionsSignature(current);
+        if (changed) _pendingPrevious = previous;
+        return changed;
+      },
+      listener: (context, state) => _handleStateChange(_pendingPrevious, state),
       child: FutureBuilder<List<ReactionEntry>>(
         future: _future,
         builder: (context, snapshot) {
