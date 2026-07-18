@@ -10,6 +10,7 @@ import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/utilities/supabase_constants.dart';
 import '../../comments/helper/comment_tree_builder.dart';
 import '../../comments/model/comment_model.dart';
+import '../../social_graph/services/connections_service.dart';
 import '../model/post_model.dart';
 import '../model/post_request_body.dart';
 
@@ -27,7 +28,7 @@ class PostsServices {
   is_post_saved,
   shares_count,
   is_post_shared,
-  ${SupabaseConstants.users} (${UserColumns.name}, ${UserColumns.imageUrl}, ${UserColumns.lastSeen}),
+  ${SupabaseConstants.users}!posts_author_id_fkey (${UserColumns.name}, ${UserColumns.imageUrl}, ${UserColumns.lastSeen}),
   ${SupabaseConstants.comments} (
   *,
   ${SupabaseConstants.users} (${UserColumns.name}, ${UserColumns.imageUrl}), 
@@ -167,14 +168,52 @@ class PostsServices {
     }
   }
 
+  Future<void> setPostAllowedViewers(
+    String postId,
+    List<String> userIds,
+  ) async {
+    if (userIds.isEmpty) return;
+    await _supabase
+        .from(SupabaseConstants.postAllowedViewers)
+        .insert(
+          userIds.map((id) => {'post_id': postId, 'user_id': id}).toList(),
+        );
+  }
+
+  Future<Set<String>> _getPrivateAllowedPostIds(String userId) async {
+    final rows = await _supabase
+        .from(SupabaseConstants.postAllowedViewers)
+        .select('post_id')
+        .eq('user_id', userId);
+    return (rows as List).map((r) => r['post_id'] as String).toSet();
+  }
+
   Future<List<PostModel>> fetchPosts() async {
     if (!(await _networkStatus.isConnected())) {
       throw Exception('no-internet');
     }
     try {
+      final currentUserId = SupabaseProvider.id;
+      final connectionIds = await ConnectionsService().getMyConnectionIds();
+      final allowedPrivateIds = await _getPrivateAllowedPostIds(currentUserId);
+
+      final orParts = <String>[
+        'privacy_type.eq.public',
+        'author_id.eq.$currentUserId',
+      ];
+      if (connectionIds.isNotEmpty) {
+        orParts.add(
+          'and(privacy_type.eq.friends,author_id.in.(${connectionIds.join(',')}))',
+        );
+      }
+      if (allowedPrivateIds.isNotEmpty) {
+        orParts.add('id.in.(${allowedPrivateIds.join(',')})');
+      }
+
       final response = await _supabase
           .from(SupabaseConstants.posts)
           .select(_postsQuery)
+          .or(orParts.join(','))
           .order(PostColumns.createdAt, ascending: false);
 
       final List<Map<String, dynamic>> rawPosts =

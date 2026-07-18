@@ -2,6 +2,7 @@ import 'package:social_media_app/core/utilities/supabase_constants.dart';
 import 'package:social_media_app/features/single_chats/models/chat_user_model.dart';
 import 'package:social_media_app/features/posts/model/post_reaction_model.dart';
 import '../../comments/model/comment_model.dart';
+import '../../social_graph/models/content_privacy.dart';
 
 class PostModel {
   bool isLikedBy(String userId) => likes?.contains(userId) ?? false;
@@ -37,18 +38,17 @@ class PostModel {
   final List<CommentModel>? comments;
   final DateTime? lastSeen;
   final bool isOnline;
-
   final int savedCount;
   final bool isSavedByMe;
 
   // ── Shared Post feature ──────────────────────────────────────────────
   final String? sharedPostId;
-
   final PostModel? originalPost;
-
   final int sharesCount;
-
   final bool isSharedByMe;
+
+  // - Privacy publishing
+  final ContentPrivacy privacyType;
 
   const PostModel({
     required this.id,
@@ -72,6 +72,7 @@ class PostModel {
     this.originalPost,
     this.sharesCount = 0,
     this.isSharedByMe = false,
+    this.privacyType = ContentPrivacy.public,
   });
 
   Map<String, dynamic> toMap() {
@@ -88,6 +89,7 @@ class PostModel {
       'likes': likes,
       'likers_images': likersImages,
       'comments': comments,
+      PostColumns.privacyType: contentPrivacyToString(privacyType),
       PostColumns.sharedPostId: sharedPostId,
       UserColumns.lastSeen: lastSeen,
     };
@@ -158,6 +160,9 @@ class PostModel {
           originalPostData != null ? PostModel.fromMap(originalPostData) : null,
       sharesCount: map['shares_count'] as int? ?? 0,
       isSharedByMe: map['is_post_shared'] as bool? ?? false,
+      privacyType: contentPrivacyFromString(
+        map[PostColumns.privacyType] as String?,
+      ),
     );
   }
 
@@ -183,6 +188,7 @@ class PostModel {
     PostModel? originalPost,
     int? sharesCount,
     bool? isSharedByMe,
+    ContentPrivacy? privacyType,
   }) {
     return PostModel(
       id: id ?? this.id,
@@ -206,6 +212,7 @@ class PostModel {
       originalPost: originalPost ?? this.originalPost,
       sharesCount: sharesCount ?? this.sharesCount,
       isSharedByMe: isSharedByMe ?? this.isSharedByMe,
+      privacyType: privacyType ?? this.privacyType,
     );
   }
 
@@ -231,6 +238,7 @@ class PostModel {
     'original_post': originalPost?.toCacheJson(),
     'shares_count': sharesCount,
     'is_post_shared': isSharedByMe,
+    PostColumns.privacyType: contentPrivacyToString(privacyType),
   };
 
   factory PostModel.fromCacheJson(Map<String, dynamic> map) {
@@ -273,6 +281,9 @@ class PostModel {
               : null,
       sharesCount: map['shares_count'] as int? ?? 0,
       isSharedByMe: map['is_post_shared'] as bool? ?? false,
+      privacyType: contentPrivacyFromString(
+        map[PostColumns.privacyType] as String?,
+      ),
     );
   }
 }
