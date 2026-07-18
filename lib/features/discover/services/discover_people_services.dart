@@ -3,31 +3,34 @@ import 'package:flutter/cupertino.dart';
 import 'package:social_media_app/core/services/network_status_service.dart';
 import 'package:social_media_app/core/supabase/supabase_provider.dart';
 import 'package:social_media_app/core/utilities/supabase_constants.dart';
-import 'package:social_media_app/features/auth/data/models/user_data.dart';
+import 'package:social_media_app/features/social_graph/models/discover_person_model.dart';
 
 class DiscoverPeopleServices {
   final NetworkStatusService _networkStatus;
   DiscoverPeopleServices({NetworkStatusService? networkStatus})
     : _networkStatus = networkStatus ?? NetworkStatusService.instance;
 
-  Future<List<UserData>> getAllUsers({int page = 0, int pageSize = 15}) async {
+  Future<List<DiscoverPersonModel>> getAllUsers({
+    int page = 0,
+    int pageSize = 15,
+  }) async {
     if (!(await _networkStatus.isConnected())) {
       throw Exception('no-internet');
     }
 
-    final start = page * pageSize;
-    final end = (page + 1) * pageSize - 1;
-
-    final currUserId = SupabaseProvider.id;
     try {
-      final List<dynamic> data = await SupabaseProvider.client
-          .from(SupabaseConstants.users)
-          .select()
-          .neq(UserColumns.id, currUserId)
-          .order(UserColumns.lastSeen, ascending: false)
-          .range(start, end);
-      return data
-          .map((user) => UserData.fromMap(user as Map<String, dynamic>))
+      final data = await SupabaseProvider.client.rpc(
+        SupabaseConstants.getDiscoverPeopleRpc,
+        params: {
+          'p_current_user_id': SupabaseProvider.id,
+          'p_limit': pageSize,
+          'p_offset': page * pageSize,
+        },
+      );
+
+      return (data as List)
+          .cast<Map<String, dynamic>>()
+          .map(DiscoverPersonModel.fromMap)
           .toList();
     } catch (e) {
       debugPrint('Fetching Users Error: $e');

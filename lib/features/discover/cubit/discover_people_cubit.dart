@@ -1,20 +1,38 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:social_media_app/features/discover/services/discover_people_services.dart';
-import '../../auth/data/models/user_data.dart';
+import 'package:social_media_app/features/social_graph/models/discover_person_model.dart';
+import '../../home/cubits/home_cubit/home_cubit.dart';
+import '../../notifications/repository/notifications_repository.dart';
+import '../../social_graph/models/friendship_status.dart';
+import '../../social_graph/services/follow_services.dart';
+import '../../social_graph/services/friendship_services.dart';
 part 'discover_people_state.dart';
 
 class DiscoverPeopleCubit extends Cubit<DiscoverPeopleState> {
   final DiscoverPeopleServices _discoverPeopleServices;
-  DiscoverPeopleCubit(this._discoverPeopleServices)
-    : super(DiscoverPeopleInitial());
+  final FriendshipServices _friendshipServices;
+  final FollowServices _followServices;
+  final HomeCubit _homeCubit;
+
+  DiscoverPeopleCubit(
+    this._discoverPeopleServices, {
+    required FriendshipServices friendshipServices,
+    required FollowServices followServices,
+    required HomeCubit homeCubit,
+  }) : _friendshipServices = friendshipServices,
+       _followServices = followServices,
+       _homeCubit = homeCubit,
+       super(DiscoverPeopleInitial());
 
   int _currentPage = 0;
   bool _hasReachedMax = false;
   bool _isFetchingMore = false;
-  final List<UserData> _users = [];
+  final List<DiscoverPersonModel> _users = [];
 
-  Future<void> getDiscoverPeople({bool isRefresh = false}) async {
+  Future<List<DiscoverPersonModel>> getDiscoverPeople({
+    bool isRefresh = false,
+  }) async {
     if (isRefresh) {
       _currentPage = 0;
       _hasReachedMax = false;
@@ -24,7 +42,7 @@ class DiscoverPeopleCubit extends Cubit<DiscoverPeopleState> {
       emit(DiscoverPeopleLoading());
     }
 
-    if (_hasReachedMax || _isFetchingMore) return;
+    if (_hasReachedMax || _isFetchingMore) return _users;
     _isFetchingMore = true;
 
     try {
@@ -58,6 +76,7 @@ class DiscoverPeopleCubit extends Cubit<DiscoverPeopleState> {
           hasReachedMax: _hasReachedMax,
         ),
       );
+      return _users;
     } catch (e) {
       _isFetchingMore = false;
 
@@ -75,6 +94,117 @@ class DiscoverPeopleCubit extends Cubit<DiscoverPeopleState> {
         );
       }
       debugPrint('Error in getDiscoverPeople: $e');
+      return _users;
+    }
+  }
+
+  void _emitUsers() => emit(
+    DiscoverPeopleSuccess(
+      users: List.from(_users),
+      hasReachedMax: _hasReachedMax,
+    ),
+  );
+
+  void _updateUser(
+    String userId,
+    DiscoverPersonModel Function(DiscoverPersonModel) update,
+  ) {
+    final idx = _users.indexWhere((u) => u.user.id == userId);
+    if (idx == -1) return;
+    _users[idx] = update(_users[idx]);
+    _emitUsers();
+  }
+
+  Future<void> sendFriendRequest(String userId) async {
+    _updateUser(
+      userId,
+      (u) => u.copyWith(friendshipStatus: FriendshipStatus.pendingSent),
+    );
+    try {
+      final friendshipId = await _friendshipServices.sendFriendRequest(userId);
+      _updateUser(userId, (u) => u.withFriendshipId(friendshipId));
+
+      final me = _homeCubit.currentUserData;
+      if (me != null) {
+        await NotificationRepository.instance.notifyFriendRequest(
+          receiverId: userId,
+          requesterId: me.id,
+          requesterName: me.name,
+          requesterImageUrl: me.imageUrl ?? '',
+          friendshipId: friendshipId,
+        );
+      }
+    } catch (e) {
+      _updateUser(
+        userId,
+        (u) => u
+            .copyWith(friendshipStatus: FriendshipStatus.none)
+            .withFriendshipId(null),
+      );
+      debugPrint('sendFriendRequest error: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> cancelFriendRequest(String userId, String friendshipId) async {
+    _updateUser(
+      userId,
+      (u) => u
+          .copyWith(friendshipStatus: FriendshipStatus.none)
+          .withFriendshipId(null),
+    );
+    try {
+      await _friendshipServices.cancelFriendRequest(friendshipId);
+      final me = _homeCubit.currentUserData;
+      if (me != null) {
+        await NotificationRepository.instance.removeFriendRequestNotification(
+          receiverId: userId,
+          senderId: me.id,
+        );
+      }
+    } catch (e) {
+      _updateUser(
+        userId,
+        (u) => u
+            .copyWith(friendshipStatus: FriendshipStatus.pendingSent)
+            .withFriendshipId(friendshipId),
+      );
+      debugPrint('cancelFriendRequest error: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> toggleFollow(
+    String userId, {
+    required bool isCurrentlyFollowing,
+  }) async {
+    _updateUser(userId, (u) => u.copyWith(isFollowing: !isCurrentlyFollowing));
+    final me = _homeCubit.currentUserData;
+    try {
+      if (isCurrentlyFollowing) {
+        await _followServices.unfollowUser(userId);
+        if (me != null) {
+          await NotificationRepository.instance.removeFollowNotification(
+            receiverId: userId,
+            senderId: me.id,
+          );
+        }
+      } else {
+        await _followServices.followUser(userId);
+        final me = _homeCubit.currentUserData;
+        if (me != null) {
+          await NotificationRepository.instance.notifyFollow(
+            receiverId: userId,
+            followerId: me.id,
+            followerName: me.name,
+            followerImageUrl: me.imageUrl ?? '',
+          );
+        }
+      }
+    } catch (e) {
+      _updateUser(userId, (u) => u.copyWith(isFollowing: isCurrentlyFollowing));
+      debugPrint('toggleFollow error: $e');
+      rethrow;
     }
   }
 }

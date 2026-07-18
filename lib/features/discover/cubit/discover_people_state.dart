@@ -11,7 +11,7 @@ class DiscoverPeopleRefreshFeedback extends DiscoverPeopleState {}
 final class DiscoverPeopleLoading extends DiscoverPeopleState {}
 
 final class DiscoverPeopleSuccess extends DiscoverPeopleState {
-  final List<UserData> users;
+  final List<DiscoverPersonModel> users;
   final bool hasReachedMax;
   const DiscoverPeopleSuccess({
     required this.users,
