@@ -1,6 +1,8 @@
 import 'package:social_media_app/core/utilities/supabase_constants.dart';
 import 'package:social_media_app/features/single_chats/models/chat_user_model.dart';
 
+import '../../social_graph/models/content_privacy.dart';
+
 enum StoryType { image, video, text }
 
 class StoryModel {
@@ -15,10 +17,10 @@ class StoryModel {
   final String createdAt;
   final String? caption;
   final DateTime? lastSeen;
-
   final String? imagePublicId;
   final String? videoPublicId;
   final int? videoDurationSeconds;
+  final ContentPrivacy privacyType;
 
   const StoryModel({
     this.id = '',
@@ -35,6 +37,7 @@ class StoryModel {
     this.imagePublicId,
     this.videoPublicId,
     this.videoDurationSeconds,
+    this.privacyType = ContentPrivacy.public,
   });
 
   StoryType get storyType {
@@ -66,6 +69,7 @@ class StoryModel {
       StoryColumns.imagePublicId: imagePublicId,
       StoryColumns.videoPublicId: videoPublicId,
       StoryColumns.videoDurationSeconds: videoDurationSeconds,
+      StoryColumns.privacyType: contentPrivacyToString(privacyType),
     };
   }
 
@@ -96,6 +100,9 @@ class StoryModel {
               : null,
       videoDurationSeconds:
           (map[StoryColumns.videoDurationSeconds] as num?)?.toInt(),
+      privacyType: contentPrivacyFromString(
+        map[StoryColumns.privacyType] as String?,
+      ),
     );
   }
 
@@ -123,6 +130,7 @@ class StoryModel {
     'image_public_id': imagePublicId,
     'video_public_id': videoPublicId,
     'video_duration_seconds': videoDurationSeconds,
+    StoryColumns.privacyType: contentPrivacyToString(privacyType),
   };
 
   factory StoryModel.fromCacheJson(Map<String, dynamic> map) {
@@ -144,6 +152,9 @@ class StoryModel {
       imagePublicId: map['image_public_id'] as String?,
       videoPublicId: map['video_public_id'] as String?,
       videoDurationSeconds: (map['video_duration_seconds'] as num?)?.toInt(),
+      privacyType: contentPrivacyFromString(
+        map[StoryColumns.privacyType] as String?,
+      ),
     );
   }
 }
