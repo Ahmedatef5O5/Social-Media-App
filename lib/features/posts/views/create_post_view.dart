@@ -5,9 +5,12 @@ import 'package:gap/gap.dart';
 import 'package:social_media_app/core/themes/background_theme_widget.dart';
 import 'package:social_media_app/core/widgets/custom_loading_indicator.dart';
 import 'package:social_media_app/features/home/cubits/home_cubit/home_cubit.dart';
+import 'package:social_media_app/features/social_graph/views/audience_picker_view.dart';
+import 'package:social_media_app/features/social_graph/widgets/privacy_selector_sheet.dart';
 import '../../../core/helpers/modern_circle_progress.dart';
 import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/toast/app_toast.dart';
+import '../../social_graph/models/content_privacy.dart';
 import '../cubit/posts_cubit/posts_cubit.dart';
 import '../widgets/add_post_options_bottom_sheet.dart';
 import '../widgets/create_post_file_preview.dart';
@@ -39,6 +42,39 @@ class _CreatePostViewState extends State<CreatePostView> {
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeOut,
       );
+    }
+  }
+
+  ContentPrivacy _selectedPrivacy = ContentPrivacy.public;
+  Set<String> _selectedViewerIds = {};
+
+  Future<void> _pickPrivacy() async {
+    final result = await showPrivacySelectorSheet(
+      context,
+      currentPrivacy: _selectedPrivacy,
+    );
+    if (result == null) return;
+
+    if (result == ContentPrivacy.private) {
+      final selected = await Navigator.of(
+        context,
+        rootNavigator: true,
+      ).push<Set<String>>(
+        MaterialPageRoute(
+          builder:
+              (_) => AudiencePickerView(initialSelectedIds: _selectedViewerIds),
+        ),
+      );
+      if (selected == null || selected.isEmpty) return;
+      setState(() {
+        _selectedPrivacy = ContentPrivacy.private;
+        _selectedViewerIds = selected;
+      });
+    } else {
+      setState(() {
+        _selectedPrivacy = result;
+        _selectedViewerIds = {};
+      });
     }
   }
 
@@ -107,8 +143,7 @@ class _CreatePostViewState extends State<CreatePostView> {
         }
       },
       builder: (context, state) {
-        final homeCubit =
-            context.read<HomeCubit>(); // TODO: DELETE THIS OR WHAT
+        final homeCubit = context.read<HomeCubit>();
         final postsCubit = context.read<PostsCubit>();
         final user = homeCubit.currentUserData;
         final authUser = SupabaseProvider.user;
@@ -145,6 +180,8 @@ class _CreatePostViewState extends State<CreatePostView> {
                               if (canPost) {
                                 postsCubit.createPost(
                                   text: _textEditingController.text.trim(),
+                                  privacy: _selectedPrivacy,
+                                  allowedViewerIds: _selectedViewerIds.toList(),
                                 );
                               } else {
                                 HapticFeedback.vibrate();
@@ -159,6 +196,8 @@ class _CreatePostViewState extends State<CreatePostView> {
                           CreatePostUserInfo(
                             userName: displayName,
                             userImageUrl: displayImage,
+                            privacy: _selectedPrivacy,
+                            onPrivacyTap: _pickPrivacy,
                           ),
                           Gap(12),
                           CreatePostInputField(

@@ -6,6 +6,7 @@ import '../../../core/router/app_routes.dart';
 import '../../../core/supabase/supabase_provider.dart';
 import '../../profile/widgets/user_preview_dialog.dart';
 import '../../home/cubits/home_cubit/home_cubit.dart';
+import '../../social_graph/models/content_privacy.dart';
 import '../cubit/posts_cubit/posts_cubit.dart';
 import '../helper/header_trailing_action.dart';
 import '../model/post_model.dart';
@@ -146,15 +147,31 @@ class PostHeaderWidget extends StatelessWidget {
           fontSize: 16,
         ),
       ),
-      subtitle: Text(
-        FormattedDate.getFormattedDate(
-          DateTime.parse(post.createdAt).toLocal().toIso8601String(),
-        ),
-        style: Theme.of(context).textTheme.titleSmall!.copyWith(
-          fontWeight: FontWeight.w500,
-          fontSize: 10.3,
-          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
-        ),
+      subtitle: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            post.privacyType.icon,
+            size: 11,
+            color: Theme.of(
+              context,
+            ).colorScheme.onSurface.withValues(alpha: 0.4),
+          ),
+
+          const SizedBox(width: 2.8),
+          Text(
+            FormattedDate.getFormattedDate(
+              DateTime.parse(post.createdAt).toLocal().toIso8601String(),
+            ),
+            style: Theme.of(context).textTheme.titleSmall!.copyWith(
+              fontWeight: FontWeight.w500,
+              fontSize: 10.3,
+              color: Theme.of(
+                context,
+              ).colorScheme.onSurface.withValues(alpha: 0.4),
+            ),
+          ),
+        ],
       ),
       trailing: buildTrailingWidget(),
     );
