@@ -4,11 +4,13 @@ class NotificationsState {
   final List<AppNotification> notifications;
   final bool isLoading;
   final NotificationType? activeFilter;
+  final Set<String> followingBackIds;
 
   const NotificationsState({
     required this.notifications,
     required this.isLoading,
     this.activeFilter,
+    this.followingBackIds = const {},
   });
 
   factory NotificationsState.initial() =>
@@ -26,11 +28,13 @@ class NotificationsState {
     bool? isLoading,
     NotificationType? activeFilter,
     bool clearFilter = false,
+    Set<String>? followingBackIds,
   }) {
     return NotificationsState(
       notifications: notifications ?? this.notifications,
       isLoading: isLoading ?? this.isLoading,
       activeFilter: clearFilter ? null : (activeFilter ?? this.activeFilter),
+      followingBackIds: followingBackIds ?? this.followingBackIds,
     );
   }
 }
