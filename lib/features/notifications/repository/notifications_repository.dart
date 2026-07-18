@@ -149,16 +149,99 @@ class NotificationRepository {
     required String followerName,
     required String followerImageUrl,
   }) async {
+    await _removeNotification(
+      receiverId: receiverId,
+      senderId: followerId,
+      type: 'follow',
+    );
     await _insert({
       'receiver_id': receiverId,
       'sender_id': followerId,
       'type': 'follow',
       'title': followerName,
-      'body': '👤 started following you',
+      'body': '👥 started following you',
       'sender_image_url': followerImageUrl,
       'reference_id': followerId,
       'is_read': false,
     });
+  }
+
+  Future<void> removeFollowNotification({
+    required String receiverId,
+    required String senderId,
+  }) => _removeNotification(
+    receiverId: receiverId,
+    senderId: senderId,
+    type: 'follow',
+  );
+
+  Future<void> notifyFriendRequest({
+    required String receiverId,
+    required String requesterId,
+    required String requesterName,
+    required String requesterImageUrl,
+    required String friendshipId,
+  }) async {
+    await _removeNotification(
+      receiverId: receiverId,
+      senderId: requesterId,
+      type: 'friend_request',
+    );
+
+    await _insert({
+      'receiver_id': receiverId,
+      'sender_id': requesterId,
+      'type': 'friend_request',
+      'title': requesterName,
+      'body': '👤 sent you a friend request',
+      'sender_image_url': requesterImageUrl,
+      'reference_id': friendshipId,
+      'is_read': false,
+    });
+  }
+
+  Future<void> removeFriendRequestNotification({
+    required String receiverId,
+    required String senderId,
+  }) => _removeNotification(
+    receiverId: receiverId,
+    senderId: senderId,
+    type: 'friend_request',
+  );
+
+  Future<void> notifyFriendAccept({
+    required String receiverId,
+    required String accepterId,
+    required String accepterName,
+    required String accepterImageUrl,
+  }) async {
+    await _insert({
+      'receiver_id': receiverId,
+      'sender_id': accepterId,
+      'type': 'friend_accept',
+      'title': accepterName,
+      'body': '✅ accepted your friend request',
+      'sender_image_url': accepterImageUrl,
+      'reference_id': accepterId,
+      'is_read': false,
+    });
+  }
+
+  Future<void> _removeNotification({
+    required String receiverId,
+    required String senderId,
+    required String type,
+  }) async {
+    try {
+      await _db
+          .from('notifications')
+          .delete()
+          .eq('receiver_id', receiverId)
+          .eq('sender_id', senderId)
+          .eq('type', type);
+    } catch (_) {
+      /// Silent - never crash the caller
+    }
   }
 
   String _chatBody(String text, String type) {

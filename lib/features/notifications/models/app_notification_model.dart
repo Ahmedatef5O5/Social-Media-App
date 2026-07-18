@@ -5,6 +5,8 @@ enum NotificationType {
   like,
   comment,
   follow,
+  friendRequest,
+  friendAccept,
   general,
 }
 
@@ -73,6 +75,11 @@ class AppNotification {
         return NotificationType.comment;
       case 'follow':
         return NotificationType.follow;
+
+      case 'friend_request':
+        return NotificationType.friendRequest;
+      case 'friend_accept':
+        return NotificationType.friendAccept;
       default:
         return NotificationType.general;
     }
@@ -92,6 +99,10 @@ class AppNotification {
         return 'comment';
       case NotificationType.follow:
         return 'follow';
+      case NotificationType.friendRequest:
+        return 'friend_request';
+      case NotificationType.friendAccept:
+        return 'friend_accept';
       case NotificationType.general:
         return 'general';
     }
