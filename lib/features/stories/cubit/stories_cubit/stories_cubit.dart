@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:uuid/uuid.dart';
 import 'package:video_player/video_player.dart';
 import 'package:social_media_app/core/cache/constants/snapshot_keys.dart';
 import 'package:social_media_app/core/cache/services/local_snapshot_store.dart';
@@ -11,6 +12,7 @@ import 'package:social_media_app/core/services/cloudinary_storage_services.dart'
 import 'package:social_media_app/core/services/file_picker_services.dart';
 import 'package:social_media_app/features/auth/data/models/user_data.dart';
 import '../../../../core/connectivity/services/connectivity_banner_controller.dart';
+import '../../../social_graph/models/content_privacy.dart';
 import '../../model/story_model.dart';
 import '../../services/stories_services.dart';
 part 'stories_state.dart';
@@ -42,18 +44,29 @@ class StoriesCubit extends Cubit<StoriesState> {
     required String text,
     required Color bgColor,
     required UserData user,
+    ContentPrivacy privacy = ContentPrivacy.public,
+    List<String> allowedViewerIds = const [],
   }) async {
     emit(AddStoryLoading());
     try {
+      final storyId = const Uuid().v4();
       final newStory = StoryModel(
+        id: storyId,
         contentText: text,
         backgroundColor: bgColor.toARGB32().toRadixString(16),
         authorId: user.id,
         authorName: user.name,
         createdAt: DateTime.now().toIso8601String(),
         imageUrl: null,
+        privacyType: privacy,
       );
       await _storiesServices.createStory(newStory);
+      if (privacy == ContentPrivacy.private && allowedViewerIds.isNotEmpty) {
+        await _storiesServices.setStoryAllowedViewers(
+          storyId,
+          allowedViewerIds,
+        );
+      }
       await fetchStories();
       emit(AddStorySuccess());
       await Future.delayed(const Duration(milliseconds: 100));
@@ -65,11 +78,18 @@ class StoriesCubit extends Cubit<StoriesState> {
     }
   }
 
-  Future<void> addStory({required File file, required UserData user}) async {
+  Future<void> addStory({
+    required File file,
+    required UserData user,
+    ContentPrivacy privacy = ContentPrivacy.public,
+    List<String> allowedViewerIds = const [],
+  }) async {
     emit(AddStoryLoading());
     try {
       final result = await _storiesServices.uploadStoryFile(file, user.id);
+      final storyId = Uuid().v4();
       final newStory = StoryModel(
+        id: storyId,
         imageUrl: result.secureUrl,
         imagePublicId: result.publicId,
         authorId: user.id,
@@ -77,6 +97,12 @@ class StoriesCubit extends Cubit<StoriesState> {
         createdAt: DateTime.now().toIso8601String(),
       );
       await _storiesServices.createStory(newStory);
+      if (privacy == ContentPrivacy.private && allowedViewerIds.isNotEmpty) {
+        await _storiesServices.setStoryAllowedViewers(
+          storyId,
+          allowedViewerIds,
+        );
+      }
       await fetchStories();
       await Future.delayed(const Duration(milliseconds: 100));
       emit(StoriesLoaded(cachedStories, DateTime.now()));
@@ -129,19 +155,30 @@ class StoriesCubit extends Cubit<StoriesState> {
     required File file,
     required UserData user,
     String? caption,
+    ContentPrivacy privacy = ContentPrivacy.public,
+    List<String> allowedViewerIds = const [],
   }) async {
     emit(AddStoryLoading());
     try {
       final result = await _storiesServices.uploadStoryFile(file, user.id);
+      final storyId = const Uuid().v4();
       final newStory = StoryModel(
+        id: storyId,
         imageUrl: result.secureUrl,
         imagePublicId: result.publicId,
         authorId: user.id,
         authorName: user.name,
         createdAt: DateTime.now().toIso8601String(),
         caption: caption,
+        privacyType: privacy,
       );
       await _storiesServices.createStory(newStory);
+      if (privacy == ContentPrivacy.private && allowedViewerIds.isNotEmpty) {
+        await _storiesServices.setStoryAllowedViewers(
+          storyId,
+          allowedViewerIds,
+        );
+      }
       await fetchStories();
       emit(AddStorySuccess());
       await Future.delayed(const Duration(milliseconds: 100));
@@ -203,6 +240,8 @@ class StoriesCubit extends Cubit<StoriesState> {
     required UserData user,
     String? caption,
     Duration? videoDuration,
+    ContentPrivacy privacy = ContentPrivacy.public,
+    List<String> allowedViewerIds = const [],
   }) async {
     emit(AddStoryLoading());
     try {
@@ -220,8 +259,9 @@ class StoriesCubit extends Cubit<StoriesState> {
         uploadFile,
         user.id,
       );
-
+      final storyId = const Uuid().v4();
       final newStory = StoryModel(
+        id: storyId,
         videoUrl: result.secureUrl,
         videoPublicId: result.publicId,
         authorId: user.id,
@@ -229,8 +269,15 @@ class StoriesCubit extends Cubit<StoriesState> {
         createdAt: DateTime.now().toIso8601String(),
         caption: caption,
         videoDurationSeconds: videoDuration?.inSeconds,
+        privacyType: privacy,
       );
       await _storiesServices.createStory(newStory);
+      if (privacy == ContentPrivacy.private && allowedViewerIds.isNotEmpty) {
+        await _storiesServices.setStoryAllowedViewers(
+          storyId,
+          allowedViewerIds,
+        );
+      }
       await fetchStories(isRefresh: true);
       _cleanupStableVideo();
       emit(AddStorySuccess());
