@@ -21,8 +21,10 @@ import 'package:social_media_app/features/group_chats/models/group_model.dart';
 import 'package:social_media_app/features/group_chats/views/group_chat_details_view.dart';
 import 'package:social_media_app/features/group_chats/views/group_info_view.dart';
 import 'package:social_media_app/features/profile/services/user_services.dart';
+import 'package:social_media_app/features/social_graph/cubit/friend_lists_cubit/friends_list_cubit.dart';
 import 'package:social_media_app/features/social_graph/services/follow_services.dart';
 import 'package:social_media_app/features/social_graph/services/friendship_services.dart';
+import 'package:social_media_app/features/social_graph/views/friends_list_view.dart';
 import 'package:social_media_app/features/stories/views/add_story_preview_view.dart';
 import 'package:social_media_app/features/posts/views/create_post_view.dart';
 import 'package:social_media_app/features/posts/views/post_themes_view.dart';
@@ -165,6 +167,7 @@ class AppRouter {
       case AppRoutes.postThemesViewRoute:
       case AppRoutes.fullScreenImageViewRoute:
       case AppRoutes.postDetailsViewRoute:
+      case AppRoutes.friendsListViewRoute:
         return _homeRoutes(settings);
 
       case AppRoutes.createTextStoryViewRoute:
@@ -226,6 +229,9 @@ class AppRouter {
                 create:
                     (context) => DiscoverPeopleCubit(
                       context.read<DiscoverPeopleServices>(),
+                      friendshipServices: context.read<FriendshipServices>(),
+                      followServices: context.read<FollowServices>(),
+                      homeCubit: context.read<HomeCubit>(),
                     )..getDiscoverPeople(),
               ),
               BlocProvider(
@@ -265,6 +271,19 @@ class AppRouter {
       case AppRoutes.postDetailsViewRoute:
         final post = settings.arguments as PostModel;
         return MaterialPageRoute(builder: (_) => PostDetailsView(post: post));
+      case AppRoutes.friendsListViewRoute:
+        final userId = settings.arguments as String;
+        return MaterialPageRoute(
+          builder:
+              (_) => BlocProvider(
+                create:
+                    (BuildContext context) => FriendsListCubit(
+                      context.read<FriendshipServices>(),
+                      userId: userId,
+                    )..loadFriends(),
+                child: FriendsListView(userId: userId),
+              ),
+        );
       default:
         return _errorRoute(settings, 'Home route not found');
     }
@@ -516,9 +535,12 @@ class AppRouter {
               providers: [
                 BlocProvider(
                   create:
-                      (context) =>
-                          ProfileCubit(context.read<UserService>())
-                            ..getProfileData(userId),
+                      (context) => ProfileCubit(
+                        context.read<UserService>(),
+                        friendshipServices: context.read<FriendshipServices>(),
+                        followServices: context.read<FollowServices>(),
+                        homeCubit: context.read<HomeCubit>(),
+                      )..getProfileData(userId),
                 ),
               ],
               child: ProfileView(userId: userId),

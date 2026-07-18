@@ -9,6 +9,9 @@ class AppRoutes {
   static const String chatDetailsViewRoute = '/chatDetailsView';
   static const String receiverProfileViewRoute = '/ReceiverProfileView';
 
+  // Friends list
+  static const String friendsListViewRoute = '/friends-list';
+
   //
   static const String aboutUsViewRoute = '/about-us';
 

@@ -11,8 +11,11 @@ import 'package:social_media_app/features/discover/views/discover_view.dart';
 import 'package:social_media_app/features/profile/services/user_services.dart';
 import 'package:social_media_app/features/profile/views/profile_view.dart';
 import 'package:social_media_app/features/settings/widgets/profile_drawer.dart';
+import '../../features/home/cubits/home_cubit/home_cubit.dart';
 import '../../features/home/views/home_view.dart';
 import '../../features/profile/cubits/profile_cubit/profile_cubit.dart';
+import '../../features/social_graph/services/follow_services.dart';
+import '../../features/social_graph/services/friendship_services.dart';
 import '../connectivity/cubit/connectivity_cubit.dart';
 import '../connectivity/cubit/connectivity_state.dart';
 import '../connectivity/services/connectivity_banner_controller.dart';
@@ -112,9 +115,12 @@ class _CustomBottomNavBarState extends State<CustomBottomNavBar> {
             providers: [
               BlocProvider(
                 create:
-                    (context) =>
-                        ProfileCubit(context.read<UserService>())
-                          ..getProfileData(userId),
+                    (context) => ProfileCubit(
+                      context.read<UserService>(),
+                      friendshipServices: context.read<FriendshipServices>(),
+                      followServices: context.read<FollowServices>(),
+                      homeCubit: context.read<HomeCubit>(),
+                    )..getProfileData(userId),
               ),
             ],
             child: Scaffold(
