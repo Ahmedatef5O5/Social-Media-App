@@ -94,13 +94,17 @@ mixin PostsFeedMixin on Cubit<PostsState> {
 
   void persistPostsSnapshot(List<PostModel> posts) {
     unawaited(
-      LocalSnapshotStore.instance.saveList(
-        SnapshotKeys.posts,
-        posts
-            .take(kMaxCachedPostsSnapshot)
-            .map((post) => post.toCacheJson())
-            .toList(),
-      ),
+      LocalSnapshotStore.instance
+          .saveList(
+            SnapshotKeys.posts,
+            posts
+                .take(kMaxCachedPostsSnapshot)
+                .map((post) => post.toCacheJson())
+                .toList(),
+          )
+          .catchError(
+            (e) => debugPrint('Failed to persist posts snapshot: $e'),
+          ),
     );
   }
 

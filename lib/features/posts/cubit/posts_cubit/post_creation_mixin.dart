@@ -13,7 +13,11 @@ mixin PostCreationMixin on Cubit<PostsState> {
 
   dio_pkg.CancelToken? _cancelToken;
 
-  Future<void> createPost({required String text}) async {
+  Future<void> createPost({
+    required String text,
+    ContentPrivacy privacy = ContentPrivacy.public,
+    List<String> allowedViewerIds = const [],
+  }) async {
     final user = SupabaseProvider.user;
     if (user == null) return;
     final userId = user.id;
@@ -84,8 +88,9 @@ mixin PostCreationMixin on Cubit<PostsState> {
           throw Exception("file_not_found");
         }
       }
-
+      final postId = const Uuid().v4();
       final postRequest = PostRequestBody(
+        id: postId,
         text: text,
         authorId: userId,
         imageUrl: imageUrl,
@@ -94,8 +99,12 @@ mixin PostCreationMixin on Cubit<PostsState> {
         imagePublicId: imagePublicId,
         videoPublicId: videoPublicId,
         filePublicId: filePublicId,
+        privacyType: privacy,
       );
       await _postsServices.addPost(postRequest);
+      if (privacy == ContentPrivacy.private && allowedViewerIds.isNotEmpty) {
+        await _postsServices.setPostAllowedViewers(postId, allowedViewerIds);
+      }
 
       emit(PostCreating(1.0));
       await Future.delayed(const Duration(milliseconds: 2000));
