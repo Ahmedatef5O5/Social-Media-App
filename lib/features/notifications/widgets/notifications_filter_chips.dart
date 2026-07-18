@@ -25,6 +25,11 @@ class NotificationsFilterChips extends StatelessWidget {
       (NotificationType.like, 'Likes', Icons.favorite_border_rounded),
       (NotificationType.comment, 'Comments', Icons.comment_outlined),
       (NotificationType.follow, 'Follows', Icons.person_add_outlined),
+      (
+        NotificationType.friendRequest,
+        'Friend Requests',
+        Icons.person_add_alt_1_rounded,
+      ),
     ];
 
     return SizedBox(

@@ -155,7 +155,7 @@ class _HomeViewState extends State<HomeView> {
                         Center(
                           child: Padding(
                             padding: const EdgeInsets.symmetric(
-                              horizontal: 16.0,
+                              horizontal: 12.0,
                             ),
                             child: CustomPullToRefresh(
                               top: MediaQuery.sizeOf(context).height * 0.068,
@@ -179,7 +179,7 @@ class _HomeViewState extends State<HomeView> {
                                   SliverToBoxAdapter(
                                     child: StoriesListSection(),
                                   ),
-                                  const SliverGap(4),
+                                  // const SliverGap(4),
                                   PostsSection(),
                                   SliverGap(
                                     MediaQuery.of(context).padding.bottom + 100,

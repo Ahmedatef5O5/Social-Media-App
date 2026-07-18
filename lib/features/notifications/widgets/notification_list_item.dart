@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:social_media_app/core/constants/app_images.dart';
+import 'package:social_media_app/core/router/app_routes.dart';
 import '../models/app_notification_model.dart';
 
 class NotificationListItem extends StatelessWidget {
@@ -11,6 +12,10 @@ class NotificationListItem extends StatelessWidget {
   final int index;
   final ValueChanged<String> onMarkAsRead;
   final ValueChanged<String> onDelete;
+  final ValueChanged<AppNotification> onAcceptFriendRequest;
+  final ValueChanged<AppNotification> onRejectFriendRequest;
+  final ValueChanged<AppNotification> onFollowBack;
+  final bool isFollowingBack;
 
   const NotificationListItem({
     super.key,
@@ -20,6 +25,10 @@ class NotificationListItem extends StatelessWidget {
     required this.index,
     required this.onMarkAsRead,
     required this.onDelete,
+    required this.onAcceptFriendRequest,
+    required this.onRejectFriendRequest,
+    required this.onFollowBack,
+    required this.isFollowingBack,
   });
 
   @override
@@ -129,7 +138,7 @@ class NotificationListItem extends StatelessWidget {
       child: InkWell(
         onTap: () {
           if (!notif.isRead) onMarkAsRead(notif.id);
-          _handleNotificationTap(notif);
+          _handleNotificationTap(context, notif);
         },
         child: Container(
           margin: const EdgeInsets.symmetric(horizontal: 0, vertical: 1),
@@ -202,6 +211,86 @@ class NotificationListItem extends StatelessWidget {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
+
+                    if (notif.type == NotificationType.friendRequest) ...[
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton(
+                              style: OutlinedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 8,
+                                ),
+                                side: BorderSide(
+                                  color:
+                                      isDark
+                                          ? Colors.white24
+                                          : Colors.grey.shade300,
+                                ),
+                              ),
+                              onPressed: () => onRejectFriendRequest(notif),
+                              child: const Text(
+                                'Reject',
+                                style: TextStyle(fontSize: 12.5),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: primary,
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 8,
+                                ),
+                              ),
+                              onPressed: () => onAcceptFriendRequest(notif),
+                              child: const Text(
+                                'Accept',
+                                style: TextStyle(
+                                  fontSize: 12.5,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ] else if (notif.type == NotificationType.follow) ...[
+                      const SizedBox(height: 8),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: SizedBox(
+                          height: 30,
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor:
+                                  isFollowingBack
+                                      ? Colors.grey.shade300
+                                      : primary,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                              ),
+                            ),
+                            onPressed:
+                                isFollowingBack
+                                    ? null
+                                    : () => onFollowBack(notif),
+                            child: Text(
+                              isFollowingBack ? 'Following' : 'Follow Back',
+                              style: TextStyle(
+                                fontSize: 12.5,
+                                color:
+                                    isFollowingBack
+                                        ? Colors.black54
+                                        : Colors.white,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -277,6 +366,10 @@ class NotificationListItem extends StatelessWidget {
         return Icons.comment_rounded;
       case NotificationType.follow:
         return Icons.person_add_rounded;
+      case NotificationType.friendRequest:
+        return Icons.person_add_alt_1_rounded;
+      case NotificationType.friendAccept:
+        return Icons.how_to_reg_rounded;
       case NotificationType.general:
         return Icons.notifications_rounded;
     }
@@ -296,6 +389,10 @@ class NotificationListItem extends StatelessWidget {
         return Colors.orange;
       case NotificationType.follow:
         return Colors.teal;
+      case NotificationType.friendRequest:
+        return Colors.indigo;
+      case NotificationType.friendAccept:
+        return Colors.green;
       case NotificationType.general:
         return Colors.grey;
     }
@@ -312,14 +409,11 @@ class NotificationListItem extends StatelessWidget {
     return '${dt.day}/${dt.month}';
   }
 
-  void _handleNotificationTap(AppNotification notif) {
-    // TODO:   Route based on type:
-    // switch (notif.type) {
-    //   case NotificationType.chat:
-    //     Navigator.pushNamed(context, '/chat', arguments: notif.referenceId);
-    //   case NotificationType.call:
-    //     // nothing (call ended)
-    //   ...
-    // }
+  void _handleNotificationTap(BuildContext context, AppNotification notif) {
+    if (notif.senderId == null) return;
+    Navigator.of(
+      context,
+      rootNavigator: true,
+    ).pushNamed(AppRoutes.profileViewRoute, arguments: notif.senderId);
   }
 }

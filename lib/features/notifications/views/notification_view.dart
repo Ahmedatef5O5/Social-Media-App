@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:social_media_app/features/home/cubits/home_cubit/home_cubit.dart';
+import 'package:social_media_app/features/social_graph/services/follow_services.dart';
+import 'package:social_media_app/features/social_graph/services/friendship_services.dart';
 import '../cubits/notifications_cubit/notifications_cubit.dart';
 import '../cubits/notifications_cubit/notifications_state.dart';
 import '../widgets/notification_empty_state.dart';
@@ -42,7 +45,13 @@ class _NotificationsViewState extends State<NotificationsView>
     final primary = theme.primaryColor;
 
     return BlocProvider(
-      create: (_) => NotificationsCubit(),
+      create:
+          (_) => NotificationsCubit(
+            friendshipServices: context.read<FriendshipServices>(),
+            followServices: context.read<FollowServices>(),
+            homeCubit: context.read<HomeCubit>(),
+          ),
+
       child: BlocConsumer<NotificationsCubit, NotificationsState>(
         listenWhen:
             (previous, current) => previous.isLoading && !current.isLoading,
@@ -91,13 +100,21 @@ class _NotificationsViewState extends State<NotificationsView>
                                 ),
                                 itemCount: filtered.length,
                                 itemBuilder: (context, i) {
+                                  final notif = filtered[i];
                                   return NotificationListItem(
-                                    notification: filtered[i],
+                                    notification: notif,
                                     isDark: isDark,
                                     primary: primary,
                                     index: i,
                                     onMarkAsRead: cubit.markAsRead,
                                     onDelete: cubit.deleteNotification,
+                                    onAcceptFriendRequest:
+                                        cubit.acceptFriendRequest,
+                                    onRejectFriendRequest:
+                                        cubit.rejectFriendRequest,
+                                    onFollowBack: cubit.followBack,
+                                    isFollowingBack: state.followingBackIds
+                                        .contains(notif.senderId),
                                   );
                                 },
                               ),
