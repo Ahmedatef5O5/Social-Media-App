@@ -2,6 +2,13 @@ abstract class SupabaseConstants {
   // ── Shared / Auth ──
   static const String users = 'users';
 
+  // social Graphy
+  static const String friendships = 'friendships';
+  static const String follows = 'follows';
+  static const String getDiscoverPeopleRpc = 'get_discover_people';
+  static const String postAllowedViewers = 'post_allowed_viewers';
+  static const String storyAllowedViewers = 'story_allowed_viewers';
+
   // ── Posts Feature ──
   static const String stories = 'stories';
   static const String storyVideos = 'story_videos';
@@ -13,6 +20,7 @@ abstract class SupabaseConstants {
 
   // ── Chat Feature ──
   static const String messages = 'messages';
+  static const String messageRequests = 'message_requests';
   static const String messageReactions = 'message_reactions';
   static const String typingStatus = 'typing_status';
 
@@ -44,6 +52,24 @@ abstract class SupabaseConstants {
   static const String togglePostShareRpc = 'toggle_post_share';
   // comments_upgrade_migration.sql
   static const String addCommentWithMentionsRpc = 'add_comment_with_mentions';
+
+  static const String getProfileOverviewRpc = 'get_profile_overview';
+}
+
+// Friendship Columns
+abstract class FriendshipColumns {
+  static const String id = 'id';
+  static const String requesterId = 'requester_id';
+  static const String addresseeId = 'addressee_id';
+  static const String status = 'status';
+  static const String createdAt = 'created_at';
+  static const String respondedAt = 'responded_at';
+}
+
+abstract class FollowColumns {
+  static const String followerId = 'follower_id';
+  static const String followingId = 'following_id';
+  static const String createdAt = 'created_at';
 }
 
 // groups
@@ -154,6 +180,8 @@ abstract class StoryColumns {
   static const String videoPublicId = 'video_public_id';
 
   static const String videoDurationSeconds = 'video_duration_seconds';
+
+  static const String privacyType = 'privacy_type';
 }
 
 // subClass for story_views column table
@@ -191,6 +219,9 @@ abstract class PostColumns {
 
   /// Alias used in the Supabase join query for the nested original post
   static const String originalPostRelation = 'original_post';
+
+  //
+  static const String privacyType = 'privacy_type';
 }
 
 // subClass for post_shares column table

@@ -221,16 +221,17 @@ class SupabaseDatabaseServices {
     required String table,
     required T Function(Map<String, dynamic> data, String id) builder,
     String? primaryKey,
+    String columns = '*',
     PostgrestTransformBuilder Function(PostgrestFilterBuilder query)? filter,
     int Function(T a, T b)? sort,
   }) async {
     try {
       // Build the base select query
-      final query = _db.from(table).select();
+      final query = _db.from(table).select(columns);
       dynamic finalQuery = query;
       if (filter != null) {
         // Apply any additional filters
-        finalQuery = filter(query as PostgrestFilterBuilder);
+        finalQuery = filter(query);
       }
       final List<dynamic> rows = await finalQuery;
       final List<T> list =
