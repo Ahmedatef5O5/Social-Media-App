@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:gap/gap.dart';
+import 'package:social_media_app/features/settings/repository/settings_repository.dart';
+import 'package:social_media_app/features/social_graph/models/content_privacy.dart';
+import 'package:social_media_app/features/social_graph/widgets/privacy_selector_sheet.dart';
 import '../../../core/router/app_routes.dart';
+import '../../../core/toast/app_toast.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
 import '../cubit/my_stories_cubit/my_stories_cubit.dart';
 import '../cubit/stories_cubit/stories_cubit.dart';
@@ -27,6 +30,19 @@ class MyStoriesListView extends StatefulWidget {
 class _MyStoriesListViewState extends State<MyStoriesListView> {
   Offset _fabPosition = Offset.zero;
   bool _isFabPositionInitialized = false;
+
+  Future<void> _openDefaultStoryPrivacySettings(BuildContext context) async {
+    final currentPrivacy = SettingsRepository.instance.defaultStoryPrivacy;
+    final result = await showPrivacySelectorSheet(
+      context,
+      currentPrivacy: currentPrivacy,
+    );
+    if (result == null) return;
+    await SettingsRepository.instance.setDefaultStoryPrivacy(result);
+    if (context.mounted) {
+      AppToast.success('Default story privacy set to ${result.label}');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -86,11 +102,29 @@ class _MyStoriesListViewState extends State<MyStoriesListView> {
               ),
             ),
             actions: [
-              IconButton(
+              PopupMenuButton<void>(
                 icon: Icon(Icons.more_vert_rounded, color: theme.primaryColor),
-                onPressed: () {},
+                onSelected: (_) => _openDefaultStoryPrivacySettings(context),
+
+                itemBuilder:
+                    (context) => [
+                      PopupMenuItem(
+                        // ignore: void_checks
+                        value: 'story_privacy',
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.privacy_tip_outlined,
+                              color: theme.primaryColor,
+                              size: 20,
+                            ),
+                            const SizedBox(width: 10),
+                            const Text('Story Privacy'),
+                          ],
+                        ),
+                      ),
+                    ],
               ),
-              const Gap(8),
             ],
           ),
           body: LayoutBuilder(

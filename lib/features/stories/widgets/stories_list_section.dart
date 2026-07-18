@@ -17,7 +17,7 @@ class StoriesListSection extends StatelessWidget {
     final currentUserId = SupabaseProvider.id;
 
     return SizedBox(
-      height: size.height * 0.12,
+      height: size.height * 0.125,
       child: BlocConsumer<StoriesCubit, StoriesState>(
         bloc: storiesCubit,
         listenWhen:
@@ -71,7 +71,7 @@ class StoriesListSection extends StatelessWidget {
               itemBuilder: (context, index) {
                 if (index == 0) {
                   return Padding(
-                    padding: const EdgeInsets.only(right: 14),
+                    padding: const EdgeInsets.only(right: 12),
                     child: StoryItemWidget(
                       isOwnTile: true,
                       userStroies: myStories,
@@ -80,7 +80,7 @@ class StoriesListSection extends StatelessWidget {
                   );
                 }
                 return Padding(
-                  padding: const EdgeInsets.only(right: 14),
+                  padding: const EdgeInsets.only(left: 5, right: 11),
                   child: StoryItemWidget(
                     story: otherUsersGroups[index - 1].first,
                     userStroies: otherUsersGroups[index - 1],

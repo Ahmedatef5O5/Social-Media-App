@@ -1,11 +1,16 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:social_media_app/features/social_graph/helpers/privacy_picker_helper.dart';
+import 'package:social_media_app/features/social_graph/views/audience_picker_view.dart';
+import 'package:social_media_app/features/social_graph/widgets/privacy_chip.dart';
 import 'package:video_player/video_player.dart';
 import 'package:social_media_app/features/auth/data/models/user_data.dart';
 import '../../../core/themes/app_colors.dart';
 import '../../../core/toast/app_toast.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
+import '../../settings/repository/settings_repository.dart';
+import '../../social_graph/models/content_privacy.dart';
 import '../cubit/stories_cubit/stories_cubit.dart';
 
 class AddStoryPreviewView extends StatefulWidget {
@@ -35,6 +40,10 @@ class _AddStoryPreviewViewState extends State<AddStoryPreviewView> {
   bool _videoInitialised = false;
   bool _videoError = false;
   bool _isPlaying = true;
+
+  late ContentPrivacy _selectedPrivacy =
+      SettingsRepository.instance.defaultStoryPrivacy;
+  Set<String> _selectedViewerIds = {};
 
   @override
   void initState() {
@@ -75,11 +84,36 @@ class _AddStoryPreviewViewState extends State<AddStoryPreviewView> {
     });
   }
 
-  void _shareStory(BuildContext context, StoriesCubit cubit) {
+  Future<void> _pickPrivacy() async {
+    final result = await pickContentPrivacy(
+      context,
+      currentPrivacy: _selectedPrivacy,
+      currentViewerIds: _selectedViewerIds,
+    );
+    if (result == null) return;
+    setState(() {
+      _selectedPrivacy = result.privacy;
+      _selectedViewerIds = result.allowedViewerIds;
+    });
+  }
+
+  Future<void> _shareStory(BuildContext context, StoriesCubit cubit) async {
     final caption =
         _captionController.text.trim().isEmpty
             ? null
             : _captionController.text.trim();
+
+    if (_selectedPrivacy == ContentPrivacy.private &&
+        _selectedViewerIds.isEmpty) {
+      final selected = await Navigator.of(
+        context,
+        rootNavigator: true,
+      ).push<Set<String>>(
+        MaterialPageRoute(builder: (_) => const AudiencePickerView()),
+      );
+      if (selected == null || selected.isEmpty) return;
+      setState(() => _selectedViewerIds = selected);
+    }
 
     if (widget.isVideo) {
       cubit.addVideoStoryWithCaption(
@@ -87,12 +121,16 @@ class _AddStoryPreviewViewState extends State<AddStoryPreviewView> {
         user: widget.currentUser,
         caption: caption,
         videoDuration: widget.videoDuration,
+        privacy: _selectedPrivacy,
+        allowedViewerIds: _selectedViewerIds.toList(),
       );
     } else {
       cubit.addStoryWithCaption(
         file: widget.file,
         user: widget.currentUser,
         caption: caption,
+        privacy: _selectedPrivacy,
+        allowedViewerIds: _selectedViewerIds.toList(),
       );
     }
   }
@@ -192,6 +230,8 @@ class _AddStoryPreviewViewState extends State<AddStoryPreviewView> {
         style: const TextStyle(color: AppColors.white, fontSize: 16),
       ),
       actions: [
+        PrivacyChip(privacy: _selectedPrivacy, onTap: _pickPrivacy),
+        const SizedBox(width: 8),
         Padding(
           padding: const EdgeInsets.only(right: 10),
           child: TextButton(

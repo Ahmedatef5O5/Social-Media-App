@@ -2,9 +2,12 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:social_media_app/features/auth/data/models/user_data.dart';
+import 'package:social_media_app/features/social_graph/views/audience_picker_view.dart';
 import '../../../core/themes/app_colors.dart';
 import '../../../core/toast/app_toast.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
+import '../../social_graph/models/content_privacy.dart';
+import '../../social_graph/widgets/privacy_selector_sheet.dart';
 import '../cubit/stories_cubit/stories_cubit.dart';
 
 class AddStoryCaptionView extends StatefulWidget {
@@ -25,6 +28,8 @@ class AddStoryCaptionView extends StatefulWidget {
 
 class _AddStoryCaptionViewState extends State<AddStoryCaptionView> {
   final TextEditingController _captionController = TextEditingController();
+  ContentPrivacy _currentPrivacy = ContentPrivacy.public;
+  Set<String> _viewerIds = {};
 
   @override
   void dispose() {
@@ -58,6 +63,45 @@ class _AddStoryCaptionViewState extends State<AddStoryCaptionView> {
                   onPressed: () => Navigator.pop(context),
                 ),
                 actions: [
+                  IconButton(
+                    icon: Icon(switch (_currentPrivacy) {
+                      ContentPrivacy.public => Icons.public,
+                      ContentPrivacy.friends => Icons.people_alt_rounded,
+                      ContentPrivacy.private => Icons.lock_outline,
+                    }, color: AppColors.white),
+
+                    onPressed: () async {
+                      final result = await showPrivacySelectorSheet(
+                        context,
+                        currentPrivacy: _currentPrivacy,
+                      );
+                      if (result == null) return;
+                      if (result == ContentPrivacy.private) {
+                        final selected = await Navigator.of(
+                          context,
+                          rootNavigator: true,
+                        ).push<Set<String>>(
+                          MaterialPageRoute(
+                            builder:
+                                (_) => AudiencePickerView(
+                                  initialSelectedIds: _viewerIds,
+                                ),
+                          ),
+                        );
+                        if (selected == null || selected.isEmpty) return;
+                        setState(() {
+                          _currentPrivacy = ContentPrivacy.private;
+                          _viewerIds = selected;
+                        });
+                      } else {
+                        setState(() {
+                          _currentPrivacy = result;
+                          _viewerIds = {};
+                        });
+                      }
+                    },
+                  ),
+
                   Padding(
                     padding: const EdgeInsets.only(right: 10),
                     child: TextButton(
@@ -72,6 +116,8 @@ class _AddStoryCaptionViewState extends State<AddStoryCaptionView> {
                                       _captionController.text.trim().isEmpty
                                           ? null
                                           : _captionController.text.trim(),
+                                  privacy: _currentPrivacy,
+                                  allowedViewerIds: _viewerIds.toList(),
                                 );
                               },
                       child:
