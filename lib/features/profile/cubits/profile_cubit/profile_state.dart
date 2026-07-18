@@ -13,7 +13,39 @@ final class ProfileLoading extends ProfileState {}
 final class ProfileLoaded extends ProfileState {
   final ProfileStatsModel stats;
   final UserData user;
-  const ProfileLoaded(this.stats, this.user);
+  final int friendsCount;
+  final FriendshipStatus friendshipStatus;
+  final String? friendshipId;
+  final bool isFollowing;
+  final bool followsMe;
+  const ProfileLoaded({
+    required this.stats,
+    required this.user,
+    required this.friendsCount,
+    required this.friendshipStatus,
+    this.friendshipId,
+    required this.isFollowing,
+    required this.followsMe,
+  });
+
+  ProfileLoaded copyWith({
+    ProfileStatsModel? stats,
+    FriendshipStatus? friendshipStatus,
+    String? friendshipId,
+    bool clearFriendshipId = false,
+    bool? isFollowing,
+  }) {
+    return ProfileLoaded(
+      stats: stats ?? this.stats,
+      user: user,
+      friendsCount: friendsCount,
+      friendshipStatus: friendshipStatus ?? this.friendshipStatus,
+      friendshipId:
+          clearFriendshipId ? null : (friendshipId ?? this.friendshipId),
+      isFollowing: isFollowing ?? this.isFollowing,
+      followsMe: followsMe,
+    );
+  }
 }
 
 final class ProfileError extends ProfileState {
