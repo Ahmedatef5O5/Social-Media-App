@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:social_media_app/core/supabase/supabase_provider.dart';
 import '../../model/story_model.dart';
 import '../../model/story_stat_model.dart';
 import '../../services/stories_services.dart';
@@ -9,6 +12,7 @@ part 'my_stories_state.dart';
 class MyStoriesCubit extends Cubit<MyStoriesState> {
   final StoriesCubit storiesCubit;
   final StoriesServices _storiesServices;
+  StreamSubscription<StoriesState>? _streamSubscription;
 
   MyStoriesCubit({
     required List<StoryModel> initialStories,
@@ -19,6 +23,38 @@ class MyStoriesCubit extends Cubit<MyStoriesState> {
          MyStoriesLoaded(stories: initialStories, statsByStoryId: const {}),
        ) {
     _loadStats();
+    _listenToStoriesUpdates();
+  }
+
+  void _listenToStoriesUpdates() {
+    _streamSubscription = storiesCubit.stream.listen((storiesState) {
+      if (storiesState is StoriesLoaded) {
+        _syncFromAllStories(storiesState.stories);
+      }
+    });
+  }
+
+  void _syncFromAllStories(List<StoryModel> allStories) {
+    final current = state;
+    if (current is! MyStoriesLoaded) return;
+
+    final myUserId = SupabaseProvider.idOrNull;
+    if (myUserId == null) return;
+    final myStories = allStories.where((s) => s.authorId == myUserId).toList();
+
+    if (_sameStoryIds(myStories, current.stories)) return;
+
+    emit(current.copyWith(stories: myStories));
+
+    _loadStats();
+  }
+
+  bool _sameStoryIds(List<StoryModel> a, List<StoryModel> b) {
+    if (a.length != b.length) return false;
+    for (var i = 0; i < a.length; i++) {
+      if (a[i].id != b[i].id) return false;
+    }
+    return true;
   }
 
   Future<void> _loadStats() async {
@@ -55,5 +91,11 @@ class MyStoriesCubit extends Cubit<MyStoriesState> {
       debugPrint('Error deleting story: $e');
       if (!isClosed) emit(current.copyWith(clearDeleting: true));
     }
+  }
+
+  @override
+  Future<void> close() {
+    _streamSubscription?.cancel();
+    return super.close();
   }
 }
