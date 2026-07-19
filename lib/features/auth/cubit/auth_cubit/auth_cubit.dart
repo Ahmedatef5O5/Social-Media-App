@@ -104,6 +104,21 @@ class AuthCubit extends Cubit<AuthState> {
     }
   }
 
+  Future<void> signInWithMicrosoft() async {
+    emit(AuthLoading());
+    try {
+      await _authServices.signInWithMicrosoft();
+
+      await Future.delayed(const Duration(seconds: 10));
+      if (state is AuthLoading) {
+        emit(AuthInitial());
+      }
+    } catch (e) {
+      debugPrint('Microsoft Sign-In Error: $e');
+      _handleError(e);
+    }
+  }
+
   Future<void> signOut() async {
     emit(AuthLoading());
     try {

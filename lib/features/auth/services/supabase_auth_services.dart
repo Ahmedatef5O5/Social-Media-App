@@ -126,6 +126,21 @@ class SupabaseAuthServices implements AuthRepository {
   }
 
   @override
+  Future<void> signInWithMicrosoft() async {
+    try {
+      await _supabase.auth.signInWithOAuth(
+        OAuthProvider.azure,
+        redirectTo: 'socialapp://login-callback',
+        scopes: 'openid profile email',
+        authScreenLaunchMode: LaunchMode.externalApplication,
+      );
+    } catch (e) {
+      debugPrint('Microsoft Sign-In Error: $e');
+      rethrow;
+    }
+  }
+
+  @override
   Future<void> signOut() async {
     try {
       await _supabase.auth.signOut();
