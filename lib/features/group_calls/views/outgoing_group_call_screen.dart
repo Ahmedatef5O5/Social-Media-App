@@ -1,10 +1,9 @@
 import 'dart:async';
-import 'dart:math' as math;
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/supabase/supabase_provider.dart';
-import '../../../core/widgets/cached_cloudinary_image.dart';
+import '../../../core/widgets/calls/calls.dart';
 import '../models/group_call_model.dart';
 import '../services/group_call_signaling_service.dart';
 import 'zego_group_call_view.dart';
@@ -38,12 +37,10 @@ class _OutgoingGroupCallScreenState extends State<OutgoingGroupCallScreen>
   String _currentUserName = 'Loading...';
 
   late final GroupCallSignalingService _signaling;
-  late AnimationController _rippleController;
-  late AnimationController _particleController;
-  late AnimationController _dotController;
-  late Animation<int> _dotAnim;
-  late AnimationController _fadeController;
-  late Animation<double> _fadeAnim;
+  late final AnimationController _dotController;
+  late final Animation<int> _dotAnim;
+  late final AnimationController _fadeController;
+  late final Animation<double> _fadeAnim;
 
   @override
   void initState() {
@@ -54,6 +51,20 @@ class _OutgoingGroupCallScreenState extends State<OutgoingGroupCallScreen>
     _initAnimations();
     _startCallMonitoring();
     _timeoutTimer = Timer(const Duration(seconds: 45), _handleTimeout);
+  }
+
+  void _initAnimations() {
+    _dotController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1000),
+    )..repeat();
+    _dotAnim = IntTween(begin: 0, end: 3).animate(_dotController);
+
+    _fadeController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 700),
+    )..forward();
+    _fadeAnim = CurvedAnimation(parent: _fadeController, curve: Curves.easeOut);
   }
 
   Future<void> _fetchMyName() async {
@@ -67,30 +78,6 @@ class _OutgoingGroupCallScreenState extends State<OutgoingGroupCallScreen>
     if (mounted) {
       setState(() => _currentUserName = (data?['name'] as String?) ?? 'Me');
     }
-  }
-
-  void _initAnimations() {
-    _rippleController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 2800),
-    )..repeat();
-
-    _particleController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 8),
-    )..repeat();
-
-    _dotController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1000),
-    )..repeat();
-    _dotAnim = IntTween(begin: 0, end: 3).animate(_dotController);
-
-    _fadeController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 700),
-    )..forward();
-    _fadeAnim = CurvedAnimation(parent: _fadeController, curve: Curves.easeOut);
   }
 
   Future<void> _playRingtone() async {
@@ -144,8 +131,6 @@ class _OutgoingGroupCallScreenState extends State<OutgoingGroupCallScreen>
   void dispose() {
     _cleanup();
     _audioPlayer.dispose();
-    _rippleController.dispose();
-    _particleController.dispose();
     _dotController.dispose();
     _fadeController.dispose();
     super.dispose();
@@ -159,21 +144,52 @@ class _OutgoingGroupCallScreenState extends State<OutgoingGroupCallScreen>
     return Scaffold(
       body: Stack(
         children: [
-          _buildBackground(primary),
-          _buildParticles(isVideo),
+          CallGradientBackground(baseColor: primary),
+          CallAmbientBackground(style: CallAmbientStyle.drift, isVideo: isVideo),
           SafeArea(
             child: FadeTransition(
               opacity: _fadeAnim,
-              child: Column(
-                children: [
-                  const SizedBox(height: 28),
-                  _buildCallTypeBadge(isVideo, primary),
-                  Expanded(
-                    child: Center(child: _buildGroupInfoSection(primary)),
-                  ),
-                  _buildCancelButton(),
-                  const SizedBox(height: 56),
-                ],
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final shortest = constraints.biggest.shortestSide;
+                  final avatarDiameter = (shortest.clamp(280.0, 460.0) * 0.34).toDouble();
+                  final buttonSize = (shortest.clamp(280.0, 460.0) * 0.19).toDouble();
+                  final isCompact = constraints.maxHeight < 620;
+
+                  return Column(
+                    children: [
+                      SizedBox(height: isCompact ? 16 : 28),
+
+                      CallStatusPill(
+                        icon:
+                            isVideo ? Icons.videocam_rounded : Icons.phone_rounded,
+                        label: isVideo ? 'Group Video Call' : 'Group Voice Call',
+                      ),
+
+                      Expanded(
+                        child: Center(
+                          child: _buildGroupInfoSection(avatarDiameter),
+                        ),
+                      ),
+
+                      GlassCallActionButton(
+                        icon: Icons.call_end_rounded,
+                        label: 'Cancel',
+                        color: Colors.red.shade600,
+                        size: buttonSize,
+                        onTap: () async {
+                          _cleanup();
+                          if (_currentCallId != null) {
+                            await _signaling.endCall(_currentCallId!);
+                          }
+                          if (mounted) Navigator.pop(context);
+                        },
+                      ),
+
+                      SizedBox(height: isCompact ? 24 : 56),
+                    ],
+                  );
+                },
               ),
             ),
           ),
@@ -182,98 +198,18 @@ class _OutgoingGroupCallScreenState extends State<OutgoingGroupCallScreen>
     );
   }
 
-  Widget _buildBackground(Color primary) {
-    final hsl = HSLColor.fromColor(primary);
-    final darker =
-        hsl.withLightness((hsl.lightness - 0.22).clamp(0.0, 1.0)).toColor();
-    final mid =
-        hsl.withLightness((hsl.lightness - 0.10).clamp(0.0, 1.0)).toColor();
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [primary, mid, darker],
-          stops: const [0.0, 0.5, 1.0],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildParticles(bool isVideo) {
-    return AnimatedBuilder(
-      animation: _particleController,
-      builder:
-          (_, __) => CustomPaint(
-            painter: _OutgoingParticlePainter(
-              progress: _particleController.value,
-              isVideo: isVideo,
-            ),
-            child: const SizedBox.expand(),
-          ),
-    );
-  }
-
-  Widget _buildCallTypeBadge(bool isVideo, Color primary) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 9),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(30),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            isVideo ? Icons.videocam_rounded : Icons.phone_rounded,
-            color: Colors.white.withValues(alpha: 0.9),
-            size: 15,
-          ),
-          const SizedBox(width: 8),
-          Text(
-            isVideo ? 'Group Video Call' : 'Group Voice Call',
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 0.4,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildGroupInfoSection(Color primary) {
+  Widget _buildGroupInfoSection(double avatarDiameter) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        AnimatedBuilder(
-          animation: _rippleController,
-          builder: (context, child) {
-            return SizedBox(
-              width: 260,
-              height: 260,
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  _buildRipple(0.0),
-                  _buildRipple(0.33),
-                  _buildRipple(0.66),
-                  child!,
-                ],
-              ),
-            );
-          },
-          child: _buildAvatarCircle(primary),
+        RippleAvatar(
+          avatarDiameter: avatarDiameter,
+          rippleColor: Colors.white,
+          avatar: CallAvatarImage(
+            imageUrl: widget.groupAvatarUrl,
+            fallbackLabel: widget.groupName,
+            diameter: avatarDiameter,
+          ),
         ),
         const SizedBox(height: 32),
         Text(
@@ -292,80 +228,6 @@ class _OutgoingGroupCallScreenState extends State<OutgoingGroupCallScreen>
     );
   }
 
-  Widget _buildRipple(double delay) {
-    final t = (_rippleController.value + delay) % 1.0;
-    final scale = 0.85 + t * 0.7;
-    final opacity = (0.25 * (1 - t)).clamp(0.0, 1.0);
-    return Transform.scale(
-      scale: scale,
-      child: Opacity(
-        opacity: opacity,
-        child: Container(
-          width: 150,
-          height: 150,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: Colors.white.withValues(alpha: 0.8),
-              width: 2,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildAvatarCircle(Color primary) {
-    return Container(
-      width: 130,
-      height: 130,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        border: Border.all(
-          color: Colors.white.withValues(alpha: 0.7),
-          width: 3,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.3),
-            blurRadius: 24,
-            spreadRadius: 4,
-          ),
-          BoxShadow(
-            color: primary.withValues(alpha: 0.3),
-            blurRadius: 20,
-            spreadRadius: 2,
-          ),
-        ],
-      ),
-      child: ClipOval(
-        child:
-            widget.groupAvatarUrl?.isNotEmpty == true
-                ? CachedCloudinaryImage(
-                  secureUrl: widget.groupAvatarUrl!,
-                  fit: BoxFit.cover,
-                  isAvatar: true,
-                  errorWidget: (_, __) => _defaultAvatar(primary),
-                )
-                : _defaultAvatar(primary),
-      ),
-    );
-  }
-
-  Widget _defaultAvatar(Color primary) => Container(
-    color: primary.withValues(alpha: 0.3),
-    child: Center(
-      child: Text(
-        widget.groupName.isNotEmpty ? widget.groupName[0].toUpperCase() : 'G',
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 54,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-    ),
-  );
-
   Widget _buildCallingStatus() {
     return AnimatedBuilder(
       animation: _dotAnim,
@@ -382,75 +244,4 @@ class _OutgoingGroupCallScreenState extends State<OutgoingGroupCallScreen>
       },
     );
   }
-
-  Widget _buildCancelButton() {
-    return GestureDetector(
-      onTap: () async {
-        _cleanup();
-        if (_currentCallId != null) await _signaling.endCall(_currentCallId!);
-        if (mounted) Navigator.pop(context);
-      },
-      child: Column(
-        children: [
-          Container(
-            width: 76,
-            height: 76,
-            decoration: BoxDecoration(
-              color: Colors.red.shade600,
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.red.withValues(alpha: 0.5),
-                  blurRadius: 24,
-                  spreadRadius: 5,
-                ),
-              ],
-            ),
-            child: const Icon(
-              Icons.call_end_rounded,
-              color: Colors.white,
-              size: 34,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            'Cancel',
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.7),
-              fontSize: 13,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _OutgoingParticlePainter extends CustomPainter {
-  final double progress;
-  final bool isVideo;
-
-  _OutgoingParticlePainter({required this.progress, required this.isVideo});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    const count = 14;
-    for (int i = 0; i < count; i++) {
-      final seed = (i * 137.5) % 360;
-      final x = (seed / 360) * size.width;
-      final yProgress = (progress + i / count) % 1.0;
-      final y = size.height * (1 - yProgress);
-      final radius = 2.0 + (i % 4) * 1.5;
-      final opacity = (1 - yProgress).clamp(0.0, 1.0) * 0.5;
-      canvas.drawCircle(
-        Offset(x + math.sin(progress * math.pi * 2 + seed) * 20, y),
-        radius,
-        Paint()..color = Colors.white.withValues(alpha: opacity),
-      );
-    }
-  }
-
-  @override
-  bool shouldRepaint(_OutgoingParticlePainter old) => old.progress != progress;
 }
