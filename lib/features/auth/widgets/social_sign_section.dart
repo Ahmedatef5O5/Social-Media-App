@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
@@ -8,6 +9,7 @@ import '../cubit/auth_cubit/auth_cubit.dart';
 class SocialSignSection extends StatelessWidget {
   const SocialSignSection({super.key, required this.label});
   final String label;
+  bool get _isIOS => defaultTargetPlatform == TargetPlatform.iOS;
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -34,7 +36,16 @@ class SocialSignSection extends StatelessWidget {
               img: AppImages.facebook,
               onTap: () => context.read<AuthCubit>().signInWithFacebook(),
             ),
-            CustomGreyContainer(img: AppImages.apple, onTap: () {}),
+            CustomGreyContainer(
+              img: _isIOS ? AppImages.apple : AppImages.microsoft,
+              onTap: () {
+                if (_isIOS) {
+                  // Apple Sign-In:
+                } else {
+                  context.read<AuthCubit>().signInWithMicrosoft();
+                }
+              },
+            ),
           ],
         ),
       ],

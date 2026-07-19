@@ -64,6 +64,7 @@ class AppImages {
   static const String google = 'assets/icons/google.png';
   static const String facebook = 'assets/icons/facebook.png';
   static const String apple = 'assets/icons/apple.png';
+  static const String microsoft = 'assets/icons/microsoft.png';
 
   // create post themes images
   static const String textStoryIcon = 'assets/icons/textstory.png';
