@@ -208,7 +208,9 @@ class _CommentsSheetSectionState extends State<CommentsSheetSection> {
                                   current is CommentsListLoading ||
                                   current is CommentsListLoaded ||
                                   current is CommentOptimisticAdded ||
-                                  current is CommentTempIdResolved,
+                                  current is CommentTempIdResolved || 
+                                  current is CommentsUiChanged ,
+
                           builder: (context, state) {
                             final cubit = context.read<CommentsCubit>();
                             return Row(

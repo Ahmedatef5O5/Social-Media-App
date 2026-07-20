@@ -20,6 +20,17 @@ class CommentAddedEvent extends CommentEvent {
   });
 }
 
+class CommentIdResolvedEvent extends CommentEvent {
+  final String tempId;
+  final String realId;
+
+  const CommentIdResolvedEvent({
+    required super.postId,
+    required this.tempId,
+    required this.realId,
+  });
+}
+
 class CommentDeletedEvent extends CommentEvent {
   final String commentId;
 

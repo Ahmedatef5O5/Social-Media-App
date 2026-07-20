@@ -1,10 +1,14 @@
+import 'dart:async';
+
 import 'package:dio/dio.dart' as dio_pkg;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 import '../../../core/connectivity/services/connectivity_banner_controller.dart';
 import '../../../core/services/cloudinary_storage_services.dart';
 import '../../../core/supabase/supabase_provider.dart';
+import '../../../core/utilities/supabase_constants.dart';
 import '../../auth/data/models/user_data.dart';
 import '../../notifications/repository/notifications_repository.dart';
 import '../events/comment_event_bus.dart';
@@ -28,6 +32,9 @@ class CommentsCubit extends Cubit<CommentsState> {
   }) : _commentsService = commentsService,
        super(CommentsInitial());
 
+  StreamSubscription? _realtimeSubscription;
+  Timer? _realtimeDebounce;
+
   final _eventBus = CommentEventBus.instance;
 
   final Set<String> collapsedComments = {};
@@ -37,8 +44,83 @@ class CommentsCubit extends Cubit<CommentsState> {
   final Set<String> _pendingCommentIds = {};
 
   final Map<String, String> _pendingReactions = {};
+  final Set<String> _pendingDeletes = {};
 
   String resolveId(String id) => _resolvedIds[id] ?? id;
+
+  void listenToCommentsRealtime(String postId) {
+    _realtimeSubscription?.cancel();
+    _realtimeDebounce?.cancel();
+
+    final channel = SupabaseProvider.client.channel('comments_sheet_$postId');
+
+    channel
+        .onPostgresChanges(
+          event: PostgresChangeEvent.all,
+          schema: 'public',
+          table: SupabaseConstants.comments,
+          filter: PostgresChangeFilter(
+            type: PostgresChangeFilterType.eq,
+            column: CommentColumns.postId,
+            value: postId,
+          ),
+          callback: (payload) {
+            if (payload.eventType == PostgresChangeEvent.insert ||
+                payload.eventType == PostgresChangeEvent.delete) {
+              _scheduleSilentReload(postId);
+            }
+          },
+        )
+        .onPostgresChanges(
+          event: PostgresChangeEvent.all,
+          schema: 'public',
+          table: 'comment_reactions',
+          callback: (payload) {
+            final record =
+                payload.eventType == PostgresChangeEvent.delete
+                    ? payload.oldRecord
+                    : payload.newRecord;
+            final affectedCommentId = record['comment_id'] as String?;
+            if (affectedCommentId != null &&
+                _belongsToLoadedComments(affectedCommentId)) {
+              _scheduleSilentReload(postId);
+            }
+          },
+        )
+        .subscribe();
+  }
+
+  void _scheduleSilentReload(String postId) {
+    _realtimeDebounce?.cancel();
+    _realtimeDebounce = Timer(const Duration(milliseconds: 300), () {
+      _silentReload(postId);
+    });
+  }
+
+  Future<void> _silentReload(String postId) async {
+    try {
+      final freshComments = await _commentsService.getComments(
+        postId: postId,
+        sort: currentSort,
+      );
+      comments = freshComments;
+      emit(CommentsUiChanged());
+    } catch (e) {
+      debugPrint('Realtime comments sync error: $e');
+    }
+  }
+
+  bool _belongsToLoadedComments(String commentId) {
+    bool contains(CommentModel node) {
+      if (node.id == commentId) return true;
+      for (final reply in node.replies) {
+        if (contains(reply)) return true;
+      }
+      return false;
+    }
+
+    return comments.any(contains);
+  }
 
   void _replaceCommentIdEverywhere(String tempId, String realId) {
     comments = comments.map((c) => _replaceId(c, tempId, realId)).toList();
@@ -101,6 +183,7 @@ class CommentsCubit extends Cubit<CommentsState> {
     required String postId,
     CommentSortOption? sort,
   }) async {
+    listenToCommentsRealtime(postId);
     final targetSort = sort ?? currentSort;
     currentSort = targetSort;
     isLoadingComments = true;
@@ -280,7 +363,28 @@ class CommentsCubit extends Cubit<CommentsState> {
       );
       _resolvedIds[tempId] = realId;
       _replaceCommentIdEverywhere(tempId, realId);
+      _eventBus.emit(
+        CommentIdResolvedEvent(postId: post.id, tempId: tempId, realId: realId),
+      );
       _pendingCommentIds.remove(tempId);
+
+      if (_pendingDeletes.remove(tempId)) {
+        _pendingReactions.remove(tempId);
+        try {
+          await _commentsService.deleteComment(commentId: realId);
+        } catch (e) {
+          debugPrint('Error deleting comment after id resolution: $e');
+        }
+        emit(
+          CommentTempIdResolved(
+            postId: post.id,
+            tempId: tempId,
+            realId: realId,
+          ),
+        );
+        return;
+      }
+
       final queuedEmoji = _pendingReactions.remove(tempId);
       if (queuedEmoji != null) {
         await toggleReaction(
@@ -346,6 +450,13 @@ class CommentsCubit extends Cubit<CommentsState> {
     required String commentId,
     required String postId,
   }) async {
+    final bool stillSaving = _pendingCommentIds.contains(commentId);
+
+    if (stillSaving) {
+      _pendingDeletes.add(commentId);
+      _pendingReactions.remove(commentId);
+    }
+
     final resolvedId = resolveId(commentId);
     final previousComments = comments;
 
@@ -357,6 +468,8 @@ class CommentsCubit extends Cubit<CommentsState> {
     emit(CommentsUiChanged());
 
     _eventBus.emit(CommentDeletedEvent(postId: postId, commentId: resolvedId));
+
+    if (stillSaving) return;
 
     try {
       await _commentsService.deleteComment(commentId: resolvedId);
@@ -506,5 +619,13 @@ class CommentsCubit extends Cubit<CommentsState> {
           );
     }
     return updated;
+  }
+
+  @override
+  Future<void> close() {
+    _realtimeSubscription?.cancel();
+    _realtimeDebounce?.cancel();
+    _uploadCancelToken?.cancel();
+    return super.close();
   }
 }

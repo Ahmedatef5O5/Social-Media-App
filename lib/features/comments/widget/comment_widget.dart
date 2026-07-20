@@ -386,6 +386,10 @@ class _CommentWidgetState extends State<CommentWidget>
                                                   ?.copyWith(
                                                     fontSize: 14,
                                                     height: 1.4,
+                                                    color:
+                                                        theme
+                                                            .colorScheme
+                                                            .onSurface,
                                                   ),
                                             ),
                                           ),

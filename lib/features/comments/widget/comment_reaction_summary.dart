@@ -41,13 +41,6 @@ class CommentReactionsSummary extends StatelessWidget {
                     color: Theme.of(context).primaryColor,
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
-                    shadows: [
-                      Shadow(
-                        color: Colors.black.withValues(alpha: 0.15),
-                        offset: const Offset(0, 0.5),
-                        blurRadius: 1,
-                      ),
-                    ],
                   ),
                 ),
               ),
