@@ -8,6 +8,11 @@ mixin PostsRealtimeMixin on Cubit<PostsState> {
 
   StreamSubscription? _postsSubscription;
 
+  final List<PostModel> _pendingPosts = [];
+  List<PostModel> get pendingPosts => List.unmodifiable(_pendingPosts);
+
+  final Set<String> _pendingDeletedPostIds = {};
+
   void listenToPosts() {
     if (_postsSubscription != null) return;
 
@@ -43,17 +48,47 @@ mixin PostsRealtimeMixin on Cubit<PostsState> {
   }
 
   Future<void> _handlePostInserted(String postId) async {
-    final newPost = await _postsServices.fetchPostById(postId);
-    if (newPost == null || isClosed) return;
+    await Future.delayed(const Duration(milliseconds: 500));
 
-    final alreadyExists = cachedPosts.any((p) => p.id == postId);
+    final newPost = await _postsServices.fetchPostById(postId);
+    if (newPost == null || isClosed) {
+      debugPrint('⚠️ Fetch Post By Id returned null for: $postId');
+      return;
+    }
+
+    final alreadyExists =
+        cachedPosts.any((p) => p.id == postId) ||
+        _pendingPosts.any((p) => p.id == postId);
     if (alreadyExists) return;
 
-    cachedPosts = [newPost, ...cachedPosts];
+    _pendingPosts.insert(0, newPost);
+    emit(PostsPendingUpdated(_pendingPosts.length));
+    debugPrint('🕓 New post queued (pending): $postId');
+  }
 
-    cachedPosts = _fixLikersImages(cachedPosts);
+  void mergePendingPosts() {
+    if ((_pendingPosts.isEmpty && _pendingDeletedPostIds.isEmpty) || isClosed) {
+      return;
+    }
+
+    List<PostModel> currentPosts = List.from(cachedPosts);
+
+    if (_pendingDeletedPostIds.isNotEmpty) {
+      currentPosts.removeWhere(
+        (p) =>
+            _pendingDeletedPostIds.contains(p.id) ||
+            _pendingDeletedPostIds.contains(p.sharedPostId),
+      );
+      _pendingDeletedPostIds.clear();
+    }
+
+    if (_pendingPosts.isNotEmpty) {
+      currentPosts = [..._pendingPosts, ...currentPosts];
+      _pendingPosts.clear();
+    }
+
+    cachedPosts = _fixLikersImages(currentPosts);
     emit(PostsLoaded(cachedPosts, DateTime.now()));
-    debugPrint('🔥 EVENT TRIGGERED: Inserted Post -> $postId');
   }
 
   Future<void> _handlePostUpdated(String postId) async {
@@ -67,15 +102,23 @@ mixin PostsRealtimeMixin on Cubit<PostsState> {
 
   void _handlePostDeleted(String postId) {
     final existsDirectly = cachedPosts.any((p) => p.id == postId);
+    final existsPending = _pendingPosts.any((p) => p.id == postId);
     final hasWrapperCards = cachedPosts.any((p) => p.sharedPostId == postId);
-    if ((!existsDirectly && !hasWrapperCards) || isClosed) return;
 
-    cachedPosts =
-        cachedPosts
-            .where((p) => p.id != postId && p.sharedPostId != postId)
-            .toList();
-    emit(PostsLoaded(cachedPosts, DateTime.now()));
-    debugPrint('🔥 EVENT TRIGGERED: Deleted Post Locally -> $postId');
+    if ((!existsDirectly && !existsPending && !hasWrapperCards) || isClosed) {
+      return;
+    }
+
+    if (existsPending) {
+      _pendingPosts.removeWhere((p) => p.id == postId);
+    }
+
+    if (existsDirectly || hasWrapperCards) {
+      _pendingDeletedPostIds.add(postId);
+    }
+
+    emit(PostsPendingUpdated(_pendingPosts.length));
+    debugPrint('🔥 EVENT TRIGGERED: Queued Post Deletion (Pending) -> $postId');
   }
 
   Future<void> _handleLikeChanged(
@@ -133,6 +176,10 @@ mixin PostsRealtimeMixin on Cubit<PostsState> {
         }).toList();
 
     emit(PostsLoaded(cachedPosts, DateTime.now()));
+  }
+
+  bool isPostGhost(String postId) {
+    return _pendingDeletedPostIds.contains(postId);
   }
 
   @override

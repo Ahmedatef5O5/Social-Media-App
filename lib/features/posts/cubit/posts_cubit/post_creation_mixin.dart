@@ -124,10 +124,10 @@ mixin PostCreationMixin on Cubit<PostsState> {
     }
   }
 
-  Future<void> toggleSharePost(PostModel post) async {
-    if (state is! PostsLoaded) return;
+  Future<bool> toggleSharePost(PostModel post) async {
+    if (state is! PostsLoaded) return false;
     final userId = SupabaseProvider.idOrNull;
-    if (userId == null) return;
+    if (userId == null) return false;
 
     final oldState = state as PostsLoaded;
 
@@ -184,7 +184,7 @@ mixin PostCreationMixin on Cubit<PostsState> {
       if (isOffline) {
         cachedPosts = oldState.posts;
         emit(PostsLoaded(oldState.posts, DateTime.now()));
-        return;
+        return false;
       }
 
       final result = await _postsServices.toggleSharePost(
@@ -194,7 +194,6 @@ mixin PostCreationMixin on Cubit<PostsState> {
       final String? realWrapperId = result['share_post_id'] as String?;
 
       if (isSharedNow && realWrapperId != null) {
-        // Edge case: ممكن الـ Realtime يكون سبقنا وضاف الكارت الحقيقي بالفعل
         final bool realCardAlreadyArrived = cachedPosts.any(
           (p) => p.id == realWrapperId,
         );
@@ -222,10 +221,16 @@ mixin PostCreationMixin on Cubit<PostsState> {
           postId: targetPost.id,
         );
       }
+      return true;
     } catch (e) {
       cachedPosts = oldState.posts;
       emit(PostsLoaded(oldState.posts, DateTime.now()));
       debugPrint('Error toggling share: $e');
+      if (e.toString().contains('23503') ||
+          e.toString().contains('not present in table')) {
+        AppToast.info('This post is no longer available.');
+      }
+      return false;
     }
   }
 

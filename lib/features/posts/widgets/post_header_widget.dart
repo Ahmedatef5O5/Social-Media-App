@@ -4,6 +4,7 @@ import 'package:social_media_app/features/posts/widgets/post_actions_menu.dart';
 import '../../../core/helpers/formatted_date.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/supabase/supabase_provider.dart';
+import '../../../core/toast/app_toast.dart';
 import '../../profile/widgets/user_preview_dialog.dart';
 import '../../home/cubits/home_cubit/home_cubit.dart';
 import '../../social_graph/models/content_privacy.dart';
@@ -35,6 +36,10 @@ class PostHeaderWidget extends StatelessWidget {
       ),
       tooltip: 'Open original post',
       onPressed: () {
+        if (postsCubit.isPostGhost(post.id)) {
+          AppToast.info('This post is no longer available.');
+          return;
+        }
         Navigator.of(
           context,
           rootNavigator: true,

@@ -4,11 +4,11 @@ mixin PostReactionsMixin on Cubit<PostsState> {
   PostsServices get _postsServices;
   UserData? get currentUserData;
 
-  Future<void> toggleReaction(PostModel post, {String emoji = 'like'}) async {
-    if (state is! PostsLoaded) return;
+  Future<bool> toggleReaction(PostModel post, {String emoji = 'like'}) async {
+    if (state is! PostsLoaded) return false;
     final user = SupabaseProvider.user;
     final userId = user?.id;
-    if (userId == null) return;
+    if (userId == null) return false;
 
     final oldState = state as PostsLoaded;
     final String? currentEmoji = post.myReactionEmoji;
@@ -72,13 +72,15 @@ mixin PostReactionsMixin on Cubit<PostsState> {
 
     try {
       final isOffline = await ConnectivityBannerController.notifyIfOffline();
-      if (isOffline) return;
+      if (isOffline) return false;
+
       await _postsServices.toggleReaction(
         postId: post.id,
         userId: userId,
         emoji: emoji,
         currentEmoji: currentEmoji,
       );
+
       if (post.authorId != userId && currentEmoji == null) {
         await NotificationRepository.instance.notifyLike(
           receiverId: post.authorId,
@@ -88,17 +90,24 @@ mixin PostReactionsMixin on Cubit<PostsState> {
           postId: post.id,
         );
       }
+      return true;
     } catch (e) {
       emit(PostsLoaded(oldState.posts, DateTime.now()));
       debugPrint('Error toggling reaction: $e');
+
+      if (e.toString().contains('23503') ||
+          e.toString().contains('not present in table')) {
+        AppToast.info('This post is no longer available.');
+      }
+      return false;
     }
   }
 
-  Future<void> toggleSavePost(PostModel post) async {
-    if (state is! PostsLoaded) return;
+  Future<bool> toggleSavePost(PostModel post) async {
+    if (state is! PostsLoaded) return false;
     final user = Supabase.instance.client.auth.currentUser;
     final userId = user?.id;
-    if (userId == null) return;
+    if (userId == null) return false;
 
     final oldState = state as PostsLoaded;
     final bool wasSaved = post.isSavedByMe;
@@ -120,16 +129,23 @@ mixin PostReactionsMixin on Cubit<PostsState> {
       final isOffline = await ConnectivityBannerController.notifyIfOffline();
       if (isOffline) {
         emit(PostsLoaded(oldState.posts, DateTime.now()));
-        return;
+        return false;
       }
       await _postsServices.toggleSavePost(
         postId: post.id,
         userId: userId,
         isCurrentlySaved: wasSaved,
       );
+      return true;
     } catch (e) {
       emit(PostsLoaded(oldState.posts, DateTime.now()));
       debugPrint('Error toggling saved post: $e');
+
+      if (e.toString().contains('23503') ||
+          e.toString().contains('not present in table')) {
+        AppToast.info('This post is no longer available.');
+      }
+      return false;
     }
   }
 }

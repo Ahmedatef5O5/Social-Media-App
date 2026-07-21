@@ -32,15 +32,22 @@ class PostInteractionsRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<PostsCubit, PostsState>(
       buildWhen: (prev, curr) {
-        if (prev is PostsLoaded && curr is PostsLoaded) {
-          final oldPost = prev.posts.findById(postId);
-          final newPost = curr.posts.findById(postId);
-          if (oldPost == null || newPost == null) return true;
+        if (prev is! PostsLoaded || curr is! PostsLoaded) return false;
 
-          return countAllComments(oldPost.comments) !=
-              countAllComments(newPost.comments);
-        }
-        return false;
+        final oldPost = prev.posts.findById(postId);
+        final newPost = curr.posts.findById(postId);
+        if (oldPost == null || newPost == null) return true;
+        if (identical(oldPost, newPost)) return false;
+
+        return countAllComments(oldPost.comments) !=
+                countAllComments(newPost.comments) ||
+            (oldPost.likes?.length ?? 0) != (newPost.likes?.length ?? 0) ||
+            oldPost.myReactionEmoji != newPost.myReactionEmoji ||
+            oldPost.sharesCount != newPost.sharesCount ||
+            oldPost.isSharedByMe != newPost.isSharedByMe ||
+            oldPost.savedCount != newPost.savedCount ||
+            oldPost.isSavedByMe != newPost.isSavedByMe ||
+            oldPost.isOnline != newPost.isOnline;
       },
       builder: (context, state) {
         if (state is! PostsLoaded) {
@@ -311,12 +318,18 @@ class _CommentButtonWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: () {
+        final postsCubit = context.read<PostsCubit>();
+
+        if (postsCubit.isPostGhost(post.id)) {
+          AppToast.info('This post is no longer available.');
+          return;
+        }
+
         if (onTap != null) {
           onTap!.call();
           return;
         }
 
-        final postsCubit = context.read<PostsCubit>();
         final commentsCubit = CommentsCubit(
           commentsService: context.read<CommentsService>(),
           currentUserData: context.read<HomeCubit>().currentUserData,
@@ -404,18 +417,22 @@ class _ShareButtonWidgetState extends State<_ShareButtonWidget>
     super.dispose();
   }
 
-  void _handleTap(PostModel currentPost) {
+  void _handleTap(PostModel currentPost) async {
     _animationController.forward(from: 0.0);
     HapticFeedback.lightImpact();
 
     final bool wasShared = currentPost.isSharedByMe;
-
-    context.read<PostsCubit>().toggleSharePost(currentPost);
-    AppToast.save(
-      wasShared ? 'Share removed' : 'Post shared successfully',
-      icon: Icons.repeat_rounded,
-      iconColor: wasShared ? AppColors.grey5 : Theme.of(context).primaryColor,
+    final bool success = await context.read<PostsCubit>().toggleSharePost(
+      currentPost,
     );
+
+    if (success) {
+      AppToast.save(
+        wasShared ? 'Share removed' : 'Post shared successfully',
+        icon: Icons.repeat_rounded,
+        iconColor: wasShared ? AppColors.grey5 : Theme.of(context).primaryColor,
+      );
+    }
   }
 
   @override
@@ -511,18 +528,22 @@ class _SaveButtonWidgetState extends State<_SaveButtonWidget>
     super.dispose();
   }
 
-  void _handleTap(PostModel currentPost) {
+  void _handleTap(PostModel currentPost) async {
     _animationController.forward(from: 0.0);
     HapticFeedback.lightImpact();
 
     final bool wasSaved = currentPost.isSavedByMe;
-
-    context.read<PostsCubit>().toggleSavePost(currentPost);
-    AppToast.save(
-      icon: wasSaved ? Icons.bookmark_remove_rounded : Icons.bookmark_rounded,
-      wasSaved ? 'Post removed from saves' : 'Post saved successfully',
-      iconColor: wasSaved ? AppColors.grey5 : AppColors.goldenYellow,
+    final bool success = await context.read<PostsCubit>().toggleSavePost(
+      currentPost,
     );
+
+    if (success) {
+      AppToast.save(
+        icon: wasSaved ? Icons.bookmark_remove_rounded : Icons.bookmark_rounded,
+        wasSaved ? 'Post removed from saves' : 'Post saved successfully',
+        iconColor: wasSaved ? AppColors.grey5 : AppColors.goldenYellow,
+      );
+    }
   }
 
   @override
