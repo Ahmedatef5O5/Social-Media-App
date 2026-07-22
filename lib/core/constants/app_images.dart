@@ -50,6 +50,7 @@ class AppImages {
   static const String savePostIcon = 'assets/icons/savePost.png';
   static const String sharePostIcon = 'assets/icons/SharePost.png';
   static const String commentAtPostIcon = 'assets/icons/comment.png';
+  static const String reelsIcon = 'assets/icons/reels.png';
 
   // input area icons
   static const String sendIcon = 'assets/icons/inputAreaIcons/send_comment.png';
