@@ -153,7 +153,7 @@ class _GroupMessageContentState extends State<GroupMessageContent> {
                             ),
                             if (widget.message.reactions.isNotEmpty)
                               Positioned(
-                                bottom: 12.0,
+                                bottom: -2.0,
                                 right: widget.isMe ? 4 : null,
                                 left: widget.isMe ? null : 4,
                                 child: GroupReactionsRow(
