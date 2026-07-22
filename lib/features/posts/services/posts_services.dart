@@ -10,6 +10,7 @@ import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/utilities/supabase_constants.dart';
 import '../../comments/helper/comment_tree_builder.dart';
 import '../../comments/model/comment_model.dart';
+import '../../social_graph/models/content_privacy.dart';
 import '../../social_graph/services/connections_service.dart';
 import '../model/post_model.dart';
 import '../model/post_request_body.dart';
@@ -29,6 +30,21 @@ class PostsServices {
   shares_count,
   is_post_shared,
   ${SupabaseConstants.users}!posts_author_id_fkey (${UserColumns.name}, ${UserColumns.imageUrl}, ${UserColumns.lastSeen}),
+  ${SupabaseConstants.reelsCache}!posts_shared_reel_id_fkey (
+    ${ReelColumns.id},
+    ${ReelColumns.youtubeVideoId},
+    ${ReelColumns.title},
+    ${ReelColumns.description},
+    ${ReelColumns.thumbnailUrl},
+    ${ReelColumns.originalLikeCount},
+    ${ReelColumns.originalViewCount},
+    ${ReelColumns.publishedAt},
+    ${SupabaseConstants.reelChannels} (
+      ${ReelChannelColumns.id},
+      ${ReelChannelColumns.channelName},
+      ${ReelChannelColumns.channelAvatarUrl}
+    )
+  ),
   ${SupabaseConstants.comments} (
   *,
   ${SupabaseConstants.users} (${UserColumns.name}, ${UserColumns.imageUrl}), 
@@ -243,7 +259,12 @@ class PostsServices {
     final controller = StreamController<FeedEvent>.broadcast();
 
     const channelName = 'home_feed_watcher';
-    _supabase.removeChannel(_supabase.channel(channelName));
+    final existingChannels = _supabase.getChannels();
+    for (final c in existingChannels) {
+      if (c.topic == 'realtime:$channelName') {
+        _supabase.removeChannel(c);
+      }
+    }
 
     final channel = _supabase
         .channel(channelName)
@@ -252,6 +273,7 @@ class PostsServices {
           schema: 'public',
           table: SupabaseConstants.posts,
           callback: (payload) {
+            debugPrint('📥 Payload Received: \${payload.newRecord}');
             final postId = payload.newRecord[PostColumns.id] as String?;
             if (postId != null && !controller.isClosed) {
               controller.add(PostInsertedEvent(postId));
@@ -292,6 +314,22 @@ class PostsServices {
             final postId = record[LikeColumns.postId] as String?;
             if (postId != null && !controller.isClosed) {
               controller.add(LikeChangedEvent(postId, payload.eventType));
+            }
+          },
+        )
+        .onPostgresChanges(
+          event: PostgresChangeEvent.all,
+          schema: 'public',
+          table: SupabaseConstants.comments,
+          callback: (payload) {
+            final record =
+                payload.newRecord.isNotEmpty
+                    ? payload.newRecord
+                    : payload.oldRecord;
+            final postId = record[CommentColumns.postId] as String?;
+
+            if (postId != null && !controller.isClosed) {
+              controller.add(PostUpdatedEvent(postId));
             }
           },
         )
@@ -346,6 +384,29 @@ class PostsServices {
         values: post.toMap(),
       );
     } catch (e) {
+      rethrow;
+    }
+  }
+  Future<void> shareReel({
+    required String postId,
+    required String reelId,
+    required String authorId,
+  }) async {
+    try {
+      await supabaseServices.insertRow(
+        table: SupabaseConstants.posts,
+        values: {
+          PostColumns.id: postId,
+          PostColumns.text: '',
+          PostColumns.authorId: authorId,
+          PostColumns.sharedReelId: reelId,
+          PostColumns.privacyType: contentPrivacyToString(
+            ContentPrivacy.public,
+          ),
+        },
+      );
+    } catch (e) {
+      debugPrint('Error sharing reel: $e');
       rethrow;
     }
   }

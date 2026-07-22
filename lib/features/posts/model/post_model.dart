@@ -2,6 +2,7 @@ import 'package:social_media_app/core/utilities/supabase_constants.dart';
 import 'package:social_media_app/features/single_chats/models/chat_user_model.dart';
 import 'package:social_media_app/features/posts/model/post_reaction_model.dart';
 import '../../comments/model/comment_model.dart';
+import '../../reels/model/reel_model.dart';
 import '../../social_graph/models/content_privacy.dart';
 
 class PostModel {
@@ -19,6 +20,7 @@ class PostModel {
       reactions.map((r) => '${r.emoji}:${r.count}').join(',');
 
   bool get isSharedPost => sharedPostId != null;
+  bool get isSharedReel => sharedReelId != null;
 
   PostModel get displayPost =>
       (isSharedPost && originalPost != null) ? originalPost! : this;
@@ -47,6 +49,10 @@ class PostModel {
   final int sharesCount;
   final bool isSharedByMe;
 
+  // ── Shared Reel feature ──────────────────────────────────────────────
+  final String? sharedReelId;
+  final ReelModel? sharedReel;
+
   // - Privacy publishing
   final ContentPrivacy privacyType;
 
@@ -72,6 +78,8 @@ class PostModel {
     this.originalPost,
     this.sharesCount = 0,
     this.isSharedByMe = false,
+    this.sharedReelId,
+    this.sharedReel,
     this.privacyType = ContentPrivacy.public,
   });
 
@@ -91,6 +99,7 @@ class PostModel {
       'comments': comments,
       PostColumns.privacyType: contentPrivacyToString(privacyType),
       PostColumns.sharedPostId: sharedPostId,
+      PostColumns.sharedReelId: sharedReelId,
       UserColumns.lastSeen: lastSeen,
     };
   }
@@ -124,6 +133,9 @@ class PostModel {
 
     final originalPostData =
         map[PostColumns.originalPostRelation] as Map<String, dynamic>?;
+
+    final sharedReelData =
+        map[SupabaseConstants.reelsCache] as Map<String, dynamic>?;
 
     return PostModel(
       id: map['id'] as String? ?? '',
@@ -160,6 +172,9 @@ class PostModel {
           originalPostData != null ? PostModel.fromMap(originalPostData) : null,
       sharesCount: map['shares_count'] as int? ?? 0,
       isSharedByMe: map['is_post_shared'] as bool? ?? false,
+      sharedReelId: map[PostColumns.sharedReelId] as String?,
+      sharedReel:
+          sharedReelData != null ? ReelModel.fromMap(sharedReelData) : null,
       privacyType: contentPrivacyFromString(
         map[PostColumns.privacyType] as String?,
       ),
@@ -188,6 +203,8 @@ class PostModel {
     PostModel? originalPost,
     int? sharesCount,
     bool? isSharedByMe,
+    String? sharedReelId,
+    ReelModel? sharedReel,
     ContentPrivacy? privacyType,
   }) {
     return PostModel(
@@ -212,6 +229,8 @@ class PostModel {
       originalPost: originalPost ?? this.originalPost,
       sharesCount: sharesCount ?? this.sharesCount,
       isSharedByMe: isSharedByMe ?? this.isSharedByMe,
+      sharedReelId: sharedReelId ?? this.sharedReelId,
+      sharedReel: sharedReel ?? this.sharedReel,
       privacyType: privacyType ?? this.privacyType,
     );
   }
@@ -238,6 +257,8 @@ class PostModel {
     'original_post': originalPost?.toCacheJson(),
     'shares_count': sharesCount,
     'is_post_shared': isSharedByMe,
+    'shared_reel_id': sharedReelId,
+    'shared_reel': sharedReel?.toJson(),
     PostColumns.privacyType: contentPrivacyToString(privacyType),
   };
 
@@ -281,6 +302,11 @@ class PostModel {
               : null,
       sharesCount: map['shares_count'] as int? ?? 0,
       isSharedByMe: map['is_post_shared'] as bool? ?? false,
+      sharedReelId: map['shared_reel_id'] as String?,
+      sharedReel:
+          map['shared_reel'] != null
+              ? ReelModel.fromJson(map['shared_reel'] as Map<String, dynamic>)
+              : null,
       privacyType: contentPrivacyFromString(
         map[PostColumns.privacyType] as String?,
       ),

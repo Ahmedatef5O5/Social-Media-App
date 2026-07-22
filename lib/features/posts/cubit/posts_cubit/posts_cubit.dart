@@ -17,6 +17,7 @@ import '../../../../core/connectivity/services/connectivity_banner_controller.da
 import '../../../../core/services/cloudinary_storage_services.dart';
 import '../../../../core/services/presence_service.dart';
 import '../../../../core/supabase/supabase_provider.dart';
+import '../../../../core/toast/app_toast.dart';
 import '../../../comments/events/comment_event_bus.dart';
 import '../../../comments/events/comment_events.dart';
 import '../../../comments/model/comment_model.dart';
@@ -26,6 +27,7 @@ import '../../model/post_model.dart';
 import '../../model/post_reaction_model.dart';
 import '../../model/post_request_body.dart';
 import '../../services/posts_services.dart';
+import '../../../reels/model/reel_model.dart';
 
 part 'posts_state.dart';
 part 'posts_feed_mixin.dart';
@@ -33,6 +35,7 @@ part 'posts_realtime_mixin.dart';
 part 'posts_comment_bridge_mixin.dart';
 part 'post_creation_mixin.dart';
 part 'post_reactions_mixin.dart';
+part 'reel_share_mixin.dart';
 
 const int kMaxCachedPostsSnapshot = 30;
 
@@ -42,7 +45,8 @@ class PostsCubit extends Cubit<PostsState>
         PostsFeedMixin,
         PostsCommentBridgeMixin,
         PostCreationMixin,
-        PostReactionsMixin {
+        PostReactionsMixin,
+        ReelShareMixin {
   @override
   final PostsServices _postsServices;
   @override
