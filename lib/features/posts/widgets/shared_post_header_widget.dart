@@ -3,9 +3,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 import '../../../core/helpers/formatted_date.dart';
 import '../../../core/router/app_routes.dart';
+import '../../../core/toast/app_toast.dart';
 import '../../../core/widgets/app_avatar.dart';
 import '../../home/cubits/home_cubit/home_cubit.dart';
 import '../cubit/posts_cubit/posts_cubit.dart';
+import '../helper/header_trailing_action.dart';
 import '../model/post_model.dart';
 import 'post_actions_menu.dart';
 
@@ -13,13 +15,38 @@ class SharedPostHeaderWidget extends StatelessWidget {
   final PostModel sharedPost;
   final String currentUserId;
   final PostsCubit postsCubit;
+  final String contentLabel;
+  final HeaderTrailingAction trailingAction;
 
   const SharedPostHeaderWidget({
     super.key,
     required this.sharedPost,
     required this.currentUserId,
     required this.postsCubit,
+    this.contentLabel = 'a post',
+    required this.trailingAction,
   });
+
+  Widget _buildOpenOriginalButton(BuildContext context) {
+    return IconButton(
+      icon: Icon(
+        Icons.open_in_new_rounded,
+        color: Theme.of(context).primaryColor.withValues(alpha: 0.75),
+        size: 19,
+      ),
+      tooltip: 'Open post details',
+      onPressed: () {
+        if (postsCubit.isPostGhost(sharedPost.id)) {
+          AppToast.info('This post is no longer available.');
+          return;
+        }
+        Navigator.of(
+          context,
+          rootNavigator: true,
+        ).pushNamed(AppRoutes.postDetailsViewRoute, arguments: sharedPost);
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -44,6 +71,47 @@ class SharedPostHeaderWidget extends StatelessWidget {
           context,
           rootNavigator: true,
         ).pushNamed(AppRoutes.profileViewRoute, arguments: sharedPost.authorId);
+      }
+    }
+
+    Widget? buildTrailingWidget() {
+      switch (trailingAction) {
+        case HeaderTrailingAction.moreActions:
+          return PostActionsMenu(
+            post: sharedPost,
+            currentUserId: currentUserId,
+            postsCubit: postsCubit,
+          );
+
+        case HeaderTrailingAction.openOriginal:
+          return _buildOpenOriginalButton(context);
+
+        case HeaderTrailingAction.moreActionsAndOpenOriginal:
+          return Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildOpenOriginalButton(context),
+              PostActionsMenu(
+                post: sharedPost,
+                currentUserId: currentUserId,
+                postsCubit: postsCubit,
+              ),
+            ],
+          );
+
+        case HeaderTrailingAction.closeScreen:
+          return IconButton(
+            icon: Icon(
+              Icons.close_rounded,
+              color: colorScheme.onSurface.withValues(alpha: 0.8),
+              size: 26,
+            ),
+            tooltip: 'Close',
+            onPressed: () => Navigator.of(context).pop(),
+          );
+
+        case HeaderTrailingAction.none:
+          return const SizedBox.shrink();
       }
     }
 
@@ -114,9 +182,9 @@ class SharedPostHeaderWidget extends StatelessWidget {
                           fontSize: 13.5,
                         ),
                       ),
-                      const TextSpan(
-                        text: '  shared a post',
-                        style: TextStyle(
+                      TextSpan(
+                        text: '  shared $contentLabel',
+                        style: const TextStyle(
                           fontWeight: FontWeight.w400,
                           fontSize: 12.5,
                         ),
@@ -146,11 +214,8 @@ class SharedPostHeaderWidget extends StatelessWidget {
             ),
           ),
         ),
-        PostActionsMenu(
-          post: sharedPost,
-          currentUserId: currentUserId,
-          postsCubit: postsCubit,
-        ),
+
+        buildTrailingWidget() ?? const SizedBox.shrink(),
       ],
     );
   }

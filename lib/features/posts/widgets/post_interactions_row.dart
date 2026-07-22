@@ -421,16 +421,17 @@ class _ShareButtonWidgetState extends State<_ShareButtonWidget>
     _animationController.forward(from: 0.0);
     HapticFeedback.lightImpact();
 
+    final primaryColor = Theme.of(context).primaryColor;
+    final postsCubit = context.read<PostsCubit>();
     final bool wasShared = currentPost.isSharedByMe;
-    final bool success = await context.read<PostsCubit>().toggleSharePost(
-      currentPost,
-    );
+
+    final bool success = await postsCubit.toggleSharePost(currentPost);
 
     if (success) {
       AppToast.save(
-        wasShared ? 'Share removed' : 'Post shared successfully',
+        wasShared ? 'Share removed' : 'Shared successfully',
         icon: Icons.repeat_rounded,
-        iconColor: wasShared ? AppColors.grey5 : Theme.of(context).primaryColor,
+        iconColor: wasShared ? AppColors.grey5 : primaryColor,
       );
     }
   }

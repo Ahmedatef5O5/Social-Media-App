@@ -5,6 +5,7 @@ import '../../../core/supabase/supabase_provider.dart';
 import '../cubit/posts_cubit/posts_cubit.dart';
 import '../helper/header_trailing_action.dart';
 import '../model/post_model.dart';
+import '../../reels/widgets/shared_reel_preview_card.dart';
 import 'post_interactions_row.dart';
 import 'post_media_widget.dart';
 import 'post_txt_content_widget.dart';
@@ -66,6 +67,12 @@ class PostItemWidget extends StatelessWidget {
           return const SizedBox.shrink();
         }
 
+        final bool isSharedReel = displayPost!.isSharedReel;
+
+        if (isSharedReel && displayPost.sharedReel == null) {
+          return const SizedBox.shrink();
+        }
+
         return Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
@@ -95,53 +102,73 @@ class PostItemWidget extends StatelessWidget {
                       sharedPost: currentPost,
                       currentUserId: currentUserId,
                       postsCubit: postsCubit,
+                      contentLabel: isSharedReel ? 'a reel' : 'a post',
+                      trailingAction: HeaderTrailingAction.moreActions,
+                    ),
+                    const SizedBox(height: 10),
+                  ] else if (isSharedReel) ...[
+                    SharedPostHeaderWidget(
+                      sharedPost: currentPost,
+                      currentUserId: currentUserId,
+                      postsCubit: postsCubit,
+                      contentLabel: 'a reel',
+                      trailingAction:
+                          HeaderTrailingAction.moreActionsAndOpenOriginal,
                     ),
                     const SizedBox(height: 10),
                   ],
-                  Container(
-                    padding:
-                        isSharedPost
-                            ? const EdgeInsets.all(12)
-                            : EdgeInsets.zero,
-                    decoration:
-                        isSharedPost
-                            ? BoxDecoration(
-                              borderRadius: BorderRadius.circular(14),
-                              gradient: LinearGradient(
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                                colors: [
-                                  colorScheme.onSurface.withValues(alpha: 0.03),
-                                  colorScheme.onSurface.withValues(alpha: 0.01),
-                                ],
-                              ),
-                              border: Border.all(
-                                color: colorScheme.outlineVariant.withValues(
-                                  alpha: 0.2,
+                  if (isSharedReel)
+                    SharedReelPreviewCard(reel: displayPost.sharedReel!)
+                  else ...[
+                    Container(
+                      padding:
+                          isSharedPost
+                              ? const EdgeInsets.all(12)
+                              : EdgeInsets.zero,
+                      decoration:
+                          isSharedPost
+                              ? BoxDecoration(
+                                borderRadius: BorderRadius.circular(14),
+                                gradient: LinearGradient(
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                  colors: [
+                                    colorScheme.onSurface.withValues(
+                                      alpha: 0.03,
+                                    ),
+                                    colorScheme.onSurface.withValues(
+                                      alpha: 0.01,
+                                    ),
+                                  ],
                                 ),
-                                width: 1,
-                              ),
-                            )
-                            : null,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        PostHeaderWidget(
-                          post: displayPost!,
-                          currentUserId: currentUserId,
-                          postsCubit: postsCubit,
-                          trailingAction:
-                              isSharedPost
-                                  ? HeaderTrailingAction.openOriginal
-                                  : HeaderTrailingAction
-                                      .moreActionsAndOpenOriginal,
-                        ),
-                        const SizedBox(height: 8),
-                        PostTxtContentWidget(post: displayPost),
-                        PostMediaWidget(post: displayPost),
-                      ],
+                                border: Border.all(
+                                  color: colorScheme.outlineVariant.withValues(
+                                    alpha: 0.2,
+                                  ),
+                                  width: 1,
+                                ),
+                              )
+                              : null,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          PostHeaderWidget(
+                            post: displayPost,
+                            currentUserId: currentUserId,
+                            postsCubit: postsCubit,
+                            trailingAction:
+                                isSharedPost
+                                    ? HeaderTrailingAction.openOriginal
+                                    : HeaderTrailingAction
+                                        .moreActionsAndOpenOriginal,
+                          ),
+                          const SizedBox(height: 8),
+                          PostTxtContentWidget(post: displayPost),
+                          PostMediaWidget(post: displayPost),
+                        ],
+                      ),
                     ),
-                  ),
+                  ],
                   const SizedBox(height: 4),
                   PostInteractionsRow(postId: displayPost.id),
                 ],

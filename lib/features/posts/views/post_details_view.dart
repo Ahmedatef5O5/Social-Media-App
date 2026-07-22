@@ -9,6 +9,7 @@ import '../../../core/supabase/supabase_provider.dart';
 import '../../comments/helper/editing_comment_banner.dart';
 import '../../comments/helper/replying_to_banner.dart';
 import '../../home/cubits/home_cubit/home_cubit.dart';
+import '../../reels/widgets/shared_reel_preview_card.dart';
 import '../cubit/posts_cubit/posts_cubit.dart';
 import '../helper/header_trailing_action.dart';
 import '../model/post_model.dart';
@@ -18,6 +19,7 @@ import '../widgets/post_txt_content_widget.dart';
 import '../widgets/post_media_widget.dart';
 import '../widgets/post_interactions_row.dart';
 import '../../comments/widget/comments_inline_section.dart';
+import '../widgets/shared_post_header_widget.dart';
 
 enum DetailsViewState { none, comments, reactions }
 
@@ -149,6 +151,16 @@ class _PostDetailsViewState extends State<PostDetailsView> {
                   } catch (_) {}
                 }
 
+                final bool isSharedPost = currentPost.isSharedPost;
+                final PostModel? displayPost =
+                    isSharedPost ? currentPost.originalPost : currentPost;
+
+                if (isSharedPost && displayPost == null) {
+                  return const Center(child: Text('Content not available'));
+                }
+
+                final bool isSharedReel = displayPost!.isSharedReel;
+
                 return Column(
                   children: [
                     Expanded(
@@ -164,26 +176,43 @@ class _PostDetailsViewState extends State<PostDetailsView> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  PostHeaderWidget(
-                                    post: currentPost,
-                                    currentUserId: currentUserId,
-                                    postsCubit: postsCubit,
-                                    trailingAction:
-                                        HeaderTrailingAction.closeScreen,
-                                  ),
-                                  const Gap(12),
+                                  if (isSharedReel) ...[
+                                    SharedPostHeaderWidget(
+                                      sharedPost: currentPost,
+                                      currentUserId: currentUserId,
+                                      postsCubit: postsCubit,
+                                      contentLabel: 'a reel',
+                                      trailingAction:
+                                          HeaderTrailingAction.closeScreen,
+                                    ),
+                                    const Gap(12),
+                                  ],
+                                  if (isSharedReel &&
+                                      displayPost.sharedReel != null)
+                                    SharedReelPreviewCard(
+                                      reel: displayPost.sharedReel!,
+                                    )
+                                  else ...[
+                                    PostHeaderWidget(
+                                      post: displayPost,
+                                      currentUserId: currentUserId,
+                                      postsCubit: postsCubit,
+                                      trailingAction:
+                                          HeaderTrailingAction.closeScreen,
+                                    ),
+                                    const Gap(12),
+                                    PostTxtContentWidget(post: displayPost),
+                                    const Gap(8),
 
-                                  PostTxtContentWidget(post: currentPost),
-                                  const Gap(8),
+                                    ClipRRect(
+                                      borderRadius: BorderRadius.circular(12),
+                                      child: PostMediaWidget(post: displayPost),
+                                    ),
+                                  ],
 
-                                  ClipRRect(
-                                    borderRadius: BorderRadius.circular(12),
-                                    child: PostMediaWidget(post: currentPost),
-                                  ),
                                   const Gap(16),
-
                                   PostInteractionsRow(
-                                    postId: currentPost.id,
+                                    postId: displayPost.id,
                                     onCommentsTap:
                                         () => _toggleView(
                                           DetailsViewState.comments,
