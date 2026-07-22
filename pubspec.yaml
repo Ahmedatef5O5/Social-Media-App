@@ -46,15 +46,18 @@ dependencies:
   record: ^6.2.0
   scrollable_positioned_list: ^0.3.8
   shared_preferences: 2.5.3
+  share_plus: ^12.0.0
   shimmer: ^3.0.0
   story_view: ^0.16.6
   supabase_flutter: ^2.12.2
   url_launcher: ^6.3.2
   uuid: ^4.5.3
+  youtube_player_iframe: ^6.0.2
   video_player: 2.10.1
   visibility_detector: ^0.4.0+2
   zego_uikit: ^2.28.44
   zego_uikit_prebuilt_call: ^4.22.4
+  webview_flutter_android: ^4.13.0
 
 dev_dependencies:
   build_runner: ^2.4.13
