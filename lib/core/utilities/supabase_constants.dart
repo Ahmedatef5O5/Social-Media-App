@@ -54,6 +54,11 @@ abstract class SupabaseConstants {
   static const String addCommentWithMentionsRpc = 'add_comment_with_mentions';
 
   static const String getProfileOverviewRpc = 'get_profile_overview';
+
+
+  // ── Reels Feature ──
+  static const String reelChannels = 'reel_channels';
+  static const String reelsCache = 'reels_cache';
 }
 
 // Friendship Columns
@@ -220,6 +225,9 @@ abstract class PostColumns {
   /// Alias used in the Supabase join query for the nested original post
   static const String originalPostRelation = 'original_post';
 
+  // ── Shared Reel feature ──
+  static const String sharedReelId = 'shared_reel_id';
+
   //
   static const String privacyType = 'privacy_type';
 }
@@ -377,4 +385,27 @@ abstract class TypingStatusColumns {
   static const String userId = 'user_id';
   static const String isTyping = 'is_typing';
   static const String updatedAt = 'updated_at';
+}
+
+// reel_channels
+abstract class ReelChannelColumns {
+  static const String id = 'id';
+  static const String youtubeChannelId = 'youtube_channel_id';
+  static const String channelName = 'channel_name';
+  static const String channelAvatarUrl = 'channel_avatar_url';
+  static const String isActive = 'is_active';
+}
+
+// reels_cache
+abstract class ReelColumns {
+  static const String id = 'id';
+  static const String youtubeVideoId = 'youtube_video_id';
+  static const String channelId = 'channel_id';
+  static const String title = 'title';
+  static const String description = 'description';
+  static const String thumbnailUrl = 'thumbnail_url';
+  static const String originalLikeCount = 'original_like_count';
+  static const String originalViewCount = 'original_view_count';
+  static const String publishedAt = 'published_at';
+  static const String cachedAt = 'cached_at';
 }
