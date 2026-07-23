@@ -1,5 +1,4 @@
 import 'package:intl/intl.dart';
-import 'package:social_media_app/core/helpers/date_extensions.dart';
 
 class FormattedDate {
   static DateTime safeParseDate(String dateString) {
@@ -85,27 +84,28 @@ class FormattedDate {
   }
 
   static String getLastSeen(DateTime lastSeen) {
-    final localDate = lastSeen.toString().toLocalFromSupabase();
+    final DateTime localDate = lastSeen.isUtc ? lastSeen.toLocal() : lastSeen;
 
-    final nowUtc = DateTime.now().toUtc();
-    final diff = nowUtc.difference(localDate);
+    final DateTime now = DateTime.now();
+    final Duration diff = now.difference(localDate);
     final String time = DateFormat.jm().format(localDate);
     final String longTimeAgo = DateFormat('d/M/y').format(localDate);
+
     if (diff.inSeconds < 30) return 'Online';
     if (diff.inSeconds < 60) return 'just now';
     if (diff.inMinutes < 60) return 'at ${diff.inMinutes} minutes ago';
-    if (lastSeen.year == nowUtc.year &&
-        lastSeen.month == nowUtc.month &&
-        lastSeen.day == nowUtc.day) {
-      return 'Today at $time';
-    }
-    final yesterday = nowUtc.subtract(const Duration(days: 1));
-    if (lastSeen.year == yesterday.year &&
-        lastSeen.month == yesterday.month &&
-        lastSeen.day == yesterday.day) {
-      return 'Yesterday at $time';
-    }
-    if (diff.inDays < 7) return 'at ${diff.inDays} days ago';
+
+    final DateTime today = DateTime(now.year, now.month, now.day);
+    final DateTime seenDay = DateTime(
+      localDate.year,
+      localDate.month,
+      localDate.day,
+    );
+    final int diffInDays = today.difference(seenDay).inDays;
+
+    if (diffInDays == 0) return 'Today at $time';
+    if (diffInDays == 1) return 'Yesterday at $time';
+    if (diffInDays < 7) return 'at $diffInDays days ago';
     return 'at $longTimeAgo';
   }
 
