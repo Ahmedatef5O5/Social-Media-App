@@ -11,6 +11,7 @@ import '../../../../core/services/supabase_storage_services.dart';
 import '../../../../core/supabase/supabase_provider.dart';
 import '../../../../core/utilities/supabase_constants.dart';
 import '../../../notifications/repository/notifications_repository.dart';
+import '../../../reactions/services/reaction_profile_resolver.dart';
 import '../../models/group_model.dart';
 import '../../models/groupe_message_model.dart';
 import '../../services/group_chat_services.dart';
@@ -59,6 +60,9 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState>
 
   @override
   String get currentUserId => SupabaseProvider.id;
+
+  final GroupChatReactionProfileResolver reactionProfileResolver =
+      GroupChatReactionProfileResolver();
 
   void init() {
     _messagesSnapshotKey = 'group_messages_snapshot_${group.id}';

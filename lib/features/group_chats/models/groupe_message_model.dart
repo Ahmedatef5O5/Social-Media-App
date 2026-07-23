@@ -21,6 +21,7 @@ class GroupMessageModel {
   final String? replyToMessageType;
   final List<MentionRef> mentions;
   final Map<String, String> reactions;
+  final Map<String, String>? reactionsCreatedAt;
   final Set<String> readBy;
   final bool isEdited;
 
@@ -44,6 +45,7 @@ class GroupMessageModel {
     this.replyToMessageType,
     this.mentions = const [],
     this.reactions = const {},
+    this.reactionsCreatedAt,
     this.readBy = const {},
     this.isEdited = false,
   });
@@ -68,6 +70,7 @@ class GroupMessageModel {
     String? replyToMessageType,
     List<MentionRef>? mentions,
     Map<String, String>? reactions,
+    Map<String, String>? reactionsCreatedAt,
     Set<String>? readBy,
     bool? isEdited,
   }) {
@@ -91,6 +94,7 @@ class GroupMessageModel {
       replyToMessageType: replyToMessageType ?? this.replyToMessageType,
       mentions: mentions ?? this.mentions,
       reactions: reactions ?? this.reactions,
+      reactionsCreatedAt: reactionsCreatedAt ?? this.reactionsCreatedAt,
       readBy: readBy ?? this.readBy,
       isEdited: isEdited ?? this.isEdited,
     );

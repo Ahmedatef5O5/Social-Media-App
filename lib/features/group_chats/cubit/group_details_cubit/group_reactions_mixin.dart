@@ -7,6 +7,7 @@ mixin GroupReactionsMixin on Cubit<GroupDetailsState> {
   List<GroupMessageModel> get cachedMessages;
   set cachedMessages(List<GroupMessageModel> value);
   final Map<String, Map<String, String>> _reactionsCache = {};
+  Map<String, Map<String, String>> _reactionsCreatedAtCache = {};
 
   String? get _messagesSnapshotKey;
   void _emitLoaded();
@@ -24,9 +25,14 @@ mixin GroupReactionsMixin on Cubit<GroupDetailsState> {
         final msgId = r['message_id'] as String?;
         final userId = r[GroupMemberColumns.userId] as String?;
         final emoji = r['reaction'] as String?;
+        final createdAt = r[MessageReactionColumns.createdAt] as String?;
         if (msgId != null && userId != null && emoji != null) {
           _reactionsCache[msgId] ??= {};
           _reactionsCache[msgId]![userId] = emoji;
+          if (createdAt != null) {
+            _reactionsCreatedAtCache[msgId] ??= {};
+            _reactionsCreatedAtCache[msgId]![userId] = createdAt;
+          }
         }
       }
 
@@ -56,10 +62,22 @@ mixin GroupReactionsMixin on Cubit<GroupDetailsState> {
 
     if (currentEmoji == emoji) {
       _reactionsCache[messageId]!.remove(currentUserId);
+      _reactionsCreatedAtCache[messageId]?.remove(currentUserId);
     } else {
       _reactionsCache[messageId]![currentUserId] = emoji;
+      _reactionsCreatedAtCache[messageId] ??= {};
+      _reactionsCreatedAtCache[messageId]![currentUserId] =
+          DateTime.now().toIso8601String();
     }
-
+    cachedMessages =
+        cachedMessages.map((msg) {
+          final reactions = _reactionsCache[msg.id] ?? {};
+          return msg.copyWith(
+            reactions: reactions,
+            reactionsCreatedAt: _reactionsCreatedAtCache[msg.id],
+          );
+        }).toList();
+    _emitLoaded();
     try {
       await _services.toggleReaction(
         messageId: messageId,
