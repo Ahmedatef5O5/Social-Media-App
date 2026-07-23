@@ -4,6 +4,7 @@ import 'package:gap/gap.dart';
 import 'package:video_player/video_player.dart';
 import '../../../core/constants/app_images.dart';
 import '../../../core/helpers/formatted_date.dart';
+import '../../../core/presence/widgets/presence_avatar_widget.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/supabase/supabase_provider.dart';
 import '../cubit/stories_cubit/stories_cubit.dart';
@@ -54,12 +55,18 @@ class StoryHeader extends StatelessWidget {
                   },
           child: Row(
             children: [
-              CircleAvatar(
-                backgroundImage:
-                    story.authorImageUrl?.isNotEmpty == true
-                        ? CachedNetworkImageProvider(story.authorImageUrl!)
-                        : const AssetImage(AppImages.defaultUserImg)
-                            as ImageProvider,
+              PresenceAvatarWidget(
+                userId: story.authorId,
+                avatarSize: 40,
+
+                showBorder: false,
+                child: CircleAvatar(
+                  backgroundImage:
+                      story.authorImageUrl?.isNotEmpty == true
+                          ? CachedNetworkImageProvider(story.authorImageUrl!)
+                          : const AssetImage(AppImages.defaultUserImg)
+                              as ImageProvider,
+                ),
               ),
               const Gap(10),
               Column(

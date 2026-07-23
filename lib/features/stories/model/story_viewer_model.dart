@@ -1,4 +1,4 @@
-import '../../../core/services/presence_service.dart';
+import '../../../core/presence/services/presence_service.dart';
 import '../../single_chats/models/chat_user_model.dart';
 
 class StoryViewerModel {

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 import '../../../core/helpers/formatted_date.dart';
+import '../../../core/presence/widgets/presence_avatar_widget.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/widgets/app_avatar.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
@@ -98,9 +99,15 @@ class StoryViewsBottomSheet extends StatelessWidget {
                                   child: Stack(
                                     clipBehavior: Clip.none,
                                     children: [
-                                      AppAvatar(
-                                        imageUrl: viewer.userImageUrl,
-                                        size: 45,
+                                      PresenceAvatarWidget(
+                                        userId: viewer.viewerId,
+                                        avatarSize: 45,
+                                        showDot: true,
+                                        showBorder: true,
+                                        child: AppAvatar(
+                                          imageUrl: viewer.userImageUrl,
+                                          size: 45,
+                                        ),
                                       ),
                                       if (viewer.hasReacted)
                                         Positioned(
