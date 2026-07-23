@@ -81,8 +81,11 @@ class _ConnectivityBannerState extends State<ConnectivityBanner>
 
   void _show(_BannerMode mode, Duration visibleFor) {
     _autoHideTimer?.cancel();
+    final bool alreadyVisibleWithSameMode = _mode == mode;
     setState(() => _mode = mode);
-    _controller.forward(from: 0);
+    if (!alreadyVisibleWithSameMode) {
+      _controller.forward(from: 0);
+    }
     _autoHideTimer = Timer(visibleFor, _hide);
   }
 

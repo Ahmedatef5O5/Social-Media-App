@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:social_media_app/core/connectivity/cubit/connectivity_state.dart';
@@ -15,41 +14,49 @@ class ConnectivityCubit extends Cubit<ConnectivityState>
 
   final NetworkStatusService _networkStatus;
 
-  StreamSubscription<List<ConnectivityResult>>? _connectivitySub;
-  Timer? _heartbeatTimer;
-  Timer? _debounceTimer;
+  Timer? _pollTimer;
+  Timer? _restoredResetTimer;
+  bool _checking = false;
+  int _consecutiveFailures = 0;
 
-  static const Duration _heartbeatInterval = Duration(seconds: 15);
-  static const Duration _debounceDelay = Duration(milliseconds: 600);
+  static const int _consecutiveFailuresToGoOffline = 2;
+  static const Duration _pollIntervalOnline = Duration(seconds: 20);
+  static const Duration _pollIntervalOffline = Duration(seconds: 5);
+  static const Duration _restoredBannerDuration = Duration(seconds: 3);
 
   void _init() {
     WidgetsBinding.instance.addObserver(this);
-
-    _checkNow(forceRefresh: true);
-
-    _connectivitySub = Connectivity().onConnectivityChanged.listen((_) {
-      _debounceTimer?.cancel();
-      _debounceTimer = Timer(
-        _debounceDelay,
-        () => _checkNow(forceRefresh: true),
-      );
-    });
-
-    _heartbeatTimer = Timer.periodic(_heartbeatInterval, (_) => _checkNow());
+    _checkNow();
+    _schedulePoll(_pollIntervalOnline);
   }
 
-  Future<void> _checkNow({bool forceRefresh = false}) async {
-    final isOnline = await _networkStatus.isConnected(
-      // forceRefresh: forceRefresh,
-    );
-    if (isClosed) return;
+  void _schedulePoll(Duration interval) {
+    _pollTimer?.cancel();
+    _pollTimer = Timer.periodic(interval, (_) => _checkNow());
+  }
 
+  Future<void> _checkNow() async {
+    if (_checking || isClosed) return;
+    _checking = true;
+    try {
+      final isOnline = await _networkStatus.isConnected();
+      if (isClosed) return;
+      _handleResult(isOnline);
+    } finally {
+      _checking = false;
+    }
+  }
+
+  void _handleResult(bool isOnline) {
     if (isOnline) {
+      _consecutiveFailures = 0;
+      _schedulePoll(_pollIntervalOnline);
+
       if (state is ConnectivityOffline) {
         debugPrint('[ConnectivityCubit] Restored ✅');
         emit(ConnectivityRestored());
-
-        Future.delayed(const Duration(seconds: 3), () {
+        _restoredResetTimer?.cancel();
+        _restoredResetTimer = Timer(_restoredBannerDuration, () {
           if (!isClosed && state is ConnectivityRestored) {
             emit(ConnectivityOnline());
           }
@@ -58,35 +65,40 @@ class ConnectivityCubit extends Cubit<ConnectivityState>
         debugPrint('[ConnectivityCubit] online ✅');
         emit(ConnectivityOnline());
       }
-    } else {
-      if (state is! ConnectivityOffline) {
-        debugPrint('[ConnectivityCubit] offline ⛔');
-        emit(ConnectivityOffline());
-      }
+      return;
     }
-    // final nextState = isOnline ? ConnectivityOnline() : ConnectivityOffline();
-    // if (state.runtimeType == nextState.runtimeType) return;
-    // debugPrint('[ConnectivityCubit] ${isOnline ? "online ✅" : "offline ⛔"}');
-    // emit(nextState);
+
+    _consecutiveFailures++;
+    _schedulePoll(_pollIntervalOffline);
+
+    final bool comingFromKnownOnline =
+        state is ConnectivityOnline || state is ConnectivityRestored;
+    final bool shouldDeclareOffline =
+        !comingFromKnownOnline ||
+        _consecutiveFailures >= _consecutiveFailuresToGoOffline;
+
+    if (shouldDeclareOffline && state is! ConnectivityOffline) {
+      debugPrint('[ConnectivityCubit] offline ⛔');
+      emit(ConnectivityOffline());
+    }
   }
 
-  Future<void> checkNow() => _checkNow(forceRefresh: true);
+  Future<void> checkNow() => _checkNow();
 
   bool get isOnline => state is ConnectivityOnline;
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      _checkNow(forceRefresh: true);
+      _checkNow();
     }
   }
 
   @override
   Future<void> close() {
     WidgetsBinding.instance.removeObserver(this);
-    _connectivitySub?.cancel();
-    _heartbeatTimer?.cancel();
-    _debounceTimer?.cancel();
+    _pollTimer?.cancel();
+    _restoredResetTimer?.cancel();
     return super.close();
   }
 }
