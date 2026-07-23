@@ -4,6 +4,7 @@ import 'package:social_media_app/features/auth/data/models/user_data.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/services/network_status_service.dart';
 import '../../../core/supabase/supabase_provider.dart';
+import '../../../core/presence/model/presence_privacy.dart';
 import '../models/profile_overview_model.dart';
 
 class UserService {
@@ -58,5 +59,19 @@ class UserService {
     );
     final row = (data as List).first as Map<String, dynamic>;
     return ProfileOverviewModel.fromMap(row);
+  }
+
+  Future<void> updatePresencePrivacy(PresencePrivacy privacy) async {
+    await _supabase
+        .from(SupabaseConstants.users)
+        .update({UserColumns.presencePrivacy: privacy.value})
+        .eq(UserColumns.id, SupabaseProvider.id);
+  }
+
+  Future<void> updatePresenceVisibleTo(List<String> userIds) async {
+    await _supabase
+        .from(SupabaseConstants.users)
+        .update({UserColumns.presenceVisibleTo: userIds})
+        .eq(UserColumns.id, SupabaseProvider.id);
   }
 }

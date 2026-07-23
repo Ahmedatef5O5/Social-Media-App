@@ -7,7 +7,12 @@ import 'package:social_media_app/core/router/app_routes.dart';
 import 'package:social_media_app/core/themes/cubit/theme_cubit.dart';
 import 'package:social_media_app/features/profile/cubits/profile_cubit/profile_cubit.dart';
 import 'package:social_media_app/features/settings/widgets/theme_picker_sheet_widget.dart';
+import '../../../core/presence/model/presence_privacy.dart';
+import '../../../core/presence/widgets/presence_privacy_sheet.dart';
 import '../../../core/toast/app_toast.dart';
+import '../../home/cubits/home_cubit/home_cubit.dart';
+import '../../profile/services/user_services.dart';
+import '../../social_graph/views/audience_picker_view.dart';
 import '../cubit/settings_state.dart';
 import '../cubit/setttings_cubit.dart';
 import '../widgets/settings_danger_zone.dart';
@@ -44,7 +49,12 @@ class _SettingsViewState extends State<SettingsView>
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => SettingsCubit(),
+      create:
+          (context) => SettingsCubit(
+            userService: context.read<UserService>(),
+            homeCubit: context.read<HomeCubit>(),
+            currentUser: context.read<HomeCubit>().currentUserData,
+          ),
       child: BlocConsumer<SettingsCubit, SettingsState>(
         listenWhen: (previous, current) => current.errorMessage != null,
         listener: (context, state) {
@@ -183,6 +193,20 @@ class _SettingsViewState extends State<SettingsView>
                                 .read<SettingsCubit>()
                                 .setOnlineStatus(v),
                       ),
+
+                      SettingsItemData(
+                        icon: Icons.visibility_outlined,
+                        label: 'Online Status Visibility',
+                        subtitle: _presencePrivacyLabel(
+                          settingsState.presencePrivacy,
+                        ),
+                        onTap:
+                            () => _pickPresencePrivacy(
+                              context,
+                              settingsState.presencePrivacy,
+                            ),
+                      ),
+
                       SettingsItemData(
                         icon: Icons.fingerprint_rounded,
                         label: 'App Lock',
@@ -307,5 +331,37 @@ class _SettingsViewState extends State<SettingsView>
             ),
           ),
     );
+  }
+
+  String _presencePrivacyLabel(PresencePrivacy p) => switch (p) {
+    PresencePrivacy.everyone => 'Everyone',
+    PresencePrivacy.friends => 'My Friends',
+    PresencePrivacy.specific => 'Specific People',
+    PresencePrivacy.nobody => 'Nobody',
+  };
+
+  Future<void> _pickPresencePrivacy(
+    BuildContext context,
+    PresencePrivacy current,
+  ) async {
+    final result = await PresencePrivacySheet.show(context, current);
+    if (result == null || !context.mounted) return;
+
+    final cubit = context.read<SettingsCubit>();
+    await cubit.setPresencePrivacy(result);
+
+    if (result == PresencePrivacy.specific && context.mounted) {
+      final selected = await Navigator.of(context).push<Set<String>>(
+        MaterialPageRoute(
+          builder:
+              (_) => AudiencePickerView(
+                initialSelectedIds: cubit.state.presenceVisibleTo.toSet(),
+              ),
+        ),
+      );
+      if (selected != null) {
+        await cubit.setPresenceVisibleTo(selected.toList());
+      }
+    }
   }
 }
