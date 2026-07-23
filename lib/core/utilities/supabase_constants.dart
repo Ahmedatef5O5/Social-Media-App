@@ -55,10 +55,11 @@ abstract class SupabaseConstants {
 
   static const String getProfileOverviewRpc = 'get_profile_overview';
 
-
   // ── Reels Feature ──
   static const String reelChannels = 'reel_channels';
   static const String reelsCache = 'reels_cache';
+  // ── RPC ──
+  static const String getBalancedReelsFeedRpc = 'get_balanced_reels_feed';
 }
 
 // Friendship Columns
@@ -168,6 +169,10 @@ abstract class UserColumns {
 
   static const String imagePublicId = 'image_public_id';
   static const String backgroundImagePublicId = 'background_image_public_id';
+
+  // ── Presence Privacy (new) ──
+  static const String presencePrivacy = 'presence_privacy';
+  static const String presenceVisibleTo = 'presence_visible_to';
 }
 
 // subClass for stories column table

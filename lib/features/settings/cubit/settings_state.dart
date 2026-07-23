@@ -1,3 +1,4 @@
+import '../../../core/presence/model/presence_privacy.dart';
 import '../repository/settings_repository.dart';
 
 class SettingsState {
@@ -8,6 +9,8 @@ class SettingsState {
   final bool onlineStatus;
   final bool biometricLock;
   final bool twoFactor;
+  final PresencePrivacy presencePrivacy;
+  final List<String> presenceVisibleTo;
 
   final String? errorMessage;
 
@@ -19,10 +22,15 @@ class SettingsState {
     required this.onlineStatus,
     required this.biometricLock,
     required this.twoFactor,
+    required this.presencePrivacy,
+    required this.presenceVisibleTo,
     this.errorMessage,
   });
 
-  factory SettingsState.fromRepository() {
+  factory SettingsState.fromRepository({
+    PresencePrivacy presencePrivacy = PresencePrivacy.friends,
+    List<String> presenceVisibleTo = const [],
+  }) {
     final repo = SettingsRepository.instance;
     return SettingsState(
       pushNotifications: repo.pushNotifications,
@@ -32,6 +40,8 @@ class SettingsState {
       onlineStatus: repo.onlineStatus,
       biometricLock: repo.biometricLock,
       twoFactor: repo.twoFactor,
+      presencePrivacy: presencePrivacy,
+      presenceVisibleTo: presenceVisibleTo,
     );
   }
 
@@ -43,6 +53,8 @@ class SettingsState {
     bool? onlineStatus,
     bool? biometricLock,
     bool? twoFactor,
+    PresencePrivacy? presencePrivacy,
+    List<String>? presenceVisibleTo,
     String? errorMessage,
   }) {
     return SettingsState(
@@ -53,6 +65,8 @@ class SettingsState {
       onlineStatus: onlineStatus ?? this.onlineStatus,
       biometricLock: biometricLock ?? this.biometricLock,
       twoFactor: twoFactor ?? this.twoFactor,
+      presencePrivacy: presencePrivacy ?? this.presencePrivacy,
+      presenceVisibleTo: presenceVisibleTo ?? this.presenceVisibleTo,
       errorMessage: errorMessage,
     );
   }
