@@ -14,6 +14,7 @@ class MessageModel {
   final String? voiceUrl;
   final String? caption;
   final Map<String, String> reactions;
+  final Map<String, String>? reactionsCreatedAt;
   final String? replyToMessageId;
   final String? replyToText;
   final String? replyToMessageType;
@@ -41,6 +42,7 @@ class MessageModel {
     this.voiceUrl,
     this.caption,
     this.reactions = const {},
+    this.reactionsCreatedAt,
     this.replyToMessageId,
     this.replyToText,
     this.replyToMessageType,
@@ -71,6 +73,7 @@ class MessageModel {
     String? voiceUrl,
     String? caption,
     Map<String, String>? reactions,
+    Map<String, String>? reactionsCreatedAt,
     String? replyToMessageId,
     String? replyToText,
     String? replyToMessageType,
@@ -98,6 +101,7 @@ class MessageModel {
       voiceUrl: voiceUrl ?? this.voiceUrl,
       caption: caption ?? this.caption,
       reactions: reactions ?? this.reactions,
+      reactionsCreatedAt: reactionsCreatedAt ?? this.reactionsCreatedAt,
       replyToMessageId: replyToMessageId ?? this.replyToMessageId,
       replyToText: replyToText ?? this.replyToText,
       replyToMessageType: replyToMessageType ?? this.replyToMessageType,

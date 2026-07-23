@@ -9,6 +9,7 @@ import 'package:social_media_app/features/single_chats/cubit/chat_details_cubit/
 import 'package:social_media_app/features/single_chats/models/message_model.dart';
 import 'package:social_media_app/features/single_chats/widgets/message_content_container_widget.dart';
 import 'package:social_media_app/features/single_chats/widgets/user_chat_avatar_widget.dart';
+import '../models/chat_user_model.dart';
 
 class ChatBubble extends StatefulWidget {
   final bool isMe;
@@ -16,6 +17,7 @@ class ChatBubble extends StatefulWidget {
   final ValueChanged<MessageModel>? onReply;
   final ValueChanged<MessageModel>? onEdit;
   final String? userImgUrl;
+  final ChatUserModel receiverUser;
   final double? uploadProgress;
   final bool isHighlighted;
   final ItemScrollController itemScrollController;
@@ -27,6 +29,7 @@ class ChatBubble extends StatefulWidget {
     this.onEdit,
     required this.isMe,
     this.userImgUrl,
+    required this.receiverUser,
     this.uploadProgress,
     this.isHighlighted = false,
     required this.itemScrollController,
@@ -298,6 +301,7 @@ class ChatBubbleState extends State<ChatBubble>
                                 key: _bubbleKey,
                                 child: MessageContentContainer(
                                   message: widget.message,
+                                  receiverUser: widget.receiverUser,
                                   isMe: widget.isMe,
                                   uploadProgress: widget.uploadProgress,
                                   itemScrollController:

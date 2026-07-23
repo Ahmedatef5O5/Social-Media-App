@@ -125,16 +125,27 @@ class CallMessageContent extends StatelessWidget {
                           ),
                         ),
                         if (duration.isNotEmpty && !isMissed) ...[
-                          const Gap(2),
-                          Text(
-                            duration,
-                            style: Theme.of(
-                              context,
-                            ).textTheme.titleMedium!.copyWith(
-                              color: isMe ? timeColor : null,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w400,
-                            ),
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Gap(2),
+                              Icon(
+                                Icons.timer_outlined,
+                                size: 11,
+                                color: isMe ? timeColor : null,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                duration,
+                                style: Theme.of(
+                                  context,
+                                ).textTheme.titleMedium!.copyWith(
+                                  color: isMe ? timeColor : null,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w400,
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ],

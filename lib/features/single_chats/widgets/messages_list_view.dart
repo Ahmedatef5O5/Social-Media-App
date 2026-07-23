@@ -137,6 +137,7 @@ class _MessagesListViewState extends State<MessagesListView> {
                       ),
                     ChatBubble(
                       userImgUrl: isMe ? null : widget.receiverUser.imageUrl,
+                      receiverUser: widget.receiverUser,
                       message: msg,
                       onReply: widget.onReply,
                       onEdit: widget.onEdit,

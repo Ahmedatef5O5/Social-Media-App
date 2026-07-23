@@ -10,6 +10,7 @@ mixin ChatReactionsMixin on Cubit<ChatDetailsState> {
   void clearSelection();
   StreamSubscription? _reactionsSubscription;
   Map<String, Map<String, String>> _reactionsCache = {};
+  Map<String, Map<String, String>> _reactionsCreatedAtCache = {};
 
   void _listenReactions(String conversationId) {
     _reactionsSubscription?.cancel();
@@ -22,16 +23,24 @@ mixin ChatReactionsMixin on Cubit<ChatDetailsState> {
             final msgId = r[MessageReactionColumns.messageId] as String?;
             final userId = r[MessageReactionColumns.userId] as String?;
             final emoji = r[MessageReactionColumns.reaction] as String?;
+            final createdAt = r[MessageReactionColumns.createdAt] as String?;
             if (msgId != null && userId != null && emoji != null) {
               _reactionsCache[msgId] ??= {};
               _reactionsCache[msgId]![userId] = emoji;
+              if (createdAt != null) {
+                _reactionsCreatedAtCache[msgId] ??= {};
+                _reactionsCreatedAtCache[msgId]![userId] = createdAt;
+              }
             }
           }
 
           cachedMessages =
               cachedMessages.map((m) {
                 final reactions = _reactionsCache[m.id] ?? {};
-                return m.copyWith(reactions: reactions);
+                return m.copyWith(
+                  reactions: reactions,
+                  reactionsCreatedAt: _reactionsCreatedAtCache[m.id],
+                );
               }).toList();
 
           if (!isClosed) emit(MessagesSuccessLoaded(messages: cachedMessages));
@@ -72,10 +81,14 @@ mixin ChatReactionsMixin on Cubit<ChatDetailsState> {
         emoji: emoji,
       );
     } catch (e) {
-      if (currentEmoji == null) {
+      if (currentEmoji == emoji) {
         _reactionsCache[messageId]!.remove(currentUserId);
+        _reactionsCreatedAtCache[messageId]?.remove(currentUserId);
       } else {
-        _reactionsCache[messageId]![currentUserId] = currentEmoji;
+        _reactionsCache[messageId]![currentUserId] = emoji;
+        _reactionsCreatedAtCache[messageId] ??= {};
+        _reactionsCreatedAtCache[messageId]![currentUserId] =
+            DateTime.now().toIso8601String();
       }
       _applyReactionsCacheToMessages();
       debugPrint('error toggling reaction: $e');
@@ -86,7 +99,10 @@ mixin ChatReactionsMixin on Cubit<ChatDetailsState> {
     cachedMessages =
         cachedMessages.map((m) {
           final reactions = _reactionsCache[m.id] ?? {};
-          return m.copyWith(reactions: reactions);
+          return m.copyWith(
+            reactions: reactions,
+            reactionsCreatedAt: _reactionsCreatedAtCache[m.id],
+          );
         }).toList();
     if (!isClosed) emit(MessagesSuccessLoaded(messages: cachedMessages));
   }
