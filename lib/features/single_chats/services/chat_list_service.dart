@@ -2,18 +2,11 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/services/network_status_service.dart';
-import '../../../core/services/presence_service.dart';
+import '../../../core/presence/services/presence_service.dart';
 import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/utilities/supabase_constants.dart';
 import '../models/chat_user_model.dart';
 
-/// Chat-list-level concerns: FCM push info for a receiver, the chats list
-/// itself (with online-status enrichment), and a stream that fires
-/// whenever anything relevant to the chats list changes.
-///
-/// Extracted from the monolithic `ChatServices`, which mixed this together
-/// with per-conversation messages, reactions, and presence/typing. Logic is
-/// unchanged — this is a pure structural extraction.
 class ChatListService {
   final _supabase = SupabaseProvider.client;
   final NetworkStatusService _networkStatus;

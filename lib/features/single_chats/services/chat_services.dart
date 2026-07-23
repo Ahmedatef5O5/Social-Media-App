@@ -143,8 +143,6 @@ class ChatServices {
   ) => _reactions.getMessageReactionsStream(conversationId);
 
   // ── Presence & typing ───────────────────────────────────────────────────
-  Future<void> updateLastSeen(String userId) =>
-      _presence.updateLastSeen(userId);
 
   Future<DateTime?> getUserLastSeen(String userId) =>
       _presence.getUserLastSeen(userId);

@@ -14,7 +14,6 @@ import '../../../../core/utilities/supabase_constants.dart';
 import '../../../notifications/repository/notifications_repository.dart';
 import '../../../settings/repository/settings_repository.dart';
 import '../../models/message_model.dart';
-import '../../models/presence_snapshot.dart';
 import '../../services/chat_permission_service.dart';
 import '../../services/chat_services.dart';
 import '../../widgets/chat_bubble.dart';

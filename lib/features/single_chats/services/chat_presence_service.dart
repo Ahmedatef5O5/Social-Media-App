@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../../core/services/presence_service.dart';
+import '../../../core/presence/services/presence_service.dart';
 import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/utilities/supabase_constants.dart';
 import '../models/presence_snapshot.dart';
@@ -9,29 +9,17 @@ import '../models/presence_snapshot.dart';
 class ChatPresenceService {
   final _supabase = SupabaseProvider.client;
 
-  Future<void> updateLastSeen(String userId) async {
-    try {
-      await _supabase
-          .from(SupabaseConstants.users)
-          .update({
-            UserColumns.lastSeen: DateTime.now().toUtc().toIso8601String(),
-          })
-          .eq(UserColumns.id, userId);
-    } catch (e) {
-      debugPrint('error updating last seen: $e');
-    }
-  }
-
   Future<DateTime?> getUserLastSeen(String userId) async {
     try {
       final data =
           await _supabase
-              .from(SupabaseConstants.users)
-              .select(UserColumns.lastSeen)
-              .eq(UserColumns.id, userId)
-              .single();
-      if (data[UserColumns.lastSeen] == null) return null;
-      return DateTime.parse(data[UserColumns.lastSeen]);
+              .from(SupabaseConstants.userPresence)
+              .select(PresenceColumns.lastSeen)
+              .eq(PresenceColumns.userId, userId)
+              .maybeSingle();
+      final raw = data?[PresenceColumns.lastSeen];
+      if (raw == null) return null;
+      return DateTime.parse(raw.toString());
     } catch (_) {
       return null;
     }
@@ -39,14 +27,16 @@ class ChatPresenceService {
 
   Stream<DateTime?> getLastSeenStream(String userId) {
     return _supabase
-        .from(SupabaseConstants.users)
-        .stream(primaryKey: [UserColumns.id])
-        .eq(UserColumns.id, userId)
+        .from(SupabaseConstants.userPresence)
+        .stream(primaryKey: [PresenceColumns.userId])
+        .eq(PresenceColumns.userId, userId)
         .map((data) {
-          if (data.isEmpty || data.first[UserColumns.lastSeen] == null) {
+          if (data.isEmpty || data.first[PresenceColumns.lastSeen] == null) {
             return null;
           }
-          return DateTime.parse(data.first[UserColumns.lastSeen]);
+          return DateTime.parse(
+            data.first[PresenceColumns.lastSeen].toString(),
+          );
         });
   }
 
@@ -86,9 +76,7 @@ class ChatPresenceService {
 
         final lastSeenRaw = row['last_seen'];
         final lastSeen =
-            lastSeenRaw != null
-                ? DateTime.parse(lastSeenRaw.toString()).toLocal()
-                : null;
+            lastSeenRaw != null ? DateTime.parse(lastSeenRaw.toString()) : null;
 
         controller.add(
           PresenceSnapshot(isOnline: isOnline, lastSeen: lastSeen),

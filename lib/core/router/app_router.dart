@@ -405,7 +405,13 @@ class AppRouter {
           return _errorRoute(settings, 'Missing ChatUserModel data');
         }
         return _buildRoute(
-          ReceiverProfileView(receiverUser: user),
+          BlocProvider(
+            create:
+                (context) =>
+                    ChatDetailsCubit(context.read<ChatServices>(), user.name)
+                      ..watchReceiverTyping(user.id),
+            child: ReceiverProfileView(receiverUser: user),
+          ),
           settings: settings,
         );
       default:
