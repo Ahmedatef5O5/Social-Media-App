@@ -8,6 +8,7 @@ part 'reels_feed_state.dart';
 class ReelsFeedCubit extends Cubit<ReelsFeedState> {
   final ReelsServices _reelsServices;
   final Set<String> _seenVideoIds = {};
+  List<String> _preferredCategories = [];
   static const int _minGap = 5;
   static const int _maxGap = 6;
   static const int _reelsPerSection = 24;
@@ -16,6 +17,19 @@ class ReelsFeedCubit extends Cubit<ReelsFeedState> {
   ReelsFeedCubit({ReelsServices? reelsServices})
     : _reelsServices = reelsServices ?? ReelsServices(),
       super(ReelsFeedInitial());
+
+  Future<void> applyPreferredCategoriesAndFetch({
+    required List<String> categories,
+    required int postsCount,
+  }) async {
+    _preferredCategories = List<String>.of(categories);
+    _seenVideoIds.clear();
+    await fetchReels(postsCount: postsCount);
+  }
+
+  void updatePreferredCategories(List<String> categories) {
+    _preferredCategories = List<String>.of(categories);
+  }
 
   Future<void> fetchReels({required int postsCount}) async {
     emit(ReelsFeedLoading());
@@ -29,6 +43,7 @@ class ReelsFeedCubit extends Cubit<ReelsFeedState> {
       final pool = await _reelsServices.fetchReelsBatch(
         limit: indices.length * _reelsPerSection,
         excludeIds: _seenVideoIds,
+        categories: _preferredCategories.isEmpty ? null : _preferredCategories,
       );
 
       if (pool.isEmpty) {
@@ -41,7 +56,9 @@ class ReelsFeedCubit extends Cubit<ReelsFeedState> {
         final chunk = pool.skip(i).take(_reelsPerSection).toList();
         if (chunk.isEmpty) continue;
         sections.add(chunk);
-        _seenVideoIds.add(chunk.first.youtubeVideoId);
+        for (final reel in chunk) {
+          _seenVideoIds.add(reel.youtubeVideoId);
+        }
       }
 
       final usableIndices = indices.take(sections.length).toList();
@@ -76,6 +93,7 @@ class ReelsFeedCubit extends Cubit<ReelsFeedState> {
       final more = await _reelsServices.fetchReelsBatch(
         limit: _loadMoreBatchSize,
         excludeIds: _seenVideoIds,
+        categories: _preferredCategories.isEmpty ? null : _preferredCategories,
       );
 
       final latest = state;

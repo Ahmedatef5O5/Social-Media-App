@@ -13,7 +13,7 @@ class ReelsServices {
   Future<List<ReelModel>> fetchReelsBatch({
     required int limit,
     Set<String> excludeIds = const {},
-    String? category,
+    List<String>? categories,
   }) async {
     final poolSize = (limit * _poolMultiplier).clamp(limit, _maxPoolSize);
 
@@ -22,6 +22,8 @@ class ReelsServices {
       params: {
         'limit_per_request': poolSize,
         'exclude_video_ids': excludeIds.toList(),
+        if (categories != null && categories.isNotEmpty)
+          'category_filter': categories,
       },
     );
 
