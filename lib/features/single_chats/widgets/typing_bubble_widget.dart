@@ -6,7 +6,12 @@ import '../helper/chat_bubble_colors.dart';
 
 class TypingBubbleWidget extends StatelessWidget {
   final String? receiverUserImgUrl;
-  const TypingBubbleWidget({super.key, this.receiverUserImgUrl});
+  final String receiverUserId;
+  const TypingBubbleWidget({
+    super.key,
+    this.receiverUserImgUrl,
+    required this.receiverUserId,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -21,6 +26,7 @@ class TypingBubbleWidget extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.only(right: 8, bottom: 2),
             child: UserChatAvatar(
+              userId: receiverUserId,
               userImgUrl: receiverUserImgUrl ?? AppImages.defaultUserImg,
             ),
           ),
@@ -28,10 +34,6 @@ class TypingBubbleWidget extends StatelessWidget {
             margin: const EdgeInsets.only(bottom: 4),
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
-              // color:
-              //     isDarkMode
-              //         ? AppColors.white.withValues(alpha: 0.85)
-              //         : AppColors.grey.withValues(alpha: 0.25),
               color: getReceiverBubbleColor(context),
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(18),
@@ -46,7 +48,6 @@ class TypingBubbleWidget extends StatelessWidget {
                           Brightness.dark
                       ? Colors.white70
                       : Colors.black54,
-              // color: isDarkMode ? AppColors.grey5 : AppColors.grey6,
               dotSize: 5,
             ),
           ),

@@ -107,6 +107,7 @@ class _MessagesListViewState extends State<MessagesListView> {
 
                 if (isTyping && index == 0) {
                   return TypingBubbleWidget(
+                    receiverUserId: widget.receiverUser.id,
                     receiverUserImgUrl: widget.receiverUser.imageUrl,
                   );
                 }

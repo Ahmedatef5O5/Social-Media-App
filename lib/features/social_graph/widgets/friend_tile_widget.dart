@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
+import '../../../core/presence/widgets/presence_avatar_widget.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/themes/app_colors.dart';
 import '../../../core/widgets/app_avatar.dart';
@@ -50,7 +51,13 @@ class FriendTileWidget extends StatelessWidget {
                   width: 2,
                 ),
               ),
-              child: AppAvatar(imageUrl: user.imageUrl, size: 48),
+              child: PresenceAvatarWidget(
+                userId: user.id,
+                avatarSize: 48,
+                showDot: true,
+                showBorder: false,
+                child: AppAvatar(imageUrl: user.imageUrl, size: 48),
+              ),
             ),
             const Gap(12),
             Expanded(

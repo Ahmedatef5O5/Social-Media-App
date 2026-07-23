@@ -6,12 +6,15 @@ import 'package:social_media_app/core/helpers/formatted_date.dart';
 import 'package:social_media_app/core/widgets/custom_loading_indicator.dart';
 import 'package:social_media_app/features/single_chats/models/chat_user_model.dart';
 import 'package:social_media_app/features/single_chats/widgets/full_screen_media_view.dart';
+import '../../../core/presence/cubit/presence_cubit/presence_cubit.dart';
+import '../../../core/presence/model/presence_info.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/toast/app_toast.dart';
 import '../../../core/utilities/supabase_constants.dart';
 import '../../../core/widgets/custom_user_profile_image_section.dart';
 import '../../single_calls/cubits/single_call_cubit/call_cubit.dart';
 import '../../single_calls/model/call_model.dart';
+import '../cubit/chat_details_cubit/chat_details_cubit.dart';
 import '../helper/call_actions.dart';
 import '../helper/safe_pop.dart';
 import '../services/chat_services.dart';
@@ -51,6 +54,7 @@ class _ReceiverProfileViewState extends State<ReceiverProfileView> {
                         avatarUrl: widget.receiverUser.imageUrl,
                         heroTag: widget.receiverUser.id,
                         isProfileHeader: true,
+                        profileUserId: widget.receiverUser.id,
                       ),
                       Align(
                         alignment: Alignment.topLeft,
@@ -79,25 +83,78 @@ class _ReceiverProfileViewState extends State<ReceiverProfileView> {
                       ),
                     ],
                   ),
-
                   const Gap(10),
-
                   Text(
                     widget.receiverUser.name,
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  if (widget.receiverUser.lastSeen != null)
-                    Text(
-                      FormattedDate.getLastSeen(
-                                widget.receiverUser.lastSeen!,
-                              ) ==
-                              'Online'
-                          ? 'Online'
-                          : "Last seen: ${FormattedDate.getLastSeen(widget.receiverUser.lastSeen!)}",
-                      style: const TextStyle(color: Colors.grey),
-                    ),
+                  BlocBuilder<ChatDetailsCubit, ChatDetailsState>(
+                    builder: (context, state) {
+                      final isTyping =
+                          state is ReceiverTypingState && state.isTyping;
+                      if (isTyping) {
+                        return const Text(
+                          'typing...',
+                          style: TextStyle(
+                            color: Colors.green,
+                            fontWeight: FontWeight.w500,
+                            fontStyle: FontStyle.italic,
+                          ),
+                        );
+                      }
+
+                      return Builder(
+                        builder: (context) {
+                          final presenceInfo = context
+                              .select<PresenceCubit, PresenceInfo?>(
+                                (cubit) => cubit.of(widget.receiverUser.id),
+                              );
+                          final isOnline =
+                              presenceInfo?.isEffectivelyOnline ??
+                              widget.receiverUser.isOnline;
+                          final lastSeen =
+                              presenceInfo?.lastSeen ??
+                              widget.receiverUser.lastSeen;
+
+                          if (isOnline) {
+                            return const Text(
+                              'Online',
+                              style: TextStyle(
+                                color: Colors.green,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            );
+                          }
+
+                          if (lastSeen != null) {
+                            final lastSeenStr = FormattedDate.getLastSeen(
+                              lastSeen,
+                            );
+
+                            if (lastSeenStr == 'Online' ||
+                                lastSeenStr == 'just now') {
+                              return const Text(
+                                'Online',
+                                style: TextStyle(
+                                  color: Colors.green,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              );
+                            }
+
+                            return Text(
+                              "Last seen: $lastSeenStr",
+                              style: const TextStyle(color: Colors.grey),
+                            );
+                          }
+
+                          return const SizedBox.shrink();
+                        },
+                      );
+                    },
+                  ),
 
                   const Gap(25),
 

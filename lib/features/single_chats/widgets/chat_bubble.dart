@@ -273,7 +273,7 @@ class ChatBubbleState extends State<ChatBubble>
                     ),
 
                     if (!widget.isMe) ...[
-                      UserChatAvatar(userImgUrl: widget.userImgUrl),
+                      UserChatAvatar( userId: widget.message.senderId, userImgUrl: widget.userImgUrl),
                       const Gap(8),
                     ],
 

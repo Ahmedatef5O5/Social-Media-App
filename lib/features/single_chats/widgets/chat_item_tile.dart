@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import '../../../core/helpers/chat_helper.dart';
 import '../../../core/helpers/formatted_date.dart';
+import '../../../core/presence/widgets/presence_avatar_widget.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/widgets/app_avatar.dart';
 import '../../profile/widgets/user_preview_dialog.dart';
@@ -198,29 +199,25 @@ class ChatItemTile extends StatelessWidget {
   }
 
   Widget _buildUserAvatar(BuildContext context) {
-    final lastSeenText =
-        user.lastSeen != null
-            ? FormattedDate.getLastSeen(user.lastSeen!)
-            : null;
-    final isOnline = user.lastSeen == null || lastSeenText == 'Online';
+    return PresenceAvatarWidget(
+      userId: user.id,
+      avatarSize: 52,
+      showDot: true,
+      showBorder: true,
 
-    return AppAvatar(
-      imageUrl: user.imageUrl,
-      size: 52,
-      heroTag: user.id,
-      onTap: () {
-        showDialog(
-          context: context,
-          builder:
-              (context) =>
-                  UserPreviewDialog(user: user, showContactOptions: true),
-        );
-      },
-      // Online status configuration
-      isOnline: isOnline,
-      showOnlineDot: isOnline,
-      borderColor: isOnline ? Colors.green : null,
-      borderWidth: 2.2,
+      child: AppAvatar(
+        imageUrl: user.imageUrl,
+        size: 52,
+        heroTag: user.id,
+        onTap: () {
+          showDialog(
+            context: context,
+            builder:
+                (context) =>
+                    UserPreviewDialog(user: user, showContactOptions: true),
+          );
+        },
+      ),
     );
   }
 }
