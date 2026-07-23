@@ -28,6 +28,7 @@ class _ReelsFullScreenViewState extends State<ReelsFullScreenView> {
   late final PageController _pageController;
   final ReelPlayerControllerPool _controllerPool = ReelPlayerControllerPool();
   late int _currentIndex;
+  double _accumulatedDragDistance = 0;
   static const int _loadMoreThreshold = 3;
 
   @override
@@ -76,6 +77,7 @@ class _ReelsFullScreenViewState extends State<ReelsFullScreenView> {
 
   void _handleDragUpdate(double dy) {
     if (!_pageController.hasClients) return;
+    _accumulatedDragDistance += dy;
     final position = _pageController.position;
     final next = (position.pixels - dy).clamp(
       position.minScrollExtent,
@@ -88,23 +90,30 @@ class _ReelsFullScreenViewState extends State<ReelsFullScreenView> {
     if (!_pageController.hasClients) return;
     final reelsCount = _currentReels().length;
     if (reelsCount == 0) return;
-    const flingVelocityThreshold = 600.0;
+    const flingVelocityThreshold = 300.0;
+    final distanceThreshold = MediaQuery.sizeOf(context).height * 0.18;
+    final draggedDistance = _accumulatedDragDistance;
+    _accumulatedDragDistance = 0;
     final page = _pageController.page ?? _currentIndex.toDouble();
 
     int target;
     if (velocity <= -flingVelocityThreshold) {
-      target = _currentIndex + 1; // fast upward swipe -> next reel
+      target = _currentIndex + 1;
     } else if (velocity >= flingVelocityThreshold) {
-      target = _currentIndex - 1; // fast downward swipe -> previous reel
+      target = _currentIndex - 1;
+    } else if (draggedDistance <= -distanceThreshold) {
+      target = _currentIndex + 1;
+    } else if (draggedDistance >= distanceThreshold) {
+      target = _currentIndex - 1;
     } else {
-      target = page.round(); // slow drag -> snap to nearest page
+      target = page.round();
     }
     target = target.clamp(0, reelsCount - 1);
 
     _pageController
         .animateToPage(
           target,
-          duration: const Duration(milliseconds: 260),
+          duration: const Duration(milliseconds: 220),
           curve: Curves.easeOutCubic,
         )
         .then((_) {

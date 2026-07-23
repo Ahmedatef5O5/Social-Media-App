@@ -1,12 +1,15 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:youtube_player_iframe/youtube_player_iframe.dart';
 import '../model/reel_model.dart';
 
 class ReelPlayerControllerPool {
   final Map<int, YoutubePlayerController> _controllers = {};
-
+  Timer? _preloadDelayTimer;
   static const int _windowBefore = 1;
-  static const int _windowAfter = 3;
+  static const int _windowAfter = 1;
+  static const Duration _preloadDelay = Duration(milliseconds: 400);
 
   YoutubePlayerController controllerFor(
     int index,
@@ -42,6 +45,7 @@ class ReelPlayerControllerPool {
   }
 
   void updateActiveIndex(int current, List<ReelModel> reels) {
+    _preloadDelayTimer?.cancel();
     final validRange = {
       for (var i = current - _windowBefore; i <= current + _windowAfter; i++) i,
     };
@@ -56,11 +60,17 @@ class ReelPlayerControllerPool {
       _controllers.remove(index);
     }
 
-    for (var i = current; i <= current + _windowAfter; i++) {
-      if (i >= 0 && i < reels.length) {
-        controllerFor(i, reels[i].youtubeVideoId, isActive: i == current);
+    controllerFor(current, reels[current].youtubeVideoId, isActive: true);
+    _preloadDelayTimer = Timer(_preloadDelay, () {
+      final nextIndex = current + 1;
+      if (nextIndex < reels.length) {
+        controllerFor(
+          nextIndex,
+          reels[nextIndex].youtubeVideoId,
+          isActive: false,
+        );
       }
-    }
+    });
   }
 
   void setActivelyPlaying(int index) {
@@ -81,6 +91,7 @@ class ReelPlayerControllerPool {
   bool get isEmpty => _controllers.isEmpty;
 
   void disposeAll() {
+    _preloadDelayTimer?.cancel();
     for (final controller in _controllers.values) {
       controller.close();
     }
