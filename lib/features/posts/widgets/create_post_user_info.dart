@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:social_media_app/core/widgets/main_user_avatar.dart';
-
 import '../../social_graph/models/content_privacy.dart';
 
 class CreatePostUserInfo extends StatelessWidget {

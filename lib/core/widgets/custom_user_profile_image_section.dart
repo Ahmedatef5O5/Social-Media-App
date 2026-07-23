@@ -1,9 +1,12 @@
 import 'dart:io';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:social_media_app/core/router/app_routes.dart';
 import '../../../core/constants/app_images.dart';
 import '../../../core/widgets/app_avatar.dart';
+import '../presence/cubit/presence_cubit/presence_cubit.dart';
+import '../presence/widgets/presence_avatar_widget.dart';
 
 class CustomUserProfileImagesSection extends StatelessWidget {
   final double aspectRatio;
@@ -19,6 +22,8 @@ class CustomUserProfileImagesSection extends StatelessWidget {
   final VoidCallback? onEditAvatar;
   final Alignment avatarAlignment;
   final String? heroTag;
+  final String? profileUserId;
+  final bool? showBorder;
 
   const CustomUserProfileImagesSection({
     super.key,
@@ -36,6 +41,8 @@ class CustomUserProfileImagesSection extends StatelessWidget {
     this.onEditAvatar,
     this.avatarAlignment = Alignment.bottomCenter,
     this.heroTag,
+    this.profileUserId,
+    this.showBorder,
   });
 
   @override
@@ -45,6 +52,12 @@ class CustomUserProfileImagesSection extends StatelessWidget {
     final double dynamicAvatarSize = screenWidth * avatarSizeFactor;
     final double calculatedTotalHeight =
         dynamicBackgroundHeight + (dynamicAvatarSize / 2);
+
+    final bool isOnline =
+        profileUserId != null &&
+        context.select<PresenceCubit, bool>(
+          (cubit) => cubit.isOnline(profileUserId!),
+        );
 
     return SizedBox(
       height: totalHeight ?? calculatedTotalHeight,
@@ -139,14 +152,23 @@ class CustomUserProfileImagesSection extends StatelessWidget {
                           ),
                         )
                       else
-                        AppAvatar(
-                          imageUrl: avatarUrl,
-                          size: dynamicAvatarSize,
-                          borderColor:
-                              !isEditMode
-                                  ? Theme.of(context).primaryColor
-                                  : null,
-                          borderWidth: isProfileHeader ? 2.2 : 2.0,
+                        PresenceAvatarWidget(
+                          userId: profileUserId ?? '',
+                          avatarSize: dynamicAvatarSize,
+                          showDot: profileUserId != null,
+                          showBorder: showBorder ?? true,
+                          child: AppAvatar(
+                            imageUrl: avatarUrl,
+                            size: dynamicAvatarSize,
+                            borderColor:
+                                (!isEditMode && !isOnline)
+                                    ? Theme.of(context).primaryColor
+                                    : Colors.transparent,
+                            borderWidth:
+                                (!isEditMode && !isOnline)
+                                    ? (isProfileHeader ? 2.2 : 2.0)
+                                    : 0.0,
+                          ),
                         ),
 
                       if (isEditMode)

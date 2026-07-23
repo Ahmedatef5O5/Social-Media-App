@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/presence/widgets/presence_avatar_widget.dart';
 import '../model/post_model.dart';
 import '../../../core/widgets/app_avatar.dart';
 
@@ -10,16 +11,10 @@ class AuthorImageWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isOnline = post.isOnline;
-
-    return AppAvatar(
-      imageUrl: post.authorImageUrl,
-      size: 44,
-      onTap: onTap,
-      isOnline: isOnline,
-      showOnlineDot: isOnline,
-      borderColor: isOnline ? Colors.green : null,
-      borderWidth: 2.2,
+    return PresenceAvatarWidget(
+      userId: post.authorId,
+      avatarSize: 44,
+      child: AppAvatar(imageUrl: post.authorImageUrl, size: 44, onTap: onTap),
     );
   }
 }

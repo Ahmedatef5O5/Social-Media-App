@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
+import '../../../core/presence/widgets/presence_avatar_widget.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/themes/app_colors.dart';
 import '../../../core/toast/app_toast.dart';
@@ -99,17 +100,23 @@ class DiscoverPersonCardWidget extends StatelessWidget {
                       width: 2,
                     ),
                   ),
-                  child: AppAvatar(
-                    imageUrl: userData.imageUrl,
-                    size: 52,
-                    onTap:
-                        () => showDialog(
-                          context: context,
-                          builder:
-                              (context) => UserPreviewDialog(
-                                user: ChatUserModel.fromEntity(userData),
-                              ),
-                        ),
+                  child: PresenceAvatarWidget(
+                    userId: userData.id,
+                    avatarSize: 52,
+                    showDot: true,
+                    showBorder: false,
+                    child: AppAvatar(
+                      imageUrl: userData.imageUrl,
+                      size: 52,
+                      onTap:
+                          () => showDialog(
+                            context: context,
+                            builder:
+                                (context) => UserPreviewDialog(
+                                  user: ChatUserModel.fromEntity(userData),
+                                ),
+                          ),
+                    ),
                   ),
                 ),
                 const Gap(12),

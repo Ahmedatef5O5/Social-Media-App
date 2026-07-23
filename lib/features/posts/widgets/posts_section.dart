@@ -1,6 +1,5 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:gap/gap.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
 import '../cubit/posts_cubit/posts_cubit.dart';
 import 'post_item_widget.dart';
@@ -28,25 +27,41 @@ class PostsSection extends StatelessWidget {
           );
         } else if (state is PostsLoaded) {
           final posts = state.posts;
+
+          debugPrint(
+            '🔄 PostsSection Rebuilt! Total posts now: \${posts.length}',
+          );
+
           if (posts.isEmpty) {
             return SliverToBoxAdapter(
               child: const Center(child: Text('No posts available.')),
             );
           }
-          return SliverList.separated(
-            itemCount: posts.length,
+          return SliverList(
+            delegate: SliverChildBuilderDelegate(
+              (context, index) {
+                final post = posts[index];
 
-            itemBuilder: (context, index) {
-              final post = posts[index];
+                return Padding(
+                  key: ValueKey(post.id),
+                  padding: EdgeInsets.only(
+                    bottom: index == posts.length - 1 ? 0 : 14.0,
+                  ),
+                  child: PostItemWidget(
+                    key: ValueKey(posts[index].id),
+                    currPost: post,
+                    postsCubit: postsCubit,
+                  ),
+                );
+              },
+              childCount: posts.length,
 
-              return PostItemWidget(
-                key: ValueKey(posts[index].id),
-                currPost: post,
-                postsCubit: postsCubit,
-              );
-            },
-            separatorBuilder:
-                (BuildContext context, int index) => const Gap(14),
+              findChildIndexCallback: (Key key) {
+                final valueKey = key as ValueKey<String>;
+                final index = posts.indexWhere((p) => p.id == valueKey.value);
+                return index >= 0 ? index : null;
+              },
+            ),
           );
         } else if (state is PostsError) {
           return SliverToBoxAdapter(child: Center(child: Text(state.message)));

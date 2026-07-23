@@ -226,9 +226,9 @@ class _CustomBottomNavBarState extends State<CustomBottomNavBar> {
                                     ),
                                     NavBarItem(
                                       child: MainUserAvatar(
+                                        userId: userId,
                                         imageUrl: imageUrl,
                                         showBorder: false,
-                                        // showBorder: _controller.index == 3,
                                         size: 30,
                                       ),
                                     ),

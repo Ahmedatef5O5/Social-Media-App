@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../core/constants/app_images.dart';
+import '../../../core/presence/widgets/presence_avatar_widget.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/widgets/app_avatar.dart';
@@ -24,11 +25,16 @@ class CommentAvatar extends StatelessWidget {
     final currentUserId = SupabaseProvider.id;
     final isMe = comment.authorId == currentUserId;
 
-    return AppAvatar(
-      imageUrl: imageUrl,
-      size: radius * 2,
-      heroTag: comment.authorId,
-      onTap: () => isMe ? _openMyAvatar(context) : _showUserPreview(context),
+    return PresenceAvatarWidget(
+      userId: comment.authorId,
+      avatarSize: radius * 2,
+      showBorder: false,
+      child: AppAvatar(
+        imageUrl: imageUrl,
+        size: radius * 2,
+        heroTag: comment.authorId,
+        onTap: () => isMe ? _openMyAvatar(context) : _showUserPreview(context),
+      ),
     );
   }
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shimmer/shimmer.dart';
+import '../../../core/presence/widgets/presence_avatar_widget.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/themes/app_colors.dart';
@@ -290,7 +291,13 @@ class _ReactionEntryTile extends StatelessWidget {
           child: Stack(
             clipBehavior: Clip.none,
             children: [
-              AppAvatar(imageUrl: entry.userImageUrl, size: 44),
+              PresenceAvatarWidget(
+                userId: entry.userId,
+                avatarSize: 44,
+                showDot: false,
+                showBorder: true,
+                child: AppAvatar(imageUrl: entry.userImageUrl, size: 44),
+              ),
               Positioned(
                 right: -2,
                 bottom: -2,
@@ -299,12 +306,6 @@ class _ReactionEntryTile extends StatelessWidget {
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: Theme.of(context).scaffoldBackgroundColor,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.08),
-                        blurRadius: 2,
-                      ),
-                    ],
                   ),
                   child: DefaultTextStyle(
                     style: const TextStyle(fontSize: 13),

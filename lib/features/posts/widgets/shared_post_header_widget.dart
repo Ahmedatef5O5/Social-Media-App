@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 import '../../../core/helpers/formatted_date.dart';
+import '../../../core/presence/widgets/presence_avatar_widget.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/toast/app_toast.dart';
 import '../../../core/widgets/app_avatar.dart';
@@ -131,7 +132,17 @@ class SharedPostHeaderWidget extends StatelessWidget {
                     width: 1.5,
                   ),
                 ),
-                child: AppAvatar(imageUrl: sharedPost.authorImageUrl, size: 38),
+                child: PresenceAvatarWidget(
+                  userId: sharedPost.authorId,
+                  avatarSize: 38,
+                  showDot: false,
+                  showBorder: true,
+
+                  child: AppAvatar(
+                    imageUrl: sharedPost.authorImageUrl,
+                    size: 38,
+                  ),
+                ),
               ),
               Positioned(
                 right: -3,
