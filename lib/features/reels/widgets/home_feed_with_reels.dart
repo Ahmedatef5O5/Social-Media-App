@@ -7,6 +7,7 @@ import '../../posts/model/post_model.dart';
 import '../../posts/widgets/post_item_widget.dart';
 import '../cubit/reels_feed_cubit/reels_feed_cubit.dart';
 import '../model/reel_model.dart';
+import '../services/reels_preferences_store.dart';
 import 'reels_horizontal_section.dart';
 
 class HomeFeedWithReels extends StatefulWidget {
@@ -17,21 +18,47 @@ class HomeFeedWithReels extends StatefulWidget {
 }
 
 class _HomeFeedWithReelsState extends State<HomeFeedWithReels> {
+  bool _isInitializingReels = false;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback(
-      (_) => _maybeFetchInitialReels(),
+      (_) => _maybeInitializeReels(),
     );
   }
 
-  void _maybeFetchInitialReels() {
-    if (!mounted) return;
+  Future<void> _maybeInitializeReels() async {
+    if (!mounted || _isInitializingReels) return;
     final postsState = context.read<PostsCubit>().state;
     final reelsCubit = context.read<ReelsFeedCubit>();
-    if (postsState is PostsLoaded && reelsCubit.state is ReelsFeedInitial) {
-      reelsCubit.fetchReels(postsCount: postsState.posts.length);
+    if (postsState is! PostsLoaded || reelsCubit.state is! ReelsFeedInitial) {
+      return;
     }
+    await _initializeReelsFeed(postsState.posts.length);
+  }
+
+  Future<void> _initializeReelsFeed(int postsCount) async {
+    _isInitializingReels = true;
+    final reelsCubit = context.read<ReelsFeedCubit>();
+
+    final hasSeenOnboarding =
+        await ReelsPreferencesStore.instance.hasSeenOnboarding();
+
+    List<String> categories = [];
+    if (hasSeenOnboarding) {
+      categories = await ReelsPreferencesStore.instance.getSelectedCategories();
+    }
+
+    if (!mounted) {
+      _isInitializingReels = false;
+      return;
+    }
+    await reelsCubit.applyPreferredCategoriesAndFetch(
+      categories: categories,
+      postsCount: postsCount,
+    );
+    _isInitializingReels = false;
   }
 
   @override
@@ -46,9 +73,7 @@ class _HomeFeedWithReelsState extends State<HomeFeedWithReels> {
       listener: (context, state) {
         final reelsCubit = context.read<ReelsFeedCubit>();
         if (reelsCubit.state is ReelsFeedInitial) {
-          reelsCubit.fetchReels(
-            postsCount: (state as PostsLoaded).posts.length,
-          );
+          _initializeReelsFeed((state as PostsLoaded).posts.length);
         }
       },
       child: BlocBuilder<PostsCubit, PostsState>(

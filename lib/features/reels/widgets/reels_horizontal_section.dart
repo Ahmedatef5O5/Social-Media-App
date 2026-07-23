@@ -3,7 +3,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/constants/app_images.dart';
 import '../cubit/reels_feed_cubit/reels_feed_cubit.dart';
 import '../model/reel_model.dart';
+import '../services/reels_preferences_store.dart';
 import '../views/reels_full_screen_view.dart';
+import '../views/reels_onboarding_view.dart';
 import 'reel_thumbnail_card.dart';
 
 class ReelsHorizontalSection extends StatelessWidget {
@@ -48,8 +50,28 @@ class ReelsHorizontalSection extends StatelessWidget {
               final reel = reels[index];
               return ReelThumbnailCard(
                 reel: reel,
-                onTap: () {
+                onTap: () async {
                   final reelsCubit = context.read<ReelsFeedCubit>();
+                  final hasSeen =
+                      await ReelsPreferencesStore.instance.hasSeenOnboarding();
+                  if (!context.mounted) return;
+
+                  if (!hasSeen) {
+                    final categories = await Navigator.of(
+                      context,
+                      rootNavigator: true,
+                    ).push<List<String>>(
+                      MaterialPageRoute(
+                        builder: (_) => const ReelsOnboardingView(),
+                      ),
+                    );
+                    if (categories != null && context.mounted) {
+                      reelsCubit.updatePreferredCategories(categories);
+                    }
+                  }
+
+                  if (!context.mounted) return;
+
                   Navigator.of(context, rootNavigator: true).push(
                     MaterialPageRoute(
                       builder:
