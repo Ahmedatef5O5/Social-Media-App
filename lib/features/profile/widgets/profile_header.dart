@@ -13,6 +13,7 @@ import '../../../core/widgets/custom_elevated_button.dart';
 import '../../posts/cubit/posts_cubit/posts_cubit.dart';
 import '../../single_chats/models/chat_user_model.dart';
 import '../../social_graph/models/friendship_status.dart';
+import '../../social_graph/widgets/animated_action_button.dart';
 
 class ProfileHeader extends StatelessWidget {
   const ProfileHeader({super.key, required this.size, required this.state});
@@ -44,6 +45,8 @@ class ProfileHeader extends StatelessWidget {
               avatarUrl: user.imageUrl ?? AppImages.defaultUserImg,
               isProfileHeader: true,
               heroTag: 'edit-profile-avatar',
+              profileUserId: isMe ? currentUserId : user.id,
+              showBorder: true,
             ),
 
             if (!isMe)
@@ -54,40 +57,7 @@ class ProfileHeader extends StatelessWidget {
                   width: 166,
                   child: Column(
                     children: [
-                      _buildSmallActionButton(
-                        context,
-                        label: switch (state.friendshipStatus) {
-                          FriendshipStatus.none => 'Add friend',
-                          FriendshipStatus.pendingSent => 'Cancel request',
-                          FriendshipStatus.pendingReceived => 'Respond',
-                          FriendshipStatus.accepted => 'Friends',
-                        },
-                        txtColor: theme.scaffoldBackgroundColor,
-                        iconWidget: Image.asset(
-                          AppImages.addUserIcon,
-                          width: 18,
-                          height: 20,
-                          color: theme.scaffoldBackgroundColor,
-                        ),
-                        onPressed: () async {
-                          final cubit = context.read<ProfileCubit>();
-                          switch (state.friendshipStatus) {
-                            case FriendshipStatus.none:
-                              await cubit.sendFriendRequest();
-                              break;
-                            case FriendshipStatus.pendingSent:
-                              await cubit.cancelFriendRequest();
-                              break;
-                            case FriendshipStatus.pendingReceived:
-                              AppToast.info(
-                                'Check your notifications to respond to this request',
-                              );
-                              break;
-                            case FriendshipStatus.accepted:
-                              break;
-                          }
-                        },
-                      ),
+                      _buildFriendshipActionWidget(context, theme),
 
                       const Gap(8),
                       _buildSmallActionButton(
@@ -273,82 +243,143 @@ class ProfileHeader extends StatelessWidget {
         Gap(size.height * 0.003),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: CustomElevatedButton(
-            minimumSize: const Size(double.infinity, 46),
-            maximumSize: const Size(double.infinity, 46),
-            txtBtn:
-                isMe
-                    ? 'Edit Profile'
-                    : (state.isFollowing ? 'Following' : 'Follow'),
-            txtBtnStyle: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 0.2,
-              color: isMe ? theme.primaryColor : Colors.white,
-            ),
-            prefixIcon:
-                isMe
-                    ? Icon(
+          child:
+              isMe
+                  ? CustomElevatedButton(
+                    minimumSize: const Size(double.infinity, 46),
+                    maximumSize: const Size(double.infinity, 46),
+                    txtBtn: 'Edit Profile',
+                    txtBtnStyle: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 0.2,
+                      color: theme.primaryColor,
+                    ),
+                    prefixIcon: Icon(
                       Icons.edit_rounded,
                       size: 16,
                       color: theme.primaryColor,
-                    )
-                    : null,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-            side: isMe ? BorderSide(color: AppColors.grey3, width: 1.3) : null,
-            elevation: 0,
-            bgColor: isMe ? theme.colorScheme.surface : theme.primaryColor,
-
-            onPressed: () async {
-              if (isMe) {
-                final profileCubit = context.read<ProfileCubit>();
-                await Navigator.of(
-                  context,
-                  rootNavigator: true,
-                ).pushNamed(AppRoutes.editProfileViewRoute, arguments: user);
-                if (context.mounted) {
-                  profileCubit.getProfileData(user.id);
-                }
-              } else {
-                await context.read<ProfileCubit>().toggleFollow();
-              }
-            },
-          ),
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    side: BorderSide(color: AppColors.grey3, width: 1.3),
+                    elevation: 0,
+                    bgColor: theme.colorScheme.surface,
+                    onPressed: () async {
+                      final profileCubit = context.read<ProfileCubit>();
+                      await Navigator.of(
+                        context,
+                        rootNavigator: true,
+                      ).pushNamed(
+                        AppRoutes.editProfileViewRoute,
+                        arguments: user,
+                      );
+                      if (context.mounted) {
+                        profileCubit.getProfileData(user.id);
+                      }
+                    },
+                  )
+                  : AnimatedActionButton(
+                    height: 46,
+                    isActive: state.isFollowing,
+                    idleLabel: 'Follow',
+                    activeLabel: 'Following',
+                    idleIcon: Icons.person_add_rounded,
+                    activeIcon: Icons.check_rounded,
+                    onPressed: () async {
+                      await context.read<ProfileCubit>().toggleFollow();
+                    },
+                  ),
         ),
       ],
     );
   }
-}
 
-Widget _buildSmallActionButton(
-  BuildContext context, {
-  required String label,
-  required Widget iconWidget,
-  required VoidCallback onPressed,
-  TextStyle? txtBtnStyle,
-  Color? txtColor,
-  BorderSide? side,
-  bgColor,
-}) {
-  return CustomElevatedButton(
-    txtBtn: label,
-    onPressed: onPressed,
-    maximumSize: const Size(double.infinity, 42),
-    minimumSize: const Size(double.infinity, 42),
-    txtColor: txtColor,
-    txtBtnStyle:
-        txtBtnStyle ??
-        TextStyle(
-          color: txtColor ?? Colors.white,
-          fontSize: 12.5,
-          fontWeight: FontWeight.bold,
-        ),
-    bgColor: bgColor,
-    side: side,
-    elevation: 1.1,
-    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
-    prefixIcon: iconWidget,
-  );
+  Widget _buildFriendshipActionWidget(BuildContext context, ThemeData theme) {
+    final cubit = context.read<ProfileCubit>();
+
+    switch (state.friendshipStatus) {
+      case FriendshipStatus.none:
+        return AnimatedActionButton(
+          height: 42,
+          isActive: false,
+          idleLabel: 'Add friend',
+          activeLabel: 'Requested',
+          idleIcon: Icons.person_add_alt_1_rounded,
+          activeIcon: Icons.hourglass_top_rounded,
+          onPressed: () => cubit.sendFriendRequest(),
+        );
+      case FriendshipStatus.pendingSent:
+        return AnimatedActionButton(
+          height: 42,
+          isActive: true,
+          idleLabel: 'Add friend',
+          activeLabel: 'Requested',
+          idleIcon: Icons.person_add_alt_1_rounded,
+          activeIcon: Icons.hourglass_top_rounded,
+          onPressed: () => cubit.cancelFriendRequest(),
+        );
+      case FriendshipStatus.pendingReceived:
+        return _buildSmallActionButton(
+          context,
+          label: 'Respond',
+          txtColor: Colors.white,
+          bgColor: theme.primaryColor,
+          iconWidget: const Icon(
+            Icons.mark_email_unread_rounded,
+            size: 18,
+            color: Colors.white,
+          ),
+          onPressed:
+              () => AppToast.info(
+                'Check your notifications to respond to this request',
+              ),
+        );
+      case FriendshipStatus.accepted:
+        return _buildSmallActionButton(
+          context,
+          label: 'Friends',
+          txtColor: theme.colorScheme.onSurfaceVariant,
+          bgColor: theme.colorScheme.surfaceContainerHighest,
+          iconWidget: Icon(
+            Icons.people_alt_rounded,
+            size: 18,
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+          onPressed: () {},
+        );
+    }
+  }
+
+  Widget _buildSmallActionButton(
+    BuildContext context, {
+    required String label,
+    required Widget iconWidget,
+    required VoidCallback onPressed,
+    TextStyle? txtBtnStyle,
+    Color? txtColor,
+    BorderSide? side,
+    bgColor,
+  }) {
+    return CustomElevatedButton(
+      txtBtn: label,
+      onPressed: onPressed,
+      maximumSize: const Size(double.infinity, 42),
+      minimumSize: const Size(double.infinity, 42),
+      txtColor: txtColor,
+      txtBtnStyle:
+          txtBtnStyle ??
+          TextStyle(
+            color: txtColor ?? Colors.white,
+            fontSize: 12.5,
+            fontWeight: FontWeight.bold,
+          ),
+      bgColor: bgColor,
+      side: side,
+      elevation: 1.1,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+      prefixIcon: iconWidget,
+    );
+  }
 }

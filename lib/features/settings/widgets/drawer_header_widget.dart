@@ -22,6 +22,7 @@ class DrawerHeaderWidget extends StatelessWidget {
                 backgroundUrl:
                     user.backgroundImageUrl ?? AppImages.defaultBackgroundImg,
                 avatarUrl: user.imageUrl ?? AppImages.defaultUserImg,
+                profileUserId: user.id,
               ),
               Align(
                 alignment: Alignment.centerRight,
