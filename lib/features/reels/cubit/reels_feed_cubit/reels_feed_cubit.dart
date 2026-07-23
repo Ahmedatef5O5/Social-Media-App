@@ -7,13 +7,11 @@ part 'reels_feed_state.dart';
 
 class ReelsFeedCubit extends Cubit<ReelsFeedState> {
   final ReelsServices _reelsServices;
-
-  final Set<String> _displayedLeadVideoIds = {};
-
+  final Set<String> _seenVideoIds = {};
   static const int _minGap = 5;
-  static const int _maxGap = 6; // inclusive
-
+  static const int _maxGap = 6;
   static const int _reelsPerSection = 24;
+  static const int _loadMoreBatchSize = 12;
 
   ReelsFeedCubit({ReelsServices? reelsServices})
     : _reelsServices = reelsServices ?? ReelsServices(),
@@ -30,7 +28,7 @@ class ReelsFeedCubit extends Cubit<ReelsFeedState> {
 
       final pool = await _reelsServices.fetchReelsBatch(
         limit: indices.length * _reelsPerSection,
-        excludeIds: _displayedLeadVideoIds,
+        excludeIds: _seenVideoIds,
       );
 
       if (pool.isEmpty) {
@@ -43,7 +41,7 @@ class ReelsFeedCubit extends Cubit<ReelsFeedState> {
         final chunk = pool.skip(i).take(_reelsPerSection).toList();
         if (chunk.isEmpty) continue;
         sections.add(chunk);
-        _displayedLeadVideoIds.add(chunk.first.youtubeVideoId);
+        _seenVideoIds.add(chunk.first.youtubeVideoId);
       }
 
       final usableIndices = indices.take(sections.length).toList();
@@ -54,6 +52,75 @@ class ReelsFeedCubit extends Cubit<ReelsFeedState> {
     } catch (e) {
       debugPrint('Error fetching reels: $e');
       emit(ReelsFeedError(e.toString()));
+    }
+  }
+
+  Future<void> loadMoreReelsForSection(int sectionIndex) async {
+    final current = state;
+    if (current is! ReelsFeedLoaded) return;
+    if (sectionIndex < 0 || sectionIndex >= current.sections.length) return;
+
+    if (current.loadingMoreSectionIndices.contains(sectionIndex)) return;
+    if (current.exhaustedSectionIndices.contains(sectionIndex)) return;
+
+    emit(
+      current.copyWith(
+        loadingMoreSectionIndices: {
+          ...current.loadingMoreSectionIndices,
+          sectionIndex,
+        },
+      ),
+    );
+
+    try {
+      final more = await _reelsServices.fetchReelsBatch(
+        limit: _loadMoreBatchSize,
+        excludeIds: _seenVideoIds,
+      );
+
+      final latest = state;
+      if (latest is! ReelsFeedLoaded) return;
+      if (sectionIndex >= latest.sections.length) return;
+
+      final stillLoading = {...latest.loadingMoreSectionIndices}
+        ..remove(sectionIndex);
+
+      if (more.isEmpty) {
+        emit(
+          latest.copyWith(
+            loadingMoreSectionIndices: stillLoading,
+            exhaustedSectionIndices: {
+              ...latest.exhaustedSectionIndices,
+              sectionIndex,
+            },
+          ),
+        );
+        return;
+      }
+
+      for (final reel in more) {
+        _seenVideoIds.add(reel.youtubeVideoId);
+      }
+
+      final updatedSections = List<List<ReelModel>>.of(latest.sections);
+      updatedSections[sectionIndex] = [
+        ...updatedSections[sectionIndex],
+        ...more,
+      ];
+
+      emit(
+        latest.copyWith(
+          sections: updatedSections,
+          loadingMoreSectionIndices: stillLoading,
+        ),
+      );
+    } catch (e) {
+      debugPrint('Error loading more reels for section $sectionIndex: $e');
+      final latest = state;
+      if (latest is! ReelsFeedLoaded) return;
+      final stillLoading = {...latest.loadingMoreSectionIndices}
+        ..remove(sectionIndex);
+      emit(latest.copyWith(loadingMoreSectionIndices: stillLoading));
     }
   }
 

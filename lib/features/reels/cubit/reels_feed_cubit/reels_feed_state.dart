@@ -4,24 +4,43 @@ sealed class ReelsFeedState {
   const ReelsFeedState();
 }
 
-final class ReelsFeedInitial extends ReelsFeedState {}
+class ReelsFeedInitial extends ReelsFeedState {}
 
-final class ReelsFeedLoading extends ReelsFeedState {}
+class ReelsFeedLoading extends ReelsFeedState {}
 
-final class ReelsFeedLoaded extends ReelsFeedState {
+class ReelsFeedEmpty extends ReelsFeedState {}
+
+class ReelsFeedError extends ReelsFeedState {
+  final String message;
+  const ReelsFeedError(this.message);
+}
+
+class ReelsFeedLoaded extends ReelsFeedState {
   final List<int> injectionIndices;
-
   final List<List<ReelModel>> sections;
+  final Set<int> loadingMoreSectionIndices;
+  final Set<int> exhaustedSectionIndices;
 
   const ReelsFeedLoaded({
     required this.injectionIndices,
     required this.sections,
+    this.loadingMoreSectionIndices = const {},
+    this.exhaustedSectionIndices = const {},
   });
-}
 
-final class ReelsFeedEmpty extends ReelsFeedState {}
-
-final class ReelsFeedError extends ReelsFeedState {
-  final String message;
-  const ReelsFeedError(this.message);
+  ReelsFeedLoaded copyWith({
+    List<int>? injectionIndices,
+    List<List<ReelModel>>? sections,
+    Set<int>? loadingMoreSectionIndices,
+    Set<int>? exhaustedSectionIndices,
+  }) {
+    return ReelsFeedLoaded(
+      injectionIndices: injectionIndices ?? this.injectionIndices,
+      sections: sections ?? this.sections,
+      loadingMoreSectionIndices:
+          loadingMoreSectionIndices ?? this.loadingMoreSectionIndices,
+      exhaustedSectionIndices:
+          exhaustedSectionIndices ?? this.exhaustedSectionIndices,
+    );
+  }
 }
