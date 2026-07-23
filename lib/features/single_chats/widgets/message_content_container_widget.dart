@@ -5,19 +5,26 @@ import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import 'package:social_media_app/features/single_chats/cubit/chat_details_cubit/chat_details_cubit.dart';
 import 'package:social_media_app/features/single_chats/widgets/message_reactions_row_widget.dart';
 import '../../../core/helpers/modern_circle_progress.dart';
+import '../../../core/router/app_routes.dart';
 import '../../../core/themes/app_colors.dart';
+import '../../reactions/model/live_reaction.dart';
+import '../../reactions/services/reaction_profile_resolver.dart';
+import '../../reactions/widgets/message_reactions_bottom_sheet.dart';
+import '../models/chat_user_model.dart';
 import '../models/message_model.dart';
 import 'call_message_content.dart';
 import 'regular_message_content.dart';
 
 class MessageContentContainer extends StatefulWidget {
   final MessageModel message;
+  final ChatUserModel receiverUser;
   final bool isMe;
   final double? uploadProgress;
   final ItemScrollController itemScrollController;
   const MessageContentContainer({
     super.key,
     required this.message,
+    required this.receiverUser,
     required this.isMe,
     this.uploadProgress,
     required this.itemScrollController,
@@ -29,6 +36,62 @@ class MessageContentContainer extends StatefulWidget {
 }
 
 class _MessageContentContainerState extends State<MessageContentContainer> {
+  Map<String, LiveReaction> _mergeLiveReactions(MessageModel message) => {
+    for (final e in message.reactions.entries)
+      e.key: LiveReaction(
+        emoji: e.value,
+        createdAt: message.reactionsCreatedAt?[e.key],
+      ),
+  };
+
+  void _openReactionsSheet(BuildContext context) {
+    final cubit = context.read<ChatDetailsCubit>();
+    final partnerId =
+        widget.message.senderId == cubit.currentUserId
+            ? widget.message.receiverId
+            : widget.message.senderId;
+
+    MessageReactionsBottomSheet.show(
+      context: context,
+      messageId: widget.message.id,
+      initialReactions: _mergeLiveReactions(widget.message),
+      currentUserId: cubit.currentUserId,
+      reactionsBuilder:
+          (contentBuilder) => BlocBuilder<ChatDetailsCubit, ChatDetailsState>(
+            bloc: cubit,
+            buildWhen: (previous, current) => current is MessagesSuccessLoaded,
+            builder: (context, state) {
+              final messages =
+                  state is MessagesSuccessLoaded
+                      ? state.messages
+                      : cubit.cachedMessages;
+              final current = messages.firstWhere(
+                (m) => m.id == widget.message.id,
+                orElse: () => widget.message,
+              );
+              return contentBuilder(_mergeLiveReactions(current));
+            },
+          ),
+      profileResolver: SingleChatReactionProfileResolver(
+        currentUserId: cubit.currentUserId,
+        currentUserName: cubit.currentUserName,
+        currentUserImageUrl: cubit.senderImageUrl,
+        receiver: widget.receiverUser,
+      ),
+      onRemoveReaction:
+          (emoji) => cubit.toggleReaction(
+            messageId: widget.message.id,
+            receiverId: partnerId,
+            emoji: emoji,
+          ),
+      onOpenProfile:
+          (userId) => Navigator.of(
+            context,
+            rootNavigator: true,
+          ).pushNamed(AppRoutes.profileViewRoute, arguments: userId),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
@@ -197,6 +260,7 @@ class _MessageContentContainerState extends State<MessageContentContainer> {
               reactions: widget.message.reactions,
               currentUserId: context.read<ChatDetailsCubit>().currentUserId,
               primary: Theme.of(context).primaryColor,
+              onTap: () => _openReactionsSheet(context),
             ),
           ),
       ],
