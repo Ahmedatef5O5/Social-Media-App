@@ -4,8 +4,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import '../../../core/helpers/modern_circle_progress.dart';
+import '../../../core/router/app_routes.dart';
 import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/themes/app_colors.dart';
+import '../../reactions/model/live_reaction.dart';
+import '../../reactions/widgets/message_reactions_bottom_sheet.dart';
 import '../cubit/group_details_cubit/group_details_cubit.dart';
 import '../models/groupe_message_model.dart';
 import 'group_call_message_content.dart';
@@ -38,6 +41,48 @@ class GroupMessageContent extends StatefulWidget {
 
 class _GroupMessageContentState extends State<GroupMessageContent> {
   final _anchorKey = GlobalKey();
+
+  Map<String, LiveReaction> _mergeLiveReactions(GroupMessageModel message) => {
+    for (final e in message.reactions.entries)
+      e.key: LiveReaction(
+        emoji: e.value,
+        createdAt: message.reactionsCreatedAt?[e.key],
+      ),
+  };
+
+  void _openReactionsSheet(BuildContext context, GroupDetailsCubit cubit) {
+    MessageReactionsBottomSheet.show(
+      context: context,
+      messageId: widget.message.id,
+      initialReactions: _mergeLiveReactions(widget.message),
+      currentUserId: cubit.currentUserId,
+      reactionsBuilder:
+          (contentBuilder) => BlocBuilder<GroupDetailsCubit, GroupDetailsState>(
+            bloc: cubit,
+            buildWhen: (previous, current) => current is GroupDetailsLoaded,
+            builder: (context, state) {
+              final messages =
+                  state is GroupDetailsLoaded
+                      ? state.messages
+                      : cubit.cachedMessages;
+              final current = messages.firstWhere(
+                (m) => m.id == widget.message.id,
+                orElse: () => widget.message,
+              );
+              return contentBuilder(_mergeLiveReactions(current));
+            },
+          ),
+      profileResolver: cubit.reactionProfileResolver,
+      onRemoveReaction:
+          (emoji) =>
+              cubit.toggleReaction(messageId: widget.message.id, emoji: emoji),
+      onOpenProfile:
+          (userId) => Navigator.of(
+            context,
+            rootNavigator: true,
+          ).pushNamed(AppRoutes.profileViewRoute, arguments: userId),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -160,6 +205,8 @@ class _GroupMessageContentState extends State<GroupMessageContent> {
                                   reactions: widget.message.reactions,
                                   currentUserId: currentUserId,
                                   primary: primary,
+                                  onTap:
+                                      () => _openReactionsSheet(context, cubit),
                                 ),
                               ),
                           ],
