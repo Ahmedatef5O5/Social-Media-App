@@ -1,12 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/constants/app_images.dart';
+import '../cubit/reels_feed_cubit/reels_feed_cubit.dart';
 import '../model/reel_model.dart';
 import '../views/reels_full_screen_view.dart';
 import 'reel_thumbnail_card.dart';
 
 class ReelsHorizontalSection extends StatelessWidget {
   final List<ReelModel> reels;
-  const ReelsHorizontalSection({super.key, required this.reels});
+  final int sectionIndex;
+  const ReelsHorizontalSection({
+    super.key,
+    required this.reels,
+    required this.sectionIndex,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -41,18 +48,21 @@ class ReelsHorizontalSection extends StatelessWidget {
               final reel = reels[index];
               return ReelThumbnailCard(
                 reel: reel,
-                onTap:
-                    () => Navigator.of(context, rootNavigator: true).push(
-                      MaterialPageRoute(
-                        builder:
-                            (_) =>
-                            // TestPlayerPage(),
-                            ReelsFullScreenView(
-                              reels: reels,
+                onTap: () {
+                  final reelsCubit = context.read<ReelsFeedCubit>();
+                  Navigator.of(context, rootNavigator: true).push(
+                    MaterialPageRoute(
+                      builder:
+                          (_) => BlocProvider.value(
+                            value: reelsCubit,
+                            child: ReelsFullScreenView(
+                              sectionIndex: sectionIndex,
                               initialIndex: index,
                             ),
-                      ),
+                          ),
                     ),
+                  );
+                },
               );
             },
           ),

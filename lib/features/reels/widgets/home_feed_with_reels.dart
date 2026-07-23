@@ -110,7 +110,10 @@ class _HomeFeedWithReelsState extends State<HomeFeedWithReels> {
         itemBuilder: (context, index) {
           final item = mergedItems[index];
           if (item.reelsSection != null) {
-            return ReelsHorizontalSection(reels: item.reelsSection!);
+            return ReelsHorizontalSection(
+              reels: item.reelsSection!,
+              sectionIndex: item.sectionIndex!,
+            );
           }
           final post = item.post!;
           return PostItemWidget(
@@ -142,7 +145,7 @@ class _HomeFeedWithReelsState extends State<HomeFeedWithReels> {
         postCursor++;
       }
       if (postCursor >= posts.length) break;
-      items.add(_MergedFeedItem.reels(sections[i]));
+      items.add(_MergedFeedItem.reels(sections[i], i));
     }
 
     while (postCursor < posts.length) {
@@ -157,7 +160,11 @@ class _HomeFeedWithReelsState extends State<HomeFeedWithReels> {
 class _MergedFeedItem {
   final PostModel? post;
   final List<ReelModel>? reelsSection;
+  final int? sectionIndex;
 
-  const _MergedFeedItem.post(this.post) : reelsSection = null;
-  const _MergedFeedItem.reels(this.reelsSection) : post = null;
+  const _MergedFeedItem.post(this.post)
+    : reelsSection = null,
+      sectionIndex = null;
+  const _MergedFeedItem.reels(this.reelsSection, this.sectionIndex)
+    : post = null;
 }

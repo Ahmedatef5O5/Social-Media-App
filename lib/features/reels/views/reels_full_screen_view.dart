@@ -1,17 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../cubit/reels_feed_cubit/reels_feed_cubit.dart';
 import '../model/reel_model.dart';
 import '../services/reel_player_controller_pool.dart';
 import '../widgets/reel_page.dart';
 
 class ReelsFullScreenView extends StatefulWidget {
-  final List<ReelModel> reels;
+  final List<ReelModel>? reels;
+  final int? sectionIndex;
   final int initialIndex;
 
   const ReelsFullScreenView({
     super.key,
-    required this.reels,
+    this.reels,
+    this.sectionIndex,
     required this.initialIndex,
-  });
+  }) : assert(
+         sectionIndex != null || reels != null,
+         'Must provide either sectionIndex or reels',
+       );
 
   @override
   State<ReelsFullScreenView> createState() => _ReelsFullScreenViewState();
@@ -21,6 +28,7 @@ class _ReelsFullScreenViewState extends State<ReelsFullScreenView> {
   late final PageController _pageController;
   final ReelPlayerControllerPool _controllerPool = ReelPlayerControllerPool();
   late int _currentIndex;
+  static const int _loadMoreThreshold = 3;
 
   @override
   void initState() {
@@ -33,10 +41,37 @@ class _ReelsFullScreenViewState extends State<ReelsFullScreenView> {
     });
   }
 
+  List<ReelModel> _currentReels() {
+    if (widget.reels != null) {
+      return widget.reels!;
+    }
+
+    final state = context.read<ReelsFeedCubit>().state;
+    if (state is ReelsFeedLoaded &&
+        widget.sectionIndex! < state.sections.length) {
+      return state.sections[widget.sectionIndex!];
+    }
+    return const [];
+  }
+
   void _activateIndex(int index) {
+    final reels = _currentReels();
+    if (reels.isEmpty) return;
+
     _currentIndex = index;
-    _controllerPool.updateActiveIndex(index, widget.reels);
+    _controllerPool.updateActiveIndex(index, reels);
     _controllerPool.setActivelyPlaying(index);
+    _maybeLoadMore(index, reels.length);
+  }
+
+  void _maybeLoadMore(int index, int totalCount) {
+    if (widget.sectionIndex == null) return;
+
+    if (index >= totalCount - _loadMoreThreshold) {
+      context.read<ReelsFeedCubit>().loadMoreReelsForSection(
+        widget.sectionIndex!,
+      );
+    }
   }
 
   void _handleDragUpdate(double dy) {
@@ -51,6 +86,8 @@ class _ReelsFullScreenViewState extends State<ReelsFullScreenView> {
 
   void _handleDragEnd(double velocity) {
     if (!_pageController.hasClients) return;
+    final reelsCount = _currentReels().length;
+    if (reelsCount == 0) return;
     const flingVelocityThreshold = 600.0;
     final page = _pageController.page ?? _currentIndex.toDouble();
 
@@ -62,7 +99,7 @@ class _ReelsFullScreenViewState extends State<ReelsFullScreenView> {
     } else {
       target = page.round(); // slow drag -> snap to nearest page
     }
-    target = target.clamp(0, widget.reels.length - 1);
+    target = target.clamp(0, reelsCount - 1);
 
     _pageController
         .animateToPage(
@@ -86,31 +123,65 @@ class _ReelsFullScreenViewState extends State<ReelsFullScreenView> {
 
   @override
   Widget build(BuildContext context) {
+    if (widget.reels != null) {
+      return Scaffold(
+        backgroundColor: Colors.black,
+        body: _buildPageView(widget.reels!),
+      );
+    }
+
     return Scaffold(
       backgroundColor: Colors.black,
-      body: PageView.builder(
-        controller: _pageController,
-        scrollDirection: Axis.vertical,
-        physics: const NeverScrollableScrollPhysics(),
-        allowImplicitScrolling: true,
-        itemCount: widget.reels.length,
-        onPageChanged: _activateIndex,
-        itemBuilder: (context, index) {
-          final reel = widget.reels[index];
-          final controller = _controllerPool.controllerFor(
-            index,
-            reel.youtubeVideoId,
-            isActive: index == _currentIndex,
-          );
-          return ReelPage(
-            reel: reel,
-            controller: controller,
-            keepAlive: _controllerPool.isWithinWindow(index, _currentIndex),
-            onVerticalDragUpdate: _handleDragUpdate,
-            onVerticalDragEnd: _handleDragEnd,
-          );
+      body: BlocBuilder<ReelsFeedCubit, ReelsFeedState>(
+        buildWhen: (previous, current) {
+          if (previous is! ReelsFeedLoaded || current is! ReelsFeedLoaded) {
+            return true;
+          }
+          final prevLen =
+              widget.sectionIndex! < previous.sections.length
+                  ? previous.sections[widget.sectionIndex!].length
+                  : 0;
+          final currLen =
+              widget.sectionIndex! < current.sections.length
+                  ? current.sections[widget.sectionIndex!].length
+                  : 0;
+          return prevLen != currLen;
+        },
+        builder: (context, state) {
+          final reels = _currentReels();
+          if (reels.isEmpty) {
+            return const SizedBox.shrink();
+          }
+
+          return _buildPageView(reels);
         },
       ),
+    );
+  }
+
+  Widget _buildPageView(List<ReelModel> reels) {
+    return PageView.builder(
+      controller: _pageController,
+      scrollDirection: Axis.vertical,
+      physics: const NeverScrollableScrollPhysics(),
+      allowImplicitScrolling: true,
+      itemCount: reels.length,
+      onPageChanged: _activateIndex,
+      itemBuilder: (context, index) {
+        final reel = reels[index];
+        final controller = _controllerPool.controllerFor(
+          index,
+          reel.youtubeVideoId,
+          isActive: index == _currentIndex,
+        );
+        return ReelPage(
+          reel: reel,
+          controller: controller,
+          keepAlive: _controllerPool.isWithinWindow(index, _currentIndex),
+          onVerticalDragUpdate: _handleDragUpdate,
+          onVerticalDragEnd: _handleDragEnd,
+        );
+      },
     );
   }
 }
