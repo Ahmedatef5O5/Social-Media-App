@@ -2,16 +2,13 @@ import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
 import 'package:social_media_app/core/mentions/mentions.dart';
 import 'package:social_media_app/features/group_chats/widgets/group_input_bar.dart';
 import 'package:social_media_app/features/group_chats/widgets/group_media_preview_screen.dart';
-import '../../gifs/model/gif_result_model.dart';
-import '../../gifs/widgets/gif_picker_sheet.dart';
-import '../../stickers/model/sticker_model.dart';
-import '../../stickers/widgets/sticker_send_picker_sheet.dart';
+import '../../../core/attachment/attachment_sheet/attachment_kind.dart';
+import '../../../core/attachment/attachment_sheet/attachment_picker_sheet.dart';
 import '../cubit/group_details_cubit/group_details_cubit.dart';
 import 'group_edit_preview_section.dart';
 import 'reply_preview_section.dart';
@@ -62,6 +59,7 @@ class _GroupChatInputBarSectionState extends State<GroupChatInputBarSection> {
     if (notEmpty != _hasText) setState(() => _hasText = notEmpty);
     if (notEmpty) widget.onTyping();
   }
+
   // ── Voice recording ─────────────────────────────────────────
 
   void _onEditingMessageChanged() {
@@ -165,207 +163,96 @@ class _GroupChatInputBarSectionState extends State<GroupChatInputBarSection> {
     }
   }
 
-  Future<void> _pickAndSendGif() async {
-    final gif = await showModalBottomSheet<GifResult?>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => const GifPickerSheet(),
+  Future<void> _openAttachmentSheet() async {
+    final picked = await AttachmentPickerSheet.show(
+      context,
+      showVoiceOption: false,
+      showFileOption: true,
+      showCameraOption: true,
     );
-    if (gif != null && mounted) {
-      context.read<GroupDetailsCubit>().sendMessage(
-        text: '',
-        messageType: 'gif',
-        remoteImageUrl: gif.sendUrl,
-      );
-    }
-  }
+    if (picked == null || !mounted) return;
 
-  Future<void> _pickAndSendSticker() async {
-    final sticker = await showModalBottomSheet<StickerModel?>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => const StickerSendPickerSheet(),
-    );
-    if (sticker != null && mounted) {
-      context.read<GroupDetailsCubit>().sendMessage(
-        text: '',
-        messageType: 'sticker',
-        remoteImageUrl: sticker.imageUrl,
-      );
-    }
-  }
+    final cubit = context.read<GroupDetailsCubit>();
 
-  void _showMediaOptions() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder:
-          (ctx) => SafeArea(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const SizedBox(height: 8),
-                Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade400,
-                    borderRadius: BorderRadius.circular(2),
+    switch (picked.kind) {
+      case AttachmentKind.image:
+        if (picked.localFile == null) return;
+        await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder:
+                (ctx) => BlocProvider.value(
+                  value: cubit,
+                  child: GroupMediaPreviewScreen(
+                    file: picked.localFile!,
+                    type: 'image',
+                    onSend:
+                        (caption) => cubit.sendMessage(
+                          text: '',
+                          messageType: 'image',
+                          imageFile: picked.localFile,
+                          caption: caption,
+                        ),
                   ),
                 ),
-                const SizedBox(height: 12),
-                ListTile(
-                  leading: Icon(
-                    Icons.photo_library,
-                    color: Theme.of(context).primaryColor,
-                  ),
-                  title: const Text('Send Image'),
-                  onTap: () async {
-                    Navigator.pop(ctx);
-                    await _pickAndSendImage();
-                  },
-                ),
-                ListTile(
-                  leading: Icon(
-                    Icons.videocam,
-                    color: Theme.of(context).primaryColor,
-                  ),
-                  title: const Text('Send Video'),
-                  onTap: () async {
-                    Navigator.pop(ctx);
-                    await _pickAndSendVideo();
-                  },
-                ),
-                ListTile(
-                  leading: Icon(
-                    Icons.camera_alt,
-                    color: Theme.of(context).primaryColor,
-                  ),
-                  title: const Text('Take Photo'),
-                  onTap: () async {
-                    Navigator.pop(ctx);
-                    await _takePhoto();
-                  },
-                ),
-                ListTile(
-                  leading: Icon(
-                    Icons.gif_box_rounded,
-                    color: Theme.of(context).primaryColor,
-                  ),
-                  title: const Text('Send GIF'),
-                  onTap: () async {
-                    Navigator.pop(ctx);
-                    await _pickAndSendGif();
-                  },
-                ),
-                ListTile(
-                  leading: Icon(
-                    Icons.emoji_emotions_rounded,
-                    color: Theme.of(context).primaryColor,
-                  ),
-                  title: const Text('Send Sticker'),
-                  onTap: () async {
-                    Navigator.pop(ctx);
-                    await _pickAndSendSticker();
-                  },
-                ),
-                const SizedBox(height: 8),
-              ],
-            ),
           ),
-    );
-  }
+        );
+        break;
 
-  Future<void> _takePhoto() async {
-    final picker = ImagePicker();
-    final picked = await picker.pickImage(source: ImageSource.camera);
-    if (picked == null || !mounted) return;
+      case AttachmentKind.video:
+        if (picked.localFile == null) return;
+        await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder:
+                (ctx) => BlocProvider.value(
+                  value: cubit,
+                  child: GroupMediaPreviewScreen(
+                    file: picked.localFile!,
+                    type: 'video',
+                    onSend:
+                        (caption) => cubit.sendMessage(
+                          text: '',
+                          messageType: 'video',
+                          videoFile: picked.localFile,
+                          caption: caption,
+                        ),
+                  ),
+                ),
+          ),
+        );
+        break;
 
-    final cubit = context.read<GroupDetailsCubit>();
+      case AttachmentKind.file:
+        if (picked.localFile == null) return;
+        cubit.sendMessage(
+          text: '',
+          messageType: 'file',
+          documentFile: picked.localFile,
+          fileName: picked.fileName,
+          fileSizeBytes: picked.fileSizeBytes,
+        );
+        break;
 
-    await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder:
-            (ctx) => BlocProvider.value(
-              value: cubit,
-              child: GroupMediaPreviewScreen(
-                file: File(picked.path),
-                type: 'image',
-                onSend:
-                    (caption) => cubit.sendMessage(
-                      text: '',
-                      messageType: 'image',
-                      imageFile: File(picked.path),
-                      caption: caption,
-                    ),
-              ),
-            ),
-      ),
-    );
-  }
+      case AttachmentKind.gif:
+        cubit.sendMessage(
+          text: '',
+          messageType: 'gif',
+          remoteImageUrl: picked.remoteUrl,
+        );
+        break;
 
-  Future<void> _pickAndSendImage() async {
-    final picker = ImagePicker();
-    final picked = await picker.pickImage(source: ImageSource.gallery);
-    if (picked == null || !mounted) return;
+      case AttachmentKind.sticker:
+        cubit.sendMessage(
+          text: '',
+          messageType: 'sticker',
+          remoteImageUrl: picked.remoteUrl,
+        );
+        break;
 
-    final cubit = context.read<GroupDetailsCubit>();
-
-    await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder:
-            (ctx) => BlocProvider.value(
-              value: cubit,
-              child: GroupMediaPreviewScreen(
-                file: File(picked.path),
-                type: 'image',
-                onSend:
-                    (caption) => cubit.sendMessage(
-                      text: '',
-                      messageType: 'image',
-                      imageFile: File(picked.path),
-                      caption: caption,
-                    ),
-              ),
-            ),
-      ),
-    );
-  }
-
-  Future<void> _pickAndSendVideo() async {
-    final picker = ImagePicker();
-    final picked = await picker.pickVideo(source: ImageSource.gallery);
-    if (picked == null || !mounted) return;
-
-    final cubit = context.read<GroupDetailsCubit>();
-
-    await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder:
-            (ctx) => BlocProvider.value(
-              value: cubit,
-              child: GroupMediaPreviewScreen(
-                file: File(picked.path),
-                type: 'video',
-                onSend:
-                    (caption) => cubit.sendMessage(
-                      text: '',
-                      messageType: 'video',
-                      videoFile: File(picked.path),
-                      caption: caption,
-                    ),
-              ),
-            ),
-      ),
-    );
+      case AttachmentKind.voice:
+        break;
+    }
   }
 
   @override
@@ -396,7 +283,7 @@ class _GroupChatInputBarSectionState extends State<GroupChatInputBarSection> {
           mentionCandidateIds: _membersIds ?? widget.mentionCandidateIds,
           onTyping: widget.onTyping,
           onSend: _handleSend,
-          onShowMedia: _showMediaOptions,
+          onShowMedia: _openAttachmentSheet,
           onStartRecording: _startRecording,
           onStopRecording: _stopRecording,
         ),

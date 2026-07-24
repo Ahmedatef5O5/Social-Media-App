@@ -19,6 +19,9 @@ mixin GroupMediaUploadMixin on Cubit<GroupDetailsState> {
     File? imageFile,
     File? videoFile,
     File? voiceFile,
+    File? documentFile,
+    String? fileName,
+    int? fileSizeBytes,
     String?
     remoteImageUrl, // Already-hosted URL (GIF / Sticker) — no upload needed
     List<MentionRef> mentions = const [],
@@ -31,6 +34,7 @@ mixin GroupMediaUploadMixin on Cubit<GroupDetailsState> {
         imageFile == null &&
         videoFile == null &&
         voiceFile == null &&
+        documentFile == null &&
         remoteImageUrl == null) {
       return;
     }
@@ -58,6 +62,8 @@ mixin GroupMediaUploadMixin on Cubit<GroupDetailsState> {
       createdAt: DateTime.now(),
       messageType: messageType,
       imageUrl: remoteImageUrl,
+      fileName: fileName,
+      fileSizeBytes: fileSizeBytes,
       mentions: mentions,
       replyToMessageId: reply?.id,
       replyToText: reply?.text,
@@ -69,8 +75,11 @@ mixin GroupMediaUploadMixin on Cubit<GroupDetailsState> {
     _emitLoaded();
 
     try {
-      String? uploadedImageUrl, uploadedVideoUrl, uploadedVoiceUrl;
-      String? imagePublicId, videoPublicId, voicePublicId;
+      String? uploadedImageUrl,
+          uploadedVideoUrl,
+          uploadedVoiceUrl,
+          uploadedFileUrl;
+      String? imagePublicId, videoPublicId, voicePublicId, filePublicId;
 
       if (remoteImageUrl != null) {
         uploadedImageUrl = remoteImageUrl;
@@ -122,6 +131,24 @@ mixin GroupMediaUploadMixin on Cubit<GroupDetailsState> {
         voicePublicId = result.publicId;
       }
 
+      if (documentFile != null) {
+        uploadProgressMap[tempId] = 0;
+        final result = await _services.storage.uploadFile(
+          documentFile,
+          'group_chats',
+          currentUserId,
+          filePrefix: 'group_',
+          cancelToken: cancelToken,
+          onProgress: (p) {
+            uploadProgressMap[tempId] = p;
+            _emitLoaded();
+          },
+        );
+        uploadedFileUrl = result.secureUrl;
+        filePublicId = result.publicId;
+        uploadProgressMap.remove(tempId);
+      }
+
       await _services.sendGroupMessage(
         groupName: group.name,
         groupId: group.id,
@@ -130,11 +157,15 @@ mixin GroupMediaUploadMixin on Cubit<GroupDetailsState> {
         imageUrl: uploadedImageUrl,
         videoUrl: uploadedVideoUrl,
         voiceUrl: uploadedVoiceUrl,
+        fileUrl: uploadedFileUrl,
+        fileName: fileName,
+        fileSizeBytes: fileSizeBytes,
         caption: caption,
         replyTo: reply,
         imagePublicId: imagePublicId,
         videoPublicId: videoPublicId,
         voicePublicId: voicePublicId,
+        filePublicId: filePublicId,
         mentions: mentions,
       );
       final memberIds =
@@ -166,6 +197,7 @@ mixin GroupMediaUploadMixin on Cubit<GroupDetailsState> {
         'image' => caption ?? '',
         'video' => caption ?? '',
         'voice' => '',
+        'file' => fileName ?? 'File',
         _ => text,
       };
 

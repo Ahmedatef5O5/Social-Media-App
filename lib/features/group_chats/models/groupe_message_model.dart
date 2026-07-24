@@ -13,6 +13,9 @@ class GroupMessageModel {
   final String? imageUrl;
   final String? videoUrl;
   final String? voiceUrl;
+  final String? fileUrl;
+  final String? fileName;
+  final int? fileSizeBytes;
   final String? caption;
   final String? replyToMessageId;
   final String? replyToText;
@@ -37,6 +40,9 @@ class GroupMessageModel {
     this.imageUrl,
     this.videoUrl,
     this.voiceUrl,
+    this.fileUrl,
+    this.fileName,
+    this.fileSizeBytes,
     this.caption,
     this.replyToMessageId,
     this.replyToText,
@@ -62,6 +68,9 @@ class GroupMessageModel {
     String? imageUrl,
     String? videoUrl,
     String? voiceUrl,
+    String? fileUrl,
+    String? fileName,
+    int? fileSizeBytes,
     String? caption,
     String? replyToMessageId,
     String? replyToText,
@@ -86,6 +95,9 @@ class GroupMessageModel {
       imageUrl: imageUrl ?? this.imageUrl,
       videoUrl: videoUrl ?? this.videoUrl,
       voiceUrl: voiceUrl ?? this.voiceUrl,
+      fileUrl: fileUrl ?? this.fileUrl,
+      fileName: fileName ?? this.fileName,
+      fileSizeBytes: fileSizeBytes ?? this.fileSizeBytes,
       caption: caption ?? this.caption,
       replyToMessageId: replyToMessageId ?? this.replyToMessageId,
       replyToText: replyToText ?? this.replyToText,
@@ -132,6 +144,9 @@ class GroupMessageModel {
       imageUrl: map['image_url'] as String?,
       videoUrl: map['video_url'] as String?,
       voiceUrl: map['voice_url'] as String?,
+      fileUrl: map['file_url'] as String?,
+      fileName: map['file_name'] as String?,
+      fileSizeBytes: (map['file_size_bytes'] as num?)?.toInt(),
       caption: map['caption'] as String?,
       replyToMessageId: map['reply_to_message_id'] as String?,
       replyToText: map['reply_to_text'] as String?,
@@ -154,6 +169,9 @@ class GroupMessageModel {
       if (imageUrl != null) 'image_url': imageUrl,
       if (videoUrl != null) 'video_url': videoUrl,
       if (voiceUrl != null) 'voice_url': voiceUrl,
+      if (fileUrl != null) 'file_url': fileUrl,
+      if (fileName != null) 'file_name': fileName,
+      if (fileSizeBytes != null) 'file_size_bytes': fileSizeBytes,
       if (caption != null) 'caption': caption,
       if (replyToMessageId != null) 'reply_to_message_id': replyToMessageId,
       if (replyToText != null) 'reply_to_text': replyToText,
@@ -196,6 +214,9 @@ class GroupMessageModel {
       imageUrl: json['image_url'] as String?,
       videoUrl: json['video_url'] as String?,
       voiceUrl: json['voice_url'] as String?,
+      fileUrl: json['file_url'] as String?,
+      fileName: json['file_name'] as String?,
+      fileSizeBytes: (json['file_size_bytes'] as num?)?.toInt(),
       caption: json['caption'] as String?,
       replyToMessageId: json['reply_to_message_id'] as String?,
       replyToText: json['reply_to_text'] as String?,
@@ -222,6 +243,9 @@ class GroupMessageModel {
       'image_url': imageUrl,
       'video_url': videoUrl,
       'voice_url': voiceUrl,
+      'file_url': fileUrl,
+      'file_name': fileName,
+      'file_size_bytes': fileSizeBytes,
       'caption': caption,
       'reply_to_message_id': replyToMessageId,
       'reply_to_text': replyToText,

@@ -108,6 +108,10 @@ abstract class GroupMessageColumns {
   static const String imageUrl = 'image_url';
   static const String videoUrl = 'video_url';
   static const String voiceUrl = 'voice_url';
+  static const String fileUrl = 'file_url';
+  static const String fileName = 'file_name';
+  static const String fileSizeBytes = 'file_size_bytes';
+  static const String filePublicId = 'file_public_id';
   static const String caption = 'caption';
   static const String createdAt = 'created_at';
   static const String replyToId = 'reply_to_id';
@@ -343,6 +347,10 @@ abstract class MessagesColumns {
   static const String imageUrl = 'image_url';
   static const String videoUrl = 'video_url';
   static const String voiceUrl = 'voice_url';
+  static const String fileUrl = 'file_url';
+  static const String fileName = 'file_name';
+  static const String fileSizeBytes = 'file_size_bytes';
+  static const String filePublicId = 'file_public_id';
   static const String caption = 'caption';
 
   @Deprecated(

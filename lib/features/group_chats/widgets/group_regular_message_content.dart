@@ -4,6 +4,7 @@ import 'package:gap/gap.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import 'package:social_media_app/core/mentions/widgets/mention_rich_text.dart';
 import 'package:social_media_app/core/router/app_routes.dart';
+import '../../../core/attachment/widgets/file_message_bubble.dart';
 import '../../../core/supabase/supabase_provider.dart';
 import '../../gifs/widgets/gif_message_bubble.dart';
 import '../../home/cubits/home_cubit/home_cubit.dart';
@@ -41,7 +42,7 @@ class GroupRegularMessageContent extends StatelessWidget {
     final isGif = message.messageType == 'gif';
     final isSticker = message.messageType == 'sticker';
     final isVoice = message.messageType == 'voice';
-
+    final isFile = message.messageType == 'file';
     final currentUserId = SupabaseProvider.id;
     final displayText = message.caption ?? message.text;
     final timeWidget = GroupTimeRow(message: message, isMe: isMe);
@@ -183,7 +184,16 @@ class GroupRegularMessageContent extends StatelessWidget {
                 timestamp: message.createdAt,
                 isUploading: isUploading,
               ),
-
+            if (isFile && message.fileUrl != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 2),
+                child: FileMessageBubble(
+                  fileUrl: message.fileUrl!,
+                  fileName: message.fileName,
+                  fileSizeBytes: message.fileSizeBytes,
+                  isMe: isMe,
+                ),
+              ),
             if (displayText.isNotEmpty)
               Padding(
                 padding: EdgeInsets.only(
@@ -227,7 +237,7 @@ class GroupRegularMessageContent extends StatelessWidget {
                 ),
               ),
 
-            if (displayText.isEmpty && (isImage || isVideo))
+            if (displayText.isEmpty && (isImage || isVideo || isFile))
               Align(alignment: Alignment.bottomRight, child: timeWidget),
           ],
         ),
