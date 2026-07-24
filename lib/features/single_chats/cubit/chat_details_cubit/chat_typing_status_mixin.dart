@@ -1,10 +1,12 @@
 part of 'chat_details_cubit.dart';
 
-mixin ChatPresenceMixin on Cubit<ChatDetailsState> {
+mixin ChatTypingStatusMixin on Cubit<ChatDetailsState> {
   String get currentUserId;
   ChatServices get _chatServices;
   StreamSubscription? _typingSubscription;
   Timer? _typingDebounce;
+  Timer? _typingStuckGuardTimer;
+  static const Duration _typingStuckTimeout = Duration(seconds: 4);
 
   String getChatId(String u1, String u2) {
     List<String> ids = [u1, u2];
@@ -16,6 +18,8 @@ mixin ChatPresenceMixin on Cubit<ChatDetailsState> {
     final chatId = getChatId(currentUserId, receiverId);
 
     _typingSubscription?.cancel();
+    _typingStuckGuardTimer?.cancel();
+
     _typingSubscription = _chatServices
         .getTypingStream(
           chatId: chatId,
@@ -23,8 +27,20 @@ mixin ChatPresenceMixin on Cubit<ChatDetailsState> {
           currentUserId: currentUserId,
         )
         .listen((isTyping) {
-          if (!isClosed) emit(ReceiverTypingState(isTyping));
+          if (isClosed) return;
+          emit(ReceiverTypingState(isTyping));
+          _resetTypingStuckGuard(isTyping);
         });
+  }
+
+  void _resetTypingStuckGuard(bool isTyping) {
+    _typingStuckGuardTimer?.cancel();
+    if (!isTyping) return;
+    _typingStuckGuardTimer = Timer(_typingStuckTimeout, () {
+      if (!isClosed) {
+        emit(const ReceiverTypingState(false));
+      }
+    });
   }
 
   void onUserTyping(String receiverId) {
@@ -61,6 +77,7 @@ mixin ChatPresenceMixin on Cubit<ChatDetailsState> {
   Future<void> close() {
     _typingSubscription?.cancel();
     _typingDebounce?.cancel();
+    _typingStuckGuardTimer?.cancel();
     return super.close();
   }
 }
