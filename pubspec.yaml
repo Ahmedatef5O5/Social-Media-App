@@ -11,7 +11,6 @@ dependencies:
   audio_session: 0.1.25
   audioplayers: ^6.6.0
   cached_network_image: ^3.4.1
-  connectivity_plus: 6.1.5
   crypto: ^3.0.6
   cupertino_icons: ^1.0.8
   custom_refresh_indicator: ^4.0.1
@@ -44,6 +43,7 @@ dependencies:
   path_provider: ^2.1.5
   persistent_bottom_nav_bar_v2: ^6.3.1
   record: ^6.2.0
+  audio_decoder: ^0.8.0
   scrollable_positioned_list: ^0.3.8
   shared_preferences: 2.5.3
   share_plus: ^12.0.0
