@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:social_media_app/core/cache/utils/cloudinary_url_extensions.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:video_player/video_player.dart';
 import 'package:social_media_app/core/helpers/media_duration_badge.dart';
 import 'package:social_media_app/core/router/app_routes.dart';
-import 'package:social_media_app/core/themes/app_colors.dart';
 import 'package:social_media_app/core/widgets/cached_cloudinary_image.dart';
 import 'package:social_media_app/features/comments/model/comment_model.dart';
 import 'package:social_media_app/features/comments/model/comment_type.dart';
 import 'package:social_media_app/features/comments/widget/comment_voice_player.dart';
+import '../../../core/attachment/widgets/file_message_bubble.dart';
 import '../../gifs/utils/loop_limited_gif.dart';
 import '../../single_chats/widgets/full_screen_media_view.dart';
 import '../../stickers/utils/animated_loop_cloudinary_sticker.dart';
@@ -33,7 +32,13 @@ class CommentMediaBubble extends StatelessWidget {
       case CommentType.voice:
         return _VoiceBubble(comment: comment);
       case CommentType.file:
-        return _FileBubble(comment: comment);
+        return comment.fileUrl == null
+            ? const SizedBox.shrink()
+            : FileMessageBubble(
+              fileUrl: comment.fileUrl!,
+              fileName: comment.fileName,
+              fileSizeBytes: comment.fileSizeBytes,
+            );
       case CommentType.text:
         return const SizedBox.shrink();
     }
@@ -305,71 +310,6 @@ class _VoiceBubble extends StatelessWidget {
       source: comment.voiceUrl!,
       durationSeconds: comment.durationSeconds,
       showBubbleBackground: true,
-    );
-  }
-}
-
-class _FileBubble extends StatelessWidget {
-  final CommentModel comment;
-  const _FileBubble({required this.comment});
-
-  String _formatSize(int? bytes) {
-    if (bytes == null) return '';
-    if (bytes < 1024) return '$bytes B';
-    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
-    return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (comment.fileUrl == null) return const SizedBox.shrink();
-    return InkWell(
-      borderRadius: BorderRadius.circular(12),
-      onTap:
-          () => launchUrl(
-            Uri.parse(comment.fileUrl!),
-            mode: LaunchMode.externalApplication,
-          ),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-        decoration: BoxDecoration(
-          color: Colors.blueAccent.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(
-              Icons.insert_drive_file_rounded,
-              color: Colors.blueAccent,
-            ),
-            const SizedBox(width: 8),
-            Flexible(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    comment.fileName ?? 'File',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  Text(
-                    _formatSize(comment.fileSizeBytes),
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: AppColors.grey6,
-                      fontSize: 10,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

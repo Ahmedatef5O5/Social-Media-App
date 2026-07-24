@@ -4,14 +4,18 @@ import 'package:gap/gap.dart';
 import 'package:social_media_app/core/constants/app_images.dart';
 import 'package:social_media_app/features/comments/cubit/comments_cubit.dart';
 import 'package:social_media_app/features/comments/model/comment_type.dart';
+import '../../../core/attachment/attachment_sheet/attachment_kind.dart';
+import '../../../core/attachment/attachment_sheet/attachment_picker_sheet.dart';
+import '../../../core/attachment/attachment_sheet/picked_attachment.dart';
 import '../../../core/themes/app_colors.dart';
 import '../../../core/toast/app_toast.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
 import '../../posts/model/post_model.dart';
+import '../model/comment_attachment_draft.dart';
 import '../model/comment_model.dart';
-import 'comment_attachment_picker_sheet.dart';
 import 'comment_attachment_preview.dart';
 import '../../../core/mentions/mentions.dart';
+import 'comment_voice_recorder_sheet.dart';
 
 class SendCommentSection extends StatefulWidget {
   final PostModel post;
@@ -117,11 +121,51 @@ class _SendCommentSectionState extends State<SendCommentSection> {
   }
 
   Future<void> _openAttachmentPicker() async {
-    final draft = await CommentAttachmentPickerSheet.show(context);
-    if (draft != null && mounted) {
-      context.read<CommentsCubit>().stageAttachment(draft);
-    }
+    final picked = await AttachmentPickerSheet.show(
+      context,
+      showVoiceOption: true,
+      showFileOption: true,
+      showCameraOption: false,
+      onRecordVoice: (ctx) async {
+        final draft = await showModalBottomSheet<CommentAttachmentDraft?>(
+          context: ctx,
+          isScrollControlled: true,
+          isDismissible: false,
+          backgroundColor: Colors.transparent,
+          builder: (_) => const CommentVoiceRecorderSheet(),
+        );
+        if (draft == null) return null;
+        return PickedAttachment(
+          kind: AttachmentKind.voice,
+          localFile: draft.localFile,
+          fileName: draft.fileName,
+          fileSizeBytes: draft.fileSizeBytes,
+          durationSeconds: draft.durationSeconds,
+        );
+      },
+    );
+    if (picked == null || !mounted) return;
+
+    context.read<CommentsCubit>().stageAttachment(
+      CommentAttachmentDraft(
+        type: _mapKindToCommentType(picked.kind),
+        localFile: picked.localFile,
+        remoteUrl: picked.remoteUrl,
+        fileName: picked.fileName,
+        fileSizeBytes: picked.fileSizeBytes,
+        durationSeconds: picked.durationSeconds,
+      ),
+    );
   }
+
+  CommentType _mapKindToCommentType(AttachmentKind kind) => switch (kind) {
+    AttachmentKind.image => CommentType.image,
+    AttachmentKind.video => CommentType.video,
+    AttachmentKind.file => CommentType.file,
+    AttachmentKind.voice => CommentType.voice,
+    AttachmentKind.gif => CommentType.gif,
+    AttachmentKind.sticker => CommentType.sticker,
+  };
 
   @override
   Widget build(BuildContext context) {
