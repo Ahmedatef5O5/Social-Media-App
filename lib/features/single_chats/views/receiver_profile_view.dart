@@ -145,7 +145,7 @@ class _ReceiverProfileViewState extends State<ReceiverProfileView> {
                             }
 
                             return Text(
-                              "Last seen: $lastSeenStr",
+                              "Last seen $lastSeenStr",
                               style: const TextStyle(color: Colors.grey),
                             );
                           }

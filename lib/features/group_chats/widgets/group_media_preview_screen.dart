@@ -2,7 +2,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:video_player/video_player.dart';
-
 import '../../../core/widgets/custom_loading_indicator.dart';
 
 class GroupMediaPreviewScreen extends StatefulWidget {

@@ -137,7 +137,7 @@ class ReceiverDetailsHeaderSection extends StatelessWidget {
                               );
                             }
                             return Text(
-                              "Last seen: $lastSeenStr",
+                              "Last seen $lastSeenStr",
                               style: const TextStyle(
                                 color: Colors.grey,
                                 fontSize: 12,

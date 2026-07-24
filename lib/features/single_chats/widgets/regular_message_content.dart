@@ -10,6 +10,7 @@ import 'package:social_media_app/features/single_chats/widgets/story_reply_previ
 import 'package:social_media_app/features/single_chats/widgets/video_message_widget.dart';
 import 'package:social_media_app/features/single_chats/widgets/voice_message_bubble_widget.dart';
 import '../../../core/attachment/widgets/file_message_bubble.dart';
+import '../../../core/link/widgets/message_link_preview.dart';
 import '../../gifs/widgets/gif_message_bubble.dart';
 import '../../stickers/widgets/sticker_message_bubble.dart';
 import '../models/message_model.dart';
@@ -129,26 +130,15 @@ class RegularMessageContent extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  CustomLinkifyText(
-                    text: displayDraft,
-                    maxLines: 4,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.titleMedium!.copyWith(
-                      color:
-                          isMe
-                              ? Theme.of(context).colorScheme.onPrimary
-                              : (Theme.of(
-                                context,
-                              ).colorScheme.onSurface.withValues(alpha: 0.7)),
-                      fontSize: 15,
-                      height: 1.3,
-                      fontWeight: FontWeight.w500,
-                    ),
-                    linkStyle: TextStyle(
-                      color: isMe ? Colors.black45 : Colors.blue,
-                      decorationColor: isMe ? Colors.black45 : Colors.blue,
-                    ),
-                  ),
+                  if (message.messageType == 'text')
+                    MessageLinkPreview(
+                      text: displayDraft,
+                      isMe: isMe,
+                      textWidget: _buildLinkifyText(context, displayDraft),
+                    )
+                  else
+                    _buildLinkifyText(context, displayDraft),
+
                   Align(
                     alignment: Alignment.bottomRight,
                     child: MessageTimeAndStatus(message: message, isMe: isMe),
@@ -208,6 +198,29 @@ class RegularMessageContent extends StatelessWidget {
               ],
             ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildLinkifyText(BuildContext context, String text) {
+    return CustomLinkifyText(
+      text: text,
+      maxLines: 4,
+      overflow: TextOverflow.ellipsis,
+      style: Theme.of(context).textTheme.titleMedium!.copyWith(
+        color:
+            isMe
+                ? Theme.of(context).colorScheme.onPrimary
+                : (Theme.of(
+                  context,
+                ).colorScheme.onSurface.withValues(alpha: 0.7)),
+        fontSize: 15,
+        height: 1.3,
+        fontWeight: FontWeight.w500,
+      ),
+      linkStyle: TextStyle(
+        color: isMe ? Colors.black45 : Colors.blue,
+        decorationColor: isMe ? Colors.black45 : Colors.blue,
       ),
     );
   }

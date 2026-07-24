@@ -5,6 +5,7 @@ import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import 'package:social_media_app/core/mentions/widgets/mention_rich_text.dart';
 import 'package:social_media_app/core/router/app_routes.dart';
 import '../../../core/attachment/widgets/file_message_bubble.dart';
+import '../../../core/link/widgets/message_link_preview.dart';
 import '../../../core/supabase/supabase_provider.dart';
 import '../../gifs/widgets/gif_message_bubble.dart';
 import '../../home/cubits/home_cubit/home_cubit.dart';
@@ -202,36 +203,28 @@ class GroupRegularMessageContent extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    MentionRichText(
-                      text: displayText,
-                      style: TextStyle(
-                        color: textColor,
-                        fontSize: 15,
-                        height: 1.3,
+                    if (message.messageType == 'text')
+                      MessageLinkPreview(
+                        text: displayText,
+                        isMe: isMe,
+                        textWidget: _MentionRichText(
+                          displayText: displayText,
+                          textColor: textColor,
+                          isMe: isMe,
+                          primary: primary,
+                          bubbleMaxWidth: bubbleMaxWidth,
+                          message: message,
+                        ),
+                      )
+                    else
+                      _MentionRichText(
+                        displayText: displayText,
+                        textColor: textColor,
+                        isMe: isMe,
+                        primary: primary,
+                        bubbleMaxWidth: bubbleMaxWidth,
+                        message: message,
                       ),
-                      mentionColor: isMe ? Colors.white : primary,
-                      maxTextWidth: bubbleMaxWidth,
-                      mentions: message.mentions,
-                      onMentionTap: (userId, name) {
-                        final currentUserId = SupabaseProvider.idOrNull;
-                        final navController =
-                            context.read<HomeCubit>().navController;
-
-                        if (userId == currentUserId) {
-                          if (navController != null) {
-                            Navigator.of(
-                              context,
-                            ).popUntil((route) => route.isFirst);
-                            navController.jumpToTab(3);
-                          }
-                        } else {
-                          Navigator.of(context, rootNavigator: true).pushNamed(
-                            AppRoutes.profileViewRoute,
-                            arguments: userId,
-                          );
-                        }
-                      },
-                    ),
                     Align(alignment: Alignment.bottomRight, child: timeWidget),
                   ],
                 ),
@@ -266,6 +259,51 @@ class GroupRegularMessageContent extends StatelessWidget {
         ),
         child: GroupTimeRow(message: message, isMe: isMe),
       ),
+    );
+  }
+}
+
+class _MentionRichText extends StatelessWidget {
+  const _MentionRichText({
+    required this.displayText,
+    required this.textColor,
+    required this.isMe,
+    required this.primary,
+    required this.bubbleMaxWidth,
+    required this.message,
+  });
+
+  final String displayText;
+  final Color textColor;
+  final bool isMe;
+  final Color primary;
+  final double bubbleMaxWidth;
+  final GroupMessageModel message;
+
+  @override
+  Widget build(BuildContext context) {
+    return MentionRichText(
+      text: displayText,
+      style: TextStyle(color: textColor, fontSize: 15, height: 1.3),
+      mentionColor: isMe ? Colors.white : primary,
+      maxTextWidth: bubbleMaxWidth,
+      mentions: message.mentions,
+      onMentionTap: (userId, name) {
+        final currentUserId = SupabaseProvider.idOrNull;
+        final navController = context.read<HomeCubit>().navController;
+
+        if (userId == currentUserId) {
+          if (navController != null) {
+            Navigator.of(context).popUntil((route) => route.isFirst);
+            navController.jumpToTab(3);
+          }
+        } else {
+          Navigator.of(
+            context,
+            rootNavigator: true,
+          ).pushNamed(AppRoutes.profileViewRoute, arguments: userId);
+        }
+      },
     );
   }
 }

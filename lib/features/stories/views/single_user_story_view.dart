@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:social_media_app/core/link/widgets/message_link_preview.dart';
 import 'package:social_media_app/core/toast/app_toast.dart';
 import 'package:video_player/video_player.dart';
 import '../../../core/supabase/supabase_provider.dart';
@@ -163,21 +164,25 @@ class _SingleUserStoryViewState extends State<SingleUserStoryView> {
                           isMyStory ? 32 : 16,
                         ),
                         child: Align(
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 8,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.black45,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              widget.story.caption!,
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 16,
+                          child: MessageLinkPreview(
+                            text: widget.story.caption!,
+                            isMe: false,
+                            textWidget: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 8,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.black45,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                widget.story.caption!,
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                ),
                               ),
                             ),
                           ),
