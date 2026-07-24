@@ -58,7 +58,6 @@ class _SendCommentSectionState extends State<SendCommentSection> {
   @override
   void didUpdateWidget(covariant SendCommentSection oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // When a edit target is select
     if (widget.editingComment != null &&
         widget.editingComment?.id != oldWidget.editingComment?.id) {
       _commentController.text = widget.editingComment!.text;
@@ -76,7 +75,6 @@ class _SendCommentSectionState extends State<SendCommentSection> {
       _commentController.clearMentions();
     }
 
-    // When a reply target is set, focus the field automatically
     if (widget.replyingToCommentId != null &&
         oldWidget.replyingToCommentId != widget.replyingToCommentId) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -98,13 +96,17 @@ class _SendCommentSectionState extends State<SendCommentSection> {
   void _submitComment() {
     final cubit = context.read<CommentsCubit>();
     final textComment = _commentController.text.trim();
+
     if (textComment.isEmpty && cubit.pendingAttachment == null) return;
+
     final mentions = _commentController.validMentions;
 
-    final text = _commentController.text.trim();
-    if (text.isEmpty) return;
     if (widget.editingComment != null) {
-      cubit.editComment(commentId: widget.editingComment!.id, newText: text);
+      if (textComment.isEmpty) return;
+      cubit.editComment(
+        commentId: widget.editingComment!.id,
+        newText: textComment,
+      );
       _commentController.clear();
       widget.onEditSaved?.call();
       return;

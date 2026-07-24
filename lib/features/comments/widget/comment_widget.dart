@@ -10,6 +10,7 @@ import 'package:social_media_app/features/comments/widget/comment_reactions_bott
 import 'package:social_media_app/features/comments/widget/thread_painter.dart';
 import '../../../core/constants/app_images.dart';
 import '../../../core/helpers/comment_helper.dart';
+import '../../../core/link/widgets/message_link_preview.dart';
 import '../../../core/mentions/mentions.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/supabase/supabase_provider.dart';
@@ -378,19 +379,58 @@ class _CommentWidgetState extends State<CommentWidget>
                                                 CommentType.text => 0,
                                               },
                                             ),
-                                            child: MentionRichText(
-                                              text: widget.comment.text,
-                                              mentions: widget.comment.mentions,
-                                              onMentionTap: _openMentionPreview,
-                                              style: theme.textTheme.bodyMedium
-                                                  ?.copyWith(
-                                                    fontSize: 14,
-                                                    height: 1.4,
-                                                    color:
-                                                        theme
-                                                            .colorScheme
-                                                            .onSurface,
-                                                  ),
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                widget.comment.commentType ==
+                                                        CommentType.text
+                                                    ? MessageLinkPreview(
+                                                      text: widget.comment.text,
+                                                      textWidget: MentionRichText(
+                                                        text:
+                                                            widget.comment.text,
+                                                        mentions:
+                                                            widget
+                                                                .comment
+                                                                .mentions,
+                                                        onMentionTap:
+                                                            _openMentionPreview,
+                                                        style: theme
+                                                            .textTheme
+                                                            .bodyMedium
+                                                            ?.copyWith(
+                                                              fontSize: 14,
+                                                              height: 1.4,
+                                                              color:
+                                                                  theme
+                                                                      .colorScheme
+                                                                      .onSurface,
+                                                            ),
+                                                      ),
+                                                    )
+                                                    : MentionRichText(
+                                                      text: widget.comment.text,
+                                                      mentions:
+                                                          widget
+                                                              .comment
+                                                              .mentions,
+                                                      onMentionTap:
+                                                          _openMentionPreview,
+                                                      style: theme
+                                                          .textTheme
+                                                          .bodyMedium
+                                                          ?.copyWith(
+                                                            fontSize: 14,
+                                                            height: 1.4,
+                                                            color:
+                                                                theme
+                                                                    .colorScheme
+                                                                    .onSurface,
+                                                          ),
+                                                    ),
+                                              ],
                                             ),
                                           ),
                                       ],
