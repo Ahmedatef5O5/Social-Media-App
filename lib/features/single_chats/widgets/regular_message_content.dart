@@ -9,6 +9,7 @@ import 'package:social_media_app/features/single_chats/widgets/reply_bubble_prev
 import 'package:social_media_app/features/single_chats/widgets/story_reply_preview_bubble.dart';
 import 'package:social_media_app/features/single_chats/widgets/video_message_widget.dart';
 import 'package:social_media_app/features/single_chats/widgets/voice_message_bubble_widget.dart';
+import '../../../core/attachment/widgets/file_message_bubble.dart';
 import '../../gifs/widgets/gif_message_bubble.dart';
 import '../../stickers/widgets/sticker_message_bubble.dart';
 import '../models/message_model.dart';
@@ -96,7 +97,19 @@ class RegularMessageContent extends StatelessWidget {
               isRead: message.isRead,
             ),
 
-          if ((isImage || isVideo) && displayDraft.isEmpty)
+          if (message.messageType == 'file' && message.fileUrl != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 2),
+              child: FileMessageBubble(
+                fileUrl: message.fileUrl!,
+                fileName: message.fileName,
+                fileSizeBytes: message.fileSizeBytes,
+                isMe: isMe,
+              ),
+            ),
+
+          if ((isImage || isVideo || message.messageType == 'file') &&
+              displayDraft.isEmpty)
             Padding(
               padding: const EdgeInsets.only(top: 4, right: 8, bottom: 2),
               child: SizedBox(

@@ -231,6 +231,9 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
     File? imageFile,
     File? videoFile,
     File? voiceFile,
+    File? documentFile,
+    String? fileName,
+    int? fileSizeBytes,
     String? remoteImageUrl,
     String? caption,
     MessageModel? replyTo,
@@ -239,6 +242,7 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
         imageFile == null &&
         videoFile == null &&
         voiceFile == null &&
+        documentFile == null &&
         remoteImageUrl == null) {
       return;
     }
@@ -246,7 +250,6 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
 
     final List<MessageModel> currentMessages = List.from(cachedMessages);
 
-    // optimistic Message
     final tempId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
     final optimisticMessage = MessageModel(
       id: tempId,
@@ -258,6 +261,8 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
       isRead: false,
       imageUrl: remoteImageUrl,
       voiceUrl: voiceFile?.path,
+      fileName: fileName,
+      fileSizeBytes: fileSizeBytes,
       replyToMessageId: replyToMessage.value?.id,
       replyToText: replyToMessage.value?.text,
       replyToMessageType: replyToMessage.value?.messageType,
@@ -271,8 +276,8 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
     final cancelToken = dio_pkg.CancelToken();
     _cancelTokens[tempId] = cancelToken;
     try {
-      String? imageUrl, videoUrl, voiceUrl;
-      String? imagePublicId, videoPublicId, voicePublicId;
+      String? imageUrl, videoUrl, voiceUrl, fileUrl;
+      String? imagePublicId, videoPublicId, voicePublicId, filePublicId;
 
       if (remoteImageUrl != null) {
         imageUrl = remoteImageUrl;
@@ -343,6 +348,31 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
         }
       }
 
+      if (documentFile != null) {
+        if (await documentFile.exists()) {
+          final result = await _chatServices.storage.uploadFile(
+            documentFile,
+            'chats',
+            'file',
+            cancelToken: cancelToken,
+            onProgress: (progress) {
+              uploadProgressMap[tempId] = progress;
+              emit(MessagesSending(messages: updatedMessages));
+            },
+          );
+          fileUrl = result.secureUrl;
+          filePublicId = result.publicId;
+          uploadProgressMap[tempId] = 1.0;
+          emit(MessagesSending(messages: updatedMessages));
+          await Future.delayed(const Duration(milliseconds: 200));
+          uploadProgressMap.remove(tempId);
+        } else {
+          emit(MessagesError("File not found. Please try picking it again."));
+          emit(MessagesSuccessLoaded(messages: currentMessages));
+          return;
+        }
+      }
+
       await _chatServices.sendMessage(
         senderId: currentUserId,
         receiverId: receiverId,
@@ -351,6 +381,9 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
         imageUrl: imageUrl,
         videoUrl: videoUrl,
         voiceUrl: voiceUrl,
+        fileUrl: fileUrl,
+        fileName: fileName,
+        fileSizeBytes: fileSizeBytes,
         caption: caption,
         replyToMessageId: replyTo?.id,
         replyToText: _getReplyPreviewText(replyTo),
@@ -360,6 +393,7 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
         imagePublicId: imagePublicId,
         videoPublicId: videoPublicId,
         voicePublicId: voicePublicId,
+        filePublicId: filePublicId,
       );
       if (messageType != 'call') {
         await NotificationRepository.instance.notifyChatMessage(
@@ -384,7 +418,7 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
         receiverId: receiverId,
         messageText: caption ?? messageText,
         messageType: messageType,
-        attachmentUrl: imageUrl ?? videoUrl,
+        attachmentUrl: imageUrl ?? videoUrl ?? fileUrl,
       );
     } on UploadCanceledException {
       return;
@@ -538,6 +572,8 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
         return '🎥 Video';
       case 'voice':
         return '🎤 Voice message';
+      case 'file':
+        return '📎 ${msg.fileName ?? 'File'}';
       default:
         final text = msg.caption ?? msg.text;
         return text.length > 60 ? '${text.substring(0, 60)}...' : text;

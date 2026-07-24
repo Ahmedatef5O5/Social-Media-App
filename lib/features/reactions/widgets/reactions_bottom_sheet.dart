@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 import '../../../core/helpers/formatted_date.dart';
+import '../../../core/presence/widgets/presence_avatar_widget.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/widgets/app_avatar.dart';
@@ -251,9 +252,16 @@ class _ReactionsBottomSheetState extends State<ReactionsBottomSheet> {
                                             );
                                           }
                                         },
-                                        child: AppAvatar(
-                                          imageUrl: r.userImageUrl,
-                                          size: 44,
+                                        child: PresenceAvatarWidget(
+                                          userId: r.userId,
+                                          avatarSize: 44,
+                                          showDot: false,
+                                          showBorder: true,
+
+                                          child: AppAvatar(
+                                            imageUrl: r.userImageUrl,
+                                            size: 44,
+                                          ),
                                         ),
                                       ),
                                       Positioned(

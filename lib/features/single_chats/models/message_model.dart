@@ -12,6 +12,9 @@ class MessageModel {
   final String? imageUrl;
   final String? videoUrl;
   final String? voiceUrl;
+  final String? fileUrl;
+  final String? fileName;
+  final int? fileSizeBytes;
   final String? caption;
   final Map<String, String> reactions;
   final Map<String, String>? reactionsCreatedAt;
@@ -40,6 +43,9 @@ class MessageModel {
     this.imageUrl,
     this.videoUrl,
     this.voiceUrl,
+    this.fileUrl,
+    this.fileName,
+    this.fileSizeBytes,
     this.caption,
     this.reactions = const {},
     this.reactionsCreatedAt,
@@ -71,6 +77,9 @@ class MessageModel {
     String? imageUrl,
     String? videoUrl,
     String? voiceUrl,
+    String? fileUrl,
+    String? fileName,
+    int? fileSizeBytes,
     String? caption,
     Map<String, String>? reactions,
     Map<String, String>? reactionsCreatedAt,
@@ -99,6 +108,9 @@ class MessageModel {
       imageUrl: imageUrl ?? this.imageUrl,
       videoUrl: videoUrl ?? this.videoUrl,
       voiceUrl: voiceUrl ?? this.voiceUrl,
+      fileUrl: fileUrl ?? this.fileUrl,
+      fileName: fileName ?? this.fileName,
+      fileSizeBytes: fileSizeBytes ?? this.fileSizeBytes,
       caption: caption ?? this.caption,
       reactions: reactions ?? this.reactions,
       reactionsCreatedAt: reactionsCreatedAt ?? this.reactionsCreatedAt,
@@ -131,6 +143,9 @@ class MessageModel {
       imageUrl: json[MessagesColumns.imageUrl],
       videoUrl: json[MessagesColumns.videoUrl],
       voiceUrl: json[MessagesColumns.voiceUrl],
+      fileUrl: json[MessagesColumns.fileUrl],
+      fileName: json[MessagesColumns.fileName],
+      fileSizeBytes: (json[MessagesColumns.fileSizeBytes] as num?)?.toInt(),
       caption: json[MessagesColumns.caption],
       replyToMessageId: json[MessagesColumns.replyToMessageId],
       replyToText: json[MessagesColumns.replyToText],
@@ -165,6 +180,9 @@ class MessageModel {
       MessagesColumns.imageUrl: imageUrl,
       MessagesColumns.videoUrl: videoUrl,
       MessagesColumns.voiceUrl: voiceUrl,
+      MessagesColumns.fileUrl: fileUrl,
+      MessagesColumns.fileName: fileName,
+      MessagesColumns.fileSizeBytes: fileSizeBytes,
       MessagesColumns.caption: caption,
       MessagesColumns.replyToMessageId: replyToMessageId,
       MessagesColumns.replyToText: replyToText,

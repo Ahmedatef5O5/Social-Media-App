@@ -2,15 +2,12 @@ import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
+import '../../../core/attachment/attachment_sheet/attachment_kind.dart';
+import '../../../core/attachment/attachment_sheet/attachment_picker_sheet.dart';
 import '../../../core/constants/app_images.dart';
 import '../../../core/themes/app_colors.dart';
-import '../../gifs/model/gif_result_model.dart';
-import '../../gifs/widgets/gif_picker_sheet.dart';
-import '../../stickers/model/sticker_model.dart';
-import '../../stickers/widgets/sticker_send_picker_sheet.dart';
 import '../cubit/chat_details_cubit/chat_details_cubit.dart';
 import '../helper/edit_preview_bar.dart';
 import '../helper/reply_preview_bar.dart';
@@ -141,44 +138,6 @@ class _TextInputAreaSectionState extends State<TextInputAreaSection> {
     }
   }
 
-  Future<void> _pickAndSendGif(BuildContext context) async {
-    final gif = await showModalBottomSheet<GifResult?>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => const GifPickerSheet(),
-    );
-    if (gif != null && context.mounted) {
-      context.read<ChatDetailsCubit>().sendMessage(
-        receiverId: widget.receiverUser.id,
-        messageText: '',
-        messageType: 'gif',
-        remoteImageUrl: gif.sendUrl,
-        replyTo: widget.replyTo,
-      );
-      widget.onCancelReply?.call();
-    }
-  }
-
-  Future<void> _pickAndSendSticker(BuildContext context) async {
-    final sticker = await showModalBottomSheet<StickerModel?>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => const StickerSendPickerSheet(),
-    );
-    if (sticker != null && context.mounted) {
-      context.read<ChatDetailsCubit>().sendMessage(
-        receiverId: widget.receiverUser.id,
-        messageText: '',
-        messageType: 'sticker',
-        remoteImageUrl: sticker.imageUrl,
-        replyTo: widget.replyTo,
-      );
-      widget.onCancelReply?.call();
-    }
-  }
-
   @override
   void dispose() {
     _recordTimer?.cancel();
@@ -230,7 +189,7 @@ class _TextInputAreaSectionState extends State<TextInputAreaSection> {
                 children: [
                   CustomIconBtnWidget(
                     icon: Icons.add,
-                    onTap: () => _showMediaOptions(context),
+                    onTap: () => _openAttachmentSheet(context),
                     size: 27,
                     padding: const EdgeInsets.only(
                       bottom: 11,
@@ -350,121 +309,113 @@ class _TextInputAreaSectionState extends State<TextInputAreaSection> {
     );
   }
 
-  void _showMediaOptions(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      builder: (ctx) {
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: Icon(
-                Icons.photo_library,
-                color: Theme.of(context).primaryColor,
-              ),
-              title: const Text('Send Image'),
-              onTap: () async {
-                Navigator.pop(context);
-                final picker = ImagePicker();
-                final file = await picker.pickImage(
-                  source: ImageSource.gallery,
-                );
-                if (file != null && context.mounted) {
-                  final chatCubit = context.read<ChatDetailsCubit>();
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder:
-                          (context) => BlocProvider.value(
-                            value: chatCubit,
-                            child: MediaPreviewScreen(
-                              file: File(file.path),
-                              type: 'image',
-                              onSend:
-                                  (caption) => chatCubit.sendMessage(
-                                    receiverId: widget.receiverUser.id,
-                                    messageText: '',
-                                    messageType: 'image',
-                                    imageFile: File(file.path),
-                                    caption: caption,
-                                    replyTo: widget.replyTo,
-                                  ),
-                            ),
-                          ),
-                    ),
-                  );
-                  widget.onCancelReply?.call();
-                }
-              },
-            ),
-            ListTile(
-              leading: Icon(
-                Icons.videocam,
-                color: Theme.of(context).primaryColor,
-              ),
-              title: const Text('Send Video'),
-              onTap: () async {
-                Navigator.pop(context);
-                final picker = ImagePicker();
-                final file = await picker.pickVideo(
-                  source: ImageSource.gallery,
-                );
-                if (file != null && context.mounted) {
-                  final chatCubit = context.read<ChatDetailsCubit>();
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder:
-                          (context) => BlocProvider.value(
-                            value: chatCubit,
-                            child: MediaPreviewScreen(
-                              file: File(file.path),
-                              type: 'video',
-                              onSend:
-                                  (caption) => chatCubit.sendMessage(
-                                    receiverId: widget.receiverUser.id,
-                                    messageText: '',
-                                    messageType: 'video',
-                                    videoFile: File(file.path),
-                                    caption: caption,
-                                    replyTo: widget.replyTo,
-                                  ),
-                            ),
-                          ),
-                    ),
-                  );
-                  widget.onCancelReply?.call();
-                }
-              },
-            ),
-
-            ListTile(
-              leading: Icon(
-                Icons.gif_box_rounded,
-                color: Theme.of(context).primaryColor,
-              ),
-              title: const Text('Send GIF'),
-              onTap: () async {
-                Navigator.pop(context);
-                await _pickAndSendGif(context);
-              },
-            ),
-
-            ListTile(
-              leading: Icon(
-                Icons.emoji_emotions_rounded,
-                color: Theme.of(context).primaryColor,
-              ),
-              title: const Text('Send Sticker'),
-              onTap: () async {
-                Navigator.pop(context);
-                await _pickAndSendSticker(context);
-              },
-            ),
-          ],
-        );
-      },
+  Future<void> _openAttachmentSheet(BuildContext context) async {
+    final picked = await AttachmentPickerSheet.show(
+      context,
+      showVoiceOption: false,
+      showFileOption: true,
+      showCameraOption: true,
     );
+    if (picked == null || !mounted) return;
+    if (!context.mounted) return;
+    final chatCubit = context.read<ChatDetailsCubit>();
+
+    switch (picked.kind) {
+      case AttachmentKind.image:
+        if (picked.localFile == null) return;
+        if (!context.mounted) return;
+        await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder:
+                (context) => BlocProvider.value(
+                  value: chatCubit,
+                  child: MediaPreviewScreen(
+                    file: picked.localFile!,
+                    type: 'image',
+                    onSend:
+                        (caption) => chatCubit.sendMessage(
+                          receiverId: widget.receiverUser.id,
+                          messageText: '',
+                          messageType: 'image',
+                          imageFile: picked.localFile,
+                          caption: caption,
+                          replyTo: widget.replyTo,
+                        ),
+                  ),
+                ),
+          ),
+        );
+        widget.onCancelReply?.call();
+        break;
+
+      case AttachmentKind.video:
+        if (picked.localFile == null) return;
+        if (!context.mounted) return;
+        await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder:
+                (context) => BlocProvider.value(
+                  value: chatCubit,
+                  child: MediaPreviewScreen(
+                    file: picked.localFile!,
+                    type: 'video',
+                    onSend:
+                        (caption) => chatCubit.sendMessage(
+                          receiverId: widget.receiverUser.id,
+                          messageText: '',
+                          messageType: 'video',
+                          videoFile: picked.localFile,
+                          caption: caption,
+                          replyTo: widget.replyTo,
+                        ),
+                  ),
+                ),
+          ),
+        );
+        widget.onCancelReply?.call();
+        break;
+
+      case AttachmentKind.file:
+        if (picked.localFile == null) return;
+        chatCubit.sendMessage(
+          receiverId: widget.receiverUser.id,
+          messageText: '',
+          messageType: 'file',
+          documentFile: picked.localFile,
+          fileName: picked.fileName,
+          fileSizeBytes: picked.fileSizeBytes,
+          replyTo: widget.replyTo,
+        );
+        widget.onCancelReply?.call();
+        break;
+
+      case AttachmentKind.gif:
+        chatCubit.sendMessage(
+          receiverId: widget.receiverUser.id,
+          messageText: '',
+          messageType: 'gif',
+          remoteImageUrl: picked.remoteUrl,
+          replyTo: widget.replyTo,
+        );
+        widget.onCancelReply?.call();
+        break;
+
+      case AttachmentKind.sticker:
+        chatCubit.sendMessage(
+          receiverId: widget.receiverUser.id,
+          messageText: '',
+          messageType: 'sticker',
+          remoteImageUrl: picked.remoteUrl,
+          replyTo: widget.replyTo,
+        );
+        widget.onCancelReply?.call();
+        break;
+
+      case AttachmentKind.voice:
+        break;
+    }
   }
 }
 

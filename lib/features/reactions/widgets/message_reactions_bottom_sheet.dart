@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../core/helpers/formatted_date.dart';
+import '../../../core/presence/widgets/presence_avatar_widget.dart';
 import '../../../core/widgets/app_avatar.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
 import '../model/live_reaction.dart';
@@ -325,9 +326,16 @@ class _MessageReactionsSheetBodyState
                                   leading: Stack(
                                     clipBehavior: Clip.none,
                                     children: [
-                                      AppAvatar(
-                                        imageUrl: r.userImageUrl,
-                                        size: 44,
+                                      PresenceAvatarWidget(
+                                        userId: r.userId,
+                                        avatarSize: 44,
+                                        showDot: false,
+                                        showBorder: true,
+
+                                        child: AppAvatar(
+                                          imageUrl: r.userImageUrl,
+                                          size: 44,
+                                        ),
                                       ),
                                       Positioned(
                                         bottom: -4,

@@ -65,6 +65,9 @@ class ChatMessagesService {
     String? imageUrl,
     String? videoUrl,
     String? voiceUrl,
+    String? fileUrl,
+    String? fileName,
+    int? fileSizeBytes,
     String? caption,
     String? replyToMessageId,
     String? replyToText,
@@ -73,6 +76,7 @@ class ChatMessagesService {
     String? imagePublicId,
     String? videoPublicId,
     String? voicePublicId,
+    String? filePublicId,
     String? replyToStoryId,
     String? replyToStoryAuthorId,
     String? replyToStoryType,
@@ -89,6 +93,9 @@ class ChatMessagesService {
       if (imageUrl != null) MessagesColumns.imageUrl: imageUrl,
       if (videoUrl != null) MessagesColumns.videoUrl: videoUrl,
       if (voiceUrl != null) MessagesColumns.voiceUrl: voiceUrl,
+      if (fileUrl != null) MessagesColumns.fileUrl: fileUrl,
+      if (fileName != null) MessagesColumns.fileName: fileName,
+      if (fileSizeBytes != null) MessagesColumns.fileSizeBytes: fileSizeBytes,
       if (caption != null) MessagesColumns.caption: caption,
       if (replyToMessageId != null)
         MessagesColumns.replyToMessageId: replyToMessageId,
@@ -100,6 +107,7 @@ class ChatMessagesService {
       if (imagePublicId != null) MessagesColumns.imagePublicId: imagePublicId,
       if (videoPublicId != null) MessagesColumns.videoPublicId: videoPublicId,
       if (voicePublicId != null) MessagesColumns.voicePublicId: voicePublicId,
+      if (filePublicId != null) MessagesColumns.filePublicId: filePublicId,
       if (replyToStoryId != null)
         MessagesColumns.replyToStoryId: replyToStoryId,
       if (replyToStoryAuthorId != null)
