@@ -59,6 +59,7 @@ import '../../features/stories/views/creat_text_story_view.dart';
 import '../../features/profile/cubits/profile_cubit/profile_cubit.dart';
 import '../../features/profile/views/profile_view.dart';
 import '../../features/stories/views/my_stories_list_view.dart';
+import '../connectivity/cubit/connectivity_cubit.dart';
 import '../supabase/supabase_provider.dart';
 
 enum TypeOfRoute { material, cupertino, fade }
@@ -546,6 +547,7 @@ class AppRouter {
                         friendshipServices: context.read<FriendshipServices>(),
                         followServices: context.read<FollowServices>(),
                         homeCubit: context.read<HomeCubit>(),
+                        connectivityCubit: context.read<ConnectivityCubit>(),
                       )..getProfileData(userId),
                 ),
               ],

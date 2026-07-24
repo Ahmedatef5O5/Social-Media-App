@@ -1,9 +1,12 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:social_media_app/features/auth/data/models/user_data.dart';
 import 'package:social_media_app/features/profile/models/profile_overview_model.dart';
 import 'package:social_media_app/features/profile/models/profile_stats_model.dart';
 import 'package:social_media_app/features/social_graph/models/friendship_status.dart';
+import '../../../../core/connectivity/cubit/connectivity_cubit.dart';
+import '../../../../core/connectivity/cubit/connectivity_state.dart';
 import '../../../auth/handler/auth_exception_handler.dart';
 import '../../../home/cubits/home_cubit/home_cubit.dart';
 import '../../../notifications/repository/notifications_repository.dart';
@@ -17,16 +20,39 @@ class ProfileCubit extends Cubit<ProfileState> {
   final FriendshipServices _friendshipServices;
   final FollowServices _followServices;
   final HomeCubit _homeCubit;
+  final ConnectivityCubit _connectivityCubit;
+  StreamSubscription<ConnectivityState>? _connectivitySubscription;
+  String? _currentUserId;
 
   ProfileCubit(
     this._userService, {
     required FriendshipServices friendshipServices,
     required FollowServices followServices,
     required HomeCubit homeCubit,
+    required ConnectivityCubit connectivityCubit,
   }) : _friendshipServices = friendshipServices,
        _followServices = followServices,
        _homeCubit = homeCubit,
-       super(ProfileInitial());
+       _connectivityCubit = connectivityCubit,
+       super(ProfileInitial()) {
+    _listenToConnectivityRestoration();
+  }
+
+  void _listenToConnectivityRestoration() {
+    _connectivitySubscription = _connectivityCubit.stream.listen((
+      connectivityState,
+    ) {
+      final bool isBackOnline =
+          connectivityState is ConnectivityRestored ||
+          connectivityState is ConnectivityOnline;
+      if (isBackOnline && state is ProfileError && _currentUserId != null) {
+        debugPrint(
+          '[ProfileCubit] Connectivity restored while stuck on error → auto re-fetching profile',
+        );
+        getProfileData(_currentUserId!);
+      }
+    });
+  }
 
   Future<void> getProfileData(String userId, {bool isRefresh = false}) async {
     if (!isRefresh) emit(ProfileLoading());
@@ -165,5 +191,11 @@ class ProfileCubit extends Cubit<ProfileState> {
       emit(s);
       debugPrint('toggleFollow error: $e');
     }
+  }
+
+  @override
+  Future<void> close() {
+    _connectivitySubscription?.cancel();
+    return super.close();
   }
 }

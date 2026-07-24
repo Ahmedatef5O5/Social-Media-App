@@ -159,4 +159,20 @@ class PresenceService with WidgetsBindingObserver {
     final diff = DateTime.now().toUtc().difference(updatedAt.toUtc());
     return diff.inSeconds <= 90;
   }
+
+  Future<void> forceSyncNow() async {
+    if (!_initialised || _writing) return;
+    _writing = true;
+    try {
+      await _setOnline(true);
+      debugPrint(
+        '[PresenceService] Force-synced after connectivity restored ✅',
+      );
+    } catch (e) {
+      debugPrint('[PresenceService] forceSyncNow error: $e');
+    } finally {
+      _writing = false;
+    }
+    _startHeartbeat();
+  }
 }

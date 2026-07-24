@@ -120,6 +120,7 @@ class _CustomBottomNavBarState extends State<CustomBottomNavBar> {
                       friendshipServices: context.read<FriendshipServices>(),
                       followServices: context.read<FollowServices>(),
                       homeCubit: context.read<HomeCubit>(),
+                      connectivityCubit: context.read<ConnectivityCubit>(),
                     )..getProfileData(userId),
               ),
             ],
