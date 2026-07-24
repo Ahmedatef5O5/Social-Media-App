@@ -5,7 +5,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:social_media_app/core/widgets/custom_loading_indicator.dart';
 import 'package:video_player/video_player.dart';
 import '../../../core/cache/repository/media_cache_repository.dart';
-import '../../../core/link/widgets/message_link_preview.dart';
 import '../model/story_model.dart';
 
 class StoryMediaView extends StatefulWidget {
@@ -140,21 +139,6 @@ class _StoryMediaViewState extends State<StoryMediaView> {
           height: double.infinity,
           color: Color(
             int.parse(widget.story.backgroundColor ?? 'ff9c27b0', radix: 16),
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          alignment: Alignment.center,
-          child: MessageLinkPreview(
-            text: widget.story.contentText ?? '',
-            isMe: false,
-            textWidget: Text(
-              widget.story.contentText ?? '',
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 28,
-                color: Colors.white,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
           ),
         );
     }

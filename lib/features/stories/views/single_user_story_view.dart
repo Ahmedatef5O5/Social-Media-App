@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_linkify/flutter_linkify.dart';
 import 'package:social_media_app/core/link/widgets/message_link_preview.dart';
 import 'package:social_media_app/core/toast/app_toast.dart';
 import 'package:video_player/video_player.dart';
@@ -42,9 +43,25 @@ class SingleUserStoryView extends StatefulWidget {
   State<SingleUserStoryView> createState() => _SingleUserStoryViewState();
 }
 
-class _SingleUserStoryViewState extends State<SingleUserStoryView> {
+class _SingleUserStoryViewState extends State<SingleUserStoryView>
+    with WidgetsBindingObserver {
   VideoPlayerController? _videoController;
   bool _isDisposed = false;
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.paused) {
+      _pauseStory();
+    } else if (state == AppLifecycleState.resumed) {
+      _resumeStory();
+    }
+  }
 
   void _pauseStory() {
     widget.onLongPressStart();
@@ -58,8 +75,46 @@ class _SingleUserStoryViewState extends State<SingleUserStoryView> {
     _videoController?.play();
   }
 
+  void _showLinkPreviewSheet(String url) {
+    _pauseStory();
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder:
+          (context) => SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 24, left: 16, right: 16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 40,
+                    height: 4,
+                    margin: const EdgeInsets.only(bottom: 12),
+                    decoration: BoxDecoration(
+                      color: Colors.white70,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  MessageLinkPreview(
+                    text: url,
+                    isMe: false,
+                    textWidget: const SizedBox.shrink(),
+                  ),
+                ],
+              ),
+            ),
+          ),
+    ).then((_) {
+      _resumeStory();
+    });
+  }
+
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _isDisposed = true;
     _videoController?.dispose();
     super.dispose();
@@ -112,6 +167,30 @@ class _SingleUserStoryViewState extends State<SingleUserStoryView> {
                   onLongPressEnd: _resumeStory,
                 ),
               ),
+
+              if (widget.story.storyType == StoryType.text)
+                Positioned.fill(
+                  child: Container(
+                    width: double.infinity,
+                    height: double.infinity,
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    alignment: Alignment.center,
+                    child: MessageLinkPreview(
+                      text: widget.story.contentText ?? '',
+                      isMe: false,
+                      textWidget: Text(
+                        widget.story.contentText ?? '',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontSize: 28,
+                          color: Colors.white,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+
               Positioned(
                 top: 55,
                 left: 20,
@@ -164,25 +243,28 @@ class _SingleUserStoryViewState extends State<SingleUserStoryView> {
                           isMyStory ? 32 : 16,
                         ),
                         child: Align(
-                          child: MessageLinkPreview(
-                            text: widget.story.caption!,
-                            isMe: false,
-                            textWidget: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 8,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 8,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.black45,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Linkify(
+                              text: widget.story.caption!,
+                              textAlign: TextAlign.center,
+                              options: const LinkifyOptions(humanize: false),
+                              onOpen: (link) => _showLinkPreviewSheet(link.url),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
                               ),
-                              decoration: BoxDecoration(
-                                color: Colors.black45,
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Text(
-                                widget.story.caption!,
-                                textAlign: TextAlign.center,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                ),
+                              linkStyle: const TextStyle(
+                                color: Colors.lightBlueAccent,
+                                decoration: TextDecoration.underline,
+                                decorationColor: Colors.lightBlueAccent,
                               ),
                             ),
                           ),

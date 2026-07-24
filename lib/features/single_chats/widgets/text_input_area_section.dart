@@ -1,9 +1,7 @@
 import 'dart:async';
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:record/record.dart';
+import 'package:social_media_app/core/widgets/voice_recorder/voice_recorder_input_section.dart';
 import '../../../core/attachment/attachment_sheet/attachment_kind.dart';
 import '../../../core/attachment/attachment_sheet/attachment_picker_sheet.dart';
 import '../../../core/constants/app_images.dart';
@@ -14,7 +12,6 @@ import '../helper/reply_preview_bar.dart';
 import '../models/chat_user_model.dart';
 import '../models/message_model.dart';
 import '../views/media_preview_screen.dart';
-import 'custom_icon_btn_widget.dart';
 
 class TextInputAreaSection extends StatefulWidget {
   final TextEditingController messageController;
@@ -39,13 +36,8 @@ class TextInputAreaSection extends StatefulWidget {
 }
 
 class _TextInputAreaSectionState extends State<TextInputAreaSection> {
-  final AudioRecorder _audioRecorder = AudioRecorder();
   final FocusNode _focusNode = FocusNode();
-  bool _isRecording = false;
   bool _isTextNotEmpty = false;
-
-  int _recordSeconds = 0;
-  Timer? _recordTimer;
 
   @override
   void initState() {
@@ -82,67 +74,8 @@ class _TextInputAreaSectionState extends State<TextInputAreaSection> {
     }
   }
 
-  Future<void> _startRecording() async {
-    if (!await _audioRecorder.hasPermission()) return;
-    final dir = await getApplicationDocumentsDirectory();
-    final path = '${dir.path}/${DateTime.now().millisecondsSinceEpoch}.m4a';
-    await _audioRecorder.start(
-      const RecordConfig(
-        encoder: AudioEncoder.aacLc,
-        bitRate: 128000,
-        sampleRate: 44100,
-      ),
-      path: path,
-    );
-    _recordSeconds = 0;
-    _recordTimer?.cancel();
-    _recordTimer = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (mounted) setState(() => _recordSeconds++);
-    });
-    setState(() => _isRecording = true);
-  }
-
-  Future<void> _stopRecording() async {
-    _recordTimer?.cancel();
-    _recordTimer = null;
-    final path = await _audioRecorder.stop();
-    setState(() {
-      _isRecording = false;
-      _recordSeconds = 0;
-    });
-
-    if (path == null) return;
-    final file = File(path);
-
-    int retries = 10;
-    while (!await file.exists() && retries-- > 0) {
-      await Future.delayed(const Duration(milliseconds: 300));
-    }
-    if (!await file.exists()) return;
-
-    final fileSize = await file.length();
-    if (fileSize < 1000) {
-      await file.delete();
-      return;
-    }
-
-    if (context.mounted) {
-      context.read<ChatDetailsCubit>().sendMessage(
-        receiverId: widget.receiverUser.id,
-        messageText: '',
-        messageType: 'voice',
-        voiceFile: file,
-        replyTo: widget.replyTo,
-      );
-      widget.onCancelReply?.call();
-    }
-  }
-
   @override
   void dispose() {
-    _recordTimer?.cancel();
-    if (_isRecording) _audioRecorder.stop();
-    _audioRecorder.dispose();
     widget.messageController.removeListener(_onTextChanged);
     _focusNode.dispose();
     try {
@@ -184,123 +117,73 @@ class _TextInputAreaSectionState extends State<TextInputAreaSection> {
             child: SafeArea(
               top: false,
               bottom: true,
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  CustomIconBtnWidget(
-                    icon: Icons.add,
-                    onTap: () => _openAttachmentSheet(context),
-                    size: 27,
-                    padding: const EdgeInsets.only(
-                      bottom: 11,
-                      left: 3,
-                      right: 3,
+              child: VoiceRecorderInputSection(
+                textField: TextField(
+                  controller: widget.messageController,
+                  focusNode: _focusNode,
+                  minLines: 1,
+                  maxLines: 5,
+                  cursorColor: Colors.blueGrey.shade400,
+                  textInputAction: TextInputAction.newline,
+                  decoration: const InputDecoration(
+                    hoverColor: AppColors.white,
+                    hintText: 'Type a message...',
+                    border: InputBorder.none,
+                    contentPadding: EdgeInsets.symmetric(
+                      vertical: 12,
+                      horizontal: 2,
                     ),
                   ),
-
-                  Expanded(
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      decoration: BoxDecoration(
-                        color:
-                            _isRecording
-                                ? Colors.red.withValues(alpha: 0.12)
-                                : Theme.of(
-                                  context,
-                                ).primaryColor.withValues(alpha: 0.25),
-                        borderRadius: BorderRadius.circular(25),
-                      ),
-                      child:
-                          _isRecording
-                              ? _RecordingIndicator(seconds: _recordSeconds)
-                              : TextField(
-                                controller: widget.messageController,
-                                focusNode: _focusNode,
-                                minLines: 1,
-                                maxLines: 5,
-                                cursorColor: Colors.blueGrey.shade400,
-                                textInputAction: TextInputAction.newline,
-                                decoration: const InputDecoration(
-                                  hoverColor: AppColors.white,
-                                  hintText: 'Type a message...',
-                                  border: InputBorder.none,
-                                  contentPadding: EdgeInsets.symmetric(
-                                    vertical: 12,
-                                    horizontal: 2,
-                                  ),
-                                ),
-                              ),
-                    ),
+                ),
+                hasText: _isTextNotEmpty,
+                onShowAttachments: () => _openAttachmentSheet(context),
+                sendButton: InkWell(
+                  splashColor: AppColors.transparent,
+                  onTap: () {
+                    if (widget.editingMessage != null) {
+                      final text = widget.messageController.text.trim();
+                      if (text.isEmpty) return;
+                      context.read<ChatDetailsCubit>().editMessage(
+                        messageId: widget.editingMessage!.id,
+                        newText: text,
+                      );
+                      widget.messageController.clear();
+                      widget.onEditCancelled?.call();
+                      return;
+                    }
+                    final text = widget.messageController.text.trim();
+                    if (text.isNotEmpty) {
+                      context.read<ChatDetailsCubit>().sendMessage(
+                        receiverId: widget.receiverUser.id,
+                        messageText: text,
+                        replyTo: widget.replyTo,
+                      );
+                      widget.messageController.clear();
+                      context.read<ChatDetailsCubit>().stopTyping(
+                        widget.receiverUser.id,
+                      );
+                      widget.onCancelReply?.call();
+                    }
+                  },
+                  child: Image.asset(
+                    AppImages.sendIcon,
+                    color: Theme.of(
+                      context,
+                    ).primaryColor.withValues(alpha: 0.95),
+                    width: 28,
+                    height: 28,
                   ),
-
-                  const SizedBox(width: 8),
-
-                  // Send / Mic button
-                  _isTextNotEmpty
-                      ? InkWell(
-                        splashColor: AppColors.transparent,
-                        onTap: () {
-                          if (widget.editingMessage != null) {
-                            final text = widget.messageController.text.trim();
-                            if (text.isEmpty) return;
-
-                            context.read<ChatDetailsCubit>().editMessage(
-                              messageId: widget.editingMessage!.id,
-                              newText: text,
-                            );
-
-                            widget.messageController.clear();
-                            widget.onEditCancelled?.call();
-                            return;
-                          }
-
-                          final text = widget.messageController.text.trim();
-                          if (text.isNotEmpty) {
-                            context.read<ChatDetailsCubit>().sendMessage(
-                              receiverId: widget.receiverUser.id,
-                              messageText: text,
-                              replyTo: widget.replyTo,
-                            );
-                            widget.messageController.clear();
-                            context.read<ChatDetailsCubit>().stopTyping(
-                              widget.receiverUser.id,
-                            );
-                            widget.onCancelReply?.call();
-                          }
-                        },
-                        child: Padding(
-                          padding: const EdgeInsets.only(bottom: 10),
-                          child: Image.asset(
-                            AppImages.sendIcon,
-                            color: Theme.of(
-                              context,
-                            ).primaryColor.withValues(alpha: 0.95),
-                            width: 28,
-                            height: 28,
-                          ),
-                        ),
-                      )
-                      : Padding(
-                        padding: const EdgeInsets.only(bottom: 10),
-                        child: GestureDetector(
-                          onLongPressStart: (_) => _startRecording(),
-                          onLongPressEnd: (_) => _stopRecording(),
-                          child: AnimatedSwitcher(
-                            duration: const Duration(milliseconds: 200),
-                            child: Icon(
-                              _isRecording ? Icons.mic : Icons.mic_none,
-                              key: ValueKey(_isRecording),
-                              color:
-                                  _isRecording
-                                      ? Colors.red
-                                      : Theme.of(context).primaryColor,
-                              size: 28,
-                            ),
-                          ),
-                        ),
-                      ),
-                ],
+                ),
+                onSendVoice: (file, seconds) {
+                  context.read<ChatDetailsCubit>().sendMessage(
+                    receiverId: widget.receiverUser.id,
+                    messageText: '',
+                    messageType: 'voice',
+                    voiceFile: file,
+                    replyTo: widget.replyTo,
+                  );
+                  widget.onCancelReply?.call();
+                },
               ),
             ),
           ),
@@ -416,49 +299,6 @@ class _TextInputAreaSectionState extends State<TextInputAreaSection> {
       case AttachmentKind.voice:
         break;
     }
-  }
-}
-
-class _RecordingIndicator extends StatelessWidget {
-  final int seconds;
-  const _RecordingIndicator({required this.seconds});
-
-  String get _formatted {
-    final m = (seconds ~/ 60).toString().padLeft(2, '0');
-    final s = (seconds % 60).toString().padLeft(2, '0');
-    return '$m:$s';
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 46,
-      child: Row(
-        children: [
-          const Icon(Icons.mic, color: Colors.red, size: 18),
-          const SizedBox(width: 6),
-          // Animated pulsing dot
-          _PulsingDot(),
-          const SizedBox(width: 6),
-          Text(
-            _formatted,
-            style: const TextStyle(
-              color: Colors.red,
-              fontWeight: FontWeight.w600,
-              fontSize: 14,
-            ),
-          ),
-          const Spacer(),
-          Text(
-            'Release to send',
-            style: TextStyle(
-              color: Colors.red.withValues(alpha: 0.7),
-              fontSize: 11,
-            ),
-          ),
-        ],
-      ),
-    );
   }
 }
 
