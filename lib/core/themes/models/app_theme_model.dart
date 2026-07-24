@@ -205,4 +205,10 @@ class AppThemeModel {
   bool get isDark => bgBase.computeLuminance() < 0.5;
 
   bool get shouldShowCircles => !isDark;
+  Color get lottieDetailColor =>
+      isDark ? Colors.white.withValues(alpha: 0.75) : const Color(0xFF1A2E35);
+  Color get lottieShadeColor {
+    final hsl = HSLColor.fromColor(primaryColor);
+    return hsl.withLightness((hsl.lightness - 0.18).clamp(0.0, 1.0)).toColor();
+  }
 }

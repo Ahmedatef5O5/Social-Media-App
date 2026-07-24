@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:lottie/lottie.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:social_media_app/core/widgets/custom_elevated_button.dart';
 import '../constants/app_images.dart';
+import '../themes/cubit/theme_cubit.dart';
+import '../themes/themed_error_lottie.dart';
 
 class CustomTabWrapper<T> extends StatefulWidget {
   final Widget loadingSkeleton;
@@ -28,6 +30,7 @@ class _CustomTabWrapperState<T> extends State<CustomTabWrapper<T>> {
   Widget build(BuildContext context) {
     final screenSize = MediaQuery.sizeOf(context);
     final theme = Theme.of(context);
+    final appTheme = context.watch<ThemeCubit>().state.theme;
 
     if (widget.isLoading) {
       return widget.loadingSkeleton;
@@ -38,8 +41,9 @@ class _CustomTabWrapperState<T> extends State<CustomTabWrapper<T>> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             RepaintBoundary(
-              child: Lottie.asset(
-                AppImages.blueError404Lot,
+              child: ThemedErrorLottie(
+                theme: appTheme,
+                assetPath: AppImages.blueError404Lot,
                 height: screenSize.height * 0.38,
                 fit: BoxFit.contain,
               ),
