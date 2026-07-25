@@ -13,7 +13,7 @@ class GroupMessageModel {
   final String? imageUrl;
   final String? videoUrl;
   final String? voiceUrl;
-  final int? voiceDurationSeconds;
+  final int? durationSeconds;
   final String? fileUrl;
   final String? fileName;
   final int? fileSizeBytes;
@@ -28,6 +28,12 @@ class GroupMessageModel {
   final Map<String, String>? reactionsCreatedAt;
   final Set<String> readBy;
   final bool isEdited;
+  final List<String> deletedFor;
+  final String? forwardedFromUserId;
+  final String? forwardedFromUserName;
+  final String? forwardedFromUserAvatar;
+
+  bool get isForwarded => forwardedFromUserId != null;
 
   const GroupMessageModel({
     required this.id,
@@ -41,7 +47,7 @@ class GroupMessageModel {
     this.imageUrl,
     this.videoUrl,
     this.voiceUrl,
-    this.voiceDurationSeconds,
+    this.durationSeconds,
     this.fileUrl,
     this.fileName,
     this.fileSizeBytes,
@@ -56,6 +62,10 @@ class GroupMessageModel {
     this.reactionsCreatedAt,
     this.readBy = const {},
     this.isEdited = false,
+    this.deletedFor = const [],
+    this.forwardedFromUserId,
+    this.forwardedFromUserName,
+    this.forwardedFromUserAvatar,
   });
 
   GroupMessageModel copyWith({
@@ -70,7 +80,7 @@ class GroupMessageModel {
     String? imageUrl,
     String? videoUrl,
     String? voiceUrl,
-    int? voiceDurationSeconds,
+    int? durationSeconds,
     String? fileUrl,
     String? fileName,
     int? fileSizeBytes,
@@ -85,6 +95,10 @@ class GroupMessageModel {
     Map<String, String>? reactionsCreatedAt,
     Set<String>? readBy,
     bool? isEdited,
+    List<String>? deletedFor,
+    String? forwardedFromUserId,
+    String? forwardedFromUserName,
+    String? forwardedFromUserAvatar,
   }) {
     return GroupMessageModel(
       id: id ?? this.id,
@@ -98,7 +112,7 @@ class GroupMessageModel {
       imageUrl: imageUrl ?? this.imageUrl,
       videoUrl: videoUrl ?? this.videoUrl,
       voiceUrl: voiceUrl ?? this.voiceUrl,
-      voiceDurationSeconds: voiceDurationSeconds ?? this.voiceDurationSeconds,
+      durationSeconds: durationSeconds ?? this.durationSeconds,
       fileUrl: fileUrl ?? this.fileUrl,
       fileName: fileName ?? this.fileName,
       fileSizeBytes: fileSizeBytes ?? this.fileSizeBytes,
@@ -113,6 +127,12 @@ class GroupMessageModel {
       reactionsCreatedAt: reactionsCreatedAt ?? this.reactionsCreatedAt,
       readBy: readBy ?? this.readBy,
       isEdited: isEdited ?? this.isEdited,
+      deletedFor: deletedFor ?? this.deletedFor,
+      forwardedFromUserId: forwardedFromUserId ?? this.forwardedFromUserId,
+      forwardedFromUserName:
+          forwardedFromUserName ?? this.forwardedFromUserName,
+      forwardedFromUserAvatar:
+          forwardedFromUserAvatar ?? this.forwardedFromUserAvatar,
     );
   }
 
@@ -136,6 +156,12 @@ class GroupMessageModel {
       readBySet = readByRaw.map((e) => e.toString()).toSet();
     }
 
+    final deletedForRaw = map['deleted_for'];
+    final List<String> deletedForList =
+        deletedForRaw is List
+            ? deletedForRaw.map((e) => e.toString()).toList()
+            : const [];
+
     return GroupMessageModel(
       id: map['id'] as String,
       groupId: map[GroupMemberColumns.groupId] as String,
@@ -148,7 +174,8 @@ class GroupMessageModel {
       imageUrl: map['image_url'] as String?,
       videoUrl: map['video_url'] as String?,
       voiceUrl: map['voice_url'] as String?,
-      voiceDurationSeconds: (map['voice_duration_seconds'] as num?)?.toInt(),
+      durationSeconds:
+          (map[GroupMessageColumns.durationSeconds] as num?)?.toInt(),
       fileUrl: map['file_url'] as String?,
       fileName: map['file_name'] as String?,
       fileSizeBytes: (map['file_size_bytes'] as num?)?.toInt(),
@@ -162,6 +189,10 @@ class GroupMessageModel {
       reactions: reactionsMap,
       readBy: readBySet,
       isEdited: (map[GroupMessageColumns.isEdited] as bool?) ?? false,
+      deletedFor: deletedForList,
+      forwardedFromUserId: map['forwarded_from_user_id'] as String?,
+      forwardedFromUserName: map['forwarded_from_user_name'] as String?,
+      forwardedFromUserAvatar: map['forwarded_from_user_avatar'] as String?,
     );
   }
 
@@ -174,8 +205,8 @@ class GroupMessageModel {
       if (imageUrl != null) 'image_url': imageUrl,
       if (videoUrl != null) 'video_url': videoUrl,
       if (voiceUrl != null) 'voice_url': voiceUrl,
-      if (voiceDurationSeconds != null)
-        'voice_duration_seconds': voiceDurationSeconds,
+      if (durationSeconds != null)
+        GroupMessageColumns.durationSeconds: durationSeconds,
       if (fileUrl != null) 'file_url': fileUrl,
       if (fileName != null) 'file_name': fileName,
       if (fileSizeBytes != null) 'file_size_bytes': fileSizeBytes,
@@ -209,6 +240,13 @@ class GroupMessageModel {
     final readByRaw = json['read_by'];
     final Set<String> readBySet =
         readByRaw is List ? readByRaw.map((e) => e.toString()).toSet() : {};
+
+    final deletedForRaw = json['deleted_for'];
+    final List<String> deletedForList =
+        deletedForRaw is List
+            ? deletedForRaw.map((e) => e.toString()).toList()
+            : const [];
+
     return GroupMessageModel(
       id: json['id'] as String,
       groupId: json[GroupMemberColumns.groupId] as String,
@@ -221,7 +259,8 @@ class GroupMessageModel {
       imageUrl: json['image_url'] as String?,
       videoUrl: json['video_url'] as String?,
       voiceUrl: json['voice_url'] as String?,
-      voiceDurationSeconds: (json['voice_duration_seconds'] as num?)?.toInt(),
+      durationSeconds:
+          (json[GroupMessageColumns.durationSeconds] as num?)?.toInt(),
       fileUrl: json['file_url'] as String?,
       fileName: json['file_name'] as String?,
       fileSizeBytes: (json['file_size_bytes'] as num?)?.toInt(),
@@ -235,6 +274,10 @@ class GroupMessageModel {
       reactions: reactionsMap,
       readBy: readBySet,
       isEdited: (json['is_edited'] as bool?) ?? false,
+      deletedFor: deletedForList,
+      forwardedFromUserId: json['forwarded_from_user_id'] as String?,
+      forwardedFromUserName: json['forwarded_from_user_name'] as String?,
+      forwardedFromUserAvatar: json['forwarded_from_user_avatar'] as String?,
     );
   }
 
@@ -251,7 +294,7 @@ class GroupMessageModel {
       'image_url': imageUrl,
       'video_url': videoUrl,
       'voice_url': voiceUrl,
-      'voice_duration_seconds': voiceDurationSeconds,
+      GroupMessageColumns.durationSeconds: durationSeconds,
       'file_url': fileUrl,
       'file_name': fileName,
       'file_size_bytes': fileSizeBytes,
@@ -265,6 +308,10 @@ class GroupMessageModel {
       'reactions': reactions,
       'read_by': readBy.toList(),
       'is_edited': isEdited,
+      'deleted_for': deletedFor,
+      'forwarded_from_user_id': forwardedFromUserId,
+      'forwarded_from_user_name': forwardedFromUserName,
+      'forwarded_from_user_avatar': forwardedFromUserAvatar,
     };
   }
 }

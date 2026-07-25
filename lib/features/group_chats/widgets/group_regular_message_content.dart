@@ -111,6 +111,7 @@ class GroupRegularMessageContent extends StatelessWidget {
                           imageUrl: message.imageUrl!,
                           caption: message.caption,
                           isMe: isMe,
+                          fileSizeBytes: message.fileSizeBytes,
                         )
                         : const SizedBox.shrink(),
               ),
@@ -125,6 +126,8 @@ class GroupRegularMessageContent extends StatelessWidget {
                           videoUrl: message.videoUrl!,
                           caption: message.caption,
                           isMe: isMe,
+                          fileSizeBytes: message.fileSizeBytes,
+                          durationSeconds: message.durationSeconds,
                         )
                         : const SizedBox.shrink(),
               ),
@@ -184,7 +187,7 @@ class GroupRegularMessageContent extends StatelessWidget {
                 isMe: isMe,
                 timestamp: message.createdAt,
                 isUploading: isUploading,
-                initialDurationSeconds: message.voiceDurationSeconds,
+                initialDurationSeconds: message.durationSeconds,
               ),
             if (isFile && message.fileUrl != null)
               Padding(

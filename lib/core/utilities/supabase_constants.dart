@@ -117,10 +117,11 @@ abstract class GroupMessageColumns {
   static const String replyToId = 'reply_to_id';
   static const String isEdited = 'is_edited';
   static const String updatedAt = 'updated_at';
-
+  static const String durationSeconds = 'duration_seconds';
   static const String imagePublicId = 'image_public_id';
   static const String videoPublicId = 'video_public_id';
   static const String voicePublicId = 'voice_public_id';
+  static const String deletedFor = 'deleted_for';
 }
 
 // group_message_reactions
@@ -352,7 +353,7 @@ abstract class MessagesColumns {
   static const String fileSizeBytes = 'file_size_bytes';
   static const String filePublicId = 'file_public_id';
   static const String caption = 'caption';
-
+  static const String durationSeconds = 'duration_seconds';
   @Deprecated(
     'Use the message_reactions table + MessageReactionColumns instead',
   )
@@ -380,6 +381,9 @@ abstract class MessagesColumns {
   static const String replyToStoryBgColor = 'reply_to_story_bg_color';
   static const String replyToStoryDurationSeconds =
       'reply_to_story_duration_seconds';
+  static const String forwardedFromUserId = 'forwarded_from_user_id';
+  static const String forwardedFromUserName = 'forwarded_from_user_name';
+  static const String forwardedFromUserAvatar = 'forwarded_from_user_avatar';
 }
 
 // message_reactions

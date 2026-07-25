@@ -7,9 +7,9 @@ import '../../group_calls/cubit/group_call_cubit/group_call_cubit.dart';
 import '../../group_calls/cubit/group_call_cubit/group_call_state.dart';
 import '../cubit/group_details_cubit/group_details_cubit.dart';
 import '../cubit/group_list_cubit/group_list_cubit.dart';
+import '../helpers/group_chat_app_bar_switcher.dart';
 import '../models/group_model.dart';
 import '../../group_calls/services/group_call_signaling_service.dart';
-import '../widgets/group_chat_app_bar.dart';
 import '../widgets/group_chat_input_bar_section.dart';
 import '../widgets/messages_list.dart';
 
@@ -83,6 +83,7 @@ class _GroupChatDetailsBodyState extends State<_GroupChatDetailsBody> {
     _controller.dispose();
     _showScrollButtonNotifier.dispose();
     _unreadCountNotifier.dispose();
+    if (!_groupDetailsCubit.isClosed) _groupDetailsCubit.clearSelection();
     super.dispose();
   }
 
@@ -188,7 +189,7 @@ class _GroupChatDetailsBodyState extends State<_GroupChatDetailsBody> {
         onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
         child: Scaffold(
           backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-          appBar: GroupChatAppBar(group: widget.group),
+          appBar: GroupChatAppBarSwitcher(group: widget.group),
           body: Column(
             children: [
               Expanded(

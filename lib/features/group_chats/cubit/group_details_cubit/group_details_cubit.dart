@@ -11,6 +11,7 @@ import '../../../../core/services/supabase_storage_services.dart';
 import '../../../../core/supabase/supabase_provider.dart';
 import '../../../../core/utilities/supabase_constants.dart';
 import '../../../../core/audio/voice_recorder/services/audio_compression_service.dart';
+import '../../../../core/helpers/selected_message_star_controller.dart';
 import '../../../notifications/repository/notifications_repository.dart';
 import '../../../reactions/services/reaction_profile_resolver.dart';
 import '../../models/group_model.dart';
@@ -23,6 +24,7 @@ part 'group_mentions_mixin.dart';
 part 'group_reactions_mixin.dart';
 part 'group_media_upload_mixin.dart';
 part 'group_edit_mixin.dart';
+part 'group_selection_mixin.dart';
 
 class GroupDetailsCubit extends Cubit<GroupDetailsState>
     with
@@ -30,7 +32,8 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState>
         GroupMentionsMixin,
         GroupReactionsMixin,
         GroupEditMixin,
-        GroupMediaUploadMixin {
+        GroupMediaUploadMixin,
+        GroupSelectionMixin {
   @override
   final GroupChatServices _services;
   @override

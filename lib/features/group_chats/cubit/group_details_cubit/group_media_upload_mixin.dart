@@ -20,13 +20,16 @@ mixin GroupMediaUploadMixin on Cubit<GroupDetailsState> {
     File? imageFile,
     File? videoFile,
     File? voiceFile,
+    int? durationSeconds,
     File? documentFile,
     String? fileName,
     int? fileSizeBytes,
-    String?
-    remoteImageUrl, // Already-hosted URL (GIF / Sticker) — no upload needed
+    String? remoteImageUrl,
     List<MentionRef> mentions = const [],
     String? caption,
+    String? forwardedFromUserId,
+    String? forwardedFromUserName,
+    String? forwardedFromUserAvatar,
   }) async {
     final isOffline = await ConnectivityBannerController.notifyIfOffline();
     if (isOffline) return;
@@ -63,6 +66,8 @@ mixin GroupMediaUploadMixin on Cubit<GroupDetailsState> {
       createdAt: DateTime.now(),
       messageType: messageType,
       imageUrl: remoteImageUrl,
+      voiceUrl: voiceFile?.path,
+      durationSeconds: durationSeconds,
       fileName: fileName,
       fileSizeBytes: fileSizeBytes,
       mentions: mentions,
@@ -71,6 +76,9 @@ mixin GroupMediaUploadMixin on Cubit<GroupDetailsState> {
       replyToSenderId: reply?.senderId,
       replyToSenderName: reply?.senderName,
       replyToMessageType: reply?.messageType,
+      forwardedFromUserId: forwardedFromUserId,
+      forwardedFromUserName: forwardedFromUserName,
+      forwardedFromUserAvatar: forwardedFromUserAvatar,
     );
     cachedMessages = [tempMsg, ...cachedMessages];
     _emitLoaded();
@@ -121,6 +129,8 @@ mixin GroupMediaUploadMixin on Cubit<GroupDetailsState> {
       }
 
       if (voiceFile != null) {
+        uploadProgressMap[tempId] = 0.0;
+        _emitLoaded();
         final compression = await _audioCompressionService.compress(voiceFile);
         try {
           final result = await _services.storage.uploadFile(
@@ -129,9 +139,14 @@ mixin GroupMediaUploadMixin on Cubit<GroupDetailsState> {
             currentUserId,
             filePrefix: 'group_',
             cancelToken: cancelToken,
+            onProgress: (p) {
+              uploadProgressMap[tempId] = p;
+              _emitLoaded();
+            },
           );
           uploadedVoiceUrl = result.secureUrl;
           voicePublicId = result.publicId;
+          uploadProgressMap.remove(tempId);
         } finally {
           await _audioCompressionService.cleanup(compression);
         }
@@ -170,8 +185,12 @@ mixin GroupMediaUploadMixin on Cubit<GroupDetailsState> {
         imagePublicId: imagePublicId,
         videoPublicId: videoPublicId,
         voicePublicId: voicePublicId,
+        durationSeconds: durationSeconds,
         filePublicId: filePublicId,
         mentions: mentions,
+        forwardedFromUserId: forwardedFromUserId,
+        forwardedFromUserName: forwardedFromUserName,
+        forwardedFromUserAvatar: forwardedFromUserAvatar,
       );
       final memberIds =
           group.members
