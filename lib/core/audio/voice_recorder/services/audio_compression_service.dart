@@ -3,7 +3,6 @@ import 'package:audio_decoder/audio_decoder.dart';
 import 'package:flutter/foundation.dart';
 
 /// Result of an attempted WAV → M4A (AAC) compression pass.
-///
 /// If compression fails for any reason, [wasCompressed] is false and
 /// [fileToUpload] simply falls back to the original WAV file — sending a
 /// slightly larger voice note is always preferable to failing the send
@@ -20,15 +19,7 @@ class AudioCompressionResult {
   });
 }
 
-/// Compresses a finished (already merged) WAV voice recording into a much
-/// smaller AAC/M4A file before upload, using native platform codecs only
-/// (AVFoundation on iOS, MediaCodec on Android via the `audio_decoder`
-/// package) — no FFmpeg, no bundled native binaries.
-///
-/// This is intentionally a single-purpose, single-method service (SRP):
-/// it knows nothing about recording, chunking, or uploading — it only
-/// turns one finished WAV file into one smaller M4A file, or safely
-/// reports that it couldn't.
+
 class AudioCompressionService {
   Future<AudioCompressionResult> compress(File wavFile) async {
     final outputPath = _buildM4aPath(wavFile.path);
@@ -63,9 +54,6 @@ class AudioCompressionService {
     );
   }
 
-  /// Deletes whichever temp files are no longer needed after the upload
-  /// (success or failure) — the original WAV always, and the compressed
-  /// M4A too if one was actually produced.
   Future<void> cleanup(AudioCompressionResult result) async {
     await _safeDelete(result.originalWavFile);
     if (result.fileToUpload.path != result.originalWavFile.path) {
