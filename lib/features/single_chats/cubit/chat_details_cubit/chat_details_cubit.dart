@@ -8,6 +8,7 @@ import '../../../../core/audio/voice_recorder/services/audio_compression_service
 import '../../../../core/cache/services/messages_snapshot_cache.dart';
 import '../../../../core/connectivity/services/connectivity_banner_controller.dart';
 import '../../../../core/helpers/chat_helper.dart';
+import '../../../../core/helpers/selected_message_star_controller.dart';
 import '../../../../core/services/fcm_services.dart';
 import '../../../../core/services/supabase_storage_services.dart';
 import '../../../../core/supabase/supabase_provider.dart';
@@ -236,7 +237,7 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
     File? imageFile,
     File? videoFile,
     File? voiceFile,
-    int? voiceDurationSeconds,
+    int? durationSeconds,
     File? documentFile,
     String? fileName,
     int? fileSizeBytes,
@@ -267,7 +268,7 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
       isRead: false,
       imageUrl: remoteImageUrl,
       voiceUrl: voiceFile?.path,
-      voiceDurationSeconds: voiceDurationSeconds,
+      durationSeconds: durationSeconds,
       fileName: fileName,
       fileSizeBytes: fileSizeBytes,
       replyToMessageId: replyToMessage.value?.id,
@@ -403,7 +404,7 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
         imageUrl: imageUrl,
         videoUrl: videoUrl,
         voiceUrl: voiceUrl,
-        voiceDurationSeconds: voiceDurationSeconds,
+        durationSeconds: durationSeconds,
         fileUrl: fileUrl,
         fileName: fileName,
         fileSizeBytes: fileSizeBytes,

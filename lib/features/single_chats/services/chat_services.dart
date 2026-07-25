@@ -52,7 +52,7 @@ class ChatServices {
     String? imageUrl,
     String? videoUrl,
     String? voiceUrl,
-    int? voiceDurationSeconds,
+    int? durationSeconds,
     String? fileUrl,
     String? fileName,
     int? fileSizeBytes,
@@ -72,6 +72,9 @@ class ChatServices {
     String? replyToStoryText,
     String? replyToStoryBgColor,
     int? replyToStoryDurationSeconds,
+    String? forwardedFromUserId,
+    String? forwardedFromUserName,
+    String? forwardedFromUserAvatar,
   }) => _messages.sendMessage(
     senderId: senderId,
     receiverId: receiverId,
@@ -80,7 +83,7 @@ class ChatServices {
     imageUrl: imageUrl,
     videoUrl: videoUrl,
     voiceUrl: voiceUrl,
-    voiceDurationSeconds: voiceDurationSeconds,
+    durationSeconds: durationSeconds,
     fileUrl: fileUrl,
     fileName: fileName,
     fileSizeBytes: fileSizeBytes,
@@ -100,6 +103,9 @@ class ChatServices {
     replyToStoryText: replyToStoryText,
     replyToStoryBgColor: replyToStoryBgColor,
     replyToStoryDurationSeconds: replyToStoryDurationSeconds,
+    forwardedFromUserId: forwardedFromUserId,
+    forwardedFromUserName: forwardedFromUserName,
+    forwardedFromUserAvatar: forwardedFromUserAvatar,
   );
 
   Future<void> editMessage({

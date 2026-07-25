@@ -12,7 +12,7 @@ class MessageModel {
   final String? imageUrl;
   final String? videoUrl;
   final String? voiceUrl;
-  final int? voiceDurationSeconds;
+  final int? durationSeconds;
   final String? fileUrl;
   final String? fileName;
   final int? fileSizeBytes;
@@ -31,6 +31,9 @@ class MessageModel {
   final String? replyToStoryText;
   final String? replyToStoryBgColor;
   final int? replyToStoryDurationSeconds;
+  final String? forwardedFromUserId;
+  final String? forwardedFromUserName;
+  final String? forwardedFromUserAvatar;
 
   const MessageModel({
     required this.id,
@@ -44,7 +47,7 @@ class MessageModel {
     this.imageUrl,
     this.videoUrl,
     this.voiceUrl,
-    this.voiceDurationSeconds,
+    this.durationSeconds,
     this.fileUrl,
     this.fileName,
     this.fileSizeBytes,
@@ -63,9 +66,13 @@ class MessageModel {
     this.replyToStoryText,
     this.replyToStoryBgColor,
     this.replyToStoryDurationSeconds,
+    this.forwardedFromUserId,
+    this.forwardedFromUserName,
+    this.forwardedFromUserAvatar,
   });
 
   bool get isStoryReply => replyToStoryType != null;
+  bool get isForwarded => forwardedFromUserId != null;
 
   MessageModel copyWith({
     String? id,
@@ -79,7 +86,7 @@ class MessageModel {
     String? imageUrl,
     String? videoUrl,
     String? voiceUrl,
-    int? voiceDurationSeconds,
+    int? durationSeconds,
     String? fileUrl,
     String? fileName,
     int? fileSizeBytes,
@@ -98,6 +105,9 @@ class MessageModel {
     String? replyToStoryText,
     String? replyToStoryBgColor,
     int? replyToStoryDurationSeconds,
+    String? forwardedFromUserId,
+    String? forwardedFromUserName,
+    String? forwardedFromUserAvatar,
   }) {
     return MessageModel(
       id: id ?? this.id,
@@ -111,7 +121,7 @@ class MessageModel {
       imageUrl: imageUrl ?? this.imageUrl,
       videoUrl: videoUrl ?? this.videoUrl,
       voiceUrl: voiceUrl ?? this.voiceUrl,
-      voiceDurationSeconds: voiceDurationSeconds ?? this.voiceDurationSeconds,
+      durationSeconds: durationSeconds ?? this.durationSeconds,
       fileUrl: fileUrl ?? this.fileUrl,
       fileName: fileName ?? this.fileName,
       fileSizeBytes: fileSizeBytes ?? this.fileSizeBytes,
@@ -131,6 +141,11 @@ class MessageModel {
       replyToStoryBgColor: replyToStoryBgColor ?? this.replyToStoryBgColor,
       replyToStoryDurationSeconds:
           replyToStoryDurationSeconds ?? this.replyToStoryDurationSeconds,
+      forwardedFromUserId: forwardedFromUserId ?? this.forwardedFromUserId,
+      forwardedFromUserName:
+          forwardedFromUserName ?? this.forwardedFromUserName,
+      forwardedFromUserAvatar:
+          forwardedFromUserAvatar ?? this.forwardedFromUserAvatar,
     );
   }
 
@@ -147,7 +162,7 @@ class MessageModel {
       imageUrl: json[MessagesColumns.imageUrl],
       videoUrl: json[MessagesColumns.videoUrl],
       voiceUrl: json[MessagesColumns.voiceUrl],
-      voiceDurationSeconds: (json['voice_duration_seconds'] as num?)?.toInt(),
+      durationSeconds: (json[MessagesColumns.durationSeconds] as num?)?.toInt(),
       fileUrl: json[MessagesColumns.fileUrl],
       fileName: json[MessagesColumns.fileName],
       fileSizeBytes: (json[MessagesColumns.fileSizeBytes] as num?)?.toInt(),
@@ -169,6 +184,9 @@ class MessageModel {
       replyToStoryBgColor: json[MessagesColumns.replyToStoryBgColor],
       replyToStoryDurationSeconds:
           (json[MessagesColumns.replyToStoryDurationSeconds] as num?)?.toInt(),
+      forwardedFromUserId: json[MessagesColumns.forwardedFromUserId],
+      forwardedFromUserName: json[MessagesColumns.forwardedFromUserName],
+      forwardedFromUserAvatar: json[MessagesColumns.forwardedFromUserAvatar],
     );
   }
 
@@ -185,7 +203,7 @@ class MessageModel {
       MessagesColumns.imageUrl: imageUrl,
       MessagesColumns.videoUrl: videoUrl,
       MessagesColumns.voiceUrl: voiceUrl,
-      'voice_duration_seconds': voiceDurationSeconds,
+      MessagesColumns.durationSeconds: durationSeconds,
       MessagesColumns.fileUrl: fileUrl,
       MessagesColumns.fileName: fileName,
       MessagesColumns.fileSizeBytes: fileSizeBytes,
@@ -202,6 +220,9 @@ class MessageModel {
       MessagesColumns.replyToStoryText: replyToStoryText,
       MessagesColumns.replyToStoryBgColor: replyToStoryBgColor,
       MessagesColumns.replyToStoryDurationSeconds: replyToStoryDurationSeconds,
+      MessagesColumns.forwardedFromUserId: forwardedFromUserId,
+      MessagesColumns.forwardedFromUserName: forwardedFromUserName,
+      MessagesColumns.forwardedFromUserAvatar: forwardedFromUserAvatar,
     };
   }
 }

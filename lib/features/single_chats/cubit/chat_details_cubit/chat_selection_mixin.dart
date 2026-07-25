@@ -8,6 +8,9 @@ mixin ChatSelectionMixin on Cubit<ChatDetailsState> {
   final ValueNotifier<Set<String>> selectedMessageIds =
       ValueNotifier<Set<String>>({});
 
+  late final SelectedMessageStarController starController =
+      SelectedMessageStarController(currentUserId: currentUserId);
+
   bool get isInSelectionMode => selectedMessageIds.value.isNotEmpty;
 
   List<MessageModel> get selectedMessages =>
@@ -21,6 +24,7 @@ mixin ChatSelectionMixin on Cubit<ChatDetailsState> {
 
   void startSelection(String messageId) {
     selectedMessageIds.value = {messageId};
+    starController.onSelectionChanged(selectedMessageIds.value);
   }
 
   void toggleMessageSelection(String messageId) {
@@ -31,11 +35,15 @@ mixin ChatSelectionMixin on Cubit<ChatDetailsState> {
       current.add(messageId);
     }
     selectedMessageIds.value = current;
+    starController.onSelectionChanged(current);
   }
 
   void clearSelection() {
     selectedMessageIds.value = {};
+    starController.onSelectionChanged(const {});
   }
+
+  Future<void> toggleStarSelected() => starController.toggleSelected();
 
   Future<void> deleteSelectedForMe() async {
     final messages = selectedMessages;
@@ -81,6 +89,7 @@ mixin ChatSelectionMixin on Cubit<ChatDetailsState> {
   @override
   Future<void> close() {
     selectedMessageIds.dispose();
+    starController.dispose();
     return super.close();
   }
 }

@@ -65,7 +65,7 @@ class ChatMessagesService {
     String? imageUrl,
     String? videoUrl,
     String? voiceUrl,
-    int? voiceDurationSeconds,
+    int? durationSeconds,
     String? fileUrl,
     String? fileName,
     int? fileSizeBytes,
@@ -85,6 +85,9 @@ class ChatMessagesService {
     String? replyToStoryText,
     String? replyToStoryBgColor,
     int? replyToStoryDurationSeconds,
+    String? forwardedFromUserId,
+    String? forwardedFromUserName,
+    String? forwardedFromUserAvatar,
   }) async {
     await _supabase.from(SupabaseConstants.messages).insert({
       MessagesColumns.senderId: senderId,
@@ -94,8 +97,8 @@ class ChatMessagesService {
       if (imageUrl != null) MessagesColumns.imageUrl: imageUrl,
       if (videoUrl != null) MessagesColumns.videoUrl: videoUrl,
       if (voiceUrl != null) MessagesColumns.voiceUrl: voiceUrl,
-      if (voiceDurationSeconds != null)
-        'voice_duration_seconds': voiceDurationSeconds,
+      if (durationSeconds != null)
+        MessagesColumns.durationSeconds: durationSeconds,
       if (fileUrl != null) MessagesColumns.fileUrl: fileUrl,
       if (fileName != null) MessagesColumns.fileName: fileName,
       if (fileSizeBytes != null) MessagesColumns.fileSizeBytes: fileSizeBytes,
@@ -126,6 +129,12 @@ class ChatMessagesService {
       if (replyToStoryDurationSeconds != null)
         MessagesColumns.replyToStoryDurationSeconds:
             replyToStoryDurationSeconds,
+      if (forwardedFromUserId != null)
+         MessagesColumns.forwardedFromUserId: forwardedFromUserId,
+      if (forwardedFromUserName != null)
+         MessagesColumns.forwardedFromUserName: forwardedFromUserName,
+      if (forwardedFromUserAvatar != null)
+         MessagesColumns.forwardedFromUserAvatar: forwardedFromUserAvatar,
     });
   }
 

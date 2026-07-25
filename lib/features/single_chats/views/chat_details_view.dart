@@ -2,10 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import 'package:social_media_app/core/themes/background_theme_widget.dart';
+import 'package:social_media_app/features/chat_forwarding/models/forward_target_selection.dart';
+import 'package:social_media_app/features/chat_forwarding/models/forwardable_message.dart';
+import 'package:social_media_app/features/chat_forwarding/services/forward_service.dart';
+import 'package:social_media_app/features/chat_forwarding/views/forward_target_picker_view.dart';
 import 'package:social_media_app/features/single_chats/cubit/chat_details_cubit/chat_details_cubit.dart';
 import 'package:social_media_app/features/single_chats/models/chat_user_model.dart';
 import 'package:social_media_app/features/single_chats/models/message_model.dart';
-import 'package:social_media_app/features/single_chats/widgets/chat_selection_app_bar.dart';
+import 'package:social_media_app/features/single_chats/services/chat_services.dart';
 import 'package:social_media_app/features/single_chats/widgets/messages_list_view.dart';
 import 'package:social_media_app/features/single_chats/widgets/receiver_details_header_section.dart';
 import '../../../core/router/app_router.dart';
@@ -13,6 +17,7 @@ import '../../../core/services/active_screen_tracker.dart';
 import '../../../core/services/notification_services.dart';
 import '../../../core/themes/app_colors.dart';
 import '../../../core/toast/app_toast.dart';
+import '../../../core/widgets/multi_select_app_bar.dart';
 import '../services/chat_permission_service.dart';
 import '../widgets/text_input_area_section.dart';
 
@@ -262,6 +267,53 @@ class _ChatDetailsViewState extends State<ChatDetailsView>
     AppToast.info('$feature is coming soon');
   }
 
+  Future<void> _openForwardPicker(
+    BuildContext context, {
+    required int messageCount,
+  }) async {
+    final result = await Navigator.of(context).push<ForwardTargetSelection>(
+      MaterialPageRoute(
+        builder: (_) => ForwardTargetPickerView(messageCount: messageCount),
+      ),
+    );
+    if (result == null || result.isEmpty) return;
+
+    final selectedMessages = _chatCubit.selectedMessages;
+    final currentUserId = _chatCubit.currentUserId;
+    _chatCubit.clearSelection();
+
+    final currentUserInfo = await ChatServices().getCurrentUserInfo(
+      currentUserId,
+    );
+
+    final forwardableMessages =
+        selectedMessages
+            .map(
+              (m) => ForwardableMessage.fromSingleChatMessage(
+                m,
+                currentUserId: currentUserId,
+                currentUserName: currentUserInfo['name'] ?? 'You',
+                currentUserAvatar: currentUserInfo['imageUrl'],
+                otherUserName: widget.receiverUser.name,
+                otherUserAvatar: widget.receiverUser.imageUrl,
+              ),
+            )
+            .toList();
+
+    try {
+      await ForwardService().forwardMessages(
+        messages: forwardableMessages,
+        targets: result,
+        currentUserId: currentUserId,
+      );
+      if (context.mounted) {
+        AppToast.info('Forwarded to ${result.length} chat(s)');
+      }
+    } catch (e) {
+      if (context.mounted) AppToast.info('Failed to forward. Try again.');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return BackgroundThemeWidget(
@@ -280,14 +332,48 @@ class _ChatDetailsViewState extends State<ChatDetailsView>
                       receiverUser: widget.receiverUser,
                     );
                   }
-                  return ChatSelectionAppBar(
-                    selectedCount: selectedIds.length,
-                    canDeleteForEveryone:
-                        _chatCubit.canDeleteSelectedForEveryone,
-                    onCancel: _chatCubit.clearSelection,
-                    onDelete: () => _showBulkDeleteMenu(context, _chatCubit),
-                    onForward: () => _showComingSoon(context, 'Forward'),
-                    onInfo: () => _showComingSoon(context, 'Info'),
+                  return ValueListenableBuilder<bool>(
+                    valueListenable:
+                        _chatCubit.starController.isSelectedStarred,
+                    builder: (context, isStarred, __) {
+                      return MultiSelectChatAppBar(
+                        selectedCount: selectedIds.length,
+                        onCancel: _chatCubit.clearSelection,
+                        actions: [
+                          if (selectedIds.length == 1)
+                            MultiSelectAction(
+                              icon:
+                                  isStarred
+                                      ? Icons.star_rounded
+                                      : Icons.star_border_rounded,
+                              color: isStarred ? Colors.amber : null,
+                              tooltip: isStarred ? 'Unstar' : 'Star',
+                              onPressed: _chatCubit.toggleStarSelected,
+                            ),
+                          MultiSelectAction(
+                            icon: Icons.info_outline,
+                            tooltip: 'Info',
+                            onPressed: () => _showComingSoon(context, 'Info'),
+                          ),
+                          MultiSelectAction(
+                            icon: Icons.forward_rounded,
+                            tooltip: 'Forward',
+                            onPressed:
+                                () => _openForwardPicker(
+                                  context,
+                                  messageCount: selectedIds.length,
+                                ),
+                          ),
+                          MultiSelectAction(
+                            icon: Icons.delete_outline,
+                            color: Colors.red,
+                            tooltip: 'Delete',
+                            onPressed:
+                                () => _showBulkDeleteMenu(context, _chatCubit),
+                          ),
+                        ],
+                      );
+                    },
                   );
                 },
               ),

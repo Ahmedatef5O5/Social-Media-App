@@ -4,9 +4,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import 'package:social_media_app/features/single_chats/cubit/chat_details_cubit/chat_details_cubit.dart';
 import 'package:social_media_app/features/single_chats/widgets/message_reactions_row_widget.dart';
-import '../../../core/helpers/modern_circle_progress.dart';
+import '../../../core/attachment/models/media_transfer_state.dart';
+import '../../../core/attachment/widgets/media_progress_overlay.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/themes/app_colors.dart';
+import '../../chat_forwarding/widgets/forwarded_header.dart';
 import '../../reactions/model/live_reaction.dart';
 import '../../reactions/services/reaction_profile_resolver.dart';
 import '../../reactions/widgets/message_reactions_bottom_sheet.dart';
@@ -120,6 +122,17 @@ class _MessageContentContainerState extends State<MessageContentContainer> {
       );
     }
 
+    final regularContent = RegularMessageContent(
+      message: widget.message,
+      isMe: widget.isMe,
+      isImage: isImage,
+      isVideo: isVideo,
+      isGif: isGif,
+      isSticker: isSticker,
+      itemScrollController: widget.itemScrollController,
+      isUploading: isUploading,
+    );
+
     return Stack(
       clipBehavior: Clip.none,
       children: [
@@ -177,16 +190,24 @@ class _MessageContentContainerState extends State<MessageContentContainer> {
           ),
           child: Opacity(
             opacity: (isUploading && !isVoice) ? 0.3 : 1.0,
-            child: RegularMessageContent(
-              message: widget.message,
-              isMe: widget.isMe,
-              isImage: isImage,
-              isVideo: isVideo,
-              isGif: isGif,
-              isSticker: isSticker,
-              itemScrollController: widget.itemScrollController,
-              isUploading: isUploading,
-            ),
+            child:
+                widget.message.isForwarded
+                    ? Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        ForwardedHeader(
+                          name:
+                              widget.message.forwardedFromUserName ?? 'Unknown',
+                          avatarUrl: widget.message.forwardedFromUserAvatar,
+                          originalSenderId:
+                              widget.message.forwardedFromUserId ?? '',
+                          isMe: widget.isMe,
+                        ),
+                        regularContent,
+                      ],
+                    )
+                    : regularContent,
           ),
         ),
 
@@ -203,10 +224,18 @@ class _MessageContentContainerState extends State<MessageContentContainer> {
                 filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
                 child: Container(
                   color: Colors.black.withValues(alpha: 0.1),
-                  child: Center(
-                    child: ModernCircularProgress(
-                      progress: widget.uploadProgress ?? 0.0,
-                      size: 110,
+                  child: Positioned.fill(
+                    child: MediaProgressOverlay(
+                      state: MediaTransferState.uploading(
+                        widget.uploadProgress ?? 0.0,
+                      ),
+                      isVideo: widget.message.messageType == 'video',
+                      durationSeconds: widget.message.durationSeconds,
+                      onCancelTap:
+                          () => context.read<ChatDetailsCubit>().cancelUpload(
+                            widget.message.id,
+                          ),
+                      child: const SizedBox.shrink(),
                     ),
                   ),
                 ),
