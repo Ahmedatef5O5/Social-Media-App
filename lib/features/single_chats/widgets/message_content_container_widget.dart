@@ -176,7 +176,7 @@ class _MessageContentContainerState extends State<MessageContentContainer> {
                     ],
           ),
           child: Opacity(
-            opacity: isUploading ? 0.3 : 1.0,
+            opacity: (isUploading && !isVoice) ? 0.3 : 1.0,
             child: RegularMessageContent(
               message: widget.message,
               isMe: widget.isMe,
@@ -185,11 +185,12 @@ class _MessageContentContainerState extends State<MessageContentContainer> {
               isGif: isGif,
               isSticker: isSticker,
               itemScrollController: widget.itemScrollController,
+              isUploading: isUploading,
             ),
           ),
         ),
 
-        if (isUploading) ...[
+        if (isUploading && !isVoice) ...[
           Positioned.fill(
             child: ClipRRect(
               borderRadius: BorderRadius.only(

@@ -4,6 +4,7 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:social_media_app/core/widgets/waveform_progress_bar.dart';
+
 import '../services/voice_chunk_recorder_service.dart';
 
 enum _RecordUiState { idle, recording, locked }
@@ -259,7 +260,8 @@ class _VoiceRecorderInputSectionState extends State<VoiceRecorderInputSection> {
     if (_isPreviewPlaying) await _previewPlayer.stop();
 
     final file = await _recorderService.finishAndBuild();
-    final seconds = _seconds;
+    final seconds =
+        file != null ? await _extractPreciseDuration(file, _seconds) : _seconds;
 
     if (mounted) {
       setState(() {
@@ -285,6 +287,28 @@ class _VoiceRecorderInputSectionState extends State<VoiceRecorderInputSection> {
     }
 
     widget.onSendVoice(file, seconds);
+  }
+
+  /// Reads the exact duration of the freshly recorded local file using a
+  /// throwaway [AudioPlayer] instance (metadata probe only — never played).
+  /// Falls back to the tick-based [fallbackSeconds] counter if the probe
+  /// fails or returns an implausible value (e.g. 0 on some Android OEMs
+  /// right after the file handle is closed).
+  Future<int> _extractPreciseDuration(File file, int fallbackSeconds) async {
+    AudioPlayer? probe;
+    try {
+      probe = AudioPlayer();
+      await probe.setSourceDeviceFile(file.path);
+      final duration = await probe.getDuration();
+      if (duration != null && duration.inMilliseconds > 0) {
+        return (duration.inMilliseconds / 1000).round();
+      }
+    } catch (_) {
+      // Ignore — fall back to the tick counter below.
+    } finally {
+      await probe?.dispose();
+    }
+    return fallbackSeconds;
   }
 
   @override

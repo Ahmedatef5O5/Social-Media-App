@@ -16,6 +16,7 @@ class MentionAwareTextField extends StatefulWidget {
   final List<String>? restrictSuggestionsToUserIds;
   final EdgeInsetsGeometry? contentPadding;
   final InputBorder? border, focusedBorder;
+  final Color? fillColor;
 
   const MentionAwareTextField({
     super.key,
@@ -28,6 +29,7 @@ class MentionAwareTextField extends StatefulWidget {
     this.contentPadding,
     this.border,
     this.focusedBorder,
+    this.fillColor,
   });
 
   @override
@@ -206,9 +208,11 @@ class _MentionAwareTextFieldState extends State<MentionAwareTextField> {
             fontSize: 15,
           ),
           filled: true,
-          fillColor: theme.colorScheme.surfaceContainerHighest.withValues(
-            alpha: 0.4,
-          ),
+          fillColor:
+              widget.fillColor ??
+              theme.colorScheme.surfaceContainerHighest.withValues(
+                alpha: 0.4,
+              ),
           contentPadding:
               widget.contentPadding ??
               const EdgeInsets.symmetric(horizontal: 16, vertical: 8),

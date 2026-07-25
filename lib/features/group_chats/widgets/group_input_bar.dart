@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:social_media_app/core/mentions/widgets/mention_aware_text_field.dart';
-import 'package:social_media_app/core/audio/voice_recorder/widgets/voice_recorder_input_section.dart';
+import '../../../core/audio/voice_recorder/widgets/voice_recorder_input_section.dart';
 import '../../../core/mentions/models/mention_ref.dart';
 import '../../../core/mentions/widgets/mention_text_editing_controller.dart';
 import '../helpers/send_button.dart';
@@ -51,6 +51,10 @@ class GroupInputBar extends StatelessWidget {
           hintText: 'Type a message...',
           restrictSuggestionsToUserIds: mentionCandidateIds,
           onSubmitted: (_) => _send(),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          fillColor: Colors.transparent,
+          border: InputBorder.none,
+          focusedBorder: InputBorder.none,
         ),
         hasText: hasText,
         onShowAttachments: onShowMedia,

@@ -12,12 +12,16 @@ class VoiceMessageBubbleWidget extends StatefulWidget {
   final bool isMe;
   final DateTime timestamp;
   final bool? isRead;
+  final bool isUploading;
+  final int? initialDurationSeconds;
   const VoiceMessageBubbleWidget({
     super.key,
     required this.voiceUrl,
     required this.isMe,
     required this.timestamp,
     this.isRead,
+    required this.isUploading,
+    this.initialDurationSeconds,
   });
 
   static final ValueNotifier<String?> _activeVoiceUrl = ValueNotifier<String?>(
@@ -28,6 +32,8 @@ class VoiceMessageBubbleWidget extends StatefulWidget {
 
   static final Map<String, Duration> _durationCache = {};
   static final Map<String, Future<void>> _preloadFutures = {};
+
+  static const Duration _minReliableDuration = Duration(seconds: 1);
 
   static Future<Duration?> _fetchDuration(String url) async {
     if (_durationCache.containsKey(url)) return _durationCache[url];
@@ -44,7 +50,9 @@ class VoiceMessageBubbleWidget extends StatefulWidget {
       final duration = temp.value.duration;
       await temp.dispose();
       temp = null;
-      _durationCache[url] = duration;
+      if (duration >= _minReliableDuration) {
+        _durationCache[url] = duration;
+      }
       completer.complete();
       return duration;
     } catch (e) {
@@ -85,7 +93,7 @@ class _VoiceMessageBubbleWidgetState extends State<VoiceMessageBubbleWidget> {
   int _speedIndex = 0;
   double get _currentSpeed => _speeds[_speedIndex];
   Future<void> _preloadDuration() async {
-    if (widget.voiceUrl.startsWith('/')) return;
+    if (widget.isUploading || widget.voiceUrl.startsWith('/')) return;
 
     await VoiceMessageBubbleWidget._fetchDuration(widget.voiceUrl);
     if (mounted) {
@@ -183,8 +191,11 @@ class _VoiceMessageBubbleWidgetState extends State<VoiceMessageBubbleWidget> {
     );
     await controller.initialize();
 
-    VoiceMessageBubbleWidget._durationCache[widget.voiceUrl] =
-        controller.value.duration;
+    if (controller.value.duration >=
+        VoiceMessageBubbleWidget._minReliableDuration) {
+      VoiceMessageBubbleWidget._durationCache[widget.voiceUrl] =
+          controller.value.duration;
+    }
 
     controller.addListener(_onControllerUpdate);
 
@@ -219,24 +230,38 @@ class _VoiceMessageBubbleWidgetState extends State<VoiceMessageBubbleWidget> {
     super.dispose();
   }
 
-  String get _durationText {
+  Duration? get _effectiveDuration {
     final ctrl = _controller;
-    if (ctrl != null && ctrl.value.isInitialized) {
-      if (_isPlaying) {
-        final remaining = ctrl.value.duration - ctrl.value.position;
-        return _fmt(remaining.isNegative ? Duration.zero : remaining);
-      }
-      return _fmt(ctrl.value.duration);
+    if (ctrl != null &&
+        ctrl.value.isInitialized &&
+        ctrl.value.duration >= VoiceMessageBubbleWidget._minReliableDuration) {
+      return ctrl.value.duration;
+    }
+
+    if (widget.initialDurationSeconds != null &&
+        widget.initialDurationSeconds! > 0) {
+      return Duration(seconds: widget.initialDurationSeconds!);
     }
 
     final cached = VoiceMessageBubbleWidget._durationCache[widget.voiceUrl];
-
-    if (cached != null && cached > Duration.zero) return _fmt(cached);
-
-    if (_isInitialized && _controller != null) {
-      return _fmt(_controller!.value.duration);
+    if (cached != null &&
+        cached >= VoiceMessageBubbleWidget._minReliableDuration) {
+      return cached;
     }
-    return '--:--';
+
+    return null;
+  }
+
+  String get _durationText {
+    final total = _effectiveDuration;
+    if (total == null) return '--:--';
+
+    final ctrl = _controller;
+    if (_isPlaying && ctrl != null && ctrl.value.isInitialized) {
+      final remaining = total - ctrl.value.position;
+      return _fmt(remaining.isNegative ? Duration.zero : remaining);
+    }
+    return _fmt(total);
   }
 
   String _fmt(Duration d) {
@@ -249,15 +274,20 @@ class _VoiceMessageBubbleWidgetState extends State<VoiceMessageBubbleWidget> {
   Widget build(BuildContext context) {
     final activeColor =
         widget.isMe ? AppColors.white : Theme.of(context).primaryColor;
+    final showLoadingIcon =
+        widget.isUploading ||
+        _isLoading ||
+        widget.voiceUrl.isEmpty ||
+        widget.voiceUrl.startsWith('/');
     return Row(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         IconButton(
           padding: EdgeInsets.zero,
-          onPressed: _isLoading ? null : _initAndPlay,
+          onPressed: showLoadingIcon ? null : _initAndPlay,
           icon:
-              widget.voiceUrl.startsWith('/')
+              showLoadingIcon
                   ? SizedBox(
                     width: 24,
                     height: 24,
@@ -300,12 +330,7 @@ class _VoiceMessageBubbleWidgetState extends State<VoiceMessageBubbleWidget> {
                     child: WaveformProgressBar(
                       seed: widget.voiceUrl,
                       position: _controller?.value.position ?? Duration.zero,
-                      duration:
-                          _isInitialized && _controller != null
-                              ? _controller!.value.duration
-                              : (VoiceMessageBubbleWidget._durationCache[widget
-                                      .voiceUrl] ??
-                                  Duration.zero),
+                      duration: _effectiveDuration ?? Duration.zero,
                       activeColor: activeColor,
                       inactiveColor: activeColor.withValues(alpha: 0.25),
                       onSeek:

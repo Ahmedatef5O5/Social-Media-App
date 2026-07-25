@@ -12,6 +12,7 @@ class MessageModel {
   final String? imageUrl;
   final String? videoUrl;
   final String? voiceUrl;
+  final int? voiceDurationSeconds;
   final String? fileUrl;
   final String? fileName;
   final int? fileSizeBytes;
@@ -43,6 +44,7 @@ class MessageModel {
     this.imageUrl,
     this.videoUrl,
     this.voiceUrl,
+    this.voiceDurationSeconds,
     this.fileUrl,
     this.fileName,
     this.fileSizeBytes,
@@ -77,6 +79,7 @@ class MessageModel {
     String? imageUrl,
     String? videoUrl,
     String? voiceUrl,
+    int? voiceDurationSeconds,
     String? fileUrl,
     String? fileName,
     int? fileSizeBytes,
@@ -108,6 +111,7 @@ class MessageModel {
       imageUrl: imageUrl ?? this.imageUrl,
       videoUrl: videoUrl ?? this.videoUrl,
       voiceUrl: voiceUrl ?? this.voiceUrl,
+      voiceDurationSeconds: voiceDurationSeconds ?? this.voiceDurationSeconds,
       fileUrl: fileUrl ?? this.fileUrl,
       fileName: fileName ?? this.fileName,
       fileSizeBytes: fileSizeBytes ?? this.fileSizeBytes,
@@ -143,6 +147,7 @@ class MessageModel {
       imageUrl: json[MessagesColumns.imageUrl],
       videoUrl: json[MessagesColumns.videoUrl],
       voiceUrl: json[MessagesColumns.voiceUrl],
+      voiceDurationSeconds: (json['voice_duration_seconds'] as num?)?.toInt(),
       fileUrl: json[MessagesColumns.fileUrl],
       fileName: json[MessagesColumns.fileName],
       fileSizeBytes: (json[MessagesColumns.fileSizeBytes] as num?)?.toInt(),
@@ -180,6 +185,7 @@ class MessageModel {
       MessagesColumns.imageUrl: imageUrl,
       MessagesColumns.videoUrl: videoUrl,
       MessagesColumns.voiceUrl: voiceUrl,
+      'voice_duration_seconds': voiceDurationSeconds,
       MessagesColumns.fileUrl: fileUrl,
       MessagesColumns.fileName: fileName,
       MessagesColumns.fileSizeBytes: fileSizeBytes,

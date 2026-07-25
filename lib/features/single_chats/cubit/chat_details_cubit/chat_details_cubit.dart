@@ -4,6 +4,7 @@ import 'package:dio/dio.dart' as dio_pkg;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
+import '../../../../core/audio/voice_recorder/services/audio_compression_service.dart';
 import '../../../../core/cache/services/messages_snapshot_cache.dart';
 import '../../../../core/connectivity/services/connectivity_banner_controller.dart';
 import '../../../../core/helpers/chat_helper.dart';
@@ -11,7 +12,6 @@ import '../../../../core/services/fcm_services.dart';
 import '../../../../core/services/supabase_storage_services.dart';
 import '../../../../core/supabase/supabase_provider.dart';
 import '../../../../core/utilities/supabase_constants.dart';
-import '../../../../core/audio/voice_recorder/services/audio_compression_service.dart';
 import '../../../notifications/repository/notifications_repository.dart';
 import '../../../settings/repository/settings_repository.dart';
 import '../../models/message_model.dart';
@@ -236,6 +236,7 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
     File? imageFile,
     File? videoFile,
     File? voiceFile,
+    int? voiceDurationSeconds,
     File? documentFile,
     String? fileName,
     int? fileSizeBytes,
@@ -266,6 +267,7 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
       isRead: false,
       imageUrl: remoteImageUrl,
       voiceUrl: voiceFile?.path,
+      voiceDurationSeconds: voiceDurationSeconds,
       fileName: fileName,
       fileSizeBytes: fileSizeBytes,
       replyToMessageId: replyToMessage.value?.id,
@@ -339,6 +341,9 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
 
       if (voiceFile != null) {
         if (await voiceFile.exists()) {
+          uploadProgressMap[tempId] = 0.0;
+          emit(MessagesSending(messages: updatedMessages));
+
           final compression = await _audioCompressionService.compress(
             voiceFile,
           );
@@ -348,9 +353,14 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
               'chats',
               'voice',
               cancelToken: cancelToken,
+              onProgress: (progress) {
+                uploadProgressMap[tempId] = progress;
+                emit(MessagesSending(messages: updatedMessages));
+              },
             );
             voiceUrl = result.secureUrl;
             voicePublicId = result.publicId;
+            uploadProgressMap.remove(tempId);
           } finally {
             await _audioCompressionService.cleanup(compression);
           }
@@ -393,6 +403,7 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
         imageUrl: imageUrl,
         videoUrl: videoUrl,
         voiceUrl: voiceUrl,
+        voiceDurationSeconds: voiceDurationSeconds,
         fileUrl: fileUrl,
         fileName: fileName,
         fileSizeBytes: fileSizeBytes,

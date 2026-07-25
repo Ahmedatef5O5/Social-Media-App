@@ -65,6 +65,7 @@ class ChatMessagesService {
     String? imageUrl,
     String? videoUrl,
     String? voiceUrl,
+    int? voiceDurationSeconds,
     String? fileUrl,
     String? fileName,
     int? fileSizeBytes,
@@ -93,6 +94,8 @@ class ChatMessagesService {
       if (imageUrl != null) MessagesColumns.imageUrl: imageUrl,
       if (videoUrl != null) MessagesColumns.videoUrl: videoUrl,
       if (voiceUrl != null) MessagesColumns.voiceUrl: voiceUrl,
+      if (voiceDurationSeconds != null)
+        'voice_duration_seconds': voiceDurationSeconds,
       if (fileUrl != null) MessagesColumns.fileUrl: fileUrl,
       if (fileName != null) MessagesColumns.fileName: fileName,
       if (fileSizeBytes != null) MessagesColumns.fileSizeBytes: fileSizeBytes,

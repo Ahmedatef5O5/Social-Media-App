@@ -1,9 +1,9 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:social_media_app/core/audio/voice_recorder/widgets/voice_recorder_input_section.dart';
 import '../../../core/attachment/attachment_sheet/attachment_kind.dart';
 import '../../../core/attachment/attachment_sheet/attachment_picker_sheet.dart';
+import '../../../core/audio/voice_recorder/widgets/voice_recorder_input_section.dart';
 import '../../../core/constants/app_images.dart';
 import '../../../core/themes/app_colors.dart';
 import '../cubit/chat_details_cubit/chat_details_cubit.dart';
@@ -130,8 +130,8 @@ class _TextInputAreaSectionState extends State<TextInputAreaSection> {
                     hintText: 'Type a message...',
                     border: InputBorder.none,
                     contentPadding: EdgeInsets.symmetric(
-                      vertical: 12,
-                      horizontal: 2,
+                      vertical: 10,
+                      horizontal: 8,
                     ),
                   ),
                 ),
@@ -180,6 +180,7 @@ class _TextInputAreaSectionState extends State<TextInputAreaSection> {
                     messageText: '',
                     messageType: 'voice',
                     voiceFile: file,
+                    voiceDurationSeconds: seconds,
                     replyTo: widget.replyTo,
                   );
                   widget.onCancelReply?.call();

@@ -24,7 +24,7 @@ class RegularMessageContent extends StatelessWidget {
   final bool isGif;
   final bool isSticker;
   final ItemScrollController itemScrollController;
-
+  final bool isUploading;
   const RegularMessageContent({
     super.key,
     required this.message,
@@ -34,6 +34,7 @@ class RegularMessageContent extends StatelessWidget {
     required this.isGif,
     required this.isSticker,
     required this.itemScrollController,
+    this.isUploading = false,
   });
 
   @override
@@ -96,6 +97,8 @@ class RegularMessageContent extends StatelessWidget {
               isMe: isMe,
               timestamp: message.createdAt,
               isRead: message.isRead,
+              initialDurationSeconds: message.voiceDurationSeconds,
+              isUploading: isUploading,
             ),
 
           if (message.messageType == 'file' && message.fileUrl != null)
