@@ -6,4 +6,5 @@ class HiveBoxNames {
   static const String dataSnapshots = 'data_snapshots_box';
   static const String storyReactions = 'story_reactions_box';
   static const String reelsPreferences = 'reels_preferences_box';
+  static const String starredMessages = 'starred_messages_box';
 }
