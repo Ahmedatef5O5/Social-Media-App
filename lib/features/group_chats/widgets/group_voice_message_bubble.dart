@@ -14,6 +14,7 @@ class GroupVoiceMessageBubbleWidget extends StatefulWidget {
   final DateTime timestamp;
   final bool? isRead;
   final bool isUploading;
+  final int? initialDurationSeconds;
 
   const GroupVoiceMessageBubbleWidget({
     super.key,
@@ -22,6 +23,7 @@ class GroupVoiceMessageBubbleWidget extends StatefulWidget {
     required this.timestamp,
     this.isRead,
     this.isUploading = false,
+    this.initialDurationSeconds,
   });
 
   static final ValueNotifier<String?> _activeVoiceUrl = ValueNotifier<String?>(
@@ -30,6 +32,8 @@ class GroupVoiceMessageBubbleWidget extends StatefulWidget {
   static final Map<String, VideoPlayerController> _cache = {};
   static final Map<String, Duration> _durationCache = {};
   static final Map<String, Future<void>> _preloadFutures = {};
+
+  static const Duration _minReliableDuration = Duration(seconds: 1);
 
   static Future<Duration?> _fetchDuration(String url) async {
     if (_durationCache.containsKey(url)) return _durationCache[url];
@@ -50,7 +54,9 @@ class GroupVoiceMessageBubbleWidget extends StatefulWidget {
       final duration = temp.value.duration;
       await temp.dispose();
       temp = null;
-      _durationCache[url] = duration;
+      if (duration >= _minReliableDuration) {
+        _durationCache[url] = duration;
+      }
       completer.complete();
       return duration;
     } catch (e) {
@@ -190,8 +196,11 @@ class _GroupVoiceMessageBubbleWidgetState
 
       await controller.initialize();
 
-      GroupVoiceMessageBubbleWidget._durationCache[widget.voiceUrl] =
-          controller.value.duration;
+      if (controller.value.duration >=
+          GroupVoiceMessageBubbleWidget._minReliableDuration) {
+        GroupVoiceMessageBubbleWidget._durationCache[widget.voiceUrl] =
+            controller.value.duration;
+      }
       controller.addListener(_onControllerUpdate);
       GroupVoiceMessageBubbleWidget._cache[widget.voiceUrl] = controller;
       GroupVoiceMessageBubbleWidget._activeVoiceUrl.value = widget.voiceUrl;
@@ -227,24 +236,40 @@ class _GroupVoiceMessageBubbleWidgetState
     super.dispose();
   }
 
-  String get _durationText {
+  Duration? get _effectiveDuration {
     final ctrl = _controller;
-    if (ctrl != null && ctrl.value.isInitialized) {
-      if (_isPlaying) {
-        final remaining = ctrl.value.duration - ctrl.value.position;
-        return _fmt(remaining.isNegative ? Duration.zero : remaining);
-      }
-      return _fmt(ctrl.value.duration);
+    if (ctrl != null &&
+        ctrl.value.isInitialized &&
+        ctrl.value.duration >=
+            GroupVoiceMessageBubbleWidget._minReliableDuration) {
+      return ctrl.value.duration;
+    }
+
+    if (widget.initialDurationSeconds != null &&
+        widget.initialDurationSeconds! > 0) {
+      return Duration(seconds: widget.initialDurationSeconds!);
     }
 
     final cached =
         GroupVoiceMessageBubbleWidget._durationCache[widget.voiceUrl];
-    if (cached != null && cached > Duration.zero) return _fmt(cached);
-
-    if (_isInitialized && _controller != null) {
-      return _fmt(_controller!.value.duration);
+    if (cached != null &&
+        cached >= GroupVoiceMessageBubbleWidget._minReliableDuration) {
+      return cached;
     }
-    return '--:--';
+
+    return null;
+  }
+
+  String get _durationText {
+    final total = _effectiveDuration;
+    if (total == null) return '--:--';
+
+    final ctrl = _controller;
+    if (_isPlaying && ctrl != null && ctrl.value.isInitialized) {
+      final remaining = total - ctrl.value.position;
+      return _fmt(remaining.isNegative ? Duration.zero : remaining);
+    }
+    return _fmt(total);
   }
 
   String _fmt(Duration d) {
@@ -300,12 +325,7 @@ class _GroupVoiceMessageBubbleWidgetState
                     child: WaveformProgressBar(
                       seed: widget.voiceUrl,
                       position: _controller?.value.position ?? Duration.zero,
-                      duration:
-                          _isInitialized && _controller != null
-                              ? _controller!.value.duration
-                              : (GroupVoiceMessageBubbleWidget
-                                      ._durationCache[widget.voiceUrl] ??
-                                  Duration.zero),
+                      duration: _effectiveDuration ?? Duration.zero,
                       activeColor: activeColor,
                       inactiveColor: activeColor.withValues(alpha: 0.25),
                       onSeek:

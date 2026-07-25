@@ -259,7 +259,7 @@ class _GroupMessageContentState extends State<GroupMessageContent> {
       clipBehavior: Clip.none,
       children: [
         Opacity(
-          opacity: isUploading ? 0.4 : 1.0,
+          opacity: (isUploading && !isVoice) ? 0.4 : 1.0,
           child: Container(
             margin: EdgeInsets.only(top: 2, bottom: hasReaction ? 28 : 2),
             constraints: BoxConstraints(
@@ -308,7 +308,7 @@ class _GroupMessageContentState extends State<GroupMessageContent> {
           ),
         ),
 
-        if (isUploading)
+        if (isUploading && !isVoice)
           Positioned.fill(
             child: ClipRRect(
               borderRadius: BorderRadius.only(

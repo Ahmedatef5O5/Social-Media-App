@@ -106,8 +106,27 @@ class CloudinaryStorageServices {
   String _extractExtension(String path) => path.split('.').last.toLowerCase();
 
   String _resolveResourceType(String ext) {
-    const imageExts = {'jpg', 'jpeg', 'png', 'gif', 'webp'};
-    const videoOrAudioExts = {'mp4', 'mov', 'm4a', 'aac', 'mp3', 'ogg'};
+    const imageExts = {
+      'jpg',
+      'jpeg',
+      'png',
+      'gif',
+      'webp',
+      'heif',
+      'heic',
+      'svg',
+    };
+    const videoOrAudioExts = {
+      'mp4',
+      'mov',
+      'm4a',
+      'webm',
+      'aac',
+      'mp3',
+      'ogg',
+      'wav',
+      'opus',
+    };
 
     if (imageExts.contains(ext)) return 'image';
     if (videoOrAudioExts.contains(ext)) return 'video';

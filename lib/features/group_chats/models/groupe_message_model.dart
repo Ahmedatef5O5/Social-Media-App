@@ -13,6 +13,7 @@ class GroupMessageModel {
   final String? imageUrl;
   final String? videoUrl;
   final String? voiceUrl;
+  final int? voiceDurationSeconds;
   final String? fileUrl;
   final String? fileName;
   final int? fileSizeBytes;
@@ -40,6 +41,7 @@ class GroupMessageModel {
     this.imageUrl,
     this.videoUrl,
     this.voiceUrl,
+    this.voiceDurationSeconds,
     this.fileUrl,
     this.fileName,
     this.fileSizeBytes,
@@ -68,6 +70,7 @@ class GroupMessageModel {
     String? imageUrl,
     String? videoUrl,
     String? voiceUrl,
+    int? voiceDurationSeconds,
     String? fileUrl,
     String? fileName,
     int? fileSizeBytes,
@@ -95,6 +98,7 @@ class GroupMessageModel {
       imageUrl: imageUrl ?? this.imageUrl,
       videoUrl: videoUrl ?? this.videoUrl,
       voiceUrl: voiceUrl ?? this.voiceUrl,
+      voiceDurationSeconds: voiceDurationSeconds ?? this.voiceDurationSeconds,
       fileUrl: fileUrl ?? this.fileUrl,
       fileName: fileName ?? this.fileName,
       fileSizeBytes: fileSizeBytes ?? this.fileSizeBytes,
@@ -144,6 +148,7 @@ class GroupMessageModel {
       imageUrl: map['image_url'] as String?,
       videoUrl: map['video_url'] as String?,
       voiceUrl: map['voice_url'] as String?,
+      voiceDurationSeconds: (map['voice_duration_seconds'] as num?)?.toInt(),
       fileUrl: map['file_url'] as String?,
       fileName: map['file_name'] as String?,
       fileSizeBytes: (map['file_size_bytes'] as num?)?.toInt(),
@@ -169,6 +174,8 @@ class GroupMessageModel {
       if (imageUrl != null) 'image_url': imageUrl,
       if (videoUrl != null) 'video_url': videoUrl,
       if (voiceUrl != null) 'voice_url': voiceUrl,
+      if (voiceDurationSeconds != null)
+        'voice_duration_seconds': voiceDurationSeconds,
       if (fileUrl != null) 'file_url': fileUrl,
       if (fileName != null) 'file_name': fileName,
       if (fileSizeBytes != null) 'file_size_bytes': fileSizeBytes,
@@ -214,6 +221,7 @@ class GroupMessageModel {
       imageUrl: json['image_url'] as String?,
       videoUrl: json['video_url'] as String?,
       voiceUrl: json['voice_url'] as String?,
+      voiceDurationSeconds: (json['voice_duration_seconds'] as num?)?.toInt(),
       fileUrl: json['file_url'] as String?,
       fileName: json['file_name'] as String?,
       fileSizeBytes: (json['file_size_bytes'] as num?)?.toInt(),
@@ -243,6 +251,7 @@ class GroupMessageModel {
       'image_url': imageUrl,
       'video_url': videoUrl,
       'voice_url': voiceUrl,
+      'voice_duration_seconds': voiceDurationSeconds,
       'file_url': fileUrl,
       'file_name': fileName,
       'file_size_bytes': fileSizeBytes,

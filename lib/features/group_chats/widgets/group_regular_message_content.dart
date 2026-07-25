@@ -184,6 +184,7 @@ class GroupRegularMessageContent extends StatelessWidget {
                 isMe: isMe,
                 timestamp: message.createdAt,
                 isUploading: isUploading,
+                initialDurationSeconds: message.voiceDurationSeconds,
               ),
             if (isFile && message.fileUrl != null)
               Padding(
