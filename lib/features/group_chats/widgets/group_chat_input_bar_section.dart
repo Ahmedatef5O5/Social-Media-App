@@ -1,8 +1,6 @@
 import 'dart:async';
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
 import 'package:social_media_app/core/mentions/mentions.dart';
 import 'package:social_media_app/features/group_chats/widgets/group_input_bar.dart';
@@ -37,13 +35,9 @@ class _GroupChatInputBarSectionState extends State<GroupChatInputBarSection> {
   final FocusNode _focusNode = FocusNode();
   late final GroupDetailsCubit _cubit;
 
-  bool _isRecording = false;
   bool _hasText = false;
 
   List<String>? _membersIds;
-
-  int _recordSeconds = 0;
-  Timer? _recordTimer;
 
   @override
   void initState() {
@@ -100,67 +94,6 @@ class _GroupChatInputBarSectionState extends State<GroupChatInputBarSection> {
         });
       }
     } catch (_) {}
-  }
-
-  Future<void> _startRecording() async {
-    if (!await _audioRecorder.hasPermission()) return;
-
-    final dir = await getApplicationDocumentsDirectory();
-    final path = '${dir.path}/${DateTime.now().millisecondsSinceEpoch}.m4a';
-
-    await _audioRecorder.start(
-      const RecordConfig(
-        encoder: AudioEncoder.aacLc,
-        bitRate: 128000,
-        sampleRate: 44100,
-      ),
-      path: path,
-    );
-
-    _recordSeconds = 0;
-    _recordTimer?.cancel();
-    _recordTimer = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (mounted) setState(() => _recordSeconds++);
-    });
-
-    setState(() => _isRecording = true);
-  }
-
-  Future<void> _stopRecording() async {
-    _recordTimer?.cancel();
-    _recordTimer = null;
-
-    final path = await _audioRecorder.stop();
-
-    setState(() {
-      _isRecording = false;
-      _recordSeconds = 0;
-    });
-
-    if (path == null) return;
-
-    final file = File(path);
-
-    int retries = 10;
-    while (!await file.exists() && retries-- > 0) {
-      await Future.delayed(const Duration(milliseconds: 300));
-    }
-
-    if (!await file.exists()) return;
-
-    final size = await file.length();
-    if (size < 1000) {
-      await file.delete();
-      return;
-    }
-
-    if (mounted) {
-      context.read<GroupDetailsCubit>().sendMessage(
-        text: '',
-        messageType: 'voice',
-        voiceFile: file,
-      );
-    }
   }
 
   Future<void> _openAttachmentSheet() async {
@@ -260,8 +193,6 @@ class _GroupChatInputBarSectionState extends State<GroupChatInputBarSection> {
     widget.controller.removeListener(_onTextChanged);
     _cubit.editingMessage.removeListener(_onEditingMessageChanged);
     _focusNode.dispose();
-    _recordTimer?.cancel();
-    if (_isRecording) _audioRecorder.stop();
     _audioRecorder.dispose();
     super.dispose();
   }
@@ -274,18 +205,21 @@ class _GroupChatInputBarSectionState extends State<GroupChatInputBarSection> {
         GroupEditPreviewSection(cubit: _cubit, controller: widget.controller),
         GroupReplyPreviewSection(cubit: _cubit),
 
-        InputBar(
-          isRecording: _isRecording,
+        GroupInputBar(
           hasText: _hasText,
-          seconds: _recordSeconds,
           controller: widget.controller,
           focusNode: _focusNode,
-          mentionCandidateIds: _membersIds ?? widget.mentionCandidateIds,
+          mentionCandidateIds: _membersIds,
           onTyping: widget.onTyping,
           onSend: _handleSend,
           onShowMedia: _openAttachmentSheet,
-          onStartRecording: _startRecording,
-          onStopRecording: _stopRecording,
+          onSendVoice: (file, seconds) {
+            context.read<GroupDetailsCubit>().sendMessage(
+              text: '',
+              messageType: 'voice',
+              voiceFile: file,
+            );
+          },
         ),
       ],
     );

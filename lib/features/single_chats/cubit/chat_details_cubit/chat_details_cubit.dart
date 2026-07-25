@@ -11,6 +11,7 @@ import '../../../../core/services/fcm_services.dart';
 import '../../../../core/services/supabase_storage_services.dart';
 import '../../../../core/supabase/supabase_provider.dart';
 import '../../../../core/utilities/supabase_constants.dart';
+import '../../../../core/audio/voice_recorder/services/audio_compression_service.dart';
 import '../../../notifications/repository/notifications_repository.dart';
 import '../../../settings/repository/settings_repository.dart';
 import '../../models/message_model.dart';
@@ -20,13 +21,14 @@ import '../../widgets/chat_bubble.dart';
 part 'chat_details_state.dart';
 part 'chat_reactions_mixin.dart';
 part 'chat_selection_mixin.dart';
-part 'chat_presence_mixin.dart';
+part 'chat_typing_status_mixin.dart';
 
 class ChatDetailsCubit extends Cubit<ChatDetailsState>
-    with ChatReactionsMixin, ChatSelectionMixin, ChatPresenceMixin {
+    with ChatReactionsMixin, ChatSelectionMixin, ChatTypingStatusMixin {
   @override
   final ChatServices _chatServices;
   final ChatPermissionService _chatPermissionService;
+  final AudioCompressionService _audioCompressionService;
   final String receiverName;
   final String? senderImageUrl;
 
@@ -62,8 +64,11 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
     this.senderImageUrl,
     this.currentUserName = 'Someone',
     ChatPermissionService? chatPermissionService,
+    AudioCompressionService? audioCompressionService,
   }) : _chatPermissionService =
            chatPermissionService ?? ChatPermissionService(),
+       _audioCompressionService =
+           audioCompressionService ?? AudioCompressionService(),
        super(ChatDetailsInitial());
 
   Future<void> resolveChatPermission(String receiverId) async {
@@ -334,14 +339,21 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
 
       if (voiceFile != null) {
         if (await voiceFile.exists()) {
-          final result = await _chatServices.storage.uploadFile(
+          final compression = await _audioCompressionService.compress(
             voiceFile,
-            'chats',
-            'voice',
-            cancelToken: cancelToken,
           );
-          voiceUrl = result.secureUrl;
-          voicePublicId = result.publicId;
+          try {
+            final result = await _chatServices.storage.uploadFile(
+              compression.fileToUpload,
+              'chats',
+              'voice',
+              cancelToken: cancelToken,
+            );
+            voiceUrl = result.secureUrl;
+            voicePublicId = result.publicId;
+          } finally {
+            await _audioCompressionService.cleanup(compression);
+          }
         } else {
           emit(MessagesError("Voice file not found."));
           return;

@@ -10,6 +10,7 @@ import '../../../../core/cache/services/messages_snapshot_cache.dart';
 import '../../../../core/services/supabase_storage_services.dart';
 import '../../../../core/supabase/supabase_provider.dart';
 import '../../../../core/utilities/supabase_constants.dart';
+import '../../../../core/audio/voice_recorder/services/audio_compression_service.dart';
 import '../../../notifications/repository/notifications_repository.dart';
 import '../../../reactions/services/reaction_profile_resolver.dart';
 import '../../models/group_model.dart';
@@ -36,14 +37,22 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState>
   final GroupModel group;
   @override
   final GroupListCubit groupListCubit;
+  @override
+  final AudioCompressionService _audioCompressionService;
 
   static final _snapshotCache = MessagesSnapshotCache<GroupMessageModel>(
     toCacheJson: (m) => m.toCacheJson(),
     fromJson: GroupMessageModel.fromJson,
   );
 
-  GroupDetailsCubit(this._services, this.group, this.groupListCubit)
-    : super(GroupDetailsLoading());
+  GroupDetailsCubit(
+    this._services,
+    this.group,
+    this.groupListCubit, {
+    AudioCompressionService? audioCompressionService,
+  }) : _audioCompressionService =
+           audioCompressionService ?? AudioCompressionService(),
+       super(GroupDetailsLoading());
 
   @override
   List<GroupMessageModel> cachedMessages = [];

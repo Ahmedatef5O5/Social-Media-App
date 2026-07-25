@@ -9,6 +9,7 @@ mixin GroupMediaUploadMixin on Cubit<GroupDetailsState> {
   set cachedMessages(List<GroupMessageModel> value);
   Map<String, double> get uploadProgressMap;
   ValueNotifier<GroupMessageModel?> get replyToMessage;
+  AudioCompressionService get _audioCompressionService;
   void _emitLoaded();
 
   final Map<String, dio_pkg.CancelToken> _cancelTokens = {};
@@ -120,17 +121,21 @@ mixin GroupMediaUploadMixin on Cubit<GroupDetailsState> {
       }
 
       if (voiceFile != null) {
-        final result = await _services.storage.uploadFile(
-          voiceFile,
-          'group_chats',
-          currentUserId,
-          filePrefix: 'group_',
-          cancelToken: cancelToken,
-        );
-        uploadedVoiceUrl = result.secureUrl;
-        voicePublicId = result.publicId;
+        final compression = await _audioCompressionService.compress(voiceFile);
+        try {
+          final result = await _services.storage.uploadFile(
+            compression.fileToUpload,
+            'group_chats',
+            currentUserId,
+            filePrefix: 'group_',
+            cancelToken: cancelToken,
+          );
+          uploadedVoiceUrl = result.secureUrl;
+          voicePublicId = result.publicId;
+        } finally {
+          await _audioCompressionService.cleanup(compression);
+        }
       }
-
       if (documentFile != null) {
         uploadProgressMap[tempId] = 0;
         final result = await _services.storage.uploadFile(
