@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
+import '../../../core/cache/repository/media_cache_repository.dart';
 import '../../../core/connectivity/services/connectivity_banner_controller.dart';
 import '../../../core/services/cloudinary_storage_services.dart';
 import '../../../core/supabase/supabase_provider.dart';
@@ -24,12 +25,15 @@ part 'comments_state.dart';
 
 class CommentsCubit extends Cubit<CommentsState> {
   final CommentsService _commentsService;
+  final MediaCacheRepository _mediaCacheRepository;
   final UserData? currentUserData;
 
   CommentsCubit({
     required CommentsService commentsService,
+    required MediaCacheRepository mediaCacheRepository,
     this.currentUserData,
   }) : _commentsService = commentsService,
+       _mediaCacheRepository = mediaCacheRepository,
        super(CommentsInitial());
 
   StreamSubscription? _realtimeSubscription;
@@ -285,10 +289,18 @@ class CommentsCubit extends Cubit<CommentsState> {
             case CommentType.image:
               imageUrl = result.secureUrl;
               imagePublicId = result.publicId;
+              await _mediaCacheRepository.adoptUploadedFile(
+                imageUrl,
+                attachment.localFile!,
+              );
               break;
             case CommentType.video:
               videoUrl = result.secureUrl;
               videoPublicId = result.publicId;
+              await _mediaCacheRepository.adoptUploadedFile(
+                videoUrl,
+                attachment.localFile!,
+              );
               break;
             case CommentType.voice:
               voiceUrl = result.secureUrl;
@@ -297,6 +309,10 @@ class CommentsCubit extends Cubit<CommentsState> {
             case CommentType.file:
               fileUrl = result.secureUrl;
               filePublicId = result.publicId;
+              await _mediaCacheRepository.adoptUploadedFile(
+                fileUrl,
+                attachment.localFile!,
+              );
               break;
             default:
               break;

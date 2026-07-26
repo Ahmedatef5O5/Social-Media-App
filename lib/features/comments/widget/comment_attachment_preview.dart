@@ -3,12 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:video_player/video_player.dart';
 import 'package:social_media_app/core/helpers/media_duration_badge.dart';
-import 'package:social_media_app/core/helpers/modern_circle_progress.dart';
 import 'package:social_media_app/core/themes/app_colors.dart';
 import 'package:social_media_app/features/comments/cubit/comments_cubit.dart';
 import 'package:social_media_app/features/comments/model/comment_attachment_draft.dart';
 import 'package:social_media_app/features/comments/model/comment_type.dart';
 import 'package:social_media_app/features/comments/widget/comment_voice_player.dart';
+import '../../../core/attachment/widgets/transfer_ring.dart';
 import '../../../core/router/app_routes.dart';
 import '../../single_chats/widgets/full_screen_media_view.dart';
 
@@ -36,13 +36,12 @@ class CommentAttachmentPreview extends StatelessWidget {
           const SizedBox(width: 12),
           Expanded(child: _PreviewInfo(attachment: attachment)),
           if (cubit.isUploading)
-            SizedBox(
-              width: 28,
-              height: 28,
-              child: ModernCircularProgress(
+            GlassPillBadge(
+              leading: TransferRing(
+                size: 30,
                 progress: cubit.uploadProgress,
-                size: 28,
-                label: '',
+                icon: Icons.close_rounded,
+                onTap: () => context.read<CommentsCubit>().cancelUpload(),
               ),
             )
           else

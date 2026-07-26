@@ -1,15 +1,19 @@
+import 'dart:io';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:social_media_app/core/cache/utils/cloudinary_url_extensions.dart';
 import 'package:video_player/video_player.dart';
-import 'package:social_media_app/core/helpers/media_duration_badge.dart';
 import 'package:social_media_app/core/router/app_routes.dart';
 import 'package:social_media_app/core/widgets/cached_cloudinary_image.dart';
 import 'package:social_media_app/features/comments/model/comment_model.dart';
 import 'package:social_media_app/features/comments/model/comment_type.dart';
 import 'package:social_media_app/features/comments/widget/comment_voice_player.dart';
 import '../../../core/attachment/widgets/file_message_bubble.dart';
+import '../../../core/attachment/widgets/media_download_gate.dart';
+import '../../../core/widgets/video_progress_slider.dart';
 import '../../gifs/utils/loop_limited_gif.dart';
+import '../../single_chats/helper/glass_icon_btn.dart';
 import '../../single_chats/widgets/full_screen_media_view.dart';
 import '../../stickers/utils/animated_loop_cloudinary_sticker.dart';
 
@@ -69,33 +73,53 @@ class _ImageBubble extends StatelessWidget {
   Widget build(BuildContext context) {
     if (comment.imageUrl == null) return const SizedBox.shrink();
     final heroTag = 'comment_${comment.id}';
-    return GestureDetector(
-      onTap: () {
-        Navigator.of(context, rootNavigator: true).pushNamed(
-          AppRoutes.fullScreenImageViewRoute,
-          arguments: {
-            'url': comment.imageUrl,
-            'tag': heroTag,
-            'isAsset': false,
-            'caption': comment.text,
-          },
-        );
-      },
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(14),
-        child: Hero(
-          tag: heroTag,
-          child: CachedCloudinaryImage(
-            secureUrl: comment.imageUrl!,
+    const size = 180.0;
+
+    return MediaDownloadGate(
+      secureUrl: comment.imageUrl!,
+      fileSizeBytes: comment.fileSizeBytes,
+      borderRadius: BorderRadius.circular(14),
+      previewBuilder:
+          (context) => CachedNetworkImage(
+            imageUrl: comment.imageUrl!.cloudinaryLowResPreviewUrl,
+            width: size,
+            height: size,
             fit: BoxFit.cover,
-            width: 180,
-            height: 180,
             placeholder:
-                (context) =>
-                    const _MediaLoadingPlaceholder(width: 180, height: 180),
+                (context, _) =>
+                    const _MediaLoadingPlaceholder(width: size, height: size),
+            errorWidget:
+                (context, _, __) =>
+                    const _MediaLoadingPlaceholder(width: size, height: size),
           ),
-        ),
-      ),
+      completedBuilder:
+          (context, localPath) => GestureDetector(
+            onTap: () {
+              Navigator.of(context, rootNavigator: true).pushNamed(
+                AppRoutes.fullScreenImageViewRoute,
+                arguments: {
+                  'url': comment.imageUrl,
+                  'tag': heroTag,
+                  'isAsset': false,
+                  'caption': comment.text,
+                },
+              );
+            },
+            child: Hero(
+              tag: heroTag,
+              child: CachedCloudinaryImage(
+                secureUrl: comment.imageUrl!,
+                fit: BoxFit.cover,
+                width: size,
+                height: size,
+                placeholder:
+                    (context) => const _MediaLoadingPlaceholder(
+                      width: size,
+                      height: size,
+                    ),
+              ),
+            ),
+          ),
     );
   }
 }
@@ -136,47 +160,100 @@ class _StickerBubble extends StatelessWidget {
   }
 }
 
-class _VideoBubble extends StatefulWidget {
+class _VideoBubble extends StatelessWidget {
   final CommentModel comment;
-
   const _VideoBubble({required this.comment});
 
   @override
-  State<_VideoBubble> createState() => _VideoBubbleState();
+  Widget build(BuildContext context) {
+    if (comment.videoUrl == null) return const SizedBox.shrink();
+    const width = 180.0;
+    const height = 185.0;
+    final thumbnailUrl = comment.videoUrl!.cloudinaryVideoThumbnailUrl;
+
+    return MediaDownloadGate(
+      secureUrl: comment.videoUrl!,
+      isVideo: true,
+      fileSizeBytes: comment.fileSizeBytes,
+      durationSeconds: comment.durationSeconds,
+      borderRadius: BorderRadius.circular(14),
+      previewBuilder:
+          (context) => SizedBox(
+            width: width,
+            height: height,
+            child:
+                thumbnailUrl != null
+                    ? CachedCloudinaryImage(
+                      secureUrl: thumbnailUrl,
+                      fit: BoxFit.cover,
+                      placeholder:
+                          (context) => const _MediaLoadingPlaceholder(
+                            width: width,
+                            height: height,
+                          ),
+                    )
+                    : const _MediaLoadingPlaceholder(
+                      width: width,
+                      height: height,
+                    ),
+          ),
+      completedBuilder:
+          (context, localPath) => _InlineVideoPlayer(
+            localPath: localPath,
+            caption: comment.text,
+            width: width,
+            height: height,
+          ),
+    );
+  }
 }
 
-class _VideoBubbleState extends State<_VideoBubble> {
-  VideoPlayerController? _controller;
+class _InlineVideoPlayer extends StatefulWidget {
+  final String localPath;
+  final String? caption;
+  final double width;
+  final double height;
+
+  const _InlineVideoPlayer({
+    required this.localPath,
+    required this.caption,
+    required this.width,
+    required this.height,
+  });
+
+  @override
+  State<_InlineVideoPlayer> createState() => _InlineVideoPlayerState();
+}
+
+class _InlineVideoPlayerState extends State<_InlineVideoPlayer> {
+  late final VideoPlayerController _controller;
   bool _isInitialized = false;
 
-  void _initAndPlay() {
-    if (widget.comment.videoUrl == null) return;
-    final controller = VideoPlayerController.networkUrl(
-      Uri.parse(widget.comment.videoUrl!),
-    );
-    _controller = controller;
-    controller.initialize().then((_) {
-      if (!mounted) return;
-      setState(() => _isInitialized = true);
-      controller
-        ..play()
-        ..setLooping(false);
-      controller.addListener(() {
-        if (mounted) setState(() {});
-      });
-    });
+  @override
+  void initState() {
+    super.initState();
+    _controller =
+        VideoPlayerController.file(File(widget.localPath))
+          ..addListener(_onControllerUpdate)
+          ..initialize().then((_) {
+            if (!mounted) return;
+            setState(() => _isInitialized = true);
+          });
+  }
+
+  void _onControllerUpdate() {
+    if (mounted) setState(() {});
   }
 
   void _openFullScreen() {
-    if (widget.comment.videoUrl == null) return;
-
     Navigator.of(context, rootNavigator: true)
         .push(
           MaterialPageRoute(
             builder:
                 (_) => FullScreenMediaView(
-                  videoUrl: widget.comment.videoUrl,
-                  caption: widget.comment.text,
+                  videoUrl: widget.localPath,
+                  isLocal: true,
+                  caption: widget.caption,
                   controller: _controller,
                 ),
           ),
@@ -188,111 +265,72 @@ class _VideoBubbleState extends State<_VideoBubble> {
 
   @override
   void dispose() {
-    _controller?.dispose();
+    _controller.removeListener(_onControllerUpdate);
+    _controller.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    if (widget.comment.videoUrl == null) return const SizedBox.shrink();
-    final String? thumbnailUrl =
-        widget.comment.videoUrl!.cloudinaryVideoThumbnailUrl;
-
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(14),
-      child: SizedBox(
-        width: 180,
-        height: 185,
-        child: GestureDetector(
-          onTap: () {
-            if (_controller == null) {
-              setState(_initAndPlay);
-            } else {
-              setState(() {
-                _controller!.value.isPlaying
-                    ? _controller!.pause()
-                    : _controller!.play();
-              });
-            }
-          },
-          onDoubleTap: _openFullScreen,
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              if (_isInitialized && _controller != null)
-                FittedBox(
-                  fit: BoxFit.cover,
-                  child: SizedBox(
-                    width: _controller!.value.size.width,
-                    height: _controller!.value.size.height,
-                    child: VideoPlayer(_controller!),
-                  ),
-                )
-              else
-                CachedCloudinaryImage(
-                  secureUrl: thumbnailUrl ?? widget.comment.videoUrl!,
-                  fit: BoxFit.cover,
-                  placeholder:
-                      (context) => const _MediaLoadingPlaceholder(
-                        width: 180,
-                        height: 185,
-                      ),
+    return SizedBox(
+      width: widget.width,
+      height: widget.height,
+      child: GestureDetector(
+        onTap: () {
+          setState(() {
+            _controller.value.isPlaying
+                ? _controller.pause()
+                : _controller.play();
+          });
+        },
+        onDoubleTap: _openFullScreen,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            if (_isInitialized)
+              FittedBox(
+                fit: BoxFit.cover,
+                child: SizedBox(
+                  width: _controller.value.size.width,
+                  height: _controller.value.size.height,
+                  child: VideoPlayer(_controller),
                 ),
-              if (_controller == null || !_controller!.value.isPlaying)
-                const Center(
-                  child: Icon(
-                    Icons.play_circle_fill_rounded,
-                    color: Colors.white,
-                    size: 40,
-                  ),
-                ),
-              if (!_isInitialized)
-                Positioned(
-                  right: 6,
-                  bottom: 6,
-                  child: MediaDurationBadge(
-                    seconds: widget.comment.durationSeconds,
-                  ),
-                ),
-              Positioned(
-                top: 6,
-                right: 6,
-                child: GestureDetector(
-                  onTap: _openFullScreen,
-                  child: Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.5),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.aspect_ratio,
-                      // Icons.fullscreen,
-                      color: Colors.white,
-                      size: 20,
-                    ),
-                  ),
+              )
+            else
+              _MediaLoadingPlaceholder(
+                width: widget.width,
+                height: widget.height,
+              ),
+            if (!_controller.value.isPlaying)
+              const Center(
+                child: Icon(
+                  Icons.play_circle_fill_rounded,
+                  color: Colors.white,
+                  size: 40,
                 ),
               ),
-
-              // --- 5. شريط التقدم (Progress Bar) ---
-              if (_isInitialized && _controller != null)
-                Positioned(
-                  bottom: 0,
-                  left: 0,
-                  right: 0,
-                  child: VideoProgressIndicator(
-                    _controller!,
-                    allowScrubbing: true,
-                    colors: VideoProgressColors(
-                      playedColor: Theme.of(context).primaryColor,
-                      backgroundColor: Colors.transparent,
-                      bufferedColor: Colors.white38,
-                    ),
-                  ),
+            Positioned(
+              top: 6,
+              right: 6,
+              child: GlassIconButton(
+                size: 28,
+                iconSize: 14,
+                icon: Icons.aspect_ratio,
+                onTap: _openFullScreen,
+              ),
+            ),
+            if (_isInitialized)
+              Positioned(
+                bottom: 4,
+                left: 6,
+                right: 6,
+                child: VideoProgressSlider(
+                  controller: _controller,
+                  trackHeight: 3,
+                  thumbSize: 9,
                 ),
-            ],
-          ),
+              ),
+          ],
         ),
       ),
     );
