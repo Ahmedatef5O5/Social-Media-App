@@ -17,6 +17,11 @@ final class PostsLoaded extends PostsState {
   List<Object?> get props => [posts, timeStamp];
 }
 
+final class PostsPendingUpdated extends PostsState {
+  final int pendingCount;
+  const PostsPendingUpdated(this.pendingCount);
+}
+
 final class PostsLoadError extends PostsState {
   final String message;
   PostsLoadError(this.message);

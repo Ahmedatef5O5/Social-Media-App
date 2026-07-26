@@ -13,6 +13,7 @@ import '../../../core/supabase/supabase_provider.dart';
 import '../../posts/cubit/posts_cubit/posts_cubit.dart';
 import '../../reels/widgets/home_feed_with_reels.dart';
 import '../../stories/cubit/stories_cubit/stories_cubit.dart';
+import '../widgets/new_posts_pill.dart';
 import '../widgets/home_view_header_section.dart';
 import '../../posts/widgets/post_writing_card.dart';
 import '../../stories/widgets/stories_list_section.dart';
@@ -243,7 +244,7 @@ class _HomeViewState extends State<HomeView> {
                                           .read<PostsCubit>()
                                           .pendingPosts
                                           .length;
-                                  return _NewPostsPill(
+                                  return NewPostsPill(
                                     count: pendingCount,
                                     onTap: () {
                                       context
@@ -274,4 +275,3 @@ class _HomeViewState extends State<HomeView> {
     );
   }
 }
-
