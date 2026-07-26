@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import '../../services/network_status_service.dart';
 import '../datasources/media_local_data_source.dart';
@@ -43,6 +44,7 @@ class MediaCacheRepositoryImpl implements MediaCacheRepository {
   Future<String?> resolveLocalPath(
     String secureUrl, {
     void Function(double progress)? onProgress,
+    CancelToken? cancelToken,
   }) async {
     final cachedPath = await _localDataSource.getCachedFilePath(secureUrl);
     if (cachedPath != null) return cachedPath;
@@ -62,6 +64,17 @@ class MediaCacheRepositoryImpl implements MediaCacheRepository {
     } on MediaCacheDownloadException catch (e) {
       debugPrint('[MediaCacheRepository] $e');
       return null;
+    }
+  }
+
+  @override
+  Future<void> adoptUploadedFile(String secureUrl, File localFile) async {
+    try {
+      await _localDataSource.adoptLocalFile(secureUrl, localFile);
+    } catch (e) {
+      debugPrint(
+        '[MediaCacheRepository] adoptUploadedFile failed for $secureUrl: $e',
+      );
     }
   }
 

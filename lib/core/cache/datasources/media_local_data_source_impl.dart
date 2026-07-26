@@ -68,6 +68,7 @@ class MediaLocalDataSourceImpl implements MediaLocalDataSource {
   Future<MediaCacheEntry> cacheMedia(
     String secureUrl, {
     void Function(double progress)? onProgress,
+    CancelToken? cancelToken,
   }) async {
     final validPath = await getCachedFilePath(secureUrl);
     if (validPath != null) {
@@ -83,7 +84,10 @@ class MediaLocalDataSourceImpl implements MediaLocalDataSource {
 
     _registerProgressListener(secureUrl, onProgress);
 
-    final downloadFuture = _downloadAndCache(secureUrl);
+    final downloadFuture = _downloadAndCache(
+      secureUrl,
+      cancelToken: cancelToken,
+    );
     _inFlightDownloads[secureUrl] = downloadFuture;
 
     try {
@@ -95,7 +99,46 @@ class MediaLocalDataSourceImpl implements MediaLocalDataSource {
     }
   }
 
-  Future<CachedMediaModel> _downloadAndCache(String secureUrl) async {
+  @override
+  Future<MediaCacheEntry> adoptLocalFile(
+    String secureUrl,
+    File sourceFile,
+  ) async {
+    final existingPath = await getCachedFilePath(secureUrl);
+    if (existingPath != null) {
+      return _box.get(secureUrl)!.toEntity();
+    }
+
+    if (!await sourceFile.exists()) {
+      throw MediaCacheDownloadException(secureUrl, 'adopt_source_missing');
+    }
+
+    final directory = await _resolveDirectoryFor(secureUrl);
+    final filePath = '${directory.path}/${_localFileName(secureUrl)}';
+
+    final copiedFile = await sourceFile.copy(filePath);
+    final sizeInBytes = await copiedFile.length();
+    final now = DateTime.now();
+
+    final entry = CachedMediaModel(
+      secureUrl: secureUrl,
+      mediaType: secureUrl.cachedMediaType,
+      featureFolder: secureUrl.cloudinaryFeatureFolder,
+      localFilePath: filePath,
+      cachedAt: now,
+      lastAccessedAt: now,
+      sizeInBytes: sizeInBytes,
+    );
+
+    await _box.put(secureUrl, entry);
+    await _adjustTotalSize(sizeInBytes);
+    return entry.toEntity();
+  }
+
+  Future<CachedMediaModel> _downloadAndCache(
+    String secureUrl, {
+    CancelToken? cancelToken,
+  }) async {
     final directory = await _resolveDirectoryFor(secureUrl);
     final filePath = '${directory.path}/${_localFileName(secureUrl)}';
 
@@ -103,6 +146,7 @@ class MediaLocalDataSourceImpl implements MediaLocalDataSource {
       final response = await _dio.download(
         secureUrl,
         filePath,
+        cancelToken: cancelToken,
         onReceiveProgress: (received, total) {
           if (total > 0) {
             _notifyProgressListeners(
@@ -134,15 +178,18 @@ class MediaLocalDataSourceImpl implements MediaLocalDataSource {
       await _adjustTotalSize(sizeInBytes);
       return entry;
     } catch (error, stackTrace) {
+      final partialFile = File(filePath);
+      if (await partialFile.exists()) {
+        await partialFile.delete();
+      }
+      if (error is DioException && CancelToken.isCancel(error)) {
+        rethrow;
+      }
       debugPrint(
         '[MediaLocalDataSource] cacheMedia failed for $secureUrl: $error',
       );
       debugPrintStack(stackTrace: stackTrace);
 
-      final partialFile = File(filePath);
-      if (await partialFile.exists()) {
-        await partialFile.delete();
-      }
       throw MediaCacheDownloadException(secureUrl, error);
     }
   }

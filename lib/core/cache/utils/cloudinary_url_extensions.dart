@@ -110,6 +110,11 @@ extension CloudinaryUrlX on String {
     return '${head}so_0,f_jpg,q_auto/$rebuiltPath';
   }
 
+  String get cloudinaryLowResPreviewUrl {
+    if (!contains('/upload/') || contains('w_60')) return this;
+    return replaceFirst('/upload/', '/upload/w_60,q_30,f_auto/');
+  }
+
   // ── internal helpers ──────────────────────────────────────────────
 
   String? get _uploadTail {
