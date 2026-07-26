@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import '../../../../core/audio/voice_recorder/services/audio_compression_service.dart';
+import '../../../../core/cache/repository/media_cache_repository.dart';
 import '../../../../core/cache/services/messages_snapshot_cache.dart';
 import '../../../../core/connectivity/services/connectivity_banner_controller.dart';
 import '../../../../core/helpers/chat_helper.dart';
@@ -28,6 +29,7 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
     with ChatReactionsMixin, ChatSelectionMixin, ChatTypingStatusMixin {
   @override
   final ChatServices _chatServices;
+  final MediaCacheRepository _mediaCacheRepository;
   final ChatPermissionService _chatPermissionService;
   final AudioCompressionService _audioCompressionService;
   final String receiverName;
@@ -61,7 +63,8 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
 
   ChatDetailsCubit(
     this._chatServices,
-    this.receiverName, {
+    this.receiverName,
+    this._mediaCacheRepository, {
     this.senderImageUrl,
     this.currentUserName = 'Someone',
     ChatPermissionService? chatPermissionService,
@@ -266,7 +269,8 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
       messageType: messageType,
       createdAt: DateTime.now(),
       isRead: false,
-      imageUrl: remoteImageUrl,
+      imageUrl: remoteImageUrl ?? imageFile?.path,
+      videoUrl: videoFile?.path,
       voiceUrl: voiceFile?.path,
       durationSeconds: durationSeconds,
       fileName: fileName,
@@ -303,6 +307,7 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
           );
           imageUrl = result.secureUrl;
           imagePublicId = result.publicId;
+          await _mediaCacheRepository.adoptUploadedFile(imageUrl, imageFile);
           uploadProgressMap[tempId] = 1.0;
           emit(MessagesSending(messages: updatedMessages));
           await Future.delayed(const Duration(milliseconds: 200));
@@ -329,6 +334,8 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
           );
           videoUrl = result.secureUrl;
           videoPublicId = result.publicId;
+          await _mediaCacheRepository.adoptUploadedFile(videoUrl, videoFile);
+
           uploadProgressMap[tempId] = 1.0;
           emit(MessagesSending(messages: updatedMessages));
           await Future.delayed(const Duration(milliseconds: 200));
@@ -385,6 +392,7 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
           );
           fileUrl = result.secureUrl;
           filePublicId = result.publicId;
+          await _mediaCacheRepository.adoptUploadedFile(fileUrl, documentFile);
           uploadProgressMap[tempId] = 1.0;
           emit(MessagesSending(messages: updatedMessages));
           await Future.delayed(const Duration(milliseconds: 200));
