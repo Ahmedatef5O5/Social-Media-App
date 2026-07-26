@@ -22,6 +22,7 @@ class GroupRegularMessageContent extends StatelessWidget {
   final GroupMessageModel message;
   final bool isMe;
   final bool isUploading;
+  final double? uploadProgress;
   final Color textColor;
   final Color primary;
   final ItemScrollController itemScrollController;
@@ -31,6 +32,7 @@ class GroupRegularMessageContent extends StatelessWidget {
     required this.message,
     required this.isMe,
     required this.isUploading,
+    this.uploadProgress,
     required this.textColor,
     required this.primary,
     required this.itemScrollController,
@@ -189,14 +191,20 @@ class GroupRegularMessageContent extends StatelessWidget {
                 isUploading: isUploading,
                 initialDurationSeconds: message.durationSeconds,
               ),
-            if (isFile && message.fileUrl != null)
+            if (isFile && (message.fileUrl != null || isUploading))
               Padding(
                 padding: const EdgeInsets.only(top: 2),
                 child: FileMessageBubble(
-                  fileUrl: message.fileUrl!,
+                  fileUrl: message.fileUrl ?? '',
                   fileName: message.fileName,
                   fileSizeBytes: message.fileSizeBytes,
                   isMe: isMe,
+                  isUploading: isUploading,
+                  uploadProgress: uploadProgress,
+                  onCancelTap:
+                      () => context.read<GroupDetailsCubit>().cancelUpload(
+                        message.id,
+                      ),
                 ),
               ),
             if (displayText.isNotEmpty)

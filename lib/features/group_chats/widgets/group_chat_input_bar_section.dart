@@ -218,7 +218,7 @@ class _GroupChatInputBarSectionState extends State<GroupChatInputBarSection> {
               text: '',
               messageType: 'voice',
               voiceFile: file,
-              voiceDurationSeconds: seconds,
+              durationSeconds: seconds,
             );
           },
         ),

@@ -8,6 +8,7 @@ class PickedAttachment {
   final String? fileName;
   final int? fileSizeBytes;
   final int? durationSeconds;
+  final File? thumbnailFile;
 
   const PickedAttachment({
     required this.kind,
@@ -16,5 +17,6 @@ class PickedAttachment {
     this.fileName,
     this.fileSizeBytes,
     this.durationSeconds,
+    this.thumbnailFile,
   });
 }

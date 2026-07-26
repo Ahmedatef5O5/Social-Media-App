@@ -5,6 +5,7 @@ import 'package:gap/gap.dart';
 import 'package:social_media_app/features/comments/cubit/comments_cubit.dart';
 import 'package:social_media_app/features/comments/services/comments_service.dart';
 import 'package:social_media_app/features/posts/widgets/post_reactions_bottom_sheet.dart';
+import '../../../core/cache/repository/media_cache_repository.dart';
 import '../../../core/constants/app_images.dart';
 import '../../../core/helpers/comment_helper.dart';
 import '../../../core/themes/app_colors.dart';
@@ -329,9 +330,9 @@ class _CommentButtonWidget extends StatelessWidget {
           onTap!.call();
           return;
         }
-
         final commentsCubit = CommentsCubit(
           commentsService: context.read<CommentsService>(),
+          mediaCacheRepository: context.read<MediaCacheRepository>(),
           currentUserData: context.read<HomeCubit>().currentUserData,
         );
 

@@ -5,6 +5,7 @@ import 'package:social_media_app/features/comments/cubit/comments_cubit.dart';
 import 'package:social_media_app/features/comments/model/comment_model.dart';
 import 'package:social_media_app/features/comments/services/comments_service.dart';
 import 'package:social_media_app/features/comments/widget/send_comment_section.dart';
+import '../../../core/cache/repository/media_cache_repository.dart';
 import '../../../core/supabase/supabase_provider.dart';
 import '../../comments/helper/editing_comment_banner.dart';
 import '../../comments/helper/replying_to_banner.dart';
@@ -55,6 +56,7 @@ class _PostDetailsViewState extends State<PostDetailsView> {
 
     _commentsCubit = CommentsCubit(
       commentsService: context.read<CommentsService>(),
+      mediaCacheRepository: context.read<MediaCacheRepository>(),
       currentUserData: context.read<HomeCubit>().currentUserData,
     );
 

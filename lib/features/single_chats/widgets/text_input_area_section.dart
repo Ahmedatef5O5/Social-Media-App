@@ -180,7 +180,7 @@ class _TextInputAreaSectionState extends State<TextInputAreaSection> {
                     messageText: '',
                     messageType: 'voice',
                     voiceFile: file,
-                    voiceDurationSeconds: seconds,
+                    durationSeconds: seconds,
                     replyTo: widget.replyTo,
                   );
                   widget.onCancelReply?.call();

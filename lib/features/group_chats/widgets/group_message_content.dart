@@ -3,7 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import '../../../core/attachment/models/media_transfer_state.dart';
-import '../../../core/attachment/widgets/media_progress_overlay.dart';
+import '../../../core/attachment/widgets/media_state_overlay.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/themes/app_colors.dart';
@@ -128,6 +128,8 @@ class _GroupMessageContentState extends State<GroupMessageContent> {
     final isImage = widget.message.messageType == 'image';
     final isVideo = widget.message.messageType == 'video';
     final isVoice = widget.message.messageType == 'voice';
+    final isFile = widget.message.messageType == 'file';
+
     final isCall = widget.message.messageType == 'call';
     final bool isStickerOrGif =
         widget.message.messageType == 'gif' ||
@@ -243,6 +245,7 @@ class _GroupMessageContentState extends State<GroupMessageContent> {
                                     isImage: isImage,
                                     isVideo: isVideo,
                                     isVoice: isVoice,
+                                    isFile: isFile,
                                     isCall: isCall,
                                     isStickerOrGif: isStickerOrGif,
                                     isUploading: isUploading,
@@ -290,6 +293,7 @@ class _GroupMessageContentState extends State<GroupMessageContent> {
     required bool isImage,
     required bool isVideo,
     required bool isVoice,
+    required bool isFile,
     required bool isCall,
     required bool isStickerOrGif,
     required bool isUploading,
@@ -317,7 +321,7 @@ class _GroupMessageContentState extends State<GroupMessageContent> {
       clipBehavior: Clip.none,
       children: [
         Opacity(
-          opacity: (isUploading && !isVoice) ? 0.4 : 1.0,
+          opacity: 1.0,
           child: Container(
             margin: EdgeInsets.only(top: 2, bottom: hasReaction ? 28 : 2),
             constraints: BoxConstraints(
@@ -385,9 +389,9 @@ class _GroupMessageContentState extends State<GroupMessageContent> {
           ),
         ),
 
-        if (isUploading && !isVoice)
+        if (isUploading && !isVoice && !isFile)
           Positioned.fill(
-            child: MediaProgressOverlay(
+            child: MediaStateOverlay(
               state: MediaTransferState.uploading(uploadProgress ?? 0.0),
               isVideo: isVideo,
               durationSeconds: widget.message.durationSeconds,
