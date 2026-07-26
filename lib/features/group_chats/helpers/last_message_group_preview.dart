@@ -40,6 +40,8 @@ String buildGroupLastMessagePreview({
       return '$senderName: 🎤 Voice message';
     case 'call':
       return '$senderName: 📞 Group Call';
+    case 'file':
+      return '$senderName : 📎 File';
     case 'text':
     default:
       return '$senderName: ${group.lastMessage}';

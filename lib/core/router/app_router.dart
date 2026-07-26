@@ -59,6 +59,7 @@ import '../../features/stories/views/creat_text_story_view.dart';
 import '../../features/profile/cubits/profile_cubit/profile_cubit.dart';
 import '../../features/profile/views/profile_view.dart';
 import '../../features/stories/views/my_stories_list_view.dart';
+import '../cache/repository/media_cache_repository.dart';
 import '../connectivity/cubit/connectivity_cubit.dart';
 import '../supabase/supabase_provider.dart';
 
@@ -393,9 +394,11 @@ class AppRouter {
         return _buildRoute(
           BlocProvider(
             create:
-                (context) =>
-                    ChatDetailsCubit(context.read<ChatServices>(), user.name)
-                      ..loadCurrentUserInfo(),
+                (context) => ChatDetailsCubit(
+                  context.read<ChatServices>(),
+                  user.name,
+                  context.read<MediaCacheRepository>(),
+                )..loadCurrentUserInfo(),
             child: ChatDetailsView(receiverUser: user),
           ),
           settings: settings,
@@ -408,9 +411,11 @@ class AppRouter {
         return _buildRoute(
           BlocProvider(
             create:
-                (context) =>
-                    ChatDetailsCubit(context.read<ChatServices>(), user.name)
-                      ..watchReceiverTyping(user.id),
+                (context) => ChatDetailsCubit(
+                  context.read<ChatServices>(),
+                  user.name,
+                  context.read<MediaCacheRepository>(),
+                )..watchReceiverTyping(user.id),
             child: ReceiverProfileView(receiverUser: user),
           ),
           settings: settings,
@@ -443,11 +448,13 @@ class AppRouter {
                   context.read<GroupChatServices>(),
                   group,
                   context.read<GroupListCubit>(),
+                  context.read<MediaCacheRepository>(),
                 )..init(),
             child: GroupChatDetailsView(group: group),
           ),
           settings: settings,
         );
+
       case AppRoutes.groupInfoViewRoute:
         final group = _args<GroupModel>(settings);
         if (group == null) {

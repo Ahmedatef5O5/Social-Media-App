@@ -10,6 +10,8 @@ mixin GroupMediaUploadMixin on Cubit<GroupDetailsState> {
   Map<String, double> get uploadProgressMap;
   ValueNotifier<GroupMessageModel?> get replyToMessage;
   AudioCompressionService get _audioCompressionService;
+  MediaCacheRepository get _mediaCacheRepository;
+
   void _emitLoaded();
 
   final Map<String, dio_pkg.CancelToken> _cancelTokens = {};
@@ -65,7 +67,8 @@ mixin GroupMediaUploadMixin on Cubit<GroupDetailsState> {
       text: text,
       createdAt: DateTime.now(),
       messageType: messageType,
-      imageUrl: remoteImageUrl,
+      imageUrl: remoteImageUrl ?? imageFile?.path,
+      videoUrl: videoFile?.path,
       voiceUrl: voiceFile?.path,
       durationSeconds: durationSeconds,
       fileName: fileName,
@@ -107,6 +110,10 @@ mixin GroupMediaUploadMixin on Cubit<GroupDetailsState> {
         );
         uploadedImageUrl = result.secureUrl;
         imagePublicId = result.publicId;
+        await _mediaCacheRepository.adoptUploadedFile(
+          uploadedImageUrl,
+          imageFile,
+        );
         uploadProgressMap.remove(tempId);
       }
 
@@ -125,6 +132,10 @@ mixin GroupMediaUploadMixin on Cubit<GroupDetailsState> {
         );
         uploadedVideoUrl = result.secureUrl;
         videoPublicId = result.publicId;
+        await _mediaCacheRepository.adoptUploadedFile(
+          uploadedVideoUrl,
+          videoFile,
+        );
         uploadProgressMap.remove(tempId);
       }
 
@@ -166,6 +177,10 @@ mixin GroupMediaUploadMixin on Cubit<GroupDetailsState> {
         );
         uploadedFileUrl = result.secureUrl;
         filePublicId = result.publicId;
+        await _mediaCacheRepository.adoptUploadedFile(
+          uploadedFileUrl,
+          documentFile,
+        );
         uploadProgressMap.remove(tempId);
       }
 

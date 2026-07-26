@@ -6,6 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import 'package:social_media_app/core/connectivity/services/connectivity_banner_controller.dart';
 import 'package:social_media_app/core/mentions/mentions.dart';
+import '../../../../core/cache/repository/media_cache_repository.dart';
 import '../../../../core/cache/services/messages_snapshot_cache.dart';
 import '../../../../core/services/supabase_storage_services.dart';
 import '../../../../core/supabase/supabase_provider.dart';
@@ -41,6 +42,8 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState>
   @override
   final GroupListCubit groupListCubit;
   @override
+  final MediaCacheRepository _mediaCacheRepository;
+  @override
   final AudioCompressionService _audioCompressionService;
 
   static final _snapshotCache = MessagesSnapshotCache<GroupMessageModel>(
@@ -51,7 +54,8 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState>
   GroupDetailsCubit(
     this._services,
     this.group,
-    this.groupListCubit, {
+    this.groupListCubit,
+    this._mediaCacheRepository, {
     AudioCompressionService? audioCompressionService,
   }) : _audioCompressionService =
            audioCompressionService ?? AudioCompressionService(),
