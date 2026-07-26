@@ -7,6 +7,7 @@ import 'package:social_media_app/features/gifs/model/gif_result_model.dart';
 import 'package:social_media_app/features/gifs/widgets/gif_picker_sheet.dart';
 import 'package:social_media_app/features/stickers/model/sticker_model.dart';
 import 'package:social_media_app/features/stickers/widgets/sticker_send_picker_sheet.dart';
+import '../utils/video_attachment_meta.dart';
 import 'attachment_kind.dart';
 import 'picked_attachment.dart';
 
@@ -196,11 +197,18 @@ class AttachmentPickerSheet extends StatelessWidget {
     final nav = Navigator.of(context);
     final file = await FilePickerServices().pickVideoFromGallery();
     if (file == null) return;
+    final videoFile = File(file.path);
+    final size = await videoFile.length();
+    final meta = await extractVideoAttachmentMeta(videoFile);
+
     nav.pop(
       PickedAttachment(
         kind: AttachmentKind.video,
         localFile: File(file.path),
         fileName: file.name,
+        fileSizeBytes: size,
+        durationSeconds: meta.durationSeconds,
+        thumbnailFile: meta.thumbnailFile,
       ),
     );
   }
