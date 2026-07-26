@@ -6,6 +6,9 @@ class FileMessageBubble extends StatelessWidget {
   final String? fileName;
   final int? fileSizeBytes;
   final bool isMe;
+  final bool isUploading;
+  final double? uploadProgress;
+  final VoidCallback? onCancelTap;
 
   const FileMessageBubble({
     super.key,
@@ -13,6 +16,9 @@ class FileMessageBubble extends StatelessWidget {
     this.fileName,
     this.fileSizeBytes,
     this.isMe = false,
+    this.isUploading = false,
+    this.uploadProgress,
+    this.onCancelTap,
   });
 
   String _formatSize(int? bytes) {
@@ -34,10 +40,12 @@ class FileMessageBubble extends StatelessWidget {
     return InkWell(
       borderRadius: BorderRadius.circular(12),
       onTap:
-          () => launchUrl(
-            Uri.parse(fileUrl),
-            mode: LaunchMode.externalApplication,
-          ),
+          isUploading
+              ? onCancelTap
+              : () => launchUrl(
+                Uri.parse(fileUrl),
+                mode: LaunchMode.externalApplication,
+              ),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
         decoration: BoxDecoration(
@@ -47,7 +55,16 @@ class FileMessageBubble extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.insert_drive_file_rounded, color: fg),
+            SizedBox(
+              width: 32,
+              child:
+                  isUploading
+                      ? _UploadProgressIcon(
+                        progress: uploadProgress ?? 0.0,
+                        color: fg,
+                      )
+                      : Icon(Icons.insert_drive_file_rounded, color: fg),
+            ),
             const SizedBox(width: 8),
             Flexible(
               child: Column(
@@ -76,6 +93,45 @@ class FileMessageBubble extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _UploadProgressIcon extends StatelessWidget {
+  final double progress;
+  final Color color;
+
+  const _UploadProgressIcon({required this.progress, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    final clamped = progress.clamp(0.0, 1.0);
+    final percent = (clamped * 100).round();
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        SizedBox(
+          width: 20,
+          height: 20,
+          child: CircularProgressIndicator(
+            value: clamped > 0 ? clamped : null,
+            strokeWidth: 2.2,
+            color: color,
+            backgroundColor: color.withValues(alpha: 0.2),
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          '$percent%',
+          style: TextStyle(
+            color: color,
+            fontSize: 8,
+            fontWeight: FontWeight.w700,
+            height: 1,
+          ),
+        ),
+      ],
     );
   }
 }
