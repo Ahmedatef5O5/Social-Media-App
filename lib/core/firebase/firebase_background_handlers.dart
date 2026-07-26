@@ -107,6 +107,26 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   }
 
   await NotificationService.instance.initialize(isBackground: true);
+
+  if (type == 'incoming_group_call') {
+    await NotificationService.instance.showIncomingGroupCallNotification(
+      callId: message.data['callId'] ?? '',
+      groupId: message.data['groupId'] ?? '',
+      groupName: message.data['groupName'] ?? 'Group',
+      groupAvatarUrl: message.data['groupAvatarUrl'] ?? '',
+      callerName: message.data['callerName'] ?? 'Unknown',
+      callType: message.data['callType'] ?? 'audio',
+    );
+    return;
+  }
+
+  if (NotificationService.isSocialType(type)) {
+    await NotificationService.instance.showSocialNotificationFromMessage(
+      message,
+    );
+    return;
+  }
+
   await NotificationService.instance.showNotificationFromMessage(message);
 }
 

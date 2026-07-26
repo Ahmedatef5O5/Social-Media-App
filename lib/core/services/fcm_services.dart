@@ -67,6 +67,31 @@ class FcmService {
     });
   }
 
+  Future<void> sendGroupCallNotification({
+    required String receiverFcmToken,
+    required String callId,
+    required String groupId,
+    required String groupName,
+    required String groupAvatarUrl,
+    required String callerId,
+    required String callerName,
+    required String callType,
+    required String startedAt,
+  }) async {
+    await _sendToEdgeFunction({
+      'type': 'group_call',
+      'receiverFcmToken': receiverFcmToken,
+      'callId': callId,
+      'groupId': groupId,
+      'groupName': groupName,
+      'groupAvatarUrl': groupAvatarUrl,
+      'callerId': callerId,
+      'callerName': callerName,
+      'callType': callType,
+      'startedAt': startedAt,
+    });
+  }
+
   Future<void> _sendToEdgeFunction(Map<String, dynamic> payload) async {
     try {
       final response = await SupabaseProvider.client.functions.invoke(
