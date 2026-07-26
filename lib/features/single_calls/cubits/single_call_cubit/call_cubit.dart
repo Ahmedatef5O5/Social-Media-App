@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:social_media_app/features/single_chats/services/chat_services.dart';
 import '../../../../core/services/fcm_services.dart';
 import '../../../../core/supabase/supabase_provider.dart';
+import '../../../group_calls/models/group_call_model.dart';
 import '../../../notifications/repository/notifications_repository.dart';
 import '../../model/call_model.dart';
 import '../../services/call_signaling_service.dart';
@@ -128,6 +129,34 @@ class CallCubit extends Cubit<CallState> {
         callType: call.type == CallType.video ? 'video' : 'audio',
       );
     } catch (_) {}
+  }
+
+  Future<void> ringOfflineMember(GroupCallModel call, String memberId) async {
+    try {
+      final data =
+          await SupabaseProvider.client
+              .from('users')
+              .select('fcm_token')
+              .eq('id', memberId)
+              .maybeSingle();
+
+      final token = data?['fcm_token'] as String?;
+      if (token == null || token.isEmpty) return;
+
+      await FcmService.instance.sendGroupCallNotification(
+        receiverFcmToken: token,
+        callId: call.callId,
+        groupId: call.groupId,
+        groupName: call.groupName,
+        groupAvatarUrl: call.groupAvatarUrl ?? '',
+        callerId: call.initiatorId,
+        callerName: call.initiatorName,
+        callType: call.type == GroupCallType.video ? 'video' : 'audio',
+        startedAt: call.startedAt.toIso8601String(),
+      );
+    } catch (e) {
+      debugPrint('[GroupCallSignalingService] ringOfflineMember error: $e');
+    }
   }
 
   Future<void> _handleCallEnded(CallModel? call) async {

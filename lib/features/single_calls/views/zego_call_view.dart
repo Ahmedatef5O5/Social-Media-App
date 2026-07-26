@@ -3,7 +3,12 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:zego_uikit_prebuilt_call/zego_uikit_prebuilt_call.dart';
 import 'package:zego_uikit/zego_uikit.dart';
 import '../../../core/secrets/app_secrets.dart';
+import '../../../core/services/active_call/cubit/active_call_session_cubit.dart';
+import '../../../core/services/active_call/call_termination_service.dart';
+import '../../../core/services/notification_services.dart';
 import '../../../core/services/zego_token_service.dart';
+import '../../../core/supabase/supabase_provider.dart';
+import '../../../core/widgets/cached_cloudinary_image.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
 import '../model/call_model.dart';
 import '../cubits/single_call_cubit/call_cubit.dart';
@@ -27,11 +32,25 @@ class ZegoCallView extends StatefulWidget {
 class _ZegoCallViewState extends State<ZegoCallView> {
   String? _zegoToken;
   String? _loadError;
-
+  bool _isEnding = false;
   @override
   void initState() {
     super.initState();
     _loadZegoToken();
+
+    final isCaller = widget.currentUserId == widget.call.callerId;
+    final otherPersonName =
+        isCaller ? widget.call.receiverName : widget.call.callerName;
+    final otherPersonAvatar =
+        isCaller ? widget.call.receiverAvatar : widget.call.callerAvatar;
+
+    context.read<ActiveCallSessionCubit>().startSingleCallSession(
+      callId: widget.call.callId,
+      title: otherPersonName,
+      avatarUrl: otherPersonAvatar,
+      isVideo: widget.call.type == CallType.video,
+      startedAt: widget.call.startTime ?? DateTime.now(),
+    );
   }
 
   Future<void> _loadZegoToken() async {
@@ -48,8 +67,10 @@ class _ZegoCallViewState extends State<ZegoCallView> {
 
       await context.read<CallCubit>().endCall(widget.call.callId);
 
-      if (!mounted) return;
-      setState(() => _loadError = e.toString());
+      if (mounted) {
+        context.read<ActiveCallSessionCubit>().endSession();
+        setState(() => _loadError = e.toString());
+      }
     }
   }
 
@@ -99,6 +120,17 @@ class _ZegoCallViewState extends State<ZegoCallView> {
         isVideo
             ? ZegoUIKitPrebuiltCallConfig.oneOnOneVideoCall()
             : ZegoUIKitPrebuiltCallConfig.oneOnOneVoiceCall();
+
+    // Minimize button — identical setup to ZegoGroupCallView's, so behavior
+    // and visuals match exactly between single and group calls. This is
+    // what was entirely missing for 1:1 calls before.
+    config.topMenuBar
+      ..isVisible = true
+      ..buttons = []
+      ..extendButtons = [_buildMinimizeButton(context)]
+      ..backgroundColor = Colors.black.withValues(alpha: 0.25)
+      ..padding = const EdgeInsets.symmetric(horizontal: 12, vertical: 6)
+      ..margin = const EdgeInsets.only(top: 8, left: 8, right: 8);
 
     config.audioVideoView.backgroundBuilder = (
       BuildContext context,
@@ -194,6 +226,61 @@ class _ZegoCallViewState extends State<ZegoCallView> {
       };
     }
 
+    config.avatarBuilder = (
+      BuildContext context,
+      Size size,
+      ZegoUIKitUser? user,
+      Map extraInfo,
+    ) {
+      if (user == null) return const SizedBox.shrink();
+
+      final double diameter =
+          size.width < size.height ? size.width : size.height;
+
+      return SizedBox(
+        width: diameter,
+        height: diameter,
+        child: FutureBuilder(
+          future:
+              SupabaseProvider.client
+                  .from('users')
+                  .select('image_url')
+                  .eq('id', user.id)
+                  .maybeSingle(),
+          builder: (context, snapshot) {
+            final imageUrl = snapshot.data?['image_url'] as String?;
+            if (imageUrl != null && imageUrl.isNotEmpty) {
+              return ClipOval(
+                child: CachedCloudinaryImage(
+                  secureUrl: imageUrl,
+                  width: diameter,
+                  height: diameter,
+                  fit: BoxFit.cover,
+                  isAvatar: true,
+                  placeholder:
+                      (context) => Container(
+                        width: diameter,
+                        height: diameter,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: primaryColor.withValues(alpha: 0.3),
+                        ),
+                      ),
+                  errorWidget:
+                      (context, error) => _buildDefaultAvatar(
+                        user.name,
+                        primaryColor,
+                        diameter,
+                      ),
+                ),
+              );
+            }
+            return _buildDefaultAvatar(user.name, primaryColor, diameter);
+          },
+        ),
+      );
+    };
+
     return SafeArea(
       child: ZegoUIKitPrebuiltCall(
         appID: AppSecrets.zegoAppId,
@@ -203,14 +290,58 @@ class _ZegoCallViewState extends State<ZegoCallView> {
         callID: widget.call.callId,
         config: config,
         events: ZegoUIKitPrebuiltCallEvents(
-          onCallEnd: (event, defaultAction) {
+          onCallEnd: (event, defaultAction) async {
             debugPrint('🔴🔴🔴 ZEGO_CALL_END reason=${event.reason} 🔴🔴🔴');
-            context.read<CallCubit>().endCall(widget.call.callId);
+
+            if (_isEnding) {
+              defaultAction.call();
+              return;
+            }
+            _isEnding = true;
+
+            await CallTerminationService.endActiveCall(
+              signalEnd:
+                  () => context.read<CallCubit>().endCall(widget.call.callId),
+            );
+
+            context.read<ActiveCallSessionCubit>().endSession();
             defaultAction.call();
+
+            if (context.mounted) {
+              Navigator.of(context).pop();
+            }
           },
         ),
       ),
     );
+  }
+
+  Widget _buildMinimizeButton(BuildContext context) {
+    return GestureDetector(
+      onTap: () => _handleMinimize(context),
+      child: Container(
+        width: 44,
+        height: 44,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: Colors.white.withValues(alpha: 0.2),
+        ),
+        child: const Icon(
+          Icons.close_fullscreen_rounded,
+          color: Colors.white,
+          size: 18,
+        ),
+      ),
+    );
+  }
+
+  void _handleMinimize(BuildContext context) {
+    final navContext = navigatorKey.currentState?.context ?? context;
+    ZegoUIKitPrebuiltCallController().minimize.minimize(navContext);
+    final navigator = Navigator.maybeOf(context);
+    if (navigator != null && navigator.canPop()) {
+      navigator.pop();
+    }
   }
 
   Widget _buildDotGrid() {
@@ -232,6 +363,27 @@ class _ZegoCallViewState extends State<ZegoCallView> {
                 shape: BoxShape.circle,
               ),
             ),
+      ),
+    );
+  }
+
+  Widget _buildDefaultAvatar(String name, Color primary, double diameter) {
+    return Container(
+      width: diameter,
+      height: diameter,
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.2),
+        shape: BoxShape.circle,
+      ),
+      child: Center(
+        child: Text(
+          name.isNotEmpty ? name[0].toUpperCase() : '?',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: diameter * 0.38,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
       ),
     );
   }

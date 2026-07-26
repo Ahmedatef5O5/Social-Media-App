@@ -5,7 +5,7 @@ import 'package:social_media_app/core/services/network_status_service.dart';
 import 'package:social_media_app/features/auth/handler/auth_exception_handler.dart';
 import 'package:social_media_app/features/auth/services/supabase_auth_services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../../../core/services/presence_service.dart';
+import '../../../../core/presence/services/presence_service.dart';
 part 'auth_state.dart';
 
 class AuthCubit extends Cubit<AuthState> {

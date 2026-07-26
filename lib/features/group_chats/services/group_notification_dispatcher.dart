@@ -57,6 +57,42 @@ class GroupNotificationDispatcher {
     );
   }
 
+  /// Rings every other member of the group when a group call starts.
+  ///
+  /// This was the missing piece behind "group call notifications never
+  /// arrive when the app is terminated": GroupCallSignalingService.initiateCall()
+  /// only wrote a row to `group_calls` and relied on Supabase Realtime to
+  /// notify members, which requires an open socket and does nothing for a
+  /// killed app. Call this from initiateCall() right after the call row is
+  /// created so offline/terminated members actually get a push.
+  Future<void> notifyIncomingCall({
+    required String groupId,
+    required String callId,
+    required String groupName,
+    required String groupAvatarUrl,
+    required String callerId,
+    required String callerName,
+    required String callType,
+    required String startedAt,
+  }) async {
+    await _dispatchToMembers(
+      groupId: groupId,
+      excludeUserId: callerId,
+      payloadBuilder:
+          (token) => _fcm.sendGroupCallNotification(
+            receiverFcmToken: token,
+            callId: callId,
+            groupId: groupId,
+            groupName: groupName,
+            groupAvatarUrl: groupAvatarUrl,
+            callerId: callerId,
+            callerName: callerName,
+            callType: callType,
+            startedAt: startedAt,
+          ),
+    );
+  }
+
   Future<void> _dispatchToMembers({
     required String groupId,
     required String excludeUserId,

@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/utilities/supabase_constants.dart';
+import '../../group_chats/services/group_notification_dispatcher.dart';
 import '../models/group_call_model.dart';
 
 class GroupCallSignalingService {
@@ -82,6 +84,26 @@ class GroupCallSignalingService {
       }),
       'message_type': 'call',
     });
+
+    // Supabase Realtime (activeCallStream / incomingGroupCallsStream) only
+    // reaches members whose app currently has an open socket — nothing for
+    // a backgrounded or terminated app. Fire the actual FCM push here so
+    // offline/terminated members are rung too; this was previously never
+    // called on call start (only manually, per-member, via
+    // ringOfflineMember), which is why group call pushes never arrived.
+    unawaited(
+      GroupNotificationDispatcher.instance.notifyIncomingCall(
+        groupId: groupId,
+        callId: callId,
+        groupName: groupName,
+        groupAvatarUrl: groupAvatarUrl ?? '',
+        callerId: currentUserId,
+        callerName: currentUserName,
+        callType: type == GroupCallType.video ? 'video' : 'audio',
+        startedAt: model.startedAt.toIso8601String(),
+      ),
+    );
+
     return model;
   }
 
