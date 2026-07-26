@@ -79,4 +79,56 @@ class GroupMembersCubit extends Cubit<GroupMembersState> {
       (m) => m.userId == currentUserId && m.role == GroupMemberRole.admin,
     );
   }
+
+  Future<void> addMembers(
+    List<String> userIds, {
+    required String currentUserId,
+  }) async {
+    if (!isCurrentUserAdmin(currentUserId)) {
+      throw Exception('Only group admins can add members');
+    }
+    if (userIds.isEmpty) return;
+
+    await _services.addMembers(groupId, userIds);
+    await refresh();
+  }
+
+  Future<void> removeMember(
+    GroupMemberModel member, {
+    required String currentUserId,
+  }) async {
+    if (!isCurrentUserAdmin(currentUserId)) {
+      throw Exception('Only group admins can remove members');
+    }
+
+    final current = state;
+    if (current is! GroupMembersLoaded) return;
+
+    final updatedMembers =
+        current.members.where((m) => m.userId != member.userId).toList();
+    emit(
+      current.copyWith(
+        members: updatedMembers,
+        totalCount: current.totalCount - 1,
+      ),
+    );
+
+    try {
+      await _services.removeMember(groupId, member.userId);
+    } catch (e) {
+      emit(current);
+      rethrow;
+    }
+  }
+
+  Future<void> leaveGroup(String currentUserId) async {
+    await _services.leaveGroup(groupId);
+  }
+
+  Future<void> deleteGroup(String currentUserId) async {
+    if (!isCurrentUserAdmin(currentUserId)) {
+      throw Exception('Only group admins can delete the group');
+    }
+    await _services.deleteGroup(groupId);
+  }
 }

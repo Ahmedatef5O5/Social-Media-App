@@ -166,18 +166,37 @@ class GroupListCubit extends Cubit<GroupListState> {
           callback: (payload) => _handleGroupCallChange(payload),
         )
         .onPostgresChanges(
-          event: PostgresChangeEvent.all,
+          event: PostgresChangeEvent.insert,
+          schema: 'public',
+          table: SupabaseConstants.groupMembers,
+          callback: (payload) {
+            final row = payload.newRecord;
+            final userId = row[GroupMemberColumns.userId] as String?;
+            if (userId == _currentUserId) {
+              loadGroups(isRefresh: true);
+            }
+          },
+        )
+        .onPostgresChanges(
+          event: PostgresChangeEvent.delete,
+          schema: 'public',
+          table: SupabaseConstants.groupMembers,
+          callback: (payload) {
+            final row = payload.oldRecord;
+            final userId = row[GroupMemberColumns.userId] as String?;
+            final groupId = row[GroupMemberColumns.groupId] as String?;
+            if (userId == _currentUserId && groupId != null) {
+              _removeGroupFromState(groupId);
+            }
+          },
+        )
+        .onPostgresChanges(
+          event: PostgresChangeEvent.delete,
           schema: 'public',
           table: SupabaseConstants.groups,
           callback: (payload) {
-            final newRow = payload.newRecord;
-            final oldRow = payload.oldRecord;
-            final affectedUserId =
-                newRow[GroupMemberColumns.userId] ??
-                oldRow[GroupMemberColumns.userId];
-            if (affectedUserId == _currentUserId) {
-              loadGroups(isRefresh: true);
-            }
+            final groupId = payload.oldRecord['id'] as String?;
+            if (groupId != null) _removeGroupFromState(groupId);
           },
         )
         .onPostgresChanges(
@@ -199,6 +218,15 @@ class GroupListCubit extends Cubit<GroupListState> {
   }
 
   // ─── State helpers ────────────────────────────────────────────────────────
+
+  void _removeGroupFromState(String groupId) {
+    if (state is! GroupListLoaded) return;
+    final currentState = state as GroupListLoaded;
+    final newList = currentState.groups.where((g) => g.id != groupId).toList();
+    if (newList.length == currentState.groups.length) return;
+    _cached = newList;
+    emit(GroupListLoaded(newList));
+  }
 
   void _updateGroupAvatarInState({
     required String groupId,

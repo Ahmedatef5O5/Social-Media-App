@@ -2,7 +2,6 @@ import 'dart:math' as math;
 import 'dart:ui';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:gap/gap.dart';
 import '../../../core/widgets/full_screen_image_viewer.dart';
 import '../models/group_model.dart';
 
@@ -14,6 +13,7 @@ class GroupInfoHeader extends StatelessWidget {
   final VoidCallback onEditTap;
   final VoidCallback onSubmit;
   final VoidCallback onChangePhoto;
+  final VoidCallback onSettingsTap;
 
   const GroupInfoHeader({
     super.key,
@@ -24,192 +24,361 @@ class GroupInfoHeader extends StatelessWidget {
     required this.onEditTap,
     required this.onSubmit,
     required this.onChangePhoto,
+    required this.onSettingsTap,
   });
 
   @override
   Widget build(BuildContext context) {
+    return SliverPersistentHeader(
+      pinned: true,
+      delegate: _GroupInfoHeaderDelegate(
+        group: group,
+        isAdmin: isAdmin,
+        isEditingName: isEditingName,
+        controller: controller,
+        onEditTap: onEditTap,
+        onSubmit: onSubmit,
+        onChangePhoto: onChangePhoto,
+        onSettingsTap: onSettingsTap,
+        topPadding: MediaQuery.paddingOf(context).top,
+        primary: Theme.of(context).primaryColor,
+      ),
+    );
+  }
+}
+
+class _GroupInfoHeaderDelegate extends SliverPersistentHeaderDelegate {
+  static const double _expandedContentHeight = 250;
+  static const double _collapsedContentHeight = kToolbarHeight;
+  static const double _avatarExpandedSize = 108;
+  static const double _avatarCollapsedSize = 34;
+  static const double _avatarExpandedTop = 30;
+  static const double _avatarCollapsedLeft = 64;
+
+  final GroupModel group;
+  final bool isAdmin;
+  final bool isEditingName;
+  final TextEditingController controller;
+  final VoidCallback onEditTap;
+  final VoidCallback onSubmit;
+  final VoidCallback onChangePhoto;
+  final VoidCallback onSettingsTap;
+  final double topPadding;
+  final Color primary;
+
+  _GroupInfoHeaderDelegate({
+    required this.group,
+    required this.isAdmin,
+    required this.isEditingName,
+    required this.controller,
+    required this.onEditTap,
+    required this.onSubmit,
+    required this.onChangePhoto,
+    required this.onSettingsTap,
+    required this.topPadding,
+    required this.primary,
+  });
+
+  @override
+  double get maxExtent => _expandedContentHeight + topPadding;
+
+  @override
+  double get minExtent => _collapsedContentHeight + topPadding;
+
+  @override
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
+    final maxShrink = maxExtent - minExtent;
+    final t = maxShrink <= 0 ? 0.0 : (shrinkOffset / maxShrink).clamp(0.0, 1.0);
+    final currentExtent = maxExtent - shrinkOffset;
+    final screenWidth = MediaQuery.sizeOf(context).width;
     final hasAvatar = group.avatarUrl?.isNotEmpty == true;
-    final primary = Theme.of(context).primaryColor;
+
     final hsl = HSLColor.fromColor(primary);
     final bg1 =
         hsl.withLightness((hsl.lightness - 0.1).clamp(0.0, 1.0)).toColor();
     final bg2 =
         hsl.withLightness((hsl.lightness + 0.05).clamp(0.0, 1.0)).toColor();
 
-    return SliverAppBar(
-      pinned: true,
-      expandedHeight: 250,
-      backgroundColor: Colors.transparent,
-      automaticallyImplyLeading: false,
-      leading: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: () => Navigator.of(context).pop(),
-        child: Padding(
-          padding: const EdgeInsets.all(7.0),
-          child: SizedBox(
-            width: 48,
-            height: 48,
-            child: Center(
-              child: ClipOval(
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-                  child: Container(
-                    width: 38,
-                    height: 38,
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.3),
-                      shape: BoxShape.circle,
+    final avatarSize =
+        lerpDouble(_avatarExpandedSize, _avatarCollapsedSize, t)!;
+    final avatarTop =
+        topPadding +
+        lerpDouble(
+          _avatarExpandedTop,
+          (_collapsedContentHeight - _avatarCollapsedSize) / 2,
+          t,
+        )!;
+    final avatarLeft =
+        lerpDouble(
+          (screenWidth - _avatarExpandedSize) / 2,
+          _avatarCollapsedLeft,
+          t,
+        )!;
+
+    final bigTitleOpacity = (1 - (t / 0.6)).clamp(0.0, 1.0);
+    final smallTitleOpacity = ((t - 0.4) / 0.6).clamp(0.0, 1.0);
+
+    return SizedBox(
+      height: currentExtent,
+      child: Stack(
+        children: [
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            height: maxExtent,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [bg1, primary, bg2],
+                      stops: const [0.0, 0.5, 1.0],
                     ),
-                    child: Icon(
-                      Icons.arrow_back_ios_new,
+                  ),
+                ),
+                const _AnimatedHeaderIcons(),
+              ],
+            ),
+          ),
+
+          Positioned(
+            top: topPadding,
+            left: 0,
+            child: _GlassCircleButton(
+              icon: Icons.arrow_back_ios_new,
+              onTap: () => Navigator.of(context).pop(),
+            ),
+          ),
+
+          Positioned(
+            top: topPadding,
+            right: 0,
+            child: _GlassCircleButton(
+              icon: Icons.settings_rounded,
+              onTap: onSettingsTap,
+            ),
+          ),
+
+          Positioned(
+            top: avatarTop,
+            left: avatarLeft,
+            width: avatarSize,
+            height: avatarSize,
+            child: _buildAvatar(context, hasAvatar, avatarSize, t),
+          ),
+
+          if (bigTitleOpacity > 0)
+            Positioned(
+              top: topPadding + _avatarExpandedTop + _avatarExpandedSize + 16,
+              left: 0,
+              right: 0,
+              child: Opacity(opacity: bigTitleOpacity, child: _buildBigTitle()),
+            ),
+
+          if (smallTitleOpacity > 0)
+            Positioned(
+              top: topPadding,
+              left: _avatarCollapsedLeft + _avatarCollapsedSize + 10,
+              right: 56,
+              height: _collapsedContentHeight,
+              child: Opacity(
+                opacity: smallTitleOpacity,
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    group.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
                       color: Colors.white,
-                      size: 20,
+                      fontSize: 17,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),
               ),
             ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAvatar(
+    BuildContext context,
+    bool hasAvatar,
+    double size,
+    double t,
+  ) {
+    return Stack(
+      clipBehavior: Clip.none, 
+      children: [
+        GestureDetector(
+          onTap:
+              !hasAvatar
+                  ? null
+                  : () {
+                    Navigator.of(context, rootNavigator: true).push(
+                      MaterialPageRoute(
+                        builder: (_) => const FullScreenImageViewer(),
+                        settings: RouteSettings(
+                          arguments: {
+                            'url': group.avatarUrl!,
+                            'tag': 'group-avatar-${group.id}',
+                            'isAsset': false,
+                          },
+                        ),
+                      ),
+                    );
+                  },
+          child: Hero(
+            tag: 'group-avatar-${group.id}',
+            child: CircleAvatar(
+              radius: size / 2,
+              backgroundColor: Colors.white.withValues(alpha: 0.2),
+              child: CircleAvatar(
+                radius: size / 2 - 3,
+                backgroundColor: primary,
+                backgroundImage:
+                    hasAvatar
+                        ? CachedNetworkImageProvider(group.avatarUrl!)
+                        : null,
+                child:
+                    !hasAvatar
+                        ? Text(
+                          group.name.isNotEmpty
+                              ? group.name[0].toUpperCase()
+                              : '?',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: size * 0.36,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        )
+                        : null,
+              ),
+            ),
           ),
         ),
-      ),
-      elevation: 0,
-      scrolledUnderElevation: 0,
-      shadowColor: Colors.transparent,
-      flexibleSpace: FlexibleSpaceBar(
-        background: Stack(
-          fit: StackFit.expand,
-          children: [
-            Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [bg1, primary, bg2],
-                  stops: const [0.0, 0.5, 1.0],
+        if (isAdmin && t < 0.5)
+          Positioned(
+            bottom: -2,
+            right: -2,
+            child: Opacity(
+              opacity: (1 - (t / 0.5)).clamp(0.0, 1.0),
+              child: GestureDetector(
+                onTap: onChangePhoto,
+                child: Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: Colors.black54,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white, width: .8),
+                  ),
+                  child: const Icon(
+                    Icons.camera_alt_rounded,
+                    size: 14,
+                    color: Colors.white,
+                  ),
                 ),
               ),
             ),
+          ),
+      ],
+    );
+  }
 
-            const _AnimatedHeaderIcons(),
-
-            Center(
-              child: TweenAnimationBuilder<double>(
-                tween: Tween<double>(begin: 0.0, end: 1.0),
-                duration: const Duration(milliseconds: 800),
-                curve: Curves.easeOutBack,
-                builder: (context, value, child) {
-                  return Opacity(
-                    opacity: value.clamp(0.0, 1.0),
-                    child: Transform.scale(
-                      scale: 0.85 + (value * 0.15),
-                      child: child,
-                    ),
-                  );
-                },
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Gap(30),
-                    Stack(
-                      clipBehavior: Clip.none,
-                      children: [
-                        GestureDetector(
-                          onTap: () {
-                            if (!hasAvatar) return;
-
-                            Navigator.of(context, rootNavigator: true).push(
-                              MaterialPageRoute(
-                                builder: (_) => const FullScreenImageViewer(),
-                                settings: RouteSettings(
-                                  arguments: {
-                                    'url': group.avatarUrl!,
-                                    'tag': 'group-avatar-${group.id}',
-                                    'isAsset': false,
-                                  },
-                                ),
-                              ),
-                            );
-                          },
-                          child: Hero(
-                            tag: 'group-avatar-${group.id}',
-                            child: CircleAvatar(
-                              radius: 58,
-                              backgroundColor: Colors.white.withValues(
-                                alpha: 0.2,
-                              ),
-                              child: CircleAvatar(
-                                radius: 55,
-                                backgroundColor: bg1,
-                                backgroundImage:
-                                    hasAvatar
-                                        ? CachedNetworkImageProvider(
-                                          group.avatarUrl!,
-                                        )
-                                        : null,
-                                child:
-                                    !hasAvatar
-                                        ? Text(
-                                          group.name[0].toUpperCase(),
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 42,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        )
-                                        : null,
-                              ),
-                            ),
-                          ),
-                        ),
-                        if (isAdmin)
-                          Positioned(
-                            bottom: -5,
-                            right: -5,
-                            child: GestureDetector(
-                              onTap: onChangePhoto,
-                              child: Container(
-                                padding: const EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  color: Colors.black54,
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                    color: Colors.white,
-                                    width: .8,
-                                  ),
-                                ),
-                                child: const Icon(
-                                  Icons.camera_alt_rounded,
-                                  size: 16,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-
-                    const Gap(16),
-                    Text(
-                      group.name,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        shadows: [
-                          Shadow(
-                            color: Colors.black26,
-                            blurRadius: 4,
-                            offset: Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+  Widget _buildBigTitle() {
+    if (isEditingName) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 40),
+        child: TextField(
+          controller: controller,
+          autofocus: true,
+          textAlign: TextAlign.center,
+          onSubmitted: (_) => onSubmit(),
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+          ),
+          decoration: const InputDecoration(
+            border: UnderlineInputBorder(
+              borderSide: BorderSide(color: Colors.white54),
             ),
+            isDense: true,
+          ),
+        ),
+      );
+    }
+    return GestureDetector(
+      onTap: isAdmin ? onEditTap : null,
+      child: Text(
+        group.name,
+        textAlign: TextAlign.center,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 24,
+          fontWeight: FontWeight.bold,
+          shadows: [
+            Shadow(color: Colors.black26, blurRadius: 4, offset: Offset(0, 2)),
           ],
+        ),
+      ),
+    );
+  }
+
+  @override
+  bool shouldRebuild(covariant _GroupInfoHeaderDelegate oldDelegate) {
+    return oldDelegate.group != group ||
+        oldDelegate.isAdmin != isAdmin ||
+        oldDelegate.isEditingName != isEditingName ||
+        oldDelegate.topPadding != topPadding ||
+        oldDelegate.primary != primary;
+  }
+}
+
+class _GlassCircleButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+
+  const _GlassCircleButton({required this.icon, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.all(7.0),
+        child: SizedBox(
+          width: 48,
+          height: 48,
+          child: Center(
+            child: ClipOval(
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+                child: Container(
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.3),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(icon, color: Colors.white, size: 20),
+                ),
+              ),
+            ),
+          ),
         ),
       ),
     );
@@ -280,11 +449,8 @@ class _AnimatedHeaderIconsState extends State<_AnimatedHeaderIcons>
     double size,
   ) {
     final pulse = math.pow((math.sin(t + phase) + 1) / 2, 5);
-
     final opacity = 0.08 + (0.40 * pulse);
-
     final scale = 0.85 + (0.35 * pulse);
-
     final verticalOffset = math.sin(t + phase) * 15;
     final horizontalOffset = math.cos(t + phase) * 10;
 

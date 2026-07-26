@@ -68,7 +68,9 @@ class GroupModel {
       avatarUrl: map['avatar_url'],
       createdBy: map['created_by'] as String,
 
-      createdAt: DateTime.parse(map['group_created_at'] as String),
+      createdAt:
+          DateTime.tryParse((map['created_at']) as String? ?? '') ??
+          DateTime.now(),
       lastMessage: map['last_message'] ?? '',
       lastMessageSenderId: map['last_message_sender_id'],
       lastMessageSenderName: map['last_message_sender_name'],

@@ -138,6 +138,21 @@ class GroupChatServices {
     });
   }
 
+  Future<void> addMembers(String groupId, List<String> userIds) async {
+    if (userIds.isEmpty) return;
+    await _supabase.from(SupabaseConstants.groupMembers).insert({
+      userIds
+          .map(
+            (uid) => {
+              GroupMemberColumns.groupId: groupId,
+              GroupMemberColumns.userId: userIds,
+              'role': 'member',
+            },
+          )
+          .toList(),
+    });
+  }
+
   Future<void> removeMember(String groupId, String userId) async {
     await _supabase
         .from(SupabaseConstants.groupMembers)
@@ -175,7 +190,11 @@ class GroupChatServices {
         .eq(GroupMemberColumns.groupId, groupId)
         .order('created_at', ascending: false)
         .map(
-          (data) => data.map((map) => GroupMessageModel.fromMap(map)).toList(),
+          (data) =>
+              data
+                  .map((map) => GroupMessageModel.fromMap(map))
+                  .where((m) => !m.deletedFor.contains(currentUserId))
+                  .toList(),
         );
   }
 
@@ -187,11 +206,19 @@ class GroupChatServices {
     String? imageUrl,
     String? videoUrl,
     String? voiceUrl,
+    int? durationSeconds,
+    String? fileUrl,
+    String? fileName,
+    int? fileSizeBytes,
     String? caption,
     GroupMessageModel? replyTo,
     String? imagePublicId,
     String? videoPublicId,
     String? voicePublicId,
+    String? filePublicId,
+    String? forwardedFromUserId,
+    String? forwardedFromUserName,
+    String? forwardedFromUserAvatar,
     List<MentionRef> mentions = const [],
   }) async {
     final currentUser = SupabaseProvider.user!;
@@ -216,10 +243,16 @@ class GroupChatServices {
       if (imageUrl != null) 'image_url': imageUrl,
       if (videoUrl != null) 'video_url': videoUrl,
       if (voiceUrl != null) 'voice_url': voiceUrl,
+      if (durationSeconds != null)
+        GroupMessageColumns.durationSeconds: durationSeconds,
+      if (fileUrl != null) 'file_url': fileUrl,
+      if (fileName != null) 'file_name': fileName,
+      if (fileSizeBytes != null) 'file_size_bytes': fileSizeBytes,
       if (caption != null) 'caption': caption,
       if (imagePublicId != null) 'image_public_id': imagePublicId,
       if (videoPublicId != null) 'video_public_id': videoPublicId,
       if (voicePublicId != null) 'voice_public_id': voicePublicId,
+      if (filePublicId != null) 'file_public_id': filePublicId,
       if (replyTo != null) ...{
         'reply_to_message_id': replyTo.id,
         'reply_to_text':
@@ -228,6 +261,13 @@ class GroupChatServices {
         'reply_to_sender_name': replyTo.senderName,
         'reply_to_message_type': replyTo.messageType,
       },
+
+      if (forwardedFromUserId != null)
+        'forwarded_from_user_id': forwardedFromUserId,
+      if (forwardedFromUserName != null)
+        'forwarded_from_user_name': forwardedFromUserName,
+      if (forwardedFromUserAvatar != null)
+        'forwarded_from_user_avatar': forwardedFromUserAvatar,
     };
 
     final result =
@@ -337,6 +377,28 @@ class GroupChatServices {
       table: SupabaseConstants.groupMessages,
       id: messageId,
     );
+  }
+
+  Future<void> deleteGroupMessagesForMe({
+    required List<GroupMessageModel> messages,
+    required String currentUserId,
+  }) async {
+    for (final m in messages) {
+      final updated = {...m.deletedFor, currentUserId}.toList();
+      await _supabase
+          .from(SupabaseConstants.groupMessages)
+          .update({GroupMessageColumns.deletedFor: updated})
+          .eq('id', m.id);
+    }
+  }
+
+  Future<void> deleteGroupMessagesForEveryone(List<String> messageIds) async {
+    for (final id in messageIds) {
+      await MediaCleanupService.instance.deleteWithMedia(
+        table: SupabaseConstants.groupMessages,
+        id: id,
+      );
+    }
   }
 
   Future<void> toggleReaction({
@@ -512,5 +574,58 @@ class GroupChatServices {
     };
 
     return controller.stream;
+  }
+
+  Future<List<GroupMessageModel>> getGroupMediaPreview({
+    required String groupId,
+    int limit = 6,
+  }) async {
+    final response = await _supabase
+        .from(SupabaseConstants.groupMessages)
+        .select()
+        .eq(GroupMemberColumns.groupId, groupId)
+        .inFilter('message_type', ['image', 'video', 'voice'])
+        .order('created_at', ascending: false)
+        .limit(limit);
+
+    return (response as List)
+        .map((e) => GroupMessageModel.fromMap(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<List<GroupMessageModel>> getGroupMediaMessages({
+    required String groupId,
+    required String messageType,
+    int limit = 100,
+  }) async {
+    final response = await _supabase
+        .from(SupabaseConstants.groupMessages)
+        .select()
+        .eq(GroupMemberColumns.groupId, groupId)
+        .eq('message_type', messageType)
+        .order('created_at', ascending: false)
+        .limit(limit);
+
+    return (response as List)
+        .map((e) => GroupMessageModel.fromMap(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<List<GroupMessageModel>> getGroupLinkMessages({
+    required String groupId,
+    int limit = 100,
+  }) async {
+    final response = await _supabase
+        .from(SupabaseConstants.groupMessages)
+        .select()
+        .eq(GroupMemberColumns.groupId, groupId)
+        .eq('message_type', 'text')
+        .ilike('message_text', '%http%')
+        .order('created_at', ascending: false)
+        .limit(limit);
+
+    return (response as List)
+        .map((e) => GroupMessageModel.fromMap(e as Map<String, dynamic>))
+        .toList();
   }
 }

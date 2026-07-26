@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:social_media_app/core/widgets/custom_loading_indicator.dart';
-import '../../../core/supabase/supabase_provider.dart';
+import 'package:social_media_app/features/social_graph/services/connections_service.dart';
 import '../../../core/toast/app_toast.dart';
 import '../cubit/group_list_cubit/group_list_cubit.dart';
 import '../services/group_chat_services.dart';
@@ -39,15 +39,10 @@ class _CreateGroupViewState extends State<CreateGroupView> {
   }
 
   Future<void> _loadUsers() async {
-    final currentId = SupabaseProvider.id;
-    final data = await SupabaseProvider.client
-        .from('users')
-        .select('id, name, image_url')
-        .neq('id', currentId);
-
+    final data = await ConnectionsService().getMyConnections();
     if (mounted) {
       setState(() {
-        _allUsers = (data as List).cast<Map<String, dynamic>>();
+        _allUsers = data;
         _filteredUsers = _allUsers;
       });
     }
@@ -98,7 +93,6 @@ class _CreateGroupViewState extends State<CreateGroupView> {
         avatarUrl = result.secureUrl;
         avatarPublicId = result.publicId;
       }
-
       final group = await context.read<GroupListCubit>().createGroup(
         name: name,
         avatarUrl: avatarUrl,
