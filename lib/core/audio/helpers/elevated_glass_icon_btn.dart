@@ -1,12 +1,12 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 
-class GlassIconButton extends StatelessWidget {
+class ElevatedIconButton extends StatelessWidget {
   final IconData icon;
   final Color color;
   final VoidCallback? onPressed;
 
-  const GlassIconButton({
+  const ElevatedIconButton({
     super.key,
     required this.icon,
     required this.color,

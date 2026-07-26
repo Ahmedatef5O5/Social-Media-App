@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../../helpers/glass_icon_btn.dart';
+import '../../helpers/elevated_glass_icon_btn.dart';
 import '../../helpers/lock_indicator_pill.dart';
 import '../../helpers/locked_paused_row.dart';
 import '../../helpers/locked_recording_row.dart';
@@ -322,12 +322,12 @@ class _VoiceRecorderInputSectionState extends State<VoiceRecorderInputSection> {
           padding: const EdgeInsets.only(right: 2),
           child:
               isLocked
-                  ? GlassIconButton(
+                  ? ElevatedIconButton(
                     icon: Icons.delete_outline_rounded,
                     color: Colors.red,
                     onPressed: _cancelRecording,
                   )
-                  : GlassIconButton(
+                  : ElevatedIconButton(
                     icon: Icons.add,
                     color: primary,
                     onPressed:
