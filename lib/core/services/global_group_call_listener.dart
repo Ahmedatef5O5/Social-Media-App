@@ -70,6 +70,8 @@ class _GlobalGroupCallListenerState extends State<GlobalGroupCallListener> {
 
       final activeCall = calls.first;
 
+      if (activeCall.initiatorId == userId) return;
+
       if (_currentlyShowingCallId == activeCall.callId) return;
 
       _currentlyShowingCallId = activeCall.callId;

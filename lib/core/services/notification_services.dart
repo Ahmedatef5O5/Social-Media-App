@@ -6,7 +6,12 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:social_media_app/core/router/app_routes.dart';
 import 'package:social_media_app/core/services/active_screen_tracker.dart';
 import 'package:social_media_app/features/single_chats/models/chat_user_model.dart';
+import '../../features/group_calls/models/group_call_model.dart';
+import '../../features/group_calls/views/incoming_group_call_screen.dart';
+import '../../features/notifications/views/notification_view.dart';
+import '../../features/posts/services/posts_services.dart';
 import '../../features/settings/repository/settings_repository.dart';
+import '../supabase/supabase_provider.dart';
 import 'notification_avatar_builder.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -36,6 +41,26 @@ class NotificationService {
   final FirebaseMessaging _fcm = FirebaseMessaging.instance;
   bool _initialized = false;
 
+  /// notificationType values that represent a "social event" (friend graph,
+  /// or an engagement on a post/story) rather than a chat message or a call.
+  /// Kept as a single source of truth so the foreground listener and the
+  /// terminated/background handler never disagree about how to render or
+  /// route a given type — that mismatch was the root cause of the group-call
+  /// bug fixed alongside this change.
+  static const Set<String> _socialNotificationTypes = {
+    'friend_request',
+    'follow',
+    'post_reaction',
+    'post_comment',
+    'post_mention',
+    'post_share',
+    'post_save',
+    'story_reaction',
+  };
+
+  static bool isSocialType(String type) =>
+      _socialNotificationTypes.contains(type);
+
   static final AndroidNotificationChannel _messageChannel =
       AndroidNotificationChannel(
         'chat_messages_channel',
@@ -58,6 +83,17 @@ class NotificationService {
         enableVibration: true,
         vibrationPattern: Int64List.fromList([0, 1000, 500, 1000]),
       );
+
+  static final AndroidNotificationChannel
+  _socialChannel = AndroidNotificationChannel(
+    'social_events_channel',
+    'Social & Post Activity',
+    description:
+        'Friend requests, follows, reactions, comments, mentions, shares, saves and story reactions',
+    importance: Importance.high,
+    playSound: true,
+    enableVibration: true,
+  );
 
   Future<void> initialize({bool isBackground = false}) async {
     if (_initialized) return;
@@ -82,6 +118,7 @@ class NotificationService {
 
     await androidPlugin?.createNotificationChannel(_messageChannel);
     await androidPlugin?.createNotificationChannel(_callChannel);
+    await androidPlugin?.createNotificationChannel(_socialChannel);
 
     if (!isBackground) {
       await _requestPermissions();
@@ -118,6 +155,12 @@ class NotificationService {
     FirebaseMessaging.onMessage.listen((RemoteMessage message) async {
       final type = message.data['notificationType'] as String? ?? 'chat';
 
+      if (type == 'incoming_group_call') {
+        if (!SettingsRepository.instance.callNotifications) return;
+        await _handleIncomingGroupCallData(message.data);
+        return;
+      }
+
       if (type == 'incoming_call') {
         if (!SettingsRepository.instance.callNotifications) return;
         await _handleIncomingCallData(message.data);
@@ -143,6 +186,11 @@ class NotificationService {
         return;
       }
 
+      if (isSocialType(type)) {
+        await showSocialNotificationFromMessage(message);
+        return;
+      }
+
       await showNotificationFromMessage(message);
     });
   }
@@ -152,6 +200,8 @@ class NotificationService {
       final type = message.data['notificationType'] as String? ?? 'chat';
       if (type == 'incoming_call') {
         _handleIncomingCallData(message.data);
+      } else if (type == 'incoming_group_call') {
+        _handleIncomingGroupCallData(message.data);
       } else {
         _navigateFromMessage(message.data);
       }
@@ -165,6 +215,8 @@ class NotificationService {
         final type = message.data['notificationType'] as String? ?? 'chat';
         if (type == 'incoming_call') {
           _handleIncomingCallData(message.data);
+        } else if (type == 'incoming_group_call') {
+          _handleIncomingGroupCallData(message.data);
         } else {
           _navigateFromMessage(message.data);
         }
@@ -254,6 +306,93 @@ class NotificationService {
           'callerAvatar': callerAvatar,
           'callType': callType,
         },
+      );
+    });
+  }
+
+  Future<void> showIncomingGroupCallNotification({
+    required String callId,
+    required String groupId,
+    required String groupName,
+    required String groupAvatarUrl,
+    required String callerName,
+    required String callType,
+  }) async {
+    Uint8List profileBitmap;
+    try {
+      profileBitmap =
+          await _avatarBuilder.fetchBitmap(groupAvatarUrl) ??
+          await _avatarBuilder.buildLetterAvatar(groupName);
+    } catch (_) {
+      profileBitmap = await _avatarBuilder.defaultBitmap();
+    }
+
+    final subtitle =
+        '$callerName is calling · ${callType == 'video' ? 'Group Video' : 'Group Voice'}';
+
+    final androidDetails = AndroidNotificationDetails(
+      _callChannel.id,
+      _callChannel.name,
+      channelDescription: _callChannel.description,
+      importance: Importance.max,
+      priority: Priority.max,
+      category: AndroidNotificationCategory.call,
+      icon: '@drawable/ic_notification',
+      largeIcon: ByteArrayAndroidBitmap(profileBitmap),
+      fullScreenIntent: true,
+      ongoing: true,
+      autoCancel: false,
+      timeoutAfter: 60000,
+    );
+
+    await _localNotifications.show(
+      callId.hashCode,
+      groupName,
+      subtitle,
+      NotificationDetails(android: androidDetails),
+      payload:
+          'group_call|$callId|$groupId|$groupName|$groupAvatarUrl|$callType',
+    );
+  }
+
+  Future<void> _handleIncomingGroupCallData(Map<String, dynamic> data) async {
+    final callerId = data['callerId'] as String? ?? '';
+    if (callerId == SupabaseProvider.idOrNull) return;
+    final callId = data['callId'] as String? ?? '';
+    final groupId = data['groupId'] as String? ?? '';
+    final groupName = data['groupName'] as String? ?? 'Group';
+    final groupAvatarUrl = data['groupAvatarUrl'] as String?;
+    final callerName = data['callerName'] as String? ?? 'Unknown';
+    final callType = data['callType'] as String? ?? 'audio';
+    final startedAt = data['startedAt'] as String?;
+
+    await showIncomingGroupCallNotification(
+      callId: callId,
+      groupId: groupId,
+      groupName: groupName,
+      groupAvatarUrl: groupAvatarUrl ?? '',
+      callerName: callerName,
+      callType: callType,
+    );
+
+    final call = GroupCallModel(
+      callId: callId,
+      groupId: groupId,
+      groupName: groupName,
+      groupAvatarUrl: groupAvatarUrl,
+      initiatorId: callerId,
+      initiatorName: callerName,
+      status: GroupCallStatus.ringing,
+      type: callType == 'video' ? GroupCallType.video : GroupCallType.audio,
+      startedAt:
+          startedAt != null
+              ? (DateTime.tryParse(startedAt) ?? DateTime.now())
+              : DateTime.now(),
+    );
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      navigatorKey.currentState?.push(
+        MaterialPageRoute(builder: (_) => IncomingGroupCallScreen(call: call)),
       );
     });
   }
@@ -381,6 +520,71 @@ class NotificationService {
     );
   }
 
+  /// Handles every "social event" type: friend_request, follow,
+  /// post_reaction, post_comment, post_mention, post_share, post_save,
+  /// story_reaction. Unlike [showNotificationFromMessage] this is a plain
+  /// single notification (no MessagingStyle thread) since these aren't
+  /// conversations. `title`/`body` come pre-built from the Edge Function,
+  /// with a local fallback in case they're missing.
+  Future<void> showSocialNotificationFromMessage(RemoteMessage message) async {
+    final data = message.data;
+    final String type = data['notificationType'] ?? 'general';
+
+    final String actorId =
+        data['actorId'] ?? data['requesterId'] ?? data['followerId'] ?? '';
+    final String actorName =
+        data['actorName'] ??
+        data['requesterName'] ??
+        data['followerName'] ??
+        'Someone';
+    final String actorImageUrl =
+        data['actorImageUrl'] ??
+        data['requesterImageUrl'] ??
+        data['followerImageUrl'] ??
+        '';
+    final String referenceId = data['postId'] ?? data['storyId'] ?? '';
+
+    final String title =
+        (data['title'] as String?)?.isNotEmpty == true
+            ? data['title']
+            : actorName;
+    final String body =
+        (data['body'] as String?)?.isNotEmpty == true
+            ? data['body']
+            : 'New notification';
+
+    Uint8List avatarBitmap;
+    try {
+      avatarBitmap = await _avatarBuilder.getAvatarBitmap(
+        actorId,
+        actorImageUrl,
+      );
+    } catch (_) {
+      avatarBitmap = await _avatarBuilder.defaultBitmap();
+    }
+
+    final androidDetails = AndroidNotificationDetails(
+      _socialChannel.id,
+      _socialChannel.name,
+      channelDescription: _socialChannel.description,
+      importance: Importance.high,
+      priority: Priority.high,
+      icon: '@drawable/ic_notification',
+      largeIcon: ByteArrayAndroidBitmap(avatarBitmap),
+      styleInformation: BigTextStyleInformation(body),
+      autoCancel: true,
+      color: const Color(0xFF2196F3),
+    );
+
+    await _localNotifications.show(
+      '$type|$referenceId|$actorId'.hashCode,
+      title,
+      body,
+      NotificationDetails(android: androidDetails),
+      payload: 'social|$type|$referenceId|$actorId|$actorName|$actorImageUrl',
+    );
+  }
+
   String _buildStyleBody(String type, String body) {
     switch (type) {
       case 'image':
@@ -389,6 +593,10 @@ class NotificationService {
         return '🎥 Video';
       case 'voice':
         return '🎤 Voice message';
+      case 'gif':
+        return '🖼️ GIF';
+      case 'sticker':
+        return '🏷️ Sticker';
       default:
         return body;
     }
@@ -407,6 +615,31 @@ class NotificationService {
   static void _handleTap(NotificationResponse response) {
     if (response.payload == null) return;
     final payload = response.payload!;
+
+    if (payload.startsWith('group_call|')) {
+      final parts = payload.split('|');
+      if (parts.length >= 6) {
+        final call = GroupCallModel(
+          callId: parts[1],
+          groupId: parts[2],
+          groupName: parts[3],
+          groupAvatarUrl: parts[4],
+          initiatorId: '',
+          initiatorName: parts[3],
+          status: GroupCallStatus.ringing,
+          type: parts[5] == 'video' ? GroupCallType.video : GroupCallType.audio,
+          startedAt: DateTime.now(),
+        );
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          navigatorKey.currentState?.push(
+            MaterialPageRoute(
+              builder: (_) => IncomingGroupCallScreen(call: call),
+            ),
+          );
+        });
+      }
+      return;
+    }
 
     if (payload.startsWith('call|')) {
       final parts = payload.split('|');
@@ -446,6 +679,17 @@ class NotificationService {
           'groupId': parts[1],
           'groupName': parts[2],
         });
+      }
+      return;
+    }
+
+    // social|<type>|<postOrStoryId>|<actorId>|<actorName>|<actorImageUrl>
+    if (payload.startsWith('social|')) {
+      final parts = payload.split('|');
+      if (parts.length >= 2) {
+        final type = parts[1];
+        final referenceId = parts.length > 2 ? parts[2] : '';
+        _routeSocialEvent(type: type, referenceId: referenceId);
       }
       return;
     }
@@ -502,6 +746,13 @@ class NotificationService {
       return;
     }
 
+    if (isSocialType(notifType)) {
+      final referenceId =
+          (data['postId'] as String?) ?? (data['storyId'] as String?) ?? '';
+      _routeSocialEvent(type: notifType, referenceId: referenceId);
+      return;
+    }
+
     final user = ChatUserModel(
       id: data['senderId'] ?? '',
       name: data['senderName'] ?? '',
@@ -511,5 +762,67 @@ class NotificationService {
       AppRoutes.chatDetailsViewRoute,
       arguments: user,
     );
+  }
+
+  /// Single routing decision for every social/post/story notification type,
+  /// shared by both the tap-payload path (_handleTap) and the data-map path
+  /// (_navigateFromMessage) so they can never disagree on where a tap leads.
+  ///
+  /// Post engagements (reaction/comment/mention/share/save) open
+  /// PostDetailsView. To satisfy "closing PostDetailsView must return to
+  /// HomeView Tab 0" regardless of where the user was when they tapped the
+  /// notification, we first collapse the navigation stack down to a fresh
+  /// Home route, then push PostDetailsView on top of it — so popping it
+  /// always reveals Home/Tab 0, with no changes needed inside
+  /// PostDetailsView or the bottom nav bar itself.
+  ///
+  /// friend_request / follow / story_reaction open the Notifications view,
+  /// same as the bell icon on the Home header. story_reaction is routed
+  /// here rather than to a story viewer because a tapped-from-notification
+  /// story may have already expired, and reconstructing the story viewer's
+  /// required state (StoriesCubit, group/story indices) isn't safely
+  /// possible from a bare storyId.
+  static void _routeSocialEvent({
+    required String type,
+    required String referenceId,
+  }) {
+    const postEngagementTypes = {
+      'post_reaction',
+      'post_comment',
+      'post_mention',
+      'post_share',
+      'post_save',
+    };
+
+    if (postEngagementTypes.contains(type) && referenceId.isNotEmpty) {
+      _openPostDetails(referenceId);
+      return;
+    }
+
+    _openNotificationsView();
+  }
+
+  static Future<void> _openPostDetails(String postId) async {
+    final post = await PostsServices().fetchPostById(postId);
+    if (post == null) return; // post was deleted or unavailable — no-op
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      navigatorKey.currentState?.pushNamedAndRemoveUntil(
+        AppRoutes.homeRoute,
+        (route) => false,
+      );
+      navigatorKey.currentState?.pushNamed(
+        AppRoutes.postDetailsViewRoute,
+        arguments: post,
+      );
+    });
+  }
+
+  static void _openNotificationsView() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      navigatorKey.currentState?.push(
+        MaterialPageRoute(builder: (_) => const NotificationsView()),
+      );
+    });
   }
 }
