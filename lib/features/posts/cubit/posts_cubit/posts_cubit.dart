@@ -15,7 +15,7 @@ import 'package:social_media_app/features/auth/data/models/user_data.dart';
 import 'package:uuid/uuid.dart';
 import '../../../../core/connectivity/services/connectivity_banner_controller.dart';
 import '../../../../core/services/cloudinary_storage_services.dart';
-import '../../../../core/services/presence_service.dart';
+import '../../../../core/presence/services/presence_service.dart';
 import '../../../../core/supabase/supabase_provider.dart';
 import '../../../../core/toast/app_toast.dart';
 import '../../../comments/events/comment_event_bus.dart';

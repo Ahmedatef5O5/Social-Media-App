@@ -191,8 +191,6 @@ class StoriesCubit extends Cubit<StoriesState> {
   }
 
   Future<void> pickAndPreviewVideoStory({required ImageSource source}) async {
-    if (state is StoryVideoPicked) return;
-
     try {
       final XFile? pickedFile =
           source == ImageSource.camera

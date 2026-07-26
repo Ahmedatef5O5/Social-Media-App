@@ -56,6 +56,7 @@ class _CreatePostViewState extends State<CreatePostView> {
     if (result == null) return;
 
     if (result == ContentPrivacy.private) {
+      if (!mounted) return;
       final selected = await Navigator.of(
         context,
         rootNavigator: true,
@@ -109,9 +110,7 @@ class _CreatePostViewState extends State<CreatePostView> {
     return BlocConsumer<PostsCubit, PostsState>(
       listenWhen: (previous, current) => previous != current,
       listener: (context, state) {
-        if (state is MediaPicking ||
-            state is MediaPicked ||
-            state is PostCreating) {
+        if (state is MediaPicking || state is PostCreating) {
           if (_sheetController.isAttached) {
             _sheetController.animateTo(
               0.15,
@@ -149,6 +148,10 @@ class _CreatePostViewState extends State<CreatePostView> {
         final authUser = SupabaseProvider.user;
         final bool canPost =
             _textEditingController.text.trim().isNotEmpty ||
+            postsCubit.selectedImage != null ||
+            postsCubit.selectedVideo != null ||
+            postsCubit.selectedDocument != null;
+        final bool hasMedia =
             postsCubit.selectedImage != null ||
             postsCubit.selectedVideo != null ||
             postsCubit.selectedDocument != null;
@@ -256,7 +259,8 @@ class _CreatePostViewState extends State<CreatePostView> {
                     ),
                   ),
                 ),
-                AddPostOptionsBottomSheet(controller: _sheetController),
+                if (!hasMedia)
+                  AddPostOptionsBottomSheet(controller: _sheetController),
                 if (state is PostCreating)
                   Container(
                     key: const ValueKey('uploading_overlay'),

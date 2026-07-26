@@ -4,7 +4,7 @@ import 'package:social_media_app/features/posts/model/feed_event.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/services/media_cleanup_service.dart';
 import '../../../core/services/network_status_service.dart';
-import '../../../core/services/presence_service.dart';
+import '../../../core/presence/services/presence_service.dart';
 import '../../../core/services/supabase_database_services.dart';
 import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/utilities/supabase_constants.dart';
@@ -261,6 +261,7 @@ class PostsServices {
     const channelName = 'home_feed_watcher';
     final existingChannels = _supabase.getChannels();
     for (final c in existingChannels) {
+      // ignore: invalid_use_of_internal_member
       if (c.topic == 'realtime:$channelName') {
         _supabase.removeChannel(c);
       }
@@ -387,6 +388,7 @@ class PostsServices {
       rethrow;
     }
   }
+
   Future<void> shareReel({
     required String postId,
     required String reelId,
