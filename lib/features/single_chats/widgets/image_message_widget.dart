@@ -1,5 +1,9 @@
-import 'package:social_media_app/core/widgets/cached_cloudinary_image.dart';
+import 'dart:io';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:social_media_app/core/attachment/widgets/media_download_gate.dart';
+import 'package:social_media_app/core/cache/utils/cloudinary_url_extensions.dart';
+import 'package:social_media_app/core/widgets/cached_cloudinary_image.dart';
 import 'package:social_media_app/features/single_chats/widgets/full_screen_media_view.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
 
@@ -7,55 +11,94 @@ class ImageMessageWidget extends StatelessWidget {
   final String imageUrl;
   final String? caption;
   final bool isMe;
+  final int? fileSizeBytes;
 
   const ImageMessageWidget({
     super.key,
     required this.imageUrl,
     this.caption,
     required this.isMe,
+    this.fileSizeBytes,
   });
 
   @override
   Widget build(BuildContext context) {
-    const double preferredWidth = 305.0;
-    const double preferredHeight = 250.0;
-    return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder:
-                (context) =>
-                    FullScreenMediaView(imageUrl: imageUrl, caption: caption),
-          ),
-        );
-      },
-      child: ClipRRect(
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(18),
-          topRight: Radius.circular(18),
-          bottomLeft: Radius.circular(isMe ? 18 : 0),
-          bottomRight: Radius.circular(isMe ? 0 : 18),
-        ),
+    const preferredWidth = 305.0;
+    const preferredHeight = 250.0;
+    final borderRadius = BorderRadius.only(
+      topLeft: const Radius.circular(18),
+      topRight: const Radius.circular(18),
+      bottomLeft: Radius.circular(isMe ? 18 : 0),
+      bottomRight: Radius.circular(isMe ? 0 : 18),
+    );
+    final bool isLocalFile = !imageUrl.startsWith('http');
 
-        child: CachedCloudinaryImage(
-          secureUrl: imageUrl,
+    if (isLocalFile) {
+      return ClipRRect(
+        borderRadius: borderRadius,
+        child: Image.file(
+          File(imageUrl),
+          width: preferredWidth,
+          height: preferredHeight,
           fit: BoxFit.cover,
-          placeholder:
-              (context) => Container(
-                width: preferredWidth,
-                height: preferredHeight,
-                color: Colors.grey[200],
-                child: const CustomLoadingIndicator(),
-              ),
-          errorWidget:
-              (context, error) => SizedBox(
-                width: preferredWidth,
-                height: preferredHeight,
-                child: Center(child: const Icon(Icons.error)),
-              ),
         ),
-      ),
+      );
+    }
+    return MediaDownloadGate(
+      secureUrl: imageUrl,
+      fileSizeBytes: fileSizeBytes,
+      borderRadius: borderRadius,
+      previewBuilder:
+          (context) => CachedNetworkImage(
+            imageUrl: imageUrl.cloudinaryLowResPreviewUrl,
+            width: preferredWidth,
+            height: preferredHeight,
+            fit: BoxFit.cover,
+            placeholder:
+                (context, _) => Container(
+                  width: preferredWidth,
+                  height: preferredHeight,
+                  color: Colors.grey[200],
+                  child: const CustomLoadingIndicator(),
+                ),
+            errorWidget:
+                (context, _, __) => Container(
+                  width: preferredWidth,
+                  height: preferredHeight,
+                  color: Colors.grey[200],
+                ),
+          ),
+      completedBuilder:
+          (context, localPath) => GestureDetector(
+            onTap:
+                () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder:
+                        (context) => FullScreenMediaView(
+                          imageUrl: imageUrl,
+                          caption: caption,
+                        ),
+                  ),
+                ),
+            child: CachedCloudinaryImage(
+              secureUrl: imageUrl,
+              fit: BoxFit.cover,
+              placeholder:
+                  (context) => Container(
+                    width: preferredWidth,
+                    height: preferredHeight,
+                    color: Colors.grey[200],
+                    child: const CustomLoadingIndicator(),
+                  ),
+              errorWidget:
+                  (context, error) => SizedBox(
+                    width: preferredWidth,
+                    height: preferredHeight,
+                    child: const Center(child: Icon(Icons.error)),
+                  ),
+            ),
+          ),
     );
   }
 }

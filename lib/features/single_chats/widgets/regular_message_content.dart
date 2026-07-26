@@ -25,6 +25,7 @@ class RegularMessageContent extends StatelessWidget {
   final bool isSticker;
   final ItemScrollController itemScrollController;
   final bool isUploading;
+  final double? uploadProgress;
   const RegularMessageContent({
     super.key,
     required this.message,
@@ -35,6 +36,7 @@ class RegularMessageContent extends StatelessWidget {
     required this.isSticker,
     required this.itemScrollController,
     this.isUploading = false,
+    this.uploadProgress,
   });
 
   @override
@@ -74,6 +76,7 @@ class RegularMessageContent extends StatelessWidget {
                         imageUrl: message.imageUrl!,
                         caption: message.caption,
                         isMe: isMe,
+                        fileSizeBytes: message.fileSizeBytes,
                       )
                       : const SizedBox.shrink(),
             ),
@@ -87,6 +90,8 @@ class RegularMessageContent extends StatelessWidget {
                         videoUrl: message.videoUrl!,
                         caption: message.caption,
                         isMe: isMe,
+                        fileSizeBytes: message.fileSizeBytes,
+                        durationSeconds: message.durationSeconds,
                       )
                       : const SizedBox.shrink(),
             ),
@@ -97,18 +102,25 @@ class RegularMessageContent extends StatelessWidget {
               isMe: isMe,
               timestamp: message.createdAt,
               isRead: message.isRead,
-              initialDurationSeconds: message.voiceDurationSeconds,
+              initialDurationSeconds: message.durationSeconds,
               isUploading: isUploading,
             ),
 
-          if (message.messageType == 'file' && message.fileUrl != null)
+          if (message.messageType == 'file' &&
+              (message.fileUrl != null || isUploading))
             Padding(
               padding: const EdgeInsets.only(top: 2),
               child: FileMessageBubble(
-                fileUrl: message.fileUrl!,
+                fileUrl: message.fileUrl ?? '',
                 fileName: message.fileName,
                 fileSizeBytes: message.fileSizeBytes,
                 isMe: isMe,
+                isUploading: isUploading,
+                uploadProgress: uploadProgress,
+                onCancelTap:
+                    () => context.read<ChatDetailsCubit>().cancelUpload(
+                      message.id,
+                    ),
               ),
             ),
 

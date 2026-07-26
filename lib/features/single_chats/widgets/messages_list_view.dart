@@ -46,6 +46,7 @@ class _MessagesListViewState extends State<MessagesListView> {
   static String? _lastPlayedMessageId;
 
   int _lastMessageCount = 0;
+  String? _lastAutoScrolledSendingId;
 
   bool _hasLoadedOnce = false;
 
@@ -161,6 +162,19 @@ class _MessagesListViewState extends State<MessagesListView> {
   }
 
   void _handleMessagesLogic(BuildContext context, ChatDetailsState state) {
+    if (state is MessagesSending &&
+        state.messages != null &&
+        state.messages!.isNotEmpty) {
+      final currentUserId = SupabaseProvider.id;
+      final lastMsg = state.messages!.first;
+      if (lastMsg.senderId == currentUserId &&
+          _lastAutoScrolledSendingId != lastMsg.id) {
+        _lastAutoScrolledSendingId = lastMsg.id;
+        widget.scrollToBottom();
+      }
+      return;
+    }
+
     if (state is MessagesSuccessLoaded && state.messages.isNotEmpty) {
       _hasLoadedOnce = true;
       final messages = state.messages;

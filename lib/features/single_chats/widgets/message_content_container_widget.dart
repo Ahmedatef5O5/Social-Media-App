@@ -1,11 +1,10 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import 'package:social_media_app/features/single_chats/cubit/chat_details_cubit/chat_details_cubit.dart';
 import 'package:social_media_app/features/single_chats/widgets/message_reactions_row_widget.dart';
 import '../../../core/attachment/models/media_transfer_state.dart';
-import '../../../core/attachment/widgets/media_progress_overlay.dart';
+import '../../../core/attachment/widgets/media_state_overlay.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/themes/app_colors.dart';
 import '../../chat_forwarding/widgets/forwarded_header.dart';
@@ -106,6 +105,7 @@ class _MessageContentContainerState extends State<MessageContentContainer> {
     final bool isGif = widget.message.messageType == 'gif';
     final bool isSticker = widget.message.messageType == 'sticker';
     final bool isVoice = widget.message.messageType == 'voice';
+    final bool isFile = widget.message.messageType == 'file';
     final bool isCall = widget.message.messageType == 'call';
 
     final bool hasReaction = widget.message.reactions.isNotEmpty;
@@ -182,14 +182,14 @@ class _MessageContentContainerState extends State<MessageContentContainer> {
               bottomRight: Radius.circular(widget.isMe ? 0 : 20),
             ),
             boxShadow:
-                isUploading || isStickerOrGif
+                (isUploading && !isFile) || isStickerOrGif
                     ? []
                     : [
                       BoxShadow(color: AppColors.grey1.withValues(alpha: 0.8)),
                     ],
           ),
           child: Opacity(
-            opacity: (isUploading && !isVoice) ? 0.3 : 1.0,
+            opacity: 1,
             child:
                 widget.message.isForwarded
                     ? Column(
@@ -211,7 +211,7 @@ class _MessageContentContainerState extends State<MessageContentContainer> {
           ),
         ),
 
-        if (isUploading && !isVoice) ...[
+        if (isUploading && !isVoice && !isFile)
           Positioned.fill(
             child: ClipRRect(
               borderRadius: BorderRadius.only(
@@ -220,66 +220,22 @@ class _MessageContentContainerState extends State<MessageContentContainer> {
                 bottomLeft: Radius.circular(widget.isMe ? 20 : 0),
                 bottomRight: Radius.circular(widget.isMe ? 0 : 20),
               ),
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-                child: Container(
-                  color: Colors.black.withValues(alpha: 0.1),
-                  child: Positioned.fill(
-                    child: MediaProgressOverlay(
-                      state: MediaTransferState.uploading(
-                        widget.uploadProgress ?? 0.0,
-                      ),
-                      isVideo: widget.message.messageType == 'video',
-                      durationSeconds: widget.message.durationSeconds,
-                      onCancelTap:
-                          () => context.read<ChatDetailsCubit>().cancelUpload(
-                            widget.message.id,
-                          ),
-                      child: const SizedBox.shrink(),
-                    ),
+              child: Positioned.fill(
+                child: MediaStateOverlay(
+                  state: MediaTransferState.uploading(
+                    widget.uploadProgress ?? 0.0,
                   ),
+                  isVideo: widget.message.messageType == 'video',
+                  durationSeconds: widget.message.durationSeconds,
+                  onCancelTap:
+                      () => context.read<ChatDetailsCubit>().cancelUpload(
+                        widget.message.id,
+                      ),
+                  child: const SizedBox.shrink(),
                 ),
               ),
             ),
           ),
-
-          Positioned(
-            top: 12,
-            right: 12,
-            child: GestureDetector(
-              onTap: () {
-                context.read<ChatDetailsCubit>().cancelUpload(
-                  widget.message.id,
-                );
-              },
-              child: Container(
-                padding: const EdgeInsets.all(4),
-                decoration: BoxDecoration(
-                  color:
-                      Theme.of(context).brightness == Brightness.light
-                          ? Theme.of(
-                            context,
-                          ).scaffoldBackgroundColor.withValues(alpha: 1)
-                          : Colors.white.withValues(alpha: 1),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.close,
-                  size: 18,
-
-                  color:
-                      Theme.of(context).brightness == Brightness.light
-                          ? Theme.of(
-                            context,
-                          ).primaryColor.withValues(alpha: 0.5)
-                          : Theme.of(
-                            context,
-                          ).primaryColor.withValues(alpha: 0.95),
-                ),
-              ),
-            ),
-          ),
-        ],
 
         if (hasReaction)
           Positioned(
