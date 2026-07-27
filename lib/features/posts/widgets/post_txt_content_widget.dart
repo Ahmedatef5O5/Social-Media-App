@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
-import 'package:social_media_app/core/widgets/custom_linkify_text.dart';
 import '../../../core/link/widgets/message_link_preview.dart';
+import '../../../core/mentions/widgets/mention_rich_text.dart';
+import '../../../core/router/app_routes.dart';
+import '../../../core/supabase/supabase_provider.dart';
 import '../model/post_model.dart';
 
 class PostTxtContentWidget extends StatelessWidget {
@@ -23,18 +25,23 @@ class PostTxtContentWidget extends StatelessWidget {
               MessageLinkPreview(
                 text: postText,
                 isMe: false,
-                textWidget: CustomLinkifyText(
+                textWidget: MentionRichText(
                   text: postText,
+                  mentions: post.mentions,
                   maxLines: 10,
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.titleSmall!.copyWith(
                     fontWeight: FontWeight.w400,
                     fontSize: 15,
                   ),
-                  linkStyle: const TextStyle(
-                    color: Colors.blue,
-                    decorationColor: Colors.blue,
-                  ),
+                  onMentionTap: (userId, name) {
+                    final currentUserId = SupabaseProvider.idOrNull;
+                    if (userId == currentUserId) return;
+                    Navigator.of(
+                      context,
+                      rootNavigator: true,
+                    ).pushNamed(AppRoutes.profileViewRoute, arguments: userId);
+                  },
                 ),
               ),
               const Gap(8),

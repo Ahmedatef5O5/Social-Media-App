@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
+import 'package:social_media_app/core/mentions/mentions.dart';
 import 'package:social_media_app/core/themes/background_theme_widget.dart';
 import 'package:social_media_app/core/widgets/custom_loading_indicator.dart';
 import 'package:social_media_app/features/home/cubits/home_cubit/home_cubit.dart';
@@ -28,7 +29,8 @@ class CreatePostView extends StatefulWidget {
 }
 
 class _CreatePostViewState extends State<CreatePostView> {
-  final TextEditingController _textEditingController = TextEditingController();
+  final MentionTextEditingController _textEditingController =
+      MentionTextEditingController();
   final DraggableScrollableController _sheetController =
       DraggableScrollableController();
 
@@ -185,6 +187,8 @@ class _CreatePostViewState extends State<CreatePostView> {
                                   text: _textEditingController.text.trim(),
                                   privacy: _selectedPrivacy,
                                   allowedViewerIds: _selectedViewerIds.toList(),
+                                  mentions:
+                                      _textEditingController.validMentions,
                                 );
                               } else {
                                 HapticFeedback.vibrate();

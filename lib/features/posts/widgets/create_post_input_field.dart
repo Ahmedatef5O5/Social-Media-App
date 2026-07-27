@@ -1,45 +1,48 @@
 import 'package:flutter/material.dart';
+import 'package:social_media_app/core/mentions/mentions.dart';
 
 class CreatePostInputField extends StatelessWidget {
-  final TextEditingController _textEditingController;
+  final MentionTextEditingController _textEditingController;
   final bool _hasText;
-  final FocusNode? focusNode;
+  final FocusNode focusNode;
 
   const CreatePostInputField({
     super.key,
-    required TextEditingController textEditingController,
+    required MentionTextEditingController textEditingController,
     required bool hasText,
-    this.focusNode,
+    required this.focusNode,
   }) : _textEditingController = textEditingController,
        _hasText = hasText;
 
   @override
   Widget build(BuildContext context) {
-    return TextField(
+    final atLimit = _textEditingController.text.length >= 140;
+
+    return MentionAwareTextField(
       controller: _textEditingController,
       focusNode: focusNode,
+      enabled: true,
+      hintText: "What's on your head?",
+      style: const TextStyle(fontSize: 18),
+      hintStyle: Theme.of(context).textTheme.titleSmall!.copyWith(
+        color: Theme.of(
+          context,
+        ).textTheme.titleSmall!.color?.withValues(alpha: 0.35),
+        fontSize: 19,
+        fontWeight: FontWeight.w400,
+      ),
+      minLines: 1,
       maxLines: null,
       maxLength: 140,
-      style: TextStyle(fontSize: 18),
-      decoration: InputDecoration(
-        hintText: "What's on your head?",
-        hintStyle: Theme.of(context).textTheme.titleSmall!.copyWith(
-          color: Theme.of(
-            context,
-          ).textTheme.titleSmall!.color?.withValues(alpha: 0.35),
-          fontSize: 19,
-          fontWeight: FontWeight.w400,
-        ),
-        counterText: _hasText ? null : '',
-        counterStyle: TextStyle(
-          color: _textEditingController.text.length >= 140 ? Colors.red : null,
-          fontWeight:
-              _textEditingController.text.length >= 140
-                  ? FontWeight.bold
-                  : null,
-        ),
-        border: InputBorder.none,
+      counterText: _hasText ? null : '',
+      counterStyle: TextStyle(
+        color: atLimit ? Colors.red : null,
+        fontWeight: atLimit ? FontWeight.bold : null,
       ),
+      filled: false,
+      border: InputBorder.none,
+      focusedBorder: InputBorder.none,
+      contentPadding: EdgeInsets.zero,
     );
   }
 }
