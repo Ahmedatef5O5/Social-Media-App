@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:social_media_app/core/themes/app_colors.dart';
 import 'package:social_media_app/core/widgets/custom_loading_indicator.dart';
+import '../helpers/safe_navigator.dart';
 import '../services/gallery_services.dart';
 
 class FullScreenImageViewer extends StatefulWidget {
@@ -19,6 +20,7 @@ class _FullScreenImageViewerState extends State<FullScreenImageViewer> {
 
   double _dragOffset = 0;
   bool _isSaving = false;
+  final _closeGuard = SingleFireGuard();
 
   void _handleDoubleTap() {
     if (_transformationController.value != Matrix4.identity()) {
@@ -27,6 +29,12 @@ class _FullScreenImageViewerState extends State<FullScreenImageViewer> {
       _transformationController.value = Matrix4.identity()..scale(2.0);
     }
     setState(() {});
+  }
+
+  void _close() {
+    if (_closeGuard.tryFire()) {
+      context.safePop();
+    }
   }
 
   @override
@@ -55,8 +63,10 @@ class _FullScreenImageViewerState extends State<FullScreenImageViewer> {
       },
 
       onScaleEnd: (details) {
-        if (_dragOffset.abs() > 150) {
-          Navigator.pop(context);
+        final velocity = details.velocity.pixelsPerSecond.dy;
+
+        if (_dragOffset.abs() > 100 || velocity.abs() > 250) {
+          _close();
         } else {
           setState(() {
             _dragOffset = 0;
@@ -65,7 +75,7 @@ class _FullScreenImageViewerState extends State<FullScreenImageViewer> {
       },
       child: Scaffold(
         backgroundColor: AppColors.black.withValues(
-          alpha: (.95 - (_dragOffset.abs() / 500)).clamp(0.0, 1.0),
+          alpha: (1.0 - (_dragOffset.abs() / 500)).clamp(0.0, 1.0),
         ),
         body: Stack(
           alignment: Alignment.center,

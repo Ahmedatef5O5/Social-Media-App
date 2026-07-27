@@ -269,7 +269,9 @@ class _FullScreenMediaViewState extends State<FullScreenMediaView>
       onScaleEnd:
           enableDismissDrag
               ? (details) {
-                if (_dragOffset.abs() > 150) {
+                final velocity = details.velocity.pixelsPerSecond.dy;
+
+                if (_dragOffset.abs() > 100 || velocity.abs() > 250) {
                   Navigator.pop(context);
                 } else {
                   setState(() => _dragOffset = 0);
@@ -283,7 +285,7 @@ class _FullScreenMediaViewState extends State<FullScreenMediaView>
       },
       child: Scaffold(
         backgroundColor: Colors.black.withValues(
-          alpha: (.95 - (_dragOffset.abs() / 500)).clamp(0.0, 1.0),
+          alpha: (1.0 - (_dragOffset.abs() / 500)).clamp(0.0, 1.0),
         ),
         extendBodyBehindAppBar: true,
         appBar: AppBar(

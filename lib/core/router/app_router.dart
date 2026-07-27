@@ -87,6 +87,7 @@ class AppRouter {
     switch (routeType) {
       case TypeOfRoute.fade:
         return PageRouteBuilder(
+          opaque: false,
           settings: settings,
           transitionDuration: const Duration(milliseconds: 200),
           reverseTransitionDuration: const Duration(milliseconds: 250),
