@@ -6,18 +6,19 @@ import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/toast/app_toast.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
 import '../cubit/stories_cubit/stories_cubit.dart';
+import 'story_card_widget.dart';
 
 class StoriesListSection extends StatelessWidget {
   const StoriesListSection({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.sizeOf(context);
     final storiesCubit = BlocProvider.of<StoriesCubit>(context);
     final currentUserId = SupabaseProvider.id;
 
     return SizedBox(
-      height: size.height * 0.125,
+      height: StoryCardWidget.cardHeight + 24,
+
       child: BlocConsumer<StoriesCubit, StoriesState>(
         bloc: storiesCubit,
         listenWhen:
@@ -42,56 +43,62 @@ class StoriesListSection extends StatelessWidget {
         buildWhen:
             (previous, current) =>
                 current is StoriesLoaded ||
+                current is AddStoryLoading ||
+                current is AddStorySuccess ||
                 (current is StoriesLoading && previous is! StoriesLoaded),
         builder: (context, state) {
-          if (state is StoriesLoading) {
-            return const CustomLoadingIndicator();
-          } else if (state is StoriesLoaded) {
-            final activeStories =
-                state.stories.where((s) => !s.isExpired).toList();
+          final stories =
+              state is StoriesLoaded
+                  ? state.stories
+                  : storiesCubit.cachedStories;
+          if (stories.isEmpty) {
+            if (state is StoriesLoading) return const CustomLoadingIndicator();
+            return const SizedBox.shrink();
+          }
 
-            final Map<String, List<StoryModel>> storiesByUser = {};
-            for (final story in activeStories) {
-              storiesByUser.putIfAbsent(story.authorId, () => []).add(story);
-            }
+          final activeStories = stories.where((s) => !s.isExpired).toList();
 
-            final myStories = storiesByUser.remove(currentUserId);
-            final otherUsersGroups = storiesByUser.values.toList();
+          final Map<String, List<StoryModel>> storiesByUser = {};
+          for (final story in activeStories) {
+            storiesByUser.putIfAbsent(story.authorId, () => []).add(story);
+          }
 
-            final allGroupsForViewer = [
-              if (myStories != null) myStories,
-              ...otherUsersGroups,
-            ];
+          final myStories = storiesByUser.remove(currentUserId);
+          final otherUsersGroups = storiesByUser.values.toList();
 
-            return ListView.builder(
-              scrollDirection: Axis.horizontal,
-              physics: const ClampingScrollPhysics(),
-              primary: false,
-              itemCount: otherUsersGroups.length + 1,
-              itemBuilder: (context, index) {
-                if (index == 0) {
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 12),
-                    child: StoryItemWidget(
-                      isOwnTile: true,
-                      userStroies: myStories,
-                      allUserGroups: allGroupsForViewer,
-                    ),
-                  );
-                }
+          final allGroupsForViewer = [
+            if (myStories != null) myStories,
+            ...otherUsersGroups,
+          ];
+
+          return ListView.builder(
+            scrollDirection: Axis.horizontal,
+            physics: const ClampingScrollPhysics(),
+            primary: false,
+            padding: const EdgeInsets.only(left: 4, right: 12),
+            clipBehavior: Clip.none,
+            itemCount: otherUsersGroups.length + 1,
+            itemBuilder: (context, index) {
+              if (index == 0) {
                 return Padding(
-                  padding: const EdgeInsets.only(left: 5, right: 11),
+                  padding: const EdgeInsets.only(right: 8),
                   child: StoryItemWidget(
-                    story: otherUsersGroups[index - 1].first,
-                    userStroies: otherUsersGroups[index - 1],
+                    isOwnTile: true,
+                    userStroies: myStories,
                     allUserGroups: allGroupsForViewer,
                   ),
                 );
-              },
-            );
-          } else {
-            return const SizedBox.shrink();
-          }
+              }
+              return Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: StoryItemWidget(
+                  story: otherUsersGroups[index - 1].first,
+                  userStroies: otherUsersGroups[index - 1],
+                  allUserGroups: allGroupsForViewer,
+                ),
+              );
+            },
+          );
         },
       ),
     );

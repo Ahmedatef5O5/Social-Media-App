@@ -97,12 +97,6 @@ class MyStoryTile extends StatelessWidget {
                         const Gap(6),
                         Row(
                           children: [
-                            Icon(
-                              Icons.visibility_rounded,
-                              size: 16,
-                              color: theme.primaryColor,
-                            ),
-                            const Gap(4),
                             Text(
                               '$viewCount',
                               style: TextStyle(
@@ -111,6 +105,14 @@ class MyStoryTile extends StatelessWidget {
                                 fontSize: 13,
                               ),
                             ),
+                            const Gap(4),
+
+                            Icon(
+                              Icons.visibility_rounded,
+                              size: 16,
+                              color: theme.primaryColor,
+                            ),
+
                             if (reactions.isNotEmpty) ...[
                               const Gap(12),
                               Expanded(child: _buildReactionsChip(reactions)),
@@ -211,13 +213,6 @@ class MyStoryTile extends StatelessWidget {
                       (_, __) => Container(color: Colors.grey.shade800),
                 )
                 : Container(color: Colors.grey.shade800),
-            const Center(
-              child: Icon(
-                Icons.play_arrow_rounded,
-                color: Colors.white70,
-                size: 22,
-              ),
-            ),
           ],
         );
 
@@ -259,10 +254,10 @@ class MyStoryTile extends StatelessWidget {
         counts.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
 
     return Text(
-      entries.take(4).map((e) => '${e.key} ${e.value}').join('  '),
+      entries.take(4).map((e) => '${e.value} ${e.key}').join('  '),
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
-      style: const TextStyle(fontSize: 12),
+      style: const TextStyle(fontSize: 12, color: Colors.black),
     );
   }
 }
