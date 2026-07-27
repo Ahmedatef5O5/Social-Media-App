@@ -123,7 +123,10 @@ class StoryReplyCubit extends Cubit<StoryReplyState> {
       final pushInfo = await _chatServices.getReceiverPushInfo(story.authorId);
       if (pushInfo == null) return;
 
-      await FcmService.instance.sendChatNotification(
+      final String? storyPreviewText =
+          story.storyType == StoryType.text ? story.contentText : story.caption;
+
+      await FcmService.instance.sendStoryReplyNotification(
         receiverFcmToken: pushInfo.fcmToken,
         senderId: currentUserId,
         senderName: senderName,
@@ -131,6 +134,11 @@ class StoryReplyCubit extends Cubit<StoryReplyState> {
         messageBody: body,
         messageType: messageType,
         attachmentUrl: mediaUrl,
+        replyToStoryId: story.id,
+        replyToStoryType: story.storyType.name,
+        replyToStoryMediaUrl: story.imageUrl ?? story.videoUrl,
+        replyToStoryText: storyPreviewText,
+        replyToStoryBgColor: story.backgroundColor,
       );
     } catch (e) {
       debugPrint('⚠️ story reply notification silent error: $e');

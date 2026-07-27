@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/services/fcm_services.dart';
 import '../../../../core/supabase/supabase_provider.dart';
 import '../../local/story_reaction_local_data_source.dart';
 import '../../services/stories_services.dart';
@@ -64,6 +66,10 @@ class StoryReactionCubit extends Cubit<StoryReactionState> {
       );
       await _localDataSource.setCachedReaction(storyId, result);
 
+      if (result != null) {
+        unawaited(_notifyStoryAuthor(reaction: result));
+      }
+
       if (!isClosed) emit(StoryReactionIdle(result));
     } catch (e) {
       debugPrint('Error toggling story reaction: $e');
@@ -73,6 +79,28 @@ class StoryReactionCubit extends Cubit<StoryReactionState> {
         emit(StoryReactionFailed(previous, e.toString()));
         emit(StoryReactionIdle(previous));
       }
+    }
+  }
+
+  Future<void> _notifyStoryAuthor({required String reaction}) async {
+    try {
+      final me =
+          await SupabaseProvider.client
+              .from('users')
+              .select('name, image_url')
+              .eq('id', _currentUserId)
+              .maybeSingle();
+
+      await FcmService.instance.notifyStoryReact(
+        receiverId: storyAuthorId,
+        actorId: _currentUserId,
+        actorName: (me?['name'] as String?) ?? 'Someone',
+        actorImageUrl: (me?['image_url'] as String?) ?? '',
+        storyId: storyId,
+        reactionType: reaction,
+      );
+    } catch (e) {
+      debugPrint('⚠️ story reaction notification silent error: $e');
     }
   }
 
