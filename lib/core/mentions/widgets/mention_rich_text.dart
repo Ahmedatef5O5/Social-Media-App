@@ -1,4 +1,3 @@
-// lib/core/mentions/widgets/mention_rich_text.dart
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:linkify/linkify.dart';
@@ -8,8 +7,10 @@ import '../models/mention_ref.dart';
 
 class MentionRichText extends StatefulWidget {
   final String text;
+  final TextAlign? textAlign;
   final List<MentionRef> mentions;
   final void Function(String userId, String name) onMentionTap;
+  final Future<void> Function(String url)? onLinkTap;
   final TextStyle? style;
   final Color? mentionColor;
   final int? maxLines;
@@ -20,8 +21,10 @@ class MentionRichText extends StatefulWidget {
   const MentionRichText({
     super.key,
     required this.text,
+    this.textAlign,
     required this.mentions,
     required this.onMentionTap,
+    this.onLinkTap,
     this.style,
     this.mentionColor,
     this.maxLines,
@@ -88,7 +91,13 @@ class _MentionRichTextState extends State<MentionRichText> {
                 decoration: TextDecoration.underline,
                 decorationColor: Colors.blue,
               ),
-              recognizer: _recognizerFor(() => _openLink(element.url)),
+              recognizer: _recognizerFor(() async {
+                if (widget.onLinkTap != null) {
+                  await widget.onLinkTap!(element.url);
+                } else {
+                  await _openLink(element.url);
+                }
+              }),
             ),
           );
         } else {
@@ -212,6 +221,7 @@ class _MentionRichTextState extends State<MentionRichText> {
           maxLines: widget.collapsedMaxLines,
           overflow: TextOverflow.ellipsis,
           textDirection: direction,
+          textAlign: widget.textAlign,
         ),
         GestureDetector(
           onTap: () => setState(() => _expanded = true),

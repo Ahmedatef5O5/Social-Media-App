@@ -13,10 +13,23 @@ class MentionAwareTextField extends StatefulWidget {
   final bool enabled;
   final String hintText;
   final ValueChanged<String>? onSubmitted;
+  final ValueChanged<String>? onChanged;
   final List<String>? restrictSuggestionsToUserIds;
   final EdgeInsetsGeometry? contentPadding;
   final InputBorder? border, focusedBorder;
+  final InputDecoration? decoration;
+  final TextStyle? style;
+  final TextStyle? hintStyle;
+  final TextAlign textAlign;
+  final int minLines;
+  final int? maxLines;
+  final int? maxLength;
+  final String? counterText;
+  final TextStyle? counterStyle;
+  final bool filled;
   final Color? fillColor;
+  final TextCapitalization textCapitalization;
+  final bool autofocus;
 
   const MentionAwareTextField({
     super.key,
@@ -25,11 +38,24 @@ class MentionAwareTextField extends StatefulWidget {
     required this.enabled,
     required this.hintText,
     this.onSubmitted,
+    this.onChanged,
     this.restrictSuggestionsToUserIds,
     this.contentPadding,
     this.border,
+    this.decoration,
     this.focusedBorder,
+    this.style,
+    this.hintStyle,
+    this.textAlign = TextAlign.start,
+    this.minLines = 1,
+    this.maxLines = 4,
+    this.maxLength,
+    this.counterText,
+    this.counterStyle,
+    this.filled = true,
     this.fillColor,
+    this.textCapitalization = TextCapitalization.sentences,
+    this.autofocus = false,
   });
 
   @override
@@ -38,6 +64,8 @@ class MentionAwareTextField extends StatefulWidget {
 
 class _MentionAwareTextFieldState extends State<MentionAwareTextField> {
   final GlobalKey _fieldKey = GlobalKey();
+  final ScrollController _scrollController = ScrollController();
+
   final _mentionsService = MentionSearchService();
 
   OverlayEntry? _overlayEntry;
@@ -63,6 +91,7 @@ class _MentionAwareTextFieldState extends State<MentionAwareTextField> {
   void dispose() {
     widget.controller.removeListener(_onTextChanged);
     widget.focusNode.removeListener(_onFocusChanged);
+    _scrollController.dispose();
     _debounce?.cancel();
     _removeOverlay();
     super.dispose();
@@ -130,6 +159,43 @@ class _MentionAwareTextFieldState extends State<MentionAwareTextField> {
 
   void _syncOverlay() => _overlayEntry?.markNeedsBuild();
 
+  ({double lineTop, double lineBottom})? _caretLineGlobalY(
+    RenderBox fieldRenderBox,
+  ) {
+    final text = widget.controller.text;
+    final selection = widget.controller.selection;
+    if (!selection.isValid) return null;
+
+    final cursor = selection.baseOffset.clamp(0, text.length);
+    final effectiveStyle =
+        widget.style ??
+        DefaultTextStyle.of(context).style.copyWith(fontSize: 15);
+    final contentPadding =
+        (widget.contentPadding as EdgeInsets?) ??
+        const EdgeInsets.symmetric(horizontal: 16, vertical: 8);
+
+    final textPainter = TextPainter(
+      text: TextSpan(text: text.substring(0, cursor), style: effectiveStyle),
+      textDirection: TextDirection.ltr,
+    )..layout(maxWidth: fieldRenderBox.size.width - contentPadding.horizontal);
+
+    final caretInText = textPainter.getOffsetForCaret(
+      TextPosition(offset: cursor),
+      Rect.zero,
+    );
+    final scrollOffset =
+        _scrollController.hasClients ? _scrollController.offset : 0.0;
+
+    final localTop = contentPadding.top + caretInText.dy - scrollOffset;
+    final localBottom = localTop + textPainter.preferredLineHeight;
+
+    final globalTop = fieldRenderBox.localToGlobal(Offset(0, localTop)).dy;
+    final globalBottom =
+        fieldRenderBox.localToGlobal(Offset(0, localBottom)).dy;
+
+    return (lineTop: globalTop, lineBottom: globalBottom);
+  }
+
   Widget _buildFollower() {
     final renderBox =
         _fieldKey.currentContext?.findRenderObject() as RenderBox?;
@@ -139,18 +205,45 @@ class _MentionAwareTextFieldState extends State<MentionAwareTextField> {
 
     final fieldSize = renderBox.size;
     final fieldTopLeft = renderBox.localToGlobal(Offset.zero);
-    final screenHeight = MediaQuery.of(context).size.height;
+    final caretLine = _caretLineGlobalY(renderBox);
+    final lineTop = caretLine?.lineTop ?? fieldTopLeft.dy;
+    final lineBottom =
+        caretLine?.lineBottom ?? (fieldTopLeft.dy + fieldSize.height);
+
+    final mediaQuery = MediaQuery.of(context);
+    final screenHeight = mediaQuery.size.height;
+    final bottomInset =
+        mediaQuery.viewInsets.bottom > 0
+            ? mediaQuery.viewInsets.bottom
+            : mediaQuery.padding.bottom;
+
+    const gap = 6.0;
+    const minUsableHeight = 100.0;
+    const preferredMaxHeight = 260.0;
+
+    final spaceBelow = screenHeight - bottomInset - lineBottom - gap;
+    final spaceAbove = lineTop - mediaQuery.padding.top - gap;
+
+    final openBelow = spaceBelow >= minUsableHeight || spaceBelow >= spaceAbove;
+    final availableHeight = openBelow ? spaceBelow : spaceAbove;
+    final maxHeight = availableHeight.clamp(
+      minUsableHeight,
+      preferredMaxHeight,
+    );
 
     return Positioned(
       left: fieldTopLeft.dx,
       width: fieldSize.width,
-      bottom: screenHeight - fieldTopLeft.dy + 8,
+      top: openBelow ? lineBottom + gap : null,
+      bottom: openBelow ? null : screenHeight - lineTop + gap,
       child: TapRegion(
         groupId: _fieldKey,
         child: Material(
           color: Colors.transparent,
           child: _MentionSuggestionsCard(
             width: fieldSize.width,
+            maxHeight: maxHeight,
+            openBelow: openBelow,
             results: _results,
             isLoading: _isSearching,
             onSelect: _selectMention,
@@ -195,40 +288,57 @@ class _MentionAwareTextFieldState extends State<MentionAwareTextField> {
         key: _fieldKey,
         controller: widget.controller,
         focusNode: widget.focusNode,
+        scrollController: _scrollController,
         enabled: widget.enabled,
-        minLines: 1,
-        maxLines: 4,
-        textCapitalization: TextCapitalization.sentences,
+        autofocus: widget.autofocus,
+        minLines: widget.minLines,
+        maxLines: widget.maxLines,
+        maxLength: widget.maxLength,
+        textAlign: widget.textAlign,
+        textCapitalization: widget.textCapitalization,
+        style: widget.style,
         onSubmitted: widget.onSubmitted,
-        decoration: InputDecoration(
-          hintText: widget.hintText,
-          hintStyle: theme.textTheme.bodyMedium?.copyWith(
-            color: AppColors.grey5,
-            fontWeight: FontWeight.w400,
-            fontSize: 15,
-          ),
-          filled: true,
-          fillColor:
-              widget.fillColor ??
-              theme.colorScheme.surfaceContainerHighest.withValues(
-                alpha: 0.4,
-              ),
-          contentPadding:
-              widget.contentPadding ??
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          border:
-              widget.border ??
-              OutlineInputBorder(
-                borderRadius: BorderRadius.circular(25),
-                borderSide: BorderSide.none,
-              ),
-          focusedBorder:
-              widget.focusedBorder ??
-              OutlineInputBorder(
-                borderRadius: BorderRadius.circular(25),
-                borderSide: BorderSide(color: theme.primaryColor, width: 1.6),
-              ),
-        ),
+        onChanged: widget.onChanged,
+        decoration:
+            widget.decoration ??
+            InputDecoration(
+              hintText: widget.hintText,
+              hintStyle:
+                  widget.hintStyle ??
+                  theme.textTheme.bodyMedium?.copyWith(
+                    color: AppColors.grey5,
+                    fontWeight: FontWeight.w400,
+                    fontSize: 15,
+                  ),
+              filled: widget.filled,
+              fillColor:
+                  widget.fillColor ??
+                  (widget.filled
+                      ? theme.colorScheme.surfaceContainerHighest.withValues(
+                        alpha: 0.4,
+                      )
+                      : null),
+              counterText: widget.counterText,
+              counterStyle: widget.counterStyle,
+              contentPadding:
+                  widget.contentPadding ??
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              border:
+                  widget.border ??
+                  OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(25),
+                    borderSide: BorderSide.none,
+                  ),
+              focusedBorder:
+                  widget.focusedBorder ??
+                  OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(25),
+                    borderSide: BorderSide(
+                      color: theme.primaryColor,
+                      width: 1.6,
+                    ),
+                  ),
+            ),
       ),
     );
   }
@@ -236,6 +346,8 @@ class _MentionAwareTextFieldState extends State<MentionAwareTextField> {
 
 class _MentionSuggestionsCard extends StatelessWidget {
   final double width;
+  final double maxHeight;
+  final bool openBelow;
   final List<MentionSuggestion> results;
   final bool isLoading;
   final ValueChanged<MentionSuggestion> onSelect;
@@ -243,6 +355,8 @@ class _MentionSuggestionsCard extends StatelessWidget {
 
   const _MentionSuggestionsCard({
     required this.width,
+    required this.maxHeight,
+    required this.openBelow,
     required this.results,
     required this.isLoading,
     required this.onSelect,
@@ -250,7 +364,6 @@ class _MentionSuggestionsCard extends StatelessWidget {
   });
 
   static const double _rowHeight = 56;
-  static const double _maxVisibleRows = 4.5;
   static const double _compactHeight = 64;
 
   @override
@@ -284,11 +397,9 @@ class _MentionSuggestionsCard extends StatelessWidget {
         label: 'No users found',
       );
     } else {
-      final visibleRows =
-          results.length <= _maxVisibleRows.floor()
-              ? results.length.toDouble()
-              : _maxVisibleRows;
-      bodyHeight = visibleRows * _rowHeight;
+      final maxRows = (maxHeight / _rowHeight).floor().clamp(1, 999);
+      final visibleRows = results.length <= maxRows ? results.length : maxRows;
+      bodyHeight = (visibleRows * _rowHeight).clamp(_rowHeight, maxHeight);
 
       body = ListView.builder(
         key: const ValueKey('mentions_results'),
@@ -341,13 +452,18 @@ class _MentionSuggestionsCard extends StatelessWidget {
     }
 
     return Padding(
-      padding: const EdgeInsets.only(top: 10, left: 6),
+      padding: EdgeInsets.only(
+        top: openBelow ? 0 : 10,
+        bottom: openBelow ? 10 : 0,
+        left: 6,
+      ),
       child: Stack(
         clipBehavior: Clip.none,
         children: [
           Container(
             width: width,
             clipBehavior: Clip.antiAlias,
+            constraints: BoxConstraints(maxHeight: maxHeight),
             decoration: BoxDecoration(
               color: isDark ? theme.colorScheme.surface : Colors.white,
               borderRadius: BorderRadius.circular(18),
@@ -365,7 +481,9 @@ class _MentionSuggestionsCard extends StatelessWidget {
             child: AnimatedSize(
               duration: const Duration(milliseconds: 180),
               curve: Curves.easeOut,
-              alignment: Alignment.topCenter,
+              alignment:
+                  openBelow ? Alignment.topCenter : Alignment.bottomCenter,
+
               child: SizedBox(
                 height: bodyHeight,
                 child: AnimatedSwitcher(
@@ -375,7 +493,12 @@ class _MentionSuggestionsCard extends StatelessWidget {
               ),
             ),
           ),
-          Positioned(top: -10, left: -6, child: _CloseBadge(onTap: onClose)),
+          Positioned(
+            top: openBelow ? -10 : null,
+            bottom: openBelow ? null : -10,
+            left: -6,
+            child: _CloseBadge(onTap: onClose),
+          ),
         ],
       ),
     );
