@@ -201,6 +201,7 @@ class GroupChatServices {
   Future<GroupMessageModel> sendGroupMessage({
     required String groupId,
     required String groupName,
+    String? groupImageUrl,
     required String text,
     String messageType = 'text',
     String? imageUrl,
@@ -302,11 +303,13 @@ class GroupChatServices {
       GroupNotificationDispatcher.instance.notifyMessage(
         groupId: groupId,
         groupName: groupName,
+        groupImageUrl: groupImageUrl ?? '',
         senderId: currentUser.id,
         senderName: senderName,
         senderAvatar: senderAvatar,
         messageBody: text,
         messageType: messageType,
+        mentionedUserIds: mentions.map((m) => m.mentionedUserId).toList(),
       ),
     );
 

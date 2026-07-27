@@ -185,8 +185,9 @@ mixin GroupMediaUploadMixin on Cubit<GroupDetailsState> {
       }
 
       await _services.sendGroupMessage(
-        groupName: group.name,
         groupId: group.id,
+        groupName: group.name,
+        groupImageUrl: group.avatarUrl,
         text: text,
         messageType: messageType,
         imageUrl: uploadedImageUrl,

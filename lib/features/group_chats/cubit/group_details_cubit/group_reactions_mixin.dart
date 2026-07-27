@@ -58,9 +58,11 @@ mixin GroupReactionsMixin on Cubit<GroupDetailsState> {
 
     final currentEmoji = _reactionsCache[messageId]?[currentUserId];
 
+    final isRemoving = currentEmoji == emoji;
+
     _reactionsCache[messageId] ??= {};
 
-    if (currentEmoji == emoji) {
+    if (isRemoving) {
       _reactionsCache[messageId]!.remove(currentUserId);
       _reactionsCreatedAtCache[messageId]?.remove(currentUserId);
     } else {
@@ -85,6 +87,16 @@ mixin GroupReactionsMixin on Cubit<GroupDetailsState> {
         groupId: group.id,
         currentEmoji: currentEmoji,
       );
+
+      if (!isRemoving) {
+        unawaited(
+          FcmService.instance.notifyMessageReact(
+            messageId: messageId,
+            isGroup: true,
+            reactionType: emoji,
+          ),
+        );
+      }
     } catch (e) {
       if (currentEmoji == null) {
         _reactionsCache[messageId]!.remove(currentUserId);
