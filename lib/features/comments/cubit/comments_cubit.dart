@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:dio/dio.dart' as dio_pkg;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -12,6 +11,7 @@ import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/utilities/supabase_constants.dart';
 import '../../auth/data/models/user_data.dart';
 import '../../notifications/repository/notifications_repository.dart';
+import '../../../core/services/fcm_services.dart';
 import '../events/comment_event_bus.dart';
 import '../events/comment_events.dart';
 import '../model/comment_attachment_draft.dart';
@@ -112,6 +112,26 @@ class CommentsCubit extends Cubit<CommentsState> {
     } catch (e) {
       debugPrint('Realtime comments sync error: $e');
     }
+  }
+
+  /// Walks the loaded comment tree to find who authored [commentId] —
+  /// used to route a reply's push notification to the right person (the
+  /// parent comment's author, not necessarily the post author).
+  String? _findCommentAuthorId(String commentId) {
+    String? search(CommentModel node) {
+      if (node.id == commentId) return node.authorId;
+      for (final reply in node.replies) {
+        final found = search(reply);
+        if (found != null) return found;
+      }
+      return null;
+    }
+
+    for (final c in comments) {
+      final found = search(c);
+      if (found != null) return found;
+    }
+    return null;
   }
 
   bool _belongsToLoadedComments(String commentId) {
@@ -422,6 +442,51 @@ class CommentsCubit extends Cubit<CommentsState> {
         );
       }
 
+      final String previewText =
+          trimmedText.isEmpty ? '📎 Attachment' : trimmedText;
+      if (resolvedParentId == null) {
+        if (post.authorId != user.id) {
+          unawaited(
+            FcmService.instance.notifyPostComment(
+              receiverId: post.authorId,
+              actorId: user.id,
+              actorName: currentUserData?.name ?? 'Someone',
+              actorImageUrl: currentUserData?.imageUrl ?? '',
+              postId: post.id,
+              commentText: previewText,
+            ),
+          );
+        }
+      } else {
+        final parentAuthorId = _findCommentAuthorId(resolvedParentId);
+        if (parentAuthorId != null && parentAuthorId != user.id) {
+          unawaited(
+            FcmService.instance.notifyCommentReply(
+              receiverId: parentAuthorId,
+              actorId: user.id,
+              actorName: currentUserData?.name ?? 'Someone',
+              actorImageUrl: currentUserData?.imageUrl ?? '',
+              postId: post.id,
+              commentId: realId,
+              commentText: previewText,
+            ),
+          );
+        }
+      }
+
+      for (final mention in mentions) {
+        unawaited(
+          FcmService.instance.notifyMention(
+            receiverId: mention.mentionedUserId,
+            actorId: user.id,
+            actorName: currentUserData?.name ?? 'Someone',
+            actorImageUrl: currentUserData?.imageUrl ?? '',
+            context: 'post',
+            postId: post.id,
+          ),
+        );
+      }
+
       emit(
         CommentTempIdResolved(postId: post.id, tempId: tempId, realId: realId),
       );
@@ -565,6 +630,17 @@ class CommentsCubit extends Cubit<CommentsState> {
           likerName: currentUserData?.name ?? 'unKnown',
           likerImageUrl: currentUserData?.imageUrl ?? '',
           postId: postId,
+        );
+        unawaited(
+          FcmService.instance.notifyCommentReact(
+            receiverId: commentOwnerId,
+            actorId: userId,
+            actorName: currentUserData?.name ?? 'Someone',
+            actorImageUrl: currentUserData?.imageUrl ?? '',
+            postId: postId,
+            commentId: resolvedCommentId,
+            reactionType: emoji,
+          ),
         );
       }
     } catch (e) {
