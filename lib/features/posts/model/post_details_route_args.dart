@@ -7,6 +7,6 @@ class PostDetailsRouteArgs {
 
   const PostDetailsRouteArgs({
     required this.post,
-    this.initialActiveMode = PostDetailsActiveMode.none,
+    this.initialActiveMode = PostDetailsActiveMode.comments,
   });
 }

@@ -280,7 +280,7 @@ class AppRouter {
           initialActiveMode = args.initialActiveMode;
         } else {
           post = args as PostModel;
-          initialActiveMode = PostDetailsActiveMode.none;
+          initialActiveMode = PostDetailsActiveMode.comments;
         }
         return MaterialPageRoute(
           builder:

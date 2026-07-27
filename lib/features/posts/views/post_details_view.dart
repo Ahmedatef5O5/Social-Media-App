@@ -9,6 +9,7 @@ import '../../../core/cache/repository/media_cache_repository.dart';
 import '../../../core/supabase/supabase_provider.dart';
 import '../../comments/helper/editing_comment_banner.dart';
 import '../../comments/helper/replying_to_banner.dart';
+import '../../comments/model/comment_sort_option.dart';
 import '../../home/cubits/home_cubit/home_cubit.dart';
 import '../../reels/widgets/shared_reel_preview_card.dart';
 import '../cubit/posts_cubit/posts_cubit.dart';
@@ -40,7 +41,8 @@ class PostDetailsView extends StatefulWidget {
 
 class _PostDetailsViewState extends State<PostDetailsView> {
   late final CommentsCubit _commentsCubit;
-
+  final ScrollController _mainScrollController = ScrollController();
+  final GlobalKey _commentsTopKey = GlobalKey();
   late PostDetailsActiveMode _activeMode;
   bool _commentsLoaded = false;
 
@@ -69,6 +71,7 @@ class _PostDetailsViewState extends State<PostDetailsView> {
   @override
   void dispose() {
     _commentsCubit.close();
+    _mainScrollController.dispose();
     super.dispose();
   }
 
@@ -125,6 +128,31 @@ class _PostDetailsViewState extends State<PostDetailsView> {
           if (state is CommentTempIdResolved) {
             _cancelReply();
           }
+          if (state is CommentOptimisticAdded &&
+              _activeMode == PostDetailsActiveMode.comments) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (_mainScrollController.hasClients) {
+                final cubit = context.read<CommentsCubit>();
+
+                if (cubit.currentSort == CommentSortOption.oldest) {
+                  _mainScrollController.animateTo(
+                    _mainScrollController.position.maxScrollExtent,
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeInOut,
+                  );
+                } else {
+                  if (_commentsTopKey.currentContext != null) {
+                    Scrollable.ensureVisible(
+                      _commentsTopKey.currentContext!,
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.easeInOut,
+                      alignment: 0.0,
+                    );
+                  }
+                }
+              }
+            });
+          }
         },
         child: Scaffold(
           backgroundColor: colorScheme.surface,
@@ -168,6 +196,7 @@ class _PostDetailsViewState extends State<PostDetailsView> {
                     Expanded(
                       child: CustomScrollView(
                         physics: const ClampingScrollPhysics(),
+                        controller: _mainScrollController,
                         slivers: [
                           SliverToBoxAdapter(
                             child: Padding(
@@ -227,6 +256,7 @@ class _PostDetailsViewState extends State<PostDetailsView> {
 
                                   const Gap(16),
                                   Divider(
+                                    key: _commentsTopKey,
                                     color: colorScheme.outlineVariant
                                         .withValues(alpha: 0.3),
                                     thickness: 1,

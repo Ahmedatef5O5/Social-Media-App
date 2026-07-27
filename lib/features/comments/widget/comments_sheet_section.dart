@@ -55,10 +55,16 @@ class _CommentsSheetSectionState extends State<CommentsSheetSection> {
     });
   }
 
-  bool _isNearBottom([double threshold = 120]) {
-    if (!_scrollController.hasClients) return false;
-    final pos = _scrollController.position;
-    return pos.maxScrollExtent - pos.pixels < threshold;
+  void _scrollToTop() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scrollController.hasClients) {
+        _scrollController.animateTo(
+          0.0,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
   }
 
   void _startReply(String commentId, String authorName) {
@@ -124,8 +130,12 @@ class _CommentsSheetSectionState extends State<CommentsSheetSection> {
     return BlocListener<CommentsCubit, CommentsState>(
       listener: (context, state) {
         if (state is CommentOptimisticAdded) {
-          if (_isNearBottom()) {
+          final cubit = context.read<CommentsCubit>();
+
+          if (cubit.currentSort == CommentSortOption.oldest) {
             _scrollToBottom();
+          } else {
+            _scrollToTop();
           }
         }
         if (state is CommentTempIdResolved) {
@@ -208,8 +218,8 @@ class _CommentsSheetSectionState extends State<CommentsSheetSection> {
                                   current is CommentsListLoading ||
                                   current is CommentsListLoaded ||
                                   current is CommentOptimisticAdded ||
-                                  current is CommentTempIdResolved || 
-                                  current is CommentsUiChanged ,
+                                  current is CommentTempIdResolved ||
+                                  current is CommentsUiChanged,
 
                           builder: (context, state) {
                             final cubit = context.read<CommentsCubit>();
