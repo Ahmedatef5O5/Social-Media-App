@@ -151,14 +151,18 @@ class _HomeViewState extends State<HomeView> {
 
               builder: (context, postsState) {
                 return BlocBuilder<StoriesCubit, StoriesState>(
+                  buildWhen:
+                      (previous, current) =>
+                          current is StoriesLoaded ||
+                          (current is StoriesLoading &&
+                              previous is! StoriesLoaded),
                   builder: (context, storiesState) {
                     return CustomTabWrapper(
                       isLoading:
                           homeState is HomeInitial ||
                           homeState is UserDataLoading ||
                           postsState is PostsInitial ||
-                          postsState is PostsLoading ||
-                          storiesState is StoriesLoading,
+                          postsState is PostsLoading,
                       errorMessage:
                           homeState is UserDataLoadError
                               ? homeState.message
@@ -199,10 +203,11 @@ class _HomeViewState extends State<HomeView> {
                                     SliverToBoxAdapter(
                                       child: PostWritingCard(),
                                     ),
-                                    const SliverGap(20),
+                                    const SliverGap(15),
                                     SliverToBoxAdapter(
                                       child: StoriesListSection(),
                                     ),
+                                    const SliverGap(10),
                                     const HomeFeedWithReels(),
                                     SliverGap(
                                       MediaQuery.of(context).padding.bottom +
