@@ -66,8 +66,9 @@ mixin ChatReactionsMixin on Cubit<ChatDetailsState> {
     final conversationId = ids.join('_');
 
     final currentEmoji = _reactionsCache[messageId]?[currentUserId];
+    final isRemoving = currentEmoji == emoji;
     _reactionsCache[messageId] ??= {};
-    if (currentEmoji == emoji) {
+    if (isRemoving) {
       _reactionsCache[messageId]!.remove(currentUserId);
     } else {
       _reactionsCache[messageId]![currentUserId] = emoji;
@@ -80,8 +81,18 @@ mixin ChatReactionsMixin on Cubit<ChatDetailsState> {
         conversationId: conversationId,
         emoji: emoji,
       );
+
+      if (!isRemoving) {
+        unawaited(
+          FcmService.instance.notifyMessageReact(
+            messageId: messageId,
+            isGroup: false,
+            reactionType: emoji,
+          ),
+        );
+      }
     } catch (e) {
-      if (currentEmoji == emoji) {
+      if (isRemoving) {
         _reactionsCache[messageId]!.remove(currentUserId);
         _reactionsCreatedAtCache[messageId]?.remove(currentUserId);
       } else {

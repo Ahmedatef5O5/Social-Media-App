@@ -17,6 +17,8 @@ abstract class SupabaseConstants {
   static const String comments = 'comments';
   static const String savedPosts = 'saved_posts';
   static const String postShares = 'post_shares';
+  static const String postMentions = 'post_mentions';
+  static const String storyMentions = 'story_mentions';
 
   // ── Chat Feature ──
   static const String messages = 'messages';
@@ -216,6 +218,15 @@ abstract class StoryReactionColumns {
   static const String createdAt = 'created_at';
 }
 
+abstract class StoryMentionColumns {
+  static const String id = 'id';
+  static const String storyId = 'story_id';
+  static const String mentionedUserId = 'mentioned_user_id';
+  static const String startIndex = 'start_index';
+  static const String endIndex = 'end_index';
+  static const String createdAt = 'created_at';
+}
+
 // subClass for posts column table
 abstract class PostColumns {
   static const String id = 'id';
@@ -247,6 +258,15 @@ abstract class PostShareColumns {
   static const String id = 'id';
   static const String postId = 'post_id';
   static const String userId = 'user_id';
+  static const String createdAt = 'created_at';
+}
+
+abstract class PostMentionColumns {
+  static const String id = 'id';
+  static const String postId = 'post_id';
+  static const String mentionedUserId = 'mentioned_user_id';
+  static const String startIndex = 'start_index';
+  static const String endIndex = 'end_index';
   static const String createdAt = 'created_at';
 }
 

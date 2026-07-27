@@ -605,7 +605,7 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
       case 'voice':
         return '🎤 Voice message';
       case 'file':
-        return '📎 ${msg.fileName ?? 'File'}';
+        return '📄 ${msg.fileName ?? 'File'}';
       default:
         final text = msg.caption ?? msg.text;
         return text.length > 60 ? '${text.substring(0, 60)}...' : text;
