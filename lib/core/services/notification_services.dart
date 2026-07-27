@@ -5,12 +5,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:social_media_app/core/router/app_routes.dart';
 import 'package:social_media_app/core/services/active_screen_tracker.dart';
+import 'package:social_media_app/core/toast/app_toast.dart';
 import 'package:social_media_app/features/single_chats/models/chat_user_model.dart';
+import 'package:social_media_app/features/stories/cubit/stories_cubit/stories_cubit.dart';
 import '../../features/group_calls/models/group_call_model.dart';
 import '../../features/group_calls/views/incoming_group_call_screen.dart';
+import '../../features/group_chats/services/group_chat_services.dart';
 import '../../features/notifications/views/notification_view.dart';
+import '../../features/posts/model/post_details_route_args.dart';
 import '../../features/posts/services/posts_services.dart';
+import '../../features/posts/views/post_details_view.dart';
 import '../../features/settings/repository/settings_repository.dart';
+import '../../features/stories/model/story_model.dart';
 import '../supabase/supabase_provider.dart';
 import 'notification_avatar_builder.dart';
 
@@ -41,21 +47,18 @@ class NotificationService {
   final FirebaseMessaging _fcm = FirebaseMessaging.instance;
   bool _initialized = false;
 
-  /// notificationType values that represent a "social event" (friend graph,
-  /// or an engagement on a post/story) rather than a chat message or a call.
-  /// Kept as a single source of truth so the foreground listener and the
-  /// terminated/background handler never disagree about how to render or
-  /// route a given type — that mismatch was the root cause of the group-call
-  /// bug fixed alongside this change.
   static const Set<String> _socialNotificationTypes = {
     'friend_request',
     'follow',
-    'post_reaction',
+    'post_react',
     'post_comment',
-    'post_mention',
-    'post_share',
+    'post_reshare',
     'post_save',
-    'story_reaction',
+    'mention',
+    'comment_reply',
+    'comment_react',
+    'story_react',
+    'message_react',
   };
 
   static bool isSocialType(String type) =>
@@ -186,6 +189,23 @@ class NotificationService {
         return;
       }
 
+      if (type == 'message_react') {
+        final isGroup = message.data['isGroup'] == 'true';
+
+        if (isGroup) {
+          final groupId = message.data['groupId'] as String?;
+          if (groupId != null && ActiveScreenTracker.isViewingGroup(groupId)) {
+            return;
+          }
+        } else {
+          final actorId = message.data['actorId'] as String?;
+          if (actorId != null &&
+              ActiveScreenTracker.isViewingChatWith(actorId)) {
+            return;
+          }
+        }
+      }
+
       if (isSocialType(type)) {
         await showSocialNotificationFromMessage(message);
         return;
@@ -233,10 +253,7 @@ class NotificationService {
   }) async {
     Uint8List profileBitmap;
     try {
-      profileBitmap = await _avatarBuilder.getAvatarBitmap(
-        callerId,
-        callerAvatar,
-      );
+      profileBitmap = await _avatarBuilder.getAvatarBitmap(callerAvatar);
     } catch (_) {
       profileBitmap = await _avatarBuilder.defaultBitmap();
     }
@@ -450,7 +467,6 @@ class NotificationService {
     if (stored.length > 7) stored.removeAt(0);
 
     final Uint8List senderBitmap = await _avatarBuilder.getAvatarBitmap(
-      conversationId,
       avatarUrl,
     );
 
@@ -463,33 +479,30 @@ class NotificationService {
             : senderBitmap;
 
     final ByteArrayAndroidIcon headerIcon = ByteArrayAndroidIcon(headerBitmap);
-
     final ByteArrayAndroidIcon senderIcon = ByteArrayAndroidIcon(senderBitmap);
 
-    // Profile bitmap is typically the sender's avatar, so we request it from the builder.
-    // final Uint8List profileBitmap = await _avatarBuilder.getAvatarBitmap(conversationId, avatarUrl);
+    const Person me = Person(name: 'Me', important: true);
 
-    final Person person = Person(
-      name: conversationTitle,
-      icon: headerIcon,
-      important: true,
-    );
+    final Person remotePerson =
+        isGroup
+            ? Person(name: conversationTitle, icon: headerIcon)
+            : Person(name: senderName, icon: senderIcon);
 
     final List<Message> styleMessages =
         stored
             .map(
               (m) => Message(
-                m.text,
+                isGroup ? '${m.senderName}: ${m.text}' : m.text,
                 DateTime.fromMillisecondsSinceEpoch(m.timestamp),
-                Person(name: m.senderName, icon: senderIcon),
+                remotePerson,
               ),
             )
             .toList();
 
     final messagingStyle = MessagingStyleInformation(
-      person,
-      conversationTitle: isGroup ? conversationTitle : null,
-      groupConversation: isGroup,
+      me,
+      conversationTitle: null,
+      groupConversation: false,
       messages: styleMessages,
     );
 
@@ -520,12 +533,6 @@ class NotificationService {
     );
   }
 
-  /// Handles every "social event" type: friend_request, follow,
-  /// post_reaction, post_comment, post_mention, post_share, post_save,
-  /// story_reaction. Unlike [showNotificationFromMessage] this is a plain
-  /// single notification (no MessagingStyle thread) since these aren't
-  /// conversations. `title`/`body` come pre-built from the Edge Function,
-  /// with a local fallback in case they're missing.
   Future<void> showSocialNotificationFromMessage(RemoteMessage message) async {
     final data = message.data;
     final String type = data['notificationType'] ?? 'general';
@@ -542,7 +549,7 @@ class NotificationService {
         data['requesterImageUrl'] ??
         data['followerImageUrl'] ??
         '';
-    final String referenceId = data['postId'] ?? data['storyId'] ?? '';
+    final String referenceId = _resolveReferenceId(data);
 
     final String title =
         (data['title'] as String?)?.isNotEmpty == true
@@ -555,10 +562,7 @@ class NotificationService {
 
     Uint8List avatarBitmap;
     try {
-      avatarBitmap = await _avatarBuilder.getAvatarBitmap(
-        actorId,
-        actorImageUrl,
-      );
+      avatarBitmap = await _avatarBuilder.getAvatarBitmap(actorImageUrl);
     } catch (_) {
       avatarBitmap = await _avatarBuilder.defaultBitmap();
     }
@@ -576,13 +580,26 @@ class NotificationService {
       color: const Color(0xFF2196F3),
     );
 
+    final String mentionContext = data['context'] ?? '';
+
     await _localNotifications.show(
       '$type|$referenceId|$actorId'.hashCode,
       title,
       body,
       NotificationDetails(android: androidDetails),
-      payload: 'social|$type|$referenceId|$actorId|$actorName|$actorImageUrl',
+      payload:
+          type == 'message_react'
+              ? 'message_react|${data['isGroup']}|${data['groupId']}|${data['groupName']}|${data['actorId']}|${data['actorName']}|${data['actorImageUrl']}'
+              : 'social|$type|$referenceId|$actorId|$actorName|$actorImageUrl|$mentionContext',
     );
+  }
+
+  static String _resolveReferenceId(Map<String, dynamic> data) {
+    final postId = data['postId'] as String?;
+    if (postId != null && postId.isNotEmpty) return postId;
+    final storyId = data['storyId'] as String?;
+    if (storyId != null && storyId.isNotEmpty) return storyId;
+    return '';
   }
 
   String _buildStyleBody(String type, String body) {
@@ -615,6 +632,29 @@ class NotificationService {
   static void _handleTap(NotificationResponse response) {
     if (response.payload == null) return;
     final payload = response.payload!;
+
+    if (payload.startsWith('message_react|')) {
+      final parts = payload.split('|');
+      if (parts.length >= 7) {
+        final isGroup = parts[1] == 'true';
+        if (isGroup) {
+          _openGroupChat(parts[2], parts[3]);
+        } else {
+          final user = ChatUserModel(
+            id: parts[4],
+            name: parts[5],
+            imageUrl: parts[6].isEmpty ? null : parts[6],
+          );
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            navigatorKey.currentState?.pushNamed(
+              AppRoutes.chatDetailsViewRoute,
+              arguments: user,
+            );
+          });
+        }
+      }
+      return;
+    }
 
     if (payload.startsWith('group_call|')) {
       final parts = payload.split('|');
@@ -683,13 +723,17 @@ class NotificationService {
       return;
     }
 
-    // social|<type>|<postOrStoryId>|<actorId>|<actorName>|<actorImageUrl>
     if (payload.startsWith('social|')) {
       final parts = payload.split('|');
       if (parts.length >= 2) {
         final type = parts[1];
         final referenceId = parts.length > 2 ? parts[2] : '';
-        _routeSocialEvent(type: type, referenceId: referenceId);
+        final commentContext = parts.length > 6 ? parts[6] : null;
+        _routeSocialEvent(
+          type: type,
+          referenceId: referenceId,
+          commentContext: commentContext,
+        );
       }
       return;
     }
@@ -738,18 +782,42 @@ class NotificationService {
   static void _navigateFromMessage(Map<String, dynamic> data) {
     final notifType = data['notificationType'] as String? ?? 'chat';
 
+    if (notifType == 'message_react') {
+      final isGroup = data['isGroup'] == 'true';
+      if (isGroup) {
+        _openGroupChat(
+          data['groupId'] as String? ?? '',
+          data['groupName'] as String? ?? 'Group',
+        );
+      } else {
+        final user = ChatUserModel(
+          id: data['actorId'] ?? '',
+          name: data['actorName'] ?? '',
+          imageUrl: data['actorImageUrl'],
+        );
+        navigatorKey.currentState?.pushNamed(
+          AppRoutes.chatDetailsViewRoute,
+          arguments: user,
+        );
+      }
+      return;
+    }
+
     if (notifType == 'group_message') {
-      navigatorKey.currentState?.pushNamed(
-        AppRoutes.groupChatRoute,
-        arguments: {'groupId': data['groupId'], 'groupName': data['groupName']},
+      _openGroupChat(
+        data['groupId'] as String? ?? '',
+        data['groupName'] as String? ?? 'Group',
       );
       return;
     }
 
     if (isSocialType(notifType)) {
-      final referenceId =
-          (data['postId'] as String?) ?? (data['storyId'] as String?) ?? '';
-      _routeSocialEvent(type: notifType, referenceId: referenceId);
+      final referenceId = _resolveReferenceId(data);
+      _routeSocialEvent(
+        type: notifType,
+        referenceId: referenceId,
+        commentContext: data['context'] as String?,
+      );
       return;
     }
 
@@ -764,45 +832,63 @@ class NotificationService {
     );
   }
 
-  /// Single routing decision for every social/post/story notification type,
-  /// shared by both the tap-payload path (_handleTap) and the data-map path
-  /// (_navigateFromMessage) so they can never disagree on where a tap leads.
-  ///
-  /// Post engagements (reaction/comment/mention/share/save) open
-  /// PostDetailsView. To satisfy "closing PostDetailsView must return to
-  /// HomeView Tab 0" regardless of where the user was when they tapped the
-  /// notification, we first collapse the navigation stack down to a fresh
-  /// Home route, then push PostDetailsView on top of it — so popping it
-  /// always reveals Home/Tab 0, with no changes needed inside
-  /// PostDetailsView or the bottom nav bar itself.
-  ///
-  /// friend_request / follow / story_reaction open the Notifications view,
-  /// same as the bell icon on the Home header. story_reaction is routed
-  /// here rather than to a story viewer because a tapped-from-notification
-  /// story may have already expired, and reconstructing the story viewer's
-  /// required state (StoriesCubit, group/story indices) isn't safely
-  /// possible from a bare storyId.
   static void _routeSocialEvent({
     required String type,
     required String referenceId,
+    String? commentContext,
   }) {
     const postEngagementTypes = {
-      'post_reaction',
+      'post_react',
       'post_comment',
-      'post_mention',
-      'post_share',
+      'post_reshare',
       'post_save',
+      'comment_reply',
+      'comment_react',
     };
 
+    if (type == 'mention') {
+      if (commentContext == 'story' && referenceId.isNotEmpty) {
+        _openMentionedStory(referenceId);
+      } else if (referenceId.isNotEmpty) {
+        _openPostDetails(referenceId, PostDetailsActiveMode.comments);
+      } else {
+        _openNotificationsView();
+      }
+      return;
+    }
+
+    if (type == 'story_react' && referenceId.isNotEmpty) {
+      _openMyStory(referenceId);
+      return;
+    }
+
     if (postEngagementTypes.contains(type) && referenceId.isNotEmpty) {
-      _openPostDetails(referenceId);
+      _openPostDetails(referenceId, _activeModeForType(type));
       return;
     }
 
     _openNotificationsView();
   }
 
-  static Future<void> _openPostDetails(String postId) async {
+  static PostDetailsActiveMode _activeModeForType(String type) {
+    switch (type) {
+      case 'post_react':
+        return PostDetailsActiveMode.reactions;
+      case 'post_comment':
+      case 'comment_reply':
+      case 'comment_react':
+        return PostDetailsActiveMode.comments;
+      case 'post_reshare':
+      case 'post_save':
+      default:
+        return PostDetailsActiveMode.none;
+    }
+  }
+
+  static Future<void> _openPostDetails(
+    String postId, [
+    PostDetailsActiveMode initialActiveMode = PostDetailsActiveMode.none,
+  ]) async {
     final post = await PostsServices().fetchPostById(postId);
     if (post == null) return; // post was deleted or unavailable — no-op
 
@@ -813,7 +899,10 @@ class NotificationService {
       );
       navigatorKey.currentState?.pushNamed(
         AppRoutes.postDetailsViewRoute,
-        arguments: post,
+        arguments: PostDetailsRouteArgs(
+          post: post,
+          initialActiveMode: initialActiveMode,
+        ),
       );
     });
   }
@@ -824,5 +913,122 @@ class NotificationService {
         MaterialPageRoute(builder: (_) => const NotificationsView()),
       );
     });
+  }
+
+  static Future<void> _openMyStory(String storyId) async {
+    final storiesCubit = StoriesCubit();
+    try {
+      await storiesCubit.fetchStories();
+      final myUserId = SupabaseProvider.idOrNull;
+      final myStories =
+          storiesCubit.cachedStories
+              .where((s) => s.authorId == myUserId)
+              .toList();
+      final storyIndex = myStories.indexWhere((s) => s.id == storyId);
+
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        navigatorKey.currentState?.pushNamedAndRemoveUntil(
+          AppRoutes.homeRoute,
+          (route) => false,
+        );
+
+        final listPopped = navigatorKey.currentState?.pushNamed(
+          AppRoutes.myStoriesListViewRoute,
+          arguments: {'storiesCubit': storiesCubit, 'myStories': myStories},
+        );
+
+        if (storyIndex == -1) {
+          AppToast.warning('This story is no longer available');
+        } else {
+          navigatorKey.currentState?.pushNamed(
+            AppRoutes.storyDisplayViewRoute,
+            arguments: {
+              'storiesCubit': storiesCubit,
+              'allUserGroups': [myStories],
+              'initialGroupIndex': 0,
+              'initialStoryIndex': storyIndex,
+            },
+          );
+        }
+
+        await listPopped;
+        await storiesCubit.close();
+      });
+    } catch (e) {
+      debugPrint('Error opening story from notification: $e');
+      AppToast.error('Failed to open story');
+      await storiesCubit.close();
+    }
+  }
+
+  static Future<void> _openMentionedStory(String storyId) async {
+    final storiesCubit = StoriesCubit();
+    try {
+      await storiesCubit.fetchStories();
+      final match = storiesCubit.cachedStories.where((s) => s.id == storyId);
+      final authorId = match.isNotEmpty ? match.first.authorId : null;
+      final authorGroup =
+          authorId == null
+              ? <StoryModel>[]
+              : storiesCubit.cachedStories
+                  .where((s) => s.authorId == authorId)
+                  .toList();
+      final storyIndex = authorGroup.indexWhere((s) => s.id == storyId);
+
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        navigatorKey.currentState?.pushNamedAndRemoveUntil(
+          AppRoutes.homeRoute,
+          (route) => false,
+        );
+
+        if (storyIndex == -1) {
+          AppToast.warning('This story is no longer available');
+          await storiesCubit.close();
+          return;
+        }
+
+        final popped = navigatorKey.currentState?.pushNamed(
+          AppRoutes.storyDisplayViewRoute,
+          arguments: {
+            'storiesCubit': storiesCubit,
+            'allUserGroups': [authorGroup],
+            'initialGroupIndex': 0,
+            'initialStoryIndex': storyIndex,
+          },
+        );
+        await popped;
+        await storiesCubit.close();
+      });
+    } catch (e) {
+      debugPrint('Error opening mentioned story from notification: $e');
+      AppToast.error('Failed to open story');
+      await storiesCubit.close();
+    }
+  }
+
+  static Future<void> _openGroupChat(String groupId, String groupName) async {
+    if (groupId.isEmpty) {
+      _openNotificationsView();
+      return;
+    }
+    try {
+      final groups = await GroupChatServices().getMyGroups();
+      final matches = groups.where((g) => g.id == groupId);
+      final group = matches.isNotEmpty ? matches.first : null;
+
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (group == null) {
+          AppToast.warning('This group is no longer available');
+          return;
+        }
+        navigatorKey.currentState?.pushNamed(
+          AppRoutes.groupChatRoute,
+          arguments: group,
+        );
+      });
+    } catch (e) {
+      debugPrint('Error opening group chat from notification: $e');
+      AppToast.error('Failed to open group chat');
+    }
   }
 }

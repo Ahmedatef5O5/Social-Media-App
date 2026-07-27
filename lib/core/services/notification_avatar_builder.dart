@@ -5,28 +5,28 @@ import 'package:flutter/services.dart';
 
 class NotificationAvatarBuilder {
   final Map<String, Uint8List> _avatarCache = {};
+  static const _defaultCacheKey = '__default__';
 
-  Future<Uint8List> getAvatarBitmap(
-    String conversationId,
-    String? avatarUrl,
-  ) async {
-    if (_avatarCache.containsKey(conversationId)) {
-      return _avatarCache[conversationId]!;
+  Future<Uint8List> getAvatarBitmap(String? avatarUrl) async {
+    final cacheKey =
+        (avatarUrl == null || avatarUrl.isEmpty) ? _defaultCacheKey : avatarUrl;
+    if (_avatarCache.containsKey(cacheKey)) {
+      return _avatarCache[cacheKey]!;
     }
     if (avatarUrl == null || avatarUrl.isEmpty) {
       final def = await defaultBitmap();
-      _avatarCache[conversationId] = def;
+      _avatarCache[cacheKey] = def;
       return def;
     }
 
     final bytes = await fetchBitmap(avatarUrl);
     if (bytes != null) {
-      _avatarCache[conversationId] = bytes;
+      _avatarCache[cacheKey] = bytes;
       return bytes;
     }
 
     final defFallback = await defaultBitmap();
-    _avatarCache[conversationId] = defFallback;
+    _avatarCache[cacheKey] = defFallback;
     return defFallback;
   }
 
@@ -75,7 +75,8 @@ class NotificationAvatarBuilder {
         options: dio_pkg.Options(responseType: dio_pkg.ResponseType.bytes),
       );
       if (response.data == null) return null;
-      return Uint8List.fromList(response.data!);
+      final raw = Uint8List.fromList(response.data!);
+      return await _cropToCircle(raw);
     } catch (_) {
       return null;
     }
@@ -86,7 +87,7 @@ class NotificationAvatarBuilder {
       final data = await rootBundle.load(
         'assets/images/no_profile_picture.png',
       );
-      return data.buffer.asUint8List();
+      return await _cropToCircle(data.buffer.asUint8List());
     } catch (_) {
       return Uint8List.fromList([
         0x89,
@@ -161,5 +162,43 @@ class NotificationAvatarBuilder {
         0x82,
       ]);
     }
+  }
+
+  Future<Uint8List> _cropToCircle(
+    Uint8List sourceBytes, {
+    int size = 160,
+  }) async {
+    final codec = await ui.instantiateImageCodec(sourceBytes);
+    final frame = await codec.getNextFrame();
+    final image = frame.image;
+
+    final recorder = ui.PictureRecorder();
+    final canvas = Canvas(recorder);
+    final outputSize = size.toDouble();
+
+    canvas.clipPath(
+      Path()..addOval(Rect.fromLTWH(0, 0, outputSize, outputSize)),
+    );
+
+    final srcSize = image.width < image.height ? image.width : image.height;
+    final srcRect = Rect.fromLTWH(
+      (image.width - srcSize) / 2,
+      (image.height - srcSize) / 2,
+      srcSize.toDouble(),
+      srcSize.toDouble(),
+    );
+    canvas.drawImageRect(
+      image,
+      srcRect,
+      Rect.fromLTWH(0, 0, outputSize, outputSize),
+      Paint()..filterQuality = FilterQuality.high,
+    );
+
+    final picture = recorder.endRecording();
+    final circularImage = await picture.toImage(size, size);
+    final byteData = await circularImage.toByteData(
+      format: ui.ImageByteFormat.png,
+    );
+    return byteData!.buffer.asUint8List();
   }
 }
