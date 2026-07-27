@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import '../../../core/cache/utils/cloudinary_url_extensions.dart';
 import '../../../core/helpers/formatted_date.dart';
+import '../../../core/mentions/widgets/mention_rich_text.dart';
 import '../../../core/themes/app_colors.dart';
 import '../../../core/widgets/cached_cloudinary_image.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
@@ -221,19 +222,29 @@ class MyStoryTile extends StatelessWidget {
         );
 
       case StoryType.text:
+        Color bgColor = AppColors.grey6;
+        if (story.backgroundColor != null) {
+          String hex = story.backgroundColor!
+              .replaceAll('#', '')
+              .replaceAll('Color(0x', '')
+              .replaceAll(')', '');
+          final parsed = int.tryParse(hex, radix: 16);
+          if (parsed != null) bgColor = Color(parsed);
+        }
+
         return Container(
-          color:
-              story.backgroundColor != null
-                  ? Color(int.parse(story.backgroundColor!, radix: 16))
-                  : AppColors.grey6,
+          color: bgColor,
           alignment: Alignment.center,
-          padding: const EdgeInsets.all(4),
-          child: Text(
-            story.contentText ?? '',
-            maxLines: 3,
-            overflow: TextOverflow.ellipsis,
-            textAlign: TextAlign.center,
-            style: const TextStyle(color: Colors.white, fontSize: 8),
+          padding: const EdgeInsets.all(6),
+          child: IgnorePointer(
+            child: MentionRichText(
+              text: story.contentText ?? '',
+              mentions: story.mentions,
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: Colors.white, fontSize: 6),
+              onMentionTap: (userId, name) {},
+              onLinkTap: null,
+            ),
           ),
         );
     }

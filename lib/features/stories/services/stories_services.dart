@@ -9,6 +9,7 @@ import '../../../core/services/supabase_database_services.dart';
 import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/utilities/supabase_constants.dart';
 import '../../social_graph/services/connections_service.dart';
+import '../../../core/mentions/models/mention_ref.dart';
 import '../model/story_model.dart';
 import '../model/story_viewer_model.dart';
 
@@ -93,7 +94,9 @@ class StoriesServices {
       return await supabaseServices.fetchRows(
         table: SupabaseConstants.stories,
         columns:
-            '*,${SupabaseConstants.users}!stories_author_id_fkey'
+            '*,'
+            'story_mentions(${StoryMentionColumns.mentionedUserId},${StoryMentionColumns.startIndex},${StoryMentionColumns.endIndex}),'
+            '${SupabaseConstants.users}!stories_author_id_fkey'
             '(${UserColumns.name}, ${UserColumns.imageUrl})',
         filter:
             (query) => query
@@ -175,6 +178,32 @@ class StoriesServices {
 
   Future<void> createStory(StoryModel story) async {
     await _supabase.from(SupabaseConstants.stories).insert(story.toMap());
+  }
+
+  Future<void> insertStoryMentions({
+    required String storyId,
+    required List<MentionRef> mentions,
+  }) async {
+    if (mentions.isEmpty) return;
+    try {
+      await _supabase
+          .from(SupabaseConstants.storyMentions)
+          .insert(
+            mentions
+                .map(
+                  (m) => {
+                    StoryMentionColumns.storyId: storyId,
+                    StoryMentionColumns.mentionedUserId: m.mentionedUserId,
+                    StoryMentionColumns.startIndex: m.startIndex,
+                    StoryMentionColumns.endIndex: m.endIndex,
+                  },
+                )
+                .toList(),
+          );
+    } catch (e) {
+      debugPrint('Error inserting story mentions: $e');
+      rethrow;
+    }
   }
 
   Future<void> deleteStory(String storyId) async {

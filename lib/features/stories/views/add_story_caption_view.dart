@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:social_media_app/core/mentions/mentions.dart';
 import 'package:social_media_app/features/auth/data/models/user_data.dart';
 import 'package:social_media_app/features/social_graph/views/audience_picker_view.dart';
 import '../../../core/themes/app_colors.dart';
@@ -27,13 +28,16 @@ class AddStoryCaptionView extends StatefulWidget {
 }
 
 class _AddStoryCaptionViewState extends State<AddStoryCaptionView> {
-  final TextEditingController _captionController = TextEditingController();
+  final MentionTextEditingController _captionController =
+      MentionTextEditingController();
+  final FocusNode _captionFocusNode = FocusNode();
   ContentPrivacy _currentPrivacy = ContentPrivacy.public;
   Set<String> _viewerIds = {};
 
   @override
   void dispose() {
     _captionController.dispose();
+    _captionFocusNode.dispose();
     super.dispose();
   }
 
@@ -76,7 +80,9 @@ class _AddStoryCaptionViewState extends State<AddStoryCaptionView> {
                         currentPrivacy: _currentPrivacy,
                       );
                       if (result == null) return;
+
                       if (result == ContentPrivacy.private) {
+                        if (!context.mounted) return;
                         final selected = await Navigator.of(
                           context,
                           rootNavigator: true,
@@ -118,6 +124,7 @@ class _AddStoryCaptionViewState extends State<AddStoryCaptionView> {
                                           : _captionController.text.trim(),
                                   privacy: _currentPrivacy,
                                   allowedViewerIds: _viewerIds.toList(),
+                                  mentions: _captionController.validMentions,
                                 );
                               },
                       child:
@@ -155,22 +162,26 @@ class _AddStoryCaptionViewState extends State<AddStoryCaptionView> {
                     bottom: 30,
                     left: 16,
                     right: 16,
-                    child: TextField(
+                    child: MentionAwareTextField(
                       controller: _captionController,
+                      focusNode: _captionFocusNode,
+                      enabled: true,
+                      hintText: 'Add a caption...',
                       style: const TextStyle(color: AppColors.white),
-                      maxLines: 3,
+                      hintStyle: const TextStyle(color: Colors.white70),
                       minLines: 1,
+                      maxLines: 3,
                       maxLength: 150,
-                      decoration: InputDecoration(
-                        hintText: 'Add a caption...',
-                        hintStyle: const TextStyle(color: Colors.white70),
-                        filled: true,
-                        fillColor: Colors.black54,
-                        counterStyle: const TextStyle(color: Colors.white70),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide.none,
-                        ),
+                      counterStyle: const TextStyle(color: Colors.white70),
+                      filled: true,
+                      fillColor: Colors.black54,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
                       ),
                     ),
                   ),

@@ -1,6 +1,6 @@
 import 'package:social_media_app/core/utilities/supabase_constants.dart';
 import 'package:social_media_app/features/single_chats/models/chat_user_model.dart';
-
+import '../../../core/mentions/models/mention_ref.dart';
 import '../../social_graph/models/content_privacy.dart';
 
 enum StoryType { image, video, text }
@@ -20,6 +20,7 @@ class StoryModel {
   final String? imagePublicId;
   final String? videoPublicId;
   final int? videoDurationSeconds;
+  final List<MentionRef> mentions;
   final ContentPrivacy privacyType;
 
   const StoryModel({
@@ -37,6 +38,7 @@ class StoryModel {
     this.imagePublicId,
     this.videoPublicId,
     this.videoDurationSeconds,
+    this.mentions = const [],
     this.privacyType = ContentPrivacy.public,
   });
 
@@ -83,6 +85,13 @@ class StoryModel {
           ).toLocal().toString();
     }
 
+    final List<MentionRef> mentions =
+        map['story_mentions'] != null
+            ? (map['story_mentions'] as List<dynamic>)
+                .map((m) => MentionRef.fromMap(m as Map<String, dynamic>))
+                .toList()
+            : [];
+
     return StoryModel(
       id: map[StoryColumns.id] as String,
       imageUrl: map[StoryColumns.imageUrl] as String?,
@@ -100,6 +109,7 @@ class StoryModel {
               : null,
       videoDurationSeconds:
           (map[StoryColumns.videoDurationSeconds] as num?)?.toInt(),
+      mentions: mentions,
       privacyType: contentPrivacyFromString(
         map[StoryColumns.privacyType] as String?,
       ),
@@ -130,6 +140,7 @@ class StoryModel {
     'image_public_id': imagePublicId,
     'video_public_id': videoPublicId,
     'video_duration_seconds': videoDurationSeconds,
+    'mentions': mentions.map((m) => m.toCacheJson()).toList(),
     StoryColumns.privacyType: contentPrivacyToString(privacyType),
   };
 
@@ -152,6 +163,10 @@ class StoryModel {
       imagePublicId: map['image_public_id'] as String?,
       videoPublicId: map['video_public_id'] as String?,
       videoDurationSeconds: (map['video_duration_seconds'] as num?)?.toInt(),
+      mentions:
+          (map['mentions'] as List<dynamic>? ?? [])
+              .map((m) => MentionRef.fromCacheJson(m as Map<String, dynamic>))
+              .toList(),
       privacyType: contentPrivacyFromString(
         map[StoryColumns.privacyType] as String?,
       ),

@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_linkify/flutter_linkify.dart';
 import 'package:social_media_app/core/link/widgets/message_link_preview.dart';
 import 'package:social_media_app/core/toast/app_toast.dart';
 import 'package:video_player/video_player.dart';
+import '../../../core/mentions/widgets/mention_rich_text.dart';
+import '../../../core/router/app_routes.dart';
 import '../../../core/supabase/supabase_provider.dart';
+import '../../home/cubits/home_cubit/home_cubit.dart';
 import '../cubit/stories_cubit/stories_cubit.dart';
 import '../cubit/story_reaction_cubit/story_reaction_cubit.dart';
 import '../cubit/story_reply_cubit/story_reply_cubit.dart';
@@ -75,10 +77,10 @@ class _SingleUserStoryViewState extends State<SingleUserStoryView>
     _videoController?.play();
   }
 
-  void _showLinkPreviewSheet(String url) {
+  Future<void> _showLinkPreviewSheet(String url) async {
     _pauseStory();
 
-    showModalBottomSheet(
+    await showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
@@ -107,9 +109,10 @@ class _SingleUserStoryViewState extends State<SingleUserStoryView>
               ),
             ),
           ),
-    ).then((_) {
-      _resumeStory();
-    });
+    );
+    if (!mounted) return;
+
+    _resumeStory();
   }
 
   @override
@@ -175,18 +178,39 @@ class _SingleUserStoryViewState extends State<SingleUserStoryView>
                     height: double.infinity,
                     padding: const EdgeInsets.symmetric(horizontal: 24),
                     alignment: Alignment.center,
-                    child: MessageLinkPreview(
-                      text: widget.story.contentText ?? '',
-                      isMe: false,
-                      textWidget: Text(
-                        widget.story.contentText ?? '',
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          fontSize: 28,
-                          color: Colors.white,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
+                    child: Builder(
+                      builder: (context) {
+                        final text = widget.story.contentText?.trim() ?? '';
+
+                        final bool isOnlyLink =
+                            !text.contains(' ') &&
+                            RegExp(
+                              r'^(https?:\/\/)?([\w\d\-]+\.)+\w{2,}(\/.*)?$',
+                            ).hasMatch(text);
+
+                        final mentionTextWidget = MentionRichText(
+                          text: text,
+                          textAlign: TextAlign.center,
+                          mentions: widget.story.mentions,
+                          style: const TextStyle(
+                            fontSize: 28,
+                            color: Colors.white,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          onMentionTap:
+                              (userId, name) => _openProfile(context, userId),
+                          onLinkTap: _showLinkPreviewSheet,
+                        );
+                        if (isOnlyLink) {
+                          return MessageLinkPreview(
+                            text: text,
+                            isMe: false,
+                            textWidget: mentionTextWidget,
+                          );
+                        }
+
+                        return mentionTextWidget;
+                      },
                     ),
                   ),
                 ),
@@ -252,20 +276,19 @@ class _SingleUserStoryViewState extends State<SingleUserStoryView>
                               color: Colors.black45,
                               borderRadius: BorderRadius.circular(12),
                             ),
-                            child: Linkify(
+                            child: MentionRichText(
                               text: widget.story.caption!,
+                              mentions: widget.story.mentions,
                               textAlign: TextAlign.center,
-                              options: const LinkifyOptions(humanize: false),
-                              onOpen: (link) => _showLinkPreviewSheet(link.url),
+
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 16,
                               ),
-                              linkStyle: const TextStyle(
-                                color: Colors.lightBlueAccent,
-                                decoration: TextDecoration.underline,
-                                decorationColor: Colors.lightBlueAccent,
-                              ),
+                              onMentionTap:
+                                  (userId, name) =>
+                                      _openProfile(context, userId),
+                              onLinkTap: _showLinkPreviewSheet,
                             ),
                           ),
                         ),
@@ -299,5 +322,27 @@ class _SingleUserStoryViewState extends State<SingleUserStoryView>
         },
       ),
     );
+  }
+
+  void _openProfile(BuildContext context, String userId) async {
+    final currentUserId = SupabaseProvider.idOrNull;
+
+    if (userId == currentUserId) {
+      final navController = context.read<HomeCubit>().navController;
+      Navigator.of(context).popUntil((route) => route.isFirst);
+      if (navController != null) {
+        navController.jumpToTab(3);
+      }
+    } else {
+      _pauseStory();
+
+      await Navigator.of(
+        context,
+      ).pushNamed(AppRoutes.profileViewRoute, arguments: userId);
+
+      if (mounted && !_isDisposed) {
+        _resumeStory();
+      }
+    }
   }
 }

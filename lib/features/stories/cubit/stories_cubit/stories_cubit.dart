@@ -10,9 +10,11 @@ import 'package:social_media_app/core/cache/constants/snapshot_keys.dart';
 import 'package:social_media_app/core/cache/services/local_snapshot_store.dart';
 import 'package:social_media_app/core/services/cloudinary_storage_services.dart';
 import 'package:social_media_app/core/services/file_picker_services.dart';
+import 'package:social_media_app/core/services/fcm_services.dart';
 import 'package:social_media_app/features/auth/data/models/user_data.dart';
 import '../../../../core/connectivity/services/connectivity_banner_controller.dart';
 import '../../../social_graph/models/content_privacy.dart';
+import 'package:social_media_app/core/mentions/mentions.dart';
 import '../../model/story_model.dart';
 import '../../services/stories_services.dart';
 part 'stories_state.dart';
@@ -46,6 +48,7 @@ class StoriesCubit extends Cubit<StoriesState> {
     required UserData user,
     ContentPrivacy privacy = ContentPrivacy.public,
     List<String> allowedViewerIds = const [],
+    List<MentionRef> mentions = const [],
   }) async {
     emit(AddStoryLoading());
     try {
@@ -66,6 +69,24 @@ class StoriesCubit extends Cubit<StoriesState> {
           storyId,
           allowedViewerIds,
         );
+      }
+      if (mentions.isNotEmpty) {
+        await _storiesServices.insertStoryMentions(
+          storyId: storyId,
+          mentions: mentions,
+        );
+        for (final mention in mentions) {
+          unawaited(
+            FcmService.instance.notifyMention(
+              receiverId: mention.mentionedUserId,
+              actorId: user.id,
+              actorName: user.name,
+              actorImageUrl: user.imageUrl ?? '',
+              context: 'story',
+              storyId: storyId,
+            ),
+          );
+        }
       }
       await fetchStories();
       emit(AddStorySuccess());
@@ -157,6 +178,7 @@ class StoriesCubit extends Cubit<StoriesState> {
     String? caption,
     ContentPrivacy privacy = ContentPrivacy.public,
     List<String> allowedViewerIds = const [],
+    List<MentionRef> mentions = const [],
   }) async {
     emit(AddStoryLoading());
     try {
@@ -179,6 +201,24 @@ class StoriesCubit extends Cubit<StoriesState> {
           allowedViewerIds,
         );
       }
+      if (mentions.isNotEmpty) {
+        await _storiesServices.insertStoryMentions(
+          storyId: storyId,
+          mentions: mentions,
+        );
+        for (final mention in mentions) {
+          unawaited(
+            FcmService.instance.notifyMention(
+              receiverId: mention.mentionedUserId,
+              actorId: user.id,
+              actorName: user.name,
+              actorImageUrl: user.imageUrl ?? '',
+              context: 'story',
+              storyId: storyId,
+            ),
+          );
+        }
+      }
       await fetchStories();
       emit(AddStorySuccess());
       await Future.delayed(const Duration(milliseconds: 100));
@@ -191,6 +231,8 @@ class StoriesCubit extends Cubit<StoriesState> {
   }
 
   Future<void> pickAndPreviewVideoStory({required ImageSource source}) async {
+    if (state is StoryVideoPicked) return;
+
     try {
       final XFile? pickedFile =
           source == ImageSource.camera
@@ -240,6 +282,7 @@ class StoriesCubit extends Cubit<StoriesState> {
     Duration? videoDuration,
     ContentPrivacy privacy = ContentPrivacy.public,
     List<String> allowedViewerIds = const [],
+    List<MentionRef> mentions = const [],
   }) async {
     emit(AddStoryLoading());
     try {
@@ -275,6 +318,24 @@ class StoriesCubit extends Cubit<StoriesState> {
           storyId,
           allowedViewerIds,
         );
+      }
+      if (mentions.isNotEmpty) {
+        await _storiesServices.insertStoryMentions(
+          storyId: storyId,
+          mentions: mentions,
+        );
+        for (final mention in mentions) {
+          unawaited(
+            FcmService.instance.notifyMention(
+              receiverId: mention.mentionedUserId,
+              actorId: user.id,
+              actorName: user.name,
+              actorImageUrl: user.imageUrl ?? '',
+              context: 'story',
+              storyId: storyId,
+            ),
+          );
+        }
       }
       await fetchStories(isRefresh: true);
       _cleanupStableVideo();

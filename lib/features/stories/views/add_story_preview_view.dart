@@ -6,6 +6,8 @@ import 'package:social_media_app/features/social_graph/views/audience_picker_vie
 import 'package:social_media_app/features/social_graph/widgets/privacy_chip.dart';
 import 'package:video_player/video_player.dart';
 import 'package:social_media_app/features/auth/data/models/user_data.dart';
+import '../../../core/mentions/widgets/mention_aware_text_field.dart';
+import '../../../core/mentions/widgets/mention_text_editing_controller.dart';
 import '../../../core/themes/app_colors.dart';
 import '../../../core/toast/app_toast.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
@@ -34,7 +36,9 @@ class AddStoryPreviewView extends StatefulWidget {
 }
 
 class _AddStoryPreviewViewState extends State<AddStoryPreviewView> {
-  final TextEditingController _captionController = TextEditingController();
+  final MentionTextEditingController _captionController =
+      MentionTextEditingController();
+  final FocusNode _captionFocusNode = FocusNode();
 
   VideoPlayerController? _videoController;
   bool _videoInitialised = false;
@@ -102,6 +106,7 @@ class _AddStoryPreviewViewState extends State<AddStoryPreviewView> {
         _captionController.text.trim().isEmpty
             ? null
             : _captionController.text.trim();
+    final mentions = _captionController.validMentions;
 
     if (_selectedPrivacy == ContentPrivacy.private &&
         _selectedViewerIds.isEmpty) {
@@ -120,6 +125,7 @@ class _AddStoryPreviewViewState extends State<AddStoryPreviewView> {
         file: widget.file,
         user: widget.currentUser,
         caption: caption,
+        mentions: mentions,
         videoDuration: widget.videoDuration,
         privacy: _selectedPrivacy,
         allowedViewerIds: _selectedViewerIds.toList(),
@@ -129,6 +135,7 @@ class _AddStoryPreviewViewState extends State<AddStoryPreviewView> {
         file: widget.file,
         user: widget.currentUser,
         caption: caption,
+        mentions: mentions,
         privacy: _selectedPrivacy,
         allowedViewerIds: _selectedViewerIds.toList(),
       );
@@ -138,6 +145,7 @@ class _AddStoryPreviewViewState extends State<AddStoryPreviewView> {
   @override
   void dispose() {
     _captionController.dispose();
+    _captionFocusNode.dispose();
     _videoController?.dispose();
     super.dispose();
   }
@@ -305,8 +313,11 @@ class _AddStoryPreviewViewState extends State<AddStoryPreviewView> {
   }
 
   Widget _buildCaptionField() {
-    return TextField(
+    return MentionAwareTextField(
       controller: _captionController,
+      focusNode: _captionFocusNode,
+      enabled: true,
+      hintText: 'Add a caption...',
       style: const TextStyle(color: AppColors.white),
       maxLines: 3,
       minLines: 1,

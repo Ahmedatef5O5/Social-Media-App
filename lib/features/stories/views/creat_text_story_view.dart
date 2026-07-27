@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:social_media_app/core/mentions/mentions.dart';
 import 'package:social_media_app/features/auth/data/models/user_data.dart';
 import 'package:social_media_app/features/social_graph/views/audience_picker_view.dart';
 import 'package:social_media_app/features/social_graph/widgets/privacy_chip.dart';
@@ -23,7 +24,9 @@ class CreateTextStoryView extends StatefulWidget {
 }
 
 class _CreateTextStoryViewState extends State<CreateTextStoryView> {
-  final TextEditingController _controller = TextEditingController();
+  final MentionTextEditingController _controller =
+      MentionTextEditingController();
+  final FocusNode _focusNode = FocusNode();
   bool _hasText = false;
 
   late List<Color> _colors;
@@ -47,13 +50,13 @@ class _CreateTextStoryViewState extends State<CreateTextStoryView> {
     super.didChangeDependencies();
 
     _colors = [
-      Theme.of(context).primaryColor,
+      Colors.grey,
+      Colors.green,
       Colors.purple,
       Colors.red,
       Colors.black,
-      Colors.grey,
       Colors.orange,
-      Colors.green,
+      Colors.pink,
     ];
 
     _selectedColor = _colors.first;
@@ -62,6 +65,7 @@ class _CreateTextStoryViewState extends State<CreateTextStoryView> {
   @override
   void dispose() {
     _controller.dispose();
+    _focusNode.dispose();
     super.dispose();
   }
 
@@ -99,6 +103,7 @@ class _CreateTextStoryViewState extends State<CreateTextStoryView> {
       user: widget.currentUser,
       privacy: _selectedPrivacy,
       allowedViewerIds: _selectedViewerIds.toList(),
+      mentions: _controller.validMentions,
     );
   }
 
@@ -145,6 +150,7 @@ class _CreateTextStoryViewState extends State<CreateTextStoryView> {
                 Expanded(
                   child: StoryTextEditor(
                     controller: _controller,
+                    focusNode: _focusNode,
                     hasText: _hasText,
                   ),
                 ),
