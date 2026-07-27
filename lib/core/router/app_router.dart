@@ -40,6 +40,7 @@ import '../../features/auth/data/models/user_data.dart';
 import '../../features/posts/cubit/posts_cubit/posts_cubit.dart';
 import '../../features/posts/cubit/saved_posts_cubit/saved_posts_cubit.dart';
 import '../../features/posts/model/post_model.dart';
+import '../../features/posts/model/post_details_route_args.dart';
 import '../../features/posts/services/posts_services.dart';
 import '../../features/posts/views/post_details_view.dart';
 import '../../features/posts/views/saved_posts_view.dart';
@@ -271,8 +272,23 @@ class AppRouter {
           settings: settings,
         );
       case AppRoutes.postDetailsViewRoute:
-        final post = settings.arguments as PostModel;
-        return MaterialPageRoute(builder: (_) => PostDetailsView(post: post));
+        final args = settings.arguments;
+        final PostModel post;
+        final PostDetailsActiveMode initialActiveMode;
+        if (args is PostDetailsRouteArgs) {
+          post = args.post;
+          initialActiveMode = args.initialActiveMode;
+        } else {
+          post = args as PostModel;
+          initialActiveMode = PostDetailsActiveMode.none;
+        }
+        return MaterialPageRoute(
+          builder:
+              (_) => PostDetailsView(
+                post: post,
+                initialActiveMode: initialActiveMode,
+              ),
+        );
       case AppRoutes.friendsListViewRoute:
         final userId = settings.arguments as String;
         return MaterialPageRoute(

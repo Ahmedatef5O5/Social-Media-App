@@ -22,16 +22,16 @@ import '../widgets/post_interactions_row.dart';
 import '../../comments/widget/comments_inline_section.dart';
 import '../widgets/shared_post_header_widget.dart';
 
-enum DetailsViewState { none, comments, reactions }
+enum PostDetailsActiveMode { none, comments, reactions }
 
 class PostDetailsView extends StatefulWidget {
   final PostModel post;
-  final DetailsViewState initialViewState;
+  final PostDetailsActiveMode initialActiveMode;
 
   const PostDetailsView({
     super.key,
     required this.post,
-    this.initialViewState = DetailsViewState.comments,
+    this.initialActiveMode = PostDetailsActiveMode.comments,
   });
 
   @override
@@ -41,7 +41,7 @@ class PostDetailsView extends StatefulWidget {
 class _PostDetailsViewState extends State<PostDetailsView> {
   late final CommentsCubit _commentsCubit;
 
-  late DetailsViewState _viewState;
+  late PostDetailsActiveMode _activeMode;
   bool _commentsLoaded = false;
 
   String? _replyingToCommentId;
@@ -52,7 +52,7 @@ class _PostDetailsViewState extends State<PostDetailsView> {
   void initState() {
     super.initState();
 
-    _viewState = widget.initialViewState;
+    _activeMode = widget.initialActiveMode;
 
     _commentsCubit = CommentsCubit(
       commentsService: context.read<CommentsService>(),
@@ -60,7 +60,7 @@ class _PostDetailsViewState extends State<PostDetailsView> {
       currentUserData: context.read<HomeCubit>().currentUserData,
     );
 
-    if (_viewState == DetailsViewState.comments) {
+    if (_activeMode == PostDetailsActiveMode.comments) {
       _commentsLoaded = true;
       _commentsCubit.loadComments(postId: widget.post.id);
     }
@@ -72,12 +72,12 @@ class _PostDetailsViewState extends State<PostDetailsView> {
     super.dispose();
   }
 
-  void _toggleView(DetailsViewState target) {
+  void _toggleView(PostDetailsActiveMode target) {
     setState(() {
-      _viewState = _viewState == target ? DetailsViewState.none : target;
+      _activeMode = _activeMode == target ? PostDetailsActiveMode.none : target;
     });
 
-    if (_viewState == DetailsViewState.comments && !_commentsLoaded) {
+    if (_activeMode == PostDetailsActiveMode.comments && !_commentsLoaded) {
       _commentsLoaded = true;
       _commentsCubit.loadComments(postId: widget.post.id);
     }
@@ -217,11 +217,11 @@ class _PostDetailsViewState extends State<PostDetailsView> {
                                     postId: displayPost.id,
                                     onCommentsTap:
                                         () => _toggleView(
-                                          DetailsViewState.comments,
+                                          PostDetailsActiveMode.comments,
                                         ),
                                     onReactionsTap:
                                         () => _toggleView(
-                                          DetailsViewState.reactions,
+                                          PostDetailsActiveMode.reactions,
                                         ),
                                   ),
 
@@ -241,18 +241,18 @@ class _PostDetailsViewState extends State<PostDetailsView> {
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 16.0,
                               ),
-                              child: switch (_viewState) {
-                                DetailsViewState.comments =>
+                              child: switch (_activeMode) {
+                                PostDetailsActiveMode.comments =>
                                   CommentsInlineSection(
                                     postId: currentPost.id,
                                     onReplyTap: _startReply,
                                     onEditTap: _startEdit,
                                   ),
-                                DetailsViewState.reactions =>
+                                PostDetailsActiveMode.reactions =>
                                   PostReactionsInlineList(
                                     postId: currentPost.id,
                                   ),
-                                DetailsViewState.none =>
+                                PostDetailsActiveMode.none =>
                                   const SizedBox.shrink(),
                               },
                             ),
@@ -263,7 +263,7 @@ class _PostDetailsViewState extends State<PostDetailsView> {
                       ),
                     ),
 
-                    if (_viewState == DetailsViewState.comments)
+                    if (_activeMode == PostDetailsActiveMode.comments)
                       _CommentComposerBar(
                         post: currentPost,
                         replyingToCommentId: _replyingToCommentId,
