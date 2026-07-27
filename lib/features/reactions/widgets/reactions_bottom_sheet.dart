@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 import '../../../core/helpers/formatted_date.dart';
+import '../../../core/helpers/safe_navigator.dart';
 import '../../../core/presence/widgets/presence_avatar_widget.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/supabase/supabase_provider.dart';
@@ -231,8 +232,7 @@ class _ReactionsBottomSheetState extends State<ReactionsBottomSheet> {
                                       GestureDetector(
                                         onTap: () {
                                           if (isMe) {
-                                            Navigator.of(context).pop();
-                                            Navigator.of(context).pop();
+                                            context.safePop();
                                             navController?.jumpToTab(3);
                                           } else {
                                             showDialog(
@@ -286,11 +286,11 @@ class _ReactionsBottomSheetState extends State<ReactionsBottomSheet> {
                                   ),
                                   title: GestureDetector(
                                     onTap: () {
-                                      Navigator.of(context).pop();
-                                      Navigator.of(context).pop();
                                       if (isMe) {
+                                        context.safePop();
                                         navController?.jumpToTab(3);
                                       } else {
+                                        context.safePopRoot();
                                         Navigator.of(
                                           context,
                                           rootNavigator: true,

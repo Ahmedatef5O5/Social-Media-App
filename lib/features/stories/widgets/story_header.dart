@@ -46,7 +46,6 @@ class StoryHeader extends StatelessWidget {
               isMyStory
                   ? null
                   : () {
-                    Navigator.pop(context);
                     Navigator.pushNamed(
                       context,
                       AppRoutes.profileViewRoute,
@@ -100,7 +99,7 @@ class StoryHeader extends StatelessWidget {
               final confirm = await showDeleteStoryDialog(context);
               if (confirm == true) {
                 storiesCubit.deleteStory(story.id);
-                Navigator.pop(context);
+                if (context.mounted) Navigator.pop(context);
               } else {
                 onResume();
               }

@@ -2,10 +2,10 @@ import 'dart:io';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:social_media_app/core/attachment/widgets/media_download_gate.dart';
+import 'package:social_media_app/core/attachment/widgets/media_loading_placeholder.dart';
 import 'package:social_media_app/core/cache/utils/cloudinary_url_extensions.dart';
 import 'package:social_media_app/core/widgets/cached_cloudinary_image.dart';
 import 'package:social_media_app/features/single_chats/widgets/full_screen_media_view.dart';
-import '../../../core/widgets/custom_loading_indicator.dart';
 
 class ImageMessageWidget extends StatelessWidget {
   final String imageUrl;
@@ -55,17 +55,15 @@ class ImageMessageWidget extends StatelessWidget {
             height: preferredHeight,
             fit: BoxFit.cover,
             placeholder:
-                (context, _) => Container(
+                (context, _) => const MediaLoadingPlaceholder(
                   width: preferredWidth,
                   height: preferredHeight,
-                  color: Colors.grey[200],
-                  child: const CustomLoadingIndicator(),
                 ),
             errorWidget:
-                (context, _, __) => Container(
+                (context, _, __) => const MediaLoadingPlaceholder(
                   width: preferredWidth,
                   height: preferredHeight,
-                  color: Colors.grey[200],
+                  isError: true,
                 ),
           ),
       completedBuilder:
@@ -85,11 +83,9 @@ class ImageMessageWidget extends StatelessWidget {
               secureUrl: imageUrl,
               fit: BoxFit.cover,
               placeholder:
-                  (context) => Container(
+                  (context) => const MediaLoadingPlaceholder(
                     width: preferredWidth,
                     height: preferredHeight,
-                    color: Colors.grey[200],
-                    child: const CustomLoadingIndicator(),
                   ),
               errorWidget:
                   (context, error) => SizedBox(

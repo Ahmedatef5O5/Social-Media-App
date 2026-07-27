@@ -100,6 +100,7 @@ class _CustomBottomNavBarState extends State<CustomBottomNavBar> {
               _scaffoldKey.currentState?.closeEndDrawer();
               return;
             }
+            if (Navigator.of(context, rootNavigator: true).canPop()) return;
 
             if (_controller.index != 0) {
               _controller.jumpToTab(0);
