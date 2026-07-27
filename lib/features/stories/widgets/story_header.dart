@@ -45,12 +45,14 @@ class StoryHeader extends StatelessWidget {
           onTap:
               isMyStory
                   ? null
-                  : () {
-                    Navigator.pushNamed(
+                  : () async {
+                    onPause();
+                    await Navigator.pushNamed(
                       context,
                       AppRoutes.profileViewRoute,
                       arguments: story.authorId,
                     );
+                    onResume();
                   },
           child: Row(
             children: [

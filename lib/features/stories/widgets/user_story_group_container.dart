@@ -155,6 +155,8 @@ class _UserStoryGroupContainerState extends State<UserStoryGroupContainer>
           onPrev: _prevStory,
           onLongPressStart: _pauseProgress,
           onLongPressEnd: _resumeProgress,
+          onNextGroup: widget.onAllStoriesComplete,
+          onPrevGroup: widget.onPrevGroup,
           onClose: widget.onClose,
           onMediaReady: _onMediaReady,
         ),

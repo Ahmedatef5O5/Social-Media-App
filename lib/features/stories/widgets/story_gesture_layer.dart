@@ -6,6 +6,8 @@ class StoryGestureLayer extends StatefulWidget {
   final VoidCallback onClose;
   final VoidCallback onLongPressStart;
   final VoidCallback onLongPressEnd;
+  final VoidCallback onNextGroup;
+  final VoidCallback onPrevGroup;
 
   const StoryGestureLayer({
     super.key,
@@ -14,6 +16,8 @@ class StoryGestureLayer extends StatefulWidget {
     required this.onClose,
     required this.onLongPressStart,
     required this.onLongPressEnd,
+    required this.onNextGroup,
+    required this.onPrevGroup,
   });
 
   @override
@@ -53,7 +57,7 @@ class _StoryGestureLayerState extends State<StoryGestureLayer> {
         }
 
         if (dx.abs() > 50) {
-          dx < 0 ? widget.onNext() : widget.onPrev();
+          dx < 0 ? widget.onNextGroup() : widget.onPrevGroup();
           return;
         }
 

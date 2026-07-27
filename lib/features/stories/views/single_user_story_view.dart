@@ -26,6 +26,8 @@ class SingleUserStoryView extends StatefulWidget {
   final VoidCallback onPrev;
   final VoidCallback onLongPressStart;
   final VoidCallback onLongPressEnd;
+  final VoidCallback onNextGroup;
+  final VoidCallback onPrevGroup;
   final VoidCallback onClose;
   final void Function(Duration?) onMediaReady;
 
@@ -37,6 +39,8 @@ class SingleUserStoryView extends StatefulWidget {
     required this.onPrev,
     required this.onLongPressStart,
     required this.onLongPressEnd,
+    required this.onNextGroup,
+    required this.onPrevGroup,
     required this.onClose,
     required this.onMediaReady,
   });
@@ -168,6 +172,8 @@ class _SingleUserStoryViewState extends State<SingleUserStoryView>
                   onClose: widget.onClose,
                   onLongPressStart: _pauseStory,
                   onLongPressEnd: _resumeStory,
+                  onNextGroup: widget.onNextGroup,
+                  onPrevGroup: widget.onPrevGroup,
                 ),
               ),
 
