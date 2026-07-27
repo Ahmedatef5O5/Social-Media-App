@@ -12,6 +12,7 @@ import '../../comments/helper/comment_tree_builder.dart';
 import '../../comments/model/comment_model.dart';
 import '../../social_graph/models/content_privacy.dart';
 import '../../social_graph/services/connections_service.dart';
+import '../../../core/mentions/models/mention_ref.dart';
 import '../model/post_model.dart';
 import '../model/post_request_body.dart';
 
@@ -29,6 +30,7 @@ class PostsServices {
   is_post_saved,
   shares_count,
   is_post_shared,
+  post_mentions(${PostMentionColumns.mentionedUserId},${PostMentionColumns.startIndex},${PostMentionColumns.endIndex}),
   ${SupabaseConstants.users}!posts_author_id_fkey (${UserColumns.name}, ${UserColumns.imageUrl}, ${UserColumns.lastSeen}),
   ${SupabaseConstants.reelsCache}!posts_shared_reel_id_fkey (
     ${ReelColumns.id},
@@ -385,6 +387,32 @@ class PostsServices {
         values: post.toMap(),
       );
     } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<void> insertPostMentions({
+    required String postId,
+    required List<MentionRef> mentions,
+  }) async {
+    if (mentions.isEmpty) return;
+    try {
+      await _supabase
+          .from(SupabaseConstants.postMentions)
+          .insert(
+            mentions
+                .map(
+                  (m) => {
+                    PostMentionColumns.postId: postId,
+                    PostMentionColumns.mentionedUserId: m.mentionedUserId,
+                    PostMentionColumns.startIndex: m.startIndex,
+                    PostMentionColumns.endIndex: m.endIndex,
+                  },
+                )
+                .toList(),
+          );
+    } catch (e) {
+      debugPrint('Error inserting post mentions: $e');
       rethrow;
     }
   }

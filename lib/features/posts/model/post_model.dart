@@ -1,6 +1,7 @@
 import 'package:social_media_app/core/utilities/supabase_constants.dart';
 import 'package:social_media_app/features/single_chats/models/chat_user_model.dart';
 import 'package:social_media_app/features/posts/model/post_reaction_model.dart';
+import '../../../core/mentions/models/mention_ref.dart';
 import '../../comments/model/comment_model.dart';
 import '../../reels/model/reel_model.dart';
 import '../../social_graph/models/content_privacy.dart';
@@ -37,6 +38,7 @@ class PostModel {
   final List<String>? likes;
   final List<String>? likersImages;
   final List<PostReactionModel> reactions;
+  final List<MentionRef> mentions;
   final List<CommentModel>? comments;
   final DateTime? lastSeen;
   final bool isOnline;
@@ -69,6 +71,7 @@ class PostModel {
     this.likes,
     this.likersImages,
     this.reactions = const [],
+    this.mentions = const [],
     this.comments,
     this.lastSeen,
     this.isOnline = false,
@@ -120,6 +123,12 @@ class PostModel {
     List<String> likesList = [];
     List<String> imagesList = [];
     List<PostReactionModel> reactionsList = [];
+    final List<MentionRef> mentions =
+        map['post_mentions'] != null
+            ? (map['post_mentions'] as List<dynamic>)
+                .map((m) => MentionRef.fromMap(m as Map<String, dynamic>))
+                .toList()
+            : [];
     if (map[SupabaseConstants.likes] != null) {
       final likesData = map[SupabaseConstants.likes] as List<dynamic>;
       for (var item in likesData) {
@@ -156,6 +165,7 @@ class PostModel {
       likes: likesList,
       likersImages: imagesList,
       reactions: reactionsList,
+      mentions: mentions,
       comments:
           commentsData != null
               ? commentsData.map((c) => CommentModel.fromMap(c)).toList()
@@ -194,6 +204,7 @@ class PostModel {
     List<String>? likes,
     List<String>? likersImages,
     List<PostReactionModel>? reactions,
+    List<MentionRef>? mentions,
     List<CommentModel>? comments,
     final DateTime? lastSeen,
     final bool? isOnline,
@@ -220,6 +231,7 @@ class PostModel {
       likes: likes ?? this.likes,
       likersImages: likersImages ?? this.likersImages,
       reactions: reactions ?? this.reactions,
+      mentions: mentions ?? this.mentions,
       comments: comments ?? this.comments,
       lastSeen: lastSeen ?? this.lastSeen,
       isOnline: isOnline ?? this.isOnline,
@@ -248,6 +260,7 @@ class PostModel {
     'likes': likes,
     'likers_images': likersImages,
     'reactions': reactions.map((r) => r.toMap()).toList(),
+    'mentions': mentions.map((m) => m.toCacheJson()).toList(),
     'comments': comments?.map((comment) => comment.toCacheJson()).toList(),
     'last_seen': lastSeen?.toIso8601String(),
     'is_online': isOnline,
@@ -278,6 +291,10 @@ class PostModel {
       reactions:
           (map['reactions'] as List<dynamic>? ?? [])
               .map((r) => PostReactionModel.fromMap(r as Map<String, dynamic>))
+              .toList(),
+      mentions:
+          (map['mentions'] as List<dynamic>? ?? [])
+              .map((m) => MentionRef.fromCacheJson(m as Map<String, dynamic>))
               .toList(),
       comments:
           (map['comments'] as List<dynamic>?)

@@ -17,6 +17,7 @@ mixin PostCreationMixin on Cubit<PostsState> {
     required String text,
     ContentPrivacy privacy = ContentPrivacy.public,
     List<String> allowedViewerIds = const [],
+    List<MentionRef> mentions = const [],
   }) async {
     final user = SupabaseProvider.user;
     if (user == null) return;
@@ -104,6 +105,25 @@ mixin PostCreationMixin on Cubit<PostsState> {
       await _postsServices.addPost(postRequest);
       if (privacy == ContentPrivacy.private && allowedViewerIds.isNotEmpty) {
         await _postsServices.setPostAllowedViewers(postId, allowedViewerIds);
+      }
+
+      if (mentions.isNotEmpty) {
+        await _postsServices.insertPostMentions(
+          postId: postId,
+          mentions: mentions,
+        );
+        for (final mention in mentions) {
+          unawaited(
+            FcmService.instance.notifyMention(
+              receiverId: mention.mentionedUserId,
+              actorId: userId,
+              actorName: currentUserData?.name ?? 'Someone',
+              actorImageUrl: currentUserData?.imageUrl ?? '',
+              context: 'post',
+              postId: postId,
+            ),
+          );
+        }
       }
 
       emit(PostCreating(1.0));
@@ -219,6 +239,15 @@ mixin PostCreationMixin on Cubit<PostsState> {
           sharerName: currentUserData?.name ?? 'unKnown',
           sharerImageUrl: currentUserData?.imageUrl ?? '',
           postId: targetPost.id,
+        );
+        unawaited(
+          FcmService.instance.notifyPostReshare(
+            receiverId: targetPost.authorId,
+            actorId: userId,
+            actorName: currentUserData?.name ?? 'Someone',
+            actorImageUrl: currentUserData?.imageUrl ?? '',
+            postId: targetPost.id,
+          ),
         );
       }
       return true;

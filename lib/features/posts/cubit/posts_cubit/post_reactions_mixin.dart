@@ -90,6 +90,19 @@ mixin PostReactionsMixin on Cubit<PostsState> {
           postId: post.id,
         );
       }
+
+      if (post.authorId != userId && !isRemoving) {
+        unawaited(
+          FcmService.instance.notifyPostReact(
+            receiverId: post.authorId,
+            actorId: userId,
+            actorName: currentUserData?.name ?? 'Someone',
+            actorImageUrl: currentUserData?.imageUrl ?? '',
+            postId: post.id,
+            reactionType: emoji,
+          ),
+        );
+      }
       return true;
     } catch (e) {
       emit(PostsLoaded(oldState.posts, DateTime.now()));
@@ -136,6 +149,17 @@ mixin PostReactionsMixin on Cubit<PostsState> {
         userId: userId,
         isCurrentlySaved: wasSaved,
       );
+      if (post.authorId != userId && !wasSaved) {
+        unawaited(
+          FcmService.instance.notifyPostSave(
+            receiverId: post.authorId,
+            actorId: userId,
+            actorName: currentUserData?.name ?? 'Someone',
+            actorImageUrl: currentUserData?.imageUrl ?? '',
+            postId: post.id,
+          ),
+        );
+      }
       return true;
     } catch (e) {
       emit(PostsLoaded(oldState.posts, DateTime.now()));
