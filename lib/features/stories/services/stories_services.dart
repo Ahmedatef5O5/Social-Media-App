@@ -68,6 +68,49 @@ class StoriesServices {
     return (rows as List).map((r) => r['story_id'] as String).toSet();
   }
 
+  Future<List<StoryModel>> getAuthorStories(String authorId) async {
+    if (!(await NetworkStatusService.instance.isConnected())) {
+      throw Exception('no-internet');
+    }
+
+    try {
+      final currentUserId = SupabaseProvider.id;
+      final connectionIds = await ConnectionsService().getMyConnectionIds();
+      final allowedPrivateIds = await _getPrivateAllowedStoryIds(currentUserId);
+
+      final orParts = <String>[
+        'privacy_type.eq.public',
+        'author_id.eq.$currentUserId',
+      ];
+      if (connectionIds.isNotEmpty) {
+        orParts.add(
+          'and(privacy_type.eq.friends,author_id.in.(${connectionIds.join(',')}))',
+        );
+      }
+      if (allowedPrivateIds.isNotEmpty) {
+        orParts.add('id.in.(${allowedPrivateIds.join(',')})');
+      }
+
+      return await supabaseServices.fetchRows(
+        table: SupabaseConstants.stories,
+        columns:
+            '*,'
+            'story_mentions(${StoryMentionColumns.mentionedUserId},${StoryMentionColumns.startIndex},${StoryMentionColumns.endIndex}),'
+            '${SupabaseConstants.users}!stories_author_id_fkey'
+            '(${UserColumns.name}, ${UserColumns.imageUrl})',
+        filter:
+            (query) => query
+                .eq(StoryColumns.authorId, authorId)
+                .or(orParts.join(','))
+                .order(StoryColumns.createdAt, ascending: false),
+        builder: (data, id) => StoryModel.fromMap(data),
+        primaryKey: StoryColumns.id,
+      );
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   Future<List<StoryModel>> fetchStories() async {
     if (!(await NetworkStatusService.instance.isConnected())) {
       throw Exception('no-internet');

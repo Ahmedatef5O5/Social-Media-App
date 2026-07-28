@@ -360,6 +360,18 @@ class StoriesCubit extends Cubit<StoriesState> {
 
   // ── Stories fetch ──────────────────────────────────────────────────────────
 
+  Future<void> fetchAuthorStories(String authorId) async {
+    if (state is! StoriesLoading) emit(StoriesLoading());
+    try {
+      final stories = await _storiesServices.getAuthorStories(authorId);
+      cachedStories = stories;
+      emit(StoriesLoaded(stories, DateTime.now()));
+    } catch (e) {
+      debugPrint('Error fetching author stories: $e');
+      emit(StoriesError(e.toString()));
+    }
+  }
+
   Future<void> fetchStories({bool isRefresh = false}) async {
     if (!isRefresh && state is! StoriesLoading) emit(StoriesLoading());
     try {
@@ -386,6 +398,8 @@ class StoriesCubit extends Cubit<StoriesState> {
       emit(StoriesError(e.toString()));
     }
   }
+
+  List<StoryModel> readCachedSnapshot() => _readStoriesSnapshot();
 
   void _persistStoriesSnapshot(List<StoryModel> stories) {
     unawaited(

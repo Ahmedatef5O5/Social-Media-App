@@ -1,10 +1,16 @@
+import 'dart:async';
 import 'dart:io';
-import 'package:social_media_app/core/widgets/cached_cloudinary_image.dart';
+import 'dart:typed_data';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:social_media_app/core/widgets/custom_loading_indicator.dart';
 import 'package:video_player/video_player.dart';
+import 'package:video_thumbnail/video_thumbnail.dart';
+
+import 'package:social_media_app/core/widgets/cached_cloudinary_image.dart';
+import 'package:social_media_app/core/widgets/custom_loading_indicator.dart';
 import '../../../core/cache/repository/media_cache_repository.dart';
+import '../../../core/cache/utils/cloudinary_url_extensions.dart';
 import '../model/story_model.dart';
 
 class StoryMediaView extends StatefulWidget {
@@ -30,6 +36,8 @@ class _StoryMediaViewState extends State<StoryMediaView> {
   bool _videoReady = false;
   bool _videoError = false;
 
+  Uint8List? _localThumbnailBytes;
+
   @override
   void initState() {
     super.initState();
@@ -45,11 +53,13 @@ class _StoryMediaViewState extends State<StoryMediaView> {
 
   Future<void> _initVideo() async {
     try {
-      final file = await context.read<MediaCacheRepository>().resolveLocalPath(
-        widget.story.videoUrl!,
-      );
-      if (file != null) {
-        _videoController = VideoPlayerController.file(File(file));
+      final localPath = await context
+          .read<MediaCacheRepository>()
+          .resolveLocalPath(widget.story.videoUrl!);
+
+      if (localPath != null) {
+        _videoController = VideoPlayerController.file(File(localPath));
+        unawaited(_generateLocalThumbnail(localPath));
       } else {
         _videoController = VideoPlayerController.networkUrl(
           Uri.parse(widget.story.videoUrl!),
@@ -91,6 +101,21 @@ class _StoryMediaViewState extends State<StoryMediaView> {
     }
   }
 
+  Future<void> _generateLocalThumbnail(String localFilePath) async {
+    try {
+      final bytes = await VideoThumbnail.thumbnailData(
+        video: localFilePath,
+        imageFormat: ImageFormat.JPEG,
+        maxWidth: 250,
+        quality: 35,
+      );
+      if (!mounted || bytes == null) return;
+      setState(() => _localThumbnailBytes = bytes);
+    } catch (e) {
+      debugPrint('StoryMediaView: local thumbnail generation failed - $e');
+    }
+  }
+
   void _onVideoUpdate() {
     if (_videoController == null) return;
     final v = _videoController!.value;
@@ -105,6 +130,12 @@ class _StoryMediaViewState extends State<StoryMediaView> {
   }
 
   @override
+  void dispose() {
+    _videoController?.removeListener(_onVideoUpdate);
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     switch (widget.story.storyType) {
       case StoryType.video:
@@ -116,14 +147,19 @@ class _StoryMediaViewState extends State<StoryMediaView> {
             ),
           );
         }
-        if (!_videoReady) {
-          return const Center(child: CustomLoadingIndicator());
-        }
-        return Center(
-          child: AspectRatio(
-            aspectRatio: _videoController!.value.aspectRatio,
-            child: VideoPlayer(_videoController!),
-          ),
+
+        return AnimatedSwitcher(
+          duration: const Duration(milliseconds: 280),
+          child:
+              !_videoReady
+                  ? _buildBlurredVideoPlaceholder()
+                  : Center(
+                    key: const ValueKey('video-ready'),
+                    child: AspectRatio(
+                      aspectRatio: _videoController!.value.aspectRatio,
+                      child: VideoPlayer(_videoController!),
+                    ),
+                  ),
         );
 
       case StoryType.image:
@@ -131,6 +167,9 @@ class _StoryMediaViewState extends State<StoryMediaView> {
           secureUrl: widget.story.imageUrl!,
           fit: BoxFit.contain,
           onReady: () => widget.onMediaReady(null),
+          placeholder:
+              (context) =>
+                  _buildBlurredImagePlaceholder(widget.story.imageUrl!),
         );
 
       case StoryType.text:
@@ -142,5 +181,98 @@ class _StoryMediaViewState extends State<StoryMediaView> {
           ),
         );
     }
+  }
+
+  Widget _buildBlurredVideoPlaceholder() {
+    final networkThumbnailUrl =
+        widget.story.videoUrl?.cloudinaryVideoThumbnailUrl;
+    final hasThumbnail =
+        _localThumbnailBytes != null || networkThumbnailUrl != null;
+
+    return Stack(
+      key: const ValueKey('video-loading'),
+      fit: StackFit.expand,
+      children: [
+        const ColoredBox(color: Colors.black),
+
+        if (_localThumbnailBytes != null)
+          ImageFiltered(
+            imageFilter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
+            child: Image.memory(
+              _localThumbnailBytes!,
+              fit: BoxFit.cover,
+              gaplessPlayback: true,
+            ),
+          )
+        else if (networkThumbnailUrl != null)
+          ImageFiltered(
+            imageFilter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
+            child: CachedCloudinaryImage(
+              secureUrl: networkThumbnailUrl,
+              fit: BoxFit.cover,
+              placeholder: (_) => const SizedBox.shrink(),
+              errorWidget: (_, __) => const SizedBox.shrink(),
+            ),
+          ),
+
+        Container(color: Colors.black.withValues(alpha: 0.25)),
+
+        if (hasThumbnail)
+          Center(
+            child:
+                _localThumbnailBytes != null
+                    ? Image.memory(
+                      _localThumbnailBytes!,
+                      fit: BoxFit.contain,
+                      gaplessPlayback: true,
+                    )
+                    : CachedCloudinaryImage(
+                      secureUrl: networkThumbnailUrl!,
+                      fit: BoxFit.contain,
+                      placeholder: (_) => const SizedBox.shrink(),
+                      errorWidget: (_, __) => const SizedBox.shrink(),
+                    ),
+          ),
+
+        const Center(
+          child: CustomLoadingIndicator(color: Colors.white, radius: 14),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildBlurredImagePlaceholder(String secureUrl) {
+    final lowResUrl = secureUrl.cloudinaryLowResPreviewUrl;
+
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        const ColoredBox(color: Colors.black),
+
+        ImageFiltered(
+          imageFilter: ImageFilter.blur(sigmaX: 2, sigmaY: 2),
+          child: Image.network(
+            lowResUrl,
+            fit: BoxFit.cover,
+            gaplessPlayback: true,
+            errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+          ),
+        ),
+        Container(color: Colors.black.withValues(alpha: 0.25)),
+
+        Center(
+          child: Image.network(
+            lowResUrl,
+            fit: BoxFit.contain,
+            gaplessPlayback: true,
+            errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+          ),
+        ),
+
+        const Center(
+          child: CustomLoadingIndicator(color: Colors.white, radius: 14),
+        ),
+      ],
+    );
   }
 }
