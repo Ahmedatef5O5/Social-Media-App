@@ -1,8 +1,8 @@
 import 'dart:async';
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:social_media_app/core/supabase/supabase_provider.dart';
+import 'package:social_media_app/core/toast/app_toast.dart';
 import '../../model/story_model.dart';
 import '../../model/story_stat_model.dart';
 import '../../services/stories_services.dart';
@@ -44,7 +44,12 @@ class MyStoriesCubit extends Cubit<MyStoriesState> {
 
     if (_sameStoryIds(myStories, current.stories)) return;
 
-    emit(current.copyWith(stories: myStories));
+    final validIds = myStories.map((s) => s.id).toSet();
+    final prunedSelection = current.selectedStoryIds.intersection(validIds);
+
+    emit(
+      current.copyWith(stories: myStories, selectedStoryIds: prunedSelection),
+    );
 
     _loadStats();
   }
@@ -76,21 +81,119 @@ class MyStoriesCubit extends Cubit<MyStoriesState> {
     final current = state;
     if (current is! MyStoriesLoaded) return;
 
-    emit(current.copyWith(deletingStoryId: storyId));
+    emit(
+      current.copyWith(
+        deletingStoryIds: {...current.deletingStoryIds, storyId},
+      ),
+    );
     try {
       await storiesCubit.deleteStory(storyId);
-      final updatedStories =
-          current.stories.where((s) => s.id != storyId).toList();
-      final updatedStats = Map<String, StoryStatModel>.from(
-        current.statsByStoryId,
-      )..remove(storyId);
-      emit(
-        MyStoriesLoaded(stories: updatedStories, statsByStoryId: updatedStats),
-      );
+      _removeStoriesLocally({storyId});
     } catch (e) {
       debugPrint('Error deleting story: $e');
-      if (!isClosed) emit(current.copyWith(clearDeleting: true));
+      final c = state;
+      if (!isClosed && c is MyStoriesLoaded) {
+        emit(
+          c.copyWith(
+            deletingStoryIds: c.deletingStoryIds.difference({storyId}),
+          ),
+        );
+      }
     }
+  }
+
+  // ── Multi-select ─────────────────────────────────────────────────────────
+
+  void enterSelectionMode(String initialStoryId) {
+    final current = state;
+    if (current is! MyStoriesLoaded) return;
+    if (current.isSelectionMode) return;
+    emit(current.copyWith(selectedStoryIds: {initialStoryId}));
+  }
+
+  void toggleSelection(String storyId) {
+    final current = state;
+    if (current is! MyStoriesLoaded) return;
+
+    final updated = Set<String>.from(current.selectedStoryIds);
+    if (!updated.remove(storyId)) {
+      updated.add(storyId);
+    }
+    emit(current.copyWith(selectedStoryIds: updated));
+  }
+
+  void clearSelection() {
+    final current = state;
+    if (current is! MyStoriesLoaded) return;
+    emit(current.copyWith(selectedStoryIds: const {}));
+  }
+
+  Future<void> deleteSelectedStories() async {
+    final current = state;
+    if (current is! MyStoriesLoaded) return;
+
+    final ids = Set<String>.from(current.selectedStoryIds);
+    if (ids.isEmpty) return;
+
+    emit(
+      current.copyWith(
+        deletingStoryIds: {...current.deletingStoryIds, ...ids},
+        selectedStoryIds: const {},
+      ),
+    );
+
+    final failedIds = <String>{};
+
+    await Future.wait(
+      ids.map((id) async {
+        try {
+          await storiesCubit.deleteStory(id);
+        } catch (e) {
+          debugPrint('Error deleting story $id: $e');
+          failedIds.add(id);
+        }
+      }),
+    );
+
+    final succeededIds = ids.difference(failedIds);
+    _removeStoriesLocally(succeededIds);
+
+    if (failedIds.isNotEmpty) {
+      final c = state;
+      if (!isClosed && c is MyStoriesLoaded) {
+        emit(
+          c.copyWith(
+            deletingStoryIds: c.deletingStoryIds.difference(failedIds),
+          ),
+        );
+      }
+      AppToast.warning(
+        failedIds.length == 1
+            ? 'One story could not be deleted'
+            : '${failedIds.length} stories could not be deleted',
+      );
+    }
+  }
+
+  void _removeStoriesLocally(Set<String> ids) {
+    if (ids.isEmpty) return;
+    final current = state;
+    if (current is! MyStoriesLoaded) return;
+
+    final updatedStories =
+        current.stories.where((s) => !ids.contains(s.id)).toList();
+    final updatedStats = Map<String, StoryStatModel>.from(
+      current.statsByStoryId,
+    )..removeWhere((id, _) => ids.contains(id));
+
+    emit(
+      MyStoriesLoaded(
+        stories: updatedStories,
+        statsByStoryId: updatedStats,
+        deletingStoryIds: current.deletingStoryIds.difference(ids),
+        selectedStoryIds: current.selectedStoryIds.difference(ids),
+      ),
+    );
   }
 
   @override

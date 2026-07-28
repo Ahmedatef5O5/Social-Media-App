@@ -83,47 +83,151 @@ class _MyStoriesListViewState extends State<MyStoriesListView> {
             elevation: 0,
             scrolledUnderElevation: 0,
             backgroundColor: theme.scaffoldBackgroundColor,
-            leading: InkWell(
-              onTap: () => Navigator.of(context).pop(),
-              borderRadius: BorderRadius.circular(50),
-              child: Icon(
-                Icons.arrow_back_ios_new_rounded,
-                color: theme.primaryColor,
-                size: 22,
-              ),
+            leading: BlocBuilder<MyStoriesCubit, MyStoriesState>(
+              buildWhen:
+                  (prev, curr) =>
+                      prev is MyStoriesLoaded &&
+                      curr is MyStoriesLoaded &&
+                      prev.isSelectionMode != curr.isSelectionMode,
+              builder: (context, state) {
+                final loaded = state as MyStoriesLoaded;
+                return AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 220),
+                  transitionBuilder:
+                      (child, anim) => ScaleTransition(
+                        scale: anim,
+                        child: FadeTransition(opacity: anim, child: child),
+                      ),
+                  child:
+                      loaded.isSelectionMode
+                          ? InkWell(
+                            key: const ValueKey('selection-close'),
+                            onTap:
+                                () =>
+                                    context
+                                        .read<MyStoriesCubit>()
+                                        .clearSelection(),
+                            borderRadius: BorderRadius.circular(50),
+                            child: Icon(
+                              Icons.close_rounded,
+                              color: theme.primaryColor,
+                              size: 24,
+                            ),
+                          )
+                          : InkWell(
+                            key: const ValueKey('back-arrow'),
+                            onTap: () => Navigator.of(context).pop(),
+                            borderRadius: BorderRadius.circular(50),
+                            child: Icon(
+                              Icons.arrow_back_ios_new_rounded,
+                              color: theme.primaryColor,
+                              size: 22,
+                            ),
+                          ),
+                );
+              },
             ),
-            title: Text(
-              'My Stories',
-              style: theme.textTheme.titleMedium!.copyWith(
-                color: theme.primaryColor,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 0.5,
-                fontSize: 20,
-              ),
+            title: BlocBuilder<MyStoriesCubit, MyStoriesState>(
+              buildWhen:
+                  (prev, curr) =>
+                      prev is MyStoriesLoaded &&
+                      curr is MyStoriesLoaded &&
+                      (prev.isSelectionMode != curr.isSelectionMode ||
+                          prev.selectedStoryIds.length !=
+                              curr.selectedStoryIds.length),
+              builder: (context, state) {
+                final loaded = state as MyStoriesLoaded;
+                return AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 220),
+                  child: Text(
+                    loaded.isSelectionMode
+                        ? '${loaded.selectedStoryIds.length} selected'
+                        : 'My Stories',
+                    key: ValueKey(loaded.isSelectionMode),
+                    style: theme.textTheme.titleMedium!.copyWith(
+                      color: theme.primaryColor,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 0.5,
+                      fontSize: 20,
+                    ),
+                  ),
+                );
+              },
             ),
             actions: [
-              PopupMenuButton<void>(
-                icon: Icon(Icons.more_vert_rounded, color: theme.primaryColor),
-                onSelected: (_) => _openDefaultStoryPrivacySettings(context),
-
-                itemBuilder:
-                    (context) => [
-                      PopupMenuItem(
-                        // ignore: void_checks
-                        value: 'story_privacy',
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.privacy_tip_outlined,
-                              color: theme.primaryColor,
-                              size: 20,
-                            ),
-                            const SizedBox(width: 10),
-                            const Text('Story Privacy'),
-                          ],
+              BlocBuilder<MyStoriesCubit, MyStoriesState>(
+                buildWhen:
+                    (prev, curr) =>
+                        prev is MyStoriesLoaded &&
+                        curr is MyStoriesLoaded &&
+                        prev.isSelectionMode != curr.isSelectionMode,
+                builder: (context, state) {
+                  final loaded = state as MyStoriesLoaded;
+                  return AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 220),
+                    transitionBuilder:
+                        (child, anim) => ScaleTransition(
+                          scale: anim,
+                          child: FadeTransition(opacity: anim, child: child),
                         ),
-                      ),
-                    ],
+                    child:
+                        loaded.isSelectionMode
+                            ? IconButton(
+                              key: const ValueKey('bulk-delete-action'),
+                              icon: Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: Colors.red.withValues(alpha: 0.1),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(
+                                  Icons.delete_outline_rounded,
+                                  color: Colors.redAccent,
+                                ),
+                              ),
+                              onPressed: () async {
+                                final cubit = context.read<MyStoriesCubit>();
+                                final currentState =
+                                    cubit.state as MyStoriesLoaded;
+                                final confirm = await showDeleteStoryDialog(
+                                  context,
+                                  count: currentState.selectedStoryIds.length,
+                                );
+                                if (confirm == true) {
+                                  cubit.deleteSelectedStories();
+                                }
+                              },
+                            )
+                            : PopupMenuButton<void>(
+                              key: const ValueKey('overflow-menu'),
+                              icon: Icon(
+                                Icons.more_vert_rounded,
+                                color: theme.primaryColor,
+                              ),
+                              onSelected:
+                                  (_) =>
+                                      _openDefaultStoryPrivacySettings(context),
+                              itemBuilder:
+                                  (context) => [
+                                    PopupMenuItem(
+                                      // ignore: void_checks
+                                      value: 'story_privacy',
+                                      child: Row(
+                                        children: [
+                                          Icon(
+                                            Icons.privacy_tip_outlined,
+                                            color: theme.primaryColor,
+                                            size: 20,
+                                          ),
+                                          const SizedBox(width: 10),
+                                          const Text('Story Privacy'),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                            ),
+                  );
+                },
               ),
             ],
           ),
@@ -155,23 +259,46 @@ class _MyStoriesListViewState extends State<MyStoriesListView> {
                         itemCount: loaded.stories.length,
                         itemBuilder: (context, index) {
                           final story = loaded.stories[index];
+                          final isDeleted = loaded.deletingStoryIds.contains(
+                            story.id,
+                          );
+                          final isSelected = loaded.selectedStoryIds.contains(
+                            story.id,
+                          );
+
                           return MyStoryTile(
                             story: story,
                             stat: loaded.statsByStoryId[story.id],
-                            isDeleting: loaded.deletingStoryId == story.id,
-                            onTap:
-                                () => Navigator.of(
-                                  context,
-                                  rootNavigator: true,
-                                ).pushNamed(
-                                  AppRoutes.storyDisplayViewRoute,
-                                  arguments: {
-                                    'storiesCubit': widget.storiesCubit,
-                                    'allUserGroups': [loaded.stories],
-                                    'initialGroupIndex': 0,
-                                    'initialStoryIndex': index,
-                                  },
-                                ),
+                            isDeleting: isDeleted,
+                            isSelectionMode: loaded.isSelectionMode,
+                            isSelected: isSelected,
+                            onTap: () {
+                              if (loaded.isSelectionMode) {
+                                context.read<MyStoriesCubit>().toggleSelection(
+                                  story.id,
+                                );
+                                return;
+                              }
+                              Navigator.of(
+                                context,
+                                rootNavigator: true,
+                              ).pushNamed(
+                                AppRoutes.storyDisplayViewRoute,
+                                arguments: {
+                                  'storiesCubit': widget.storiesCubit,
+                                  'allUserGroups': [loaded.stories],
+                                  'initialGroupIndex': 0,
+                                  'initialStoryIndex': index,
+                                },
+                              );
+                            },
+                            onLongPress: () {
+                              if (!loaded.isSelectionMode) {
+                                context
+                                    .read<MyStoriesCubit>()
+                                    .enterSelectionMode(story.id);
+                              }
+                            },
                             onDelete: () async {
                               final confirm = await showDeleteStoryDialog(
                                 context,
@@ -188,6 +315,8 @@ class _MyStoriesListViewState extends State<MyStoriesListView> {
                     },
                   ),
 
+                  // The FAB is deliberately hidden in selection mode further
+                  // down (Step 4 territory) - left untouched here.
                   Positioned(
                     left: _fabPosition.dx,
                     top: _fabPosition.dy,

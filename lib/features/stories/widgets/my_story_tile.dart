@@ -13,7 +13,10 @@ class MyStoryTile extends StatelessWidget {
   final StoryModel story;
   final StoryStatModel? stat;
   final bool isDeleting;
+  final bool isSelectionMode;
+  final bool isSelected;
   final VoidCallback onTap;
+  final VoidCallback onLongPress;
   final VoidCallback onDelete;
 
   const MyStoryTile({
@@ -21,7 +24,10 @@ class MyStoryTile extends StatelessWidget {
     required this.story,
     required this.stat,
     required this.isDeleting,
+    required this.isSelectionMode,
+    required this.isSelected,
     required this.onTap,
+    required this.onLongPress,
     required this.onDelete,
   });
 
@@ -35,11 +41,16 @@ class MyStoryTile extends StatelessWidget {
     return AnimatedOpacity(
       duration: const Duration(milliseconds: 300),
       opacity: isDeleting ? 0.4 : 1.0,
-      child: Container(
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
         decoration: BoxDecoration(
           color: isDark ? theme.colorScheme.surface : Colors.white,
           borderRadius: BorderRadius.circular(18),
+          border:
+              isSelected
+                  ? Border.all(color: theme.primaryColor, width: 2)
+                  : Border.all(color: Colors.transparent, width: 2),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
@@ -54,6 +65,7 @@ class MyStoryTile extends StatelessWidget {
           child: InkWell(
             borderRadius: BorderRadius.circular(18),
             onTap: isDeleting ? null : onTap,
+            onLongPress: isDeleting ? null : onLongPress,
             child: Padding(
               padding: const EdgeInsets.all(12),
               child: Row(
@@ -123,31 +135,47 @@ class MyStoryTile extends StatelessWidget {
                     ),
                   ),
 
-                  if (isDeleting)
-                    const Padding(
-                      padding: EdgeInsets.all(12.0),
-                      child: SizedBox(
-                        width: 24,
-                        height: 24,
-                        child: CustomLoadingIndicator(),
-                      ),
-                    )
-                  else
-                    IconButton(
-                      onPressed: onDelete,
-                      icon: Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: Colors.red.withValues(alpha: 0.1),
-                          shape: BoxShape.circle,
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 220),
+                    transitionBuilder:
+                        (child, anim) => ScaleTransition(
+                          scale: anim,
+                          child: FadeTransition(opacity: anim, child: child),
                         ),
-                        child: const Icon(
-                          Icons.delete_outline_rounded,
-                          color: Colors.redAccent,
-                          size: 20,
-                        ),
-                      ),
-                    ),
+                    child:
+                        isDeleting
+                            ? const Padding(
+                              key: ValueKey('deleting'),
+                              padding: EdgeInsets.all(12.0),
+                              child: SizedBox(
+                                width: 24,
+                                height: 24,
+                                child: CustomLoadingIndicator(),
+                              ),
+                            )
+                            : isSelectionMode
+                            ? Padding(
+                              key: const ValueKey('checkbox'),
+                              padding: const EdgeInsets.all(12.0),
+                              child: _buildCircularCheckbox(theme),
+                            )
+                            : IconButton(
+                              key: const ValueKey('delete-trash'),
+                              onPressed: onDelete,
+                              icon: Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: Colors.red.withValues(alpha: 0.1),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(
+                                  Icons.delete_outline_rounded,
+                                  color: Colors.redAccent,
+                                  size: 20,
+                                ),
+                              ),
+                            ),
+                  ),
                 ],
               ),
             ),
@@ -165,6 +193,28 @@ class MyStoryTile extends StatelessWidget {
     }
     if (s.caption?.trim().isNotEmpty == true) return s.caption!;
     return s.storyType == StoryType.video ? 'Video story' : 'Photo story';
+  }
+
+  Widget _buildCircularCheckbox(ThemeData theme) {
+    return IgnorePointer(
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        width: 26,
+        height: 26,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: isSelected ? theme.primaryColor : Colors.transparent,
+          border: Border.all(
+            color: isSelected ? theme.primaryColor : AppColors.grey5,
+            width: 2,
+          ),
+        ),
+        child:
+            isSelected
+                ? const Icon(Icons.check_rounded, color: Colors.white, size: 18)
+                : null,
+      ),
+    );
   }
 
   Widget _buildThumbnail() {

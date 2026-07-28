@@ -7,25 +7,29 @@ sealed class MyStoriesState {
 final class MyStoriesLoaded extends MyStoriesState {
   final List<StoryModel> stories;
   final Map<String, StoryStatModel> statsByStoryId;
-  final String? deletingStoryId;
+  final Set<String> deletingStoryIds;
+  final Set<String> selectedStoryIds;
 
   const MyStoriesLoaded({
     required this.stories,
     required this.statsByStoryId,
-    this.deletingStoryId,
+    this.deletingStoryIds = const {},
+    this.selectedStoryIds = const {},
   });
+
+  bool get isSelectionMode => selectedStoryIds.isNotEmpty;
 
   MyStoriesLoaded copyWith({
     List<StoryModel>? stories,
     Map<String, StoryStatModel>? statsByStoryId,
-    String? deletingStoryId,
-    bool clearDeleting = false,
+    Set<String>? deletingStoryIds,
+    Set<String>? selectedStoryIds,
   }) {
     return MyStoriesLoaded(
       stories: stories ?? this.stories,
       statsByStoryId: statsByStoryId ?? this.statsByStoryId,
-      deletingStoryId:
-          clearDeleting ? null : (deletingStoryId ?? this.deletingStoryId),
+      deletingStoryIds: deletingStoryIds ?? this.deletingStoryIds,
+      selectedStoryIds: selectedStoryIds ?? this.selectedStoryIds,
     );
   }
 }
