@@ -23,6 +23,8 @@ class _HomeFeedWithReelsState extends State<HomeFeedWithReels> {
   @override
   void initState() {
     super.initState();
+    // TODO : REMEBER REMOVE THIS resetPreferences
+    // ReelsPreferencesStore.instance.resetPreferences();
     WidgetsBinding.instance.addPostFrameCallback(
       (_) => _maybeInitializeReels(),
     );

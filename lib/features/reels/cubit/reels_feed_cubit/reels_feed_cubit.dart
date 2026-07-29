@@ -7,12 +7,16 @@ part 'reels_feed_state.dart';
 
 class ReelsFeedCubit extends Cubit<ReelsFeedState> {
   final ReelsServices _reelsServices;
+
   final Set<String> _seenVideoIds = {};
   List<String> _preferredCategories = [];
-  static const int _minGap = 5;
-  static const int _maxGap = 6;
-  static const int _reelsPerSection = 24;
-  static const int _loadMoreBatchSize = 12;
+
+  static const int _minGap = 2;
+  static const int _maxGap = 10;
+
+  static const int _reelsPerSection = 60;
+
+  static const int _loadMoreBatchSize = 20;
 
   ReelsFeedCubit({ReelsServices? reelsServices})
     : _reelsServices = reelsServices ?? ReelsServices(),
@@ -40,11 +44,38 @@ class ReelsFeedCubit extends Cubit<ReelsFeedState> {
         return;
       }
 
-      final pool = await _reelsServices.fetchReelsBatch(
-        limit: indices.length * _reelsPerSection,
-        excludeIds: _seenVideoIds,
-        categories: _preferredCategories.isEmpty ? null : _preferredCategories,
+      final excludeFromLastCycle = Set<String>.of(_seenVideoIds);
+      _seenVideoIds.clear();
+
+      final limit = indices.length * _reelsPerSection;
+      final categories =
+          _preferredCategories.isEmpty ? null : _preferredCategories;
+
+      var pool = await _reelsServices.fetchReelsBatch(
+        limit: limit,
+        excludeIds: excludeFromLastCycle,
+        categories: categories,
       );
+
+      if (pool.isEmpty && excludeFromLastCycle.isNotEmpty) {
+        pool = await _reelsServices.fetchReelsBatch(
+          limit: limit,
+          excludeIds: const {},
+          categories: categories,
+        );
+      }
+
+      if (pool.isEmpty && categories != null) {
+        debugPrint(
+          'Reels pool empty with category_filter=$categories - '
+          'retrying without category filter.',
+        );
+        pool = await _reelsServices.fetchReelsBatch(
+          limit: limit,
+          excludeIds: const {},
+          categories: null,
+        );
+      }
 
       if (pool.isEmpty) {
         emit(ReelsFeedEmpty());

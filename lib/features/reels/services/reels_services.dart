@@ -7,8 +7,9 @@ import '../utils/reels_interleaver.dart';
 class ReelsServices {
   final supabaseServices = SupabaseDatabaseServices.instance;
   final _supabase = SupabaseProvider.client;
+
   static const int _poolMultiplier = 4;
-  static const int _maxPoolSize = 400;
+  static const int _maxPoolSize = 800;
 
   Future<List<ReelModel>> fetchReelsBatch({
     required int limit,
