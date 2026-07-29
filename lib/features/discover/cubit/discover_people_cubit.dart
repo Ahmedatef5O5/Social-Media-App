@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:social_media_app/features/discover/services/discover_people_services.dart';
 import 'package:social_media_app/features/social_graph/models/discover_person_model.dart';
+import '../../../core/services/fcm_services.dart';
 import '../../home/cubits/home_cubit/home_cubit.dart';
 import '../../notifications/repository/notifications_repository.dart';
 import '../../social_graph/models/friendship_status.dart';
@@ -133,6 +134,12 @@ class DiscoverPeopleCubit extends Cubit<DiscoverPeopleState> {
           requesterImageUrl: me.imageUrl ?? '',
           friendshipId: friendshipId,
         );
+        await FcmService.instance.notifyFriendRequest(
+          receiverId: userId,
+          requesterId: me.id,
+          requesterName: me.name,
+          requesterImageUrl: me.imageUrl ?? '',
+        );
       }
     } catch (e) {
       _updateUser(
@@ -142,6 +149,44 @@ class DiscoverPeopleCubit extends Cubit<DiscoverPeopleState> {
             .withFriendshipId(null),
       );
       debugPrint('sendFriendRequest error: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> acceptFriendRequest(String userId) async {
+    _updateUser(
+      userId,
+      (u) => u.copyWith(friendshipStatus: FriendshipStatus.accepted),
+    );
+
+    try {
+      await _friendshipServices.acceptFriendRequest(userId);
+      final me = _homeCubit.currentUserData;
+      if (me != null) {
+        await NotificationRepository.instance.removeFriendRequestNotification(
+          receiverId: me.id,
+          senderId: userId,
+        );
+
+        await NotificationRepository.instance.notifyFriendAccept(
+          receiverId: userId,
+          accepterId: me.id,
+          accepterName: me.name,
+          accepterImageUrl: me.imageUrl ?? '',
+        );
+        await FcmService.instance.notifyFriendAccept(
+          receiverId: userId,
+          accepterId: me.id,
+          accepterName: me.name,
+          accepterImageUrl: me.imageUrl ?? '',
+        );
+      }
+    } catch (e) {
+      _updateUser(
+        userId,
+        (u) => u.copyWith(friendshipStatus: FriendshipStatus.pendingReceived),
+      );
+      debugPrint('acceptFriendRequest error: $e');
       rethrow;
     }
   }
@@ -194,6 +239,12 @@ class DiscoverPeopleCubit extends Cubit<DiscoverPeopleState> {
         final me = _homeCubit.currentUserData;
         if (me != null) {
           await NotificationRepository.instance.notifyFollow(
+            receiverId: userId,
+            followerId: me.id,
+            followerName: me.name,
+            followerImageUrl: me.imageUrl ?? '',
+          );
+          await FcmService.instance.notifyFollow(
             receiverId: userId,
             followerId: me.id,
             followerName: me.name,

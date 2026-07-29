@@ -7,6 +7,7 @@ import 'package:social_media_app/features/profile/models/profile_stats_model.dar
 import 'package:social_media_app/features/social_graph/models/friendship_status.dart';
 import '../../../../core/connectivity/cubit/connectivity_cubit.dart';
 import '../../../../core/connectivity/cubit/connectivity_state.dart';
+import '../../../../core/services/fcm_services.dart';
 import '../../../auth/handler/auth_exception_handler.dart';
 import '../../../home/cubits/home_cubit/home_cubit.dart';
 import '../../../notifications/repository/notifications_repository.dart';
@@ -117,10 +118,52 @@ class ProfileCubit extends Cubit<ProfileState> {
           requesterImageUrl: me.imageUrl ?? '',
           friendshipId: friendshipId,
         );
+        await FcmService.instance.notifyFriendRequest(
+          receiverId: s.user.id,
+          requesterId: me.id,
+          requesterName: me.name,
+          requesterImageUrl: me.imageUrl ?? '',
+        );
       }
     } catch (e) {
       emit(s);
       debugPrint('sendFriendRequest error: $e');
+    }
+  }
+
+  Future<void> acceptFriendRequest() async {
+    if (state is! ProfileLoaded) return;
+    final s = state as ProfileLoaded;
+
+    emit(s.copyWith(friendshipStatus: FriendshipStatus.accepted));
+
+    try {
+      await _friendshipServices.acceptFriendRequest(s.user.id);
+
+      final me = _homeCubit.currentUserData;
+      if (me != null) {
+        await NotificationRepository.instance.removeFriendRequestNotification(
+          receiverId: me.id,
+          senderId: s.user.id,
+        );
+
+        await NotificationRepository.instance.notifyFriendAccept(
+          receiverId: s.user.id,
+          accepterId: me.id,
+          accepterName: me.name,
+          accepterImageUrl: me.imageUrl ?? '',
+        );
+
+        await FcmService.instance.notifyFriendAccept(
+          receiverId: s.user.id,
+          accepterId: me.id,
+          accepterName: me.name,
+          accepterImageUrl: me.imageUrl ?? '',
+        );
+      }
+    } catch (e) {
+      emit(s);
+      debugPrint('acceptFriendRequest error: $e');
     }
   }
 
@@ -170,7 +213,7 @@ class ProfileCubit extends Cubit<ProfileState> {
       if (wasFollowing) {
         await _followServices.unfollowUser(s.user.id);
         if (me != null) {
-          await NotificationRepository.instance.removeFriendRequestNotification(
+          await NotificationRepository.instance.removeFollowNotification(
             receiverId: s.user.id,
             senderId: me.id,
           );
@@ -180,6 +223,12 @@ class ProfileCubit extends Cubit<ProfileState> {
         final me = _homeCubit.currentUserData;
         if (me != null) {
           await NotificationRepository.instance.notifyFollow(
+            receiverId: s.user.id,
+            followerId: me.id,
+            followerName: me.name,
+            followerImageUrl: me.imageUrl ?? '',
+          );
+          await FcmService.instance.notifyFollow(
             receiverId: s.user.id,
             followerId: me.id,
             followerName: me.name,

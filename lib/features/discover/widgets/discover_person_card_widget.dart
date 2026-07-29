@@ -33,6 +33,8 @@ class DiscoverPersonCardWidget extends StatelessWidget {
           }
           break;
         case FriendshipStatus.pendingReceived:
+          await cubit.acceptFriendRequest(personData.user.id);
+          break;
         case FriendshipStatus.accepted:
           break;
       }
@@ -207,12 +209,9 @@ class DiscoverPersonCardWidget extends StatelessWidget {
       case FriendshipStatus.pendingReceived:
         return _StaticChip(
           theme: theme,
-          label: 'Respond',
-          icon: Icons.mark_email_unread_rounded,
-          onTap:
-              () => AppToast.info(
-                'Check your notifications to respond to this request',
-              ),
+          label: 'Accept',
+          icon: Icons.person_add_alt_1_rounded,
+          onTap: () => _handleFriendAction(context),
         );
       case FriendshipStatus.accepted:
         return _StaticChip(

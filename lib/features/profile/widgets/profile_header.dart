@@ -8,7 +8,6 @@ import 'package:social_media_app/features/profile/cubits/profile_cubit/profile_c
 import '../../../core/constants/app_images.dart';
 import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/themes/app_colors.dart';
-import '../../../core/toast/app_toast.dart';
 import '../../../core/widgets/custom_elevated_button.dart';
 import '../../posts/cubit/posts_cubit/posts_cubit.dart';
 import '../../single_chats/models/chat_user_model.dart';
@@ -323,18 +322,17 @@ class ProfileHeader extends StatelessWidget {
       case FriendshipStatus.pendingReceived:
         return _buildSmallActionButton(
           context,
-          label: 'Respond',
+          label: 'Accept',
           txtColor: Colors.white,
           bgColor: theme.primaryColor,
           iconWidget: const Icon(
-            Icons.mark_email_unread_rounded,
+            Icons.person_add_alt_1_rounded,
             size: 18,
             color: Colors.white,
           ),
-          onPressed:
-              () => AppToast.info(
-                'Check your notifications to respond to this request',
-              ),
+          onPressed: () {
+            cubit.acceptFriendRequest();
+          },
         );
       case FriendshipStatus.accepted:
         return _buildSmallActionButton(
