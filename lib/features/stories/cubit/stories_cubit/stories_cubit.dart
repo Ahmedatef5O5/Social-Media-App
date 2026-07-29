@@ -536,6 +536,23 @@ class StoriesCubit extends Cubit<StoriesState> {
     _stableVideoFile = null;
   }
 
+  void resetSession() {
+    for (final token in _uploadCancelTokens.values) {
+      token.cancel('Session reset (sign-out)');
+    }
+    _uploadCancelTokens.clear();
+
+    for (final notifier in storyUploadProgress.values) {
+      notifier.dispose();
+    }
+    storyUploadProgress.clear();
+
+    cachedStories = [];
+    selectedStoryFile = null;
+    _stableVideoFile = null;
+    emit(StoriesInitial());
+  }
+
   @override
   Future<void> close() {
     _storiesChannel?.unsubscribe();

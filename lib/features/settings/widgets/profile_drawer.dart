@@ -146,14 +146,6 @@ class ProfileDrawer extends StatelessWidget {
                   listener: (context, state) {
                     if (state is AuthSignedOut) {
                       AppToast.warning('Log out Successfully');
-
-                      Navigator.of(
-                        context,
-                        rootNavigator: true,
-                      ).pushNamedAndRemoveUntil(
-                        AppRoutes.authRoute,
-                        (route) => false,
-                      );
                     } else if (state is AuthFailure) {
                       AppToast.error(state.errMsg);
                     }

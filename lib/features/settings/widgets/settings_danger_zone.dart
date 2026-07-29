@@ -2,9 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
-import 'package:social_media_app/core/router/app_routes.dart';
 import 'package:social_media_app/features/auth/cubit/auth_cubit/auth_cubit.dart';
-
 import '../../../core/toast/app_toast.dart';
 
 class SettingsDangerZone extends StatelessWidget {
@@ -73,14 +71,6 @@ class SettingsDangerZone extends StatelessWidget {
                   listener: (context, state) {
                     if (state is AuthSignedOut) {
                       AppToast.error('Logged out successfully');
-
-                      Navigator.of(
-                        context,
-                        rootNavigator: true,
-                      ).pushNamedAndRemoveUntil(
-                        AppRoutes.authRoute,
-                        (route) => false,
-                      );
                     } else if (state is AuthFailure) {
                       AppToast.error(state.errMsg);
                     }

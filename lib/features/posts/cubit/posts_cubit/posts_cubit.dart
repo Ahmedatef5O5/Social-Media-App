@@ -97,4 +97,12 @@ class PostsCubit extends Cubit<PostsState>
           : fixedPost.copyWith(originalPost: fixedOriginal);
     }).toList();
   }
+
+  void resetSession() {
+    currentUserData = null;
+    cachedPosts = [];
+    _pendingPosts.clear();
+    _pendingDeletedPostIds.clear();
+    emit(PostsInitial());
+  }
 }

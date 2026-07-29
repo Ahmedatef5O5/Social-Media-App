@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:social_media_app/core/cache/services/hive_cache_manager.dart';
 import 'package:social_media_app/core/cache/services/local_snapshot_store.dart';
@@ -14,6 +16,9 @@ import 'package:social_media_app/core/presence/services/presence_service.dart';
 import 'package:social_media_app/features/settings/repository/settings_repository.dart';
 import 'package:social_media_app/firebase_options.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../features/home/cubits/home_cubit/home_cubit.dart';
+import '../../features/posts/cubit/posts_cubit/posts_cubit.dart';
+import '../../features/stories/cubit/stories_cubit/stories_cubit.dart';
 import '../supabase/supabase_provider.dart';
 
 Future<void> initializeApp() async {
@@ -37,6 +42,12 @@ void _setupAuthListener() {
     if (event == AuthChangeEvent.signedIn && session != null) {
       debugPrint('✅ Logged in: ${session.user.email}');
       await PresenceService.instance.init();
+      final context = navigatorKey.currentContext;
+
+      if (context != null) {
+        if (!context.mounted) return;
+        _refetchSessionCubits(context);
+      }
       return;
     }
     final bool looksLikeSignOut =
@@ -56,12 +67,39 @@ void _setupAuthListener() {
 
     debugPrint('⚠️ Session expired or signed out. Redirecting to Login...');
     await PresenceService.instance.dispose();
+    final context = navigatorKey.currentContext;
+
+    if (context != null) {
+      if (!context.mounted) return;
+      _resetSessionCubits(context);
+    }
 
     navigatorKey.currentState?.pushNamedAndRemoveUntil(
       AppRoutes.authRoute,
       (route) => false,
     );
   });
+}
+
+void _resetSessionCubits(BuildContext context) {
+  try {
+    context.read<HomeCubit>().resetSession();
+    context.read<PostsCubit>().resetSession();
+    context.read<StoriesCubit>().resetSession();
+  } catch (e) {
+    debugPrint('⚠️ Failed to reset session cubits on sign-out: $e');
+  }
+  unawaited(LocalSnapshotStore.instance.clearAll());
+}
+
+void _refetchSessionCubits(BuildContext context) {
+  try {
+    context.read<HomeCubit>().getCurrentUserData();
+    context.read<PostsCubit>().fetchPosts();
+    context.read<StoriesCubit>().fetchStories();
+  } catch (e) {
+    debugPrint('⚠️ Failed to refetch session cubits after sign-in: $e');
+  }
 }
 
 Future<void> _initHiveCache() async {

@@ -101,4 +101,9 @@ class HomeCubit extends Cubit<HomeState> {
       return null;
     }
   }
+
+  void resetSession() {
+    currentUserData = null;
+    emit(HomeInitial());
+  }
 }

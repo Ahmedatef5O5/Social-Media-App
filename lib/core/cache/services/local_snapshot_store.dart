@@ -74,4 +74,14 @@ class LocalSnapshotStore {
     if (!_isInitialized) return;
     await _box.delete(key);
   }
+
+  Future<void> clearAll() async {
+    if (!_isInitialized) return;
+    try {
+      await _box.clear();
+    } catch (error, stackTrace) {
+      debugPrint('[LocalSnapshotStore] Failed to clear all snapshots: $error');
+      debugPrintStack(stackTrace: stackTrace);
+    }
+  }
 }
