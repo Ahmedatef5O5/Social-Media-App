@@ -5,6 +5,7 @@ import 'privacy_option_card.dart';
 Future<ContentPrivacy?> showPrivacySelectorSheet(
   BuildContext context, {
   required ContentPrivacy currentPrivacy,
+  bool isStory = true,
 }) {
   final theme = Theme.of(context);
   final isDark = theme.brightness == Brightness.dark;
@@ -50,7 +51,9 @@ Future<ContentPrivacy?> showPrivacySelectorSheet(
             ),
             const SizedBox(height: 6),
             Text(
-              'Choose your audience for this story',
+              isStory
+                  ? 'Choose your audience for this story'
+                  : 'Choose your audience for this post',
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: Colors.grey.shade600,
                 fontWeight: FontWeight.w500,

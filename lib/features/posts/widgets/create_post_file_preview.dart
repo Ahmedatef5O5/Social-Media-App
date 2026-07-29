@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:social_media_app/core/themes/app_colors.dart';
+import '../../../core/utilities/file_size_formatter.dart';
 
 class CreatePostFilePreview extends StatelessWidget {
   final String fileName;
+  final int? fileSizeBytes;
+
   final VoidCallback onRemove;
 
   const CreatePostFilePreview({
     super.key,
     required this.fileName,
+    this.fileSizeBytes,
     required this.onRemove,
   });
 
@@ -45,7 +49,9 @@ class CreatePostFilePreview extends StatelessWidget {
                   ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
                 ),
                 Text(
-                  "Document File",
+                  fileSizeBytes != null && fileSizeBytes! > 0
+                      ? "Document File · ${formatMediaFileSize(fileSizeBytes)}"
+                      : "Document File",
                   style: Theme.of(
                     context,
                   ).textTheme.labelSmall?.copyWith(color: AppColors.grey),

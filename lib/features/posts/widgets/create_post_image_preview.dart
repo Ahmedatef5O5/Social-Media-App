@@ -2,13 +2,18 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:social_media_app/core/themes/app_colors.dart';
 
+import '../../../core/attachment/widgets/transfer_ring.dart';
+import '../../../core/utilities/file_size_formatter.dart';
+
 class CreatePostImagePreview extends StatelessWidget {
   final String imagePath;
+  final int? fileSizeBytes;
   final VoidCallback onRemove;
 
   const CreatePostImagePreview({
     super.key,
     required this.imagePath,
+    this.fileSizeBytes,
     required this.onRemove,
   });
 
@@ -48,6 +53,20 @@ class CreatePostImagePreview extends StatelessWidget {
                 ),
               ),
             ),
+
+            if (fileSizeBytes != null && fileSizeBytes! > 0)
+              Positioned(
+                left: 12,
+                bottom: 22,
+                child: GlassPillBadge(
+                  leading: const Icon(
+                    Icons.photo_outlined,
+                    size: 14,
+                    color: Colors.white,
+                  ),
+                  caption: formatMediaFileSize(fileSizeBytes),
+                ),
+              ),
           ],
         ),
       );

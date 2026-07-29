@@ -10,7 +10,9 @@ mixin PostCreationMixin on Cubit<PostsState> {
   XFile? selectedDocument;
   XFile? selectedImage;
   XFile? selectedVideo;
-
+  int? selectedImageSizeBytes;
+  int? selectedVideoSizeBytes;
+  int? selectedDocumentSizeBytes;
   dio_pkg.CancelToken? _cancelToken;
 
   Future<void> createPost({
@@ -32,10 +34,17 @@ mixin PostCreationMixin on Cubit<PostsState> {
     String? imagePublicId, videoPublicId, filePublicId;
 
     try {
-      void updateProgress(double p) {
-        if (state is PostCreating) {
-          emit(PostCreating(p.clamp(0.05, 0.95)));
-        }
+      void updateProgress(int sentBytes, int totalBytes) {
+        if (state is! PostCreating) return;
+        final ratio =
+            totalBytes > 0 ? (sentBytes / totalBytes).clamp(0.0, 1.0) : 0.0;
+        emit(
+          PostCreating(
+            ratio.clamp(0.05, 0.95),
+            sentBytes: sentBytes,
+            totalBytes: totalBytes,
+          ),
+        );
       }
 
       if (selectedImage != null) {
@@ -46,7 +55,7 @@ mixin PostCreationMixin on Cubit<PostsState> {
             'posts',
             'images',
             cancelToken: _cancelToken,
-            onProgress: updateProgress,
+            onProgressBytes: updateProgress,
           );
           imageUrl = result.secureUrl;
           imagePublicId = result.publicId;
@@ -63,7 +72,7 @@ mixin PostCreationMixin on Cubit<PostsState> {
             'posts',
             'videos',
             cancelToken: _cancelToken,
-            onProgress: updateProgress,
+            onProgressBytes: updateProgress,
           );
           videoUrl = result.secureUrl;
           videoPublicId = result.publicId;
@@ -80,7 +89,7 @@ mixin PostCreationMixin on Cubit<PostsState> {
             'posts',
             'documents',
             cancelToken: _cancelToken,
-            onProgress: updateProgress,
+            onProgressBytes: updateProgress,
           );
 
           fileUrl = result.secureUrl;
@@ -295,6 +304,7 @@ mixin PostCreationMixin on Cubit<PostsState> {
       final image = await filePickerServices.pickImageFromGallery();
       if (image != null) {
         selectedImage = image;
+        selectedImageSizeBytes = File(image.path).lengthSync();
         emit(MediaPicked(image));
       } else {
         _emitPreviousState();
@@ -311,6 +321,7 @@ mixin PostCreationMixin on Cubit<PostsState> {
       final image = await filePickerServices.takePhotoByCamera();
       if (image != null) {
         selectedImage = image;
+        selectedImageSizeBytes = File(image.path).lengthSync();
         emit(MediaPicked(image));
       } else {
         _emitPreviousState();
@@ -327,6 +338,7 @@ mixin PostCreationMixin on Cubit<PostsState> {
       final video = await filePickerServices.pickVideoFromGallery();
       if (video != null) {
         selectedVideo = video;
+        selectedVideoSizeBytes = File(video.path).lengthSync();
         emit(MediaPicked(video));
       } else {
         _emitPreviousState();
@@ -343,6 +355,7 @@ mixin PostCreationMixin on Cubit<PostsState> {
       final doc = await filePickerServices.pickFile();
       if (doc != null) {
         selectedDocument = doc;
+        selectedDocumentSizeBytes = File(doc.path).lengthSync();
         emit(MediaPicked(doc));
       } else {
         _emitPreviousState();
@@ -357,6 +370,9 @@ mixin PostCreationMixin on Cubit<PostsState> {
     selectedImage = null;
     selectedVideo = null;
     selectedDocument = null;
+    selectedImageSizeBytes = null;
+    selectedVideoSizeBytes = null;
+    selectedDocumentSizeBytes = null;
   }
 
   void _emitPreviousState() {

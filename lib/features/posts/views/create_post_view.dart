@@ -11,6 +11,7 @@ import 'package:social_media_app/features/social_graph/widgets/privacy_selector_
 import '../../../core/helpers/modern_circle_progress.dart';
 import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/toast/app_toast.dart';
+import '../../../core/utilities/file_size_formatter.dart';
 import '../../social_graph/models/content_privacy.dart';
 import '../cubit/posts_cubit/posts_cubit.dart';
 import '../widgets/add_post_options_bottom_sheet.dart';
@@ -54,6 +55,7 @@ class _CreatePostViewState extends State<CreatePostView> {
     final result = await showPrivacySelectorSheet(
       context,
       currentPrivacy: _selectedPrivacy,
+      isStory: false,
     );
     if (result == null) return;
 
@@ -218,18 +220,24 @@ class _CreatePostViewState extends State<CreatePostView> {
                               if (postsCubit.selectedImage != null) {
                                 return CreatePostImagePreview(
                                   imagePath: postsCubit.selectedImage!.path,
+                                  fileSizeBytes:
+                                      postsCubit.selectedImageSizeBytes,
                                   onRemove: () {
                                     setState(() {
                                       postsCubit.selectedImage = null;
+                                      postsCubit.selectedImageSizeBytes = null;
                                     });
                                   },
                                 );
                               } else if (postsCubit.selectedVideo != null) {
                                 return CreatePostVideoPreview(
                                   videoPath: postsCubit.selectedVideo!.path,
+                                  fileSizeBytes:
+                                      postsCubit.selectedVideoSizeBytes,
                                   onRemove: () {
                                     setState(() {
                                       postsCubit.selectedVideo = null;
+                                      postsCubit.selectedVideoSizeBytes = null;
                                     });
                                   },
                                 );
@@ -239,9 +247,13 @@ class _CreatePostViewState extends State<CreatePostView> {
                                       postsCubit.selectedDocument!.path
                                           .split('/')
                                           .last,
+                                  fileSizeBytes:
+                                      postsCubit.selectedDocumentSizeBytes,
                                   onRemove: () {
                                     setState(() {
                                       postsCubit.selectedDocument = null;
+                                      postsCubit.selectedDocumentSizeBytes =
+                                          null;
                                     });
                                   },
                                 );
@@ -299,7 +311,12 @@ class _CreatePostViewState extends State<CreatePostView> {
                                     Text(
                                       state.progress >= 1.0
                                           ? 'Posted'
-                                          : "Publishing Post...",
+                                          : (state.totalBytes > 0
+                                              ? formatMediaFileSizeRatio(
+                                                state.sentBytes,
+                                                state.totalBytes,
+                                              )
+                                              : "Publishing Post..."),
                                       textAlign: TextAlign.center,
                                       style: Theme.of(
                                         context,
@@ -311,16 +328,14 @@ class _CreatePostViewState extends State<CreatePostView> {
                                                     .withValues(alpha: 0.7)
                                                 : Theme.of(context).primaryColor
                                                     .withValues(alpha: 0.95),
-
                                         fontSize: 18,
                                         fontWeight:
                                             state.progress >= 1.0
                                                 ? FontWeight.bold
-                                                : FontWeight.w400,
+                                                : FontWeight.w600,
                                       ),
                                     ),
                                   ],
-                                  // ],
                                 ),
                               ),
                             ),

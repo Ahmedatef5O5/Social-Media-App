@@ -7,6 +7,7 @@ class ModernCircularProgress extends StatelessWidget {
   final double progress;
   final double size;
   final String? label;
+  final String? sizeLabel;
   final bool showCheckmark;
   final bool enableHaptic;
 
@@ -15,6 +16,7 @@ class ModernCircularProgress extends StatelessWidget {
     required this.progress,
     this.size = 120,
     this.label,
+    this.sizeLabel,
     this.showCheckmark = false,
     this.enableHaptic = false,
   });
@@ -82,19 +84,42 @@ class ModernCircularProgress extends StatelessWidget {
                           );
                         },
                       )
-                      : Text(
+                      : Column(
                         key: const ValueKey('text'),
-                        label ?? "${(progress * 100).toInt()}%",
-                        style: theme.textTheme.headlineSmall?.copyWith(
-                          color:
-                              theme.brightness == Brightness.light
-                                  ? Theme.of(
-                                    context,
-                                  ).primaryColor.withValues(alpha: 0.7)
-                                  : Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: label != null ? size * 0.18 : size * 0.28,
-                        ),
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            label ?? "${(progress * 100).toInt()}%",
+                            style: theme.textTheme.headlineSmall?.copyWith(
+                              color:
+                                  theme.brightness == Brightness.light
+                                      ? Theme.of(
+                                        context,
+                                      ).primaryColor.withValues(alpha: 0.7)
+                                      : Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize:
+                                  label != null ? size * 0.18 : size * 0.28,
+                            ),
+                          ),
+                          if (sizeLabel != null && sizeLabel!.isNotEmpty)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 3),
+                              child: Text(
+                                sizeLabel!,
+                                style: theme.textTheme.labelSmall?.copyWith(
+                                  color:
+                                      theme.brightness == Brightness.light
+                                          ? Theme.of(
+                                            context,
+                                          ).primaryColor.withValues(alpha: 0.5)
+                                          : Colors.white.withValues(alpha: 0.6),
+                                  fontWeight: FontWeight.w500,
+                                  fontSize: size * 0.09,
+                                ),
+                              ),
+                            ),
+                        ],
                       ),
             ),
           ],

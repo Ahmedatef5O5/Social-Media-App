@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
+import '../../../core/attachment/widgets/transfer_ring.dart';
+import '../../../core/utilities/file_size_formatter.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
 import '../../../core/widgets/vertical_volume_indicator.dart';
 import '../../../core/widgets/video_progress_slider.dart';
@@ -10,11 +12,13 @@ import '../../single_chats/widgets/full_screen_media_view.dart';
 
 class CreatePostVideoPreview extends StatefulWidget {
   final String videoPath;
+  final int? fileSizeBytes;
   final VoidCallback onRemove;
 
   const CreatePostVideoPreview({
     super.key,
     required this.videoPath,
+    this.fileSizeBytes,
     required this.onRemove,
   });
 
@@ -142,6 +146,18 @@ class _CreatePostVideoPreviewState extends State<CreatePostVideoPreview>
         child: Stack(
           alignment: Alignment.center,
           children: [
+            Positioned(
+              top: 8,
+              left: 50,
+              child: GlassPillBadge(
+                leading: const Icon(
+                  Icons.videocam_outlined,
+                  size: 14,
+                  color: Colors.white,
+                ),
+                caption: formatMediaFileSize(widget.fileSizeBytes),
+              ),
+            ),
             if (_isInitialized)
               VideoPlayer(_controller)
             else

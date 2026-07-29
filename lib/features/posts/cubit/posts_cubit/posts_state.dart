@@ -34,7 +34,9 @@ final class PostsError extends PostsState {
 
 final class PostCreating extends PostsState {
   final double progress;
-  const PostCreating(this.progress);
+  final int sentBytes;
+  final int totalBytes;
+  const PostCreating(this.progress, {this.sentBytes = 0, this.totalBytes = 0});
 }
 
 final class PostUploadCanceled extends PostsState {

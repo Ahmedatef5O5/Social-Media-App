@@ -22,6 +22,7 @@ class CloudinaryStorageServices {
     String subFolder, {
     String filePrefix = '',
     void Function(double progress)? onProgress,
+    void Function(int sentBytes, int totalBytes)? onProgressBytes,
     dio_pkg.CancelToken? cancelToken,
   }) async {
     if (!await file.exists()) {
@@ -56,6 +57,7 @@ class CloudinaryStorageServices {
         onSendProgress: (sent, total) {
           final actualTotal = total > 0 ? total : 1;
           onProgress?.call((sent / actualTotal).clamp(0.0, 1.0));
+          if (total > 0) onProgressBytes?.call(sent, total);
         },
         cancelToken: cancelToken,
       );

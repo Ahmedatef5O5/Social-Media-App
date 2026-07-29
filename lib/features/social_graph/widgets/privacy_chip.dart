@@ -43,19 +43,23 @@ class PrivacyChip extends StatelessWidget {
                 highlightColor: Colors.white.withValues(alpha: 0.1),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 11,
-                    vertical: 8,
+                    horizontal: 8,
+                    vertical: 6,
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(privacy.icon, size: 12, color: Colors.white),
+                      Icon(
+                        privacy.icon,
+                        size: 11,
+                        color: Colors.white.withValues(alpha: 0.95),
+                      ),
                       const SizedBox(width: 4),
                       Text(
                         privacy.label,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 11,
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.8),
+                          fontSize: 9,
                           fontWeight: FontWeight.w600,
                           letterSpacing: 0.3,
                         ),
@@ -63,7 +67,7 @@ class PrivacyChip extends StatelessWidget {
                       const SizedBox(width: 2.5),
                       Icon(
                         Icons.keyboard_arrow_down_rounded,
-                        size: 12,
+                        size: 11,
                         color: Colors.white.withValues(alpha: 0.8),
                       ),
                     ],
