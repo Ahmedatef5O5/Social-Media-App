@@ -69,6 +69,7 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState>
 
   @override
   final Map<String, double> uploadProgressMap = {};
+  final Map<String, ValueNotifier<double>> uploadProgressNotifiers = {};
 
   @override
   final ValueNotifier<GroupMessageModel?> replyToMessage = ValueNotifier(null);
@@ -175,6 +176,17 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState>
   GroupModel get currentGroup => group;
 
   void onGroupAvatarUpdated(String newUrl) {}
+
+  ValueNotifier<double> progressNotifierFor(String messageId) {
+    return uploadProgressNotifiers.putIfAbsent(
+      messageId,
+      () => ValueNotifier<double>(0),
+    );
+  }
+
+  void disposeProgressNotifier(String messageId) {
+    uploadProgressNotifiers.remove(messageId)?.dispose();
+  }
 
   @override
   Future<void> close() {

@@ -105,7 +105,7 @@ mixin GroupMediaUploadMixin on Cubit<GroupDetailsState> {
           cancelToken: cancelToken,
           onProgress: (p) {
             uploadProgressMap[tempId] = p;
-            _emitLoaded();
+            (this as GroupDetailsCubit).progressNotifierFor(tempId).value = p;
           },
         );
         uploadedImageUrl = result.secureUrl;
@@ -115,6 +115,7 @@ mixin GroupMediaUploadMixin on Cubit<GroupDetailsState> {
           imageFile,
         );
         uploadProgressMap.remove(tempId);
+        (this as GroupDetailsCubit).disposeProgressNotifier(tempId);
       }
 
       if (videoFile != null) {
@@ -127,7 +128,7 @@ mixin GroupMediaUploadMixin on Cubit<GroupDetailsState> {
           cancelToken: cancelToken,
           onProgress: (p) {
             uploadProgressMap[tempId] = p;
-            _emitLoaded();
+            (this as GroupDetailsCubit).progressNotifierFor(tempId).value = p;
           },
         );
         uploadedVideoUrl = result.secureUrl;
@@ -136,7 +137,7 @@ mixin GroupMediaUploadMixin on Cubit<GroupDetailsState> {
           uploadedVideoUrl,
           videoFile,
         );
-        uploadProgressMap.remove(tempId);
+        (this as GroupDetailsCubit).disposeProgressNotifier(tempId);
       }
 
       if (voiceFile != null) {
@@ -172,7 +173,7 @@ mixin GroupMediaUploadMixin on Cubit<GroupDetailsState> {
           cancelToken: cancelToken,
           onProgress: (p) {
             uploadProgressMap[tempId] = p;
-            _emitLoaded();
+            (this as GroupDetailsCubit).progressNotifierFor(tempId).value = p;
           },
         );
         uploadedFileUrl = result.secureUrl;
@@ -181,7 +182,7 @@ mixin GroupMediaUploadMixin on Cubit<GroupDetailsState> {
           uploadedFileUrl,
           documentFile,
         );
-        uploadProgressMap.remove(tempId);
+        (this as GroupDetailsCubit).disposeProgressNotifier(tempId);
       }
 
       await _services.sendGroupMessage(
@@ -250,8 +251,12 @@ mixin GroupMediaUploadMixin on Cubit<GroupDetailsState> {
         lastMessageSenderId: currentUserId,
         lastMessageSenderName: senderName,
       );
-
-      cachedMessages.removeWhere((m) => m.id == tempId);
+      Future.delayed(const Duration(seconds: 2), () {
+        if (!(this as Cubit).isClosed) {
+          cachedMessages.removeWhere((m) => m.id == tempId);
+          _emitLoaded();
+        }
+      });
     } on UploadCanceledException {
       return;
     } catch (e) {
@@ -274,7 +279,7 @@ mixin GroupMediaUploadMixin on Cubit<GroupDetailsState> {
 
         _cancelTokens.remove(tempId);
         uploadProgressMap.remove(tempId);
-
+        (this as GroupDetailsCubit).disposeProgressNotifier(tempId);
         cachedMessages.removeWhere((m) => m.id == tempId);
 
         if (!isOffline) {
@@ -298,7 +303,7 @@ mixin GroupMediaUploadMixin on Cubit<GroupDetailsState> {
 
       _cancelTokens.remove(tempId);
       uploadProgressMap.remove(tempId);
-
+      (this as GroupDetailsCubit).disposeProgressNotifier(tempId);
       cachedMessages.removeWhere((m) => m.id == tempId);
 
       emit(GroupDetailsLoaded(messages: List.from(cachedMessages)));

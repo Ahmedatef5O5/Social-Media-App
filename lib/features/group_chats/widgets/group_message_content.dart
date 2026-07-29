@@ -391,21 +391,29 @@ class _GroupMessageContentState extends State<GroupMessageContent> {
 
         if (isUploading && !isVoice && !isFile)
           Positioned.fill(
-            child: MediaStateOverlay(
-              state: MediaTransferState.uploading(uploadProgress ?? 0.0),
-              isVideo: isVideo,
-              durationSeconds: widget.message.durationSeconds,
-              borderRadius: BorderRadius.only(
-                topLeft: const Radius.circular(18),
-                topRight: const Radius.circular(18),
-                bottomLeft: Radius.circular(widget.isMe ? 18 : 4),
-                bottomRight: Radius.circular(widget.isMe ? 4 : 18),
-              ),
-              onCancelTap:
-                  () => context.read<GroupDetailsCubit>().cancelUpload(
-                    widget.message.id,
+            child: ValueListenableBuilder<double>(
+              valueListenable: context
+                  .read<GroupDetailsCubit>()
+                  .progressNotifierFor(widget.message.id),
+              builder: (context, progress, _) {
+                return MediaStateOverlay(
+                  state: MediaTransferState.uploading(progress),
+                  isVideo: isVideo,
+                  durationSeconds: widget.message.durationSeconds,
+                  fileSizeBytes: widget.message.fileSizeBytes,
+                  borderRadius: BorderRadius.only(
+                    topLeft: const Radius.circular(18),
+                    topRight: const Radius.circular(18),
+                    bottomLeft: Radius.circular(widget.isMe ? 18 : 4),
+                    bottomRight: Radius.circular(widget.isMe ? 4 : 18),
                   ),
-              child: const SizedBox.shrink(),
+                  onCancelTap:
+                      () => context.read<GroupDetailsCubit>().cancelUpload(
+                        widget.message.id,
+                      ),
+                  child: const SizedBox.shrink(),
+                );
+              },
             ),
           ),
       ],

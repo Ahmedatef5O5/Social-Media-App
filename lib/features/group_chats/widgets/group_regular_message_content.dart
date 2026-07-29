@@ -194,18 +194,36 @@ class GroupRegularMessageContent extends StatelessWidget {
             if (isFile && (message.fileUrl != null || isUploading))
               Padding(
                 padding: const EdgeInsets.only(top: 2),
-                child: FileMessageBubble(
-                  fileUrl: message.fileUrl ?? '',
-                  fileName: message.fileName,
-                  fileSizeBytes: message.fileSizeBytes,
-                  isMe: isMe,
-                  isUploading: isUploading,
-                  uploadProgress: uploadProgress,
-                  onCancelTap:
-                      () => context.read<GroupDetailsCubit>().cancelUpload(
-                        message.id,
-                      ),
-                ),
+                child:
+                    isUploading
+                        ? ValueListenableBuilder<double>(
+                          valueListenable: context
+                              .read<GroupDetailsCubit>()
+                              .progressNotifierFor(message.id),
+                          builder: (context, progress, _) {
+                            return FileMessageBubble(
+                              fileUrl: message.fileUrl ?? '',
+                              fileName: message.fileName,
+                              fileSizeBytes: message.fileSizeBytes,
+                              isMe: isMe,
+
+                              isUploading: isUploading,
+                              uploadProgress: progress,
+                              onCancelTap:
+                                  () => context
+                                      .read<GroupDetailsCubit>()
+                                      .cancelUpload(message.id),
+                            );
+                          },
+                        )
+                        : FileMessageBubble(
+                          fileUrl: message.fileUrl ?? '',
+                          fileName: message.fileName,
+                          fileSizeBytes: message.fileSizeBytes,
+                          isMe: isMe,
+                          isUploading: false,
+                          uploadProgress: null,
+                        ),
               ),
             if (displayText.isNotEmpty)
               Padding(

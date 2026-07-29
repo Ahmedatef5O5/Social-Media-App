@@ -19,10 +19,6 @@ class GroupChatAppBarSwitcher extends StatelessWidget
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
 
-  void _showComingSoon(String feature) {
-    AppToast.info('$feature is coming soon');
-  }
-
   Future<void> _openForwardPicker(
     BuildContext context, {
     required int messageCount,
