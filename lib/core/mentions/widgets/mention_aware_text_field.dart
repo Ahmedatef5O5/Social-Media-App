@@ -65,7 +65,7 @@ class MentionAwareTextField extends StatefulWidget {
 class _MentionAwareTextFieldState extends State<MentionAwareTextField> {
   final GlobalKey _fieldKey = GlobalKey();
   final ScrollController _scrollController = ScrollController();
-
+  final LayerLink _layerLink = LayerLink();
   final _mentionsService = MentionSearchService();
 
   OverlayEntry? _overlayEntry;
@@ -159,43 +159,6 @@ class _MentionAwareTextFieldState extends State<MentionAwareTextField> {
 
   void _syncOverlay() => _overlayEntry?.markNeedsBuild();
 
-  ({double lineTop, double lineBottom})? _caretLineGlobalY(
-    RenderBox fieldRenderBox,
-  ) {
-    final text = widget.controller.text;
-    final selection = widget.controller.selection;
-    if (!selection.isValid) return null;
-
-    final cursor = selection.baseOffset.clamp(0, text.length);
-    final effectiveStyle =
-        widget.style ??
-        DefaultTextStyle.of(context).style.copyWith(fontSize: 15);
-    final contentPadding =
-        (widget.contentPadding as EdgeInsets?) ??
-        const EdgeInsets.symmetric(horizontal: 16, vertical: 8);
-
-    final textPainter = TextPainter(
-      text: TextSpan(text: text.substring(0, cursor), style: effectiveStyle),
-      textDirection: TextDirection.ltr,
-    )..layout(maxWidth: fieldRenderBox.size.width - contentPadding.horizontal);
-
-    final caretInText = textPainter.getOffsetForCaret(
-      TextPosition(offset: cursor),
-      Rect.zero,
-    );
-    final scrollOffset =
-        _scrollController.hasClients ? _scrollController.offset : 0.0;
-
-    final localTop = contentPadding.top + caretInText.dy - scrollOffset;
-    final localBottom = localTop + textPainter.preferredLineHeight;
-
-    final globalTop = fieldRenderBox.localToGlobal(Offset(0, localTop)).dy;
-    final globalBottom =
-        fieldRenderBox.localToGlobal(Offset(0, localBottom)).dy;
-
-    return (lineTop: globalTop, lineBottom: globalBottom);
-  }
-
   Widget _buildFollower() {
     final renderBox =
         _fieldKey.currentContext?.findRenderObject() as RenderBox?;
@@ -205,10 +168,8 @@ class _MentionAwareTextFieldState extends State<MentionAwareTextField> {
 
     final fieldSize = renderBox.size;
     final fieldTopLeft = renderBox.localToGlobal(Offset.zero);
-    final caretLine = _caretLineGlobalY(renderBox);
-    final lineTop = caretLine?.lineTop ?? fieldTopLeft.dy;
-    final lineBottom =
-        caretLine?.lineBottom ?? (fieldTopLeft.dy + fieldSize.height);
+    final fieldTop = fieldTopLeft.dy;
+    final fieldBottom = fieldTop + fieldSize.height;
 
     final mediaQuery = MediaQuery.of(context);
     final screenHeight = mediaQuery.size.height;
@@ -217,37 +178,37 @@ class _MentionAwareTextFieldState extends State<MentionAwareTextField> {
             ? mediaQuery.viewInsets.bottom
             : mediaQuery.padding.bottom;
 
-    const gap = 6.0;
-    const minUsableHeight = 100.0;
-    const preferredMaxHeight = 260.0;
+    const gap = 8.0;
+    final spaceBelow = screenHeight - bottomInset - fieldBottom - gap;
+    final spaceAbove = fieldTop - mediaQuery.padding.top - gap;
 
-    final spaceBelow = screenHeight - bottomInset - lineBottom - gap;
-    final spaceAbove = lineTop - mediaQuery.padding.top - gap;
+    final openBelow = spaceBelow >= spaceAbove;
 
-    final openBelow = spaceBelow >= minUsableHeight || spaceBelow >= spaceAbove;
     final availableHeight = openBelow ? spaceBelow : spaceAbove;
-    final maxHeight = availableHeight.clamp(
-      minUsableHeight,
-      preferredMaxHeight,
-    );
+    final maxHeight = availableHeight.clamp(80.0, 260.0);
 
     return Positioned(
-      left: fieldTopLeft.dx,
-      width: fieldSize.width,
-      top: openBelow ? lineBottom + gap : null,
-      bottom: openBelow ? null : screenHeight - lineTop + gap,
-      child: TapRegion(
-        groupId: _fieldKey,
-        child: Material(
-          color: Colors.transparent,
-          child: _MentionSuggestionsCard(
-            width: fieldSize.width,
-            maxHeight: maxHeight,
-            openBelow: openBelow,
-            results: _results,
-            isLoading: _isSearching,
-            onSelect: _selectMention,
-            onClose: _closeMentionSearch,
+      top: 0,
+      left: 0,
+      child: CompositedTransformFollower(
+        link: _layerLink,
+        showWhenUnlinked: false,
+        targetAnchor: openBelow ? Alignment.bottomLeft : Alignment.topLeft,
+        followerAnchor: openBelow ? Alignment.topLeft : Alignment.bottomLeft,
+        offset: Offset(0, openBelow ? gap : -gap),
+        child: TapRegion(
+          groupId: _fieldKey,
+          child: Material(
+            color: Colors.transparent,
+            child: _MentionSuggestionsCard(
+              width: fieldSize.width,
+              maxHeight: maxHeight,
+              openBelow: openBelow,
+              results: _results,
+              isLoading: _isSearching,
+              onSelect: _selectMention,
+              onClose: _closeMentionSearch,
+            ),
           ),
         ),
       ),
@@ -284,61 +245,64 @@ class _MentionAwareTextFieldState extends State<MentionAwareTextField> {
       onTapOutside: (event) {
         widget.focusNode.unfocus();
       },
-      child: TextField(
-        key: _fieldKey,
-        controller: widget.controller,
-        focusNode: widget.focusNode,
-        scrollController: _scrollController,
-        enabled: widget.enabled,
-        autofocus: widget.autofocus,
-        minLines: widget.minLines,
-        maxLines: widget.maxLines,
-        maxLength: widget.maxLength,
-        textAlign: widget.textAlign,
-        textCapitalization: widget.textCapitalization,
-        style: widget.style,
-        onSubmitted: widget.onSubmitted,
-        onChanged: widget.onChanged,
-        decoration:
-            widget.decoration ??
-            InputDecoration(
-              hintText: widget.hintText,
-              hintStyle:
-                  widget.hintStyle ??
-                  theme.textTheme.bodyMedium?.copyWith(
-                    color: AppColors.grey5,
-                    fontWeight: FontWeight.w400,
-                    fontSize: 15,
-                  ),
-              filled: widget.filled,
-              fillColor:
-                  widget.fillColor ??
-                  (widget.filled
-                      ? theme.colorScheme.surfaceContainerHighest.withValues(
-                        alpha: 0.4,
-                      )
-                      : null),
-              counterText: widget.counterText,
-              counterStyle: widget.counterStyle,
-              contentPadding:
-                  widget.contentPadding ??
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              border:
-                  widget.border ??
-                  OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(25),
-                    borderSide: BorderSide.none,
-                  ),
-              focusedBorder:
-                  widget.focusedBorder ??
-                  OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(25),
-                    borderSide: BorderSide(
-                      color: theme.primaryColor,
-                      width: 1.6,
+      child: CompositedTransformTarget(
+        link: _layerLink,
+        child: TextField(
+          key: _fieldKey,
+          controller: widget.controller,
+          focusNode: widget.focusNode,
+          scrollController: _scrollController,
+          enabled: widget.enabled,
+          autofocus: widget.autofocus,
+          minLines: widget.minLines,
+          maxLines: widget.maxLines,
+          maxLength: widget.maxLength,
+          textAlign: widget.textAlign,
+          textCapitalization: widget.textCapitalization,
+          style: widget.style,
+          onSubmitted: widget.onSubmitted,
+          onChanged: widget.onChanged,
+          decoration:
+              widget.decoration ??
+              InputDecoration(
+                hintText: widget.hintText,
+                hintStyle:
+                    widget.hintStyle ??
+                    theme.textTheme.bodyMedium?.copyWith(
+                      color: AppColors.grey5,
+                      fontWeight: FontWeight.w400,
+                      fontSize: 15,
                     ),
-                  ),
-            ),
+                filled: widget.filled,
+                fillColor:
+                    widget.fillColor ??
+                    (widget.filled
+                        ? theme.colorScheme.surfaceContainerHighest.withValues(
+                          alpha: 0.4,
+                        )
+                        : null),
+                counterText: widget.counterText,
+                counterStyle: widget.counterStyle,
+                contentPadding:
+                    widget.contentPadding ??
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                border:
+                    widget.border ??
+                    OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(25),
+                      borderSide: BorderSide.none,
+                    ),
+                focusedBorder:
+                    widget.focusedBorder ??
+                    OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(25),
+                      borderSide: BorderSide(
+                        color: theme.primaryColor,
+                        width: 1.6,
+                      ),
+                    ),
+              ),
+        ),
       ),
     );
   }

@@ -20,3 +20,10 @@ String formatMediaFileSizeRatio(int? downloadedBytes, int? totalBytes) {
   final downloaded = (downloadedBytes ?? 0).clamp(0, totalBytes);
   return '${_formatBytesAllowZero(downloaded)} / ${formatMediaFileSize(totalBytes)}';
 }
+
+String formatMediaDuration(int? seconds) {
+  if (seconds == null || seconds < 0) return '';
+  final m = (seconds ~/ 60).toString().padLeft(2, '0');
+  final s = (seconds % 60).toString().padLeft(2, '0');
+  return '$m:$s';
+}

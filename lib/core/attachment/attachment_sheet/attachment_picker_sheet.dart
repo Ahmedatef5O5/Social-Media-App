@@ -171,11 +171,14 @@ class AttachmentPickerSheet extends StatelessWidget {
     final nav = Navigator.of(context);
     final file = await FilePickerServices().pickImageFromGallery();
     if (file == null) return;
+    final imageFile = File(file.path);
+    final size = await imageFile.length();
     nav.pop(
       PickedAttachment(
         kind: AttachmentKind.image,
-        localFile: File(file.path),
+        localFile: imageFile,
         fileName: file.name,
+        fileSizeBytes: size,
       ),
     );
   }
@@ -184,11 +187,14 @@ class AttachmentPickerSheet extends StatelessWidget {
     final nav = Navigator.of(context);
     final file = await FilePickerServices().takePhotoByCamera();
     if (file == null) return;
+    final imageFile = File(file.path);
+    final size = await imageFile.length();
     nav.pop(
       PickedAttachment(
         kind: AttachmentKind.image,
-        localFile: File(file.path),
+        localFile: imageFile,
         fileName: file.name,
+        fileSizeBytes: size,
       ),
     );
   }

@@ -76,6 +76,10 @@ class MediaLocalDataSourceImpl implements MediaLocalDataSource {
       return _box.get(secureUrl)!.toEntity();
     }
 
+    if (!_isRemoteUrl(secureUrl)) {
+      return _adoptLocalPathDirectly(secureUrl);
+    }
+
     final inFlight = _inFlightDownloads[secureUrl];
     if (inFlight != null) {
       _registerProgressListener(secureUrl, onProgress);
@@ -97,6 +101,17 @@ class MediaLocalDataSourceImpl implements MediaLocalDataSource {
       _inFlightDownloads.remove(secureUrl);
       _progressListeners.remove(secureUrl);
     }
+  }
+
+  bool _isRemoteUrl(String path) =>
+      path.startsWith('http://') || path.startsWith('https://');
+
+  Future<MediaCacheEntry> _adoptLocalPathDirectly(String secureUrl) async {
+    final sourceFile = File(secureUrl);
+    if (!await sourceFile.exists()) {
+      throw MediaCacheDownloadException(secureUrl, 'local_source_missing');
+    }
+    return adoptLocalFile(secureUrl, sourceFile);
   }
 
   @override

@@ -3,6 +3,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shimmer/shimmer.dart';
+import '../attachment/widgets/media_loading_placeholder.dart';
 import '../cache/repository/media_cache_repository.dart';
 
 class CachedCloudinaryImage extends StatefulWidget {
@@ -225,18 +226,21 @@ class _CachedCloudinaryImageState extends State<CachedCloudinaryImage> {
   }
 
   Widget _buildDefaultPlaceholder() {
-    return Shimmer.fromColors(
-      baseColor: Colors.grey[300]!,
-      highlightColor: Colors.grey[100]!,
-      child: Container(
-        width: widget.width ?? double.infinity,
-        height: widget.height ?? double.infinity,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          shape: widget.isAvatar ? BoxShape.circle : BoxShape.rectangle,
+    if (widget.isAvatar) {
+      return Shimmer.fromColors(
+        baseColor: Colors.grey[300]!,
+        highlightColor: Colors.grey[100]!,
+        child: Container(
+          width: widget.width ?? double.infinity,
+          height: widget.height ?? double.infinity,
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            shape: BoxShape.circle,
+          ),
         ),
-      ),
-    );
+      );
+    }
+    return MediaLoadingPlaceholder(width: widget.width, height: widget.height);
   }
 
   Widget _buildError(BuildContext context, Object error) {
