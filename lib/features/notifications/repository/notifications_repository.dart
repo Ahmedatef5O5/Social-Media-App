@@ -220,7 +220,7 @@ class NotificationRepository {
       'sender_id': accepterId,
       'type': 'friend_accept',
       'title': accepterName,
-      'body': '✅ accepted your friend request',
+      'body': '🤝 accepted your friend request',
       'sender_image_url': accepterImageUrl,
       'reference_id': accepterId,
       'is_read': false,

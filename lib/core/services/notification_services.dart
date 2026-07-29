@@ -2,6 +2,7 @@ import 'dart:typed_data';
 import 'package:dio/dio.dart' as dio_pkg;
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:social_media_app/core/router/app_routes.dart';
 import 'package:social_media_app/core/services/active_screen_tracker.dart';
@@ -11,6 +12,7 @@ import 'package:social_media_app/features/stories/cubit/stories_cubit/stories_cu
 import '../../features/group_calls/models/group_call_model.dart';
 import '../../features/group_calls/views/incoming_group_call_screen.dart';
 import '../../features/group_chats/services/group_chat_services.dart';
+import '../../features/notifications/models/app_notification_model.dart';
 import '../../features/notifications/views/notification_view.dart';
 import '../../features/posts/model/post_details_route_args.dart';
 import '../../features/posts/services/posts_services.dart';
@@ -49,6 +51,7 @@ class NotificationService {
 
   static const Set<String> _socialNotificationTypes = {
     'friend_request',
+    'friend_accept',
     'follow',
     'post_react',
     'post_comment',
@@ -439,9 +442,8 @@ class NotificationService {
             : 'New message';
 
     final String? avatarUrl = data['senderImageUrl'];
-    final String? groupImageUrl = data['groupImageUrl'];
 
-    Future<Uint8List> _getGroupAvatarBitmap(
+    Future<Uint8List> getGroupAvatarBitmap(
       String groupName,
       String? groupImageUrl,
     ) async {
@@ -472,7 +474,7 @@ class NotificationService {
 
     final Uint8List headerBitmap =
         isGroup
-            ? await _getGroupAvatarBitmap(
+            ? await getGroupAvatarBitmap(
               conversationTitle,
               data['groupImageUrl'],
             )
@@ -866,6 +868,15 @@ class NotificationService {
       _openPostDetails(referenceId, _activeModeForType(type));
       return;
     }
+    if (type == 'friend_request') {
+      _openNotificationsView(NotificationType.friendRequest);
+      return;
+    }
+
+    if (type == 'follow') {
+      _openNotificationsView(NotificationType.follow);
+      return;
+    }
 
     _openNotificationsView();
   }
@@ -907,18 +918,23 @@ class NotificationService {
     });
   }
 
-  static void _openNotificationsView() {
+  static void _openNotificationsView([NotificationType? initialFilter]) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       navigatorKey.currentState?.push(
-        MaterialPageRoute(builder: (_) => const NotificationsView()),
+        MaterialPageRoute(
+          builder: (_) => NotificationsView(initialFilter: initialFilter),
+        ),
       );
     });
   }
 
   static Future<void> _openMyStory(String storyId) async {
-    final storiesCubit = StoriesCubit();
+    final context = navigatorKey.currentContext;
+    if (context == null) return;
+    final storiesCubit = context.read<StoriesCubit>();
+
     try {
-      await storiesCubit.fetchStories();
+      await storiesCubit.fetchStories(isRefresh: true);
       final myUserId = SupabaseProvider.idOrNull;
       final myStories =
           storiesCubit.cachedStories
@@ -926,13 +942,13 @@ class NotificationService {
               .toList();
       final storyIndex = myStories.indexWhere((s) => s.id == storyId);
 
-      WidgetsBinding.instance.addPostFrameCallback((_) async {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
         navigatorKey.currentState?.pushNamedAndRemoveUntil(
           AppRoutes.homeRoute,
           (route) => false,
         );
 
-        final listPopped = navigatorKey.currentState?.pushNamed(
+        navigatorKey.currentState?.pushNamed(
           AppRoutes.myStoriesListViewRoute,
           arguments: {'storiesCubit': storiesCubit, 'myStories': myStories},
         );
@@ -950,21 +966,20 @@ class NotificationService {
             },
           );
         }
-
-        await listPopped;
-        await storiesCubit.close();
       });
     } catch (e) {
       debugPrint('Error opening story from notification: $e');
       AppToast.error('Failed to open story');
-      await storiesCubit.close();
     }
   }
 
   static Future<void> _openMentionedStory(String storyId) async {
-    final storiesCubit = StoriesCubit();
+    final context = navigatorKey.currentContext;
+    if (context == null) return;
+    final storiesCubit = context.read<StoriesCubit>();
+
     try {
-      await storiesCubit.fetchStories();
+      await storiesCubit.fetchStories(isRefresh: true);
       final match = storiesCubit.cachedStories.where((s) => s.id == storyId);
       final authorId = match.isNotEmpty ? match.first.authorId : null;
       final authorGroup =
@@ -975,7 +990,7 @@ class NotificationService {
                   .toList();
       final storyIndex = authorGroup.indexWhere((s) => s.id == storyId);
 
-      WidgetsBinding.instance.addPostFrameCallback((_) async {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
         navigatorKey.currentState?.pushNamedAndRemoveUntil(
           AppRoutes.homeRoute,
           (route) => false,
@@ -983,11 +998,10 @@ class NotificationService {
 
         if (storyIndex == -1) {
           AppToast.warning('This story is no longer available');
-          await storiesCubit.close();
           return;
         }
 
-        final popped = navigatorKey.currentState?.pushNamed(
+        navigatorKey.currentState?.pushNamed(
           AppRoutes.storyDisplayViewRoute,
           arguments: {
             'storiesCubit': storiesCubit,
@@ -996,13 +1010,10 @@ class NotificationService {
             'initialStoryIndex': storyIndex,
           },
         );
-        await popped;
-        await storiesCubit.close();
       });
     } catch (e) {
       debugPrint('Error opening mentioned story from notification: $e');
       AppToast.error('Failed to open story');
-      await storiesCubit.close();
     }
   }
 

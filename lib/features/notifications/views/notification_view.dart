@@ -6,6 +6,7 @@ import 'package:social_media_app/features/social_graph/services/follow_services.
 import 'package:social_media_app/features/social_graph/services/friendship_services.dart';
 import '../cubits/notifications_cubit/notifications_cubit.dart';
 import '../cubits/notifications_cubit/notifications_state.dart';
+import '../models/app_notification_model.dart';
 import '../widgets/notification_empty_state.dart';
 import '../widgets/notification_list_item.dart';
 import '../widgets/notification_shimmer_list.dart';
@@ -13,8 +14,8 @@ import '../widgets/notifications_filter_chips.dart';
 import '../widgets/notifications_header.dart';
 
 class NotificationsView extends StatefulWidget {
-  const NotificationsView({super.key});
-
+  final NotificationType? initialFilter;
+  const NotificationsView({super.key, this.initialFilter});
   @override
   State<NotificationsView> createState() => _NotificationsViewState();
 }
@@ -50,7 +51,7 @@ class _NotificationsViewState extends State<NotificationsView>
             friendshipServices: context.read<FriendshipServices>(),
             followServices: context.read<FollowServices>(),
             homeCubit: context.read<HomeCubit>(),
-          ),
+          )..setFilter(widget.initialFilter),
 
       child: BlocConsumer<NotificationsCubit, NotificationsState>(
         listenWhen:

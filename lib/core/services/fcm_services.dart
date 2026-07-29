@@ -331,6 +331,60 @@ class FcmService {
     });
   }
 
+  Future<void> notifyFriendRequest({
+    required String receiverId,
+    required String requesterId,
+    required String requesterName,
+    String requesterImageUrl = '',
+  }) async {
+    if (receiverId.isEmpty || receiverId == requesterId) return;
+    final token = await _fetchFcmToken(receiverId);
+    if (token == null) return;
+    await _sendToEdgeFunction({
+      'type': 'friend_request',
+      'receiverFcmToken': token,
+      'requesterId': requesterId,
+      'requesterName': requesterName,
+      'requesterImageUrl': requesterImageUrl,
+    });
+  }
+
+  Future<void> notifyFriendAccept({
+    required String receiverId,
+    required String accepterId,
+    required String accepterName,
+    String accepterImageUrl = '',
+  }) async {
+    if (receiverId.isEmpty || receiverId == accepterId) return;
+    final token = await _fetchFcmToken(receiverId);
+    if (token == null) return;
+    await _sendToEdgeFunction({
+      'type': 'friend_accept',
+      'receiverFcmToken': token,
+      'actorId': accepterId,
+      'actorName': accepterName,
+      'actorImageUrl': accepterImageUrl,
+    });
+  }
+
+  Future<void> notifyFollow({
+    required String receiverId,
+    required String followerId,
+    required String followerName,
+    String followerImageUrl = '',
+  }) async {
+    if (receiverId.isEmpty || receiverId == followerId) return;
+    final token = await _fetchFcmToken(receiverId);
+    if (token == null) return;
+    await _sendToEdgeFunction({
+      'type': 'follow',
+      'receiverFcmToken': token,
+      'followerId': followerId,
+      'followerName': followerName,
+      'followerImageUrl': followerImageUrl,
+    });
+  }
+
   Future<String?> _fetchFcmToken(String userId) async {
     try {
       final data =
