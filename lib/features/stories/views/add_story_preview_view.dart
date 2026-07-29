@@ -1,15 +1,14 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:social_media_app/features/social_graph/helpers/privacy_picker_helper.dart';
 import 'package:social_media_app/features/social_graph/views/audience_picker_view.dart';
 import 'package:social_media_app/features/social_graph/widgets/privacy_chip.dart';
 import 'package:video_player/video_player.dart';
 import 'package:social_media_app/features/auth/data/models/user_data.dart';
+import '../../../core/helpers/safe_navigator.dart';
 import '../../../core/mentions/widgets/mention_aware_text_field.dart';
 import '../../../core/mentions/widgets/mention_text_editing_controller.dart';
 import '../../../core/themes/app_colors.dart';
-import '../../../core/toast/app_toast.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
 import '../../settings/repository/settings_repository.dart';
 import '../../social_graph/models/content_privacy.dart';
@@ -36,6 +35,7 @@ class AddStoryPreviewView extends StatefulWidget {
 }
 
 class _AddStoryPreviewViewState extends State<AddStoryPreviewView> {
+  final _shareGuard = SingleFireGuard();
   final MentionTextEditingController _captionController =
       MentionTextEditingController();
   final FocusNode _captionFocusNode = FocusNode();
@@ -102,6 +102,9 @@ class _AddStoryPreviewViewState extends State<AddStoryPreviewView> {
   }
 
   Future<void> _shareStory(BuildContext context, StoriesCubit cubit) async {
+    if (!_shareGuard.tryFire()) return;
+    FocusScope.of(context).unfocus();
+
     final caption =
         _captionController.text.trim().isEmpty
             ? null
@@ -116,8 +119,20 @@ class _AddStoryPreviewViewState extends State<AddStoryPreviewView> {
       ).push<Set<String>>(
         MaterialPageRoute(builder: (_) => const AudiencePickerView()),
       );
-      if (selected == null || selected.isEmpty) return;
+      if (selected == null || selected.isEmpty) {
+        _shareGuard.reset();
+        return;
+      }
+      if (!context.mounted) return;
       setState(() => _selectedViewerIds = selected);
+    }
+
+    if (_videoController != null && _videoController!.value.isPlaying) {
+      _videoController!.pause();
+    }
+
+    if (context.mounted) {
+      Navigator.of(context, rootNavigator: true).pop();
     }
 
     if (widget.isVideo) {
@@ -143,129 +158,106 @@ class _AddStoryPreviewViewState extends State<AddStoryPreviewView> {
   }
 
   @override
-  void dispose() {
-    _captionController.dispose();
-    _captionFocusNode.dispose();
-    _videoController?.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return BlocProvider.value(
-      value: widget.storiesCubit,
-      child: BlocConsumer<StoriesCubit, StoriesState>(
-        listener: (context, state) {
-          if (state is AddStorySuccess) {
-            Navigator.of(context).pop();
-            AppToast.success('Story Added Successfully');
-          } else if (state is AddStoryError && !state.isConnectivityError) {
-            AppToast.error(state.message);
-          }
-        },
-        builder: (context, state) {
-          final isLoading = state is AddStoryLoading;
+    return GestureDetector(
+      onTap: () => FocusScope.of(context).unfocus(),
+      child: Scaffold(
+        backgroundColor: Colors.black,
+        appBar: _buildAppBar(context),
+        body: Stack(
+          children: [
+            Positioned.fill(child: _buildMediaPreview()),
 
-          return GestureDetector(
-            onTap: () => FocusScope.of(context).unfocus(),
-            child: Scaffold(
-              backgroundColor: Colors.black,
-              appBar: _buildAppBar(context, isLoading),
-              body: Stack(
-                children: [
-                  // ── Media preview ──────────────────────────────────────
-                  Positioned.fill(child: _buildMediaPreview()),
+            if (widget.isVideo && widget.videoDuration != null)
+              Positioned(
+                top: 12,
+                right: 12,
+                child: _DurationBadge(duration: widget.videoDuration!),
+              ),
 
-                  // ── Duration badge (video only) ────────────────────────
-                  if (widget.isVideo && widget.videoDuration != null)
-                    Positioned(
-                      top: 12,
-                      right: 12,
-                      child: _DurationBadge(duration: widget.videoDuration!),
+            if (widget.isVideo && _videoInitialised)
+              Center(
+                child: GestureDetector(
+                  onTap: _togglePlayPause,
+                  child: AnimatedOpacity(
+                    opacity: _isPlaying ? 0.0 : 1.0,
+                    duration: const Duration(milliseconds: 200),
+                    child: Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: const BoxDecoration(
+                        color: Colors.black54,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        _isPlaying
+                            ? Icons.pause_rounded
+                            : Icons.play_arrow_rounded,
+                        color: Colors.white,
+                        size: 40,
+                      ),
                     ),
+                  ),
+                ),
+              ),
 
-                  // ── Play/Pause overlay (video only) ────────────────────
-                  if (widget.isVideo && _videoInitialised)
-                    Center(
-                      child: GestureDetector(
-                        onTap: _togglePlayPause,
-                        child: AnimatedOpacity(
-                          opacity: _isPlaying ? 0.0 : 1.0,
-                          duration: const Duration(milliseconds: 200),
-                          child: Container(
-                            padding: const EdgeInsets.all(14),
-                            decoration: BoxDecoration(
-                              color: Colors.black54,
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(
-                              _isPlaying
-                                  ? Icons.pause_rounded
-                                  : Icons.play_arrow_rounded,
-                              color: Colors.white,
-                              size: 40,
-                            ),
-                          ),
+            Positioned(
+              bottom: 20,
+              left: 12,
+              right: 12,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Expanded(child: _buildCaptionField()),
+                  const SizedBox(width: 8),
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 2),
+                    child: ElevatedButton(
+                      onPressed:
+                          () => _shareStory(context, widget.storiesCubit),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Theme.of(context).primaryColor,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(24),
+                        ),
+                      ),
+                      child: const Text(
+                        'Share',
+                        style: TextStyle(
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
                     ),
-
-                  // ── Caption field ──────────────────────────────────────
-                  Positioned(
-                    bottom: 30,
-                    left: 16,
-                    right: 16,
-                    child: _buildCaptionField(),
                   ),
                 ],
               ),
             ),
-          );
-        },
+          ],
+        ),
       ),
     );
   }
 
-  AppBar _buildAppBar(BuildContext context, bool isLoading) {
+  AppBar _buildAppBar(BuildContext context) {
     return AppBar(
       backgroundColor: Colors.black,
       leading: IconButton(
         icon: const Icon(Icons.close, color: AppColors.white),
-        onPressed: () => Navigator.pop(context),
+        onPressed: () => Navigator.of(context, rootNavigator: true).pop(),
       ),
       title: Text(
         widget.isVideo ? 'Video Preview' : 'Photo Preview',
         style: const TextStyle(color: AppColors.white, fontSize: 16),
       ),
       actions: [
-        PrivacyChip(privacy: _selectedPrivacy, onTap: _pickPrivacy),
-        const SizedBox(width: 8),
         Padding(
-          padding: const EdgeInsets.only(right: 10),
-          child: TextButton(
-            onPressed:
-                isLoading
-                    ? null
-                    : () => _shareStory(context, widget.storiesCubit),
-            child:
-                isLoading
-                    ? const CustomLoadingIndicator(
-                      radius: 10,
-                      color: AppColors.white,
-                    )
-                    : Text(
-                      'Share',
-                      style: Theme.of(
-                        context,
-                      ).textTheme.headlineMedium!.copyWith(
-                        color: Theme.of(
-                          context,
-                        ).primaryColor.withValues(alpha: 0.95),
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-          ),
+          padding: const EdgeInsets.only(right: 12),
+          child: PrivacyChip(privacy: _selectedPrivacy, onTap: _pickPrivacy),
         ),
       ],
     );
@@ -313,31 +305,61 @@ class _AddStoryPreviewViewState extends State<AddStoryPreviewView> {
   }
 
   Widget _buildCaptionField() {
-    return MentionAwareTextField(
-      controller: _captionController,
-      focusNode: _captionFocusNode,
-      enabled: true,
-      hintText: 'Add a caption...',
-      style: const TextStyle(color: AppColors.white),
-      maxLines: 3,
-      minLines: 1,
-      maxLength: 150,
-      decoration: InputDecoration(
-        hintText: 'Add a caption...',
-        hintStyle: const TextStyle(color: Colors.white70),
-        filled: true,
-        fillColor: Colors.black54,
-        counterStyle: const TextStyle(color: Colors.white70),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
-        ),
-      ),
+    return ValueListenableBuilder<TextEditingValue>(
+      valueListenable: _captionController,
+      builder: (context, value, child) {
+        final int length = value.text.length;
+        final bool hasText = length > 0;
+
+        return Stack(
+          children: [
+            MentionAwareTextField(
+              controller: _captionController,
+              focusNode: _captionFocusNode,
+              enabled: true,
+              hintText: 'Add a caption...',
+              style: const TextStyle(color: AppColors.white),
+              maxLines: 3,
+              minLines: 1,
+              maxLength: 150,
+              decoration: InputDecoration(
+                hintText: 'Add a caption...',
+                hintStyle: const TextStyle(color: Colors.white70),
+                filled: true,
+                fillColor: Colors.black54,
+                counterText: '',
+                contentPadding: EdgeInsets.only(
+                  left: 16,
+                  right: 16,
+                  top: 10,
+                  bottom: hasText ? 24 : 10,
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(24),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+            ),
+
+            if (hasText)
+              Positioned(
+                bottom: 8,
+                right: 16,
+                child: Text(
+                  '$length/150',
+                  style: const TextStyle(
+                    color: Colors.white54,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
     );
   }
 }
-
-// ── Helper widget ────────────────────────────────────────────────────────────
 
 class _DurationBadge extends StatelessWidget {
   final Duration duration;
