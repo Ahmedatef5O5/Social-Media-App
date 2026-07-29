@@ -10,6 +10,7 @@ import 'package:social_media_app/features/comments/model/comment_type.dart';
 import 'package:social_media_app/features/comments/widget/comment_voice_player.dart';
 import '../../../core/attachment/widgets/transfer_ring.dart';
 import '../../../core/router/app_routes.dart';
+import '../../../core/utilities/file_size_formatter.dart';
 import '../../single_chats/widgets/full_screen_media_view.dart';
 
 class CommentAttachmentPreview extends StatelessWidget {
@@ -20,7 +21,13 @@ class CommentAttachmentPreview extends StatelessWidget {
     final cubit = context.watch<CommentsCubit>();
     final attachment = cubit.pendingAttachment;
     if (attachment == null) return const SizedBox.shrink();
+    final isOptimisticMedia =
+        attachment.type == CommentType.video ||
+        attachment.type == CommentType.image;
 
+    if (cubit.isUploading && isOptimisticMedia) {
+      return const SizedBox.shrink();
+    }
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(10),
@@ -34,15 +41,31 @@ class CommentAttachmentPreview extends StatelessWidget {
         children: [
           _PreviewThumbnail(attachment: attachment),
           const SizedBox(width: 12),
-          Expanded(child: _PreviewInfo(attachment: attachment)),
+          Expanded(
+            child: _PreviewInfo(
+              attachment: attachment,
+              isUploading: cubit.isUploading,
+            ),
+          ),
           if (cubit.isUploading)
             GlassPillBadge(
               leading: TransferRing(
                 size: 30,
                 progress: cubit.uploadProgress,
                 icon: Icons.close_rounded,
+                iconColor: Colors.red.shade700,
                 onTap: () => context.read<CommentsCubit>().cancelUpload(),
               ),
+              caption: formatMediaFileSizeRatio(
+                ((attachment.fileSizeBytes ?? 0) * cubit.uploadProgress)
+                    .round(),
+                attachment.fileSizeBytes,
+              ),
+              secondaryCaption:
+                  attachment.type == CommentType.video &&
+                          attachment.durationSeconds != null
+                      ? formatMediaDuration(attachment.durationSeconds!)
+                      : null,
             )
           else
             InkWell(
@@ -230,7 +253,8 @@ class _VideoThumbnailState extends State<_VideoThumbnail> {
 
 class _PreviewInfo extends StatelessWidget {
   final CommentAttachmentDraft attachment;
-  const _PreviewInfo({required this.attachment});
+  final bool isUploading;
+  const _PreviewInfo({required this.attachment, this.isUploading = false});
 
   String _formatSize(int? bytes) {
     if (bytes == null) return '';
@@ -245,6 +269,24 @@ class _PreviewInfo extends StatelessWidget {
 
     switch (attachment.type) {
       case CommentType.voice:
+        if (isUploading) {
+          return Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              MediaDurationBadge(
+                seconds: attachment.durationSeconds,
+                fontSize: 7.8,
+              ),
+              const SizedBox(width: 4),
+              Text(
+                '🎤 voice',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          );
+        }
         return attachment.localFile != null
             ? CommentVoicePlayer(
               source: attachment.localFile!.path,

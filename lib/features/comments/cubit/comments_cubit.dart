@@ -114,9 +114,6 @@ class CommentsCubit extends Cubit<CommentsState> {
     }
   }
 
-  /// Walks the loaded comment tree to find who authored [commentId] —
-  /// used to route a reply's push notification to the right person (the
-  /// parent comment's author, not necessarily the post author).
   String? _findCommentAuthorId(String commentId) {
     String? search(CommentModel node) {
       if (node.id == commentId) return node.authorId;
@@ -175,8 +172,20 @@ class CommentsCubit extends Cubit<CommentsState> {
 
   CommentAttachmentDraft? pendingAttachment;
   double uploadProgress = 0;
+  final Map<String, ValueNotifier<double>> commentUploadProgress = {};
   bool isUploading = false;
   dio_pkg.CancelToken? _uploadCancelToken;
+
+  ValueNotifier<double> progressNotifierFor(String commentId) {
+    return commentUploadProgress.putIfAbsent(
+      commentId,
+      () => ValueNotifier<double>(0),
+    );
+  }
+
+  void _disposeProgressNotifier(String commentId) {
+    commentUploadProgress.remove(commentId)?.dispose();
+  }
 
   void stageAttachment(CommentAttachmentDraft draft) {
     pendingAttachment = draft;
@@ -255,6 +264,54 @@ class CommentsCubit extends Cubit<CommentsState> {
     );
   }
 
+  CommentModel _replaceCommentInTree(
+    CommentModel node,
+    String targetId,
+    CommentModel replacement,
+  ) {
+    if (node.id == targetId) return replacement;
+    if (node.replies.isEmpty) return node;
+    return node.copyWith(
+      replies:
+          node.replies
+              .map((r) => _replaceCommentInTree(r, targetId, replacement))
+              .toList(),
+    );
+  }
+
+  void _updateCommentLocally(CommentModel comment, String? parentId) {
+    comments =
+        comments
+            .map((c) => _replaceCommentInTree(c, comment.id, comment))
+            .toList();
+  }
+
+  CommentModel? _removeCommentFromTree(CommentModel node, String targetId) {
+    if (node.replies.any((r) => r.id == targetId)) {
+      return node.copyWith(
+        replies: node.replies.where((r) => r.id != targetId).toList(),
+      );
+    }
+    if (node.replies.isEmpty) return node;
+    return node.copyWith(
+      replies:
+          node.replies
+              .map((r) => _removeCommentFromTree(r, targetId) ?? r)
+              .toList(),
+    );
+  }
+
+  void _removeCommentLocally(String commentId, String? parentId) {
+    if (parentId == null) {
+      comments = comments.where((c) => c.id != commentId).toList();
+    } else {
+      comments =
+          comments
+              .map((c) => _removeCommentFromTree(c, commentId) ?? c)
+              .toList();
+    }
+  }
+
   Future<void> addComment({
     required PostModel post,
     String commentText = '',
@@ -274,24 +331,54 @@ class CommentsCubit extends Cubit<CommentsState> {
     final resolvedParentId =
         parentCommentId != null ? resolveId(parentCommentId) : null;
 
-    CommentType commentType = CommentType.text;
+    final bool isMediaAttachment =
+        attachment != null &&
+        (attachment.type == CommentType.image ||
+            attachment.type == CommentType.video) &&
+        attachment.needsUpload;
+
+    CommentType commentType = attachment?.type ?? CommentType.text;
     String? imageUrl, videoUrl, voiceUrl, fileUrl;
     String? imagePublicId, videoPublicId, voicePublicId, filePublicId;
-    String? fileName;
-    int? fileSizeBytes, durationSeconds;
+    String? fileName = attachment?.fileName;
+    int? fileSizeBytes = attachment?.fileSizeBytes;
+    int? durationSeconds = attachment?.durationSeconds;
+
+    CommentModel? optimisticComment;
+    if (isMediaAttachment) {
+      optimisticComment = CommentModel(
+        id: tempId,
+        createdAt: DateTime.now().toIso8601String(),
+        authorId: user!.id,
+        authorName: currentUserData?.name ?? 'User',
+        authorImageUrl: currentUserData?.imageUrl,
+        text: trimmedText,
+        postId: post.id,
+        parentCommentId: resolvedParentId,
+        commentType: commentType,
+        imageUrl:
+            commentType == CommentType.image
+                ? attachment.localFile!.path
+                : null,
+        videoUrl:
+            commentType == CommentType.video
+                ? attachment.localFile!.path
+                : null,
+        fileSizeBytes: fileSizeBytes,
+        durationSeconds: durationSeconds,
+        mentions: mentions,
+      );
+      _insertCommentLocally(optimisticComment, resolvedParentId);
+      emit(CommentOptimisticAdded(post.id, optimisticComment, parentCommentId));
+    }
 
     try {
       if (attachment != null) {
-        commentType = attachment.type;
-        fileName = attachment.fileName;
-        fileSizeBytes = attachment.fileSizeBytes;
-        durationSeconds = attachment.durationSeconds;
-
         if (attachment.needsUpload) {
           isUploading = true;
           uploadProgress = 0;
           _uploadCancelToken = dio_pkg.CancelToken();
-          emit(ComposerUploadProgress(0));
+          if (!isMediaAttachment) emit(ComposerUploadProgress(0));
 
           final result = await CloudinaryStorageServices.instance.uploadFile(
             attachment.localFile!,
@@ -301,7 +388,11 @@ class CommentsCubit extends Cubit<CommentsState> {
             cancelToken: _uploadCancelToken,
             onProgress: (progress) {
               uploadProgress = progress;
-              emit(ComposerUploadProgress(progress));
+              if (isMediaAttachment) {
+                progressNotifierFor(tempId).value = progress;
+              } else {
+                emit(ComposerUploadProgress(progress));
+              }
             },
           );
 
@@ -344,29 +435,39 @@ class CommentsCubit extends Cubit<CommentsState> {
 
       isUploading = false;
 
-      final newComment = CommentModel(
-        id: tempId,
-        createdAt: DateTime.now().toIso8601String(),
-        authorId: user!.id,
-        authorName: currentUserData?.name ?? 'User',
-        authorImageUrl: currentUserData?.imageUrl,
-        text: trimmedText,
-        postId: post.id,
-        parentCommentId: resolvedParentId,
-        commentType: commentType,
-        imageUrl: imageUrl,
-        videoUrl: videoUrl,
-        voiceUrl: voiceUrl,
-        fileUrl: fileUrl,
-        fileName: fileName,
-        fileSizeBytes: fileSizeBytes,
-        durationSeconds: durationSeconds,
-        mentions: mentions,
-      );
+      final newComment = (optimisticComment ??
+              CommentModel(
+                id: tempId,
+                createdAt: DateTime.now().toIso8601String(),
+                authorId: user!.id,
+                authorName: currentUserData?.name ?? 'User',
+                authorImageUrl: currentUserData?.imageUrl,
+                text: trimmedText,
+                postId: post.id,
+                parentCommentId: resolvedParentId,
+                commentType: commentType,
+                mentions: mentions,
+              ))
+          .copyWith(
+            imageUrl: imageUrl,
+            videoUrl: videoUrl,
+            voiceUrl: voiceUrl,
+            fileUrl: fileUrl,
+            fileName: fileName,
+            fileSizeBytes: fileSizeBytes,
+            durationSeconds: durationSeconds,
+          );
 
       clearAttachment();
-      _insertCommentLocally(newComment, resolvedParentId);
-      emit(CommentOptimisticAdded(post.id, newComment, parentCommentId));
+
+      if (isMediaAttachment) {
+        _updateCommentLocally(newComment, resolvedParentId);
+        emit(CommentOptimisticAdded(post.id, newComment, parentCommentId));
+        _disposeProgressNotifier(tempId);
+      } else {
+        _insertCommentLocally(newComment, resolvedParentId);
+        emit(CommentOptimisticAdded(post.id, newComment, parentCommentId));
+      }
 
       _eventBus.emit(
         CommentAddedEvent(
@@ -380,7 +481,7 @@ class CommentsCubit extends Cubit<CommentsState> {
 
       final realId = await _commentsService.addComment(
         postId: post.id,
-        authorId: user.id,
+        authorId: user!.id,
         commentText: trimmedText.isEmpty ? null : trimmedText,
         parentCommentId: resolvedParentId,
         commentType: commentType,
@@ -492,11 +593,20 @@ class CommentsCubit extends Cubit<CommentsState> {
       );
     } on UploadCanceledException {
       isUploading = false;
+      if (isMediaAttachment) {
+        _removeCommentLocally(tempId, resolvedParentId);
+        _disposeProgressNotifier(tempId);
+        emit(CommentsUiChanged());
+      }
       _pendingCommentIds.remove(tempId);
       _pendingReactions.remove(tempId);
       emit(ComposerAttachmentUpdated());
     } catch (e) {
       isUploading = false;
+      if (isMediaAttachment) {
+        _removeCommentLocally(tempId, resolvedParentId);
+        _disposeProgressNotifier(tempId);
+      }
       _resolvedIds.remove(tempId);
       _pendingCommentIds.remove(tempId);
       _pendingReactions.remove(tempId);
@@ -718,6 +828,9 @@ class CommentsCubit extends Cubit<CommentsState> {
     _realtimeSubscription?.cancel();
     _realtimeDebounce?.cancel();
     _uploadCancelToken?.cancel();
+    for (final notifier in commentUploadProgress.values) {
+      notifier.dispose();
+    }
     return super.close();
   }
 }

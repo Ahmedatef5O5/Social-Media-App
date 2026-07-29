@@ -24,10 +24,12 @@ class CommentVoicePlayer extends StatefulWidget {
 }
 
 class _CommentVoicePlayerState extends State<CommentVoicePlayer> {
+  static _CommentVoicePlayerState? _activePlayer;
   final _player = AudioPlayer();
   bool _isPlaying = false;
   Duration _position = Duration.zero;
   Duration _total = Duration.zero;
+  bool _hasSetSource = false;
 
   @override
   void initState() {
@@ -47,6 +49,7 @@ class _CommentVoicePlayerState extends State<CommentVoicePlayer> {
     });
     _player.onPlayerComplete.listen((_) {
       if (!mounted) return;
+      _player.seek(Duration.zero);
       setState(() {
         _isPlaying = false;
         _position = Duration.zero;
@@ -55,14 +58,26 @@ class _CommentVoicePlayerState extends State<CommentVoicePlayer> {
   }
 
   Future<void> _toggle() async {
+    if (_activePlayer != null && _activePlayer != this) {
+      await _activePlayer!._player.pause();
+    }
+    _activePlayer = this;
+
     if (_isPlaying) {
       await _player.pause();
       return;
     }
-    if (widget.isLocalFile) {
-      await _player.play(DeviceFileSource(widget.source));
+
+    if (!_hasSetSource) {
+      final audioSource =
+          widget.isLocalFile
+              ? DeviceFileSource(widget.source)
+              : UrlSource(widget.source);
+
+      await _player.play(audioSource);
+      _hasSetSource = true;
     } else {
-      await _player.play(UrlSource(widget.source));
+      await _player.resume();
     }
   }
 
@@ -70,6 +85,9 @@ class _CommentVoicePlayerState extends State<CommentVoicePlayer> {
 
   @override
   void dispose() {
+    if (_activePlayer == this) {
+      _activePlayer = null;
+    }
     _player.dispose();
     super.dispose();
   }
