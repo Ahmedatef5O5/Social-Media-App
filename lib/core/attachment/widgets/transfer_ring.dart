@@ -4,11 +4,22 @@ import '../../helpers/modern_progress_painter.dart';
 class GlassPillBadge extends StatelessWidget {
   final Widget leading;
   final String? caption;
+  final String? secondaryCaption;
 
-  const GlassPillBadge({super.key, required this.leading, this.caption});
+  const GlassPillBadge({
+    super.key,
+    required this.leading,
+    this.caption,
+    this.secondaryCaption,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final hasCaption = caption != null && caption!.isNotEmpty;
+    final hasSecondary =
+        secondaryCaption != null && secondaryCaption!.isNotEmpty;
+    final hasText = hasCaption || hasSecondary;
+
     return Container(
       padding: const EdgeInsets.all(3),
       decoration: BoxDecoration(
@@ -20,17 +31,37 @@ class GlassPillBadge extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           leading,
-          if (caption != null && caption!.isNotEmpty) ...[
+          if (hasText) ...[
             const SizedBox(width: 6),
             Padding(
               padding: const EdgeInsets.only(right: 8),
-              child: Text(
-                caption!,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (hasSecondary)
+                    Text(
+                      secondaryCaption!,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        height: 1.15,
+                      ),
+                    ),
+                  if (hasCaption)
+                    Text(
+                      caption!,
+                      style: TextStyle(
+                        color: Colors.white.withValues(
+                          alpha: hasSecondary ? 0.82 : 1,
+                        ),
+                        fontSize: hasSecondary ? 10 : 11,
+                        fontWeight: FontWeight.w600,
+                        height: 1.15,
+                      ),
+                    ),
+                ],
               ),
             ),
           ],
@@ -44,6 +75,7 @@ class TransferRing extends StatelessWidget {
   final double size;
   final double progress;
   final IconData icon;
+  final Color? iconColor;
   final VoidCallback? onTap;
 
   const TransferRing({
@@ -51,6 +83,7 @@ class TransferRing extends StatelessWidget {
     required this.size,
     required this.progress,
     required this.icon,
+    this.iconColor,
     this.onTap,
   });
 
@@ -82,7 +115,7 @@ class TransferRing extends StatelessWidget {
                 );
               },
             ),
-            Icon(icon, size: size * 0.42, color: Colors.white),
+            Icon(icon, size: size * 0.42, color: iconColor ?? Colors.white),
           ],
         ),
       ),

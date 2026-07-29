@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../utilities/file_size_formatter.dart';
 
 class MediaDurationBadge extends StatelessWidget {
   final int? seconds;
@@ -12,9 +13,8 @@ class MediaDurationBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (seconds == null) return const SizedBox.shrink();
-    final m = (seconds! ~/ 60).toString().padLeft(2, '0');
-    final s = (seconds! % 60).toString().padLeft(2, '0');
+    final formatted = formatMediaDuration(seconds);
+    if (formatted.isEmpty) return const SizedBox.shrink();
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1.5),
       decoration: BoxDecoration(
@@ -22,7 +22,7 @@ class MediaDurationBadge extends StatelessWidget {
         borderRadius: BorderRadius.circular(5),
       ),
       child: Text(
-        '$m:$s',
+        formatted,
         style: TextStyle(
           color: Colors.white,
           fontSize: fontSize,

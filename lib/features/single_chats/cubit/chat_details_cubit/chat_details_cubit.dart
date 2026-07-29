@@ -232,6 +232,18 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
   }
 
   final Map<String, double> uploadProgressMap = {};
+  final Map<String, ValueNotifier<double>> uploadProgressNotifiers = {};
+
+  ValueNotifier<double> progressNotifierFor(String messageId) {
+    return uploadProgressNotifiers.putIfAbsent(
+      messageId,
+      () => ValueNotifier<double>(0),
+    );
+  }
+
+  void _disposeProgressNotifier(String messageId) {
+    uploadProgressNotifiers.remove(messageId)?.dispose();
+  }
 
   Future<void> sendMessage({
     required String receiverId,
@@ -295,6 +307,9 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
         imageUrl = remoteImageUrl;
       } else if (imageFile != null) {
         if (await imageFile.exists()) {
+          uploadProgressMap[tempId] = 0.0;
+          emit(MessagesSending(messages: updatedMessages));
+
           final result = await _chatServices.storage.uploadFile(
             imageFile,
             'chats',
@@ -302,7 +317,7 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
             cancelToken: cancelToken,
             onProgress: (progress) {
               uploadProgressMap[tempId] = progress;
-              emit(MessagesSending(messages: updatedMessages));
+              progressNotifierFor(tempId).value = progress;
             },
           );
           imageUrl = result.secureUrl;
@@ -312,6 +327,7 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
           emit(MessagesSending(messages: updatedMessages));
           await Future.delayed(const Duration(milliseconds: 200));
           uploadProgressMap.remove(tempId);
+          _disposeProgressNotifier(tempId);
         } else {
           emit(
             MessagesError("Image file not found. Please try picking it again."),
@@ -322,6 +338,8 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
 
       if (videoFile != null) {
         if (await videoFile.exists()) {
+          uploadProgressMap[tempId] = 0.0;
+          emit(MessagesSending(messages: updatedMessages));
           final result = await _chatServices.storage.uploadFile(
             videoFile,
             'chats',
@@ -329,7 +347,7 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
             cancelToken: cancelToken,
             onProgress: (progress) {
               uploadProgressMap[tempId] = progress;
-              emit(MessagesSending(messages: updatedMessages));
+              progressNotifierFor(tempId).value = progress;
             },
           );
           videoUrl = result.secureUrl;
@@ -340,6 +358,7 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
           emit(MessagesSending(messages: updatedMessages));
           await Future.delayed(const Duration(milliseconds: 200));
           uploadProgressMap.remove(tempId);
+          _disposeProgressNotifier(tempId);
         } else {
           emit(MessagesError("Video file not found. Please try again."));
           emit(MessagesSuccessLoaded(messages: currentMessages));
@@ -363,12 +382,13 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
               cancelToken: cancelToken,
               onProgress: (progress) {
                 uploadProgressMap[tempId] = progress;
-                emit(MessagesSending(messages: updatedMessages));
+                progressNotifierFor(tempId).value = progress;
               },
             );
             voiceUrl = result.secureUrl;
             voicePublicId = result.publicId;
             uploadProgressMap.remove(tempId);
+            _disposeProgressNotifier(tempId);
           } finally {
             await _audioCompressionService.cleanup(compression);
           }
@@ -387,7 +407,7 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
             cancelToken: cancelToken,
             onProgress: (progress) {
               uploadProgressMap[tempId] = progress;
-              emit(MessagesSending(messages: updatedMessages));
+              progressNotifierFor(tempId).value = progress;
             },
           );
           fileUrl = result.secureUrl;
@@ -397,6 +417,7 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
           emit(MessagesSending(messages: updatedMessages));
           await Future.delayed(const Duration(milliseconds: 200));
           uploadProgressMap.remove(tempId);
+          _disposeProgressNotifier(tempId);
         } else {
           emit(MessagesError("File not found. Please try picking it again."));
           emit(MessagesSuccessLoaded(messages: currentMessages));
@@ -452,6 +473,13 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
         messageType: messageType,
         attachmentUrl: imageUrl ?? videoUrl ?? fileUrl,
       );
+
+      Future.delayed(const Duration(seconds: 2), () {
+        if (!isClosed) {
+          cachedMessages.removeWhere((m) => m.id == tempId);
+          emit(MessagesSuccessLoaded(messages: List.from(cachedMessages)));
+        }
+      });
     } on UploadCanceledException {
       return;
     } catch (e) {
@@ -578,7 +606,7 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
       _cancelTokens[tempId]!.cancel();
       _cancelTokens.remove(tempId);
       uploadProgressMap.remove(tempId);
-
+      _disposeProgressNotifier(tempId);
       if (state is MessagesSending) {
         final currentList = (state as MessagesSending).messages;
         final updatedList = currentList!.where((m) => m.id != tempId).toList();
@@ -655,6 +683,9 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
   Future<void> close() {
     chatPermission.dispose();
     highlightedMessageId.dispose();
+    for (final notifier in uploadProgressNotifiers.values) {
+      notifier.dispose();
+    }
     _messageSubscription?.cancel();
     return super.close();
   }

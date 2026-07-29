@@ -220,19 +220,27 @@ class _MessageContentContainerState extends State<MessageContentContainer> {
                 bottomLeft: Radius.circular(widget.isMe ? 20 : 0),
                 bottomRight: Radius.circular(widget.isMe ? 0 : 20),
               ),
-              child: Positioned.fill(
-                child: MediaStateOverlay(
-                  state: MediaTransferState.uploading(
-                    widget.uploadProgress ?? 0.0,
-                  ),
-                  isVideo: widget.message.messageType == 'video',
-                  durationSeconds: widget.message.durationSeconds,
-                  onCancelTap:
-                      () => context.read<ChatDetailsCubit>().cancelUpload(
-                        widget.message.id,
-                      ),
-                  child: const SizedBox.shrink(),
-                ),
+              child: ValueListenableBuilder<double>(
+                valueListenable: context
+                    .read<ChatDetailsCubit>()
+                    .progressNotifierFor(widget.message.id),
+                builder: (
+                  BuildContext context,
+                  double progress,
+                  Widget? child,
+                ) {
+                  return MediaStateOverlay(
+                    state: MediaTransferState.uploading(progress),
+                    isVideo: widget.message.messageType == 'video',
+                    durationSeconds: widget.message.durationSeconds,
+                    fileSizeBytes: widget.message.fileSizeBytes,
+                    onCancelTap:
+                        () => context.read<ChatDetailsCubit>().cancelUpload(
+                          widget.message.id,
+                        ),
+                    child: const SizedBox.shrink(),
+                  );
+                },
               ),
             ),
           ),

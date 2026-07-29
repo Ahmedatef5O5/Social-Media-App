@@ -1,7 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:social_media_app/core/attachment/widgets/transfer_ring.dart';
-import '../../helpers/media_duration_badge.dart';
 import '../../utilities/file_size_formatter.dart';
 import '../models/media_transfer_state.dart';
 
@@ -101,15 +100,13 @@ class MediaStateOverlay extends StatelessWidget {
             size: ringSize,
             progress: state.progress,
             icon: Icons.close_rounded,
+            iconColor: Colors.red.shade700,
             onTap: onCancelTap,
           ),
-          caption:
-              state.isUpload
-                  ? formatMediaFileSize(fileSizeBytes)
-                  : formatMediaFileSizeRatio(
-                    ((fileSizeBytes ?? 0) * state.progress).round(),
-                    fileSizeBytes,
-                  ),
+          caption: formatMediaFileSizeRatio(
+            ((fileSizeBytes ?? 0) * state.progress).round(),
+            fileSizeBytes,
+          ),
         );
 
       case MediaTransferStage.failed:
@@ -151,14 +148,15 @@ class _TopLeftBadge extends StatelessWidget {
         Positioned(
           top: inset,
           left: inset,
-          child: GlassPillBadge(leading: leading, caption: caption),
-        ),
-        if (isVideo && durationSeconds != null)
-          Positioned(
-            top: inset,
-            right: inset,
-            child: MediaDurationBadge(seconds: durationSeconds),
+          child: GlassPillBadge(
+            leading: leading,
+            secondaryCaption:
+                isVideo && durationSeconds != null
+                    ? formatMediaDuration(durationSeconds)
+                    : null,
+            caption: caption,
           ),
+        ),
       ],
     );
   }
