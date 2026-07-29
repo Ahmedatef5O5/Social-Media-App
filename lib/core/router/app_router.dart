@@ -55,7 +55,6 @@ import '../../features/group_chats/views/create_group_view.dart';
 import '../../features/about_us/views/about_us_view.dart';
 import '../../features/stories/cubit/stories_cubit/stories_cubit.dart';
 import '../../features/stories/model/story_model.dart';
-import '../../features/stories/views/add_story_caption_view.dart';
 import '../../features/stories/views/creat_text_story_view.dart';
 import '../../features/profile/cubits/profile_cubit/profile_cubit.dart';
 import '../../features/profile/views/profile_view.dart';
@@ -176,7 +175,6 @@ class AppRouter {
         return _homeRoutes(settings);
 
       case AppRoutes.createTextStoryViewRoute:
-      case AppRoutes.addStoryCaptionViewRoute:
       case AppRoutes.storyDisplayViewRoute:
       case AppRoutes.addStoryPreviewViewRoute:
       case AppRoutes.myStoriesListViewRoute:
@@ -330,22 +328,7 @@ class AppRouter {
           ),
           settings: settings,
         );
-      case AppRoutes.addStoryCaptionViewRoute:
-        final args = _args<Map<String, dynamic>>(settings);
-        if (args == null ||
-            args['file'] is! File ||
-            args['storiesCubit'] is! StoriesCubit ||
-            args['currentUser'] is! UserData) {
-          return _errorRoute(settings, 'Invalid arguments for Story Caption');
-        }
-        return _buildRoute(
-          AddStoryCaptionView(
-            file: args['file'],
-            storiesCubit: args['storiesCubit'],
-            currentUser: args['currentUser'],
-          ),
-          settings: settings,
-        );
+
       case AppRoutes.storyDisplayViewRoute:
         final args = _args<Map<String, dynamic>>(settings);
         if (args == null) {
