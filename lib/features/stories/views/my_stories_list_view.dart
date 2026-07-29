@@ -60,6 +60,8 @@ class _MyStoriesListViewState extends State<MyStoriesListView> {
             (_, current) =>
                 current is StoryImagePicked || current is StoryVideoPicked,
         listener: (context, state) {
+          if (ModalRoute.of(context)?.isCurrent != true) return;
+
           if (state is StoryImagePicked) {
             StoryCreationLauncher.navigateToPreview(
               context: context,
@@ -244,6 +246,8 @@ class _MyStoriesListViewState extends State<MyStoriesListView> {
                 children: [
                   BlocConsumer<MyStoriesCubit, MyStoriesState>(
                     listener: (context, state) {
+                      if (ModalRoute.of(context)?.isCurrent != true) return;
+
                       final loaded = state as MyStoriesLoaded;
                       if (loaded.stories.isEmpty) Navigator.pop(context);
                     },
@@ -267,11 +271,13 @@ class _MyStoriesListViewState extends State<MyStoriesListView> {
                           );
 
                           return MyStoryTile(
+                            key: ValueKey(story.id),
                             story: story,
                             stat: loaded.statsByStoryId[story.id],
                             isDeleting: isDeleted,
                             isSelectionMode: loaded.isSelectionMode,
                             isSelected: isSelected,
+                            storiesCubit: widget.storiesCubit,
                             onTap: () {
                               if (loaded.isSelectionMode) {
                                 context.read<MyStoriesCubit>().toggleSelection(
@@ -315,8 +321,6 @@ class _MyStoriesListViewState extends State<MyStoriesListView> {
                     },
                   ),
 
-                  // The FAB is deliberately hidden in selection mode further
-                  // down (Step 4 territory) - left untouched here.
                   Positioned(
                     left: _fabPosition.dx,
                     top: _fabPosition.dy,

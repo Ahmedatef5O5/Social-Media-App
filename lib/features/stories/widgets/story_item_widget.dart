@@ -93,6 +93,7 @@ class _StoryItemWidgetState extends State<StoryItemWidget> {
               widget.story == null &&
               (current is StoryImagePicked || current is StoryVideoPicked),
       listener: (context, state) {
+        if (ModalRoute.of(context)?.isCurrent != true) return;
         if (state is StoryImagePicked) {
           _navigateToPreview(
             context: context,
@@ -117,14 +118,16 @@ class _StoryItemWidgetState extends State<StoryItemWidget> {
       return BlocBuilder<StoriesCubit, StoriesState>(
         buildWhen:
             (_, current) =>
-                current is AddStoryLoading ||
-                current is AddStorySuccess ||
-                current is AddStoryError,
+                current is StoriesLoaded || current is AddStoryError,
         builder: (context, state) {
           final currentUser = context.read<HomeCubit>().currentUserData;
+          final storiesCubit = context.read<StoriesCubit>();
+          final isUploading = storiesCubit.cachedStories.any(
+            (s) => s.authorId == currentUserId && s.isPendingUpload,
+          );
           return CreateStoryCardWidget(
             avatarUrl: currentUser?.imageUrl,
-            isUploading: state is AddStoryLoading,
+            isUploading: isUploading,
             onTap: () => _showAddStoryOptions(context),
           );
         },

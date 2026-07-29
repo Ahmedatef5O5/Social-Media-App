@@ -1,11 +1,15 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
+import 'package:social_media_app/features/stories/cubit/stories_cubit/stories_cubit.dart';
 import '../../../core/cache/utils/cloudinary_url_extensions.dart';
 import '../../../core/helpers/formatted_date.dart';
 import '../../../core/mentions/widgets/mention_rich_text.dart';
 import '../../../core/themes/app_colors.dart';
 import '../../../core/widgets/cached_cloudinary_image.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
+import '../helpers/local_video_thumbnail.dart';
+import '../helpers/uploading_indicator_story.dart';
 import '../model/story_model.dart';
 import '../model/story_stat_model.dart';
 
@@ -15,6 +19,7 @@ class MyStoryTile extends StatelessWidget {
   final bool isDeleting;
   final bool isSelectionMode;
   final bool isSelected;
+  final StoriesCubit storiesCubit;
   final VoidCallback onTap;
   final VoidCallback onLongPress;
   final VoidCallback onDelete;
@@ -26,6 +31,7 @@ class MyStoryTile extends StatelessWidget {
     required this.isDeleting,
     required this.isSelectionMode,
     required this.isSelected,
+    required this.storiesCubit,
     required this.onTap,
     required this.onLongPress,
     required this.onDelete,
@@ -37,6 +43,7 @@ class MyStoryTile extends StatelessWidget {
     final isDark = theme.brightness == Brightness.dark;
     final viewCount = stat?.viewCount ?? 0;
     final reactions = stat?.reactions ?? const [];
+    final bool isPending = story.isPendingUpload;
 
     return AnimatedOpacity(
       duration: const Duration(milliseconds: 300),
@@ -143,7 +150,14 @@ class MyStoryTile extends StatelessWidget {
                           child: FadeTransition(opacity: anim, child: child),
                         ),
                     child:
-                        isDeleting
+                        isPending
+                            ? UploadingIndicatorStory(
+                              key: const ValueKey('uploading'),
+                              storyId: story.id,
+                              fileSizeBytes: story.fileSizeBytes,
+                              storiesCubit: storiesCubit,
+                            )
+                            : isDeleting
                             ? const Padding(
                               key: ValueKey('deleting'),
                               padding: EdgeInsets.all(12.0),
@@ -242,6 +256,14 @@ class MyStoryTile extends StatelessWidget {
   Widget _buildThumbnailContent() {
     switch (story.storyType) {
       case StoryType.image:
+        if (story.isPendingUpload) {
+          return Image.file(
+            File(story.imageUrl!),
+            width: 60,
+            height: 60,
+            fit: BoxFit.cover,
+          );
+        }
         return CachedCloudinaryImage(
           secureUrl: story.imageUrl!,
           width: 60,
@@ -249,6 +271,10 @@ class MyStoryTile extends StatelessWidget {
           fit: BoxFit.cover,
         );
       case StoryType.video:
+        if (story.isPendingUpload) {
+          return LocalVideoThumbnail(localPath: story.videoUrl!);
+        }
+
         final thumbUrl = story.videoUrl?.cloudinaryVideoThumbnailUrl;
         return Stack(
           fit: StackFit.expand,
