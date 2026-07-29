@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'package:dio/dio.dart' as dio_pkg;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
@@ -16,6 +17,7 @@ import 'package:social_media_app/core/services/file_picker_services.dart';
 import 'package:social_media_app/core/services/fcm_services.dart';
 import 'package:social_media_app/features/auth/data/models/user_data.dart';
 import '../../../../core/connectivity/services/connectivity_banner_controller.dart';
+import '../../../../core/toast/app_toast.dart';
 import '../../../social_graph/models/content_privacy.dart';
 import 'package:social_media_app/core/mentions/mentions.dart';
 import '../../model/story_model.dart';
@@ -37,6 +39,8 @@ class StoriesCubit extends Cubit<StoriesState> {
 
   List<StoryModel> cachedStories = [];
   final filePickerServices = FilePickerServices();
+  final Map<String, ValueNotifier<double>> storyUploadProgress = {};
+  final Map<String, dio_pkg.CancelToken> _uploadCancelTokens = {};
   File? selectedStoryFile;
   File? _stableVideoFile;
 
@@ -66,14 +70,23 @@ class StoriesCubit extends Cubit<StoriesState> {
     }
   }
 
-  @override
-  Future<void> close() {
-    _storiesChannel?.unsubscribe();
-    _cleanupStableVideo();
-    return super.close();
+  // ── Story actions ──────────────────────────────────────────────────────────
+
+  ValueNotifier<double> progressNotifierFor(String storyId) {
+    return storyUploadProgress.putIfAbsent(
+      storyId,
+      () => ValueNotifier<double>(0),
+    );
   }
 
-  // ── Story actions ──────────────────────────────────────────────────────────
+  void _disposeProgressNotifier(String storyId) {
+    storyUploadProgress.remove(storyId)?.dispose();
+  }
+
+  void cancelStoryUpload(String storyId) {
+    _uploadCancelTokens[storyId]?.cancel();
+    _uploadCancelTokens.remove(storyId);
+  }
 
   Future<void> addTextStory({
     required String text,
@@ -142,10 +155,37 @@ class StoriesCubit extends Cubit<StoriesState> {
     List<String> allowedViewerIds = const [],
     List<MentionRef> mentions = const [],
   }) async {
-    emit(AddStoryLoading());
+    final storyId = const Uuid().v4();
+    final createdAt = DateTime.now().toIso8601String();
+
+    final cancelToken = dio_pkg.CancelToken();
+    _uploadCancelTokens[storyId] = cancelToken;
+
     try {
-      final result = await _storiesServices.uploadStoryFile(file, user.id);
-      final storyId = const Uuid().v4();
+      final fileSizeBytes = await file.length();
+
+      final pendingStory = StoryModel(
+        id: storyId,
+        imageUrl: file.path,
+        authorId: user.id,
+        authorName: user.name,
+        authorImageUrl: user.imageUrl,
+        createdAt: createdAt,
+        caption: caption,
+        fileSizeBytes: fileSizeBytes,
+        privacyType: privacy,
+      );
+      cachedStories = [pendingStory, ...cachedStories];
+      emit(StoriesLoaded(cachedStories, DateTime.now()));
+
+      final result = await _storiesServices.uploadStoryFile(
+        file,
+        user.id,
+        cancelToken: cancelToken,
+        onProgress: (progress) {
+          progressNotifierFor(storyId).value = progress;
+        },
+      );
       final newStory = StoryModel(
         id: storyId,
         imageUrl: result.secureUrl,
@@ -153,7 +193,7 @@ class StoriesCubit extends Cubit<StoriesState> {
         authorId: user.id,
         authorName: user.name,
         authorImageUrl: user.imageUrl,
-        createdAt: DateTime.now().toIso8601String(),
+        createdAt: createdAt,
         caption: caption,
         privacyType: privacy,
       );
@@ -183,13 +223,22 @@ class StoriesCubit extends Cubit<StoriesState> {
         }
       }
 
-      cachedStories = [newStory, ...cachedStories];
+      cachedStories = [
+        newStory,
+        ...cachedStories.where((s) => s.id != storyId),
+      ];
+      _disposeProgressNotifier(storyId);
       emit(StoriesLoaded(cachedStories, DateTime.now()));
-      emit(AddStorySuccess());
+      AppToast.success('Story Added Successfully');
       unawaited(_silentReconcile());
+      _uploadCancelTokens.remove(storyId);
     } catch (e) {
       debugPrint('Error adding story with caption: $e');
+      cachedStories = cachedStories.where((s) => s.id != storyId).toList();
+      _disposeProgressNotifier(storyId);
+      emit(StoriesLoaded(cachedStories, DateTime.now()));
       final isOffline = await ConnectivityBannerController.notifyIfOffline();
+      if (!isOffline) AppToast.error(e.toString());
       emit(AddStoryError(e.toString(), isConnectivityError: isOffline));
     }
   }
@@ -203,7 +252,12 @@ class StoriesCubit extends Cubit<StoriesState> {
     List<String> allowedViewerIds = const [],
     List<MentionRef> mentions = const [],
   }) async {
-    emit(AddStoryLoading());
+    final storyId = const Uuid().v4();
+    final createdAt = DateTime.now().toIso8601String();
+
+    final cancelToken = dio_pkg.CancelToken();
+    _uploadCancelTokens[storyId] = cancelToken;
+
     try {
       final File uploadFile =
           (_stableVideoFile != null && await _stableVideoFile!.exists())
@@ -215,11 +269,31 @@ class StoriesCubit extends Cubit<StoriesState> {
                     const OSError('File not found', 2),
                   ));
 
+      final fileSizeBytes = await uploadFile.length();
+
+      final pendingStory = StoryModel(
+        id: storyId,
+        videoUrl: uploadFile.path,
+        authorId: user.id,
+        authorName: user.name,
+        authorImageUrl: user.imageUrl,
+        createdAt: createdAt,
+        caption: caption,
+        videoDurationSeconds: videoDuration?.inSeconds,
+        fileSizeBytes: fileSizeBytes,
+        privacyType: privacy,
+      );
+      cachedStories = [pendingStory, ...cachedStories];
+      emit(StoriesLoaded(cachedStories, DateTime.now()));
+
       final result = await _storiesServices.uploadStoryVideoFile(
         uploadFile,
         user.id,
+        cancelToken: cancelToken,
+        onProgress: (progress) {
+          progressNotifierFor(storyId).value = progress;
+        },
       );
-      final storyId = const Uuid().v4();
       final newStory = StoryModel(
         id: storyId,
         videoUrl: result.secureUrl,
@@ -227,7 +301,7 @@ class StoriesCubit extends Cubit<StoriesState> {
         authorId: user.id,
         authorName: user.name,
         authorImageUrl: user.imageUrl,
-        createdAt: DateTime.now().toIso8601String(),
+        createdAt: createdAt,
         caption: caption,
         videoDurationSeconds: videoDuration?.inSeconds,
         privacyType: privacy,
@@ -258,21 +332,31 @@ class StoriesCubit extends Cubit<StoriesState> {
         }
       }
 
-      cachedStories = [newStory, ...cachedStories];
+      cachedStories = [
+        newStory,
+        ...cachedStories.where((s) => s.id != storyId),
+      ];
+      _disposeProgressNotifier(storyId);
       _cleanupStableVideo();
       emit(StoriesLoaded(cachedStories, DateTime.now()));
-      emit(AddStorySuccess());
+      AppToast.success('Story Added Successfully');
       unawaited(_silentReconcile());
+      _uploadCancelTokens.remove(storyId);
     } on UploadCanceledException {
-      return;
+      cachedStories = cachedStories.where((s) => s.id != storyId).toList();
+      _disposeProgressNotifier(storyId);
+      emit(StoriesLoaded(cachedStories, DateTime.now()));
     } catch (e) {
       debugPrint('Error adding video story: $e');
+      cachedStories = cachedStories.where((s) => s.id != storyId).toList();
+      _disposeProgressNotifier(storyId);
+      emit(StoriesLoaded(cachedStories, DateTime.now()));
       final isOffline = await ConnectivityBannerController.notifyIfOffline();
+      if (!isOffline) AppToast.error(e.toString());
       emit(AddStoryError(e.toString(), isConnectivityError: isOffline));
 
       if (e.toString().contains('session_expired')) {
         emit(AddStoryError('Your session has expired; please log in again'));
-        return;
       }
     }
   }
@@ -450,5 +534,15 @@ class StoriesCubit extends Cubit<StoriesState> {
     // ignore: body_might_complete_normally_catch_error
     _stableVideoFile?.delete().catchError((_) {});
     _stableVideoFile = null;
+  }
+
+  @override
+  Future<void> close() {
+    _storiesChannel?.unsubscribe();
+    _cleanupStableVideo();
+    for (final notifier in storyUploadProgress.values) {
+      notifier.dispose();
+    }
+    return super.close();
   }
 }

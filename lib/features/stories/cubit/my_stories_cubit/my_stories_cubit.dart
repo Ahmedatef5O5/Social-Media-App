@@ -42,7 +42,7 @@ class MyStoriesCubit extends Cubit<MyStoriesState> {
     if (myUserId == null) return;
     final myStories = allStories.where((s) => s.authorId == myUserId).toList();
 
-    if (_sameStoryIds(myStories, current.stories)) return;
+    if (_sameStories(myStories, current.stories)) return;
 
     final validIds = myStories.map((s) => s.id).toSet();
     final prunedSelection = current.selectedStoryIds.intersection(validIds);
@@ -54,10 +54,15 @@ class MyStoriesCubit extends Cubit<MyStoriesState> {
     _loadStats();
   }
 
-  bool _sameStoryIds(List<StoryModel> a, List<StoryModel> b) {
+  bool _sameStories(List<StoryModel> a, List<StoryModel> b) {
     if (a.length != b.length) return false;
     for (var i = 0; i < a.length; i++) {
-      if (a[i].id != b[i].id) return false;
+      final sa = a[i];
+      final sb = b[i];
+      if (sa.id != sb.id) return false;
+      if (sa.isPendingUpload != sb.isPendingUpload) return false;
+      if (sa.imageUrl != sb.imageUrl) return false;
+      if (sa.videoUrl != sb.videoUrl) return false;
     }
     return true;
   }

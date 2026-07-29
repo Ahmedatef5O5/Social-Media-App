@@ -20,6 +20,7 @@ class StoryModel {
   final String? imagePublicId;
   final String? videoPublicId;
   final int? videoDurationSeconds;
+  final int? fileSizeBytes;
   final List<MentionRef> mentions;
   final ContentPrivacy privacyType;
 
@@ -38,6 +39,7 @@ class StoryModel {
     this.imagePublicId,
     this.videoPublicId,
     this.videoDurationSeconds,
+    this.fileSizeBytes,
     this.mentions = const [],
     this.privacyType = ContentPrivacy.public,
   });
@@ -47,6 +49,10 @@ class StoryModel {
     if (imageUrl != null) return StoryType.image;
     return StoryType.text;
   }
+
+  bool get isPendingUpload =>
+      (imageUrl != null && !imageUrl!.startsWith('http')) ||
+      (videoUrl != null && !videoUrl!.startsWith('http'));
 
   static const Duration activeWindow = Duration(days: 200);
 
