@@ -199,11 +199,11 @@ class _HomeViewState extends State<HomeView> {
                                         navController: widget.navController,
                                       ),
                                     ),
-                                    const SliverGap(35),
+                                    const SliverGap(16),
                                     SliverToBoxAdapter(
                                       child: PostWritingCard(),
                                     ),
-                                    const SliverGap(15),
+                                    const SliverGap(10),
                                     SliverToBoxAdapter(
                                       child: StoriesListSection(),
                                     ),

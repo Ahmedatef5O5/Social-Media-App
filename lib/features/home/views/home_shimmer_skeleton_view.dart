@@ -1,3 +1,4 @@
+// ignore_for_file: avoid_unnecessary_containers
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
 
@@ -82,67 +83,90 @@ class HomeShimmerSkeleton extends StatelessWidget {
             const SizedBox(height: 8),
 
             // 2. --- Write Post Card Section ---
-            Container(
-              height: MediaQuery.sizeOf(context).height * 0.18,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-              decoration: BoxDecoration(
-                color: cardBgColor,
-                borderRadius: BorderRadius.all(Radius.circular(14)),
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 2.0,
+                vertical: 8.0,
               ),
-              child: buildShimmer(
-                child: Column(
-                  children: [
-                    Row(
-                      children: [
-                        const CircleAvatar(
-                          radius: 20,
-                          backgroundColor: skeletonColor,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: cardBgColor,
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 20,
+                ),
+                child: buildShimmer(
+                  child: Row(
+                    children: [
+                      // الـ Avatar
+                      Container(
+                        width: 42,
+                        height: 42,
+                        decoration: const BoxDecoration(
+                          color: skeletonColor,
+                          shape: BoxShape.circle,
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Container(
-                            height: 38,
-                            decoration: BoxDecoration(
-                              color: skeletonColor,
-                              borderRadius: BorderRadius.circular(20),
-                            ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Container(
+                          height: 14,
+                          decoration: BoxDecoration(
+                            color: skeletonColor,
+                            borderRadius: BorderRadius.circular(4),
                           ),
                         ),
-                      ],
-                    ),
-                    const Spacer(),
-                    const SizedBox(height: 14),
-                    Container(
-                      height: 1,
-                      width: double.infinity,
-                      color: skeletonColor,
-                    ),
-                    const SizedBox(height: 12),
-
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: List.generate(
-                        3,
-                        (index) => Row(
+                      ),
+                      const SizedBox(width: 8),
+                      // مكان الـ AnimatedActionCluster (Icons)
+                      SizedBox(
+                        width: 40,
+                        height: 40,
+                        child: Stack(
+                          alignment: Alignment.center,
                           children: [
-                            const CircleAvatar(
-                              radius: 10,
-                              backgroundColor: skeletonColor,
+                            Transform.translate(
+                              // قللنا المسافة هنا عشان الدائرة تقرب للمركز
+                              offset: const Offset(-5.5, 4.0),
+                              child: Container(
+                                width: 14,
+                                height: 14,
+                                decoration: const BoxDecoration(
+                                  color: skeletonColor,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
                             ),
-                            const SizedBox(width: 6),
-                            Container(
-                              width: 50,
-                              height: 10,
-                              decoration: BoxDecoration(
-                                color: skeletonColor,
-                                borderRadius: BorderRadius.circular(4),
+                            Transform.translate(
+                              // قللنا المسافة هنا
+                              offset: const Offset(5.5, 4.0),
+                              child: Container(
+                                width: 14,
+                                height: 14,
+                                decoration: const BoxDecoration(
+                                  color: skeletonColor,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                            ),
+                            Transform.translate(
+                              offset: const Offset(0, -9.50),
+                              child: Container(
+                                width: 14,
+                                height: 14,
+                                decoration: const BoxDecoration(
+                                  color: skeletonColor,
+                                  shape: BoxShape.circle,
+                                ),
                               ),
                             ),
                           ],
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -152,44 +176,65 @@ class HomeShimmerSkeleton extends StatelessWidget {
             Container(
               decoration: BoxDecoration(
                 color: cardBgColor,
-                borderRadius: BorderRadius.all(Radius.circular(14)),
+                borderRadius: const BorderRadius.all(Radius.circular(14)),
               ),
-              height: 112,
+              height: 170 + 24,
               padding: const EdgeInsets.symmetric(vertical: 12),
               child: buildShimmer(
                 child: ListView.builder(
                   scrollDirection: Axis.horizontal,
                   physics: const NeverScrollableScrollPhysics(),
                   itemCount: 5,
-                  itemBuilder:
-                      (_, index) => Padding(
-                        padding: EdgeInsets.only(
-                          left: index == 0 ? 16 : 12,
-                          right: index == 4 ? 16 : 12,
+                  itemBuilder: (_, index) {
+                    final randomWidthFactors = [0.65, 0.75, 0.70, 0.80, 0.62];
+                    final textWidth =
+                        110 *
+                        randomWidthFactors[index % randomWidthFactors.length];
+
+                    return Padding(
+                      padding: EdgeInsets.only(
+                        left: index == 0 ? 14 : 10,
+                        right: index == 4 ? 14 : 10,
+                      ),
+                      child: Container(
+                        width: 110,
+                        height: 170,
+                        decoration: BoxDecoration(
+                          color: skeletonColor.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(14),
                         ),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
+                        child: Stack(
                           children: [
-                            Container(
-                              width: 55,
-                              height: 55,
-                              decoration: const BoxDecoration(
-                                color: skeletonColor,
-                                shape: BoxShape.circle,
+                            Positioned(
+                              top: 8,
+                              left: 8,
+                              child: Container(
+                                width: 34,
+                                height: 34,
+                                decoration: BoxDecoration(
+                                  color: skeletonColor,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(color: skeletonColor),
+                                ),
                               ),
                             ),
-                            const SizedBox(height: 8),
-                            Container(
-                              width: 45,
-                              height: 8,
-                              decoration: BoxDecoration(
-                                color: skeletonColor,
-                                borderRadius: BorderRadius.circular(4),
+                            Positioned(
+                              left: 8,
+                              bottom: 8,
+                              child: Container(
+                                height: 10,
+                                width: textWidth,
+                                decoration: BoxDecoration(
+                                  color: skeletonColor,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
                               ),
                             ),
                           ],
                         ),
                       ),
+                    );
+                  },
                 ),
               ),
             ),
@@ -227,6 +272,7 @@ class HomeShimmerSkeleton extends StatelessWidget {
                                 const SizedBox(width: 10),
                                 Column(
                                   mainAxisAlignment: MainAxisAlignment.start,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Container(
                                       width: screenWidth * 0.35,
@@ -237,26 +283,60 @@ class HomeShimmerSkeleton extends StatelessWidget {
                                       ),
                                     ),
                                     const SizedBox(height: 6),
-                                    Container(
-                                      width: screenWidth * 0.15,
-                                      height: 10,
-                                      decoration: BoxDecoration(
-                                        color: skeletonColor,
-                                        borderRadius: BorderRadius.circular(4),
-                                      ),
+                                    Row(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.center,
+                                      children: [
+                                        Container(
+                                          width: 10,
+                                          height: 10,
+                                          decoration: const BoxDecoration(
+                                            color: skeletonColor,
+                                            shape: BoxShape.circle,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 4),
+                                        Container(
+                                          width: screenWidth * 0.15,
+                                          height: 10,
+                                          decoration: BoxDecoration(
+                                            color: skeletonColor,
+                                            borderRadius: BorderRadius.circular(
+                                              4,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ],
                                 ),
                                 const Spacer(),
                                 Padding(
                                   padding: const EdgeInsets.only(bottom: 16.0),
-                                  child: Container(
-                                    width: 16,
-                                    height: 12,
-                                    decoration: BoxDecoration(
-                                      color: skeletonColor,
-                                      borderRadius: BorderRadius.circular(4),
-                                    ),
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        width: 14,
+                                        height: 14,
+                                        decoration: BoxDecoration(
+                                          color: skeletonColor,
+                                          borderRadius: BorderRadius.circular(
+                                            4,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 14),
+                                      Container(
+                                        width: 16,
+                                        height: 12,
+                                        decoration: BoxDecoration(
+                                          color: skeletonColor,
+                                          borderRadius: BorderRadius.circular(
+                                            4,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
                               ],
