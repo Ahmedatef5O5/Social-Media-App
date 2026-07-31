@@ -11,6 +11,7 @@ import 'package:social_media_app/features/home/cubits/home_cubit/home_cubit.dart
 import 'package:social_media_app/features/reels/cubit/reels_feed_cubit/reels_feed_cubit.dart';
 import '../../../core/supabase/supabase_provider.dart';
 import '../../posts/cubit/posts_cubit/posts_cubit.dart';
+import '../../posts/helper/global_video_pause_gate.dart';
 import '../../reels/widgets/home_feed_with_reels.dart';
 import '../../stories/cubit/stories_cubit/stories_cubit.dart';
 import '../widgets/new_posts_pill.dart';
@@ -113,6 +114,7 @@ class _HomeViewState extends State<HomeView> {
 
   Future<void> _handleRefresh() async {
     setState(() => _isRefreshing = true);
+    GlobalVideoPauseGate.instance.isPaused.value = true;
     try {
       await Future.wait([
         context.read<HomeCubit>().refreshUserData(isRefresh: true),
@@ -130,6 +132,7 @@ class _HomeViewState extends State<HomeView> {
       if (mounted) {
         setState(() => _isRefreshing = false);
       }
+      GlobalVideoPauseGate.instance.isPaused.value = false;
     }
   }
 

@@ -5,6 +5,7 @@ import 'package:social_media_app/core/router/app_routes.dart';
 import 'package:social_media_app/features/home/cubits/home_cubit/home_cubit.dart';
 import 'package:social_media_app/features/stories/model/story_model.dart';
 import '../../../core/supabase/supabase_provider.dart';
+import '../../posts/helper/global_video_pause_gate.dart';
 import '../cubit/stories_cubit/stories_cubit.dart';
 import '../helpers/story_creation_launcher.dart';
 import 'create_story_card_widget.dart';
@@ -38,42 +39,49 @@ class _StoryItemWidgetState extends State<StoryItemWidget> {
     StoryCreationLauncher.openPicker(context, context.read<StoriesCubit>());
   }
 
-  void _navigateToPreview({
+  Future<void> _navigateToPreview({
     required BuildContext context,
     required File file,
     required bool isVideo,
     Duration? videoDuration,
-  }) {
+  }) async {
     if (_navigationHandled) return;
     _navigationHandled = true;
+    GlobalVideoPauseGate.instance.isPaused.value = true;
 
-    StoryCreationLauncher.navigateToPreview(
+    await StoryCreationLauncher.navigateToPreview(
       context: context,
       storiesCubit: context.read<StoriesCubit>(),
       file: file,
       isVideo: isVideo,
       videoDuration: videoDuration,
-    ).whenComplete(() => _navigationHandled = false);
+    );
+    GlobalVideoPauseGate.instance.isPaused.value = false;
+    _navigationHandled = false;
   }
 
-  void _openMyStories(BuildContext context) {
-    Navigator.of(context, rootNavigator: true).pushNamed(
+  void _openMyStories(BuildContext context) async {
+    GlobalVideoPauseGate.instance.isPaused.value = true;
+    await Navigator.of(context, rootNavigator: true).pushNamed(
       AppRoutes.myStoriesListViewRoute,
       arguments: {
         'storiesCubit': context.read<StoriesCubit>(),
         'myStories': widget.userStroies,
       },
     );
+    GlobalVideoPauseGate.instance.isPaused.value = false;
   }
 
-  void _openOtherUserStory(BuildContext context) {
+  void _openOtherUserStory(BuildContext context) async {
     final storiesCubit = context.read<StoriesCubit>();
     final stories = widget.userStroies ?? [widget.story!];
     final groups = widget.allUserGroups ?? [stories];
     final groupIndex = groups.indexWhere(
       (g) => g.first.authorId == widget.story!.authorId,
     );
-    Navigator.of(context, rootNavigator: true).pushNamed(
+    GlobalVideoPauseGate.instance.isPaused.value = true;
+
+    await Navigator.of(context, rootNavigator: true).pushNamed(
       AppRoutes.storyDisplayViewRoute,
       arguments: {
         'storiesCubit': storiesCubit,
@@ -81,6 +89,7 @@ class _StoryItemWidgetState extends State<StoryItemWidget> {
         'initialGroupIndex': groupIndex,
       },
     );
+    GlobalVideoPauseGate.instance.isPaused.value = false;
   }
 
   @override
