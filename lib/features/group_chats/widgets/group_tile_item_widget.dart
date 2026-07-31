@@ -19,9 +19,9 @@ class GroupTileItem extends StatelessWidget {
     final currentUserId = SupabaseProvider.id;
     final primary = Theme.of(context).primaryColor;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-
     final hasAvatar = group.avatarUrl != null && group.avatarUrl!.isNotEmpty;
-
+    final highlightUnreadMessage =
+        group.unreadCount > 0 && group.lastMessageSenderId != currentUserId;
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       leading: GestureDetector(
@@ -79,8 +79,15 @@ class GroupTileItem extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  color: isDark ? Colors.white54 : Colors.black54,
+                  color:
+                      highlightUnreadMessage
+                          ? Theme.of(context).colorScheme.onSurface
+                          : Colors.grey.shade600,
                   fontSize: 13,
+                  fontWeight:
+                      highlightUnreadMessage
+                          ? FontWeight.w500
+                          : FontWeight.w400,
                 ),
               )
               : Text(

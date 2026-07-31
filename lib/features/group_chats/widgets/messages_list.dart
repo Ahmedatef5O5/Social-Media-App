@@ -8,7 +8,7 @@ import '../../../core/supabase/supabase_provider.dart';
 import '../../single_chats/widgets/chat_loading_skeleton.dart';
 import '../../single_chats/widgets/empty_placeholder_state.dart';
 import '../cubit/group_details_cubit/group_details_cubit.dart';
-import 'message_builder.dart';
+import 'group_message_item_builder.dart';
 
 class GroupMessagesList extends StatefulWidget {
   final ItemScrollController scrollController;

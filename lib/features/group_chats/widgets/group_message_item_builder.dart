@@ -8,8 +8,10 @@ import '../../single_chats/helper/chat_date_separator_helper.dart';
 import '../../single_chats/widgets/date_separator_glassmorphism_widget.dart';
 import '../cubit/group_details_cubit/group_details_cubit.dart';
 import '../../group_calls/models/group_call_model.dart';
+import '../helpers/group_system_event_text_builder.dart';
 import '../models/groupe_message_model.dart';
 import 'group_message_bubble.dart';
+import 'group_system_event_separator.dart';
 import 'group_typing_indicator_widget.dart';
 
 class GroupMessageItemBuilder extends StatelessWidget {
@@ -47,6 +49,24 @@ class GroupMessageItemBuilder extends StatelessWidget {
       index: msgIndex,
       getCreatedAt: (m) => m.createdAt,
     );
+
+    if (msg.isSystemEvent) {
+      return Column(
+        key: ValueKey(msg.id),
+        children: [
+          if (showDate)
+            DateSeparatorGlassmorphismWidget(
+              date: FormattedDate.getChatTime(msg.createdAt),
+            ),
+          GroupSystemEventSeparator(
+            text: GroupSystemEventTextBuilder.build(
+              message: msg,
+              currentUserId: SupabaseProvider.id,
+            ),
+          ),
+        ],
+      );
+    }
 
     if (msg.messageType == 'group_call') {
       return StreamBuilder<GroupCallModel?>(

@@ -32,8 +32,12 @@ class GroupMessageModel {
   final String? forwardedFromUserId;
   final String? forwardedFromUserName;
   final String? forwardedFromUserAvatar;
+  final Map<String, dynamic>? systemEventData;
 
   bool get isForwarded => forwardedFromUserId != null;
+
+  static const String systemEventType = 'system_event';
+  bool get isSystemEvent => messageType == systemEventType;
 
   const GroupMessageModel({
     required this.id,
@@ -66,6 +70,7 @@ class GroupMessageModel {
     this.forwardedFromUserId,
     this.forwardedFromUserName,
     this.forwardedFromUserAvatar,
+    this.systemEventData,
   });
 
   GroupMessageModel copyWith({
@@ -99,6 +104,7 @@ class GroupMessageModel {
     String? forwardedFromUserId,
     String? forwardedFromUserName,
     String? forwardedFromUserAvatar,
+    Map<String, dynamic>? systemEventData,
   }) {
     return GroupMessageModel(
       id: id ?? this.id,
@@ -133,6 +139,7 @@ class GroupMessageModel {
           forwardedFromUserName ?? this.forwardedFromUserName,
       forwardedFromUserAvatar:
           forwardedFromUserAvatar ?? this.forwardedFromUserAvatar,
+      systemEventData: systemEventData ?? this.systemEventData,
     );
   }
 
@@ -193,6 +200,7 @@ class GroupMessageModel {
       forwardedFromUserId: map['forwarded_from_user_id'] as String?,
       forwardedFromUserName: map['forwarded_from_user_name'] as String?,
       forwardedFromUserAvatar: map['forwarded_from_user_avatar'] as String?,
+      systemEventData: map['system_event_data'] as Map<String, dynamic>?,
     );
   }
 
@@ -278,6 +286,7 @@ class GroupMessageModel {
       forwardedFromUserId: json['forwarded_from_user_id'] as String?,
       forwardedFromUserName: json['forwarded_from_user_name'] as String?,
       forwardedFromUserAvatar: json['forwarded_from_user_avatar'] as String?,
+      systemEventData: json['system_event_data'] as Map<String, dynamic>?,
     );
   }
 
@@ -312,6 +321,7 @@ class GroupMessageModel {
       'forwarded_from_user_id': forwardedFromUserId,
       'forwarded_from_user_name': forwardedFromUserName,
       'forwarded_from_user_avatar': forwardedFromUserAvatar,
+      'system_event_data': systemEventData,
     };
   }
 }
