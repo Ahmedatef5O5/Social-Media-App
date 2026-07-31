@@ -10,8 +10,8 @@ import 'package:social_media_app/features/settings/widgets/theme_picker_sheet_wi
 import '../../../core/router/app_routes.dart';
 import '../../../core/themes/cubit/theme_cubit.dart';
 import '../../../core/toast/app_toast.dart';
-import '../../../core/widgets/custom_loading_indicator.dart';
-import '../../discover/views/search_view.dart';
+import '../../discover/views/discover_people_search_view.dart';
+import '../utils/drawer_header_shimmer.dart';
 import 'drawer_header_widget.dart';
 
 class ProfileDrawer extends StatelessWidget {
@@ -35,10 +35,7 @@ class ProfileDrawer extends StatelessWidget {
               if (state is ProfileLoaded) {
                 return DrawerHeaderWidget(user: state.user);
               } else {
-                return SizedBox(
-                  height: MediaQuery.of(context).size.height * 0.3,
-                  child: CustomLoadingIndicator(),
-                );
+                return const DrawerHeaderShimmer();
               }
             },
           ),
@@ -74,7 +71,9 @@ class ProfileDrawer extends StatelessWidget {
                   onTap: () {
                     Navigator.of(context, rootNavigator: true).push(
                       PageRouteBuilder(
-                        pageBuilder: (_, animation, __) => const SearchView(),
+                        pageBuilder:
+                            (_, animation, __) =>
+                                const DiscoverPeopleSearchView(),
                         transitionsBuilder: (_, anim, __, child) {
                           return FadeTransition(
                             opacity: anim,
