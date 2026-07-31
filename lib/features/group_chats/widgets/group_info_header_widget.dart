@@ -130,7 +130,7 @@ class _GroupInfoHeaderDelegate extends SliverPersistentHeaderDelegate {
             top: 0,
             left: 0,
             right: 0,
-            height: maxExtent,
+            height: currentExtent,
             child: Stack(
               fit: StackFit.expand,
               children: [
@@ -144,7 +144,10 @@ class _GroupInfoHeaderDelegate extends SliverPersistentHeaderDelegate {
                     ),
                   ),
                 ),
-                const _AnimatedHeaderIcons(),
+                Opacity(
+                  opacity: (1 - (t / 0.5)).clamp(0.0, 1.0),
+                  child: const _AnimatedHeaderIcons(),
+                ),
               ],
             ),
           ),
@@ -218,7 +221,7 @@ class _GroupInfoHeaderDelegate extends SliverPersistentHeaderDelegate {
     double t,
   ) {
     return Stack(
-      clipBehavior: Clip.none, 
+      clipBehavior: Clip.none,
       children: [
         GestureDetector(
           onTap:
@@ -318,22 +321,50 @@ class _GroupInfoHeaderDelegate extends SliverPersistentHeaderDelegate {
         ),
       );
     }
-    return GestureDetector(
-      onTap: isAdmin ? onEditTap : null,
-      child: Text(
-        group.name,
-        textAlign: TextAlign.center,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 24,
-          fontWeight: FontWeight.bold,
-          shadows: [
-            Shadow(color: Colors.black26, blurRadius: 4, offset: Offset(0, 2)),
-          ],
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+
+      children: [
+        GestureDetector(
+          onTap: isAdmin ? onEditTap : null,
+          child: Text(
+            group.name,
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              shadows: [
+                Shadow(
+                  color: Colors.black26,
+                  blurRadius: 4,
+                  offset: Offset(0, 2),
+                ),
+              ],
+            ),
+          ),
         ),
-      ),
+
+        if (group.title?.isNotEmpty == true) ...[
+          const SizedBox(height: 4),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 40),
+            child: Text(
+              group.title!,
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.85),
+                fontSize: 13.5,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      ],
     );
   }
 

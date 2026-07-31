@@ -84,12 +84,12 @@ abstract class FollowColumns {
 abstract class GroupColumns {
   static const String id = 'id';
   static const String name = 'name';
+  static const String title = 'title';
   static const String description = 'description';
   static const String avatarUrl = 'avatar_url';
+  static const String avatarPublicId = 'avatar_public_id';
   static const String createdAt = 'created_at';
   static const String createdBy = 'created_by';
-
-  static const String avatarPublicId = 'avatar_public_id';
 }
 
 // group_members
@@ -98,6 +98,7 @@ abstract class GroupMemberColumns {
   static const String userId = 'user_id';
   static const String role = 'role';
   static const String joinedAt = 'joined_at';
+  static const String isMuted = 'is_muted';
 }
 
 // group_messages
