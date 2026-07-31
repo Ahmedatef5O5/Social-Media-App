@@ -33,7 +33,7 @@ class CreatePostInputField extends StatelessWidget {
       ),
       minLines: 1,
       maxLines: null,
-      maxLength: 140,
+      maxLength: 250,
       counterText: _hasText ? null : '',
       counterStyle: TextStyle(
         color: atLimit ? Colors.red : null,

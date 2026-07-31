@@ -173,8 +173,8 @@ class _CreatePostVideoPreviewState extends State<CreatePostVideoPreview>
                       opacity: _controller.value.isPlaying ? 0.0 : 1.0,
                       duration: const Duration(milliseconds: 300),
                       child: GlassIconButton(
-                        size: 60,
-                        iconSize: 32,
+                        size: 38,
+                        iconSize: 24,
                         icon:
                             _controller.value.isPlaying
                                 ? Icons.pause_rounded
@@ -219,8 +219,8 @@ class _CreatePostVideoPreviewState extends State<CreatePostVideoPreview>
               top: 8,
               left: 8,
               child: GlassIconButton(
-                size: 34,
-                iconSize: 16,
+                size: 32,
+                iconSize: 15,
                 icon:
                     !_isInitialized
                         ? Icons.volume_up_rounded
@@ -240,15 +240,15 @@ class _CreatePostVideoPreviewState extends State<CreatePostVideoPreview>
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   GlassIconButton(
-                    size: 34,
-                    iconSize: 16,
+                    size: 32,
+                    iconSize: 15,
                     icon: Icons.fullscreen_rounded,
                     onTap: _isInitialized ? _openFullScreen : null,
                   ),
                   const SizedBox(width: 8),
                   GlassIconButton(
-                    size: 34,
-                    iconSize: 16,
+                    size: 32,
+                    iconSize: 15,
                     icon: Icons.close_rounded,
                     onTap: widget.onRemove,
                   ),
@@ -258,7 +258,7 @@ class _CreatePostVideoPreviewState extends State<CreatePostVideoPreview>
 
             if (_isInitialized)
               Positioned(
-                bottom: 6,
+                bottom: 2,
                 left: 10,
                 right: 10,
                 child: VideoProgressSlider(controller: _controller),

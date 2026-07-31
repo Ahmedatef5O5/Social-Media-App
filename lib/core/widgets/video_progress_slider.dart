@@ -9,8 +9,8 @@ class VideoProgressSlider extends StatelessWidget {
   const VideoProgressSlider({
     super.key,
     required this.controller,
-    this.trackHeight = 4,
-    this.thumbSize = 12,
+    this.trackHeight = 2.8,
+    this.thumbSize = 10,
   });
 
   @override
@@ -41,7 +41,7 @@ class VideoProgressSlider extends StatelessWidget {
           onTapDown: (d) => seekToLocalDx(d.localPosition.dx),
           onHorizontalDragUpdate: (d) => seekToLocalDx(d.localPosition.dx),
           child: SizedBox(
-            height: thumbSize + 6,
+            height: thumbSize + 2,
             child: Stack(
               alignment: Alignment.centerLeft,
               children: [
