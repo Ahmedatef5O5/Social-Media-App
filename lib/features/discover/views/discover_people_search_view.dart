@@ -5,14 +5,15 @@ import '../../../core/router/app_routes.dart';
 import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/widgets/empty_findings_animation_widget.dart';
 
-class SearchView extends StatefulWidget {
-  const SearchView({super.key});
+class DiscoverPeopleSearchView extends StatefulWidget {
+  const DiscoverPeopleSearchView({super.key});
 
   @override
-  State<SearchView> createState() => _SearchViewState();
+  State<DiscoverPeopleSearchView> createState() =>
+      _DiscoverPeopleSearchViewState();
 }
 
-class _SearchViewState extends State<SearchView>
+class _DiscoverPeopleSearchViewState extends State<DiscoverPeopleSearchView>
     with SingleTickerProviderStateMixin {
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _focusNode = FocusNode();
