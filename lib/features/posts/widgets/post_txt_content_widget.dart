@@ -1,53 +1,119 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
+import '../../../core/helpers/chat_helper.dart';
 import '../../../core/link/widgets/message_link_preview.dart';
 import '../../../core/mentions/widgets/mention_rich_text.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/supabase/supabase_provider.dart';
 import '../model/post_model.dart';
 
-class PostTxtContentWidget extends StatelessWidget {
+class PostTxtContentWidget extends StatefulWidget {
   const PostTxtContentWidget({super.key, required this.post});
 
   final PostModel post;
 
   @override
-  Widget build(BuildContext context) {
-    final String postText = post.text.trim();
+  State<PostTxtContentWidget> createState() => _PostTxtContentWidgetState();
+}
 
-    return postText.isNotEmpty
-        ? Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 10),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // const Gap(4),
-              MessageLinkPreview(
+class _PostTxtContentWidgetState extends State<PostTxtContentWidget> {
+  bool _isExpanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final String postText = widget.post.text.trim();
+
+    if (postText.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    final bool hasMedia =
+        (widget.post.imageUrl?.isNotEmpty ?? false) ||
+        (widget.post.videoUrl?.isNotEmpty ?? false) ||
+        (widget.post.fileUrl?.isNotEmpty ?? false);
+    final int maxLines = hasMedia ? 2 : 5;
+
+    final bool isArabic = ChatHelper.isArabic(postText);
+    final TextDirection textDirection =
+        isArabic ? TextDirection.rtl : TextDirection.ltr;
+
+    final String readMoreTxt = isArabic ? 'قراءة المزيد...' : 'Read more...';
+    final String readLessTxt = isArabic ? 'عرض أقل' : 'Show less';
+
+    final textStyle = Theme.of(
+      context,
+    ).textTheme.titleSmall!.copyWith(fontWeight: FontWeight.w400, fontSize: 15);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final TextPainter textPainter = TextPainter(
+                text: TextSpan(text: postText, style: textStyle),
+                maxLines: maxLines,
+                textDirection: textDirection,
+              )..layout(maxWidth: constraints.maxWidth);
+
+              final bool isOverflowing = textPainter.didExceedMaxLines;
+
+              return MessageLinkPreview(
                 text: postText,
                 isMe: false,
-                textWidget: MentionRichText(
-                  text: postText,
-                  mentions: post.mentions,
-                  maxLines: 10,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.titleSmall!.copyWith(
-                    fontWeight: FontWeight.w400,
-                    fontSize: 15,
-                  ),
-                  onMentionTap: (userId, name) {
-                    final currentUserId = SupabaseProvider.idOrNull;
-                    if (userId == currentUserId) return;
-                    Navigator.of(
-                      context,
-                      rootNavigator: true,
-                    ).pushNamed(AppRoutes.profileViewRoute, arguments: userId);
-                  },
+                textWidget: Column(
+                  crossAxisAlignment:
+                      isArabic
+                          ? CrossAxisAlignment.end
+                          : CrossAxisAlignment.start,
+                  children: [
+                    MentionRichText(
+                      text: postText,
+                      mentions: widget.post.mentions,
+                      maxLines: _isExpanded ? null : maxLines,
+                      overflow:
+                          _isExpanded
+                              ? TextOverflow.visible
+                              : TextOverflow.ellipsis,
+                      style: textStyle,
+                      onMentionTap: (userId, name) {
+                        final currentUserId = SupabaseProvider.idOrNull;
+                        if (userId == currentUserId) return;
+                        Navigator.of(context, rootNavigator: true).pushNamed(
+                          AppRoutes.profileViewRoute,
+                          arguments: userId,
+                        );
+                      },
+                    ),
+
+                    if (isOverflowing)
+                      GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            _isExpanded = !_isExpanded;
+                          });
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.only(top: 4.0, bottom: 2.0),
+                          child: Text(
+                            _isExpanded ? readLessTxt : readMoreTxt,
+                            style: textStyle.copyWith(
+                              color: Theme.of(context).colorScheme.outline,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
-              ),
-              const Gap(8),
-            ],
+              );
+            },
           ),
-        )
-        : const SizedBox.shrink();
+          const Gap(8),
+        ],
+      ),
+    );
   }
 }
