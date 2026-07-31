@@ -3,12 +3,13 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 import 'package:persistent_bottom_nav_bar_v2/persistent_bottom_nav_bar_v2.dart';
 import 'package:social_media_app/core/constants/app_images.dart';
+import 'package:social_media_app/features/group_chats/cubit/group_list_cubit/group_list_cubit.dart';
 import 'package:social_media_app/features/single_chats/cubit/chats_cubit/chats_cubit.dart';
 import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/themes/dynamic_logo_app.dart';
 import '../../../core/widgets/custom_badge.dart';
-import '../../discover/views/search_view.dart';
 import '../../notifications/views/notification_view.dart';
+import '../../search/views/search_view.dart';
 
 class HomeViewHeaderSection extends StatefulWidget {
   final PersistentTabController navController;
@@ -144,24 +145,38 @@ class _HomeViewHeaderSectionState extends State<HomeViewHeaderSection> {
             child: BlocBuilder<ChatsCubit, ChatsState>(
               buildWhen: (previous, current) => current is ChatsSuccessloaded,
               builder: (context, state) {
-                int totalUnread = 0;
+                int singleChatsUnread = 0;
                 if (state is ChatsSuccessloaded) {
-                  totalUnread = state.chats.fold(
+                  singleChatsUnread = state.chats.fold(
                     0,
                     (sum, chat) => sum + chat.unreadCount,
                   );
                 }
-                return CustomBadge(
-                  count: totalUnread,
-                  top: -10.5,
-                  right: -30,
-                  left: 0,
-                  size: 16.5,
-                  child: Image.asset(
-                    AppImages.paperPlaneIcon,
-                    width: 24,
-                    color: Theme.of(context).primaryColor,
-                  ),
+                return BlocBuilder<GroupListCubit, GroupListState>(
+                  buildWhen: (previous, current) => current is GroupListLoaded,
+                  builder: (context, groupState) {
+                    int groupChatsUnread = 0;
+                    if (groupState is GroupListLoaded) {
+                      groupChatsUnread = groupState.groups.fold(
+                        0,
+                        (sum, g) => sum + g.unreadCount,
+                      );
+                    }
+                    final totalUnread = singleChatsUnread + groupChatsUnread;
+
+                    return CustomBadge(
+                      count: totalUnread,
+                      top: -10.5,
+                      right: -30,
+                      left: 0,
+                      size: 16.5,
+                      child: Image.asset(
+                        AppImages.paperPlaneIcon,
+                        width: 24,
+                        color: Theme.of(context).primaryColor,
+                      ),
+                    );
+                  },
                 );
               },
             ),

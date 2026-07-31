@@ -11,6 +11,7 @@ import 'package:social_media_app/features/discover/views/discover_view.dart';
 import 'package:social_media_app/features/profile/services/user_services.dart';
 import 'package:social_media_app/features/profile/views/profile_view.dart';
 import 'package:social_media_app/features/settings/widgets/profile_drawer.dart';
+import '../../features/group_chats/cubit/group_list_cubit/group_list_cubit.dart';
 import '../../features/home/cubits/home_cubit/home_cubit.dart';
 import '../../features/home/views/home_view.dart';
 import '../../features/profile/cubits/profile_cubit/profile_cubit.dart';
@@ -181,60 +182,79 @@ class _CustomBottomNavBarState extends State<CustomBottomNavBar> {
                               (previous, current) =>
                                   current is ChatsSuccessloaded,
                           builder: (context, chatsState) {
-                            int unread = 0;
+                            int singleChatsUnread = 0;
                             if (chatsState is ChatsSuccessloaded) {
-                              unread = chatsState.chats.fold(
+                              singleChatsUnread = chatsState.chats.fold(
                                 0,
                                 (s, c) => s + c.unreadCount,
                               );
                             }
-                            return BlocBuilder<ProfileCubit, ProfileState>(
-                              builder: (context, profileState) {
-                                String? imageUrl;
-                                if (profileState is ProfileLoaded) {
-                                  imageUrl = profileState.user.imageUrl;
+                            return BlocBuilder<GroupListCubit, GroupListState>(
+                              buildWhen:
+                                  (previous, current) =>
+                                      current is GroupListLoaded,
+                              builder: (context, groupState) {
+                                int groupChatsUnread = 0;
+                                if (groupState is GroupListLoaded) {
+                                  groupChatsUnread = groupState.groups.fold(
+                                    0,
+                                    (s, g) => s + g.unreadCount,
+                                  );
                                 }
-                                return CustomFloatingNavBar(
-                                  currentIndex: _controller.index,
+                                final unread =
+                                    singleChatsUnread + groupChatsUnread;
 
-                                  onTap: (i) {
-                                    if (_controller.index == i) {
-                                      if (_scrollControllers[i].hasClients) {
-                                        _scrollControllers[i].animateTo(
-                                          0.0,
-                                          duration: const Duration(
-                                            milliseconds: 400,
+                                return BlocBuilder<ProfileCubit, ProfileState>(
+                                  builder: (context, profileState) {
+                                    String? imageUrl;
+                                    if (profileState is ProfileLoaded) {
+                                      imageUrl = profileState.user.imageUrl;
+                                    }
+                                    return CustomFloatingNavBar(
+                                      currentIndex: _controller.index,
+                                      onTap: (i) {
+                                        if (_controller.index == i) {
+                                          if (_scrollControllers[i]
+                                              .hasClients) {
+                                            _scrollControllers[i].animateTo(
+                                              0.0,
+                                              duration: const Duration(
+                                                milliseconds: 400,
+                                              ),
+                                              curve: Curves.easeOutBack,
+                                            );
+                                          }
+                                        } else {
+                                          _controller.jumpToTab(i);
+                                        }
+                                        if (i == 3) {
+                                          _scaffoldKey.currentState!
+                                              .openEndDrawer();
+                                        }
+                                        setState(() {});
+                                      },
+                                      items: [
+                                        const NavBarItem(
+                                          icon: Icons.home_outlined,
+                                        ),
+                                        const NavBarItem(
+                                          icon: Icons.group_outlined,
+                                        ),
+                                        NavBarItem(
+                                          icon: Icons.chat_bubble_outline,
+                                          badgeCount: unread,
+                                        ),
+                                        NavBarItem(
+                                          child: MainUserAvatar(
+                                            userId: userId,
+                                            imageUrl: imageUrl,
+                                            showBorder: false,
+                                            size: 30,
                                           ),
-                                          curve: Curves.easeOutBack,
-                                        );
-                                      }
-                                    } else {
-                                      _controller.jumpToTab(i);
-                                    }
-                                    if (i == 3) {
-                                      _scaffoldKey.currentState!
-                                          .openEndDrawer();
-                                    }
-                                    setState(() {});
+                                        ),
+                                      ],
+                                    );
                                   },
-                                  items: [
-                                    const NavBarItem(icon: Icons.home_outlined),
-                                    const NavBarItem(
-                                      icon: Icons.group_outlined,
-                                    ),
-                                    NavBarItem(
-                                      icon: Icons.chat_bubble_outline,
-                                      badgeCount: unread,
-                                    ),
-                                    NavBarItem(
-                                      child: MainUserAvatar(
-                                        userId: userId,
-                                        imageUrl: imageUrl,
-                                        showBorder: false,
-                                        size: 30,
-                                      ),
-                                    ),
-                                  ],
                                 );
                               },
                             );
