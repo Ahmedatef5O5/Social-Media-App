@@ -237,7 +237,11 @@ class _PostDetailsViewState extends State<PostDetailsView> {
 
                                     ClipRRect(
                                       borderRadius: BorderRadius.circular(12),
-                                      child: PostMediaWidget(post: displayPost),
+                                      child: PostMediaWidget(
+                                        post: displayPost,
+                                        postsCubit: postsCubit,
+                                        currentUserId: currentUserId,
+                                      ),
                                     ),
                                   ],
 

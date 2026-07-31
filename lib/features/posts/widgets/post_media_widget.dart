@@ -4,13 +4,21 @@ import 'package:social_media_app/features/posts/widgets/post_video_player.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/themes/app_colors.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
+import '../cubit/posts_cubit/posts_cubit.dart';
 import '../model/post_model.dart';
 import 'file_attachment_preview.dart';
 
 class PostMediaWidget extends StatelessWidget {
-  const PostMediaWidget({super.key, required this.post});
-
   final PostModel post;
+  final PostsCubit postsCubit;
+  final String currentUserId;
+
+  const PostMediaWidget({
+    super.key,
+    required this.post,
+    required this.postsCubit,
+    required this.currentUserId,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -47,7 +55,12 @@ class PostMediaWidget extends StatelessWidget {
             ),
           ),
         if (post.videoUrl != null && post.videoUrl!.isNotEmpty)
-          PostVideoPlayer(videoUrl: post.videoUrl!),
+          PostVideoPlayer(
+            videoUrl: post.videoUrl!,
+            post: post,
+            postsCubit: postsCubit,
+            currentUserId: currentUserId,
+          ),
         if (post.fileUrl != null && post.fileUrl!.isNotEmpty)
           FileAttachmentPreview(url: post.fileUrl!),
       ],

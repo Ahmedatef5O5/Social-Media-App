@@ -283,6 +283,7 @@ class AppRouter {
           initialActiveMode = PostDetailsActiveMode.comments;
         }
         return MaterialPageRoute(
+          settings: settings,
           builder:
               (_) => PostDetailsView(
                 post: post,
@@ -292,6 +293,7 @@ class AppRouter {
       case AppRoutes.friendsListViewRoute:
         final userId = settings.arguments as String;
         return MaterialPageRoute(
+          settings: settings,
           builder:
               (_) => BlocProvider(
                 create:

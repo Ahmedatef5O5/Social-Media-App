@@ -164,7 +164,11 @@ class PostItemWidget extends StatelessWidget {
                           ),
                           const SizedBox(height: 8),
                           PostTxtContentWidget(post: displayPost),
-                          PostMediaWidget(post: displayPost),
+                          PostMediaWidget(
+                            post: displayPost,
+                            postsCubit: postsCubit,
+                            currentUserId: currentUserId,
+                          ),
                         ],
                       ),
                     ),
