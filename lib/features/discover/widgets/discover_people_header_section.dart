@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
-import '../views/search_view.dart';
+import '../views/discover_people_search_view.dart';
 
 class DiscoverPeopleHeaderSection extends StatelessWidget {
   const DiscoverPeopleHeaderSection({super.key});
@@ -42,7 +42,8 @@ class DiscoverPeopleHeaderSection extends StatelessWidget {
             onTap: () {
               Navigator.of(context, rootNavigator: true).push(
                 PageRouteBuilder(
-                  pageBuilder: (_, animation, __) => const SearchView(),
+                  pageBuilder:
+                      (_, animation, __) => const DiscoverPeopleSearchView(),
                   transitionsBuilder: (_, anim, __, child) {
                     return FadeTransition(
                       opacity: anim,

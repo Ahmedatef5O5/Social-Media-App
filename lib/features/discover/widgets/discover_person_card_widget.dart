@@ -15,7 +15,12 @@ import '../cubit/discover_people_cubit.dart';
 
 class DiscoverPersonCardWidget extends StatelessWidget {
   final DiscoverPersonModel personData;
-  const DiscoverPersonCardWidget({super.key, required this.personData});
+  final List<BoxShadow>? boxShadow;
+  const DiscoverPersonCardWidget({
+    super.key,
+    required this.personData,
+    this.boxShadow,
+  });
 
   Future<void> _handleFriendAction(BuildContext context) async {
     try {
@@ -70,16 +75,18 @@ class DiscoverPersonCardWidget extends StatelessWidget {
         border: Border.all(
           color: colorScheme.outlineVariant.withValues(alpha: 0.12),
         ),
-        boxShadow: [
-          BoxShadow(
-            color:
-                theme.brightness == Brightness.dark
-                    ? Colors.black.withValues(alpha: 0.35)
-                    : Colors.black.withValues(alpha: 0.05),
-            blurRadius: 14,
-            offset: const Offset(0, 5),
-          ),
-        ],
+        boxShadow:
+            boxShadow ??
+            [
+              BoxShadow(
+                color:
+                    theme.brightness == Brightness.dark
+                        ? Colors.black.withValues(alpha: 0.35)
+                        : Colors.black.withValues(alpha: 0.05),
+                blurRadius: 14,
+                offset: const Offset(0, 5),
+              ),
+            ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
