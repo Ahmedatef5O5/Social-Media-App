@@ -100,7 +100,10 @@ class CloudinaryStorageServices {
     final idx = secureUrl.indexOf(marker);
     if (idx == -1) return secureUrl;
 
-    final transformation = isVideo ? 'f_auto,q_auto' : 'f_auto,q_auto';
+    final transformation =
+        isVideo
+            ? 'c_limit,w_1280,h_1280,q_auto,f_auto'
+            : 'c_limit,w_1280,h_1280,q_auto,f_auto';
     final insertAt = idx + marker.length;
     return '${secureUrl.substring(0, insertAt)}$transformation/${secureUrl.substring(insertAt)}';
   }

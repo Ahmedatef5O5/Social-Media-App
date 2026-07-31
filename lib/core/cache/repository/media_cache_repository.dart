@@ -18,4 +18,6 @@ abstract class MediaCacheRepository {
   Future<int> runEvictionSweep();
 
   Future<void> adoptUploadedFile(String secureUrl, File localFile);
+
+  Future<void> invalidate(String secureUrl);
 }

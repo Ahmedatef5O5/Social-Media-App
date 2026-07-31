@@ -68,6 +68,9 @@ class MediaCacheRepositoryImpl implements MediaCacheRepository {
   }
 
   @override
+  Future<int> runEvictionSweep() => _evictionService.runSweep();
+
+  @override
   Future<void> adoptUploadedFile(String secureUrl, File localFile) async {
     try {
       await _localDataSource.adoptLocalFile(secureUrl, localFile);
@@ -79,5 +82,6 @@ class MediaCacheRepositoryImpl implements MediaCacheRepository {
   }
 
   @override
-  Future<int> runEvictionSweep() => _evictionService.runSweep();
+  Future<void> invalidate(String secureUrl) =>
+      _localDataSource.removeCachedMedia(secureUrl);
 }
