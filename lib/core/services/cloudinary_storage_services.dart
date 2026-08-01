@@ -80,6 +80,8 @@ class CloudinaryStorageServices {
         ),
         publicId: publicId,
         resourceType: resourceType,
+        width: data['width'] as int?,
+        height: data['height'] as int?,
       );
     } on dio_pkg.DioException catch (e) {
       if (e.type == dio_pkg.DioExceptionType.cancel) {

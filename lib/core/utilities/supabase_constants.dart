@@ -241,6 +241,9 @@ abstract class PostColumns {
   static const String imagePublicId = 'image_public_id';
   static const String videoPublicId = 'video_public_id';
   static const String filePublicId = 'file_public_id';
+  //  Media dimensions (scroll-jank fix) ──
+  static const String mediaWidth = 'media_width';
+  static const String mediaHeight = 'media_height';
   // ── Shared Post feature ──
   static const String sharedPostId = 'shared_post_id';
 

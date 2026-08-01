@@ -44,7 +44,8 @@ class PostModel {
   final bool isOnline;
   final int savedCount;
   final bool isSavedByMe;
-
+  final int? mediaWidth;
+  final int? mediaHeight;
   // ── Shared Post feature ──────────────────────────────────────────────
   final String? sharedPostId;
   final PostModel? originalPost;
@@ -57,6 +58,13 @@ class PostModel {
 
   // - Privacy publishing
   final ContentPrivacy privacyType;
+
+  double get mediaAspectRatio {
+    if (mediaWidth != null && mediaHeight != null && mediaHeight! > 0) {
+      return mediaWidth! / mediaHeight!;
+    }
+    return 4 / 5;
+  }
 
   const PostModel({
     required this.id,
@@ -81,6 +89,8 @@ class PostModel {
     this.originalPost,
     this.sharesCount = 0,
     this.isSharedByMe = false,
+    this.mediaWidth,
+    this.mediaHeight,
     this.sharedReelId,
     this.sharedReel,
     this.privacyType = ContentPrivacy.public,
@@ -100,6 +110,8 @@ class PostModel {
       'likes': likes,
       'likers_images': likersImages,
       'comments': comments,
+      PostColumns.mediaWidth: mediaWidth,
+      PostColumns.mediaHeight: mediaHeight,
       PostColumns.privacyType: contentPrivacyToString(privacyType),
       PostColumns.sharedPostId: sharedPostId,
       PostColumns.sharedReelId: sharedReelId,
@@ -161,7 +173,8 @@ class PostModel {
           map['video_url'] != null ? map['video_url'] as String? ?? '' : null,
       imageUrl: map['image_url'] != null ? map['image_url'] as String : null,
       fileUrl: map['file_url'] != null ? map['file_url'] as String : null,
-
+      mediaWidth: map[PostColumns.mediaWidth] as int?,
+      mediaHeight: map[PostColumns.mediaHeight] as int?,
       likes: likesList,
       likersImages: imagesList,
       reactions: reactionsList,
@@ -214,6 +227,8 @@ class PostModel {
     PostModel? originalPost,
     int? sharesCount,
     bool? isSharedByMe,
+    int? mediaWidth,
+    int? mediaHeight,
     String? sharedReelId,
     ReelModel? sharedReel,
     ContentPrivacy? privacyType,
@@ -237,6 +252,8 @@ class PostModel {
       isOnline: isOnline ?? this.isOnline,
       savedCount: savedCount ?? this.savedCount,
       isSavedByMe: isSavedByMe ?? this.isSavedByMe,
+      mediaWidth: mediaWidth ?? this.mediaWidth,
+      mediaHeight: mediaHeight ?? this.mediaHeight,
       sharedPostId: sharedPostId ?? this.sharedPostId,
       originalPost: originalPost ?? this.originalPost,
       sharesCount: sharesCount ?? this.sharesCount,
@@ -272,6 +289,8 @@ class PostModel {
     'is_post_shared': isSharedByMe,
     'shared_reel_id': sharedReelId,
     'shared_reel': sharedReel?.toJson(),
+    'media_width': mediaWidth,
+    'media_height': mediaHeight,
     PostColumns.privacyType: contentPrivacyToString(privacyType),
   };
 
@@ -303,6 +322,7 @@ class PostModel {
                     CommentModel.fromCacheJson(comment as Map<String, dynamic>),
               )
               .toList(),
+
       lastSeen:
           map['last_seen'] != null
               ? DateTime.parse(map['last_seen'] as String)
@@ -310,6 +330,8 @@ class PostModel {
       isOnline: map['is_online'] as bool? ?? false,
       savedCount: map['saved_count'] as int? ?? 0,
       isSavedByMe: map['is_post_saved'] as bool? ?? false,
+      mediaWidth: map['media_width'] as int?,
+      mediaHeight: map['media_height'] as int?,
       sharedPostId: map['shared_post_id'] as String?,
       originalPost:
           map['original_post'] != null
