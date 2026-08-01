@@ -8,6 +8,7 @@ import '../../../core/helpers/formatted_date.dart';
 import '../../../core/widgets/custom_linkify_text.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
 import '../cubit/group_media_cubit/group_media_cubit.dart';
+import '../helpers/media_date_sectioner.dart';
 import '../models/groupe_message_model.dart';
 
 class GroupMediaView extends StatefulWidget {
@@ -86,6 +87,85 @@ class _GroupMediaViewState extends State<GroupMediaView> {
   }
 }
 
+class _SectionHeader extends StatelessWidget {
+  final String label;
+  const _SectionHeader({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 16, 12, 8),
+      child: Text(
+        label.toUpperCase(),
+        style: TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.5,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
+      ),
+    );
+  }
+}
+
+class _SectionedMediaGrid extends StatelessWidget {
+  final List<GroupMessageModel> items;
+  final Widget Function(BuildContext, GroupMessageModel) tileBuilder;
+
+  const _SectionedMediaGrid({required this.items, required this.tileBuilder});
+
+  @override
+  Widget build(BuildContext context) {
+    final sections = MediaDateSectioner.bucket(items);
+    return CustomScrollView(
+      slivers: [
+        for (final section in sections) ...[
+          SliverToBoxAdapter(child: _SectionHeader(label: section.key)),
+          SliverPadding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            sliver: SliverGrid(
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 3,
+                mainAxisSpacing: 4,
+                crossAxisSpacing: 4,
+              ),
+              delegate: SliverChildBuilderDelegate(
+                (context, index) => tileBuilder(context, section.value[index]),
+                childCount: section.value.length,
+              ),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _SectionedMediaList extends StatelessWidget {
+  final List<GroupMessageModel> items;
+  final Widget Function(BuildContext, GroupMessageModel) tileBuilder;
+
+  const _SectionedMediaList({required this.items, required this.tileBuilder});
+
+  @override
+  Widget build(BuildContext context) {
+    final sections = MediaDateSectioner.bucket(items);
+    return CustomScrollView(
+      slivers: [
+        for (final section in sections) ...[
+          SliverToBoxAdapter(child: _SectionHeader(label: section.key)),
+          SliverList(
+            delegate: SliverChildBuilderDelegate(
+              (context, index) => tileBuilder(context, section.value[index]),
+              childCount: section.value.length,
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
 class _MediaTabView extends StatefulWidget {
   final GroupMediaTab tab;
   const _MediaTabView({required this.tab});
@@ -147,17 +227,9 @@ class _AllMediaGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final primary = Theme.of(context).primaryColor;
-
-    return GridView.builder(
-      padding: const EdgeInsets.all(4),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
-        mainAxisSpacing: 4,
-        crossAxisSpacing: 4,
-      ),
-      itemCount: items.length,
-      itemBuilder: (context, index) {
-        final msg = items[index];
+    return _SectionedMediaGrid(
+      items: items,
+      tileBuilder: (context, msg) {
         return GestureDetector(
           onTap: () {
             if (msg.messageType == 'image') {
@@ -222,30 +294,22 @@ class _ImagesGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GridView.builder(
-      padding: const EdgeInsets.all(4),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
-        mainAxisSpacing: 4,
-        crossAxisSpacing: 4,
-      ),
-      itemCount: items.length,
-      itemBuilder: (context, index) {
-        final msg = items[index];
-        return GestureDetector(
-          onTap:
-              () => Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder:
-                      (_) => _FullScreenNetworkImage(url: msg.imageUrl ?? ''),
+    return _SectionedMediaGrid(
+      items: items,
+      tileBuilder:
+          (context, msg) => GestureDetector(
+            onTap:
+                () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder:
+                        (_) => _FullScreenNetworkImage(url: msg.imageUrl ?? ''),
+                  ),
                 ),
-              ),
-          child: CachedNetworkImage(
-            imageUrl: msg.imageUrl ?? '',
-            fit: BoxFit.cover,
+            child: CachedNetworkImage(
+              imageUrl: msg.imageUrl ?? '',
+              fit: BoxFit.cover,
+            ),
           ),
-        );
-      },
     );
   }
 }
@@ -256,32 +320,24 @@ class _VideosGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GridView.builder(
-      padding: const EdgeInsets.all(4),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
-        mainAxisSpacing: 4,
-        crossAxisSpacing: 4,
-      ),
-      itemCount: items.length,
-      itemBuilder: (context, index) {
-        final msg = items[index];
-        return GestureDetector(
-          onTap:
-              () => Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder:
-                      (_) => _FullScreenNetworkVideo(url: msg.videoUrl ?? ''),
+    return _SectionedMediaGrid(
+      items: items,
+      tileBuilder:
+          (context, msg) => GestureDetector(
+            onTap:
+                () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder:
+                        (_) => _FullScreenNetworkVideo(url: msg.videoUrl ?? ''),
+                  ),
                 ),
+            child: Container(
+              color: Colors.black12,
+              child: const Center(
+                child: Icon(Icons.play_circle_fill_rounded, size: 28),
               ),
-          child: Container(
-            color: Colors.black12,
-            child: const Center(
-              child: Icon(Icons.play_circle_fill_rounded, size: 28),
             ),
           ),
-        );
-      },
     );
   }
 }
@@ -299,13 +355,10 @@ class _VoiceListState extends State<_VoiceList> {
 
   @override
   Widget build(BuildContext context) {
-    return ListView.separated(
-      itemCount: widget.items.length,
-      separatorBuilder: (_, __) => const Divider(height: 1),
-      itemBuilder: (context, index) {
-        final msg = widget.items[index];
+    return _SectionedMediaList(
+      items: widget.items,
+      tileBuilder: (context, msg) {
         final isPlaying = _playingId == msg.id;
-
         return ListTile(
           leading: CircleAvatar(
             backgroundColor: Theme.of(
@@ -350,19 +403,16 @@ class _LinksList extends StatelessWidget {
       return const Center(child: Text('No links shared yet'));
     }
 
-    return ListView.separated(
-      itemCount: confirmed.length,
-      separatorBuilder: (_, __) => const Divider(height: 1),
-      itemBuilder: (context, index) {
-        final msg = confirmed[index];
-        return ListTile(
-          leading: const Icon(Icons.link_rounded),
-          title: CustomLinkifyText(text: msg.text, maxLines: 2),
-          subtitle: Text(
-            '${msg.senderName} · ${FormattedDate.getFormattedDate(msg.createdAt.toString())}',
+    return _SectionedMediaList(
+      items: confirmed,
+      tileBuilder:
+          (context, msg) => ListTile(
+            leading: const Icon(Icons.link_rounded),
+            title: CustomLinkifyText(text: msg.text, maxLines: 2),
+            subtitle: Text(
+              '${msg.senderName} · ${FormattedDate.getFormattedDate(msg.createdAt.toString())}',
+            ),
           ),
-        );
-      },
     );
   }
 }
