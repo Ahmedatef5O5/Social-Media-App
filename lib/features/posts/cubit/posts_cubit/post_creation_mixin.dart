@@ -32,6 +32,7 @@ mixin PostCreationMixin on Cubit<PostsState> {
     String? imageUrl, videoUrl, fileUrl;
     // ignore: unused_local_variable
     String? imagePublicId, videoPublicId, filePublicId;
+    int? mediaWidth, mediaHeight;
 
     try {
       void updateProgress(int sentBytes, int totalBytes) {
@@ -59,6 +60,8 @@ mixin PostCreationMixin on Cubit<PostsState> {
           );
           imageUrl = result.secureUrl;
           imagePublicId = result.publicId;
+          mediaWidth = result.width;
+          mediaHeight = result.height;
         } else {
           throw Exception('image_not_found');
         }
@@ -76,6 +79,8 @@ mixin PostCreationMixin on Cubit<PostsState> {
           );
           videoUrl = result.secureUrl;
           videoPublicId = result.publicId;
+          mediaWidth = result.width ?? mediaWidth;
+          mediaHeight = result.height ?? mediaHeight;
         } else {
           throw Exception('video_not_found');
         }
@@ -109,6 +114,8 @@ mixin PostCreationMixin on Cubit<PostsState> {
         imagePublicId: imagePublicId,
         videoPublicId: videoPublicId,
         filePublicId: filePublicId,
+        mediaWidth: mediaWidth,
+        mediaHeight: mediaHeight,
         privacyType: privacy,
       );
       await _postsServices.addPost(postRequest);

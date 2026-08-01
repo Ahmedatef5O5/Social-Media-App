@@ -23,6 +23,7 @@ class PostVideoPlayer extends StatefulWidget {
   final PostModel post;
   final PostsCubit postsCubit;
   final String currentUserId;
+  final double? aspectRatio;
 
   const PostVideoPlayer({
     super.key,
@@ -30,6 +31,7 @@ class PostVideoPlayer extends StatefulWidget {
     required this.post,
     required this.postsCubit,
     required this.currentUserId,
+    this.aspectRatio,
   });
 
   @override
@@ -406,7 +408,7 @@ class _PostVideoPlayerState extends State<PostVideoPlayer> with RouteAware {
 
   Widget _buildPlaceholder() {
     return AspectRatio(
-      aspectRatio: 16 / 9,
+      aspectRatio: widget.aspectRatio ?? 16 / 9,
       child: Container(
         decoration: BoxDecoration(
           color: AppColors.grey4.withValues(alpha: 0.1),
@@ -423,7 +425,8 @@ class _PostVideoPlayerState extends State<PostVideoPlayer> with RouteAware {
     required bool showRetry,
   }) {
     return AspectRatio(
-      aspectRatio: 16 / 9,
+      aspectRatio: widget.aspectRatio ?? 16 / 9,
+
       child: Container(
         decoration: BoxDecoration(
           color: AppColors.grey4.withValues(alpha: 0.1),

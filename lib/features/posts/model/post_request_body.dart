@@ -10,6 +10,8 @@ class PostRequestBody {
   final String? imagePublicId;
   final String? videoPublicId;
   final String? filePublicId;
+  final int? mediaWidth;
+  final int? mediaHeight;
   final ContentPrivacy privacyType;
 
   const PostRequestBody({
@@ -22,6 +24,8 @@ class PostRequestBody {
     this.imagePublicId,
     this.videoPublicId,
     this.filePublicId,
+    this.mediaWidth,
+    this.mediaHeight,
     this.privacyType = ContentPrivacy.public,
   });
 
@@ -36,6 +40,8 @@ class PostRequestBody {
       'image_public_id': imagePublicId,
       'video_public_id': videoPublicId,
       'file_public_id': filePublicId,
+      'media_width': mediaWidth,
+      'media_height': mediaHeight,
       'privacy_type': contentPrivacyToString(privacyType),
     };
   }
@@ -47,6 +53,8 @@ class PostRequestBody {
       imageUrl: map['image_url'] as String?,
       videoUrl: map['video_url'] as String?,
       fileUrl: map['file_url'] as String?,
+      mediaWidth: map['media_width'] as int?,
+      mediaHeight: map['media_height'] as int?,
     );
   }
 }

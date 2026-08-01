@@ -31,26 +31,31 @@ class PostMediaWidget extends StatelessWidget {
                   AppRoutes.fullScreenImageViewRoute,
                   arguments: {'url': post.imageUrl},
                 ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(14),
-              child: CachedCloudinaryImage(
-                secureUrl: post.imageUrl!,
-                width: double.infinity,
-                fit: BoxFit.cover,
-                placeholder:
-                    (context) => Container(
-                      height: MediaQuery.sizeOf(context).height * 0.3,
-                      decoration: BoxDecoration(
-                        color: AppColors.grey4.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(15),
+            child: AspectRatio(
+              aspectRatio: post.mediaAspectRatio,
+
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(14),
+                child: CachedCloudinaryImage(
+                  secureUrl: post.imageUrl!,
+                  width: double.infinity,
+                  height: double.infinity,
+                  fit: BoxFit.cover,
+                  placeholder:
+                      (context) => Container(
+                        height: MediaQuery.sizeOf(context).height * 0.3,
+                        decoration: BoxDecoration(
+                          color: AppColors.grey4.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(15),
+                        ),
+                        child: const CustomLoadingIndicator(),
                       ),
-                      child: const CustomLoadingIndicator(),
-                    ),
-                errorWidget:
-                    (context, error) => SizedBox(
-                      height: MediaQuery.sizeOf(context).height * 0.3,
-                      child: const Icon(Icons.error),
-                    ),
+                  errorWidget:
+                      (context, error) => SizedBox(
+                        height: MediaQuery.sizeOf(context).height * 0.3,
+                        child: const Icon(Icons.error),
+                      ),
+                ),
               ),
             ),
           ),
@@ -60,6 +65,7 @@ class PostMediaWidget extends StatelessWidget {
             post: post,
             postsCubit: postsCubit,
             currentUserId: currentUserId,
+            aspectRatio: post.mediaAspectRatio,
           ),
         if (post.fileUrl != null && post.fileUrl!.isNotEmpty)
           FileAttachmentPreview(url: post.fileUrl!),
