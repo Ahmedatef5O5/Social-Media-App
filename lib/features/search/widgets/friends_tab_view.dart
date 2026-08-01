@@ -7,6 +7,7 @@ import '../../../core/widgets/empty_findings_animation_widget.dart';
 import '../../social_graph/cubit/friend_lists_cubit/friends_list_cubit.dart';
 import '../../social_graph/widgets/friend_tile_widget.dart';
 import '../../social_graph/widgets/friends_list_skeleton.dart';
+import '../utils/search_view_metrics.dart';
 
 class FriendsTabView extends StatefulWidget {
   const FriendsTabView({super.key});
@@ -17,34 +18,9 @@ class FriendsTabView extends StatefulWidget {
 
 class _FriendsTabViewState extends State<FriendsTabView>
     with AutomaticKeepAliveClientMixin {
-  final _scrollController = ScrollController();
-
   @override
   bool get wantKeepAlive => true;
 
-  @override
-  void initState() {
-    super.initState();
-    _scrollController.addListener(_onScroll);
-  }
-
-  void _onScroll() {
-    if (_scrollController.position.pixels >=
-        _scrollController.position.maxScrollExtent - 200) {
-      context.read<FriendsListCubit>().loadMore();
-    }
-  }
-
-  @override
-  void dispose() {
-    _scrollController.dispose();
-    super.dispose();
-  }
-
-  /// Reserved slot for the future "Mutual Friends" section.
-  /// When that lands, this becomes a small horizontal row/section
-  /// (its own cubit field or a dedicated MutualFriendsCubit) rendered
-  /// above the friends list — the ListView below stays untouched.
   Widget _buildMutualFriendsPlaceholder() => const SizedBox.shrink();
 
   @override
@@ -72,31 +48,41 @@ class _FriendsTabViewState extends State<FriendsTabView>
           children: [
             _buildMutualFriendsPlaceholder(),
             Expanded(
-              child: CustomPullToRefresh(
-                onRefresh: () => context.read<FriendsListCubit>().loadFriends(),
-                child: ListView.separated(
-                  controller: _scrollController,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
+              child: NotificationListener<ScrollNotification>(
+                onNotification: (ScrollNotification scrollInfo) {
+                  if (scrollInfo.metrics.pixels >=
+                      scrollInfo.metrics.maxScrollExtent - 200) {
+                    context.read<FriendsListCubit>().loadMore();
+                  }
+                  return false;
+                },
+                child: CustomPullToRefresh(
+                  onRefresh:
+                      () => context.read<FriendsListCubit>().loadFriends(),
+                  child: ListView.separated(
+                    padding: const EdgeInsets.fromLTRB(
+                      SearchViewMetrics.horizontalPadding,
+                      SearchViewMetrics.topGap,
+                      SearchViewMetrics.horizontalPadding,
+                      SearchViewMetrics.bottomGap,
+                    ),
+                    physics: const ClampingScrollPhysics(),
+                    itemCount: friends.length,
+                    separatorBuilder:
+                        (_, __) => const Gap(SearchViewMetrics.itemGap),
+                    itemBuilder: (context, i) {
+                      final friend = friends[i];
+                      return FriendTileWidget(
+                        key: ValueKey(friend.friendshipId),
+                        friend: friend,
+                        isMe: true,
+                        onUnfriend:
+                            () => context.read<FriendsListCubit>().unfriend(
+                              friend.friendshipId,
+                            ),
+                      );
+                    },
                   ),
-                  physics: const AlwaysScrollableScrollPhysics(
-                    parent: ClampingScrollPhysics(),
-                  ),
-                  itemCount: friends.length,
-                  separatorBuilder: (_, __) => const Gap(10),
-                  itemBuilder: (context, i) {
-                    final friend = friends[i];
-                    return FriendTileWidget(
-                      key: ValueKey(friend.friendshipId),
-                      friend: friend,
-                      isMe: true,
-                      onUnfriend:
-                          () => context.read<FriendsListCubit>().unfriend(
-                            friend.friendshipId,
-                          ),
-                    );
-                  },
                 ),
               ),
             ),

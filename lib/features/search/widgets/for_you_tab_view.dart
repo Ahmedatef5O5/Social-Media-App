@@ -13,6 +13,7 @@ import '../../reels/model/reel_model.dart';
 import '../cubit/search_reels_cubit/search_reels_cubit.dart';
 import '../model/injection_plan_entry.dart';
 import '../utils/search_matcher.dart';
+import '../utils/search_view_metrics.dart';
 import 'for_you_feed_item.dart';
 import 'for_you_reels_grid_section.dart';
 import 'suggested_accounts_section.dart';
@@ -27,8 +28,6 @@ class ForYouTabView extends StatefulWidget {
 
 class _ForYouTabViewState extends State<ForYouTabView>
     with AutomaticKeepAliveClientMixin {
-  final _scrollController = ScrollController();
-
   DateTime? _cachedPostsTimestamp;
   List<PostModel>? _rankedPosts;
   List<InjectionPlanEntry>? _injectionPlan;
@@ -39,15 +38,7 @@ class _ForYouTabViewState extends State<ForYouTabView>
   @override
   void initState() {
     super.initState();
-    _scrollController.addListener(_onScroll);
     WidgetsBinding.instance.addPostFrameCallback((_) => _maybeTopUpReels());
-  }
-
-  void _onScroll() {
-    if (_scrollController.position.pixels >=
-        _scrollController.position.maxScrollExtent - 500) {
-      _maybeTopUpReels();
-    }
   }
 
   void _maybeTopUpReels() {
@@ -59,12 +50,6 @@ class _ForYouTabViewState extends State<ForYouTabView>
     } else if (reelsState is SearchReelsLoaded && !reelsState.hasReachedMax) {
       context.read<SearchReelsCubit>().getReels();
     }
-  }
-
-  @override
-  void dispose() {
-    _scrollController.dispose();
-    super.dispose();
   }
 
   List<PostModel> _rankPosts(List<PostModel> posts) {
@@ -124,7 +109,22 @@ class _ForYouTabViewState extends State<ForYouTabView>
             return BlocBuilder<SearchReelsCubit, SearchReelsState>(
               builder:
                   (context, reelsState) =>
-                      _buildBody(context, theme, postsState, reelsState, query),
+                      NotificationListener<ScrollNotification>(
+                        onNotification: (ScrollNotification scrollInfo) {
+                          if (scrollInfo.metrics.pixels >=
+                              scrollInfo.metrics.maxScrollExtent - 200) {
+                            _maybeTopUpReels();
+                          }
+                          return false;
+                        },
+                        child: _buildBody(
+                          context,
+                          theme,
+                          postsState,
+                          reelsState,
+                          query,
+                        ),
+                      ),
             );
           },
         );
@@ -164,13 +164,17 @@ class _ForYouTabViewState extends State<ForYouTabView>
       if (matches.isEmpty) return _buildEmptyState(theme, query);
 
       return CustomScrollView(
-        controller: _scrollController,
         slivers: [
+          const SliverToBoxAdapter(
+            child: SizedBox(height: SearchViewMetrics.topGap),
+          ),
           SliverList.separated(
             itemCount: matches.length,
             itemBuilder:
                 (context, i) => Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: SearchViewMetrics.horizontalPadding,
+                  ),
 
                   child: PostItemWidget(
                     key: ValueKey(matches[i].id),
@@ -179,10 +183,12 @@ class _ForYouTabViewState extends State<ForYouTabView>
                   ),
                 ),
             separatorBuilder: (context, i) {
-              return const Gap(14);
+              return const Gap(SearchViewMetrics.itemGap);
             },
           ),
-          const SliverToBoxAdapter(child: SizedBox(height: 24)),
+          const SliverToBoxAdapter(
+            child: SizedBox(height: SearchViewMetrics.bottomGap),
+          ),
         ],
       );
     }
@@ -208,15 +214,21 @@ class _ForYouTabViewState extends State<ForYouTabView>
     return CustomPullToRefresh(
       onRefresh: () => postsCubit.fetchPosts(isRefresh: true),
       child: CustomScrollView(
-        controller: _scrollController,
         slivers: [
+          const SliverToBoxAdapter(
+            child: SizedBox(height: SearchViewMetrics.topGap),
+          ),
+
           SliverList.separated(
             itemCount: items.length,
             itemBuilder:
                 (context, i) => _buildItem(context, items[i], postsCubit),
-            separatorBuilder: (context, i) => const Gap(14),
+            separatorBuilder:
+                (context, i) => const Gap(SearchViewMetrics.itemGap),
           ),
-          const SliverToBoxAdapter(child: SizedBox(height: 24)),
+          const SliverToBoxAdapter(
+            child: SizedBox(height: SearchViewMetrics.bottomGap),
+          ),
         ],
       ),
     );
@@ -232,7 +244,9 @@ class _ForYouTabViewState extends State<ForYouTabView>
         return const SuggestedAccountsSection();
       case ForYouItemType.post:
         return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+          padding: const EdgeInsets.symmetric(
+            horizontal: SearchViewMetrics.horizontalPadding,
+          ),
 
           child: PostItemWidget(
             key: ValueKey(item.post!.id),
@@ -242,7 +256,10 @@ class _ForYouTabViewState extends State<ForYouTabView>
         );
       case ForYouItemType.reelsGrid:
         return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+          padding: const EdgeInsets.symmetric(
+            horizontal: SearchViewMetrics.horizontalPadding,
+          ),
+
           child: ForYouReelsGridSection(
             reelsPool: item.reelsPool!,
             startIndex: item.reelsStartIndex!,

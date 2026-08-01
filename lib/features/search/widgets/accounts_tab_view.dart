@@ -10,6 +10,7 @@ import '../../discover/widgets/discover_person_card_widget.dart';
 import '../../social_graph/models/discover_person_model.dart';
 import '../utils/search_matcher.dart';
 import '../utils/accounts_skeleton_list.dart';
+import '../utils/search_view_metrics.dart';
 
 class AccountsTabView extends StatefulWidget {
   final ValueListenable<String> searchQuery;
@@ -21,31 +22,15 @@ class AccountsTabView extends StatefulWidget {
 
 class _AccountsTabViewState extends State<AccountsTabView>
     with AutomaticKeepAliveClientMixin {
-  final _scrollController = ScrollController();
-
   @override
   bool get wantKeepAlive => true;
 
   @override
   void initState() {
     super.initState();
-    _scrollController.addListener(_onScroll);
     widget.searchQuery.addListener(_maybeBroadenSearchPool);
   }
 
-  void _onScroll() {
-    if (_scrollController.position.pixels >=
-        _scrollController.position.maxScrollExtent - 200) {
-      context.read<DiscoverPeopleCubit>().getDiscoverPeople();
-    }
-  }
-
-  /// If the current query returns few matches from the pool we've
-  /// already loaded, fetch another page from the same RPC to broaden
-  /// the search pool. This does NOT search the whole users table
-  /// server-side (that RPC has no search param — see Step 5 notes) —
-  /// it just grows the local candidate set the client-side filter runs
-  /// against.
   void _maybeBroadenSearchPool() {
     final query = widget.searchQuery.value;
     if (query.isEmpty) return;
@@ -66,7 +51,6 @@ class _AccountsTabViewState extends State<AccountsTabView>
 
   @override
   void dispose() {
-    _scrollController.dispose();
     widget.searchQuery.removeListener(_maybeBroadenSearchPool);
     super.dispose();
   }
@@ -113,37 +97,47 @@ class _AccountsTabViewState extends State<AccountsTabView>
               return _buildEmptyState(theme, query);
             }
 
-            return CustomPullToRefresh(
-              onRefresh:
-                  () => context.read<DiscoverPeopleCubit>().getDiscoverPeople(
-                    isRefresh: true,
+            return NotificationListener<ScrollNotification>(
+              onNotification: (ScrollNotification scrollInfo) {
+                if (scrollInfo.metrics.pixels >=
+                    scrollInfo.metrics.maxScrollExtent - 200) {
+                  context.read<DiscoverPeopleCubit>().getDiscoverPeople();
+                }
+                return false;
+              },
+              child: CustomPullToRefresh(
+                onRefresh:
+                    () => context.read<DiscoverPeopleCubit>().getDiscoverPeople(
+                      isRefresh: true,
+                    ),
+                child: ListView.separated(
+                  padding: const EdgeInsets.fromLTRB(
+                    SearchViewMetrics.horizontalPadding,
+                    SearchViewMetrics.topGap,
+                    SearchViewMetrics.horizontalPadding,
+                    SearchViewMetrics.bottomGap,
                   ),
-              child: ListView.separated(
-                controller: _scrollController,
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-                physics: const AlwaysScrollableScrollPhysics(
-                  parent: ClampingScrollPhysics(),
-                ),
-                // The "load more" tail only makes sense against the raw
-                // (unfiltered) pool — loading more users can surface
-                // more matches — driven independently by _onScroll.
-                itemCount:
-                    users.length + (query.isEmpty && !hasReachedMax ? 1 : 0),
-                separatorBuilder: (_, __) => const Gap(12),
-                itemBuilder: (context, i) {
-                  if (i >= users.length) {
-                    return const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 16),
-                      child: Center(
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      ),
+                  physics: const ClampingScrollPhysics(),
+
+                  itemCount:
+                      users.length + (query.isEmpty && !hasReachedMax ? 1 : 0),
+                  separatorBuilder:
+                      (_, __) => const Gap(SearchViewMetrics.itemGap),
+                  itemBuilder: (context, i) {
+                    if (i >= users.length) {
+                      return const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 16),
+                        child: Center(
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      );
+                    }
+                    return DiscoverPersonCardWidget(
+                      key: ValueKey(users[i].user.id),
+                      personData: users[i],
                     );
-                  }
-                  return DiscoverPersonCardWidget(
-                    key: ValueKey(users[i].user.id),
-                    personData: users[i],
-                  );
-                },
+                  },
+                ),
               ),
             );
           },

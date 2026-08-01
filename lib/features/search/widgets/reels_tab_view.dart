@@ -8,6 +8,7 @@ import '../../reels/model/reel_model.dart';
 import '../../reels/views/reels_full_screen_view.dart';
 import '../cubit/search_reels_cubit/search_reels_cubit.dart';
 import '../utils/search_matcher.dart';
+import '../utils/search_view_metrics.dart';
 import 'reel_grid_tile.dart';
 import '../utils/reels_grid_skeleton.dart';
 
@@ -21,23 +22,13 @@ class ReelsTabView extends StatefulWidget {
 
 class _ReelsTabViewState extends State<ReelsTabView>
     with AutomaticKeepAliveClientMixin {
-  final _scrollController = ScrollController();
-
   @override
   bool get wantKeepAlive => true;
 
   @override
   void initState() {
     super.initState();
-    _scrollController.addListener(_onScroll);
     widget.searchQuery.addListener(_maybeBroadenSearchPool);
-  }
-
-  void _onScroll() {
-    if (_scrollController.position.pixels >=
-        _scrollController.position.maxScrollExtent - 300) {
-      context.read<SearchReelsCubit>().getReels();
-    }
   }
 
   void _maybeBroadenSearchPool() {
@@ -63,7 +54,6 @@ class _ReelsTabViewState extends State<ReelsTabView>
 
   @override
   void dispose() {
-    _scrollController.dispose();
     widget.searchQuery.removeListener(_maybeBroadenSearchPool);
     super.dispose();
   }
@@ -137,42 +127,52 @@ class _ReelsTabViewState extends State<ReelsTabView>
               return _buildEmptyState(theme, query);
             }
 
-            return CustomScrollView(
-              controller: _scrollController,
-              slivers: [
-                SliverPadding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
-                  sliver: SliverGrid(
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 3,
-                          crossAxisSpacing: 2,
-                          mainAxisSpacing: 2,
-                          childAspectRatio: 9 / 16,
+            return NotificationListener<ScrollNotification>(
+              onNotification: (ScrollNotification scrollInfo) {
+                if (scrollInfo.metrics.pixels >=
+                    scrollInfo.metrics.maxScrollExtent - 200) {
+                  context.read<SearchReelsCubit>().getReels();
+                }
+                return false;
+              },
+              child: CustomScrollView(
+                slivers: [
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(
+                      SearchViewMetrics.horizontalPadding - 10,
+                      SearchViewMetrics.topGap - 7,
+                      SearchViewMetrics.horizontalPadding - 10,
+                      SearchViewMetrics.bottomGap,
+                    ),
+                    sliver: SliverGrid(
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 3,
+                            crossAxisSpacing: 2,
+                            mainAxisSpacing: 2,
+                            childAspectRatio: 9 / 16,
+                          ),
+                      delegate: SliverChildBuilderDelegate(
+                        (context, i) => ReelGridTile(
+                          key: ValueKey(reels[i].id),
+                          reel: reels[i],
+                          onTap: () => _openReel(reels, i),
                         ),
-                    delegate: SliverChildBuilderDelegate(
-                      (context, i) => ReelGridTile(
-                        key: ValueKey(reels[i].id),
-                        reel: reels[i],
-                        onTap: () => _openReel(reels, i),
-                      ),
-                      childCount: reels.length,
-                    ),
-                  ),
-                ),
-                if (query.isEmpty && !hasReachedMax)
-                  const SliverToBoxAdapter(
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(vertical: 20),
-                      child: Center(
-                        child: CircularProgressIndicator(strokeWidth: 2),
+                        childCount: reels.length,
                       ),
                     ),
                   ),
-              ],
+                  if (query.isEmpty && !hasReachedMax)
+                    const SliverToBoxAdapter(
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(vertical: 20),
+                        child: Center(
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
             );
           },
         );
