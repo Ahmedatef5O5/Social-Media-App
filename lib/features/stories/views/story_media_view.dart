@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:video_player/video_player.dart';
 import 'package:video_thumbnail/video_thumbnail.dart';
-
 import 'package:social_media_app/core/widgets/cached_cloudinary_image.dart';
 import 'package:social_media_app/core/widgets/custom_loading_indicator.dart';
 import '../../../core/cache/repository/media_cache_repository.dart';
@@ -250,7 +249,7 @@ class _StoryMediaViewState extends State<StoryMediaView> {
         const ColoredBox(color: Colors.black),
 
         ImageFiltered(
-          imageFilter: ImageFilter.blur(sigmaX: 2, sigmaY: 2),
+          imageFilter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
           child: Image.network(
             lowResUrl,
             fit: BoxFit.cover,
@@ -260,7 +259,7 @@ class _StoryMediaViewState extends State<StoryMediaView> {
         ),
         Container(color: Colors.black.withValues(alpha: 0.25)),
 
-        Center(
+        SizedBox.expand(
           child: Image.network(
             lowResUrl,
             fit: BoxFit.contain,

@@ -317,7 +317,7 @@ class _SingleUserStoryViewState extends State<SingleUserStoryView>
                         onComposingStart: _pauseStory,
                         onComposingEnd: _resumeStory,
                         onSent: () {
-                          AppToast.info('Reply sent ✓');
+                          AppToast.success('Reply sent ✓');
                         },
                       ),
                   ],
