@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
 
+import 'search_view_metrics.dart';
+
 class ReelsGridSkeleton extends StatelessWidget {
   const ReelsGridSkeleton({super.key});
 
@@ -12,7 +14,12 @@ class ReelsGridSkeleton extends StatelessWidget {
     final highlightColor = isDark ? Colors.grey.shade700 : Colors.grey.shade100;
 
     return GridView.builder(
-      padding: const EdgeInsets.all(2),
+      padding: const EdgeInsets.fromLTRB(
+        SearchViewMetrics.horizontalPadding,
+        SearchViewMetrics.topGap,
+        SearchViewMetrics.horizontalPadding,
+        SearchViewMetrics.bottomGap,
+      ),
       physics: const NeverScrollableScrollPhysics(),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 3,

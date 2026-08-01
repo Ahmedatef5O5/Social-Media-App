@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:shimmer/shimmer.dart';
+import 'package:social_media_app/features/search/utils/search_view_metrics.dart';
 import '../../../core/widgets/skeleton_shapes.dart';
 
 class AccountsSkeletonList extends StatelessWidget {
@@ -20,9 +21,14 @@ class AccountsSkeletonList extends StatelessWidget {
 
     return ListView.separated(
       physics: const NeverScrollableScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(12, 16, 12, 24),
+      padding: const EdgeInsets.fromLTRB(
+        SearchViewMetrics.horizontalPadding,
+        SearchViewMetrics.topGap,
+        SearchViewMetrics.horizontalPadding,
+        SearchViewMetrics.bottomGap,
+      ),
       itemCount: 6,
-      separatorBuilder: (_, __) => const Gap(12),
+      separatorBuilder: (_, __) => const Gap(SearchViewMetrics.itemGap),
       itemBuilder: (_, __) {
         return Container(
           padding: const EdgeInsets.all(14),

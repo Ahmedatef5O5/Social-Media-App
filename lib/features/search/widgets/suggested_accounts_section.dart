@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 import '../../discover/cubit/discover_people_cubit.dart';
 import '../../discover/widgets/discover_person_card_widget.dart';
+import '../utils/search_view_metrics.dart';
 
 class SuggestedAccountsSection extends StatelessWidget {
   const SuggestedAccountsSection({super.key});
@@ -21,7 +22,9 @@ class SuggestedAccountsSection extends StatelessWidget {
           children: [
             const Gap(10),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.symmetric(
+                horizontal: SearchViewMetrics.horizontalPadding,
+              ),
               child: Text(
                 'Suggested for you',
                 style: theme.textTheme.titleMedium!.copyWith(
@@ -30,36 +33,39 @@ class SuggestedAccountsSection extends StatelessWidget {
               ),
             ),
             const Gap(10),
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  for (var i = 0; i < users.length; i++) ...[
-                    if (i > 0) const Gap(10),
-                    SizedBox(
-                      width: 260,
-                      child: DiscoverPersonCardWidget(
-                        key: ValueKey(users[i].user.id),
-                        personData: users[i],
-                        boxShadow: [
-                          BoxShadow(
-                            color:
-                                theme.brightness == Brightness.dark
-                                    ? Colors.black.withValues(alpha: 0.35)
-                                    : Colors.black.withValues(alpha: 0.05),
-                            blurRadius: 2,
-                            offset: const Offset(0, 0),
-                          ),
-                        ],
+            IntrinsicWidth(
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: SearchViewMetrics.horizontalPadding,
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    for (var i = 0; i < users.length; i++) ...[
+                      if (i > 0) const Gap(10),
+                      SizedBox(
+                        width: 260,
+                        child: DiscoverPersonCardWidget(
+                          key: ValueKey(users[i].user.id),
+                          personData: users[i],
+                          boxShadow: [
+                            BoxShadow(
+                              color:
+                                  theme.brightness == Brightness.dark
+                                      ? Colors.black.withValues(alpha: 0.35)
+                                      : Colors.black.withValues(alpha: 0.05),
+                              blurRadius: 2,
+                              offset: const Offset(0, 0),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
+                    ],
                   ],
-                ],
+                ),
               ),
             ),
-            const Gap(5),
           ],
         );
       },
