@@ -2,15 +2,15 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:gap/gap.dart';
+import '../../../core/toast/app_toast.dart';
 import 'package:social_media_app/core/widgets/custom_loading_indicator.dart';
 import 'package:social_media_app/features/social_graph/services/connections_service.dart';
-import '../../../core/toast/app_toast.dart';
 import '../cubit/group_list_cubit/group_list_cubit.dart';
+import '../helpers/group_user_list_tile.dart';
 import '../services/group_chat_services.dart';
 import '../widgets/group_header_section_widget.dart';
-import '../widgets/group_search_field_section_widget.dart';
-import '../widgets/group_users_list.dart';
-import '../widgets/members_count_label_widget.dart';
+import '../widgets/group_search_field_widget.dart';
 import '../widgets/selected_members_section_widget.dart';
 
 class CreateGroupView extends StatefulWidget {
@@ -36,6 +36,7 @@ class _CreateGroupViewState extends State<CreateGroupView> {
     super.initState();
     _loadUsers();
     _searchController.addListener(_filterUsers);
+    _nameController.addListener(() => setState(() {}));
   }
 
   Future<void> _loadUsers() async {
@@ -67,18 +68,11 @@ class _CreateGroupViewState extends State<CreateGroupView> {
     }
   }
 
+  bool get _canCreate =>
+      _nameController.text.trim().isNotEmpty && _selectedUserIds.isNotEmpty;
+
   Future<void> _createGroup() async {
-    final name = _nameController.text.trim();
-
-    if (name.isEmpty) {
-      AppToast.warning('Please enter a group name');
-      return;
-    }
-
-    if (_selectedUserIds.isEmpty) {
-      AppToast.warning('Please select at least one member');
-      return;
-    }
+    if (!_canCreate) return;
 
     setState(() => _isCreating = true);
 
@@ -93,8 +87,9 @@ class _CreateGroupViewState extends State<CreateGroupView> {
         avatarUrl = result.secureUrl;
         avatarPublicId = result.publicId;
       }
+      if (!mounted) return;
       final group = await context.read<GroupListCubit>().createGroup(
-        name: name,
+        name: _nameController.text.trim(),
         avatarUrl: avatarUrl,
         avatarPublicId: avatarPublicId,
         memberIds: _selectedUserIds.toList(),
@@ -117,66 +112,209 @@ class _CreateGroupViewState extends State<CreateGroupView> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final primary = Theme.of(context).primaryColor;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = theme.brightness == Brightness.dark;
+    final isKeyboardOpen = MediaQuery.viewInsetsOf(context).bottom > 0;
 
-    return Scaffold(
-      appBar: AppBar(
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        title: const Text('New Group'),
-        actions: [
-          TextButton(
-            onPressed: _isCreating ? null : _createGroup,
-            child:
-                _isCreating
-                    ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CustomLoadingIndicator(),
-                    )
-                    : Text('Create', style: TextStyle(color: primary)),
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          GroupHeaderSection(
-            groupImage: _groupImage,
-            onPickImage: _pickImage,
-            controller: _nameController,
-            primary: primary,
-            isDark: isDark,
-          ),
-
-          SelectedMembersSection(
-            selectedUserIds: _selectedUserIds,
-            allUsers: _allUsers,
-            primary: primary,
-            onRemove: (uid) => setState(() => _selectedUserIds.remove(uid)),
-          ),
-
-          SearchField(controller: _searchController, isDark: isDark),
-
-          MembersCountLabel(count: _selectedUserIds.length, primary: primary),
-
-          Expanded(
-            child: UsersList(
-              users: _filteredUsers,
-              selectedIds: _selectedUserIds,
-              primary: primary,
-              isDark: isDark,
-              onToggle: (uid) {
-                setState(() {
-                  _selectedUserIds.contains(uid)
-                      ? _selectedUserIds.remove(uid)
-                      : _selectedUserIds.add(uid);
-                });
-              },
+    return GestureDetector(
+      onTap: () => FocusScope.of(context).unfocus(),
+      child: Scaffold(
+        backgroundColor: theme.scaffoldBackgroundColor,
+        appBar: AppBar(
+          backgroundColor: theme.scaffoldBackgroundColor,
+          elevation: 0,
+          scrolledUnderElevation: 0,
+          centerTitle: true,
+          title: Text(
+            'New Group',
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: primary,
             ),
           ),
-        ],
+          leading: IconButton(
+            icon: Icon(
+              Icons.arrow_back_ios_new_rounded,
+              size: 20,
+              color: primary,
+            ),
+            onPressed: () => Navigator.pop(context),
+          ),
+        ),
+        body: CustomScrollView(
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.manual,
+          slivers: [
+            SliverToBoxAdapter(
+              child: GroupHeaderSection(
+                groupImage: _groupImage,
+                onPickImage: _pickImage,
+                controller: _nameController,
+                primary: primary,
+                isDark: isDark,
+              ),
+            ),
+
+            SliverToBoxAdapter(
+              child: AnimatedSize(
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeInOut,
+                child: SelectedMembersSection(
+                  selectedUserIds: _selectedUserIds,
+                  allUsers: _allUsers,
+                  primary: primary,
+                  onRemove:
+                      (uid) => setState(() => _selectedUserIds.remove(uid)),
+                ),
+              ),
+            ),
+
+            SliverPersistentHeader(
+              pinned: true,
+              delegate: _StickySearchBarDelegate(
+                child: Container(
+                  color: theme.scaffoldBackgroundColor,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      GroupSearchField(
+                        controller: _searchController,
+                        isDark: isDark,
+                      ),
+                      if (_selectedUserIds.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(
+                            left: 24,
+                            right: 24,
+                            bottom: 8,
+                          ),
+                          child: Text(
+                            '${_selectedUserIds.length} members selected',
+                            style: theme.textTheme.labelLarge?.copyWith(
+                              color: primary,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                height: _selectedUserIds.isNotEmpty ? 115.0 : 75.0,
+              ),
+            ),
+
+            SliverPadding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              sliver: SliverList(
+                delegate: SliverChildBuilderDelegate((context, index) {
+                  final user = _filteredUsers[index];
+                  final uid = user['id'] as String;
+                  final isSelected = _selectedUserIds.contains(uid);
+
+                  return GroupUserListTile(
+                    user: user,
+                    isSelected: isSelected,
+                    primary: primary,
+                    onTap: () {
+                      setState(() {
+                        isSelected
+                            ? _selectedUserIds.remove(uid)
+                            : _selectedUserIds.add(uid);
+                      });
+                    },
+                  );
+                }, childCount: _filteredUsers.length),
+              ),
+            ),
+
+            const SliverToBoxAdapter(child: Gap(120)),
+          ],
+        ),
+
+        floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+        floatingActionButton:
+            isKeyboardOpen
+                ? null
+                : Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Container(
+                    width: double.infinity,
+                    height: 56,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(100),
+                      boxShadow: [
+                        if (_canCreate)
+                          BoxShadow(
+                            color: primary.withValues(alpha: 0.35),
+                            blurRadius: 20,
+                            offset: const Offset(0, 8),
+                          ),
+                      ],
+                    ),
+                    child: ElevatedButton(
+                      onPressed:
+                          _canCreate && !_isCreating ? _createGroup : null,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: primary,
+                        foregroundColor: Colors.white,
+                        disabledBackgroundColor:
+                            isDark
+                                ? Colors.grey.shade800
+                                : Colors.grey.shade300,
+                        disabledForegroundColor:
+                            isDark ? Colors.white54 : Colors.black38,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(100),
+                        ),
+                      ),
+                      child:
+                          _isCreating
+                              ? const CustomLoadingIndicator(
+                                color: Colors.white,
+                              )
+                              : Text(
+                                _selectedUserIds.isEmpty
+                                    ? 'Create Group'
+                                    : 'Create Group (${_selectedUserIds.length})',
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                    ),
+                  ),
+                ),
       ),
     );
+  }
+}
+
+class _StickySearchBarDelegate extends SliverPersistentHeaderDelegate {
+  final Widget child;
+  final double height;
+
+  _StickySearchBarDelegate({required this.child, required this.height});
+
+  @override
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
+    return child;
+  }
+
+  @override
+  double get maxExtent => height;
+
+  @override
+  double get minExtent => height;
+
+  @override
+  bool shouldRebuild(covariant _StickySearchBarDelegate oldDelegate) {
+    return oldDelegate.height != height || oldDelegate.child != child;
   }
 }

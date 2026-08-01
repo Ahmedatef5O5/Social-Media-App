@@ -20,75 +20,94 @@ class SelectedMembersSection extends StatelessWidget {
     if (selectedUserIds.isEmpty) return const SizedBox();
 
     return Container(
-      height: 80,
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: ListView(
+      height: 100,
+      padding: const EdgeInsets.only(top: 8, bottom: 4),
+      child: ListView.builder(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 12),
-        children:
-            selectedUserIds.map((uid) {
-              final user = allUsers.firstWhere(
-                (u) => u['id'] == uid,
-                orElse: () => {'id': uid, 'name': '?', 'image_url': null},
-              );
-              final name = user['name'] as String? ?? '';
-              final imageUrl = user['image_url'] as String?;
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        itemCount: selectedUserIds.length,
+        itemBuilder: (context, index) {
+          final uid = selectedUserIds.elementAt(index);
+          final user = allUsers.firstWhere(
+            (u) => u['id'] == uid,
+            orElse: () => {'id': uid, 'name': '?', 'image_url': null},
+          );
+          final name = user['name'] as String? ?? '';
+          final imageUrl = user['image_url'] as String?;
 
-              return Padding(
-                padding: const EdgeInsets.only(right: 10),
-                child: GestureDetector(
-                  onTap: () => onRemove(uid),
-                  child: Column(
+          return Padding(
+            padding: const EdgeInsets.only(right: 18),
+            child: GestureDetector(
+              onTap: () => onRemove(uid),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Stack(
+                    clipBehavior: Clip.none,
                     children: [
-                      Stack(
-                        clipBehavior: Clip.none,
-                        children: [
-                          CircleAvatar(
-                            radius: 22,
-                            backgroundColor: primary.withValues(alpha: 0.12),
-                            backgroundImage:
-                                (imageUrl != null && imageUrl.isNotEmpty)
-                                    ? CachedNetworkImageProvider(imageUrl)
-                                    : null,
-                            child:
-                                (imageUrl == null || imageUrl.isEmpty)
-                                    ? Text(
-                                      name.isNotEmpty
-                                          ? name[0].toUpperCase()
-                                          : '?',
-                                      style: TextStyle(color: primary),
-                                    )
-                                    : null,
+                      CircleAvatar(
+                        radius: 28,
+                        backgroundColor: primary.withValues(alpha: 0.12),
+                        backgroundImage:
+                            (imageUrl != null && imageUrl.isNotEmpty)
+                                ? CachedNetworkImageProvider(imageUrl)
+                                : null,
+                        child:
+                            (imageUrl == null || imageUrl.isEmpty)
+                                ? Text(
+                                  name.isNotEmpty ? name[0].toUpperCase() : '?',
+                                  style: TextStyle(
+                                    color: primary,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 20,
+                                  ),
+                                )
+                                : null,
+                      ),
+                      Positioned(
+                        bottom: -2,
+                        right: -2,
+                        child: Container(
+                          padding: const EdgeInsets.all(2),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).scaffoldBackgroundColor,
+                            shape: BoxShape.circle,
                           ),
-                          Positioned(
-                            top: -2,
-                            right: -2,
-                            child: Container(
-                              width: 16,
-                              height: 16,
-                              decoration: const BoxDecoration(
-                                color: Colors.red,
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(
-                                Icons.close,
-                                color: Colors.white,
-                                size: 10,
-                              ),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade400,
+                              shape: BoxShape.circle,
+                            ),
+                            padding: const EdgeInsets.all(2),
+                            child: const Icon(
+                              Icons.close_rounded,
+                              size: 10,
+                              color: Colors.white,
                             ),
                           ),
-                        ],
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        name.length > 5 ? '${name.substring(0, 5)}..' : name,
-                        style: const TextStyle(fontSize: 10),
+                        ),
                       ),
                     ],
                   ),
-                ),
-              );
-            }).toList(),
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    width: 56,
+                    child: Text(
+                      name.split(' ').first,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
       ),
     );
   }
