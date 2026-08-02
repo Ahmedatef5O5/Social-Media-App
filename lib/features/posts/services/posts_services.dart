@@ -198,6 +198,56 @@ class PostsServices {
         );
   }
 
+  Future<List<PostModel>> fetchPostsByIds(List<String> ids) async {
+    if (ids.isEmpty) return [];
+    try {
+      final response = await _supabase
+          .from(SupabaseConstants.posts)
+          .select(_postsQuery)
+          .inFilter(PostColumns.id, ids);
+
+      final rawPosts = List<Map<String, dynamic>>.from(response);
+      final posts = await _resolveSharedPostsAndHydrate(rawPosts);
+      if (posts.isEmpty) return posts;
+
+      final authorIds =
+          <String>{
+            for (final p in posts) ...[
+              p.authorId,
+              if (p.originalPost != null) p.originalPost!.authorId,
+            ],
+          }.toList();
+      final onlineMap = await _fetchOnlineMap(authorIds);
+      final hydrated = posts.map((p) => _applyOnline(p, onlineMap)).toList();
+
+      final byId = {for (final p in hydrated) p.id: p};
+      return ids.map((id) => byId[id]).whereType<PostModel>().toList();
+    } catch (e) {
+      debugPrint('fetchPostsByIds error: $e');
+      return [];
+    }
+  }
+
+  /// Ranked post-ID search via the `search_posts` RPC. Matches caption
+  /// text OR author name/username, and enforces the same visibility.
+
+  Future<List<String>> searchPostIds({
+    required String query,
+    int limit = 12,
+    int offset = 0,
+  }) async {
+    final rows = await _supabase.rpc(
+      'search_posts',
+      params: {
+        'p_query': query,
+        'p_user_id': SupabaseProvider.id,
+        'p_limit': limit,
+        'p_offset': offset,
+      },
+    );
+    return (rows as List).map((r) => r['id'] as String).toList();
+  }
+
   Future<Set<String>> _getPrivateAllowedPostIds(String userId) async {
     final rows = await _supabase
         .from(SupabaseConstants.postAllowedViewers)
