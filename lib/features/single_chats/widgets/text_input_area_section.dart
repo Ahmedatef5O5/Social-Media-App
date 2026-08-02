@@ -6,6 +6,11 @@ import '../../../core/attachment/attachment_sheet/attachment_picker_sheet.dart';
 import '../../../core/audio/voice_recorder/widgets/voice_recorder_input_section.dart';
 import '../../../core/constants/app_images.dart';
 import '../../../core/themes/app_colors.dart';
+import '../../ai_assistant/entities/ai_action_type.dart';
+import '../../ai_assistant/entities/ai_request_context.dart';
+import '../../ai_assistant/widgets/ai_action_icon.dart';
+import '../../ai_assistant/widgets/ai_chat_command_trigger.dart';
+import '../helper/chat_transcript_builder.dart';
 import '../cubit/chat_details_cubit/chat_details_cubit.dart';
 import '../helper/edit_preview_bar.dart';
 import '../helper/reply_preview_bar.dart';
@@ -64,7 +69,25 @@ class _TextInputAreaSectionState extends State<TextInputAreaSection> {
   }
 
   void _onTextChanged() {
-    final notEmpty = widget.messageController.text.trim().isNotEmpty;
+    final text = widget.messageController.text;
+
+    if (text.trim().toLowerCase() == AiChatCommandTrigger.trigger) {
+      widget.messageController.clear();
+      final cubit = context.read<ChatDetailsCubit>();
+      AiChatCommandTrigger.showCommandMenu(
+        context: context,
+        buildTranscript:
+            (maxMessages) => ChatTranscriptBuilder.fromMessages(
+              messages: cubit.cachedMessages,
+              currentUserId: cubit.currentUserId,
+              otherUserName: widget.receiverUser.name,
+              maxMessages: maxMessages,
+            ),
+      );
+      return;
+    }
+
+    final notEmpty = text.trim().isNotEmpty;
     if (notEmpty != _isTextNotEmpty) setState(() => _isTextNotEmpty = notEmpty);
     final cubit = context.read<ChatDetailsCubit>();
     if (notEmpty) {
@@ -125,13 +148,29 @@ class _TextInputAreaSectionState extends State<TextInputAreaSection> {
                   maxLines: 5,
                   cursorColor: Colors.blueGrey.shade400,
                   textInputAction: TextInputAction.newline,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     hoverColor: AppColors.white,
                     hintText: 'Type a message...',
                     border: InputBorder.none,
-                    contentPadding: EdgeInsets.symmetric(
+                    contentPadding: const EdgeInsets.symmetric(
                       vertical: 10,
                       horizontal: 8,
+                    ),
+                    suffixIcon: AiActionIcon(
+                      controller: widget.messageController,
+                      surface: AiSurfaceType.chatMessage,
+                      generationAction: AiActionType.replySuggestion,
+                      hasReplyContext: widget.replyTo != null,
+                      replyToText: widget.replyTo?.text,
+                      replyToAuthorName:
+                          widget.replyTo == null
+                              ? null
+                              : (widget.replyTo!.senderId ==
+                                      context
+                                          .read<ChatDetailsCubit>()
+                                          .currentUserId
+                                  ? 'You'
+                                  : widget.receiverUser.name),
                     ),
                   ),
                 ),

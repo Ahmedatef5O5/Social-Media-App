@@ -7,7 +7,10 @@ import 'package:social_media_app/features/group_chats/widgets/group_input_bar.da
 import 'package:social_media_app/features/group_chats/widgets/group_media_preview_screen.dart';
 import '../../../core/attachment/attachment_sheet/attachment_kind.dart';
 import '../../../core/attachment/attachment_sheet/attachment_picker_sheet.dart';
+import '../../ai_assistant/widgets/ai_chat_command_trigger.dart';
 import '../cubit/group_details_cubit/group_details_cubit.dart';
+import '../models/groupe_message_model.dart';
+import '../helpers/group_chat_transcript_builder.dart';
 import 'group_edit_preview_section.dart';
 import 'reply_preview_section.dart';
 
@@ -208,20 +211,44 @@ class _GroupChatInputBarSectionState extends State<GroupChatInputBarSection> {
         GroupEditPreviewSection(cubit: _cubit, controller: widget.controller),
         GroupReplyPreviewSection(cubit: _cubit),
 
-        GroupInputBar(
-          hasText: _hasText,
-          controller: widget.controller,
-          focusNode: _focusNode,
-          mentionCandidateIds: _membersIds,
-          onTyping: widget.onTyping,
-          onSend: _handleSend,
-          onShowMedia: _openAttachmentSheet,
-          onSendVoice: (file, seconds) {
-            context.read<GroupDetailsCubit>().sendMessage(
-              text: '',
-              messageType: 'voice',
-              voiceFile: file,
-              durationSeconds: seconds,
+        ValueListenableBuilder<GroupMessageModel?>(
+          valueListenable: _cubit.replyToMessage,
+          builder: (context, replyTo, _) {
+            return GroupInputBar(
+              hasText: _hasText,
+              controller: widget.controller,
+              focusNode: _focusNode,
+              mentionCandidateIds: _membersIds,
+              onTyping: widget.onTyping,
+              onSend: _handleSend,
+              onShowMedia: _openAttachmentSheet,
+              hasReplyContext: replyTo != null,
+              replyToText: replyTo?.text,
+              replyToAuthorName:
+                  replyTo == null
+                      ? null
+                      : (replyTo.senderId == _cubit.currentUserId
+                          ? 'You'
+                          : replyTo.senderName),
+              onSendVoice: (file, seconds) {
+                context.read<GroupDetailsCubit>().sendMessage(
+                  text: '',
+                  messageType: 'voice',
+                  voiceFile: file,
+                  durationSeconds: seconds,
+                );
+              },
+              onSlashAiTrigger: () {
+                AiChatCommandTrigger.showCommandMenu(
+                  context: context,
+                  buildTranscript:
+                      (maxMessages) => GroupChatTranscriptBuilder.fromMessages(
+                        messages: _cubit.cachedMessages,
+                        currentUserId: _cubit.currentUserId,
+                        maxMessages: maxMessages,
+                      ),
+                );
+              },
             );
           },
         ),

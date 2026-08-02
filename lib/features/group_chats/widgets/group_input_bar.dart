@@ -4,6 +4,9 @@ import 'package:social_media_app/core/mentions/widgets/mention_aware_text_field.
 import '../../../core/audio/voice_recorder/widgets/voice_recorder_input_section.dart';
 import '../../../core/mentions/models/mention_ref.dart';
 import '../../../core/mentions/widgets/mention_text_editing_controller.dart';
+import '../../ai_assistant/entities/ai_action_type.dart';
+import '../../ai_assistant/entities/ai_request_context.dart';
+import '../../ai_assistant/widgets/ai_action_icon.dart';
 import '../helpers/send_button.dart';
 
 class GroupInputBar extends StatelessWidget {
@@ -17,6 +20,12 @@ class GroupInputBar extends StatelessWidget {
   final VoidCallback onShowMedia;
   final void Function(File file, int durationSeconds) onSendVoice;
 
+  final bool hasReplyContext;
+  final String? replyToText;
+  final String? replyToAuthorName;
+
+  final VoidCallback? onSlashAiTrigger;
+
   const GroupInputBar({
     super.key,
     required this.hasText,
@@ -27,6 +36,10 @@ class GroupInputBar extends StatelessWidget {
     required this.onSend,
     required this.onShowMedia,
     required this.onSendVoice,
+    this.hasReplyContext = false,
+    this.replyToText,
+    this.replyToAuthorName,
+    this.onSlashAiTrigger,
   });
 
   void _send() {
@@ -51,10 +64,22 @@ class GroupInputBar extends StatelessWidget {
           hintText: 'Type a message...',
           restrictSuggestionsToUserIds: mentionCandidateIds,
           onSubmitted: (_) => _send(),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 10,
+          ),
           fillColor: Colors.transparent,
           border: InputBorder.none,
           focusedBorder: InputBorder.none,
+          trailingIcon: AiActionIcon(
+            controller: controller,
+            surface: AiSurfaceType.chatMessage,
+            generationAction: AiActionType.replySuggestion,
+            hasReplyContext: hasReplyContext,
+            replyToText: replyToText,
+            replyToAuthorName: replyToAuthorName,
+          ),
+          onSlashAiTrigger: onSlashAiTrigger,
         ),
         hasText: hasText,
         onShowAttachments: onShowMedia,
