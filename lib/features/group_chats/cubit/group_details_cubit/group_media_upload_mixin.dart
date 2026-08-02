@@ -12,7 +12,7 @@ mixin GroupMediaUploadMixin on Cubit<GroupDetailsState> {
   AudioCompressionService get _audioCompressionService;
   MediaCacheRepository get _mediaCacheRepository;
 
-  void _emitLoaded();
+  void _emitLoaded({bool force = false});
 
   final Map<String, dio_pkg.CancelToken> _cancelTokens = {};
 

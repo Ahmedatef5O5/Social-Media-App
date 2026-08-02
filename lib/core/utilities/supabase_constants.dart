@@ -99,6 +99,8 @@ abstract class GroupMemberColumns {
   static const String role = 'role';
   static const String joinedAt = 'joined_at';
   static const String isMuted = 'is_muted';
+  static const String membershipStatus = 'membership_status';
+  static const String leftAt = 'left_at';
 }
 
 // group_messages

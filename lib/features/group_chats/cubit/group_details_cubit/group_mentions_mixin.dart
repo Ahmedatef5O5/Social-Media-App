@@ -11,7 +11,7 @@ mixin GroupMentionsMixin on Cubit<GroupDetailsState> {
 
   void _persistMessagesSnapshot(String key, List<GroupMessageModel> messages);
 
-  void _emitLoaded();
+  void _emitLoaded({bool force = false});
   StreamSubscription? _mentionsSubscription;
 
   void _listenMentions() {

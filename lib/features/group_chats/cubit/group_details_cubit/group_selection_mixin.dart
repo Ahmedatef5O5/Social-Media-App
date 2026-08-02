@@ -4,8 +4,9 @@ mixin GroupSelectionMixin on Cubit<GroupDetailsState> {
   String get currentUserId;
   GroupChatServices get _services;
   List<GroupMessageModel> get cachedMessages;
+  bool get isMember;
   void cancelUpload(String tempId);
-  void _emitLoaded();
+  void _emitLoaded({bool force = false});
 
   final ValueNotifier<Set<String>> selectedMessageIds =
       ValueNotifier<Set<String>>({});
@@ -25,11 +26,13 @@ mixin GroupSelectionMixin on Cubit<GroupDetailsState> {
       selectedMessages.every((m) => m.senderId == currentUserId);
 
   void startSelection(String messageId) {
+    if (!isMember) return;
     selectedMessageIds.value = {messageId};
     starController.onSelectionChanged(selectedMessageIds.value);
   }
 
   void toggleMessageSelection(String messageId) {
+    if (!isMember) return;
     final current = Set<String>.from(selectedMessageIds.value);
     if (current.contains(messageId)) {
       current.remove(messageId);

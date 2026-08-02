@@ -6,7 +6,7 @@ mixin GroupEditMixin on Cubit<GroupDetailsState> {
   set cachedMessages(List<GroupMessageModel> value);
   GroupModel get group;
   String get currentUserId;
-  void _emitLoaded();
+  void _emitLoaded({bool force = false});
 
   Future<void> editMessage({
     required String messageId,

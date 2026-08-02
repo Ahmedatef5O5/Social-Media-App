@@ -77,6 +77,26 @@ class GroupChatServices {
         .toList();
   }
 
+  Future<List<GroupModel>> searchMyGroups({
+    required String query,
+    int limit = 20,
+    int offset = 0,
+  }) async {
+    final response = await _supabase.rpc(
+      'search_my_groups',
+      params: {
+        'p_query': query,
+        'p_user_id': currentUserId,
+        'p_limit': limit,
+        'p_offset': offset,
+      },
+    );
+    if (response == null) return [];
+    return (response as List)
+        .map((e) => GroupModel.fromMap(e as Map<String, dynamic>))
+        .toList();
+  }
+
   static const int _membersPageSize = 20;
 
   Future<({List<GroupMemberModel> members, int totalCount})>
@@ -98,6 +118,7 @@ class GroupChatServices {
           '(${UserColumns.name}, ${UserColumns.imageUrl})',
         )
         .eq(GroupMemberColumns.groupId, groupId)
+        .eq(GroupMemberColumns.membershipStatus, 'active')
         .order(GroupMemberColumns.role, ascending: true)
         .order(GroupMemberColumns.joinedAt, ascending: false)
         .range(from, to)
@@ -124,45 +145,184 @@ class GroupChatServices {
     final response = await _supabase
         .from(SupabaseConstants.groupMembers)
         .select(GroupMemberColumns.userId)
-        .eq(GroupMemberColumns.groupId, groupId);
+        .eq(GroupMemberColumns.groupId, groupId)
+        .eq(GroupMemberColumns.membershipStatus, 'active');
     return (response as List)
         .map((row) => row[GroupMemberColumns.userId] as String)
         .toList();
   }
 
   Future<void> addMember(String groupId, String userId) async {
-    await _supabase.from(SupabaseConstants.groupMembers).insert({
-      GroupMemberColumns.groupId: groupId,
-      GroupMemberColumns.userId: userId,
-      'role': 'member',
-    });
+    await _supabase.from(SupabaseConstants.groupMembers).upsert(
+      {
+        GroupMemberColumns.groupId: groupId,
+        GroupMemberColumns.userId: userId,
+        'role': 'member',
+        GroupMemberColumns.membershipStatus: 'active',
+        GroupMemberColumns.leftAt: null,
+        GroupMemberColumns.joinedAt: DateTime.now().toUtc().toIso8601String(),
+      },
+      onConflict: '${GroupMemberColumns.groupId},${GroupMemberColumns.userId}',
+    );
   }
 
   Future<void> addMembers(String groupId, List<String> userIds) async {
     if (userIds.isEmpty) return;
-    await _supabase.from(SupabaseConstants.groupMembers).insert({
-      userIds
-          .map(
-            (uid) => {
-              GroupMemberColumns.groupId: groupId,
-              GroupMemberColumns.userId: userIds,
-              'role': 'member',
-            },
-          )
-          .toList(),
+    await _supabase
+        .from(SupabaseConstants.groupMembers)
+        .upsert(
+          userIds
+              .map(
+                (uid) => {
+                  GroupMemberColumns.groupId: groupId,
+                  GroupMemberColumns.userId: uid,
+                  'role': 'member',
+                  GroupMemberColumns.membershipStatus: 'active',
+                  GroupMemberColumns.leftAt: null,
+                  GroupMemberColumns.joinedAt:
+                      DateTime.now().toUtc().toIso8601String(),
+                },
+              )
+              .toList(),
+          onConflict:
+              '${GroupMemberColumns.groupId},${GroupMemberColumns.userId}',
+        );
+
+    final names = await _fetchUserNames([currentUserId, ...userIds]);
+    final actorName = names[currentUserId] ?? 'Someone';
+    for (final uid in userIds) {
+      await sendSystemEvent(
+        groupId: groupId,
+        type: 'member_added',
+        actorId: currentUserId,
+        actorName: actorName,
+        targetId: uid,
+        targetName: names[uid] ?? 'Unknown',
+      );
+    }
+  }
+
+  Future<Map<String, String>> _fetchUserNames(List<String> userIds) async {
+    final ids = userIds.toSet().toList();
+    if (ids.isEmpty) return {};
+    final rows = await _supabase
+        .from('users')
+        .select('id, name')
+        .inFilter('id', ids);
+    return {
+      for (final r in (rows as List))
+        r['id'] as String: (r['name'] as String?) ?? 'Unknown',
+    };
+  }
+
+  Future<void> sendSystemEvent({
+    required String groupId,
+    required String type,
+    required String actorId,
+    required String actorName,
+    String? targetId,
+    String? targetName,
+  }) async {
+    await _supabase.from(SupabaseConstants.groupMessages).insert({
+      GroupMemberColumns.groupId: groupId,
+      'sender_id': actorId,
+      'sender_name': actorName,
+      'message_text': _buildFallbackEventText(
+        type: type,
+        actorName: actorName,
+        targetName: targetName,
+      ),
+      'message_type': GroupMessageModel.systemEventType,
+      if (targetId != null) 'target_id': targetId,
+      if (targetName != null) 'target_name': targetName,
+
+      'system_event_data': {
+        'type': type,
+        'actor_id': actorId,
+        'actor_name': actorName,
+        if (targetId != null) 'target_id': targetId,
+        if (targetName != null) 'target_name': targetName,
+      },
     });
   }
 
-  Future<void> removeMember(String groupId, String userId) async {
-    await _supabase
-        .from(SupabaseConstants.groupMembers)
-        .delete()
-        .eq(GroupMemberColumns.groupId, groupId)
-        .eq(GroupMemberColumns.userId, userId);
+  String _buildFallbackEventText({
+    required String type,
+    required String actorName,
+    String? targetName,
+  }) {
+    switch (type) {
+      case 'member_added':
+        return '$actorName added $targetName';
+      case 'member_removed':
+        return '$actorName removed $targetName';
+      case 'member_left':
+        return '$actorName left the group';
+      default:
+        return '$actorName updated the group';
+    }
+  }
+
+  Future<void> removeMember(
+    String groupId,
+    String userId, {
+    required String actorId,
+  }) async {
+    final names = await _fetchUserNames([actorId, userId]);
+
+    await sendSystemEvent(
+      groupId: groupId,
+      type: 'member_removed',
+      actorId: actorId,
+      actorName: names[actorId] ?? 'Someone',
+      targetId: userId,
+      targetName: names[userId] ?? 'Unknown',
+    );
+
+    final response =
+        await _supabase
+            .from(SupabaseConstants.groupMembers)
+            .update({
+              GroupMemberColumns.membershipStatus: 'removed',
+              GroupMemberColumns.leftAt:
+                  DateTime.now().toUtc().toIso8601String(),
+            })
+            .eq(GroupMemberColumns.groupId, groupId)
+            .eq(GroupMemberColumns.userId, userId)
+            .select();
+    if (response.isEmpty) {
+      throw Exception(
+        'Membership row was not deleted — likely blocked by an RLS policy on group_members.',
+      );
+    }
   }
 
   Future<void> leaveGroup(String groupId) async {
-    await removeMember(groupId, currentUserId);
+    final names = await _fetchUserNames([currentUserId]);
+    await sendSystemEvent(
+      groupId: groupId,
+      type: 'member_left',
+      actorId: currentUserId,
+      actorName: names[currentUserId] ?? 'Someone',
+    );
+
+    final response =
+        await _supabase
+            .from(SupabaseConstants.groupMembers)
+            .update({
+              GroupMemberColumns.membershipStatus: 'left',
+              GroupMemberColumns.leftAt:
+                  DateTime.now().toUtc().toIso8601String(),
+            })
+            .eq(GroupMemberColumns.groupId, groupId)
+            .eq(GroupMemberColumns.userId, currentUserId)
+            .eq(GroupMemberColumns.membershipStatus, 'active')
+            .select();
+    if (response.isEmpty) {
+      throw Exception(
+        'Membership row was not deleted — likely blocked by an RLS policy on group_members.',
+      );
+    }
   }
 
   Future<void> updateGroup({
@@ -177,10 +337,6 @@ class GroupChatServices {
           if (avatarUrl != null) 'avatar_url': avatarUrl,
         })
         .eq('id', groupId);
-  }
-
-  Future<void> deleteGroup(String groupId) async {
-    await _supabase.from(SupabaseConstants.groups).delete().eq('id', groupId);
   }
 
   Stream<List<GroupMessageModel>> getGroupMessagesStream(String groupId) {
@@ -446,7 +602,12 @@ class GroupChatServices {
         .map((data) => data.cast<Map<String, dynamic>>());
   }
 
-  Future<void> setTyping(String groupId, bool isTyping) async {
+  Future<void> setTyping(
+    String groupId,
+    bool isTyping, {
+    required bool isMember,
+  }) async {
+    if (!isMember) return;
     await _supabase.from(SupabaseConstants.groupTypingStatus).upsert({
       GroupMemberColumns.groupId: groupId,
       GroupMemberColumns.userId: currentUserId,
@@ -507,6 +668,19 @@ class GroupChatServices {
         );
   }
 
+  Future<CloudinaryUploadResult> uploadGroupAvatar(
+    File file, {
+    void Function(double progress)? onProgress,
+  }) async {
+    return await storage.uploadFile(
+      file,
+      'avatars',
+      'groups',
+      filePrefix: 'group_avatar_',
+      onProgress: onProgress,
+    );
+  }
+
   Future<void> updateGroupAvatarUrl(
     String groupId,
     String newAvatarUrl,
@@ -532,17 +706,42 @@ class GroupChatServices {
     }
   }
 
-  Future<CloudinaryUploadResult> uploadGroupAvatar(
-    File file, {
-    void Function(double progress)? onProgress,
-  }) async {
-    return await storage.uploadFile(
-      file,
-      'avatars',
-      'groups',
-      filePrefix: 'group_avatar_',
-      onProgress: onProgress,
-    );
+  Future<void> updateGroupTitle(String groupId, String? title) async {
+    await _supabase
+        .from(SupabaseConstants.groups)
+        .update({GroupColumns.title: title})
+        .eq('id', groupId);
+  }
+
+  Future<void> removeGroupAvatar(String groupId) async {
+    final response =
+        await _supabase
+            .from(SupabaseConstants.groups)
+            .update({'avatar_url': null, 'avatar_public_id': null})
+            .eq('id', groupId)
+            .select();
+    if (response.isEmpty) {
+      throw Exception('Database update blocked by RLS Policy!');
+    }
+  }
+
+  Future<bool> getMyMuteStatus(String groupId) async {
+    final row =
+        await _supabase
+            .from(SupabaseConstants.groupMembers)
+            .select(GroupMemberColumns.isMuted)
+            .eq(GroupMemberColumns.groupId, groupId)
+            .eq(GroupMemberColumns.userId, currentUserId)
+            .maybeSingle();
+    return (row?[GroupMemberColumns.isMuted] as bool?) ?? false;
+  }
+
+  Future<void> toggleMute(String groupId, bool muted) async {
+    await _supabase
+        .from(SupabaseConstants.groupMembers)
+        .update({GroupMemberColumns.isMuted: muted})
+        .eq(GroupMemberColumns.groupId, groupId)
+        .eq(GroupMemberColumns.userId, currentUserId);
   }
 
   Stream<void> getGroupsListStream() {

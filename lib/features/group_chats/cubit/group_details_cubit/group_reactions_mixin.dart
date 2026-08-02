@@ -5,18 +5,20 @@ mixin GroupReactionsMixin on Cubit<GroupDetailsState> {
   GroupModel get group;
   String get currentUserId;
   List<GroupMessageModel> get cachedMessages;
+  bool get isMember;
   set cachedMessages(List<GroupMessageModel> value);
   final Map<String, Map<String, String>> _reactionsCache = {};
-  Map<String, Map<String, String>> _reactionsCreatedAtCache = {};
+  final Map<String, Map<String, String>> _reactionsCreatedAtCache = {};
 
   String? get _messagesSnapshotKey;
-  void _emitLoaded();
+  void _emitLoaded({bool force = false});
   void _persistMessagesSnapshot(String key, List<GroupMessageModel> messages);
 
   StreamSubscription? _reactionsSubscription;
 
   void _listenReactions() {
     _reactionsSubscription?.cancel();
+    if (!isMember) return;
     _reactionsSubscription = _services.getReactionsStream(group.id).listen((
       reactionsList,
     ) {
@@ -53,6 +55,8 @@ mixin GroupReactionsMixin on Cubit<GroupDetailsState> {
     required String messageId,
     required String emoji,
   }) async {
+    if (!isMember) return;
+
     final isOffline = await ConnectivityBannerController.notifyIfOffline();
     if (isOffline) return;
 

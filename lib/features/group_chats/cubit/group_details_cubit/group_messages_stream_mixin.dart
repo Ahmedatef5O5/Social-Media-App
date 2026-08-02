@@ -11,17 +11,66 @@ mixin GroupMessagesStreamMixin on Cubit<GroupDetailsState> {
   bool _isFirstLoad = true;
   List<String> _typingUserIds = [];
   String? get _messagesSnapshotKey;
-  void _emitLoaded();
+  String get currentUserId;
+  bool get isMember;
+  set isMember(bool value);
+
+  void _emitLoaded({bool force = false});
   void _persistMessagesSnapshot(String key, List<GroupMessageModel> messages);
   Future<void> markRead();
 
   StreamSubscription? _messagesSubscription;
   StreamSubscription? _readReceiptsSubscription;
   StreamSubscription? _typingSubscription;
+  StreamSubscription? _membershipSubscription;
   Timer? _typingDebounce;
+
+  void _listenMembership() {
+    _membershipSubscription?.cancel();
+    _membershipSubscription = SupabaseProvider.client
+        .from(SupabaseConstants.groupMembers)
+        .stream(primaryKey: ['id'])
+        .eq(GroupMemberColumns.groupId, group.id)
+        .listen((data) {
+          final myRow = data.firstWhere(
+            (row) => row[GroupMemberColumns.userId] == currentUserId,
+            orElse: () => <String, dynamic>{},
+          );
+
+          final bool newIsMember =
+              myRow.isNotEmpty &&
+              myRow[GroupMemberColumns.membershipStatus] == 'active';
+
+          final lastStateIsMember =
+              state is GroupDetailsLoaded
+                  ? (state as GroupDetailsLoaded).isMember
+                  : null;
+
+          if (lastStateIsMember == newIsMember) return;
+
+          isMember = newIsMember;
+          _emitLoaded(force: true);
+
+          groupListCubit.updateGroupMembership(group.id, newIsMember);
+
+          if (!newIsMember) {
+            _messagesSubscription?.cancel();
+            _messagesSubscription = null;
+            _readReceiptsSubscription?.cancel();
+            _readReceiptsSubscription = null;
+            _typingSubscription?.cancel();
+            _typingSubscription = null;
+          } else {
+            _listenMessages();
+            _listenReadReceipts();
+            _listenTyping();
+          }
+        });
+  }
 
   void _listenMessages() {
     _messagesSubscription?.cancel();
+    if (!isMember) return;
     _messagesSubscription = _services.getGroupMessagesStream(group.id).listen((
       messages,
     ) {
@@ -50,6 +99,23 @@ mixin GroupMessagesStreamMixin on Cubit<GroupDetailsState> {
       // Mark read in DB
       markRead();
 
+      bool amIRemoved = false;
+      for (final msg in messages) {
+        if (msg.isSystemEvent) {
+          final type = msg.systemEventData?['type'];
+          final targetId = msg.targetId ?? msg.systemEventData?['target_id'];
+
+          if (targetId == currentUserId && type == 'member_removed') {
+            amIRemoved = true;
+            break;
+          }
+        }
+      }
+
+      if (amIRemoved) {
+        groupListCubit.updateGroupMembership(group.id, false);
+      }
+
       if (enriched.isNotEmpty) {
         final latest = enriched.first;
 
@@ -61,6 +127,8 @@ mixin GroupMessagesStreamMixin on Cubit<GroupDetailsState> {
           createdAt: latest.createdAt,
           lastMessageSenderId: latest.senderId,
           lastMessageSenderName: latest.senderName,
+          lastMessageTargetId: latest.targetId,
+          lastMessageTargetName: latest.targetName,
         );
       }
     });
@@ -68,6 +136,7 @@ mixin GroupMessagesStreamMixin on Cubit<GroupDetailsState> {
 
   void _listenReadReceipts() {
     _readReceiptsSubscription?.cancel();
+    if (!isMember) return;
     _readReceiptsSubscription = _services
         .getReadReceiptsStream(group.id)
         .listen((receipts) {
@@ -102,6 +171,7 @@ mixin GroupMessagesStreamMixin on Cubit<GroupDetailsState> {
 
   void _listenTyping() {
     _typingSubscription?.cancel();
+    if (!isMember) return;
     _typingSubscription = _services.getTypingUsersStream(group.id).listen((
       typingIds,
     ) {
@@ -111,10 +181,11 @@ mixin GroupMessagesStreamMixin on Cubit<GroupDetailsState> {
   }
 
   void onTyping() {
-    _services.setTyping(group.id, true);
+    if (!isMember) return;
+    _services.setTyping(group.id, true, isMember: isMember);
     _typingDebounce?.cancel();
     _typingDebounce = Timer(const Duration(seconds: 3), () {
-      _services.setTyping(group.id, false);
+      _services.setTyping(group.id, false, isMember: isMember);
     });
   }
 
@@ -123,6 +194,7 @@ mixin GroupMessagesStreamMixin on Cubit<GroupDetailsState> {
     _messagesSubscription?.cancel();
     _readReceiptsSubscription?.cancel();
     _typingSubscription?.cancel();
+    _membershipSubscription?.cancel();
     _typingDebounce?.cancel();
     return super.close();
   }

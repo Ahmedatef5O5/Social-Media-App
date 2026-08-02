@@ -44,6 +44,7 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState>
   final GroupListCubit groupListCubit;
   @override
   final MediaCacheRepository _mediaCacheRepository;
+
   @override
   final AudioCompressionService _audioCompressionService;
 
@@ -78,12 +79,15 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState>
 
   @override
   String get currentUserId => SupabaseProvider.id;
+  @override
+  bool isMember = true;
 
   final GroupChatReactionProfileResolver reactionProfileResolver =
       GroupChatReactionProfileResolver();
 
   void init() {
     _messagesSnapshotKey = 'group_messages_snapshot_${group.id}';
+    isMember = group.isMember;
     final diskMessages = _readMessagesSnapshot(_messagesSnapshotKey!);
     if (diskMessages.isNotEmpty) {
       for (var m in diskMessages) {
@@ -103,6 +107,7 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState>
           messages: cachedMessages,
           typingUserIds: _typingUserIds,
           uploadProgress: uploadProgressMap,
+          isMember: isMember,
         ),
       );
     } else {
@@ -110,6 +115,7 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState>
     }
 
     groupListCubit.setActiveGroupId(group.id);
+    _listenMembership();
     _listenMentions();
     _listenReactions();
     _listenMessages();
@@ -119,13 +125,14 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState>
   }
 
   @override
-  void _emitLoaded() {
-    if (_isFirstLoad) return;
+  void _emitLoaded({bool force = false}) {
+    if (_isFirstLoad && !force) return;
     emit(
       GroupDetailsLoaded(
         messages: cachedMessages,
         typingUserIds: _typingUserIds,
         uploadProgress: uploadProgressMap,
+        isMember: isMember,
       ),
     );
   }
