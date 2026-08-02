@@ -10,6 +10,9 @@ import '../../../core/attachment/attachment_sheet/picked_attachment.dart';
 import '../../../core/themes/app_colors.dart';
 import '../../../core/toast/app_toast.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
+import '../../ai_assistant/entities/ai_action_type.dart';
+import '../../ai_assistant/entities/ai_request_context.dart';
+import '../../ai_assistant/widgets/ai_action_icon.dart';
 import '../../posts/model/post_model.dart';
 import '../model/comment_attachment_draft.dart';
 import '../model/comment_model.dart';
@@ -25,6 +28,8 @@ class SendCommentSection extends StatefulWidget {
   final CommentModel? editingComment;
   final VoidCallback? onEditSaved;
 
+  final ValueChanged<MentionTextEditingController>? onControllerReady;
+
   const SendCommentSection({
     super.key,
     required this.post,
@@ -33,6 +38,7 @@ class SendCommentSection extends StatefulWidget {
     this.onReplySent,
     this.editingComment,
     this.onEditSaved,
+    this.onControllerReady,
   });
 
   @override
@@ -53,6 +59,7 @@ class _SendCommentSectionState extends State<SendCommentSection> {
       final has = _commentController.text.trim().isNotEmpty;
       if (has != _hasText) setState(() => _hasText = has);
     });
+    widget.onControllerReady?.call(_commentController);
   }
 
   @override
@@ -226,6 +233,14 @@ class _SendCommentSectionState extends State<SendCommentSection> {
                                     ? 'Reply to @${widget.replyingToAuthorName}...'
                                     : 'Write a comment...',
                             onSubmitted: (_) => _submitComment(),
+                            trailingIcon: AiActionIcon(
+                              controller: _commentController,
+                              surface: AiSurfaceType.comment,
+                              generationAction: AiActionType.replySuggestion,
+                              hasReplyContext: isReplying,
+                              replyToAuthorName: widget.replyingToAuthorName,
+                              parentContentText: widget.post.text,
+                            ),
                           ),
                         ),
                         const Gap(8),

@@ -18,6 +18,8 @@ import '../helper/editing_comment_banner.dart';
 import '../helper/reactor_avatar_stack.dart';
 import '../helper/replying_to_banner.dart';
 import 'send_comment_section.dart';
+import 'ai_comment_suggestions_row.dart';
+import 'package:social_media_app/core/mentions/mentions.dart';
 
 class CommentsSheetSection extends StatefulWidget {
   final String postId;
@@ -42,6 +44,7 @@ class _CommentsSheetSectionState extends State<CommentsSheetSection> {
 
   String? _replyingToCommentId;
   String? _replyingToAuthorName;
+  MentionTextEditingController? _commentController;
 
   void _scrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -253,6 +256,16 @@ class _CommentsSheetSectionState extends State<CommentsSheetSection> {
                             );
                           },
                         ),
+                        const SizedBox(height: 12),
+                        AiCommentSuggestionsRow(
+                          postId: post.id,
+                          postText: post.text,
+                          onChipSelected: (text) {
+                            _commentController?.text = text;
+                            _commentController?.selection =
+                                TextSelection.collapsed(offset: text.length);
+                          },
+                        ),
                         const SizedBox(height: 14),
                         BlocBuilder<CommentsCubit, CommentsState>(
                           buildWhen:
@@ -308,6 +321,8 @@ class _CommentsSheetSectionState extends State<CommentsSheetSection> {
                         post: post,
                         replyingToCommentId: _replyingToCommentId,
                         replyingToAuthorName: _replyingToAuthorName,
+                        onControllerReady:
+                            (controller) => _commentController = controller,
                         onReplySent: () {
                           setState(() {
                             _replyingToCommentId = null;
