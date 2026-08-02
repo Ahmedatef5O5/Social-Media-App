@@ -13,6 +13,7 @@ class GroupMessageBubble extends StatelessWidget {
   final Function(GroupMessageModel) onReply;
   final Function(GroupMessageModel)? onEdit;
   final ItemScrollController itemScrollController;
+  final bool showAvatar;
 
   const GroupMessageBubble({
     super.key,
@@ -22,6 +23,7 @@ class GroupMessageBubble extends StatelessWidget {
     required this.onReply,
     this.onEdit,
     required this.itemScrollController,
+    this.showAvatar = true,
   });
 
   @override
@@ -45,6 +47,7 @@ class GroupMessageBubble extends StatelessWidget {
             onReply: onReply,
             onEdit: onEdit,
             itemScrollController: itemScrollController,
+            showAvatar: showAvatar,
           ),
         );
       },

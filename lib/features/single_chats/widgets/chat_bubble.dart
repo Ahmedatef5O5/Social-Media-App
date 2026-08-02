@@ -11,6 +11,8 @@ import 'package:social_media_app/features/single_chats/widgets/message_content_c
 import 'package:social_media_app/features/single_chats/widgets/user_chat_avatar_widget.dart';
 import '../models/chat_user_model.dart';
 
+const double _kAvatarSlotWidth = 28;
+
 class ChatBubble extends StatefulWidget {
   final bool isMe;
   final MessageModel message;
@@ -21,6 +23,8 @@ class ChatBubble extends StatefulWidget {
   final double? uploadProgress;
   final bool isHighlighted;
   final ItemScrollController itemScrollController;
+
+  final bool showAvatar;
 
   const ChatBubble({
     super.key,
@@ -33,6 +37,7 @@ class ChatBubble extends StatefulWidget {
     this.uploadProgress,
     this.isHighlighted = false,
     required this.itemScrollController,
+    this.showAvatar = true,
   });
 
   @override
@@ -273,7 +278,12 @@ class ChatBubbleState extends State<ChatBubble>
                     ),
 
                     if (!widget.isMe) ...[
-                      UserChatAvatar( userId: widget.message.senderId, userImgUrl: widget.userImgUrl),
+                      widget.showAvatar
+                          ? UserChatAvatar(
+                            userId: widget.message.senderId,
+                            userImgUrl: widget.userImgUrl,
+                          )
+                          : const SizedBox(width: _kAvatarSlotWidth),
                       const Gap(8),
                     ],
 
@@ -295,17 +305,19 @@ class ChatBubbleState extends State<ChatBubble>
                                   : MainAxisAlignment.start,
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
-                            AbsorbPointer(
-                              absorbing: isSelectionMode,
-                              child: KeyedSubtree(
-                                key: _bubbleKey,
-                                child: MessageContentContainer(
-                                  message: widget.message,
-                                  receiverUser: widget.receiverUser,
-                                  isMe: widget.isMe,
-                                  uploadProgress: widget.uploadProgress,
-                                  itemScrollController:
-                                      widget.itemScrollController,
+                            Flexible(
+                              child: AbsorbPointer(
+                                absorbing: isSelectionMode,
+                                child: KeyedSubtree(
+                                  key: _bubbleKey,
+                                  child: MessageContentContainer(
+                                    message: widget.message,
+                                    receiverUser: widget.receiverUser,
+                                    isMe: widget.isMe,
+                                    uploadProgress: widget.uploadProgress,
+                                    itemScrollController:
+                                        widget.itemScrollController,
+                                  ),
                                 ),
                               ),
                             ),

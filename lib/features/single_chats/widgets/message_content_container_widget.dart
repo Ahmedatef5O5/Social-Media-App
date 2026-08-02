@@ -95,9 +95,19 @@ class _MessageContentContainerState extends State<MessageContentContainer> {
 
   @override
   Widget build(BuildContext context) {
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final double screenCap = MediaQuery.of(context).size.width * 0.70;
+        final double maxBubbleWidth =
+            constraints.maxWidth < screenCap ? constraints.maxWidth : screenCap;
 
-    final double maxBubbleWidth = MediaQuery.of(context).size.width * 0.70;
+        return _buildContent(context, maxBubbleWidth);
+      },
+    );
+  }
+
+  Widget _buildContent(BuildContext context, double maxBubbleWidth) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
     final bool isUploading = widget.isMe && widget.uploadProgress != null;
     final bool isImage = widget.message.messageType == 'image';

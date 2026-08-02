@@ -18,6 +18,8 @@ import 'group_message_avatar.dart';
 import 'group_reactions_row_widget.dart';
 import 'group_regular_message_content.dart';
 
+const double _kAvatarSlotWidth = 32;
+
 class GroupMessageContent extends StatefulWidget {
   final GroupMessageModel message;
   final bool isMe;
@@ -26,6 +28,8 @@ class GroupMessageContent extends StatefulWidget {
   final Function(GroupMessageModel)? onEdit;
   final VoidCallback? onLongPress;
   final ItemScrollController itemScrollController;
+
+  final bool showAvatar;
 
   const GroupMessageContent({
     super.key,
@@ -36,6 +40,7 @@ class GroupMessageContent extends StatefulWidget {
     this.onEdit,
     this.onLongPress,
     required this.itemScrollController,
+    this.showAvatar = true,
   });
 
   @override
@@ -229,10 +234,12 @@ class _GroupMessageContentState extends State<GroupMessageContent> {
                                   : const SizedBox.shrink(),
                         ),
                         if (!widget.isMe) ...[
-                          GroupMessageAvatar(
-                            message: widget.message,
-                            primary: primary,
-                          ),
+                          widget.showAvatar
+                              ? GroupMessageAvatar(
+                                message: widget.message,
+                                primary: primary,
+                              )
+                              : const SizedBox(width: _kAvatarSlotWidth),
                           const Gap(8),
                         ],
                         Flexible(
@@ -324,106 +331,118 @@ class _GroupMessageContentState extends State<GroupMessageContent> {
               itemScrollController: widget.itemScrollController,
             );
 
-    return Stack(
-      clipBehavior: Clip.none,
-      children: [
-        Opacity(
-          opacity: 1.0,
-          child: Container(
-            margin: EdgeInsets.only(top: 2, bottom: hasReaction ? 28 : 2),
-            constraints: BoxConstraints(
-              maxWidth: MediaQuery.of(context).size.width * 0.70,
-              minWidth: isVoice ? 240 : (isImage || isVideo ? 200 : 50),
-            ),
-            decoration: BoxDecoration(
-              color:
-                  isStickerOrGif
-                      ? Colors.transparent
-                      : (isImage || isVideo) &&
-                          !isUploading &&
-                          (widget.message.imageUrl == null &&
-                              widget.message.videoUrl == null)
-                      ? Colors.transparent
-                      : bgColor,
-              borderRadius: BorderRadius.only(
-                topLeft: const Radius.circular(20),
-                topRight: const Radius.circular(20),
-                bottomLeft: Radius.circular(widget.isMe ? 20 : 0),
-                bottomRight: Radius.circular(widget.isMe ? 0 : 20),
-              ),
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.only(
-                topLeft: const Radius.circular(20),
-                topRight: const Radius.circular(20),
-                bottomLeft: Radius.circular(widget.isMe ? 20 : 0),
-                bottomRight: Radius.circular(widget.isMe ? 0 : 20),
-              ),
-              child: Padding(
-                padding:
-                    isStickerOrGif
-                        ? EdgeInsets.zero
-                        : (isImage || isVideo)
-                        ? const EdgeInsets.all(3)
-                        : const EdgeInsets.only(
-                          left: 10,
-                          right: 10,
-                          bottom: 8,
-                          top: 6,
-                        ),
-                child:
-                    widget.message.isForwarded
-                        ? Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            ForwardedHeader(
-                              name:
-                                  widget.message.forwardedFromUserName ??
-                                  'Unknown',
-                              originalSenderId:
-                                  widget.message.forwardedFromUserId ?? '',
-                              avatarUrl: widget.message.forwardedFromUserAvatar,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final double screenCap = MediaQuery.of(context).size.width * 0.70;
+        final double maxBubbleWidth =
+            constraints.maxWidth < screenCap ? constraints.maxWidth : screenCap;
 
-                              isMe: widget.isMe,
-                            ),
-                            content,
-                          ],
-                        )
-                        : content,
-              ),
-            ),
-          ),
-        ),
-
-        if (isUploading && !isVoice && !isFile)
-          Positioned.fill(
-            child: ValueListenableBuilder<double>(
-              valueListenable: context
-                  .read<GroupDetailsCubit>()
-                  .progressNotifierFor(widget.message.id),
-              builder: (context, progress, _) {
-                return MediaStateOverlay(
-                  state: MediaTransferState.uploading(progress),
-                  isVideo: isVideo,
-                  durationSeconds: widget.message.durationSeconds,
-                  fileSizeBytes: widget.message.fileSizeBytes,
+        return Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Opacity(
+              opacity: 1.0,
+              child: Container(
+                margin: EdgeInsets.only(top: 2, bottom: hasReaction ? 28 : 2),
+                constraints: BoxConstraints(
+                  maxWidth: maxBubbleWidth,
+                  minWidth:
+                      isVoice
+                          ? (240 > maxBubbleWidth ? maxBubbleWidth : 240)
+                          : (isImage || isVideo ? 200 : 50),
+                ),
+                decoration: BoxDecoration(
+                  color:
+                      isStickerOrGif
+                          ? Colors.transparent
+                          : (isImage || isVideo) &&
+                              !isUploading &&
+                              (widget.message.imageUrl == null &&
+                                  widget.message.videoUrl == null)
+                          ? Colors.transparent
+                          : bgColor,
                   borderRadius: BorderRadius.only(
-                    topLeft: const Radius.circular(18),
-                    topRight: const Radius.circular(18),
-                    bottomLeft: Radius.circular(widget.isMe ? 18 : 4),
-                    bottomRight: Radius.circular(widget.isMe ? 4 : 18),
+                    topLeft: const Radius.circular(20),
+                    topRight: const Radius.circular(20),
+                    bottomLeft: Radius.circular(widget.isMe ? 20 : 0),
+                    bottomRight: Radius.circular(widget.isMe ? 0 : 20),
                   ),
-                  onCancelTap:
-                      () => context.read<GroupDetailsCubit>().cancelUpload(
-                        widget.message.id,
-                      ),
-                  child: const SizedBox.shrink(),
-                );
-              },
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.only(
+                    topLeft: const Radius.circular(20),
+                    topRight: const Radius.circular(20),
+                    bottomLeft: Radius.circular(widget.isMe ? 20 : 0),
+                    bottomRight: Radius.circular(widget.isMe ? 0 : 20),
+                  ),
+                  child: Padding(
+                    padding:
+                        isStickerOrGif
+                            ? EdgeInsets.zero
+                            : (isImage || isVideo)
+                            ? const EdgeInsets.all(3)
+                            : const EdgeInsets.only(
+                              left: 10,
+                              right: 10,
+                              bottom: 8,
+                              top: 6,
+                            ),
+                    child:
+                        widget.message.isForwarded
+                            ? Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                ForwardedHeader(
+                                  name:
+                                      widget.message.forwardedFromUserName ??
+                                      'Unknown',
+                                  originalSenderId:
+                                      widget.message.forwardedFromUserId ?? '',
+                                  avatarUrl:
+                                      widget.message.forwardedFromUserAvatar,
+
+                                  isMe: widget.isMe,
+                                ),
+                                content,
+                              ],
+                            )
+                            : content,
+                  ),
+                ),
+              ),
             ),
-          ),
-      ],
+
+            if (isUploading && !isVoice && !isFile)
+              Positioned.fill(
+                child: ValueListenableBuilder<double>(
+                  valueListenable: context
+                      .read<GroupDetailsCubit>()
+                      .progressNotifierFor(widget.message.id),
+                  builder: (context, progress, _) {
+                    return MediaStateOverlay(
+                      state: MediaTransferState.uploading(progress),
+                      isVideo: isVideo,
+                      durationSeconds: widget.message.durationSeconds,
+                      fileSizeBytes: widget.message.fileSizeBytes,
+                      borderRadius: BorderRadius.only(
+                        topLeft: const Radius.circular(18),
+                        topRight: const Radius.circular(18),
+                        bottomLeft: Radius.circular(widget.isMe ? 18 : 4),
+                        bottomRight: Radius.circular(widget.isMe ? 4 : 18),
+                      ),
+                      onCancelTap:
+                          () => context.read<GroupDetailsCubit>().cancelUpload(
+                            widget.message.id,
+                          ),
+                      child: const SizedBox.shrink(),
+                    );
+                  },
+                ),
+              ),
+          ],
+        );
+      },
     );
   }
 }

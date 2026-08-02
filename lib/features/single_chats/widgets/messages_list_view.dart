@@ -129,6 +129,15 @@ class _MessagesListViewState extends State<MessagesListView> {
                       index: msgIndex,
                       getCreatedAt: (m) => m.createdAt,
                     );
+
+                final showAvatar =
+                    ChatDateSeparatorHelper.isLastInSenderCluster<MessageModel>(
+                      messages: messages,
+                      index: msgIndex,
+                      getSenderId: (m) => m.senderId,
+                      getCreatedAt: (m) => m.createdAt,
+                    );
+
                 return Column(
                   key: ValueKey('item_${msg.id}'),
                   children: [
@@ -146,6 +155,7 @@ class _MessagesListViewState extends State<MessagesListView> {
                       itemScrollController: widget.itemScrollController,
                       isMe: isMe,
                       uploadProgress: currentProgress,
+                      showAvatar: showAvatar,
                     ),
                   ],
                 );

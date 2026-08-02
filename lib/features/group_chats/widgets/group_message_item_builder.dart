@@ -142,6 +142,21 @@ class GroupMessageItemBuilder extends StatelessWidget {
         },
       );
     }
+
+    final belowMsg = msgIndex > 0 ? messages[msgIndex - 1] : null;
+    final isBrokenBySpecialNeighbor =
+        belowMsg != null &&
+        (belowMsg.isSystemEvent || belowMsg.messageType == 'group_call');
+
+    final showAvatar =
+        isBrokenBySpecialNeighbor ||
+        ChatDateSeparatorHelper.isLastInSenderCluster<GroupMessageModel>(
+          messages: messages,
+          index: msgIndex,
+          getSenderId: (m) => m.senderId,
+          getCreatedAt: (m) => m.createdAt,
+        );
+
     return Column(
       key: ValueKey(msg.id),
       children: [
@@ -166,6 +181,7 @@ class GroupMessageItemBuilder extends StatelessWidget {
             cubit.editingMessage.value = m;
           },
           itemScrollController: itemScrollController,
+          showAvatar: showAvatar,
         ),
       ],
     );
