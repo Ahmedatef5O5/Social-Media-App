@@ -243,12 +243,6 @@ class AppRouter {
                         ChatsCubit(context.read<ChatServices>())
                           ..monitorChats(),
               ),
-              BlocProvider(
-                create:
-                    (context) =>
-                        GroupListCubit(context.read<GroupChatServices>())
-                          ..monitorGroups(),
-              ),
             ],
             child: const CustomBottomNavBar(),
           ),
@@ -447,14 +441,7 @@ class AppRouter {
   static Route<dynamic> _groupChatRoutes(RouteSettings settings) {
     switch (settings.name) {
       case AppRoutes.createGroupRoute:
-        return _buildRoute(
-          BlocProvider(
-            create:
-                (context) => GroupListCubit(context.read<GroupChatServices>()),
-            child: const CreateGroupView(),
-          ),
-          settings: settings,
-        );
+        return _buildRoute(const CreateGroupView(), settings: settings);
       case AppRoutes.groupChatRoute:
         final group = _args<GroupModel>(settings);
         if (group == null) {

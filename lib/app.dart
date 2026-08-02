@@ -112,7 +112,9 @@ Widget buildApp(String savedTheme) {
         BlocProvider(create: (context) => ReelsFeedCubit()),
         BlocProvider(
           create:
-              (context) => GroupListCubit(context.read<GroupChatServices>()),
+              (context) =>
+                  GroupListCubit(context.read<GroupChatServices>())
+                    ..monitorGroups(),
         ),
 
         BlocProvider(
