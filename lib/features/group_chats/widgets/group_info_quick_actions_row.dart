@@ -2,17 +2,19 @@ import 'package:flutter/material.dart';
 
 class GroupInfoQuickActionsRow extends StatelessWidget {
   final bool isMuted;
+  final bool isMember;
   final VoidCallback onMessage;
-  final VoidCallback onCall;
-  final VoidCallback onVideo;
+  final VoidCallback? onCall;
+  final VoidCallback? onVideo;
   final VoidCallback onToggleMute;
 
   const GroupInfoQuickActionsRow({
     super.key,
     required this.isMuted,
+    required this.isMember,
     required this.onMessage,
-    required this.onCall,
-    required this.onVideo,
+    this.onCall,
+    this.onVideo,
     required this.onToggleMute,
   });
 
@@ -30,18 +32,20 @@ class GroupInfoQuickActionsRow extends StatelessWidget {
             color: primary,
             onTap: onMessage,
           ),
-          _QuickAction(
-            icon: Icons.call_rounded,
-            label: 'Call',
-            color: primary,
-            onTap: onCall,
-          ),
-          _QuickAction(
-            icon: Icons.videocam_rounded,
-            label: 'Video',
-            color: primary,
-            onTap: onVideo,
-          ),
+          if (isMember) ...[
+            _QuickAction(
+              icon: Icons.call_rounded,
+              label: 'Call',
+              color: primary,
+              onTap: onCall!,
+            ),
+            _QuickAction(
+              icon: Icons.videocam_rounded,
+              label: 'Video',
+              color: primary,
+              onTap: onVideo!,
+            ),
+          ],
           _QuickAction(
             icon:
                 isMuted

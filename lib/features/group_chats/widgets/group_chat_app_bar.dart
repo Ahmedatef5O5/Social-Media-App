@@ -3,13 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../../core/connectivity/services/connectivity_banner_controller.dart';
 import '../../../core/router/app_routes.dart';
-import '../../../core/supabase/supabase_provider.dart';
-import '../../group_calls/views/outgoing_group_call_screen.dart';
 import '../../group_calls/views/zego_group_call_view.dart';
 import '../cubit/group_list_cubit/group_list_cubit.dart';
 import '../../group_calls/models/group_call_model.dart';
+import '../helpers/group_call_initiator.dart';
 import '../models/group_model.dart';
 import '../../group_calls/services/group_call_signaling_service.dart';
 
@@ -17,66 +15,6 @@ class GroupChatAppBar extends StatelessWidget implements PreferredSizeWidget {
   final GroupModel group;
 
   const GroupChatAppBar({super.key, required this.group});
-
-  Future<void> _initiateCall(BuildContext context, GroupCallType type) async {
-    final navigator = Navigator.of(context);
-    try {
-      final isOffline = await ConnectivityBannerController.notifyIfOffline();
-      if (isOffline) {
-        return;
-      }
-      final user = SupabaseProvider.user!;
-      final profileData =
-          await SupabaseProvider.client
-              .from('users')
-              .select('name')
-              .eq('id', user.id)
-              .maybeSingle();
-      final currentUserName =
-          (profileData?['name'] as String?) ?? user.email ?? 'Me';
-
-      final signaling = context.read<GroupCallSignalingService>();
-
-      final existingCall = await signaling.getActiveCall(group.id);
-      if (existingCall != null) {
-        final joined = await signaling.acceptCall(existingCall.callId);
-        navigator.push(
-          MaterialPageRoute(
-            builder:
-                (_) => ZegoGroupCallView(
-                  call: joined,
-                  currentUserId: user.id,
-                  currentUserName: currentUserName,
-                ),
-          ),
-        );
-        return;
-      }
-
-      await signaling.initiateCall(
-        groupId: group.id,
-        groupName: group.name,
-        groupAvatarUrl: group.avatarUrl,
-        currentUserId: user.id,
-        currentUserName: currentUserName,
-        type: type,
-      );
-
-      navigator.push(
-        MaterialPageRoute(
-          builder:
-              (_) => OutgoingGroupCallScreen(
-                groupId: group.id,
-                groupName: group.name,
-                groupAvatarUrl: group.avatarUrl,
-                callType: type,
-              ),
-        ),
-      );
-    } catch (e) {
-      debugPrint('Error initiating group call: $e');
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -162,56 +100,70 @@ class GroupChatAppBar extends StatelessWidget implements PreferredSizeWidget {
                 ),
               ),
               actions: [
-                if (hasActiveCall)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                    child: ElevatedButton.icon(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                      ),
-                      icon: const Icon(Icons.call, size: 16),
-                      label: const Text('Join'),
-                      onPressed: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder:
-                                (_) => ZegoGroupCallView(
-                                  call: activeCall,
-                                  currentUserId:
-                                      Supabase
-                                          .instance
-                                          .client
-                                          .auth
-                                          .currentUser!
-                                          .id,
-                                  currentUserName: 'Me',
-                                ),
+                if (updatedGroup.isMember) ...[
+                  if (hasActiveCall)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                      child: ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
                           ),
-                        );
-                      },
+                        ),
+                        icon: const Icon(Icons.call, size: 16),
+                        label: const Text('Join'),
+                        onPressed: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder:
+                                  (_) => ZegoGroupCallView(
+                                    call: activeCall,
+                                    currentUserId:
+                                        Supabase
+                                            .instance
+                                            .client
+                                            .auth
+                                            .currentUser!
+                                            .id,
+                                    currentUserName: 'Me',
+                                  ),
+                            ),
+                          );
+                        },
+                      ),
+                    )
+                  else ...[
+                    IconButton(
+                      tooltip: 'Voice call',
+                      icon: Icon(
+                        Icons.phone_outlined,
+                        color: primary,
+                        size: 22,
+                      ),
+                      onPressed:
+                          () => GroupCallInitiator.initiate(
+                            context,
+                            updatedGroup,
+                            GroupCallType.audio,
+                          ),
                     ),
-                  )
-                else ...[
-                  IconButton(
-                    tooltip: 'Voice call',
-                    icon: Icon(Icons.phone_outlined, color: primary, size: 22),
-                    onPressed:
-                        () => _initiateCall(context, GroupCallType.audio),
-                  ),
-                  IconButton(
-                    tooltip: 'Video call',
-                    icon: Icon(
-                      Icons.videocam_outlined,
-                      color: primary,
-                      size: 22,
+                    IconButton(
+                      tooltip: 'Video call',
+                      icon: Icon(
+                        Icons.videocam_outlined,
+                        color: primary,
+                        size: 22,
+                      ),
+                      onPressed:
+                          () => GroupCallInitiator.initiate(
+                            context,
+                            updatedGroup,
+                            GroupCallType.video,
+                          ),
                     ),
-                    onPressed:
-                        () => _initiateCall(context, GroupCallType.video),
-                  ),
+                  ],
                 ],
                 PopupMenuButton<String>(
                   color: Colors.white,
@@ -221,7 +173,7 @@ class GroupChatAppBar extends StatelessWidget implements PreferredSizeWidget {
                     if (value == 'info') {
                       Navigator.of(context).pushNamed(
                         AppRoutes.groupInfoViewRoute,
-                        arguments: group,
+                        arguments: updatedGroup,
                       );
                     }
                   },
