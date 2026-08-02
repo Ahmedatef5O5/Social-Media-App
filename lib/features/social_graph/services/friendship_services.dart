@@ -39,6 +39,30 @@ class FriendshipServices {
         .eq(FriendshipColumns.id, friendshipId);
   }
 
+  Future<List<FriendListItemModel>> searchFriends({
+    required String userId,
+    required String query,
+    int limit = 30,
+    int offset = 0,
+  }) async {
+    final rows = await _supabase.rpc(
+      'search_friends',
+      params: {
+        'p_query': query,
+        'p_user_id': userId,
+        'p_limit': limit,
+        'p_offset': offset,
+      },
+    );
+    return (rows as List).map((row) {
+      final map = row as Map<String, dynamic>;
+      return FriendListItemModel(
+        user: UserData.fromMap(map),
+        friendshipId: map['friendship_id'] as String,
+      );
+    }).toList();
+  }
+
   Future<String> sendFriendRequest(String addresseeId) async {
     final row =
         await _supabase
