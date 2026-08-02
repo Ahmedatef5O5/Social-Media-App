@@ -37,4 +37,33 @@ class DiscoverPeopleServices {
       rethrow;
     }
   }
+
+  Future<List<DiscoverPersonModel>> searchPeople({
+    required String query,
+    int page = 0,
+    int pageSize = 15,
+  }) async {
+    if (!(await _networkStatus.isConnected())) {
+      throw Exception('no-internet');
+    }
+    try {
+      final data = await SupabaseProvider.client.rpc(
+        'search_people',
+        params: {
+          'p_query': query,
+          'p_current_user_id': SupabaseProvider.id,
+          'p_limit': pageSize,
+          'p_offset': page * pageSize,
+        },
+      );
+
+      return (data as List)
+          .cast<Map<String, dynamic>>()
+          .map(DiscoverPersonModel.fromMap)
+          .toList();
+    } catch (e) {
+      debugPrint('Searching People Error: $e');
+      rethrow;
+    }
+  }
 }

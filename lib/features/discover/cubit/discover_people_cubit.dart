@@ -30,6 +30,73 @@ class DiscoverPeopleCubit extends Cubit<DiscoverPeopleState> {
   bool _hasReachedMax = false;
   bool _isFetchingMore = false;
   final List<DiscoverPersonModel> _users = [];
+  String _searchQuery = '';
+  bool _isSearchMode = false;
+  bool _searchHasReachedMax = false;
+  final List<DiscoverPersonModel> _searchResults = [];
+
+  List<DiscoverPersonModel> get _activeList =>
+      _isSearchMode ? _searchResults : _users;
+  bool get _activeHasReachedMax =>
+      _isSearchMode ? _searchHasReachedMax : _hasReachedMax;
+
+  void _emitActive() => emit(
+    DiscoverPeopleSuccess(
+      users: List.of(_activeList),
+      hasReachedMax: _activeHasReachedMax,
+    ),
+  );
+
+  Future<void> searchPeople(String query) async {
+    final trimmed = query.trim();
+    _searchQuery = trimmed;
+
+    if (trimmed.isEmpty) {
+      _isSearchMode = false;
+      _emitActive();
+      return;
+    }
+
+    _isSearchMode = true;
+    _searchResults.clear();
+    _searchHasReachedMax = false;
+    emit(DiscoverPeopleLoading());
+    try {
+      final results = await _discoverPeopleServices.searchPeople(
+        query: trimmed,
+        pageSize: 15,
+      );
+
+      if (_searchQuery != trimmed) return;
+      _searchResults.addAll(results);
+      _searchHasReachedMax = results.length < 15;
+      _emitActive();
+    } catch (e) {
+      if (_searchQuery != trimmed) return;
+      emit(
+        const DiscoverPeopleFailure(
+          'Something went wrong. Please try again later.',
+        ),
+      );
+    }
+  }
+
+  Future<void> loadMoreSearchResults() async {
+    if (!_isSearchMode || _searchHasReachedMax) return;
+    try {
+      final page = (_searchResults.length / 15).floor();
+      final results = await _discoverPeopleServices.searchPeople(
+        query: _searchQuery,
+        page: page,
+        pageSize: 15,
+      );
+      _searchResults.addAll(results);
+      _searchHasReachedMax = results.length < 15;
+      _emitActive();
+    } catch (e) {
+      debugPrint('loadMoreSearchResults error: $e');
+    }
+  }
 
   Future<List<DiscoverPersonModel>> getDiscoverPeople({
     bool isRefresh = false,
@@ -99,21 +166,20 @@ class DiscoverPeopleCubit extends Cubit<DiscoverPeopleState> {
     }
   }
 
-  void _emitUsers() => emit(
-    DiscoverPeopleSuccess(
-      users: List.from(_users),
-      hasReachedMax: _hasReachedMax,
-    ),
-  );
-
   void _updateUser(
     String userId,
     DiscoverPersonModel Function(DiscoverPersonModel) update,
   ) {
     final idx = _users.indexWhere((u) => u.user.id == userId);
-    if (idx == -1) return;
-    _users[idx] = update(_users[idx]);
-    _emitUsers();
+    if (idx != -1) _users[idx] = update(_users[idx]);
+
+    final searchIdx = _searchResults.indexWhere((u) => u.user.id == userId);
+    if (searchIdx != -1) {
+      _searchResults[searchIdx] = update(_searchResults[searchIdx]);
+    }
+
+    if (idx == -1 && searchIdx == -1) return;
+    _emitActive();
   }
 
   Future<void> sendFriendRequest(String userId) async {
