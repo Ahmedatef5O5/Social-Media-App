@@ -15,6 +15,9 @@ class SearchReelsCubit extends Cubit<SearchReelsState> {
   bool _isFetchingMore = false;
   final Set<String> _seenVideoIds = {};
   final List<ReelModel> _reels = [];
+  String _lastSearchQuery = '';
+  bool _searchHasReachedMax = false;
+  static const int _searchPageSize = 30;
 
   Future<void> getReels({bool isRefresh = false}) async {
     if (isRefresh) {
@@ -57,6 +60,68 @@ class SearchReelsCubit extends Cubit<SearchReelsState> {
       );
     } finally {
       _isFetchingMore = false;
+    }
+  }
+
+  Future<void> searchReels(String query) async {
+    final trimmed = query.trim();
+    _lastSearchQuery = trimmed;
+
+    if (trimmed.isEmpty) {
+      // Back to browsing — the pool we already had is still intact.
+      emit(
+        SearchReelsLoaded(
+          reels: List.of(_reels),
+          hasReachedMax: _hasReachedMax,
+        ),
+      );
+      return;
+    }
+
+    emit(SearchReelsSearching());
+    try {
+      final results = await _reelsServices.searchReels(
+        query: trimmed,
+        limit: _searchPageSize,
+      );
+      if (_lastSearchQuery != trimmed) return;
+      _searchHasReachedMax = results.length < _searchPageSize;
+      emit(
+        SearchReelsSearchResults(
+          reels: results,
+          hasReachedMax: _searchHasReachedMax,
+          query: trimmed,
+        ),
+      );
+    } catch (e) {
+      if (_lastSearchQuery != trimmed) return;
+      emit(
+        const SearchReelsError('Something went wrong. Please try again later.'),
+      );
+    }
+  }
+
+  Future<void> loadMoreSearchResults() async {
+    final current = state;
+    if (current is! SearchReelsSearchResults || current.hasReachedMax) return;
+
+    try {
+      final more = await _reelsServices.searchReels(
+        query: current.query,
+        limit: _searchPageSize,
+        offset: current.reels.length,
+      );
+      if (_lastSearchQuery != current.query) return;
+      _searchHasReachedMax = more.length < _searchPageSize;
+      emit(
+        SearchReelsSearchResults(
+          reels: [...current.reels, ...more],
+          hasReachedMax: _searchHasReachedMax,
+          query: current.query,
+        ),
+      );
+    } catch (_) {
+      // Silent on purpose — keep showing what we already have.
     }
   }
 }

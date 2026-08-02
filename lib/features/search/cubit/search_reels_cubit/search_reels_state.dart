@@ -18,3 +18,16 @@ final class SearchReelsError extends SearchReelsState {
   final String message;
   const SearchReelsError(this.message);
 }
+
+final class SearchReelsSearching extends SearchReelsState {}
+
+final class SearchReelsSearchResults extends SearchReelsState {
+  final List<ReelModel> reels;
+  final bool hasReachedMax;
+  final String query;
+  const SearchReelsSearchResults({
+    required this.reels,
+    required this.hasReachedMax,
+    required this.query,
+  });
+}

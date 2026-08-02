@@ -7,7 +7,6 @@ import '../../../core/widgets/empty_findings_animation_widget.dart';
 import '../../reels/model/reel_model.dart';
 import '../../reels/views/reels_full_screen_view.dart';
 import '../cubit/search_reels_cubit/search_reels_cubit.dart';
-import '../utils/search_matcher.dart';
 import '../utils/search_view_metrics.dart';
 import 'reel_grid_tile.dart';
 import '../utils/reels_grid_skeleton.dart';
@@ -28,33 +27,16 @@ class _ReelsTabViewState extends State<ReelsTabView>
   @override
   void initState() {
     super.initState();
-    widget.searchQuery.addListener(_maybeBroadenSearchPool);
+    widget.searchQuery.addListener(_onQueryChanged);
   }
 
-  void _maybeBroadenSearchPool() {
-    final query = widget.searchQuery.value;
-    if (query.isEmpty) return;
-    final state = context.read<SearchReelsCubit>().state;
-    if (state is SearchReelsLoaded && !state.hasReachedMax) {
-      final matches =
-          state.reels
-              .where(
-                (r) => matchesSearchQuery(query, [
-                  r.title,
-                  r.description,
-                  r.channel.channelName,
-                ]),
-              )
-              .length;
-      if (matches < 6) {
-        context.read<SearchReelsCubit>().getReels();
-      }
-    }
+  void _onQueryChanged() {
+    context.read<SearchReelsCubit>().searchReels(widget.searchQuery.value);
   }
 
   @override
   void dispose() {
-    widget.searchQuery.removeListener(_maybeBroadenSearchPool);
+    widget.searchQuery.removeListener(_onQueryChanged);
     super.dispose();
   }
 
@@ -74,54 +56,28 @@ class _ReelsTabViewState extends State<ReelsTabView>
     return ValueListenableBuilder<String>(
       valueListenable: widget.searchQuery,
       builder: (context, query, _) {
-        return BlocConsumer<SearchReelsCubit, SearchReelsState>(
-          listener: (context, state) {
-            if (query.isNotEmpty &&
-                state is SearchReelsLoaded &&
-                !state.hasReachedMax) {
-              final matches =
-                  state.reels
-                      .where(
-                        (r) => matchesSearchQuery(query, [
-                          r.title,
-                          r.description,
-                          r.channel.channelName,
-                        ]),
-                      )
-                      .length;
-
-              if (matches < 6) {
-                context.read<SearchReelsCubit>().getReels();
-              }
-            }
-          },
-
+        return BlocBuilder<SearchReelsCubit, SearchReelsState>(
           builder: (context, state) {
-            if (state is SearchReelsInitial || state is SearchReelsLoading) {
+            if (state is SearchReelsInitial ||
+                state is SearchReelsLoading ||
+                state is SearchReelsSearching) {
               return const ReelsGridSkeleton();
             }
 
             if (state is SearchReelsError) {
-              return _buildErrorState(context, theme, state.message);
+              return _buildErrorState(context, theme, state.message, query);
             }
 
-            final allReels =
-                state is SearchReelsLoaded ? state.reels : const <ReelModel>[];
-            final hasReachedMax =
-                state is SearchReelsLoaded ? state.hasReachedMax : true;
-
-            final reels =
-                query.isEmpty
-                    ? allReels
-                    : allReels
-                        .where(
-                          (r) => matchesSearchQuery(query, [
-                            r.title,
-                            r.description,
-                            r.channel.channelName,
-                          ]),
-                        )
-                        .toList();
+            final reels = switch (state) {
+              SearchReelsLoaded s => s.reels,
+              SearchReelsSearchResults s => s.reels,
+              _ => const <ReelModel>[],
+            };
+            final hasReachedMax = switch (state) {
+              SearchReelsLoaded s => s.hasReachedMax,
+              SearchReelsSearchResults s => s.hasReachedMax,
+              _ => true,
+            };
 
             if (reels.isEmpty) {
               return _buildEmptyState(theme, query);
@@ -131,7 +87,11 @@ class _ReelsTabViewState extends State<ReelsTabView>
               onNotification: (ScrollNotification scrollInfo) {
                 if (scrollInfo.metrics.pixels >=
                     scrollInfo.metrics.maxScrollExtent - 200) {
-                  context.read<SearchReelsCubit>().getReels();
+                  if (query.isEmpty) {
+                    context.read<SearchReelsCubit>().getReels();
+                  } else {
+                    context.read<SearchReelsCubit>().loadMoreSearchResults();
+                  }
                 }
                 return false;
               },
@@ -162,7 +122,7 @@ class _ReelsTabViewState extends State<ReelsTabView>
                       ),
                     ),
                   ),
-                  if (query.isEmpty && !hasReachedMax)
+                  if (!hasReachedMax)
                     const SliverToBoxAdapter(
                       child: Padding(
                         padding: EdgeInsets.symmetric(vertical: 20),
@@ -212,6 +172,7 @@ class _ReelsTabViewState extends State<ReelsTabView>
     BuildContext context,
     ThemeData theme,
     String message,
+    String query,
   ) {
     return Center(
       child: Padding(
@@ -232,7 +193,11 @@ class _ReelsTabViewState extends State<ReelsTabView>
             ),
             const Gap(14),
             TextButton(
-              onPressed: () => context.read<SearchReelsCubit>().getReels(),
+              onPressed:
+                  () =>
+                      query.isEmpty
+                          ? context.read<SearchReelsCubit>().getReels()
+                          : context.read<SearchReelsCubit>().searchReels(query),
               child: const Text('Retry'),
             ),
           ],

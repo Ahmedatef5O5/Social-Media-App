@@ -36,4 +36,22 @@ class ReelsServices {
     final shuffled = ReelsInterleaver.shuffle(pool);
     return shuffled.take(limit).toList();
   }
+
+  /// Real backend search via the `search_reels` RPC — matches title,
+  /// description, category, and channel name server-side, ranked by
+  /// relevance.
+
+  Future<List<ReelModel>> searchReels({
+    required String query,
+    int limit = 30,
+    int offset = 0,
+  }) async {
+    final response = await _supabase.rpc(
+      'search_reels',
+      params: {'p_query': query, 'p_limit': limit, 'p_offset': offset},
+    );
+    return (response as List)
+        .map((e) => ReelModel.fromMap(e as Map<String, dynamic>))
+        .toList();
+  }
 }
