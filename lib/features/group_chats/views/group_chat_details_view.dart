@@ -11,7 +11,8 @@ import '../helpers/group_chat_app_bar_switcher.dart';
 import '../models/group_model.dart';
 import '../../group_calls/services/group_call_signaling_service.dart';
 import '../widgets/group_chat_input_bar_section.dart';
-import '../widgets/messages_list.dart';
+import '../widgets/group_chat_locked_banner.dart';
+import '../widgets/group_messages_list.dart';
 
 class GroupChatDetailsView extends StatelessWidget {
   final GroupModel group;
@@ -181,45 +182,83 @@ class _GroupChatDetailsBodyState extends State<_GroupChatDetailsBody> {
   Widget build(BuildContext context) {
     final cubit = context.read<GroupDetailsCubit>();
 
-    return BlocListener<GroupCallCubit, GroupCallState>(
-      listener: (context, state) {
-        if (state is GroupCallEnded) {}
+    return BlocListener<GroupDetailsCubit, GroupDetailsState>(
+      listenWhen: (previous, current) {
+        final prevMember =
+            previous is GroupDetailsLoaded ? previous.isMember : true;
+        final currMember =
+            current is GroupDetailsLoaded ? current.isMember : true;
+        return prevMember && !currMember;
       },
-      child: GestureDetector(
-        onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
-        child: Scaffold(
-          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-          appBar: GroupChatAppBarSwitcher(group: widget.group),
-          body: Column(
-            children: [
-              Expanded(
-                child: GroupMessagesList(
-                  scrollController: _scrollController,
-                  positionsListener: _positionsListener,
-                  showScrollButtonNotifier: _showScrollButtonNotifier,
-                  unreadCountNotifier: _unreadCountNotifier,
-                  scrollToBottom: _scrollToBottom,
-                  isAtBottom: _isAtBottom,
-                ),
-              ),
-              Align(
-                alignment: Alignment.bottomCenter,
-                child: SafeArea(
-                  top: false,
-                  child: GroupChatInputBarSection(
-                    controller: _controller,
-                    mentionCandidateIds:
-                        widget.group.members.map((m) => m.userId).toList(),
-                    onSend: (text, mentions) {
-                      cubit.sendMessage(text: text, mentions: mentions);
-                      // _controller.clear();
-                      _scrollToBottom();
-                    },
-                    onTyping: cubit.onTyping,
+      listener: (context, state) {
+        FocusManager.instance.primaryFocus?.unfocus();
+        cubit.clearSelection();
+      },
+      child: BlocListener<GroupCallCubit, GroupCallState>(
+        listener: (context, state) {
+          if (state is GroupCallEnded) {}
+        },
+        child: GestureDetector(
+          onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+          child: Scaffold(
+            backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+            appBar: GroupChatAppBarSwitcher(group: widget.group),
+            body: Column(
+              children: [
+                Expanded(
+                  child: GroupMessagesList(
+                    scrollController: _scrollController,
+                    positionsListener: _positionsListener,
+                    showScrollButtonNotifier: _showScrollButtonNotifier,
+                    unreadCountNotifier: _unreadCountNotifier,
+                    scrollToBottom: _scrollToBottom,
+                    isAtBottom: _isAtBottom,
                   ),
                 ),
-              ),
-            ],
+                Align(
+                  alignment: Alignment.bottomCenter,
+                  child: SafeArea(
+                    top: false,
+                    child: BlocBuilder<GroupDetailsCubit, GroupDetailsState>(
+                      buildWhen: (previous, current) {
+                        final prevMember =
+                            previous is GroupDetailsLoaded
+                                ? previous.isMember
+                                : true;
+                        final currMember =
+                            current is GroupDetailsLoaded
+                                ? current.isMember
+                                : true;
+                        return prevMember != currMember;
+                      },
+                      builder: (context, state) {
+                        final isMember =
+                            state is GroupDetailsLoaded
+                                ? state.isMember
+                                : widget.group.isMember;
+
+                        if (!isMember) {
+                          return const GroupChatLockedBanner();
+                        }
+
+                        return GroupChatInputBarSection(
+                          controller: _controller,
+                          mentionCandidateIds:
+                              widget.group.members
+                                  .map((m) => m.userId)
+                                  .toList(),
+                          onSend: (text, mentions) {
+                            cubit.sendMessage(text: text, mentions: mentions);
+                            _scrollToBottom();
+                          },
+                          onTyping: cubit.onTyping,
+                        );
+                      },
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
