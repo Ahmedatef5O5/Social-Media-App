@@ -33,6 +33,8 @@ class GroupMessageModel {
   final String? forwardedFromUserName;
   final String? forwardedFromUserAvatar;
   final Map<String, dynamic>? systemEventData;
+  final String? targetId;
+  final String? targetName;
 
   bool get isForwarded => forwardedFromUserId != null;
 
@@ -71,6 +73,8 @@ class GroupMessageModel {
     this.forwardedFromUserName,
     this.forwardedFromUserAvatar,
     this.systemEventData,
+    this.targetId,
+    this.targetName,
   });
 
   GroupMessageModel copyWith({
@@ -105,6 +109,8 @@ class GroupMessageModel {
     String? forwardedFromUserName,
     String? forwardedFromUserAvatar,
     Map<String, dynamic>? systemEventData,
+    String? targetId,
+    String? targetName,
   }) {
     return GroupMessageModel(
       id: id ?? this.id,
@@ -140,6 +146,8 @@ class GroupMessageModel {
       forwardedFromUserAvatar:
           forwardedFromUserAvatar ?? this.forwardedFromUserAvatar,
       systemEventData: systemEventData ?? this.systemEventData,
+      targetId: targetId ?? this.targetId,
+      targetName: targetName ?? this.targetName,
     );
   }
 
@@ -201,6 +209,8 @@ class GroupMessageModel {
       forwardedFromUserName: map['forwarded_from_user_name'] as String?,
       forwardedFromUserAvatar: map['forwarded_from_user_avatar'] as String?,
       systemEventData: map['system_event_data'] as Map<String, dynamic>?,
+      targetId: map['target_id'] as String?,
+      targetName: map['target_name'] as String?,
     );
   }
 
@@ -225,6 +235,8 @@ class GroupMessageModel {
       if (replyToSenderName != null) 'reply_to_sender_name': replyToSenderName,
       if (replyToMessageType != null)
         'reply_to_message_type': replyToMessageType,
+      if (targetId != null) 'target_id': targetId,
+      if (targetName != null) 'target_name': targetName,
     };
   }
 
@@ -287,6 +299,8 @@ class GroupMessageModel {
       forwardedFromUserName: json['forwarded_from_user_name'] as String?,
       forwardedFromUserAvatar: json['forwarded_from_user_avatar'] as String?,
       systemEventData: json['system_event_data'] as Map<String, dynamic>?,
+      targetId: json['target_id'] as String?,
+      targetName: json['target_name'] as String?,
     );
   }
 
@@ -322,6 +336,8 @@ class GroupMessageModel {
       'forwarded_from_user_name': forwardedFromUserName,
       'forwarded_from_user_avatar': forwardedFromUserAvatar,
       'system_event_data': systemEventData,
+      'target_id': targetId,
+      'target_name': targetName,
     };
   }
 }

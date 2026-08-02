@@ -1,4 +1,5 @@
 import '../models/group_model.dart';
+import '../models/groupe_message_model.dart';
 
 String buildGroupLastMessagePreview({
   required GroupModel group,
@@ -19,6 +20,30 @@ String buildGroupLastMessagePreview({
 
   final isMe =
       currentUserId != null && senderId != null && senderId == currentUserId;
+
+  if (type == GroupMessageModel.systemEventType) {
+    var eventText = group.lastMessage ?? '';
+    if (isMe &&
+        senderNameFromData != null &&
+        senderNameFromData.trim().isNotEmpty &&
+        eventText.startsWith(senderNameFromData)) {
+      eventText = eventText.replaceFirst(senderNameFromData, 'You');
+    }
+    final targetId = group.lastMessageTargetId;
+    final targetNameFromData = group.lastMessageTargetName;
+
+    final isTargetMe =
+        currentUserId != null && targetId != null && targetId == currentUserId;
+
+    if (isTargetMe &&
+        targetNameFromData != null &&
+        targetNameFromData.trim().isNotEmpty &&
+        eventText.contains(targetNameFromData)) {
+      eventText = eventText.replaceFirst(targetNameFromData, 'you');
+    }
+
+    return eventText;
+  }
 
   final senderName =
       isMe
