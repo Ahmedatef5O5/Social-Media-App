@@ -31,6 +31,10 @@ class MentionAwareTextField extends StatefulWidget {
   final TextCapitalization textCapitalization;
   final bool autofocus;
 
+  final Widget? trailingIcon;
+
+  final VoidCallback? onSlashAiTrigger;
+
   const MentionAwareTextField({
     super.key,
     required this.controller,
@@ -56,6 +60,8 @@ class MentionAwareTextField extends StatefulWidget {
     this.fillColor,
     this.textCapitalization = TextCapitalization.sentences,
     this.autofocus = false,
+    this.trailingIcon,
+    this.onSlashAiTrigger,
   });
 
   @override
@@ -99,6 +105,13 @@ class _MentionAwareTextFieldState extends State<MentionAwareTextField> {
 
   void _onTextChanged() {
     final text = widget.controller.text;
+
+    if (widget.onSlashAiTrigger != null && text.trim().toLowerCase() == '/ai') {
+      widget.controller.clear();
+      widget.onSlashAiTrigger!();
+      return;
+    }
+
     final selection = widget.controller.selection;
 
     if (!selection.isValid || !selection.isCollapsed) {
@@ -273,6 +286,7 @@ class _MentionAwareTextFieldState extends State<MentionAwareTextField> {
                       fontWeight: FontWeight.w400,
                       fontSize: 15,
                     ),
+                suffixIcon: widget.trailingIcon,
                 filled: widget.filled,
                 fillColor:
                     widget.fillColor ??

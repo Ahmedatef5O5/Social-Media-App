@@ -10,6 +10,9 @@ import '../../../core/mentions/widgets/mention_aware_text_field.dart';
 import '../../../core/mentions/widgets/mention_text_editing_controller.dart';
 import '../../../core/themes/app_colors.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
+import '../../ai_assistant/entities/ai_action_type.dart';
+import '../../ai_assistant/entities/ai_request_context.dart';
+import '../../ai_assistant/widgets/ai_action_icon.dart';
 import '../../settings/repository/settings_repository.dart';
 import '../../social_graph/models/content_privacy.dart';
 import '../cubit/stories_cubit/stories_cubit.dart';
@@ -337,6 +340,14 @@ class _AddStoryPreviewViewState extends State<AddStoryPreviewView> {
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(24),
                   borderSide: BorderSide.none,
+                ),
+                suffixIcon: AiActionIcon(
+                  controller: _captionController,
+                  surface: AiSurfaceType.story,
+                  generationAction: AiActionType.autocompleteCaption,
+                  hasMediaAttached: true, // media file already picked here
+                  imageBytesProvider:
+                      widget.isVideo ? null : () => widget.file.readAsBytes(),
                 ),
               ),
             ),

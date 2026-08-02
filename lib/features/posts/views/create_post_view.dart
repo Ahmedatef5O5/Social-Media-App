@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -209,10 +210,24 @@ class _CreatePostViewState extends State<CreatePostView> {
                             onPrivacyTap: _pickPrivacy,
                           ),
                           Gap(12),
-                          CreatePostInputField(
-                            textEditingController: _textEditingController,
-                            hasText: _hasText,
-                            focusNode: _focusNode,
+                          BlocBuilder<PostsCubit, PostsState>(
+                            builder: (context, state) {
+                              return CreatePostInputField(
+                                textEditingController: _textEditingController,
+                                hasText: _hasText,
+                                focusNode: _focusNode,
+                                hasMediaAttached:
+                                    postsCubit.selectedImage != null ||
+                                    postsCubit.selectedVideo != null,
+                                imageBytesProvider:
+                                    postsCubit.selectedImage == null
+                                        ? null
+                                        : () =>
+                                            File(
+                                              postsCubit.selectedImage!.path,
+                                            ).readAsBytes(),
+                              );
+                            },
                           ),
                           Gap(8),
                           BlocBuilder<PostsCubit, PostsState>(

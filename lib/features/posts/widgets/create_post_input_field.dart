@@ -1,16 +1,26 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:social_media_app/core/mentions/mentions.dart';
+import '../../ai_assistant/entities/ai_action_type.dart';
+import '../../ai_assistant/entities/ai_request_context.dart';
+import '../../ai_assistant/widgets/ai_action_icon.dart';
 
 class CreatePostInputField extends StatelessWidget {
   final MentionTextEditingController _textEditingController;
   final bool _hasText;
   final FocusNode focusNode;
 
+  final bool hasMediaAttached;
+
+  final Future<Uint8List?> Function()? imageBytesProvider;
+
   const CreatePostInputField({
     super.key,
     required MentionTextEditingController textEditingController,
     required bool hasText,
     required this.focusNode,
+    this.hasMediaAttached = false,
+    this.imageBytesProvider,
   }) : _textEditingController = textEditingController,
        _hasText = hasText;
 
@@ -43,6 +53,13 @@ class CreatePostInputField extends StatelessWidget {
       border: InputBorder.none,
       focusedBorder: InputBorder.none,
       contentPadding: EdgeInsets.zero,
+      trailingIcon: AiActionIcon(
+        controller: _textEditingController,
+        surface: AiSurfaceType.post,
+        generationAction: AiActionType.autocompleteCaption,
+        hasMediaAttached: hasMediaAttached,
+        imageBytesProvider: imageBytesProvider,
+      ),
     );
   }
 }

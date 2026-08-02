@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:social_media_app/core/mentions/mentions.dart';
 import '../../../core/themes/app_colors.dart';
+import '../../ai_assistant/entities/ai_action_type.dart';
+import '../../ai_assistant/entities/ai_request_context.dart';
+import '../../ai_assistant/widgets/ai_action_icon.dart';
 
 class StoryTextEditor extends StatelessWidget {
   final MentionTextEditingController controller;
@@ -36,6 +39,12 @@ class StoryTextEditor extends StatelessWidget {
             focusedBorder: InputBorder.none,
             contentPadding: EdgeInsets.zero,
             counterText: hasText ? null : '',
+            trailingIcon: AiActionIcon(
+              controller: controller,
+              surface: AiSurfaceType.story,
+              generationAction: AiActionType.autocompleteCaption,
+              hasMediaAttached: true,
+            ),
           ),
         ),
       ),
