@@ -6,6 +6,7 @@ import 'for_you_tab_view.dart';
 import 'friends_tab_view.dart';
 import 'global_search_input_field.dart';
 import 'reels_tab_view.dart';
+import 'groups_tab_view.dart';
 
 class SearchViewBodyWidget extends StatefulWidget {
   const SearchViewBodyWidget({super.key});
@@ -19,6 +20,7 @@ class _SearchViewBodyWidgetState extends State<SearchViewBodyWidget>
   static const List<String> _tabLabels = [
     'For You',
     'Accounts',
+    'Groups',
     'Reels',
     'Friends',
   ];
@@ -41,7 +43,7 @@ class _SearchViewBodyWidgetState extends State<SearchViewBodyWidget>
 
   void _onQueryChanged() {
     _debounce?.cancel();
-    _debounce = Timer(const Duration(milliseconds: 350), () {
+    _debounce = Timer(const Duration(milliseconds: 500), () {
       if (!mounted) return;
       _query.value = _searchController.text.trim();
     });
@@ -49,7 +51,6 @@ class _SearchViewBodyWidgetState extends State<SearchViewBodyWidget>
 
   void _clearQuery() {
     _debounce?.cancel();
-
     _searchController.clear();
     _query.value = '';
     _searchFocusNode.requestFocus();
@@ -186,8 +187,9 @@ class _SearchViewBodyWidgetState extends State<SearchViewBodyWidget>
               children: [
                 ForYouTabView(searchQuery: _query),
                 AccountsTabView(searchQuery: _query),
+                GroupsTabView(searchQuery: _query),
                 ReelsTabView(searchQuery: _query),
-                const FriendsTabView(),
+                FriendsTabView(searchQuery: _query),
               ],
             ),
           ),

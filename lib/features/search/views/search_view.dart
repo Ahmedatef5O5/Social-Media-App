@@ -5,6 +5,9 @@ import '../../discover/cubit/discover_people_cubit.dart';
 import '../../discover/services/discover_people_services.dart';
 import '../../home/cubits/home_cubit/home_cubit.dart';
 import '../cubit/search_reels_cubit/search_reels_cubit.dart';
+import '../cubit/search_posts_cubit/search_posts_cubit.dart';
+import '../cubit/search_friends_cubit/search_friends_cubit.dart';
+import '../cubit/search_groups_cubit/search_groups_cubit.dart';
 import '../../social_graph/cubit/friend_lists_cubit/friends_list_cubit.dart';
 import '../../social_graph/services/follow_services.dart';
 import '../../social_graph/services/friendship_services.dart';
@@ -34,6 +37,11 @@ class SearchView extends StatelessWidget {
               )..loadFriends(),
         ),
         BlocProvider(create: (context) => SearchReelsCubit()..getReels()),
+        BlocProvider(create: (context) => SearchPostsCubit()),
+        BlocProvider(
+          create: (context) => SearchFriendsCubit(SupabaseProvider.id),
+        ),
+        BlocProvider(create: (context) => SearchGroupsCubit()),
       ],
       child: const SearchViewBodyWidget(),
     );

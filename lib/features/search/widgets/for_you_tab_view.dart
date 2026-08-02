@@ -11,8 +11,8 @@ import '../../posts/model/post_model.dart';
 import '../../posts/widgets/post_item_widget.dart';
 import '../../reels/model/reel_model.dart';
 import '../cubit/search_reels_cubit/search_reels_cubit.dart';
+import '../cubit/search_posts_cubit/search_posts_cubit.dart';
 import '../model/injection_plan_entry.dart';
-import '../utils/search_matcher.dart';
 import '../utils/search_view_metrics.dart';
 import 'for_you_feed_item.dart';
 import 'for_you_reels_grid_section.dart';
@@ -38,7 +38,18 @@ class _ForYouTabViewState extends State<ForYouTabView>
   @override
   void initState() {
     super.initState();
+    widget.searchQuery.addListener(_onQueryChanged);
     WidgetsBinding.instance.addPostFrameCallback((_) => _maybeTopUpReels());
+  }
+
+  void _onQueryChanged() {
+    context.read<SearchPostsCubit>().search(widget.searchQuery.value);
+  }
+
+  @override
+  void dispose() {
+    widget.searchQuery.removeListener(_onQueryChanged);
+    super.dispose();
   }
 
   void _maybeTopUpReels() {
@@ -101,6 +112,22 @@ class _ForYouTabViewState extends State<ForYouTabView>
     return ValueListenableBuilder<String>(
       valueListenable: widget.searchQuery,
       builder: (context, query, _) {
+        if (query.isNotEmpty) {
+          return NotificationListener<ScrollNotification>(
+            onNotification: (ScrollNotification scrollInfo) {
+              if (scrollInfo.metrics.pixels >=
+                  scrollInfo.metrics.maxScrollExtent - 200) {
+                context.read<SearchPostsCubit>().loadMore();
+              }
+              return false;
+            },
+            child: BlocBuilder<SearchPostsCubit, SearchPostsState>(
+              builder:
+                  (context, searchState) =>
+                      _buildSearchResults(context, theme, searchState, query),
+            ),
+          );
+        }
         return BlocBuilder<PostsCubit, PostsState>(
           buildWhen:
               (p, c) =>
@@ -122,7 +149,6 @@ class _ForYouTabViewState extends State<ForYouTabView>
                           theme,
                           postsState,
                           reelsState,
-                          query,
                         ),
                       ),
             );
@@ -132,15 +158,86 @@ class _ForYouTabViewState extends State<ForYouTabView>
     );
   }
 
+  Widget _buildSearchResults(
+    BuildContext context,
+    ThemeData theme,
+    SearchPostsState state,
+    String query,
+  ) {
+    if (state is SearchPostsError) {
+      return _buildErrorState(
+        context,
+        theme,
+        state.message,
+        onRetry: () => context.read<SearchPostsCubit>().search(query),
+      );
+    }
+    if (state is SearchPostsInitial || state is SearchPostsLoading) {
+      return Center(
+        child: SizedBox(
+          height: MediaQuery.sizeOf(context).height * 0.4,
+          child: const CustomLoadingIndicator(radius: 11),
+        ),
+      );
+    }
+
+    final posts = (state as SearchPostsLoaded).posts;
+    if (posts.isEmpty) return _buildEmptyState(theme, query);
+
+    final postsCubit = context.read<PostsCubit>();
+
+    return CustomScrollView(
+      slivers: [
+        const SliverToBoxAdapter(
+          child: SizedBox(height: SearchViewMetrics.topGap),
+        ),
+        SliverList.separated(
+          itemCount: posts.length,
+          itemBuilder:
+              (context, i) => Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: SearchViewMetrics.horizontalPadding,
+                ),
+                child: PostItemWidget(
+                  key: ValueKey(posts[i].id),
+                  currPost: posts[i],
+                  postsCubit: postsCubit,
+                ),
+              ),
+          separatorBuilder:
+              (context, i) => const Gap(SearchViewMetrics.itemGap),
+        ),
+        SliverToBoxAdapter(
+          child: SizedBox(
+            height: SearchViewMetrics.bottomGap,
+            child:
+                !state.hasReachedMax
+                    ? const Center(
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(vertical: 4),
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                    )
+                    : null,
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildBody(
     BuildContext context,
     ThemeData theme,
     PostsState postsState,
     SearchReelsState reelsState,
-    String query,
   ) {
     if (postsState is PostsError) {
-      return _buildErrorState(context, theme, postsState.message);
+      return _buildErrorState(
+        context,
+        theme,
+        postsState.message,
+        onRetry: () => context.read<PostsCubit>().fetchPosts(isRefresh: true),
+      );
     }
     if (postsState is! PostsLoaded) {
       return Center(
@@ -153,45 +250,10 @@ class _ForYouTabViewState extends State<ForYouTabView>
 
     final posts = postsState.posts;
     if (posts.isEmpty) {
-      return _buildEmptyState(theme, query);
+      return _buildEmptyState(theme, '');
     }
 
     final postsCubit = context.read<PostsCubit>();
-
-    if (query.isNotEmpty) {
-      final matches =
-          posts.where((p) => matchesSearchQuery(query, [p.text])).toList();
-      if (matches.isEmpty) return _buildEmptyState(theme, query);
-
-      return CustomScrollView(
-        slivers: [
-          const SliverToBoxAdapter(
-            child: SizedBox(height: SearchViewMetrics.topGap),
-          ),
-          SliverList.separated(
-            itemCount: matches.length,
-            itemBuilder:
-                (context, i) => Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: SearchViewMetrics.horizontalPadding,
-                  ),
-
-                  child: PostItemWidget(
-                    key: ValueKey(matches[i].id),
-                    currPost: matches[i],
-                    postsCubit: postsCubit,
-                  ),
-                ),
-            separatorBuilder: (context, i) {
-              return const Gap(SearchViewMetrics.itemGap);
-            },
-          ),
-          const SliverToBoxAdapter(
-            child: SizedBox(height: SearchViewMetrics.bottomGap),
-          ),
-        ],
-      );
-    }
 
     if (_cachedPostsTimestamp != postsState.timeStamp) {
       _cachedPostsTimestamp = postsState.timeStamp;
@@ -218,7 +280,6 @@ class _ForYouTabViewState extends State<ForYouTabView>
           const SliverToBoxAdapter(
             child: SizedBox(height: SearchViewMetrics.topGap),
           ),
-
           SliverList.separated(
             itemCount: items.length,
             itemBuilder:
@@ -247,7 +308,6 @@ class _ForYouTabViewState extends State<ForYouTabView>
           padding: const EdgeInsets.symmetric(
             horizontal: SearchViewMetrics.horizontalPadding,
           ),
-
           child: PostItemWidget(
             key: ValueKey(item.post!.id),
             currPost: item.post!,
@@ -259,7 +319,6 @@ class _ForYouTabViewState extends State<ForYouTabView>
           padding: const EdgeInsets.symmetric(
             horizontal: SearchViewMetrics.horizontalPadding,
           ),
-
           child: ForYouReelsGridSection(
             reelsPool: item.reelsPool!,
             startIndex: item.reelsStartIndex!,
@@ -300,8 +359,9 @@ class _ForYouTabViewState extends State<ForYouTabView>
   Widget _buildErrorState(
     BuildContext context,
     ThemeData theme,
-    String message,
-  ) {
+    String message, {
+    required VoidCallback onRetry,
+  }) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 32),
@@ -320,11 +380,7 @@ class _ForYouTabViewState extends State<ForYouTabView>
               style: theme.textTheme.bodyMedium,
             ),
             const Gap(14),
-            TextButton(
-              onPressed:
-                  () => context.read<PostsCubit>().fetchPosts(isRefresh: true),
-              child: const Text('Retry'),
-            ),
+            TextButton(onPressed: onRetry, child: const Text('Retry')),
           ],
         ),
       ),

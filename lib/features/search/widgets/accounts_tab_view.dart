@@ -8,7 +8,6 @@ import '../../../../core/widgets/empty_findings_animation_widget.dart';
 import '../../discover/cubit/discover_people_cubit.dart';
 import '../../discover/widgets/discover_person_card_widget.dart';
 import '../../social_graph/models/discover_person_model.dart';
-import '../utils/search_matcher.dart';
 import '../utils/accounts_skeleton_list.dart';
 import '../utils/search_view_metrics.dart';
 
@@ -28,36 +27,23 @@ class _AccountsTabViewState extends State<AccountsTabView>
   @override
   void initState() {
     super.initState();
-    widget.searchQuery.addListener(_maybeBroadenSearchPool);
+    widget.searchQuery.addListener(_onQueryChanged);
   }
 
-  void _maybeBroadenSearchPool() {
+  void _onQueryChanged() {
     final query = widget.searchQuery.value;
-    if (query.isEmpty) return;
-    final state = context.read<DiscoverPeopleCubit>().state;
-    if (state is DiscoverPeopleSuccess && !state.hasReachedMax) {
-      final matches =
-          state.users
-              .where(
-                (u) =>
-                    matchesSearchQuery(query, [u.user.name, u.user.userName]),
-              )
-              .length;
-      if (matches < 5) {
-        context.read<DiscoverPeopleCubit>().getDiscoverPeople();
-      }
-    }
+    context.read<DiscoverPeopleCubit>().searchPeople(query);
   }
 
   @override
   void dispose() {
-    widget.searchQuery.removeListener(_maybeBroadenSearchPool);
+    widget.searchQuery.removeListener(_onQueryChanged);
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    super.build(context); // required by AutomaticKeepAliveClientMixin
+    super.build(context);
     final theme = Theme.of(context);
 
     return ValueListenableBuilder<String>(
@@ -71,27 +57,15 @@ class _AccountsTabViewState extends State<AccountsTabView>
             }
 
             if (state is DiscoverPeopleFailure) {
-              return _buildErrorState(context, theme, state.message);
+              return _buildErrorState(context, theme, state.message, query);
             }
 
-            final allUsers =
+            final users =
                 state is DiscoverPeopleSuccess
                     ? state.users
                     : const <DiscoverPersonModel>[];
             final hasReachedMax =
                 state is DiscoverPeopleSuccess ? state.hasReachedMax : true;
-
-            final users =
-                query.isEmpty
-                    ? allUsers
-                    : allUsers
-                        .where(
-                          (u) => matchesSearchQuery(query, [
-                            u.user.name,
-                            u.user.userName,
-                          ]),
-                        )
-                        .toList();
 
             if (users.isEmpty) {
               return _buildEmptyState(theme, query);
@@ -101,7 +75,11 @@ class _AccountsTabViewState extends State<AccountsTabView>
               onNotification: (ScrollNotification scrollInfo) {
                 if (scrollInfo.metrics.pixels >=
                     scrollInfo.metrics.maxScrollExtent - 200) {
-                  context.read<DiscoverPeopleCubit>().getDiscoverPeople();
+                  if (query.isEmpty) {
+                    context.read<DiscoverPeopleCubit>().getDiscoverPeople();
+                  } else {
+                    context.read<DiscoverPeopleCubit>().loadMoreSearchResults();
+                  }
                 }
                 return false;
               },
@@ -118,9 +96,7 @@ class _AccountsTabViewState extends State<AccountsTabView>
                     SearchViewMetrics.bottomGap,
                   ),
                   physics: const ClampingScrollPhysics(),
-
-                  itemCount:
-                      users.length + (query.isEmpty && !hasReachedMax ? 1 : 0),
+                  itemCount: users.length + (!hasReachedMax ? 1 : 0),
                   separatorBuilder:
                       (_, __) => const Gap(SearchViewMetrics.itemGap),
                   itemBuilder: (context, i) {
@@ -178,6 +154,7 @@ class _AccountsTabViewState extends State<AccountsTabView>
     BuildContext context,
     ThemeData theme,
     String message,
+    String query,
   ) {
     return Center(
       child: Padding(
@@ -199,7 +176,14 @@ class _AccountsTabViewState extends State<AccountsTabView>
             const Gap(14),
             TextButton(
               onPressed:
-                  () => context.read<DiscoverPeopleCubit>().getDiscoverPeople(),
+                  () =>
+                      query.isEmpty
+                          ? context
+                              .read<DiscoverPeopleCubit>()
+                              .getDiscoverPeople()
+                          : context.read<DiscoverPeopleCubit>().searchPeople(
+                            query,
+                          ),
               child: const Text('Retry'),
             ),
           ],
