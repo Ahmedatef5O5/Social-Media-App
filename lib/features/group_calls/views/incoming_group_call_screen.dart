@@ -3,6 +3,7 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/supabase/supabase_provider.dart';
+import '../../../core/utilities/supabase_constants.dart';
 import '../../../core/widgets/calls/calls.dart';
 import '../models/group_call_model.dart';
 import '../services/group_call_signaling_service.dart';
@@ -24,8 +25,8 @@ class _IncomingGroupCallScreenState extends State<IncomingGroupCallScreen>
 
   String _currentUserName = 'Loading...';
   StreamSubscription? _statusSubscription;
+  StreamSubscription? _membershipSubscription;
   late final GroupCallSignalingService _signaling;
-
   late final AnimationController _titleController;
   late final Animation<double> _titleFade;
   late final Animation<Offset> _titleSlide;
@@ -38,6 +39,7 @@ class _IncomingGroupCallScreenState extends State<IncomingGroupCallScreen>
     _playRingtone();
     _initAnimations();
     _listenToCallStatus();
+    _listenToMembership();
   }
 
   void _initAnimations() {
@@ -96,10 +98,34 @@ class _IncomingGroupCallScreenState extends State<IncomingGroupCallScreen>
 
   void _cleanup() => _audioPlayer.stop();
 
+  // if I get removed/leave while this dialog is on screen, dismiss it.
+  void _listenToMembership() {
+    final myId = SupabaseProvider.id;
+    _membershipSubscription = SupabaseProvider.client
+        .from(SupabaseConstants.groupMembers)
+        .stream(primaryKey: ['id'])
+        .eq(GroupMemberColumns.groupId, widget.call.groupId)
+        .listen((data) {
+          if (!mounted) return;
+          final myRow = data.firstWhere(
+            (row) => row[GroupMemberColumns.userId] == myId,
+            orElse: () => <String, dynamic>{},
+          );
+          final isMember =
+              myRow.isNotEmpty &&
+              myRow[GroupMemberColumns.membershipStatus] == 'active';
+          if (!isMember) {
+            _cleanup();
+            Navigator.pop(context);
+          }
+        });
+  }
+
   @override
   void dispose() {
     _cleanup();
     _statusSubscription?.cancel();
+    _membershipSubscription?.cancel();
     _audioPlayer.dispose();
     _titleController.dispose();
     super.dispose();

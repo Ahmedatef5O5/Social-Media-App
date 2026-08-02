@@ -249,7 +249,7 @@ class GroupCallMessageContent extends StatelessWidget {
       height: size,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: primary.withValues(alpha: 0.15),
+        color: isMe ? Colors.white : primary.withValues(alpha: 0.15),
         border: Border.all(color: primary.withValues(alpha: 0.35), width: 1.5),
       ),
       child: ClipOval(

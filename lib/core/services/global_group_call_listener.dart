@@ -64,15 +64,24 @@ class _GlobalGroupCallListenerState extends State<GlobalGroupCallListener> {
 
     _incomingCallSub = _signaling.incomingGroupCallsStream(userId).listen((
       calls,
-    ) {
+    ) async {
       if (!mounted) return;
       if (calls.isEmpty) return;
 
       final activeCall = calls.first;
 
       if (activeCall.initiatorId == userId) return;
-
       if (_currentlyShowingCallId == activeCall.callId) return;
+
+      final isMember = await _signaling.isActiveGroupMember(
+        groupId: activeCall.groupId,
+        userId: userId,
+      );
+      if (!mounted) return;
+      if (!isMember) return;
+      if (_currentlyShowingCallId == activeCall.callId) {
+        return;
+      }
 
       _currentlyShowingCallId = activeCall.callId;
 

@@ -23,6 +23,7 @@ class GroupNotificationDispatcher {
     await _dispatchToMembers(
       groupId: groupId,
       excludeUserId: senderId,
+      respectMute: true,
       payloadBuilder:
           (memberId, token) => _fcm.sendGroupNotification(
             receiverFcmToken: token,
@@ -49,6 +50,7 @@ class GroupNotificationDispatcher {
     await _dispatchToMembers(
       groupId: groupId,
       excludeUserId: callerId,
+      respectMute: false,
       payloadBuilder:
           (memberId, token) => _fcm.sendCallNotification(
             receiverFcmToken: token,
@@ -74,6 +76,7 @@ class GroupNotificationDispatcher {
     await _dispatchToMembers(
       groupId: groupId,
       excludeUserId: callerId,
+      respectMute: false,
       payloadBuilder:
           (memberId, token) => _fcm.sendGroupCallNotification(
             receiverFcmToken: token,
@@ -94,21 +97,26 @@ class GroupNotificationDispatcher {
     required String excludeUserId,
     required Future<void> Function(String memberId, String token)
     payloadBuilder,
+    bool respectMute = true,
   }) async {
     try {
       final rows = await SupabaseProvider.client
           .from(SupabaseConstants.groupMembers)
           .select(
             '${GroupMemberColumns.userId},'
+            '${GroupMemberColumns.isMuted},'
             'users!${SupabaseConstants.groupMembers}'
             '_${GroupMemberColumns.userId}_fkey'
             '(${UserColumns.fcmToken})',
           )
           .eq(GroupMemberColumns.groupId, groupId)
+          .eq(GroupMemberColumns.membershipStatus, 'active')
           .neq(GroupMemberColumns.userId, excludeUserId);
 
       final futures = <Future<void>>[];
       for (final row in rows as List) {
+        final isMuted = row[GroupMemberColumns.isMuted] as bool? ?? false;
+        if (respectMute && isMuted) continue;
         final userInfo = row['users'] as Map<String, dynamic>?;
         final token = userInfo?[UserColumns.fcmToken] as String?;
         final memberId = row[GroupMemberColumns.userId] as String?;

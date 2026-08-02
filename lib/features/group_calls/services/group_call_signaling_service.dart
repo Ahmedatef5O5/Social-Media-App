@@ -302,4 +302,27 @@ class GroupCallSignalingService {
     if (result == null) return null;
     return GroupCallModel.fromMap(result);
   }
+
+  Future<bool> isActiveGroupMember({
+    required String groupId,
+    required String userId,
+  }) async {
+    try {
+      final row =
+          await _supabase
+              .from(SupabaseConstants.groupMembers)
+              .select(GroupMemberColumns.membershipStatus)
+              .eq(GroupMemberColumns.groupId, groupId)
+              .eq(GroupMemberColumns.userId, userId)
+              .maybeSingle();
+
+      return row != null &&
+          row[GroupMemberColumns.membershipStatus] == 'active';
+    } catch (e) {
+      // Fail-open on network errors: a missed real call is worse than an
+      // occasional ghost dialog during a transient connectivity blip.
+      debugPrint('isActiveGroupMember check failed: $e');
+      return true;
+    }
+  }
 }
