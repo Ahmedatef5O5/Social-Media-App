@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter/foundation.dart';
 import 'package:social_media_app/features/group_chats/models/group_member_model.dart';
 import 'package:social_media_app/features/group_chats/services/group_chat_services.dart';
+import '../group_list_cubit/group_list_cubit.dart';
 part 'group_members_state.dart';
 
 class GroupMembersCubit extends Cubit<GroupMembersState> {
@@ -101,6 +103,10 @@ class GroupMembersCubit extends Cubit<GroupMembersState> {
       throw Exception('Only group admins can remove members');
     }
 
+    if (member.userId == currentUserId) {
+      throw Exception('Use "Leave Group" to remove yourself');
+    }
+
     final current = state;
     if (current is! GroupMembersLoaded) return;
 
@@ -114,21 +120,41 @@ class GroupMembersCubit extends Cubit<GroupMembersState> {
     );
 
     try {
-      await _services.removeMember(groupId, member.userId);
+      await _services.removeMember(
+        groupId,
+        member.userId,
+        actorId: currentUserId,
+      );
     } catch (e) {
       emit(current);
       rethrow;
     }
   }
 
-  Future<void> leaveGroup(String currentUserId) async {
+  Future<void> leaveGroup({
+    required String currentUserId,
+    required GroupListCubit groupListCubit,
+  }) async {
     await _services.leaveGroup(groupId);
+    groupListCubit.markGroupAsLeft(groupId);
   }
 
-  Future<void> deleteGroup(String currentUserId) async {
-    if (!isCurrentUserAdmin(currentUserId)) {
-      throw Exception('Only group admins can delete the group');
+  Future<void> deleteGroup({
+    required String currentUserId,
+    required GroupListCubit groupListCubit,
+    required bool isCurrentlyMember,
+  }) async {
+    await groupListCubit.removeGroupLocally(groupId);
+
+    if (isCurrentlyMember) {
+      unawaited(
+        _services.leaveGroup(groupId).catchError((e) {
+          debugPrint(
+            '[GroupMembersCubit] deleteGroup: remote leave failed: $e. '
+            'Group stays removed locally (tombstoned) regardless.',
+          );
+        }),
+      );
     }
-    await _services.deleteGroup(groupId);
   }
 }

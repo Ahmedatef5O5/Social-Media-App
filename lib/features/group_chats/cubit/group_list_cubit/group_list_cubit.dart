@@ -24,7 +24,7 @@ class GroupListCubit extends Cubit<GroupListState> {
   String? _activeGroupId;
 
   final Map<String, int> _dbUnreadCounts = {};
-
+  final Set<String> _locallyDeletedGroupIds = {};
   List<GroupModel> get cachedGroupsChats => _cached;
 
   String get _currentUserId => SupabaseProvider.id;
@@ -65,19 +65,16 @@ class GroupListCubit extends Cubit<GroupListState> {
           if (state is! GroupListLoaded) return;
 
           final Map<String, Map<String, dynamic>> latestPerGroup = {};
-          // Count unread per group (not from me, not in read_by)
           final Map<String, int> unreadPerGroup = {};
 
           for (final row in data) {
             final gId = row[GroupMemberColumns.groupId] as String?;
             if (gId == null) continue;
 
-            // Track latest message per group (first occurrence = most recent)
             if (!latestPerGroup.containsKey(gId)) {
               latestPerGroup[gId] = row;
             }
 
-            // Count unread: not my message AND my ID not in read_by
             final senderId = row['sender_id'] as String?;
             if (senderId == _currentUserId) continue;
             if (_isReadByMe(row['read_by'])) continue;
@@ -87,6 +84,19 @@ class GroupListCubit extends Cubit<GroupListState> {
           for (final entry in latestPerGroup.entries) {
             final groupId = entry.key;
             final row = entry.value;
+
+            final cachedGroup = _cached.firstWhere(
+              (g) => g.id == groupId,
+              orElse:
+                  () => GroupModel(
+                    id: groupId,
+                    name: '',
+                    createdBy: '',
+                    createdAt: DateTime.now(),
+                    isMember: true,
+                  ),
+            );
+            if (!cachedGroup.isMember) continue;
 
             // Use DB-computed unread count, but override to 0 if group is active
             final isActiveGroup = _activeGroupId == groupId;
@@ -117,6 +127,8 @@ class GroupListCubit extends Cubit<GroupListState> {
     final messageType = row['message_type'] as String? ?? 'text';
     final senderId = row['sender_id'] as String?;
     final senderName = row['sender_name'] as String? ?? '';
+    final targetId = row['target_id'] as String?;
+    final targetName = row['target_name'] as String?;
     final text = row['message_text'] as String? ?? '';
 
     final String rawMessage =
@@ -129,6 +141,8 @@ class GroupListCubit extends Cubit<GroupListState> {
       lastMessageAt: createdAt,
       lastMessageSenderId: senderId,
       lastMessageSenderName: senderName,
+      lastMessageTargetId: targetId,
+      lastMessageTargetName: targetName,
       unreadCount: unreadCount,
     );
   }
@@ -178,6 +192,24 @@ class GroupListCubit extends Cubit<GroupListState> {
           },
         )
         .onPostgresChanges(
+          event: PostgresChangeEvent.update,
+          schema: 'public',
+          table: SupabaseConstants.groupMembers,
+          callback: (payload) {
+            final row = payload.newRecord;
+            final userId = row[GroupMemberColumns.userId] as String?;
+            final groupId = row[GroupMemberColumns.groupId] as String?;
+            final status = row[GroupMemberColumns.membershipStatus] as String?;
+            if (userId != _currentUserId || groupId == null) return;
+
+            if (status == 'left' || status == 'removed') {
+              markGroupAsLeft(groupId);
+            } else if (status == 'active') {
+              markGroupAsActive(groupId);
+            }
+          },
+        )
+        .onPostgresChanges(
           event: PostgresChangeEvent.delete,
           schema: 'public',
           table: SupabaseConstants.groupMembers,
@@ -186,7 +218,7 @@ class GroupListCubit extends Cubit<GroupListState> {
             final userId = row[GroupMemberColumns.userId] as String?;
             final groupId = row[GroupMemberColumns.groupId] as String?;
             if (userId == _currentUserId && groupId != null) {
-              _removeGroupFromState(groupId);
+              markGroupAsLeft(groupId);
             }
           },
         )
@@ -218,6 +250,71 @@ class GroupListCubit extends Cubit<GroupListState> {
   }
 
   // ─── State helpers ────────────────────────────────────────────────────────
+
+  void markGroupAsActive(String groupId) {
+    if (state is! GroupListLoaded) return;
+    final currentState = state as GroupListLoaded;
+    final idx = currentState.groups.indexWhere((g) => g.id == groupId);
+    if (idx == -1) return;
+    if (currentState.groups[idx].isMember) return;
+    final newList = List<GroupModel>.from(currentState.groups);
+    newList[idx] = newList[idx].copyWith(isMember: true);
+    _cached = newList;
+    emit(GroupListLoaded(newList));
+    _persistGroupsSnapshot(newList);
+  }
+
+  void markGroupAsLeft(String groupId) {
+    if (state is! GroupListLoaded) return;
+    final currentState = state as GroupListLoaded;
+    final idx = currentState.groups.indexWhere((g) => g.id == groupId);
+    if (idx == -1) return;
+    if (!currentState.groups[idx].isMember) return;
+    final newList = List<GroupModel>.from(currentState.groups);
+    newList[idx] = newList[idx].copyWith(isMember: false);
+    _cached = newList;
+    emit(GroupListLoaded(newList));
+    _persistGroupsSnapshot(newList);
+  }
+
+  void updateGroupMembership(String groupId, bool isMember) {
+    final currentState = state;
+    if (currentState is GroupListLoaded) {
+      final updatedGroups =
+          currentState.groups.map((g) {
+            if (g.id == groupId) {
+              return g.copyWith(isMember: isMember);
+            }
+            return g;
+          }).toList();
+      emit(GroupListLoaded(updatedGroups));
+    }
+  }
+
+  // Updated removeGroupLocally: records the tombstone before touching state.
+  Future<void> removeGroupLocally(String groupId) async {
+    _locallyDeletedGroupIds.add(groupId);
+
+    if (state is! GroupListLoaded) {
+      // Even if state isn't Loaded yet, still clear the cached snapshot so a
+      // late loadGroups() doesn't resurrect it from disk.
+      await LocalSnapshotStore.instance.clear(
+        'group_messages_snapshot_$groupId',
+      );
+      return;
+    }
+
+    final currentState = state as GroupListLoaded;
+    final newList = currentState.groups.where((g) => g.id != groupId).toList();
+    _cached = newList;
+
+    // Emit FIRST — the UI must reflect the removal before any I/O happens.
+    emit(GroupListLoaded(newList));
+
+    // Local snapshot cleanup can safely happen after the UI already updated.
+    await LocalSnapshotStore.instance.clear('group_messages_snapshot_$groupId');
+    _persistGroupsSnapshot(newList);
+  }
 
   void _removeGroupFromState(String groupId) {
     if (state is! GroupListLoaded) return;
@@ -252,6 +349,42 @@ class GroupListCubit extends Cubit<GroupListState> {
     required String newAvatarUrl,
   }) {
     _updateGroupAvatarInState(groupId: groupId, avatarUrl: newAvatarUrl);
+  }
+
+  void clearGroupAvatar(String groupId) {
+    if (state is! GroupListLoaded) return;
+    final currentState = state as GroupListLoaded;
+    final idx = currentState.groups.indexWhere((g) => g.id == groupId);
+    if (idx == -1) return;
+    final newList = List<GroupModel>.from(currentState.groups);
+    newList[idx] = newList[idx].copyWith(avatarUrl: null);
+    _cached = newList;
+    emit(GroupListLoaded(newList));
+    _persistGroupsSnapshot(newList);
+  }
+
+  void updateGroupTitle({required String groupId, String? newTitle}) {
+    if (state is! GroupListLoaded) return;
+    final currentState = state as GroupListLoaded;
+    final idx = currentState.groups.indexWhere((g) => g.id == groupId);
+    if (idx == -1) return;
+    final newList = List<GroupModel>.from(currentState.groups);
+    newList[idx] = newList[idx].copyWith(title: newTitle);
+    _cached = newList;
+    emit(GroupListLoaded(newList));
+    _persistGroupsSnapshot(newList);
+  }
+
+  void toggleGroupMute(String groupId, bool muted) {
+    if (state is! GroupListLoaded) return;
+    final currentState = state as GroupListLoaded;
+    final idx = currentState.groups.indexWhere((g) => g.id == groupId);
+    if (idx == -1) return;
+    final newList = List<GroupModel>.from(currentState.groups);
+    newList[idx] = newList[idx].copyWith(isMuted: muted);
+    _cached = newList;
+    emit(GroupListLoaded(newList));
+    _persistGroupsSnapshot(newList);
   }
 
   void _handleGroupCallChange(PostgresChangePayload payload) {
@@ -294,6 +427,8 @@ class GroupListCubit extends Cubit<GroupListState> {
     final idx = currentState.groups.indexWhere((g) => g.id == groupId);
     if (idx == -1) return;
 
+    if (!currentState.groups[idx].isMember) return;
+
     _updateGroupInState(
       groupId: groupId,
       lastMessage: preview,
@@ -310,6 +445,8 @@ class GroupListCubit extends Cubit<GroupListState> {
     required DateTime lastMessageAt,
     String? lastMessageSenderId,
     String? lastMessageSenderName,
+    String? lastMessageTargetId,
+    String? lastMessageTargetName,
     required int unreadCount,
   }) {
     if (state is! GroupListLoaded) return;
@@ -331,6 +468,10 @@ class GroupListCubit extends Cubit<GroupListState> {
           lastMessageSenderId ?? newList[idx].lastMessageSenderId,
       lastMessageSenderName:
           lastMessageSenderName ?? newList[idx].lastMessageSenderName,
+      lastMessageTargetId:
+          lastMessageType == 'system_event' ? lastMessageTargetId : null,
+      lastMessageTargetName:
+          lastMessageType == 'system_event' ? lastMessageTargetName : null,
       unreadCount: unreadCount,
     );
 
@@ -371,17 +512,26 @@ class GroupListCubit extends Cubit<GroupListState> {
 
   // ─── Public API ───────────────────────────────────────────────────────────
 
+  // Updated loadGroups(): filters out anything tombstoned locally so a stale
+  // server row can never re-add a group the user just deleted/left.
   Future<void> loadGroups({bool isRefresh = false}) async {
     if (!isRefresh) emit(GroupListLoading());
     try {
-      final fetchedGroups = await _services.getMyGroups();
+      final fetchedGroups =
+          await _services.getMyGroups()
+            ..removeWhere((g) => _locallyDeletedGroupIds.contains(g.id));
 
-      _cached =
+      final fetchedIds = fetchedGroups.map((g) => g.id).toSet();
+
+      final leftGroupsStillTracked = _cached.where(
+        (g) => !g.isMember && !fetchedIds.contains(g.id),
+      );
+
+      final mergedActive =
           fetchedGroups.map((newGroup) {
             final existingIndex = _cached.indexWhere(
               (g) => g.id == newGroup.id,
             );
-
             if (existingIndex != -1) {
               final existingGroup = _cached[existingIndex];
               final isNewMessageEmpty = newGroup.lastMessage?.isEmpty ?? true;
@@ -408,11 +558,13 @@ class GroupListCubit extends Cubit<GroupListState> {
             return newGroup;
           }).toList();
 
+      _cached = [...mergedActive, ...leftGroupsStillTracked];
       _cached.sort((a, b) {
         final aTime = a.lastMessageAt ?? DateTime.fromMillisecondsSinceEpoch(0);
         final bTime = b.lastMessageAt ?? DateTime.fromMillisecondsSinceEpoch(0);
         return bTime.compareTo(aTime);
       });
+
       emit(GroupListLoaded(_cached));
       _persistGroupsSnapshot(_cached);
     } catch (e) {
@@ -484,8 +636,6 @@ class GroupListCubit extends Cubit<GroupListState> {
     return group;
   }
 
-  /// Called by GroupDetailsCubit when a new message arrives while inside chat.
-  /// Never changes unread count — user is actively reading.
   void updateGroupLastMessage({
     required String groupId,
     required String message,
@@ -494,23 +644,35 @@ class GroupListCubit extends Cubit<GroupListState> {
     required DateTime createdAt,
     String? lastMessageSenderId,
     String? lastMessageSenderName,
+    String? lastMessageTargetId,
+    String? lastMessageTargetName,
   }) {
-    if (state is! GroupListLoaded) return;
-    final currentState = state as GroupListLoaded;
-    final idx = currentState.groups.indexWhere((g) => g.id == groupId);
-    if (idx == -1) return;
+    final currentState = state;
+    if (currentState is GroupListLoaded) {
+      final updatedGroups =
+          currentState.groups.map((g) {
+            if (g.id == groupId) {
+              return g.copyWith(
+                lastMessage: message,
+                lastMessageType: messageType,
+                lastMessageAt: createdAt,
+                lastMessageSenderId: lastMessageSenderId,
+                lastMessageSenderName: lastMessageSenderName,
+                lastMessageTargetId: lastMessageTargetId,
+                lastMessageTargetName: lastMessageTargetName,
+              );
+            }
+            return g;
+          }).toList();
 
-    final existingUnread = currentState.groups[idx].unreadCount;
+      updatedGroups.sort(
+        (a, b) => (b.lastMessageAt ?? b.createdAt).compareTo(
+          a.lastMessageAt ?? a.createdAt,
+        ),
+      );
 
-    _updateGroupInState(
-      groupId: groupId,
-      lastMessage: message,
-      lastMessageType: messageType,
-      lastMessageAt: createdAt,
-      lastMessageSenderId: lastMessageSenderId,
-      lastMessageSenderName: lastMessageSenderName,
-      unreadCount: existingUnread,
-    );
+      emit(GroupListLoaded(updatedGroups));
+    }
   }
 
   void resetGroupUnreadCount(String groupId) {
