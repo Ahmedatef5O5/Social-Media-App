@@ -36,6 +36,7 @@ dependencies:
   hive: ^2.2.3
   hive_flutter: ^1.1.0
   image_picker: ^1.2.1
+  image: ^4.5.4
   intl: 0.20.2
   linkify: ^5.0.0
   local_auth: ^2.3.0
