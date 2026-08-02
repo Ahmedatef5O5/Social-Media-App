@@ -112,19 +112,38 @@ class GroupTileItem extends StatelessWidget {
                 fontSize: 11,
               ),
             ),
-          if (group.unreadCount > 0) ...[
+
+          if (group.isMuted || group.unreadCount > 0) ...[
             const Gap(4),
-            Container(
-              padding: const EdgeInsets.all(5),
-              decoration: BoxDecoration(color: primary, shape: BoxShape.circle),
-              child: Text(
-                group.unreadCount > 99 ? '99+' : '${group.unreadCount}',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 10,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (group.isMuted) ...[
+                  Icon(
+                    Icons.notifications_off_rounded,
+                    size: 16,
+                    color: isDark ? Colors.white38 : Colors.black38,
+                  ),
+                  if (group.unreadCount > 0) const Gap(4),
+                ],
+
+                if (group.unreadCount > 0)
+                  Container(
+                    padding: const EdgeInsets.all(5),
+                    decoration: BoxDecoration(
+                      color: primary,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Text(
+                      group.unreadCount > 99 ? '99+' : '${group.unreadCount}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+              ],
             ),
           ],
         ],

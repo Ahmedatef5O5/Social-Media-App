@@ -110,6 +110,7 @@ class _GroupMessagesListState extends State<GroupMessagesList> {
         if (state is GroupDetailsLoaded) {
           final messages = state.messages;
           final typing = state.typingUserIds;
+          final isMember = state.isMember;
 
           if (messages.isEmpty && typing.isEmpty) {
             return _groupEmptyState(context);
@@ -132,6 +133,7 @@ class _GroupMessagesListState extends State<GroupMessagesList> {
                       messages: messages,
                       typing: typing,
                       itemScrollController: widget.scrollController,
+                      isMember: isMember,
                     ),
                 separatorBuilder: (_, __) => const Gap(4),
               ),

@@ -9,6 +9,7 @@ import '../models/groupe_message_model.dart';
 class GroupMessageBubble extends StatelessWidget {
   final GroupMessageModel message;
   final bool isMe;
+  final bool isMember;
   final Function(GroupMessageModel) onReply;
   final Function(GroupMessageModel)? onEdit;
   final ItemScrollController itemScrollController;
@@ -17,6 +18,7 @@ class GroupMessageBubble extends StatelessWidget {
     super.key,
     required this.message,
     required this.isMe,
+    required this.isMember,
     required this.onReply,
     this.onEdit,
     required this.itemScrollController,
@@ -33,12 +35,13 @@ class GroupMessageBubble extends StatelessWidget {
         final isSelectionMode = selectedIds.isNotEmpty;
 
         return SwipeToReplyWrapper(
-          enabled: !isCall && !isSelectionMode,
+          enabled: !isCall && !isSelectionMode && isMember,
           isMe: isMe,
           onReply: () => onReply(message),
           child: GroupMessageContent(
             message: message,
             isMe: isMe,
+            isMember: isMember,
             onReply: onReply,
             onEdit: onEdit,
             itemScrollController: itemScrollController,

@@ -19,6 +19,7 @@ class GroupMessageItemBuilder extends StatelessWidget {
   final List<GroupMessageModel> messages;
   final List<String> typing;
   final ItemScrollController itemScrollController;
+  final bool isMember;
 
   const GroupMessageItemBuilder({
     super.key,
@@ -26,6 +27,7 @@ class GroupMessageItemBuilder extends StatelessWidget {
     required this.messages,
     required this.typing,
     required this.itemScrollController,
+    required this.isMember,
   });
 
   @override
@@ -151,6 +153,7 @@ class GroupMessageItemBuilder extends StatelessWidget {
         GroupMessageBubble(
           message: msg,
           isMe: isMe,
+          isMember: isMember,
           onReply: (m) {
             final cubit = context.read<GroupDetailsCubit>();
             cubit.editingMessage.value = null;

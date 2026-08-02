@@ -21,6 +21,7 @@ import 'group_regular_message_content.dart';
 class GroupMessageContent extends StatefulWidget {
   final GroupMessageModel message;
   final bool isMe;
+  final bool isMember;
   final Function(GroupMessageModel) onReply;
   final Function(GroupMessageModel)? onEdit;
   final VoidCallback? onLongPress;
@@ -30,6 +31,7 @@ class GroupMessageContent extends StatefulWidget {
     super.key,
     required this.message,
     required this.isMe,
+    required this.isMember,
     required this.onReply,
     this.onEdit,
     this.onLongPress,
@@ -181,9 +183,14 @@ class _GroupMessageContentState extends State<GroupMessageContent> {
                 ).primaryColor.withValues(alpha: 0.16);
 
                 return GestureDetector(
-                  onTap: isSelectionMode ? () => _handleTap(cubit) : null,
+                  onTap:
+                      (isSelectionMode && widget.isMember)
+                          ? () => _handleTap(cubit)
+                          : null,
                   onLongPress:
-                      isCall ? null : () => _handleLongPress(context, cubit),
+                      (isCall || !widget.isMember)
+                          ? null
+                          : () => _handleLongPress(context, cubit),
                   child: Container(
                     decoration: BoxDecoration(
                       color:
