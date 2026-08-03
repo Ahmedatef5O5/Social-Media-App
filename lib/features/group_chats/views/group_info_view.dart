@@ -3,12 +3,20 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
+import '../../../core/cache/services/starred_message_store.dart';
+import '../../../core/chat_shared/models/starred_message_entry.dart';
+import '../../../core/chat_shared/views/starred_messages_view.dart';
+import '../../../core/chat_shared/cubits/shared_media_cubit/shared_media_cubit.dart';
+import '../../../core/chat_shared/widgets/shared_media_preview_section.dart';
+import '../../../core/chat_shared/services/shared_media_data_source.dart';
+import '../../../core/chat_shared/widgets/starred_messages_row.dart';
 import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/toast/app_toast.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
 import '../../group_calls/models/group_call_model.dart';
+import '../cubit/group_details_cubit/group_details_cubit.dart';
 import '../cubit/group_list_cubit/group_list_cubit.dart';
-import '../cubit/group_media_cubit/group_media_cubit.dart';
 import '../cubit/group_members_cubit/group_members_cubit.dart';
 import '../helpers/group_call_initiator.dart';
 import '../models/group_member_model.dart';
@@ -17,14 +25,21 @@ import '../services/group_chat_services.dart';
 import '../widgets/group_info_header_widget.dart';
 import '../widgets/group_info_members_list_widget.dart';
 import '../widgets/group_info_quick_actions_row.dart';
-import '../widgets/group_media_preview_section_widget.dart';
 import '../widgets/group_member_header_widget.dart';
 import 'add_group_members_view.dart';
 import 'group_settings_view.dart';
 
 class GroupInfoView extends StatefulWidget {
   final GroupModel group;
-  const GroupInfoView({super.key, required this.group});
+  final GroupDetailsCubit? detailsCubit;
+  final ItemScrollController? itemScrollController;
+
+  const GroupInfoView({
+    super.key,
+    required this.group,
+    this.detailsCubit,
+    this.itemScrollController,
+  });
 
   @override
   State<GroupInfoView> createState() => _GroupInfoViewState();
@@ -39,8 +54,10 @@ class _GroupInfoViewState extends State<GroupInfoView> {
   late final GroupChatServices _services;
   late final GroupMembersCubit _membersCubit;
   late final ScrollController _scrollController;
-  late final GroupMediaCubit _mediaCubit;
+  late final SharedMediaCubit _mediaCubit;
   String get _currentUserId => SupabaseProvider.id;
+
+  bool get _canShowStarredMessages => widget.detailsCubit != null;
 
   @override
   void initState() {
@@ -51,7 +68,9 @@ class _GroupInfoViewState extends State<GroupInfoView> {
     _scrollController = ScrollController()..addListener(_onScroll);
     _nameController.text = widget.group.name;
     _currentAvatarUrl = widget.group.avatarUrl;
-    _mediaCubit = GroupMediaCubit(_services, groupId: widget.group.id);
+    _mediaCubit = SharedMediaCubit(
+      GroupChatMediaDataSource(services: _services, groupId: widget.group.id),
+    );
     _isMuted = widget.group.isMuted;
     _loadMuteStatus();
   }
@@ -217,6 +236,48 @@ class _GroupInfoViewState extends State<GroupInfoView> {
     );
   }
 
+  Future<void> _openStarredMessages(BuildContext context) async {
+    final detailsCubit = widget.detailsCubit;
+    if (detailsCubit == null) return;
+
+    final starredIds = await StarredMessagesStore.instance.getStarredMessageIds(
+      _currentUserId,
+    );
+
+    if (!context.mounted) return;
+
+    final entries =
+        detailsCubit.cachedMessages
+            .where((m) => starredIds.contains(m.id))
+            .map((m) => m.toStarredEntry(currentUserId: _currentUserId))
+            .toList();
+
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder:
+            (_) => StarredMessagesView(
+              entries: entries,
+              onUnstar:
+                  (messageId) => StarredMessagesStore.instance.toggleStar(
+                    currentUserId: _currentUserId,
+                    messageId: messageId,
+                  ),
+              onTapEntry: (messageId) {
+                Navigator.of(context).pop();
+                Navigator.of(context).pop();
+                final controller = widget.itemScrollController;
+                if (controller != null) {
+                  detailsCubit.scrollToMessage(
+                    messageId: messageId,
+                    itemScrollController: controller,
+                  );
+                }
+              },
+            ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final primary = Theme.of(context).primaryColor;
@@ -293,6 +354,13 @@ class _GroupInfoViewState extends State<GroupInfoView> {
                             onToggleMute: _toggleMute,
                           ),
                         ),
+                        if (_canShowStarredMessages)
+                          SliverToBoxAdapter(
+                            child: StarredMessagesRow(
+                              primary: primary,
+                              onTap: () => _openStarredMessages(context),
+                            ),
+                          ),
                         GroupMembersHeaderWidget(
                           count: totalCount,
                           primary: primary,
@@ -343,9 +411,10 @@ class _GroupInfoViewState extends State<GroupInfoView> {
                               ),
                             ),
 
-                          GroupMediaPreviewSection(
-                            mediaCubit: _mediaCubit,
-                            groupId: liveGroup.id,
+                          SliverToBoxAdapter(
+                            child: SharedMediaPreviewSection(
+                              mediaCubit: _mediaCubit,
+                            ),
                           ),
                         ],
                       ],

@@ -1,16 +1,18 @@
-import 'package:social_media_app/core/widgets/cached_cloudinary_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
+import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import 'package:social_media_app/core/helpers/formatted_date.dart';
-import 'package:social_media_app/core/widgets/custom_loading_indicator.dart';
 import 'package:social_media_app/features/single_chats/models/chat_user_model.dart';
-import 'package:social_media_app/features/single_chats/widgets/full_screen_media_view.dart';
+import '../../../core/cache/services/starred_message_store.dart';
+import '../../../core/chat_shared/views/starred_messages_view.dart';
+import '../../../core/chat_shared/cubits/shared_media_cubit/shared_media_cubit.dart';
+import '../../../core/chat_shared/widgets/shared_media_preview_section.dart';
+import '../../../core/chat_shared/models/starred_message_entry.dart';
+import '../../../core/chat_shared/widgets/starred_messages_row.dart';
 import '../../../core/presence/cubit/presence_cubit/presence_cubit.dart';
 import '../../../core/presence/model/presence_info.dart';
-import '../../../core/router/app_routes.dart';
-import '../../../core/toast/app_toast.dart';
-import '../../../core/utilities/supabase_constants.dart';
+import '../../../core/chat_shared/services/shared_media_data_source.dart';
 import '../../../core/widgets/custom_user_profile_image_section.dart';
 import '../../single_calls/cubits/single_call_cubit/call_cubit.dart';
 import '../../single_calls/model/call_model.dart';
@@ -22,205 +24,266 @@ import '../services/chat_services.dart';
 class ReceiverProfileView extends StatefulWidget {
   final ChatUserModel receiverUser;
 
-  const ReceiverProfileView({super.key, required this.receiverUser});
+  final ItemScrollController? itemScrollController;
+
+  const ReceiverProfileView({
+    super.key,
+    required this.receiverUser,
+    this.itemScrollController,
+  });
 
   @override
   State<ReceiverProfileView> createState() => _ReceiverProfileViewState();
 }
 
 class _ReceiverProfileViewState extends State<ReceiverProfileView> {
-  late final Future<List<Map<String, dynamic>>> _chatMediaFuture;
+  late final SharedMediaCubit _mediaCubit;
 
   @override
   void initState() {
     super.initState();
-    _chatMediaFuture = context.read<ChatServices>().getChatMedia(
-      widget.receiverUser.id,
+    final cubit = context.read<ChatDetailsCubit>();
+    _mediaCubit = SharedMediaCubit(
+      SingleChatMediaDataSource(
+        services: context.read<ChatServices>(),
+        currentUserId: cubit.currentUserId,
+        currentUserName: cubit.currentUserName,
+        currentUserAvatar: cubit.senderImageUrl,
+        receiverUser: widget.receiverUser,
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _mediaCubit.close();
+    super.dispose();
+  }
+
+  Future<void> _openStarredMessages(BuildContext context) async {
+    final cubit = context.read<ChatDetailsCubit>();
+    final starredIds = await StarredMessagesStore.instance.getStarredMessageIds(
+      cubit.currentUserId,
+    );
+
+    if (!context.mounted) return;
+
+    final entries =
+        cubit.cachedMessages
+            .where((m) => starredIds.contains(m.id))
+            .map(
+              (m) => m.toStarredEntry(
+                currentUserId: cubit.currentUserId,
+                meName: cubit.currentUserName,
+                receiverName: widget.receiverUser.name,
+              ),
+            )
+            .toList();
+
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder:
+            (_) => StarredMessagesView(
+              entries: entries,
+              onUnstar:
+                  (messageId) => StarredMessagesStore.instance.toggleStar(
+                    currentUserId: cubit.currentUserId,
+                    messageId: messageId,
+                  ),
+              onTapEntry: (messageId) {
+                // Pop StarredMessagesView, then this profile view, landing
+                // back on the actual open chat, then scroll+highlight.
+                Navigator.of(context).pop();
+                Navigator.of(context).pop();
+                final controller = widget.itemScrollController;
+                if (controller != null) {
+                  cubit.scrollToMessage(
+                    messageId: messageId,
+                    itemScrollController: controller,
+                  );
+                }
+              },
+            ),
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<List<Map<String, dynamic>>>(
-      future: _chatMediaFuture,
-      builder:
-          (context, snapshot) => Scaffold(
-            body: SingleChildScrollView(
-              child: Column(
-                children: [
-                  Stack(
-                    children: [
-                      CustomUserProfileImagesSection(
-                        avatarUrl: widget.receiverUser.imageUrl,
-                        heroTag: widget.receiverUser.id,
-                        isProfileHeader: true,
-                        profileUserId: widget.receiverUser.id,
-                      ),
-                      Align(
-                        alignment: Alignment.topLeft,
-                        child: Padding(
-                          padding: const EdgeInsets.only(top: 12.0),
-                          child: GestureDetector(
-                            behavior: HitTestBehavior.opaque,
-                            onTap: () => safePop(context),
-                            child: Padding(
-                              padding: const EdgeInsets.all(12.0),
-                              child: Container(
-                                padding: const EdgeInsets.all(10),
-                                decoration: BoxDecoration(
-                                  color: Colors.black.withValues(alpha: 0.3),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Icon(
-                                  Icons.arrow_back_ios_new,
-                                  color: Colors.white,
-                                  size: 20,
-                                ),
-                              ),
-                            ),
+    return Scaffold(
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            Stack(
+              children: [
+                CustomUserProfileImagesSection(
+                  avatarUrl: widget.receiverUser.imageUrl,
+                  heroTag: widget.receiverUser.id,
+                  isProfileHeader: true,
+                  profileUserId: widget.receiverUser.id,
+                ),
+                Align(
+                  alignment: Alignment.topLeft,
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 12.0),
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () => safePop(context),
+                      child: Padding(
+                        padding: const EdgeInsets.all(12.0),
+                        child: Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.3),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.arrow_back_ios_new,
+                            color: Colors.white,
+                            size: 20,
                           ),
                         ),
                       ),
-                    ],
-                  ),
-                  const Gap(10),
-                  Text(
-                    widget.receiverUser.name,
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
                     ),
                   ),
-                  BlocBuilder<ChatDetailsCubit, ChatDetailsState>(
-                    builder: (context, state) {
-                      final isTyping =
-                          state is ReceiverTypingState && state.isTyping;
-                      if (isTyping) {
+                ),
+              ],
+            ),
+            const Gap(10),
+            Text(
+              widget.receiverUser.name,
+              style: Theme.of(
+                context,
+              ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+            ),
+            BlocBuilder<ChatDetailsCubit, ChatDetailsState>(
+              builder: (context, state) {
+                final isTyping = state is ReceiverTypingState && state.isTyping;
+                if (isTyping) {
+                  return const Text(
+                    'typing...',
+                    style: TextStyle(
+                      color: Colors.green,
+                      fontWeight: FontWeight.w500,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  );
+                }
+
+                return Builder(
+                  builder: (context) {
+                    final presenceInfo = context
+                        .select<PresenceCubit, PresenceInfo?>(
+                          (cubit) => cubit.of(widget.receiverUser.id),
+                        );
+                    final isOnline =
+                        presenceInfo?.isEffectivelyOnline ??
+                        widget.receiverUser.isOnline;
+                    final lastSeen =
+                        presenceInfo?.lastSeen ?? widget.receiverUser.lastSeen;
+
+                    if (isOnline) {
+                      return const Text(
+                        'Online',
+                        style: TextStyle(
+                          color: Colors.green,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      );
+                    }
+
+                    if (lastSeen != null) {
+                      final lastSeenStr = FormattedDate.getLastSeen(lastSeen);
+
+                      if (lastSeenStr == 'Online' ||
+                          lastSeenStr == 'just now') {
                         return const Text(
-                          'typing...',
+                          'Online',
                           style: TextStyle(
                             color: Colors.green,
                             fontWeight: FontWeight.w500,
-                            fontStyle: FontStyle.italic,
                           ),
                         );
                       }
 
-                      return Builder(
-                        builder: (context) {
-                          final presenceInfo = context
-                              .select<PresenceCubit, PresenceInfo?>(
-                                (cubit) => cubit.of(widget.receiverUser.id),
-                              );
-                          final isOnline =
-                              presenceInfo?.isEffectivelyOnline ??
-                              widget.receiverUser.isOnline;
-                          final lastSeen =
-                              presenceInfo?.lastSeen ??
-                              widget.receiverUser.lastSeen;
-
-                          if (isOnline) {
-                            return const Text(
-                              'Online',
-                              style: TextStyle(
-                                color: Colors.green,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            );
-                          }
-
-                          if (lastSeen != null) {
-                            final lastSeenStr = FormattedDate.getLastSeen(
-                              lastSeen,
-                            );
-
-                            if (lastSeenStr == 'Online' ||
-                                lastSeenStr == 'just now') {
-                              return const Text(
-                                'Online',
-                                style: TextStyle(
-                                  color: Colors.green,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              );
-                            }
-
-                            return Text(
-                              "Last seen $lastSeenStr",
-                              style: const TextStyle(color: Colors.grey),
-                            );
-                          }
-
-                          return const SizedBox.shrink();
-                        },
+                      return Text(
+                        "Last seen $lastSeenStr",
+                        style: const TextStyle(color: Colors.grey),
                       );
-                    },
-                  ),
+                    }
 
-                  const Gap(25),
-
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      _buildOptionItem(
-                        context,
-                        Icons.message_outlined,
-                        "Message",
-                        () => safePop(context),
-                      ),
-
-                      _buildOptionItem(
-                        context,
-                        Icons.call_outlined,
-                        "Call",
-                        () async {
-                          final call = await CallActions.buildCall(
-                            type: CallType.audio,
-                            receiverId: widget.receiverUser.id,
-                            receiverName: widget.receiverUser.name,
-                            receiverAvatar: widget.receiverUser.imageUrl ?? '',
-                          );
-                          if (call == null || !context.mounted) return;
-
-                          context.read<CallCubit>().makeAudioCall(call);
-                        },
-                      ),
-
-                      _buildOptionItem(
-                        context,
-                        Icons.videocam_outlined,
-                        "Video",
-                        () async {
-                          final call = await CallActions.buildCall(
-                            type: CallType.video,
-                            receiverId: widget.receiverUser.id,
-                            receiverName: widget.receiverUser.name,
-                            receiverAvatar: widget.receiverUser.imageUrl ?? '',
-                          );
-                          if (call == null || !context.mounted) return;
-
-                          context.read<CallCubit>().makeAudioCall(call);
-                        },
-                      ),
-                      _buildOptionItem(
-                        context,
-                        Icons.notifications_off_outlined,
-                        "Mute",
-                        () {},
-                      ),
-                    ],
-                  ),
-
-                  const Divider(
-                    height: 40,
-                    thickness: 8,
-                    color: Color(0x00fff5f5),
-                  ),
-
-                  _buildMediaSection(context),
-                ],
-              ),
+                    return const SizedBox.shrink();
+                  },
+                );
+              },
             ),
-          ),
+
+            const Gap(25),
+
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _buildOptionItem(
+                  context,
+                  Icons.message_outlined,
+                  "Message",
+                  () => safePop(context),
+                ),
+
+                _buildOptionItem(
+                  context,
+                  Icons.call_outlined,
+                  "Call",
+                  () async {
+                    final call = await CallActions.buildCall(
+                      type: CallType.audio,
+                      receiverId: widget.receiverUser.id,
+                      receiverName: widget.receiverUser.name,
+                      receiverAvatar: widget.receiverUser.imageUrl ?? '',
+                    );
+                    if (call == null || !context.mounted) return;
+
+                    context.read<CallCubit>().makeAudioCall(call);
+                  },
+                ),
+
+                _buildOptionItem(
+                  context,
+                  Icons.videocam_outlined,
+                  "Video",
+                  () async {
+                    final call = await CallActions.buildCall(
+                      type: CallType.video,
+                      receiverId: widget.receiverUser.id,
+                      receiverName: widget.receiverUser.name,
+                      receiverAvatar: widget.receiverUser.imageUrl ?? '',
+                    );
+                    if (call == null || !context.mounted) return;
+
+                    context.read<CallCubit>().makeAudioCall(call);
+                  },
+                ),
+                _buildOptionItem(
+                  context,
+                  Icons.notifications_off_outlined,
+                  "Mute",
+                  () {},
+                ),
+              ],
+            ),
+
+            const Gap(16),
+            StarredMessagesRow(
+              primary: Theme.of(context).primaryColor,
+              onTap: () => _openStarredMessages(context),
+            ),
+
+            const Divider(height: 40, thickness: 8, color: Color(0x00fff5f5)),
+
+            SharedMediaPreviewSection(mediaCubit: _mediaCubit),
+          ],
+        ),
+      ),
     );
   }
 
@@ -248,171 +311,6 @@ class _ReceiverProfileViewState extends State<ReceiverProfileView> {
           style: TextStyle(color: Theme.of(context).primaryColor, fontSize: 12),
         ),
       ],
-    );
-  }
-
-  Widget _buildMediaSection(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(
-            left: 16,
-            right: 16,
-            top: 10,
-            bottom: 4,
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                "Media, links, and docs",
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-              ),
-              TextButton(
-                onPressed: () {},
-                child: Text(
-                  "See all",
-                  style: Theme.of(context).textTheme.titleSmall!.copyWith(
-                    color: Theme.of(
-                      context,
-                    ).primaryColor.withValues(alpha: 0.85),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-        FutureBuilder<List<Map<String, dynamic>>>(
-          future: ChatServices().getChatMedia(widget.receiverUser.id),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const SizedBox(
-                height: 100,
-                child: Center(child: CustomLoadingIndicator()),
-              );
-            }
-
-            final allMedia = snapshot.data ?? [];
-
-            if (allMedia.isEmpty) {
-              return SizedBox(
-                height: MediaQuery.sizeOf(context).height * 0.3,
-                child: const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 16),
-                  child: Center(
-                    child: Text(
-                      "No media shared yet",
-                      style: TextStyle(color: Colors.grey),
-                    ),
-                  ),
-                ),
-              );
-            }
-
-            return Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: GridView.builder(
-                padding: EdgeInsets.zero,
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: allMedia.length,
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 4,
-                  crossAxisSpacing: 1,
-                  mainAxisSpacing: 6,
-                  childAspectRatio: 0.9,
-                ),
-                itemBuilder: (context, index) {
-                  final item = allMedia[index];
-                  final type = item[MessagesColumns.messageType];
-
-                  String? mediaUrl =
-                      (type == 'image')
-                          ? item[MessagesColumns.imageUrl]
-                          : (type == 'video')
-                          ? item[MessagesColumns.videoUrl]
-                          : item[MessagesColumns.voiceUrl];
-
-                  if (mediaUrl == null) return const SizedBox.shrink();
-                  return GestureDetector(
-                    onTap: () {
-                      if (type == 'image') {
-                        _openFullScreenImage(context, mediaUrl, 'media-$index');
-                      } else if (type == 'video') {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder:
-                                (context) =>
-                                    FullScreenMediaView(imageUrl: mediaUrl),
-                          ),
-                        );
-                      } else if (type == 'voice') {
-                        AppToast.info('this feature is coming soon');
-                      }
-                    },
-                    child: Container(
-                      width: 110,
-                      margin: const EdgeInsets.only(right: 10),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-                        child: _buildMediaPreview(type, mediaUrl),
-                      ),
-                    ),
-                  );
-                },
-              ),
-            );
-          },
-        ),
-        const Gap(20),
-      ],
-    );
-  }
-
-  Widget _buildMediaPreview(String type, String? url) {
-    if (type == 'image' && url != null) {
-      return CachedCloudinaryImage(
-        secureUrl: url,
-        fit: BoxFit.cover,
-
-        isAvatar: true,
-        errorWidget: (context, error) => const Icon(Icons.broken_image),
-      );
-    } else if (type == 'video') {
-      return Stack(
-        alignment: Alignment.center,
-        children: [
-          Container(color: Colors.black87),
-          const Icon(Icons.play_circle_fill, color: Colors.white, size: 35),
-          const Positioned(
-            bottom: 5,
-            right: 5,
-            child: Icon(Icons.videocam, color: Colors.white, size: 14),
-          ),
-        ],
-      );
-    } else if (type == 'voice') {
-      return Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: const [
-          Icon(Icons.mic, color: Colors.blue, size: 30),
-          Gap(4),
-          Text(
-            "Voice",
-            style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600),
-          ),
-        ],
-      );
-    }
-    return const Icon(Icons.insert_drive_file);
-  }
-
-  void _openFullScreenImage(BuildContext context, String url, String tag) {
-    Navigator.of(context, rootNavigator: true).pushNamed(
-      AppRoutes.fullScreenImageViewRoute,
-      arguments: {'url': url, 'tag': tag, 'isAsset': false},
     );
   }
 }
