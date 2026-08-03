@@ -17,6 +17,8 @@ class MentionRichText extends StatefulWidget {
   final int collapsedMaxLines;
   final TextOverflow? overflow;
   final double? maxTextWidth;
+  final String? highlightQuery;
+  final TextStyle? highlightStyle;
 
   const MentionRichText({
     super.key,
@@ -31,6 +33,8 @@ class MentionRichText extends StatefulWidget {
     this.collapsedMaxLines = 10,
     this.overflow,
     this.maxTextWidth,
+    this.highlightQuery,
+    this.highlightStyle,
   });
 
   @override
@@ -101,7 +105,7 @@ class _MentionRichTextState extends State<MentionRichText> {
             ),
           );
         } else {
-          spans.add(TextSpan(text: element.text, style: defaultStyle));
+          spans.addAll(_highlightedTextSpans(element.text, defaultStyle));
         }
       }
     }
@@ -133,6 +137,53 @@ class _MentionRichTextState extends State<MentionRichText> {
       cursor = mention.endIndex;
     }
     addLinkifiedSegment(text.substring(cursor));
+    return spans;
+  }
+
+  List<InlineSpan> _highlightedTextSpans(String text, TextStyle baseStyle) {
+    final query = widget.highlightQuery?.trim() ?? '';
+    if (query.isEmpty) {
+      return [TextSpan(text: text, style: baseStyle)];
+    }
+
+    final highlightStyle =
+        widget.highlightStyle ??
+        TextStyle(
+          backgroundColor: Colors.yellow.withValues(alpha: 0.55),
+          color: baseStyle.color,
+          fontWeight: FontWeight.w700,
+        );
+
+    final lowerText = text.toLowerCase();
+    final lowerQuery = query.toLowerCase();
+    final spans = <InlineSpan>[];
+
+    int start = 0;
+    int index = lowerText.indexOf(lowerQuery, start);
+    if (index == -1) {
+      return [TextSpan(text: text, style: baseStyle)];
+    }
+
+    while (index != -1) {
+      if (index > start) {
+        spans.add(
+          TextSpan(text: text.substring(start, index), style: baseStyle),
+        );
+      }
+      spans.add(
+        TextSpan(
+          text: text.substring(index, index + query.length),
+          style: highlightStyle,
+        ),
+      );
+      start = index + query.length;
+      index = lowerText.indexOf(lowerQuery, start);
+    }
+
+    if (start < text.length) {
+      spans.add(TextSpan(text: text.substring(start), style: baseStyle));
+    }
+
     return spans;
   }
 

@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import 'package:social_media_app/core/router/app_routes.dart';
 import 'package:social_media_app/core/views/loading_screen.dart';
 import 'package:social_media_app/core/views/no_route_screen.dart';
@@ -417,20 +418,41 @@ class AppRouter {
           settings: settings,
         );
       case AppRoutes.receiverProfileViewRoute:
-        final user = _args<ChatUserModel>(settings);
+        final rawArgs = settings.arguments;
+        final ChatUserModel? user =
+            rawArgs is Map
+                ? rawArgs['user'] as ChatUserModel?
+                : rawArgs as ChatUserModel?;
         if (user == null) {
           return _errorRoute(settings, 'Missing ChatUserModel data');
         }
+        final ChatDetailsCubit? existingCubit =
+            rawArgs is Map ? rawArgs['cubit'] as ChatDetailsCubit? : null;
+        final ItemScrollController? itemScrollController =
+            rawArgs is Map
+                ? rawArgs['itemScrollController'] as ItemScrollController?
+                : null;
         return _buildRoute(
-          BlocProvider(
-            create:
-                (context) => ChatDetailsCubit(
-                  context.read<ChatServices>(),
-                  user.name,
-                  context.read<MediaCacheRepository>(),
-                )..watchReceiverTyping(user.id),
-            child: ReceiverProfileView(receiverUser: user),
-          ),
+          existingCubit != null
+              ? BlocProvider<ChatDetailsCubit>.value(
+                value: existingCubit,
+                child: ReceiverProfileView(
+                  receiverUser: user,
+                  itemScrollController: itemScrollController,
+                ),
+              )
+              : BlocProvider(
+                create:
+                    (context) => ChatDetailsCubit(
+                      context.read<ChatServices>(),
+                      user.name,
+                      context.read<MediaCacheRepository>(),
+                    )..watchReceiverTyping(user.id),
+                child: ReceiverProfileView(
+                  receiverUser: user,
+                  itemScrollController: itemScrollController,
+                ),
+              ),
           settings: settings,
         );
       default:
@@ -462,12 +484,26 @@ class AppRouter {
         );
 
       case AppRoutes.groupInfoViewRoute:
-        final group = _args<GroupModel>(settings);
+        final rawArgs = settings.arguments;
+        final GroupModel? group =
+            rawArgs is Map
+                ? rawArgs['group'] as GroupModel?
+                : rawArgs as GroupModel?;
         if (group == null) {
           return _errorRoute(settings, 'Missing GroupModel data');
         }
+        final GroupDetailsCubit? existingCubit =
+            rawArgs is Map ? rawArgs['cubit'] as GroupDetailsCubit? : null;
+        final ItemScrollController? itemScrollController =
+            rawArgs is Map
+                ? rawArgs['itemScrollController'] as ItemScrollController?
+                : null;
         return _buildRoute(
-          GroupInfoView(group: group),
+          GroupInfoView(
+            group: group,
+            detailsCubit: existingCubit,
+            itemScrollController: itemScrollController,
+          ),
           typeOfRoute: TypeOfRoute.material,
           settings: settings,
         );
