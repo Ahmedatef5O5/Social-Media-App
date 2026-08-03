@@ -48,6 +48,9 @@ class _GroupChatDetailsBodyState extends State<_GroupChatDetailsBody> {
   final ValueNotifier<bool> _showScrollButtonNotifier = ValueNotifier(false);
   final ValueNotifier<int> _unreadCountNotifier = ValueNotifier(0);
 
+  final TextEditingController _searchTextController = TextEditingController();
+  final FocusNode _searchFocusNode = FocusNode();
+
   int? _lastMinIndex;
   double? _lastLeadingEdge;
   // ignore: unused_field
@@ -66,6 +69,39 @@ class _GroupChatDetailsBodyState extends State<_GroupChatDetailsBody> {
 
     ActiveScreenTracker.setActiveGroupId(widget.group.id);
     _positionsListener.itemPositions.addListener(_scrollListener);
+    _groupDetailsCubit.searchController.currentIndex.addListener(
+      _onSearchMatchChanged,
+    );
+    _groupDetailsCubit.searchController.isActive.addListener(
+      _onSearchActiveChanged,
+    );
+    _groupDetailsCubit.replyToMessage.addListener(_onReplyChanged);
+  }
+
+  void _onSearchMatchChanged() {
+    final id = _groupDetailsCubit.searchController.currentMatchId;
+    if (id == null || !_scrollController.isAttached) return;
+    _groupDetailsCubit.scrollToMessage(
+      messageId: id,
+      itemScrollController: _scrollController,
+    );
+  }
+
+  void _onReplyChanged() {
+    if (_groupDetailsCubit.replyToMessage.value != null &&
+        _groupDetailsCubit.searchController.isActive.value) {
+      _groupDetailsCubit.searchController.deactivate();
+    }
+  }
+
+  void _onSearchActiveChanged() {
+    if (!_groupDetailsCubit.searchController.isActive.value) {
+      _searchTextController.clear();
+    }
+  }
+
+  void _exitSearch() {
+    _groupDetailsCubit.searchController.deactivate();
   }
 
   void _markAsReadIfNeeded() {
@@ -84,7 +120,18 @@ class _GroupChatDetailsBodyState extends State<_GroupChatDetailsBody> {
     _controller.dispose();
     _showScrollButtonNotifier.dispose();
     _unreadCountNotifier.dispose();
-    if (!_groupDetailsCubit.isClosed) _groupDetailsCubit.clearSelection();
+    if (!_groupDetailsCubit.isClosed) {
+      _groupDetailsCubit.clearSelection();
+      _groupDetailsCubit.searchController.currentIndex.removeListener(
+        _onSearchMatchChanged,
+      );
+      _groupDetailsCubit.searchController.isActive.removeListener(
+        _onSearchActiveChanged,
+      );
+      _groupDetailsCubit.replyToMessage.removeListener(_onReplyChanged);
+    }
+    _searchTextController.dispose();
+    _searchFocusNode.dispose();
     super.dispose();
   }
 
@@ -202,7 +249,13 @@ class _GroupChatDetailsBodyState extends State<_GroupChatDetailsBody> {
           onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
           child: Scaffold(
             backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-            appBar: GroupChatAppBarSwitcher(group: widget.group),
+            appBar: GroupChatAppBarSwitcher(
+              group: widget.group,
+              itemScrollController: _scrollController,
+              searchTextController: _searchTextController,
+              searchFocusNode: _searchFocusNode,
+              onExitSearch: _exitSearch,
+            ),
             body: Column(
               children: [
                 Expanded(

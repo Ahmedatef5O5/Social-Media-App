@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
+import 'package:social_media_app/core/chat_shared/widgets/chat_search_app_bar.dart';
 import 'package:social_media_app/core/toast/app_toast.dart';
 import 'package:social_media_app/features/chat_forwarding/models/forward_target_selection.dart';
 import 'package:social_media_app/features/chat_forwarding/models/forwardable_message.dart';
@@ -13,8 +15,19 @@ import '../widgets/group_chat_app_bar.dart';
 class GroupChatAppBarSwitcher extends StatelessWidget
     implements PreferredSizeWidget {
   final GroupModel group;
+  final ItemScrollController itemScrollController;
+  final TextEditingController searchTextController;
+  final FocusNode searchFocusNode;
+  final VoidCallback onExitSearch;
 
-  const GroupChatAppBarSwitcher({super.key, required this.group});
+  const GroupChatAppBarSwitcher({
+    super.key,
+    required this.group,
+    required this.itemScrollController,
+    required this.searchTextController,
+    required this.searchFocusNode,
+    required this.onExitSearch,
+  });
 
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
@@ -59,46 +72,72 @@ class GroupChatAppBarSwitcher extends StatelessWidget
   Widget build(BuildContext context) {
     final cubit = context.read<GroupDetailsCubit>();
 
-    return ValueListenableBuilder<Set<String>>(
-      valueListenable: cubit.selectedMessageIds,
-      builder: (context, selectedIds, _) {
-        if (selectedIds.isEmpty) {
-          return GroupChatAppBar(group: group);
+    return ValueListenableBuilder<bool>(
+      valueListenable: cubit.searchController.isActive,
+      builder: (context, isSearching, _) {
+        if (isSearching) {
+          return ValueListenableBuilder<List<String>>(
+            valueListenable: cubit.searchController.matchIds,
+            builder: (context, matches, __) {
+              return ChatSearchAppBar(
+                controller: searchTextController,
+                focusNode: searchFocusNode,
+                onChanged: (q) => cubit.searchController.updateQuery(q),
+                counterTextNotifier: cubit.searchController.counterTextNotifier,
+                hasMatches: matches.isNotEmpty,
+                onPrevious: () => cubit.searchController.previousMatch(),
+                onNext: () => cubit.searchController.nextMatch(),
+                onClose: onExitSearch,
+              );
+            },
+          );
         }
 
-        return ValueListenableBuilder<bool>(
-          valueListenable: cubit.starController.isSelectedStarred,
-          builder: (context, isStarred, __) {
-            return MultiSelectChatAppBar(
-              selectedCount: selectedIds.length,
-              onCancel: cubit.clearSelection,
-              actions: [
-                if (selectedIds.length == 1)
-                  MultiSelectAction(
-                    icon:
-                        isStarred
-                            ? Icons.star_rounded
-                            : Icons.star_border_rounded,
-                    color: isStarred ? Colors.amber : null,
-                    tooltip: isStarred ? 'Unstar' : 'Star',
-                    onPressed: cubit.toggleStarSelected,
-                  ),
-                MultiSelectAction(
-                  icon: Icons.forward_rounded,
-                  tooltip: 'Forward',
-                  onPressed:
-                      () => _openForwardPicker(
-                        context,
-                        messageCount: selectedIds.length,
+        return ValueListenableBuilder<Set<String>>(
+          valueListenable: cubit.selectedMessageIds,
+          builder: (context, selectedIds, _) {
+            if (selectedIds.isEmpty) {
+              return GroupChatAppBar(
+                group: group,
+                itemScrollController: itemScrollController,
+              );
+            }
+
+            return ValueListenableBuilder<bool>(
+              valueListenable: cubit.starController.isSelectedStarred,
+              builder: (context, isStarred, __) {
+                return MultiSelectChatAppBar(
+                  selectedCount: selectedIds.length,
+                  onCancel: cubit.clearSelection,
+                  actions: [
+                    if (selectedIds.length == 1)
+                      MultiSelectAction(
+                        icon:
+                            isStarred
+                                ? Icons.star_rounded
+                                : Icons.star_border_rounded,
+                        color: isStarred ? Colors.amber : null,
+                        tooltip: isStarred ? 'Unstar' : 'Star',
+                        onPressed: cubit.toggleStarSelected,
                       ),
-                ),
-                MultiSelectAction(
-                  icon: Icons.delete_outline,
-                  color: Colors.red,
-                  tooltip: 'Delete',
-                  onPressed: () => _showBulkDeleteMenu(context, cubit),
-                ),
-              ],
+                    MultiSelectAction(
+                      icon: Icons.forward_rounded,
+                      tooltip: 'Forward',
+                      onPressed:
+                          () => _openForwardPicker(
+                            context,
+                            messageCount: selectedIds.length,
+                          ),
+                    ),
+                    MultiSelectAction(
+                      icon: Icons.delete_outline,
+                      color: Colors.red,
+                      tooltip: 'Delete',
+                      onPressed: () => _showBulkDeleteMenu(context, cubit),
+                    ),
+                  ],
+                );
+              },
             );
           },
         );

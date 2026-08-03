@@ -7,6 +7,7 @@ import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import '../../../../core/audio/voice_recorder/services/audio_compression_service.dart';
 import '../../../../core/cache/repository/media_cache_repository.dart';
 import '../../../../core/cache/services/messages_snapshot_cache.dart';
+import '../../../../core/chat_shared/controllers/chat_search_controller.dart';
 import '../../../../core/connectivity/services/connectivity_banner_controller.dart';
 import '../../../../core/helpers/chat_helper.dart';
 import '../../../../core/helpers/selected_message_star_controller.dart';
@@ -60,6 +61,14 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
   final String currentUserName;
 
   final Map<String, GlobalKey<ChatBubbleState>> bubbleKeys = {};
+
+  late final ChatSearchController<MessageModel> searchController =
+      ChatSearchController<MessageModel>(
+        getMessages: () => cachedMessages,
+        getSearchableText:
+            (m) => (m.caption?.isNotEmpty == true ? m.caption! : m.text),
+        getId: (m) => m.id,
+      );
 
   ChatDetailsCubit(
     this._chatServices,
@@ -683,6 +692,7 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
   Future<void> close() {
     chatPermission.dispose();
     highlightedMessageId.dispose();
+    searchController.dispose();
     for (final notifier in uploadProgressNotifiers.values) {
       notifier.dispose();
     }

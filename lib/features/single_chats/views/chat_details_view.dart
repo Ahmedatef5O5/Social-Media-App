@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
+import 'package:social_media_app/core/chat_shared/widgets/chat_search_app_bar.dart';
 import 'package:social_media_app/core/themes/background_theme_widget.dart';
 import 'package:social_media_app/features/chat_forwarding/models/forward_target_selection.dart';
 import 'package:social_media_app/features/chat_forwarding/models/forwardable_message.dart';
@@ -48,6 +49,9 @@ class _ChatDetailsViewState extends State<ChatDetailsView>
 
   MessageModel? _editingMessage;
 
+  final TextEditingController _searchTextController = TextEditingController();
+  final FocusNode _searchFocusNode = FocusNode();
+
   @override
   void initState() {
     super.initState();
@@ -64,6 +68,27 @@ class _ChatDetailsViewState extends State<ChatDetailsView>
     _chatCubit.resolveChatPermission(_receiverId);
     _chatCubit.getMessagesStream(receiverId: _receiverId);
     _chatCubit.watchReceiverTyping(_receiverId);
+    _chatCubit.searchController.currentIndex.addListener(_onSearchMatchChanged);
+    _chatCubit.searchController.isActive.addListener(_onSearchActiveChanged);
+  }
+
+  void _onSearchMatchChanged() {
+    final id = _chatCubit.searchController.currentMatchId;
+    if (id == null || !_itemScrollController.isAttached) return;
+    _chatCubit.scrollToMessage(
+      messageId: id,
+      itemScrollController: _itemScrollController,
+    );
+  }
+
+  void _onSearchActiveChanged() {
+    if (!_chatCubit.searchController.isActive.value) {
+      _searchTextController.clear();
+    }
+  }
+
+  void _exitSearch() {
+    _chatCubit.searchController.deactivate();
   }
 
   @override
@@ -204,7 +229,17 @@ class _ChatDetailsViewState extends State<ChatDetailsView>
     _messageController.dispose();
     _showScrollButtonNotifier.dispose();
     _unreadCountNotifier.dispose();
-    if (!_chatCubit.isClosed) _chatCubit.clearSelection();
+    if (!_chatCubit.isClosed) {
+      _chatCubit.clearSelection();
+      _chatCubit.searchController.currentIndex.removeListener(
+        _onSearchMatchChanged,
+      );
+      _chatCubit.searchController.isActive.removeListener(
+        _onSearchActiveChanged,
+      );
+    }
+    _searchTextController.dispose();
+    _searchFocusNode.dispose();
 
     super.dispose();
   }
@@ -324,54 +359,85 @@ class _ChatDetailsViewState extends State<ChatDetailsView>
           backgroundColor: AppColors.transparent,
           body: Column(
             children: [
-              ValueListenableBuilder<Set<String>>(
-                valueListenable: _chatCubit.selectedMessageIds,
-                builder: (context, selectedIds, _) {
-                  if (selectedIds.isEmpty) {
-                    return ReceiverDetailsHeaderSection(
-                      receiverUser: widget.receiverUser,
+              ValueListenableBuilder<bool>(
+                valueListenable: _chatCubit.searchController.isActive,
+                builder: (context, isSearching, _) {
+                  if (isSearching) {
+                    return ValueListenableBuilder<List<String>>(
+                      valueListenable: _chatCubit.searchController.matchIds,
+                      builder: (context, matches, __) {
+                        return ChatSearchAppBar(
+                          controller: _searchTextController,
+                          focusNode: _searchFocusNode,
+                          onChanged:
+                              (q) => _chatCubit.searchController.updateQuery(q),
+                          counterTextNotifier:
+                              _chatCubit.searchController.counterTextNotifier,
+                          hasMatches: matches.isNotEmpty,
+                          onPrevious:
+                              () => _chatCubit.searchController.previousMatch(),
+                          onNext: () => _chatCubit.searchController.nextMatch(),
+                          onClose: _exitSearch,
+                        );
+                      },
                     );
                   }
-                  return ValueListenableBuilder<bool>(
-                    valueListenable:
-                        _chatCubit.starController.isSelectedStarred,
-                    builder: (context, isStarred, __) {
-                      return MultiSelectChatAppBar(
-                        selectedCount: selectedIds.length,
-                        onCancel: _chatCubit.clearSelection,
-                        actions: [
-                          if (selectedIds.length == 1)
-                            MultiSelectAction(
-                              icon:
-                                  isStarred
-                                      ? Icons.star_rounded
-                                      : Icons.star_border_rounded,
-                              color: isStarred ? Colors.amber : null,
-                              tooltip: isStarred ? 'Unstar' : 'Star',
-                              onPressed: _chatCubit.toggleStarSelected,
-                            ),
-                          MultiSelectAction(
-                            icon: Icons.info_outline,
-                            tooltip: 'Info',
-                            onPressed: () => _showComingSoon(context, 'Info'),
-                          ),
-                          MultiSelectAction(
-                            icon: Icons.forward_rounded,
-                            tooltip: 'Forward',
-                            onPressed:
-                                () => _openForwardPicker(
-                                  context,
-                                  messageCount: selectedIds.length,
+
+                  return ValueListenableBuilder<Set<String>>(
+                    valueListenable: _chatCubit.selectedMessageIds,
+                    builder: (context, selectedIds, _) {
+                      if (selectedIds.isEmpty) {
+                        return ReceiverDetailsHeaderSection(
+                          receiverUser: widget.receiverUser,
+                          itemScrollController: _itemScrollController,
+                        );
+                      }
+                      return ValueListenableBuilder<bool>(
+                        valueListenable:
+                            _chatCubit.starController.isSelectedStarred,
+                        builder: (context, isStarred, __) {
+                          return MultiSelectChatAppBar(
+                            selectedCount: selectedIds.length,
+                            onCancel: _chatCubit.clearSelection,
+                            actions: [
+                              if (selectedIds.length == 1)
+                                MultiSelectAction(
+                                  icon:
+                                      isStarred
+                                          ? Icons.star_rounded
+                                          : Icons.star_border_rounded,
+                                  color: isStarred ? Colors.amber : null,
+                                  tooltip: isStarred ? 'Unstar' : 'Star',
+                                  onPressed: _chatCubit.toggleStarSelected,
                                 ),
-                          ),
-                          MultiSelectAction(
-                            icon: Icons.delete_outline,
-                            color: Colors.red,
-                            tooltip: 'Delete',
-                            onPressed:
-                                () => _showBulkDeleteMenu(context, _chatCubit),
-                          ),
-                        ],
+                              MultiSelectAction(
+                                icon: Icons.info_outline,
+                                tooltip: 'Info',
+                                onPressed:
+                                    () => _showComingSoon(context, 'Info'),
+                              ),
+                              MultiSelectAction(
+                                icon: Icons.forward_rounded,
+                                tooltip: 'Forward',
+                                onPressed:
+                                    () => _openForwardPicker(
+                                      context,
+                                      messageCount: selectedIds.length,
+                                    ),
+                              ),
+                              MultiSelectAction(
+                                icon: Icons.delete_outline,
+                                color: Colors.red,
+                                tooltip: 'Delete',
+                                onPressed:
+                                    () => _showBulkDeleteMenu(
+                                      context,
+                                      _chatCubit,
+                                    ),
+                              ),
+                            ],
+                          );
+                        },
                       );
                     },
                   );
@@ -391,6 +457,11 @@ class _ChatDetailsViewState extends State<ChatDetailsView>
                           _messageController.clear();
                         }
                       });
+                      // Auto-dismiss search mode (swipe/menu reply both
+                      // funnel through this same callback).
+                      if (_chatCubit.searchController.isActive.value) {
+                        _exitSearch();
+                      }
                     }
                   },
                   onEdit: (msg) {

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
+import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import 'package:social_media_app/core/router/app_routes.dart';
 import 'package:social_media_app/features/single_chats/widgets/custom_icon_btn_widget.dart';
 import '../../../core/helpers/formatted_date.dart';
@@ -17,8 +18,13 @@ import '../models/chat_user_model.dart';
 
 class ReceiverDetailsHeaderSection extends StatelessWidget {
   final ChatUserModel receiverUser;
+  final ItemScrollController itemScrollController;
 
-  const ReceiverDetailsHeaderSection({super.key, required this.receiverUser});
+  const ReceiverDetailsHeaderSection({
+    super.key,
+    required this.receiverUser,
+    required this.itemScrollController,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -49,7 +55,11 @@ class ReceiverDetailsHeaderSection extends StatelessWidget {
                     onTap: () {
                       Navigator.of(context, rootNavigator: true).pushNamed(
                         AppRoutes.receiverProfileViewRoute,
-                        arguments: receiverUser,
+                        arguments: {
+                          'user': receiverUser,
+                          'cubit': context.read<ChatDetailsCubit>(),
+                          'itemScrollController': itemScrollController,
+                        },
                       );
                     },
                   ),
@@ -64,7 +74,11 @@ class ReceiverDetailsHeaderSection extends StatelessWidget {
               onTap: () {
                 Navigator.of(context, rootNavigator: true).pushNamed(
                   AppRoutes.receiverProfileViewRoute,
-                  arguments: receiverUser,
+                  arguments: {
+                    'user': receiverUser,
+                    'cubit': context.read<ChatDetailsCubit>(),
+                    'itemScrollController': itemScrollController,
+                  },
                 );
               },
               child: Column(
@@ -189,10 +203,33 @@ class ReceiverDetailsHeaderSection extends StatelessWidget {
                 size: 24,
               ),
               const Gap(8),
-              CustomIconBtnWidget(
-                icon: Icons.more_vert_outlined,
-                onTap: () {},
-                size: 24,
+              PopupMenuButton<String>(
+                icon: Icon(
+                  Icons.more_vert_outlined,
+                  color: Theme.of(context).primaryColor,
+                  size: 24,
+                ),
+                onSelected: (value) {
+                  if (value == 'search') {
+                    context
+                        .read<ChatDetailsCubit>()
+                        .searchController
+                        .activate();
+                  }
+                },
+                itemBuilder:
+                    (_) => const [
+                      PopupMenuItem(
+                        value: 'search',
+                        child: Row(
+                          children: [
+                            Icon(Icons.search_rounded, size: 20),
+                            Gap(10),
+                            Text('Search'),
+                          ],
+                        ),
+                      ),
+                    ],
               ),
             ],
           ),

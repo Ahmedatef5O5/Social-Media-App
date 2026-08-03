@@ -312,27 +312,35 @@ class _MentionRichText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MentionRichText(
-      text: displayText,
-      style: TextStyle(color: textColor, fontSize: 15, height: 1.3),
-      mentionColor: isMe ? Colors.white : primary,
-      maxTextWidth: bubbleMaxWidth,
-      mentions: message.mentions,
-      onMentionTap: (userId, name) {
-        final currentUserId = SupabaseProvider.idOrNull;
-        final navController = context.read<HomeCubit>().navController;
+    final searchController = context.read<GroupDetailsCubit>().searchController;
 
-        if (userId == currentUserId) {
-          if (navController != null) {
-            Navigator.of(context).popUntil((route) => route.isFirst);
-            navController.jumpToTab(3);
-          }
-        } else {
-          Navigator.of(
-            context,
-            rootNavigator: true,
-          ).pushNamed(AppRoutes.profileViewRoute, arguments: userId);
-        }
+    return ValueListenableBuilder<String>(
+      valueListenable: searchController.query,
+      builder: (context, query, _) {
+        return MentionRichText(
+          text: displayText,
+          style: TextStyle(color: textColor, fontSize: 15, height: 1.3),
+          mentionColor: isMe ? Colors.white : primary,
+          maxTextWidth: bubbleMaxWidth,
+          mentions: message.mentions,
+          highlightQuery: query,
+          onMentionTap: (userId, name) {
+            final currentUserId = SupabaseProvider.idOrNull;
+            final navController = context.read<HomeCubit>().navController;
+
+            if (userId == currentUserId) {
+              if (navController != null) {
+                Navigator.of(context).popUntil((route) => route.isFirst);
+                navController.jumpToTab(3);
+              }
+            } else {
+              Navigator.of(
+                context,
+                rootNavigator: true,
+              ).pushNamed(AppRoutes.profileViewRoute, arguments: userId);
+            }
+          },
+        );
       },
     );
   }

@@ -4,6 +4,7 @@ import 'package:dio/dio.dart' as dio_pkg;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
+import 'package:social_media_app/core/chat_shared/controllers/chat_search_controller.dart';
 import 'package:social_media_app/core/connectivity/services/connectivity_banner_controller.dart';
 import 'package:social_media_app/core/mentions/mentions.dart';
 import '../../../../core/cache/repository/media_cache_repository.dart';
@@ -84,6 +85,17 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState>
 
   final GroupChatReactionProfileResolver reactionProfileResolver =
       GroupChatReactionProfileResolver();
+
+  /// In-chat search (Step 3). Same rationale as ChatDetailsCubit: reads
+  /// straight off `cachedMessages`, which getGroupMessagesStream loads in
+  /// full (no `.limit()`), so search covers the whole group history.
+  late final ChatSearchController<GroupMessageModel> searchController =
+      ChatSearchController<GroupMessageModel>(
+        getMessages: () => cachedMessages,
+        getSearchableText:
+            (m) => (m.caption?.isNotEmpty == true ? m.caption! : m.text),
+        getId: (m) => m.id,
+      );
 
   void init() {
     _messagesSnapshotKey = 'group_messages_snapshot_${group.id}';
@@ -205,6 +217,7 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState>
     replyToMessage.dispose();
     editingMessage.dispose();
     highlightedMessageId.dispose();
+    searchController.dispose();
     return super.close();
   }
 }

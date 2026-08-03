@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
-import 'package:social_media_app/core/widgets/custom_linkify_text.dart';
 import 'package:social_media_app/features/single_chats/cubit/chat_details_cubit/chat_details_cubit.dart';
 import 'package:social_media_app/features/single_chats/widgets/image_message_widget.dart';
 import 'package:social_media_app/features/single_chats/widgets/reply_bubble_preview_widget.dart';
@@ -10,6 +9,7 @@ import 'package:social_media_app/features/single_chats/widgets/story_reply_previ
 import 'package:social_media_app/features/single_chats/widgets/video_message_widget.dart';
 import 'package:social_media_app/features/single_chats/widgets/voice_message_bubble_widget.dart';
 import '../../../core/attachment/widgets/file_message_bubble.dart';
+import '../../../core/chat_shared/widgets/highlighted_linkify_text.dart';
 import '../../../core/link/widgets/message_link_preview.dart';
 import '../../gifs/widgets/gif_message_bubble.dart';
 import '../../stickers/widgets/sticker_message_bubble.dart';
@@ -218,25 +218,33 @@ class RegularMessageContent extends StatelessWidget {
   }
 
   Widget _buildLinkifyText(BuildContext context, String text) {
-    return CustomLinkifyText(
-      text: text,
-      maxLines: 4,
-      overflow: TextOverflow.ellipsis,
-      style: Theme.of(context).textTheme.titleMedium!.copyWith(
-        color:
-            isMe
-                ? Theme.of(context).colorScheme.onPrimary
-                : (Theme.of(
-                  context,
-                ).colorScheme.onSurface.withValues(alpha: 0.7)),
-        fontSize: 15,
-        height: 1.3,
-        fontWeight: FontWeight.w500,
-      ),
-      linkStyle: TextStyle(
-        color: isMe ? Colors.black45 : Colors.blue,
-        decorationColor: isMe ? Colors.black45 : Colors.blue,
-      ),
+    final searchController = context.read<ChatDetailsCubit>().searchController;
+
+    return ValueListenableBuilder<String>(
+      valueListenable: searchController.query,
+      builder: (context, query, _) {
+        return HighlightedLinkifyText(
+          text: text,
+          maxLines: 4,
+          overflow: TextOverflow.ellipsis,
+          highlightQuery: query,
+          style: Theme.of(context).textTheme.titleMedium!.copyWith(
+            color:
+                isMe
+                    ? Theme.of(context).colorScheme.onPrimary
+                    : (Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withValues(alpha: 0.7)),
+            fontSize: 15,
+            height: 1.3,
+            fontWeight: FontWeight.w500,
+          ),
+          linkStyle: TextStyle(
+            color: isMe ? Colors.black45 : Colors.blue,
+            decorationColor: isMe ? Colors.black45 : Colors.blue,
+          ),
+        );
+      },
     );
   }
 
