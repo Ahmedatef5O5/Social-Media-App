@@ -237,6 +237,7 @@ class _SendCommentSectionState extends State<SendCommentSection> {
                               controller: _commentController,
                               surface: AiSurfaceType.comment,
                               generationAction: AiActionType.replySuggestion,
+                              hasMediaAttached: true,
                               hasReplyContext: isReplying,
                               replyToAuthorName: widget.replyingToAuthorName,
                               parentContentText: widget.post.text,

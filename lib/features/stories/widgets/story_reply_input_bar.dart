@@ -5,6 +5,9 @@ import 'package:gap/gap.dart';
 import 'package:social_media_app/core/widgets/custom_loading_indicator.dart';
 import '../../../core/services/file_picker_services.dart';
 import '../../../core/toast/app_toast.dart';
+import '../../ai_assistant/entities/ai_action_type.dart';
+import '../../ai_assistant/entities/ai_request_context.dart';
+import '../../ai_assistant/widgets/ai_action_icon.dart';
 import '../../single_chats/widgets/full_screen_media_view.dart';
 import '../cubit/story_reply_cubit/story_reply_cubit.dart';
 import '../helpers/story_reaction_btn.dart';
@@ -257,6 +260,17 @@ class _StoryReplyInputBarState extends State<StoryReplyInputBar> {
                 ),
                 border: InputBorder.none,
                 contentPadding: const EdgeInsets.symmetric(vertical: 5),
+                suffixIcon: AiActionIcon(
+                  controller: _controller,
+                  surface: AiSurfaceType.chatMessage,
+                  generationAction: AiActionType.replySuggestion,
+                  hasReplyContext: true,
+                  replyToText:
+                      widget.story.storyType == StoryType.text
+                          ? widget.story.contentText
+                          : widget.story.caption,
+                  replyToAuthorName: widget.story.authorName,
+                ),
               ),
             ),
           ),

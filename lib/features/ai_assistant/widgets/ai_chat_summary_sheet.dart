@@ -5,6 +5,7 @@ import '../data/repositories/ai_repository_impl.dart';
 import '../entities/ai_action_type.dart';
 import '../entities/ai_result.dart';
 import '../repository/ai_repository.dart';
+import 'animated_ai_stars_icon.dart';
 
 class AiChatSummarySheet extends StatefulWidget {
   final AiActionType mode;
@@ -107,7 +108,7 @@ class _AiChatSummarySheetState extends State<AiChatSummarySheet> {
     if (_loading) {
       return const Padding(
         padding: EdgeInsets.symmetric(vertical: 24),
-        child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+        child: Center(child: AnimatedAiStarsIcon(size: 28)),
       );
     }
 

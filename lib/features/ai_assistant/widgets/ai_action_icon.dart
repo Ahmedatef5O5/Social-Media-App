@@ -8,6 +8,7 @@ import '../entities/ai_request_context.dart';
 import '../helpers/ai_image_encoder.dart';
 import '../repository/ai_repository.dart';
 import 'dart:typed_data';
+import 'animated_ai_stars_icon.dart';
 
 class AiActionIcon extends StatefulWidget {
   final TextEditingController controller;
@@ -140,11 +141,7 @@ class _AiActionIconState extends State<AiActionIcon> {
           if (state is AiFieldChecking || state is AiFieldLoading) {
             return const Padding(
               padding: EdgeInsets.all(12),
-              child: SizedBox(
-                width: 18,
-                height: 18,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              ),
+              child: AnimatedAiStarsIcon(size: 18),
             );
           }
 
@@ -168,7 +165,7 @@ class _AiActionIconState extends State<AiActionIcon> {
             ),
             onPressed: () async {
               if (isQuotaExceeded) {
-                _showQuotaToast((state as AiFieldQuotaExceeded).isGlobal);
+                _showQuotaToast((state).isGlobal);
                 return;
               }
               _cubit.onIconTapped(await _buildContext());
