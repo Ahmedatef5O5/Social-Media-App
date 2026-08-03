@@ -44,6 +44,38 @@ class ChatServices {
   Future<List<Map<String, dynamic>>> getChatMedia(String receiverId) =>
       _messages.getChatMedia(receiverId);
 
+  Future<List<MessageModel>> getMediaPreview({
+    required String senderId,
+    required String receiverId,
+    int limit = 6,
+  }) => _messages.getMediaPreview(
+    senderId: senderId,
+    receiverId: receiverId,
+    limit: limit,
+  );
+
+  Future<List<MessageModel>> getMediaMessages({
+    required String senderId,
+    required String receiverId,
+    required String messageType,
+    int limit = 100,
+  }) => _messages.getMediaMessages(
+    senderId: senderId,
+    receiverId: receiverId,
+    messageType: messageType,
+    limit: limit,
+  );
+
+  Future<List<MessageModel>> getLinkMessages({
+    required String senderId,
+    required String receiverId,
+    int limit = 100,
+  }) => _messages.getLinkMessages(
+    senderId: senderId,
+    receiverId: receiverId,
+    limit: limit,
+  );
+
   Future<void> sendMessage({
     required String senderId,
     required String receiverId,

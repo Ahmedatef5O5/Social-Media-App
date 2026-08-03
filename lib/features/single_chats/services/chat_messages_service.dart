@@ -57,6 +57,65 @@ class ChatMessagesService {
     }
   }
 
+  Future<List<MessageModel>> getMediaPreview({
+    required String senderId,
+    required String receiverId,
+    int limit = 6,
+  }) async {
+    final conversationId = ChatHelper.buildConversationId(senderId, receiverId);
+    final response = await _supabase
+        .from(SupabaseConstants.messages)
+        .select()
+        .eq(MessagesColumns.conversationId, conversationId)
+        .inFilter(MessagesColumns.messageType, ['image', 'video', 'voice'])
+        .order(MessagesColumns.createdAt, ascending: false)
+        .limit(limit);
+
+    return (response as List)
+        .map((e) => MessageModel.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<List<MessageModel>> getMediaMessages({
+    required String senderId,
+    required String receiverId,
+    required String messageType,
+    int limit = 100,
+  }) async {
+    final conversationId = ChatHelper.buildConversationId(senderId, receiverId);
+    final response = await _supabase
+        .from(SupabaseConstants.messages)
+        .select()
+        .eq(MessagesColumns.conversationId, conversationId)
+        .eq(MessagesColumns.messageType, messageType)
+        .order(MessagesColumns.createdAt, ascending: false)
+        .limit(limit);
+
+    return (response as List)
+        .map((e) => MessageModel.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<List<MessageModel>> getLinkMessages({
+    required String senderId,
+    required String receiverId,
+    int limit = 100,
+  }) async {
+    final conversationId = ChatHelper.buildConversationId(senderId, receiverId);
+    final response = await _supabase
+        .from(SupabaseConstants.messages)
+        .select()
+        .eq(MessagesColumns.conversationId, conversationId)
+        .eq(MessagesColumns.messageType, 'text')
+        .ilike(MessagesColumns.messageText, '%http%')
+        .order(MessagesColumns.createdAt, ascending: false)
+        .limit(limit);
+
+    return (response as List)
+        .map((e) => MessageModel.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
   Future<void> sendMessage({
     required String senderId,
     required String receiverId,
@@ -130,11 +189,11 @@ class ChatMessagesService {
         MessagesColumns.replyToStoryDurationSeconds:
             replyToStoryDurationSeconds,
       if (forwardedFromUserId != null)
-         MessagesColumns.forwardedFromUserId: forwardedFromUserId,
+        MessagesColumns.forwardedFromUserId: forwardedFromUserId,
       if (forwardedFromUserName != null)
-         MessagesColumns.forwardedFromUserName: forwardedFromUserName,
+        MessagesColumns.forwardedFromUserName: forwardedFromUserName,
       if (forwardedFromUserAvatar != null)
-         MessagesColumns.forwardedFromUserAvatar: forwardedFromUserAvatar,
+        MessagesColumns.forwardedFromUserAvatar: forwardedFromUserAvatar,
     });
   }
 
