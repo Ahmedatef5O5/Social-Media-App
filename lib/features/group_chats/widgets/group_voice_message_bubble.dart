@@ -1,9 +1,9 @@
-import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:social_media_app/core/widgets/custom_loading_indicator.dart';
 import 'package:video_player/video_player.dart';
+import '../../../core/chat_shared/controllers/voice_playback_controller.dart';
 import '../../../core/helpers/formatted_date.dart';
 import '../../../core/themes/app_colors.dart';
 import '../../../core/widgets/waveform_progress_bar.dart';
@@ -26,57 +26,8 @@ class GroupVoiceMessageBubbleWidget extends StatefulWidget {
     this.initialDurationSeconds,
   });
 
-  static final ValueNotifier<String?> _activeVoiceUrl = ValueNotifier<String?>(
-    null,
-  );
-  static final Map<String, VideoPlayerController> _cache = {};
-  static final Map<String, Duration> _durationCache = {};
-  static final Map<String, Future<void>> _preloadFutures = {};
-
-  static const Duration _minReliableDuration = Duration(seconds: 1);
-
-  static Future<Duration?> _fetchDuration(String url) async {
-    if (_durationCache.containsKey(url)) return _durationCache[url];
-    if (_preloadFutures.containsKey(url)) {
-      await _preloadFutures[url];
-      return _durationCache[url];
-    }
-    final completer = Completer<void>();
-    _preloadFutures[url] = completer.future;
-    VideoPlayerController? temp;
-    try {
-      final isLocal = url.startsWith('/');
-      temp =
-          isLocal
-              ? VideoPlayerController.file(File(url))
-              : VideoPlayerController.networkUrl(Uri.parse(url));
-      await temp.initialize();
-      final duration = temp.value.duration;
-      await temp.dispose();
-      temp = null;
-      if (duration >= _minReliableDuration) {
-        _durationCache[url] = duration;
-      }
-      completer.complete();
-      return duration;
-    } catch (e) {
-      completer.completeError(e);
-      return null;
-    } finally {
-      await temp?.dispose();
-      _preloadFutures.remove(url);
-    }
-  }
-
-  static Future<void> clearCache() async {
-    _activeVoiceUrl.value = null;
-    _preloadFutures.clear();
-    for (final c in _cache.values) {
-      await c.dispose();
-    }
-    _cache.clear();
-    _durationCache.clear();
-  }
+  static Future<void> clearCache() =>
+      VoicePlaybackController.instance.clearCache();
 
   @override
   State<GroupVoiceMessageBubbleWidget> createState() =>
@@ -85,8 +36,10 @@ class GroupVoiceMessageBubbleWidget extends StatefulWidget {
 
 class _GroupVoiceMessageBubbleWidgetState
     extends State<GroupVoiceMessageBubbleWidget> {
+  final VoicePlaybackController _voice = VoicePlaybackController.instance;
+
   VideoPlayerController? get _controller =>
-      GroupVoiceMessageBubbleWidget._cache[widget.voiceUrl];
+      _voice.controllerFor(widget.voiceUrl);
 
   bool _isPlaying = false;
   bool _isInitialized = false;
@@ -101,7 +54,7 @@ class _GroupVoiceMessageBubbleWidgetState
   Future<void> _preloadDuration() async {
     if (widget.isUploading || _isLocalFile || widget.voiceUrl.isEmpty) return;
 
-    await GroupVoiceMessageBubbleWidget._fetchDuration(widget.voiceUrl);
+    await _voice.fetchDuration(widget.voiceUrl);
 
     if (mounted) setState(() {});
   }
@@ -109,11 +62,9 @@ class _GroupVoiceMessageBubbleWidgetState
   @override
   void initState() {
     super.initState();
-    GroupVoiceMessageBubbleWidget._activeVoiceUrl.addListener(
-      _onActiveVoiceChanged,
-    );
+    _voice.activeVoiceUrl.addListener(_onActiveVoiceChanged);
 
-    if (GroupVoiceMessageBubbleWidget._cache.containsKey(widget.voiceUrl)) {
+    if (_voice.cache.containsKey(widget.voiceUrl)) {
       _isInitialized = true;
       _isPlaying = _controller!.value.isPlaying;
       _controller!.addListener(_onControllerUpdate);
@@ -131,7 +82,7 @@ class _GroupVoiceMessageBubbleWidgetState
       _isInitialized = false;
       _isPlaying = false;
 
-      if (GroupVoiceMessageBubbleWidget._cache.containsKey(widget.voiceUrl)) {
+      if (_voice.cache.containsKey(widget.voiceUrl)) {
         _isInitialized = true;
         _controller!.addListener(_onControllerUpdate);
       }
@@ -146,7 +97,7 @@ class _GroupVoiceMessageBubbleWidgetState
   }
 
   void _onActiveVoiceChanged() {
-    final active = GroupVoiceMessageBubbleWidget._activeVoiceUrl.value;
+    final active = _voice.activeVoiceUrl.value;
     if (active != widget.voiceUrl && _isPlaying) {
       _controller?.pause();
       if (mounted) setState(() => _isPlaying = false);
@@ -164,7 +115,7 @@ class _GroupVoiceMessageBubbleWidgetState
     if (dur > Duration.zero && pos >= dur) {
       ctrl.seekTo(Duration.zero);
       ctrl.pause();
-      GroupVoiceMessageBubbleWidget._activeVoiceUrl.value = null;
+      _voice.markStopped(widget.voiceUrl);
       setState(() => _isPlaying = false);
     } else {
       setState(() {});
@@ -177,9 +128,9 @@ class _GroupVoiceMessageBubbleWidgetState
       if (_isPlaying) {
         _controller!.pause();
         if (mounted) setState(() => _isPlaying = false);
-        GroupVoiceMessageBubbleWidget._activeVoiceUrl.value = null;
+        _voice.markStopped(widget.voiceUrl);
       } else {
-        GroupVoiceMessageBubbleWidget._activeVoiceUrl.value = widget.voiceUrl;
+        _voice.setActive(widget.voiceUrl);
         await _controller!.setPlaybackSpeed(_currentSpeed);
         _controller!.play();
         if (mounted) setState(() => _isPlaying = true);
@@ -196,14 +147,9 @@ class _GroupVoiceMessageBubbleWidgetState
 
       await controller.initialize();
 
-      if (controller.value.duration >=
-          GroupVoiceMessageBubbleWidget._minReliableDuration) {
-        GroupVoiceMessageBubbleWidget._durationCache[widget.voiceUrl] =
-            controller.value.duration;
-      }
       controller.addListener(_onControllerUpdate);
-      GroupVoiceMessageBubbleWidget._cache[widget.voiceUrl] = controller;
-      GroupVoiceMessageBubbleWidget._activeVoiceUrl.value = widget.voiceUrl;
+      _voice.register(widget.voiceUrl, controller);
+      _voice.setActive(widget.voiceUrl);
       await controller.setPlaybackSpeed(_currentSpeed);
       await controller.play();
 
@@ -229,9 +175,7 @@ class _GroupVoiceMessageBubbleWidgetState
 
   @override
   void dispose() {
-    GroupVoiceMessageBubbleWidget._activeVoiceUrl.removeListener(
-      _onActiveVoiceChanged,
-    );
+    _voice.activeVoiceUrl.removeListener(_onActiveVoiceChanged);
     _controller?.removeListener(_onControllerUpdate);
     super.dispose();
   }
@@ -240,8 +184,7 @@ class _GroupVoiceMessageBubbleWidgetState
     final ctrl = _controller;
     if (ctrl != null &&
         ctrl.value.isInitialized &&
-        ctrl.value.duration >=
-            GroupVoiceMessageBubbleWidget._minReliableDuration) {
+        ctrl.value.duration >= VoicePlaybackController.minReliableDuration) {
       return ctrl.value.duration;
     }
 
@@ -250,10 +193,9 @@ class _GroupVoiceMessageBubbleWidgetState
       return Duration(seconds: widget.initialDurationSeconds!);
     }
 
-    final cached =
-        GroupVoiceMessageBubbleWidget._durationCache[widget.voiceUrl];
+    final cached = _voice.durationCache[widget.voiceUrl];
     if (cached != null &&
-        cached >= GroupVoiceMessageBubbleWidget._minReliableDuration) {
+        cached >= VoicePlaybackController.minReliableDuration) {
       return cached;
     }
 

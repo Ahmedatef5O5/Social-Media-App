@@ -18,6 +18,7 @@ class VoiceRecorderInputSection extends StatefulWidget {
   final Widget sendButton;
   final VoidCallback onShowAttachments;
   final void Function(File file, int durationSeconds) onSendVoice;
+  final VoidCallback? onRecordingStart;
 
   const VoiceRecorderInputSection({
     super.key,
@@ -26,6 +27,7 @@ class VoiceRecorderInputSection extends StatefulWidget {
     required this.sendButton,
     required this.onShowAttachments,
     required this.onSendVoice,
+    this.onRecordingStart,
   });
 
   @override
@@ -126,6 +128,7 @@ class _VoiceRecorderInputSectionState extends State<VoiceRecorderInputSection> {
     _startAmplitudeSampling();
 
     if (mounted) setState(() => _uiState = _RecordUiState.recording);
+    widget.onRecordingStart?.call();
   }
 
   void _startAmplitudeSampling() {

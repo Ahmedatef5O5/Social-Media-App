@@ -2,8 +2,10 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
+import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/router/app_routes.dart';
+import '../cubit/group_details_cubit/group_details_cubit.dart';
 import '../../group_calls/views/zego_group_call_view.dart';
 import '../cubit/group_list_cubit/group_list_cubit.dart';
 import '../../group_calls/models/group_call_model.dart';
@@ -13,8 +15,13 @@ import '../../group_calls/services/group_call_signaling_service.dart';
 
 class GroupChatAppBar extends StatelessWidget implements PreferredSizeWidget {
   final GroupModel group;
+  final ItemScrollController itemScrollController;
 
-  const GroupChatAppBar({super.key, required this.group});
+  const GroupChatAppBar({
+    super.key,
+    required this.group,
+    required this.itemScrollController,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -52,9 +59,14 @@ class GroupChatAppBar extends StatelessWidget implements PreferredSizeWidget {
               titleSpacing: 0,
               title: GestureDetector(
                 onTap:
-                    () => Navigator.of(
-                      context,
-                    ).pushNamed(AppRoutes.groupInfoViewRoute, arguments: group),
+                    () => Navigator.of(context).pushNamed(
+                      AppRoutes.groupInfoViewRoute,
+                      arguments: {
+                        'group': group,
+                        'cubit': context.read<GroupDetailsCubit>(),
+                        'itemScrollController': itemScrollController,
+                      },
+                    ),
                 child: Row(
                   children: [
                     CircleAvatar(
@@ -173,12 +185,38 @@ class GroupChatAppBar extends StatelessWidget implements PreferredSizeWidget {
                     if (value == 'info') {
                       Navigator.of(context).pushNamed(
                         AppRoutes.groupInfoViewRoute,
-                        arguments: updatedGroup,
+                        arguments: {
+                          'group': updatedGroup,
+                          'cubit': context.read<GroupDetailsCubit>(),
+                          'itemScrollController': itemScrollController,
+                        },
                       );
+                    } else if (value == 'search') {
+                      context
+                          .read<GroupDetailsCubit>()
+                          .searchController
+                          .activate();
                     }
                   },
                   itemBuilder:
                       (_) => [
+                        const PopupMenuItem(
+                          value: 'search',
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.search_rounded,
+                                size: 18,
+                                color: Colors.black45,
+                              ),
+                              SizedBox(width: 8),
+                              Text(
+                                'Search',
+                                style: TextStyle(color: Colors.black45),
+                              ),
+                            ],
+                          ),
+                        ),
                         const PopupMenuItem(
                           value: 'info',
                           child: Row(

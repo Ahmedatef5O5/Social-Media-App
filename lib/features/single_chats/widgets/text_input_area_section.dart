@@ -92,6 +92,9 @@ class _TextInputAreaSectionState extends State<TextInputAreaSection> {
     final cubit = context.read<ChatDetailsCubit>();
     if (notEmpty) {
       cubit.onUserTyping(widget.receiverUser.id);
+      if (cubit.searchController.isActive.value) {
+        cubit.searchController.deactivate();
+      }
     } else {
       cubit.stopTyping(widget.receiverUser.id);
     }
@@ -223,6 +226,12 @@ class _TextInputAreaSectionState extends State<TextInputAreaSection> {
                     replyTo: widget.replyTo,
                   );
                   widget.onCancelReply?.call();
+                },
+                onRecordingStart: () {
+                  final cubit = context.read<ChatDetailsCubit>();
+                  if (cubit.searchController.isActive.value) {
+                    cubit.searchController.deactivate();
+                  }
                 },
               ),
             ),

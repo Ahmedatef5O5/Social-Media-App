@@ -54,7 +54,12 @@ class _GroupChatInputBarSectionState extends State<GroupChatInputBarSection> {
   void _onTextChanged() {
     final notEmpty = widget.controller.text.trim().isNotEmpty;
     if (notEmpty != _hasText) setState(() => _hasText = notEmpty);
-    if (notEmpty) widget.onTyping();
+    if (notEmpty) {
+      widget.onTyping();
+      if (_cubit.searchController.isActive.value) {
+        _cubit.searchController.deactivate();
+      }
+    }
   }
 
   // ── Voice recording ─────────────────────────────────────────
@@ -248,6 +253,11 @@ class _GroupChatInputBarSectionState extends State<GroupChatInputBarSection> {
                         maxMessages: maxMessages,
                       ),
                 );
+              },
+              onRecordingStart: () {
+                if (_cubit.searchController.isActive.value) {
+                  _cubit.searchController.deactivate();
+                }
               },
             );
           },

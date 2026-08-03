@@ -19,12 +19,11 @@ class GroupInputBar extends StatelessWidget {
   final void Function(String text, List<MentionRef> mentions) onSend;
   final VoidCallback onShowMedia;
   final void Function(File file, int durationSeconds) onSendVoice;
-
   final bool hasReplyContext;
   final String? replyToText;
   final String? replyToAuthorName;
-
   final VoidCallback? onSlashAiTrigger;
+  final VoidCallback? onRecordingStart;
 
   const GroupInputBar({
     super.key,
@@ -40,6 +39,7 @@ class GroupInputBar extends StatelessWidget {
     this.replyToText,
     this.replyToAuthorName,
     this.onSlashAiTrigger,
+    this.onRecordingStart,
   });
 
   void _send() {
@@ -85,6 +85,7 @@ class GroupInputBar extends StatelessWidget {
         onShowAttachments: onShowMedia,
         sendButton: SendButton(primary: primary, onTap: _send),
         onSendVoice: onSendVoice,
+        onRecordingStart: onRecordingStart,
       ),
     );
   }

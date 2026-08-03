@@ -1,8 +1,8 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:social_media_app/core/widgets/custom_loading_indicator.dart';
 import 'package:video_player/video_player.dart';
+import '../../../core/chat_shared/controllers/voice_playback_controller.dart';
 import '../../../core/helpers/formatted_date.dart';
 import '../../../core/themes/app_colors.dart';
 import '../../../core/widgets/waveform_progress_bar.dart';
@@ -24,55 +24,8 @@ class VoiceMessageBubbleWidget extends StatefulWidget {
     this.initialDurationSeconds,
   });
 
-  static final ValueNotifier<String?> _activeVoiceUrl = ValueNotifier<String?>(
-    null,
-  );
-
-  static final Map<String, VideoPlayerController> _cache = {};
-
-  static final Map<String, Duration> _durationCache = {};
-  static final Map<String, Future<void>> _preloadFutures = {};
-
-  static const Duration _minReliableDuration = Duration(seconds: 1);
-
-  static Future<Duration?> _fetchDuration(String url) async {
-    if (_durationCache.containsKey(url)) return _durationCache[url];
-    if (_preloadFutures.containsKey(url)) {
-      await _preloadFutures[url];
-      return _durationCache[url];
-    }
-    final completer = Completer<void>();
-    _preloadFutures[url] = completer.future;
-    VideoPlayerController? temp;
-    try {
-      temp = VideoPlayerController.networkUrl(Uri.parse(url));
-      await temp.initialize();
-      final duration = temp.value.duration;
-      await temp.dispose();
-      temp = null;
-      if (duration >= _minReliableDuration) {
-        _durationCache[url] = duration;
-      }
-      completer.complete();
-      return duration;
-    } catch (e) {
-      completer.completeError(e);
-      return null;
-    } finally {
-      await temp?.dispose();
-      _preloadFutures.remove(url);
-    }
-  }
-
-  static Future<void> clearCache() async {
-    _activeVoiceUrl.value = null;
-    _preloadFutures.clear();
-    for (final c in _cache.values) {
-      await c.dispose();
-    }
-    _cache.clear();
-    _durationCache.clear();
-  }
+  static Future<void> clearCache() =>
+      VoicePlaybackController.instance.clearCache();
 
   @override
   State<VoiceMessageBubbleWidget> createState() =>
@@ -80,8 +33,10 @@ class VoiceMessageBubbleWidget extends StatefulWidget {
 }
 
 class _VoiceMessageBubbleWidgetState extends State<VoiceMessageBubbleWidget> {
+  final VoicePlaybackController _voice = VoicePlaybackController.instance;
+
   VideoPlayerController? get _controller =>
-      VoiceMessageBubbleWidget._cache[widget.voiceUrl];
+      _voice.controllerFor(widget.voiceUrl);
 
   bool _isPlaying = false;
   bool _isInitialized = false;
@@ -92,10 +47,11 @@ class _VoiceMessageBubbleWidgetState extends State<VoiceMessageBubbleWidget> {
   static const List<double> _speeds = [1.0, 1.25, 1.5, 1.75, 2.0];
   int _speedIndex = 0;
   double get _currentSpeed => _speeds[_speedIndex];
+
   Future<void> _preloadDuration() async {
     if (widget.isUploading || widget.voiceUrl.startsWith('/')) return;
 
-    await VoiceMessageBubbleWidget._fetchDuration(widget.voiceUrl);
+    await _voice.fetchDuration(widget.voiceUrl);
     if (mounted) {
       setState(() {});
     }
@@ -104,14 +60,14 @@ class _VoiceMessageBubbleWidgetState extends State<VoiceMessageBubbleWidget> {
   @override
   void initState() {
     super.initState();
-    VoiceMessageBubbleWidget._activeVoiceUrl.addListener(_onActiveVoiceChanged);
+    _voice.activeVoiceUrl.addListener(_onActiveVoiceChanged);
 
     if (widget.voiceUrl.startsWith('/')) {
       _isLocalFile = true;
       return;
     }
 
-    if (VoiceMessageBubbleWidget._cache.containsKey(widget.voiceUrl)) {
+    if (_voice.cache.containsKey(widget.voiceUrl)) {
       _isInitialized = true;
       _isPlaying = _controller!.value.isPlaying;
       _controller!.addListener(_onControllerUpdate);
@@ -129,7 +85,7 @@ class _VoiceMessageBubbleWidgetState extends State<VoiceMessageBubbleWidget> {
       if (!widget.voiceUrl.startsWith('/')) {
         _isLocalFile = false;
 
-        if (VoiceMessageBubbleWidget._cache.containsKey(widget.voiceUrl)) {
+        if (_voice.cache.containsKey(widget.voiceUrl)) {
           _isInitialized = true;
           _controller!.addListener(_onControllerUpdate);
         } else {
@@ -144,7 +100,7 @@ class _VoiceMessageBubbleWidgetState extends State<VoiceMessageBubbleWidget> {
   }
 
   void _onActiveVoiceChanged() {
-    final active = VoiceMessageBubbleWidget._activeVoiceUrl.value;
+    final active = _voice.activeVoiceUrl.value;
     if (active != widget.voiceUrl && _isPlaying) {
       _controller?.pause();
       if (mounted) setState(() => _isPlaying = false);
@@ -162,7 +118,7 @@ class _VoiceMessageBubbleWidgetState extends State<VoiceMessageBubbleWidget> {
     if (dur > Duration.zero && pos >= dur) {
       ctrl.seekTo(Duration.zero);
       ctrl.pause();
-      VoiceMessageBubbleWidget._activeVoiceUrl.value = null;
+      _voice.markStopped(widget.voiceUrl);
       setState(() => _isPlaying = false);
     } else {
       setState(() {});
@@ -173,11 +129,10 @@ class _VoiceMessageBubbleWidgetState extends State<VoiceMessageBubbleWidget> {
     if (_isInitialized && _controller != null) {
       if (_isPlaying) {
         _controller!.pause();
-
         if (mounted) setState(() => _isPlaying = false);
-        VoiceMessageBubbleWidget._activeVoiceUrl.value = null;
+        _voice.markStopped(widget.voiceUrl);
       } else {
-        VoiceMessageBubbleWidget._activeVoiceUrl.value = widget.voiceUrl;
+        _voice.setActive(widget.voiceUrl);
         await _controller!.setPlaybackSpeed(_currentSpeed);
         _controller!.play();
         if (mounted) setState(() => _isPlaying = true);
@@ -191,17 +146,10 @@ class _VoiceMessageBubbleWidgetState extends State<VoiceMessageBubbleWidget> {
     );
     await controller.initialize();
 
-    if (controller.value.duration >=
-        VoiceMessageBubbleWidget._minReliableDuration) {
-      VoiceMessageBubbleWidget._durationCache[widget.voiceUrl] =
-          controller.value.duration;
-    }
-
     controller.addListener(_onControllerUpdate);
+    _voice.register(widget.voiceUrl, controller);
 
-    VoiceMessageBubbleWidget._cache[widget.voiceUrl] = controller;
-
-    VoiceMessageBubbleWidget._activeVoiceUrl.value = widget.voiceUrl;
+    _voice.setActive(widget.voiceUrl);
     await controller.setPlaybackSpeed(_currentSpeed);
     await controller.play();
 
@@ -223,9 +171,7 @@ class _VoiceMessageBubbleWidgetState extends State<VoiceMessageBubbleWidget> {
 
   @override
   void dispose() {
-    VoiceMessageBubbleWidget._activeVoiceUrl.removeListener(
-      _onActiveVoiceChanged,
-    );
+    _voice.activeVoiceUrl.removeListener(_onActiveVoiceChanged);
     _controller?.removeListener(_onControllerUpdate);
     super.dispose();
   }
@@ -234,7 +180,7 @@ class _VoiceMessageBubbleWidgetState extends State<VoiceMessageBubbleWidget> {
     final ctrl = _controller;
     if (ctrl != null &&
         ctrl.value.isInitialized &&
-        ctrl.value.duration >= VoiceMessageBubbleWidget._minReliableDuration) {
+        ctrl.value.duration >= VoicePlaybackController.minReliableDuration) {
       return ctrl.value.duration;
     }
 
@@ -243,9 +189,9 @@ class _VoiceMessageBubbleWidgetState extends State<VoiceMessageBubbleWidget> {
       return Duration(seconds: widget.initialDurationSeconds!);
     }
 
-    final cached = VoiceMessageBubbleWidget._durationCache[widget.voiceUrl];
+    final cached = _voice.durationCache[widget.voiceUrl];
     if (cached != null &&
-        cached >= VoiceMessageBubbleWidget._minReliableDuration) {
+        cached >= VoicePlaybackController.minReliableDuration) {
       return cached;
     }
 
@@ -292,7 +238,6 @@ class _VoiceMessageBubbleWidgetState extends State<VoiceMessageBubbleWidget> {
                     width: 24,
                     height: 24,
                     child: CustomLoadingIndicator(
-                      // strokeWidth: 2,
                       color:
                           widget.isMe
                               ? AppColors.white
