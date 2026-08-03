@@ -4,6 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:video_player/video_player.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
+import '../../ai_assistant/entities/ai_action_type.dart';
+import '../../ai_assistant/entities/ai_request_context.dart';
+import '../../ai_assistant/widgets/ai_action_icon.dart';
 
 class GroupMediaPreviewScreen extends StatefulWidget {
   final File file;
@@ -228,6 +231,16 @@ class _GroupMediaPreviewScreenState extends State<GroupMediaPreviewScreen> {
                           contentPadding: const EdgeInsets.symmetric(
                             horizontal: 16,
                             vertical: 10,
+                          ),
+                          suffixIcon: AiActionIcon(
+                            controller: _captionController,
+                            surface: AiSurfaceType.chatMessage,
+                            generationAction: AiActionType.autocompleteCaption,
+                            hasMediaAttached: true,
+                            imageBytesProvider:
+                                widget.type == 'image'
+                                    ? () => widget.file.readAsBytes()
+                                    : null,
                           ),
                         ),
                       ),

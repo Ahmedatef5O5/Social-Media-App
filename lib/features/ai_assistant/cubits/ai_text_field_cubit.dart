@@ -116,8 +116,13 @@ class AiTextFieldCubit extends Cubit<AiTextFieldState> {
 
     emit(const AiFieldLoading());
 
+    final effectiveAction =
+        context.hasMediaAttached
+            ? AiActionType.autocompleteCaption
+            : generationAction;
+
     final result =
-        generationAction == AiActionType.replySuggestion
+        effectiveAction == AiActionType.replySuggestion
             ? await _repository.suggestReply(context)
             : await _repository.generateCaption(context);
 

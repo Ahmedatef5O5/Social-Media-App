@@ -203,6 +203,10 @@ class _SendCommentSectionState extends State<SendCommentSection> {
                   final isStickerOnly =
                       cubit.pendingAttachment?.type == CommentType.sticker;
                   final canSend = _canSend(cubit);
+                  final pendingMedia = cubit.pendingAttachment;
+                  final isMediaCaptionable =
+                      pendingMedia?.type == CommentType.image ||
+                      pendingMedia?.type == CommentType.video;
 
                   return Container(
                     padding: const EdgeInsets.symmetric(vertical: 4),
@@ -237,8 +241,14 @@ class _SendCommentSectionState extends State<SendCommentSection> {
                               controller: _commentController,
                               surface: AiSurfaceType.comment,
                               generationAction: AiActionType.replySuggestion,
-                              hasMediaAttached: true,
+                              hasMediaAttached: isMediaCaptionable,
                               hasReplyContext: isReplying,
+                              imageBytesProvider:
+                                  pendingMedia?.type == CommentType.image &&
+                                          pendingMedia?.localFile != null
+                                      ? () =>
+                                          pendingMedia!.localFile!.readAsBytes()
+                                      : null,
                               replyToAuthorName: widget.replyingToAuthorName,
                               parentContentText: widget.post.text,
                             ),

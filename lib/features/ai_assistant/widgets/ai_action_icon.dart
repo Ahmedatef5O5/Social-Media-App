@@ -77,8 +77,7 @@ class _AiActionIconState extends State<AiActionIcon> {
   Future<AiRequestContext> _buildContext() async {
     String? imageBase64;
 
-    if (widget.generationAction == AiActionType.autocompleteCaption &&
-        widget.imageBytesProvider != null) {
+    if (widget.hasMediaAttached && widget.imageBytesProvider != null) {
       try {
         final bytes = await widget.imageBytesProvider!();
         if (bytes != null) {

@@ -4,6 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:social_media_app/core/widgets/custom_loading_indicator.dart';
 import 'package:video_player/video_player.dart';
 import '../../../core/themes/app_colors.dart';
+import '../../ai_assistant/entities/ai_action_type.dart';
+import '../../ai_assistant/entities/ai_request_context.dart';
+import '../../ai_assistant/widgets/ai_action_icon.dart';
 
 class MediaPreviewScreen extends StatefulWidget {
   final File file;
@@ -230,6 +233,16 @@ class _MediaPreviewScreenState extends State<MediaPreviewScreen> {
                           filled: true,
                           contentPadding: const EdgeInsets.symmetric(
                             horizontal: 20,
+                          ),
+                          suffixIcon: AiActionIcon(
+                            controller: _captionController,
+                            surface: AiSurfaceType.chatMessage,
+                            generationAction: AiActionType.autocompleteCaption,
+                            hasMediaAttached: true,
+                            imageBytesProvider:
+                                widget.type == 'image'
+                                    ? () => widget.file.readAsBytes()
+                                    : null,
                           ),
                         ),
                       ),
