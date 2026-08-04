@@ -216,6 +216,7 @@ class _GroupInfoViewState extends State<GroupInfoView> {
               group: liveGroup,
               membersCubit: _membersCubit,
               groupListCubit: context.read<GroupListCubit>(),
+              detailsCubit: widget.detailsCubit,
               isAdmin: isAdmin,
               currentUserId: _currentUserId,
             ),
@@ -281,7 +282,28 @@ class _GroupInfoViewState extends State<GroupInfoView> {
   @override
   Widget build(BuildContext context) {
     final primary = Theme.of(context).primaryColor;
+    final detailsCubit = widget.detailsCubit;
 
+    if (detailsCubit != null) {
+      return BlocBuilder<GroupDetailsCubit, GroupDetailsState>(
+        bloc: detailsCubit,
+        builder: (context, detailsState) {
+          final isMemberLive =
+              detailsState is GroupDetailsLoaded
+                  ? detailsState.isMember
+                  : widget.group.isMember;
+          return _buildBody(context, primary, isMemberOverride: isMemberLive);
+        },
+      );
+    }
+    return _buildBody(context, primary, isMemberOverride: null);
+  }
+
+  Widget _buildBody(
+    BuildContext context,
+    Color primary, {
+    required bool? isMemberOverride,
+  }) {
     return BlocBuilder<GroupListCubit, GroupListState>(
       builder: (context, listState) {
         final liveGroup =
@@ -337,7 +359,7 @@ class _GroupInfoViewState extends State<GroupInfoView> {
                         SliverToBoxAdapter(
                           child: GroupInfoQuickActionsRow(
                             isMuted: _isMuted,
-                            isMember: liveGroup.isMember,
+                            isMember: isMemberOverride ?? liveGroup.isMember,
                             onMessage: () => Navigator.of(context).pop(),
                             onCall:
                                 () => GroupCallInitiator.initiate(
