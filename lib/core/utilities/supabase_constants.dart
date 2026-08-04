@@ -101,6 +101,8 @@ abstract class GroupMemberColumns {
   static const String isMuted = 'is_muted';
   static const String membershipStatus = 'membership_status';
   static const String leftAt = 'left_at';
+  static const String isBlocked = 'is_blocked';
+  static const String blockedAt = 'blocked_at';
 }
 
 // group_messages

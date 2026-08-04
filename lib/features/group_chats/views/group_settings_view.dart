@@ -1,10 +1,10 @@
 import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../core/toast/app_toast.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
+import '../cubit/group_details_cubit/group_details_cubit.dart';
 import '../cubit/group_list_cubit/group_list_cubit.dart';
 import '../cubit/group_members_cubit/group_members_cubit.dart';
 import '../helpers/group_info_action_btn_widget.dart';
@@ -15,6 +15,7 @@ class GroupSettingsView extends StatefulWidget {
   final GroupModel group;
   final GroupMembersCubit membersCubit;
   final GroupListCubit groupListCubit;
+  final GroupDetailsCubit? detailsCubit;
   final bool isAdmin;
   final String currentUserId;
 
@@ -23,6 +24,7 @@ class GroupSettingsView extends StatefulWidget {
     required this.group,
     required this.membersCubit,
     required this.groupListCubit,
+    this.detailsCubit,
     required this.isAdmin,
     required this.currentUserId,
   });
@@ -205,20 +207,46 @@ class _GroupSettingsViewState extends State<GroupSettingsView> {
     }
   }
 
-  Future<void> _deleteGroup(BuildContext context, GroupModel liveGroup) async {
+  // Future<void> _deleteGroup(BuildContext context, GroupModel liveGroup) async {
+  //   final confirm = await _confirm(
+  //     context,
+  //     title: 'Delete Group',
+  //     body:
+  //         liveGroup.isMember
+  //             ? 'This will remove you from the group and delete the chat history on this device only. Continue?'
+  //             : 'This will delete the chat history on this device only. Continue?',
+  //     confirmLabel: 'Delete',
+  //     confirmColor: Colors.red,
+  //   );
+  //   if (confirm != true) return;
+  //   try {
+  //     await widget.membersCubit.deleteGroup(
+  //       currentUserId: widget.currentUserId,
+  //       groupListCubit: widget.groupListCubit,
+  //       isCurrentlyMember: liveGroup.isMember,
+  //     );
+  //     if (context.mounted) {
+  //       Navigator.of(context, rootNavigator: true).popUntil((r) => r.isFirst);
+  //     }
+  //   } catch (e) {
+  //     if (context.mounted) AppToast.error('Failed to delete group: $e');
+  //   }
+  // }
+
+  Future<void> _blockGroup(BuildContext context, GroupModel liveGroup) async {
     final confirm = await _confirm(
       context,
-      title: 'Delete Group',
+      title: 'Block Group',
       body:
           liveGroup.isMember
-              ? 'This will remove you from the group and delete the chat history on this device only. Continue?'
-              : 'This will delete the chat history on this device only. Continue?',
-      confirmLabel: 'Delete',
+              ? 'You will leave "${liveGroup.name}", the chat history on this device will be cleared, and you won\'t be able to be re-added to this group. Continue?'
+              : 'The chat history on this device will be cleared, and you won\'t be able to be re-added to this group. Continue?',
+      confirmLabel: 'Block',
       confirmColor: Colors.red,
     );
     if (confirm != true) return;
     try {
-      await widget.membersCubit.deleteGroup(
+      await widget.membersCubit.blockGroup(
         currentUserId: widget.currentUserId,
         groupListCubit: widget.groupListCubit,
         isCurrentlyMember: liveGroup.isMember,
@@ -227,12 +255,29 @@ class _GroupSettingsViewState extends State<GroupSettingsView> {
         Navigator.of(context, rootNavigator: true).popUntil((r) => r.isFirst);
       }
     } catch (e) {
-      if (context.mounted) AppToast.error('Failed to delete group: $e');
+      if (context.mounted) AppToast.error('Failed to block group: $e');
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final detailsCubit = widget.detailsCubit;
+    if (detailsCubit != null) {
+      return BlocBuilder<GroupDetailsCubit, GroupDetailsState>(
+        bloc: detailsCubit,
+        builder: (context, detailsState) {
+          final isMemberLive =
+              detailsState is GroupDetailsLoaded
+                  ? detailsState.isMember
+                  : widget.group.isMember;
+          return _buildBody(context, isMemberOverride: isMemberLive);
+        },
+      );
+    }
+    return _buildBody(context, isMemberOverride: null);
+  }
+
+  Widget _buildBody(BuildContext context, {required bool? isMemberOverride}) {
     return BlocBuilder<GroupListCubit, GroupListState>(
       bloc: widget.groupListCubit,
       builder: (context, listState) {
@@ -243,6 +288,7 @@ class _GroupSettingsViewState extends State<GroupSettingsView> {
                   orElse: () => widget.group,
                 )
                 : widget.group;
+        final isMember = isMemberOverride ?? liveGroup.isMember;
 
         return Scaffold(
           appBar: AppBar(title: const Text('Group Settings')),
@@ -290,7 +336,7 @@ class _GroupSettingsViewState extends State<GroupSettingsView> {
                 ),
                 const Divider(height: 32),
               ],
-              if (liveGroup.isMember) ...[
+              if (isMember) ...[
                 GroupInfoActionButton(
                   icon: Icons.exit_to_app_rounded,
                   label: 'Leave Group',
@@ -299,11 +345,18 @@ class _GroupSettingsViewState extends State<GroupSettingsView> {
                 ),
                 const SizedBox(height: 8),
               ],
+
+              // GroupInfoActionButton(
+              //   icon: Icons.delete_forever_rounded,
+              //   label: 'Delete Group',
+              //   color: Colors.red,
+              //   onTap: () => _deleteGroup(context, liveGroup),
+              // ),
               GroupInfoActionButton(
-                icon: Icons.delete_forever_rounded,
-                label: 'Delete Group',
+                icon: Icons.block_rounded,
+                label: 'Block Group',
                 color: Colors.red,
-                onTap: () => _deleteGroup(context, liveGroup),
+                onTap: () => _blockGroup(context, liveGroup),
               ),
             ],
           ),
