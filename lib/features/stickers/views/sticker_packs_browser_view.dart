@@ -7,6 +7,7 @@ import 'package:social_media_app/core/widgets/custom_loading_indicator.dart';
 import '../cubit/sticker_packs_cubit/sticker_packs_cubit.dart';
 import '../cubit/sticker_packs_cubit/sticker_packs_state.dart';
 import '../model/sticker_pack_model.dart';
+import 'create_sticker_pack_view.dart';
 import 'sticker_pack_details_view.dart';
 
 class StickerPacksBrowserView extends StatelessWidget {
@@ -37,7 +38,25 @@ class _StickerPacksBrowserSheetBody extends StatelessWidget {
         ),
         centerTitle: true,
         elevation: 0,
+        scrolledUnderElevation: 0,
+        shadowColor: Colors.transparent,
         backgroundColor: Colors.transparent,
+        actions: [
+          IconButton(
+            tooltip: 'Create Pack',
+            icon: const Icon(Icons.add_rounded),
+            onPressed: () async {
+              final cubit = context.read<StickerPacksCubit>();
+
+              final created = await Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const CreateStickerPackView(),
+                ),
+              );
+              if (created != null) cubit.loadPacks();
+            },
+          ),
+        ],
       ),
       body: BlocBuilder<StickerPacksCubit, StickerPacksState>(
         builder: (context, state) {
