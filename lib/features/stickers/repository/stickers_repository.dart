@@ -3,6 +3,7 @@ import 'package:social_media_app/core/cache/services/local_snapshot_store.dart';
 import 'package:social_media_app/core/utilities/supabase_constants.dart';
 import '../model/sticker_model.dart';
 import '../model/sticker_pack_model.dart';
+import '../model/sticker_pack_privacy.dart';
 
 class StickersRepository {
   StickersRepository._();
@@ -56,5 +57,45 @@ class StickersRepository {
       _downloadedPacksKey,
       current.map((id) => {'id': id}).toList(),
     );
+  }
+
+  Future<StickerPackModel> createUserPack({
+    required String title,
+    required StickerPackPrivacy privacy,
+    required List<Map<String, dynamic>> stickers,
+    required Set<String> friendIds,
+  }) async {
+    final response = await _client.rpc(
+      SupabaseConstants.createUserStickerPackRpc,
+      params: {
+        'p_title': title,
+        'p_privacy_level': privacy.dbValue,
+        'p_stickers': stickers,
+        'p_friend_ids': friendIds.isEmpty ? null : friendIds.toList(),
+      },
+    );
+    return StickerPackModel.fromMap(response as Map<String, dynamic>);
+  }
+
+  Future<List<StickerPackModel>> fetchMyPacks() async {
+    final userId = _client.auth.currentUser?.id;
+    if (userId == null) return [];
+
+    final response = await _client
+        .from(SupabaseConstants.stickerPacks)
+        .select()
+        .eq(StickerPackColumns.ownerId, userId)
+        .order(StickerPackColumns.createdAt);
+
+    return (response as List)
+        .map((e) => StickerPackModel.fromMap(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<void> deleteMyPack(String packId) async {
+    await _client
+        .from(SupabaseConstants.stickerPacks)
+        .delete()
+        .eq(StickerPackColumns.id, packId);
   }
 }
