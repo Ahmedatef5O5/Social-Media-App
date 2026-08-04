@@ -44,6 +44,7 @@ abstract class SupabaseConstants {
   // ── Stickers Feature ──
   static const String stickerPacks = 'sticker_packs';
   static const String stickers = 'stickers';
+  static const String stickerPackShares = 'sticker_pack_shares';
 
   // ── RPC (Stored Functions) ──
   static const String getChatsWithLastMessage = 'get_chats_with_last_message';
@@ -52,6 +53,7 @@ abstract class SupabaseConstants {
   static const String getMyStoriesOverviewRpc = 'get_my_stories_overview';
   static const String getStoryViewersRpc = 'get_story_viewers';
   static const String togglePostShareRpc = 'toggle_post_share';
+  static const String createUserStickerPackRpc = 'create_user_sticker_pack';
   // comments_upgrade_migration.sql
   static const String addCommentWithMentionsRpc = 'add_comment_with_mentions';
 
@@ -295,9 +297,16 @@ abstract class StickerPackColumns {
   static const String stickerCount = 'sticker_count';
   static const String sortOrder = 'sort_order';
   static const String createdAt = 'created_at';
-
-  // Animated StickerPack
   static const String hasAnimated = 'has_animated';
+  static const String ownerId = 'owner_id';
+  static const String privacyLevel = 'privacy_level';
+}
+
+abstract class StickerPackShareColumns {
+  static const String id = 'id';
+  static const String packId = 'pack_id';
+  static const String sharedWithUserId = 'shared_with_user_id';
+  static const String createdAt = 'created_at';
 }
 
 // subClass for stickers column table

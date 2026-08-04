@@ -1,4 +1,5 @@
 import 'package:social_media_app/core/utilities/supabase_constants.dart';
+import 'sticker_pack_privacy.dart';
 
 class StickerPackModel {
   final String id;
@@ -6,6 +7,8 @@ class StickerPackModel {
   final String coverUrl;
   final int stickerCount;
   final int sortOrder;
+  final String? ownerId;
+  final StickerPackPrivacy privacyLevel;
 
   const StickerPackModel({
     required this.id,
@@ -13,7 +16,11 @@ class StickerPackModel {
     required this.coverUrl,
     required this.stickerCount,
     required this.sortOrder,
+    this.ownerId,
+    this.privacyLevel = StickerPackPrivacy.public,
   });
+
+  bool get isUserGenerated => ownerId != null;
 
   factory StickerPackModel.fromMap(Map<String, dynamic> map) {
     return StickerPackModel(
@@ -22,6 +29,10 @@ class StickerPackModel {
       coverUrl: map[StickerPackColumns.coverUrl] as String,
       stickerCount: map[StickerPackColumns.stickerCount] as int? ?? 0,
       sortOrder: map[StickerPackColumns.sortOrder] as int? ?? 0,
+      ownerId: map[StickerPackColumns.ownerId] as String?,
+      privacyLevel: StickerPackPrivacyX.fromDbValue(
+        map[StickerPackColumns.privacyLevel] as String?,
+      ),
     );
   }
 }
