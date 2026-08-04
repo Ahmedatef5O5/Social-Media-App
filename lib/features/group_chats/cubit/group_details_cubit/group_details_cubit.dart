@@ -17,6 +17,7 @@ import '../../../../core/audio/voice_recorder/services/audio_compression_service
 import '../../../../core/helpers/selected_message_star_controller.dart';
 import '../../../notifications/repository/notifications_repository.dart';
 import '../../../reactions/services/reaction_profile_resolver.dart';
+import '../../helpers/group_chat_clear_store.dart';
 import '../../models/group_model.dart';
 import '../../models/groupe_message_model.dart';
 import '../../services/group_chat_services.dart';
@@ -99,7 +100,15 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState>
 
   void init() {
     _messagesSnapshotKey = 'group_messages_snapshot_${group.id}';
-    isMember = group.isMember;
+
+    final listState = groupListCubit.state;
+    isMember =
+        listState is GroupListLoaded
+            ? listState.groups
+                .firstWhere((g) => g.id == group.id, orElse: () => group)
+                .isMember
+            : group.isMember;
+
     final diskMessages = _readMessagesSnapshot(_messagesSnapshotKey!);
     if (diskMessages.isNotEmpty) {
       for (var m in diskMessages) {
@@ -163,6 +172,7 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState>
 
   @override
   Future<void> markRead() async {
+    if (!isMember) return;
     groupListCubit.resetGroupUnreadCount(group.id);
     await _services.markGroupMessagesRead(group.id);
   }
@@ -210,14 +220,20 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState>
   @override
   Future<void> close() {
     groupListCubit.resetGroupUnreadCount(group.id);
-    _services.markGroupMessagesRead(group.id);
-
+    if (isMember) {
+      _services.markGroupMessagesRead(group.id);
+    }
     groupListCubit.setActiveGroupId(null);
+
+    _messagesSubscription?.cancel();
+    _readReceiptsSubscription?.cancel();
+    _typingSubscription?.cancel();
+    _membershipSubscription?.cancel();
+    _typingDebounce?.cancel();
 
     replyToMessage.dispose();
     editingMessage.dispose();
     highlightedMessageId.dispose();
-    searchController.dispose();
     return super.close();
   }
 }

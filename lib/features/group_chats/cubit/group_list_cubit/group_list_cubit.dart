@@ -8,6 +8,7 @@ import '../../../../core/cache/services/local_snapshot_store.dart';
 import '../../../../core/supabase/supabase_provider.dart';
 import '../../../../core/utilities/supabase_constants.dart';
 import '../../../auth/handler/auth_exception_handler.dart';
+import '../../helpers/group_chat_clear_store.dart';
 import '../../models/group_model.dart';
 import '../../services/group_chat_services.dart';
 part 'group_list_state.dart';
@@ -19,17 +20,45 @@ class GroupListCubit extends Cubit<GroupListState> {
   RealtimeChannel? _channel;
   StreamSubscription? _messagesStreamSub;
   List<GroupModel> _cached = [];
-
   Timer? _activeGroupTimer;
   String? _activeGroupId;
 
-  final Map<String, int> _dbUnreadCounts = {};
   final Set<String> _locallyDeletedGroupIds = {};
   List<GroupModel> get cachedGroupsChats => _cached;
 
   String get _currentUserId => SupabaseProvider.id;
 
   GroupListCubit(this._services) : super(GroupListInitial());
+
+  bool _isHiddenByLocalClear(GroupModel g) {
+    final clearedAt = GroupChatClearStore.instance.clearedAtFor(g.id);
+    if (clearedAt == null) return false;
+    final lastMsgAt = g.lastMessageAt;
+    if (lastMsgAt != null && lastMsgAt.isAfter(clearedAt)) {
+      return false;
+    }
+    return true;
+  }
+
+  Future<void> clearChatsLocally(Set<String> groupIds) async {
+    if (groupIds.isEmpty) return;
+
+    await GroupChatClearStore.instance.setClearedNow(groupIds);
+
+    for (final groupId in groupIds) {
+      await LocalSnapshotStore.instance.clear(
+        'group_messages_snapshot_$groupId',
+      );
+    }
+
+    if (state is! GroupListLoaded) return;
+    final currentState = state as GroupListLoaded;
+    final newList =
+        currentState.groups.where((g) => !groupIds.contains(g.id)).toList();
+    _cached = newList;
+    emit(GroupListLoaded(newList));
+    _persistGroupsSnapshot(newList);
+  }
 
   void setActiveGroupId(String? groupId) {
     _activeGroupTimer?.cancel();
@@ -40,7 +69,6 @@ class GroupListCubit extends Cubit<GroupListState> {
       });
     } else {
       _activeGroupId = groupId;
-      _dbUnreadCounts[groupId] = 0;
       resetGroupUnreadCount(groupId);
     }
   }
@@ -98,7 +126,6 @@ class GroupListCubit extends Cubit<GroupListState> {
             );
             if (!cachedGroup.isMember) continue;
 
-            // Use DB-computed unread count, but override to 0 if group is active
             final isActiveGroup = _activeGroupId == groupId;
             final computedUnread =
                 isActiveGroup ? 0 : (unreadPerGroup[groupId] ?? 0);
@@ -186,7 +213,11 @@ class GroupListCubit extends Cubit<GroupListState> {
           callback: (payload) {
             final row = payload.newRecord;
             final userId = row[GroupMemberColumns.userId] as String?;
-            if (userId == _currentUserId) {
+            final groupId = row[GroupMemberColumns.groupId] as String?;
+
+            if (userId == _currentUserId && groupId != null) {
+              _locallyDeletedGroupIds.remove(groupId);
+              unawaited(GroupChatClearStore.instance.clear(groupId));
               loadGroups(isRefresh: true);
             }
           },
@@ -205,6 +236,8 @@ class GroupListCubit extends Cubit<GroupListState> {
             if (status == 'left' || status == 'removed') {
               markGroupAsLeft(groupId);
             } else if (status == 'active') {
+              _locallyDeletedGroupIds.remove(groupId);
+              unawaited(GroupChatClearStore.instance.clear(groupId));
               markGroupAsActive(groupId);
             }
           },
@@ -252,10 +285,16 @@ class GroupListCubit extends Cubit<GroupListState> {
   // ─── State helpers ────────────────────────────────────────────────────────
 
   void markGroupAsActive(String groupId) {
-    if (state is! GroupListLoaded) return;
+    if (state is! GroupListLoaded) {
+      loadGroups(isRefresh: true);
+      return;
+    }
     final currentState = state as GroupListLoaded;
     final idx = currentState.groups.indexWhere((g) => g.id == groupId);
-    if (idx == -1) return;
+    if (idx == -1) {
+      loadGroups(isRefresh: true);
+      return;
+    }
     if (currentState.groups[idx].isMember) return;
     final newList = List<GroupModel>.from(currentState.groups);
     newList[idx] = newList[idx].copyWith(isMember: true);
@@ -278,26 +317,17 @@ class GroupListCubit extends Cubit<GroupListState> {
   }
 
   void updateGroupMembership(String groupId, bool isMember) {
-    final currentState = state;
-    if (currentState is GroupListLoaded) {
-      final updatedGroups =
-          currentState.groups.map((g) {
-            if (g.id == groupId) {
-              return g.copyWith(isMember: isMember);
-            }
-            return g;
-          }).toList();
-      emit(GroupListLoaded(updatedGroups));
+    if (isMember) {
+      markGroupAsActive(groupId);
+    } else {
+      markGroupAsLeft(groupId);
     }
   }
 
-  // Updated removeGroupLocally: records the tombstone before touching state.
   Future<void> removeGroupLocally(String groupId) async {
     _locallyDeletedGroupIds.add(groupId);
 
     if (state is! GroupListLoaded) {
-      // Even if state isn't Loaded yet, still clear the cached snapshot so a
-      // late loadGroups() doesn't resurrect it from disk.
       await LocalSnapshotStore.instance.clear(
         'group_messages_snapshot_$groupId',
       );
@@ -308,10 +338,8 @@ class GroupListCubit extends Cubit<GroupListState> {
     final newList = currentState.groups.where((g) => g.id != groupId).toList();
     _cached = newList;
 
-    // Emit FIRST — the UI must reflect the removal before any I/O happens.
     emit(GroupListLoaded(newList));
 
-    // Local snapshot cleanup can safely happen after the UI already updated.
     await LocalSnapshotStore.instance.clear('group_messages_snapshot_$groupId');
     _persistGroupsSnapshot(newList);
   }
@@ -512,14 +540,13 @@ class GroupListCubit extends Cubit<GroupListState> {
 
   // ─── Public API ───────────────────────────────────────────────────────────
 
-  // Updated loadGroups(): filters out anything tombstoned locally so a stale
-  // server row can never re-add a group the user just deleted/left.
   Future<void> loadGroups({bool isRefresh = false}) async {
     if (!isRefresh) emit(GroupListLoading());
     try {
       final fetchedGroups =
           await _services.getMyGroups()
-            ..removeWhere((g) => _locallyDeletedGroupIds.contains(g.id));
+            ..removeWhere((g) => _locallyDeletedGroupIds.contains(g.id))
+            ..removeWhere(_isHiddenByLocalClear);
 
       final fetchedIds = fetchedGroups.map((g) => g.id).toSet();
 

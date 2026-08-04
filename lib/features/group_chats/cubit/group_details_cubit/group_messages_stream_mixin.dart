@@ -71,15 +71,22 @@ mixin GroupMessagesStreamMixin on Cubit<GroupDetailsState> {
   void _listenMessages() {
     _messagesSubscription?.cancel();
     if (!isMember) return;
+
+    final clearedAt = GroupChatClearStore.instance.clearedAtFor(group.id);
+
     _messagesSubscription = _services.getGroupMessagesStream(group.id).listen((
       messages,
     ) {
+      final visibleMessages =
+          clearedAt == null
+              ? messages
+              : messages.where((m) => m.createdAt.isAfter(clearedAt)).toList();
+
       final existingById = {for (final c in cachedMessages) c.id: c};
 
       final enriched =
-          messages.map((msg) {
+          visibleMessages.map((msg) {
             final existing = existingById[msg.id];
-
             final mentions =
                 _mentionsCache[msg.id] ??
                 existing?.mentions ??
@@ -96,29 +103,25 @@ mixin GroupMessagesStreamMixin on Cubit<GroupDetailsState> {
         _persistMessagesSnapshot(_messagesSnapshotKey!, enriched);
       }
 
-      // Mark read in DB
       markRead();
 
       bool amIRemoved = false;
-      for (final msg in messages) {
+      for (final msg in visibleMessages) {
         if (msg.isSystemEvent) {
           final type = msg.systemEventData?['type'];
           final targetId = msg.targetId ?? msg.systemEventData?['target_id'];
-
           if (targetId == currentUserId && type == 'member_removed') {
             amIRemoved = true;
             break;
           }
         }
       }
-
       if (amIRemoved) {
         groupListCubit.updateGroupMembership(group.id, false);
       }
 
       if (enriched.isNotEmpty) {
         final latest = enriched.first;
-
         groupListCubit.updateGroupLastMessage(
           groupId: group.id,
           message: latest.text,

@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter/foundation.dart';
 import 'package:social_media_app/features/group_chats/models/group_member_model.dart';
 import 'package:social_media_app/features/group_chats/services/group_chat_services.dart';
+import '../../models/group_add_members_result.dart';
 import '../group_list_cubit/group_list_cubit.dart';
 part 'group_members_state.dart';
 
@@ -82,17 +83,22 @@ class GroupMembersCubit extends Cubit<GroupMembersState> {
     );
   }
 
-  Future<void> addMembers(
+  Future<GroupAddMembersResult> addMembers(
     List<String> userIds, {
     required String currentUserId,
   }) async {
     if (!isCurrentUserAdmin(currentUserId)) {
       throw Exception('Only group admins can add members');
     }
-    if (userIds.isEmpty) return;
+    if (userIds.isEmpty) {
+      return const GroupAddMembersResult(added: [], failed: []);
+    }
 
-    await _services.addMembers(groupId, userIds);
-    await refresh();
+    final result = await _services.addMembers(groupId, userIds);
+    if (result.added.isNotEmpty) {
+      await refresh();
+    }
+    return result;
   }
 
   Future<void> removeMember(
@@ -137,6 +143,15 @@ class GroupMembersCubit extends Cubit<GroupMembersState> {
   }) async {
     await _services.leaveGroup(groupId);
     groupListCubit.markGroupAsLeft(groupId);
+  }
+
+  Future<void> blockGroup({
+    required String currentUserId,
+    required GroupListCubit groupListCubit,
+    required bool isCurrentlyMember,
+  }) async {
+    await _services.blockGroup(groupId, wasMember: isCurrentlyMember);
+    await groupListCubit.removeGroupLocally(groupId);
   }
 
   Future<void> deleteGroup({

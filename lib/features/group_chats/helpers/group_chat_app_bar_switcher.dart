@@ -32,6 +32,10 @@ class GroupChatAppBarSwitcher extends StatelessWidget
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
 
+  void _showComingSoon(BuildContext context, String feature) {
+    AppToast.info('$feature is coming soon');
+  }
+
   Future<void> _openForwardPicker(
     BuildContext context, {
     required int messageCount,
@@ -120,6 +124,11 @@ class GroupChatAppBarSwitcher extends StatelessWidget
                         tooltip: isStarred ? 'Unstar' : 'Star',
                         onPressed: cubit.toggleStarSelected,
                       ),
+                    MultiSelectAction(
+                      icon: Icons.info_outline,
+                      tooltip: 'Info',
+                      onPressed: () => _showComingSoon(context, 'Info'),
+                    ),
                     MultiSelectAction(
                       icon: Icons.forward_rounded,
                       tooltip: 'Forward',

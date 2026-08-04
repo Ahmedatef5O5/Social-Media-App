@@ -72,13 +72,29 @@ class _AddGroupMembersViewState extends State<AddGroupMembersView> {
     setState(() => _isSubmitting = true);
 
     try {
-      await widget.membersCubit.addMembers(
+      final result = await widget.membersCubit.addMembers(
         _selectedUserIds.toList(),
         currentUserId: widget.currentUserId,
       );
-      if (mounted) Navigator.pop(context);
+
+      if (result.isFullSuccess) {
+        if (mounted) Navigator.pop(context);
+      } else if (result.isPartialSuccess) {
+        AppToast.error(
+          result.failed.length == 1
+              ? 'Added ${result.added.length}. One person isn\'t available to join right now.'
+              : 'Added ${result.added.length}. ${result.failed.length} people aren\'t available to join right now.',
+        );
+        if (mounted) Navigator.pop(context);
+      } else {
+        AppToast.error(
+          result.failed.length == 1
+              ? "This person isn't available to join the group right now."
+              : "These people aren't available to join the group right now.",
+        );
+      }
     } catch (e) {
-      AppToast.error('Failed to add members: $e');
+      AppToast.error('Failed to add members. Please try again.');
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
     }

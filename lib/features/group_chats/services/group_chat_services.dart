@@ -9,6 +9,7 @@ import '../../../core/services/cloudinary_upload_result.dart';
 import '../../../core/services/media_cleanup_service.dart';
 import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/utilities/supabase_constants.dart';
+import '../models/group_add_members_result.dart';
 import '../models/group_member_model.dart';
 import '../models/group_model.dart';
 import '../models/groupe_message_model.dart';
@@ -166,40 +167,58 @@ class GroupChatServices {
     );
   }
 
-  Future<void> addMembers(String groupId, List<String> userIds) async {
-    if (userIds.isEmpty) return;
-    await _supabase
-        .from(SupabaseConstants.groupMembers)
-        .upsert(
-          userIds
-              .map(
-                (uid) => {
-                  GroupMemberColumns.groupId: groupId,
-                  GroupMemberColumns.userId: uid,
-                  'role': 'member',
-                  GroupMemberColumns.membershipStatus: 'active',
-                  GroupMemberColumns.leftAt: null,
-                  GroupMemberColumns.joinedAt:
-                      DateTime.now().toUtc().toIso8601String(),
-                },
-              )
-              .toList(),
+  Future<GroupAddMembersResult> addMembers(
+    String groupId,
+    List<String> userIds,
+  ) async {
+    if (userIds.isEmpty) {
+      return const GroupAddMembersResult(added: [], failed: []);
+    }
+
+    final added = <String>[];
+    final failed = <String>[];
+
+    for (final uid in userIds) {
+      try {
+        await _supabase.from(SupabaseConstants.groupMembers).upsert(
+          {
+            GroupMemberColumns.groupId: groupId,
+            GroupMemberColumns.userId: uid,
+            'role': 'member',
+            GroupMemberColumns.membershipStatus: 'active',
+            GroupMemberColumns.leftAt: null,
+            GroupMemberColumns.joinedAt:
+                DateTime.now().toUtc().toIso8601String(),
+          },
           onConflict:
               '${GroupMemberColumns.groupId},${GroupMemberColumns.userId}',
         );
-
-    final names = await _fetchUserNames([currentUserId, ...userIds]);
-    final actorName = names[currentUserId] ?? 'Someone';
-    for (final uid in userIds) {
-      await sendSystemEvent(
-        groupId: groupId,
-        type: 'member_added',
-        actorId: currentUserId,
-        actorName: actorName,
-        targetId: uid,
-        targetName: names[uid] ?? 'Unknown',
-      );
+        added.add(uid);
+      } on PostgrestException catch (e) {
+        if (e.code == '42501') {
+          failed.add(uid);
+        } else {
+          rethrow;
+        }
+      }
     }
+
+    if (added.isNotEmpty) {
+      final names = await _fetchUserNames([currentUserId, ...added]);
+      final actorName = names[currentUserId] ?? 'Someone';
+      for (final uid in added) {
+        await sendSystemEvent(
+          groupId: groupId,
+          type: 'member_added',
+          actorId: currentUserId,
+          actorName: actorName,
+          targetId: uid,
+          targetName: names[uid] ?? 'Unknown',
+        );
+      }
+    }
+
+    return GroupAddMembersResult(added: added, failed: failed);
   }
 
   Future<Map<String, String>> _fetchUserNames(List<String> userIds) async {
@@ -282,11 +301,7 @@ class GroupChatServices {
     final response =
         await _supabase
             .from(SupabaseConstants.groupMembers)
-            .update({
-              GroupMemberColumns.membershipStatus: 'removed',
-              GroupMemberColumns.leftAt:
-                  DateTime.now().toUtc().toIso8601String(),
-            })
+            .update({GroupMemberColumns.membershipStatus: 'removed'})
             .eq(GroupMemberColumns.groupId, groupId)
             .eq(GroupMemberColumns.userId, userId)
             .select();
@@ -309,11 +324,7 @@ class GroupChatServices {
     final response =
         await _supabase
             .from(SupabaseConstants.groupMembers)
-            .update({
-              GroupMemberColumns.membershipStatus: 'left',
-              GroupMemberColumns.leftAt:
-                  DateTime.now().toUtc().toIso8601String(),
-            })
+            .update({GroupMemberColumns.membershipStatus: 'left'})
             .eq(GroupMemberColumns.groupId, groupId)
             .eq(GroupMemberColumns.userId, currentUserId)
             .eq(GroupMemberColumns.membershipStatus, 'active')
@@ -321,6 +332,37 @@ class GroupChatServices {
     if (response.isEmpty) {
       throw Exception(
         'Membership row was not deleted — likely blocked by an RLS policy on group_members.',
+      );
+    }
+  }
+
+  Future<void> blockGroup(String groupId, {required bool wasMember}) async {
+    if (wasMember) {
+      final names = await _fetchUserNames([currentUserId]);
+      await sendSystemEvent(
+        groupId: groupId,
+        type: 'member_left',
+        actorId: currentUserId,
+        actorName: names[currentUserId] ?? 'Someone',
+      );
+    }
+
+    final response =
+        await _supabase
+            .from(SupabaseConstants.groupMembers)
+            .update({
+              GroupMemberColumns.membershipStatus: 'left',
+              GroupMemberColumns.isBlocked: true,
+              GroupMemberColumns.blockedAt:
+                  DateTime.now().toUtc().toIso8601String(),
+            })
+            .eq(GroupMemberColumns.groupId, groupId)
+            .eq(GroupMemberColumns.userId, currentUserId)
+            .select();
+
+    if (response.isEmpty) {
+      throw Exception(
+        'Failed to block group — likely blocked by an RLS policy on group_members.',
       );
     }
   }

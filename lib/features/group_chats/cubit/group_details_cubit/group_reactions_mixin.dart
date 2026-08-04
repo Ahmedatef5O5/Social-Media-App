@@ -7,6 +7,7 @@ mixin GroupReactionsMixin on Cubit<GroupDetailsState> {
   List<GroupMessageModel> get cachedMessages;
   bool get isMember;
   set cachedMessages(List<GroupMessageModel> value);
+  void clearSelection();
   final Map<String, Map<String, String>> _reactionsCache = {};
   final Map<String, Map<String, String>> _reactionsCreatedAtCache = {};
 
@@ -56,6 +57,7 @@ mixin GroupReactionsMixin on Cubit<GroupDetailsState> {
     required String emoji,
   }) async {
     if (!isMember) return;
+    clearSelection();
 
     final isOffline = await ConnectivityBannerController.notifyIfOffline();
     if (isOffline) return;
