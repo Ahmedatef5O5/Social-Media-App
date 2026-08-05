@@ -4,6 +4,7 @@ class StickerModel {
   final String id;
   final String packId;
   final String imageUrl;
+  final int sizeBytes;
   final int sortOrder;
   final bool isAnimated;
   final String? format;
@@ -12,6 +13,7 @@ class StickerModel {
     required this.id,
     required this.packId,
     required this.imageUrl,
+    this.sizeBytes = 0,
     required this.sortOrder,
     this.isAnimated = false,
     this.format,
@@ -22,6 +24,7 @@ class StickerModel {
       id: map[StickerColumns.id] as String,
       packId: map[StickerColumns.packId] as String,
       imageUrl: map[StickerColumns.imageUrl] as String,
+      sizeBytes: map[StickerColumns.sizeBytes] as int? ?? 0,
       sortOrder: map[StickerColumns.sortOrder] as int? ?? 0,
       isAnimated: map[StickerColumns.isAnimated] as bool? ?? false,
       format: map[StickerColumns.format] as String?,

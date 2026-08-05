@@ -6,6 +6,7 @@ class StickerPackModel {
   final String title;
   final String coverUrl;
   final int stickerCount;
+  final int totalSizeBytes;
   final int sortOrder;
   final String? ownerId;
   final StickerPackPrivacy privacyLevel;
@@ -15,6 +16,7 @@ class StickerPackModel {
     required this.title,
     required this.coverUrl,
     required this.stickerCount,
+    this.totalSizeBytes = 0,
     required this.sortOrder,
     this.ownerId,
     this.privacyLevel = StickerPackPrivacy.public,
@@ -28,6 +30,7 @@ class StickerPackModel {
       title: map[StickerPackColumns.title] as String,
       coverUrl: map[StickerPackColumns.coverUrl] as String,
       stickerCount: map[StickerPackColumns.stickerCount] as int? ?? 0,
+      totalSizeBytes: map[StickerPackColumns.totalSizeBytes] as int? ?? 0,
       sortOrder: map[StickerPackColumns.sortOrder] as int? ?? 0,
       ownerId: map[StickerPackColumns.ownerId] as String?,
       privacyLevel: StickerPackPrivacyX.fromDbValue(
