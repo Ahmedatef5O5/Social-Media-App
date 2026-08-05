@@ -1,28 +1,36 @@
+import 'dart:async';
 import 'dart:io';
+import 'package:dio/dio.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:social_media_app/core/services/file_picker_services.dart';
 import 'package:social_media_app/core/supabase/supabase_provider.dart';
 import 'package:social_media_app/core/toast/app_toast.dart';
 import 'package:social_media_app/features/social_graph/services/friendship_services.dart';
+import '../../../../core/cache/repository/media_cache_repository.dart';
 import '../../../../core/services/cloudinary_storage_services.dart';
+import '../../../../core/services/media_cleanup_service.dart';
 import '../../model/sticker_pack_privacy.dart';
 import '../../repository/stickers_repository.dart';
 import 'create_sticker_pack_state.dart';
 
 class CreateStickerPackCubit extends Cubit<CreateStickerPackState> {
+  final StickersRepository _repository;
+  final FilePickerServices _filePicker;
+  final MediaCacheRepository _mediaCache;
+  CancelToken? _uploadCancelToken;
+
   CreateStickerPackCubit({
     StickersRepository? repository,
     FilePickerServices? filePickerServices,
+    required MediaCacheRepository mediaCacheRepository,
     this.onReadyToUpload,
   }) : _repository = repository ?? StickersRepository.instance,
        _filePicker = filePickerServices ?? FilePickerServices(),
+       _mediaCache = mediaCacheRepository,
        super(CreateStickerPackLoading()) {
     _checkQuota();
   }
-
-  final StickersRepository _repository;
-  final FilePickerServices _filePicker;
 
   final void Function({
     required String title,
@@ -212,8 +220,28 @@ class CreateStickerPackCubit extends Cubit<CreateStickerPackState> {
   }
 
   Future<void> _uploadAndCreatePack(CreateStickerPackForm form) async {
-    emit(CreateStickerPackUploading(done: 0, total: form.images.length));
+    final sizes = <int>[];
+    for (final image in form.images) {
+      sizes.add(await image.length());
+    }
+    final totalBytes = sizes.fold<int>(0, (a, b) => a + b);
+    final completedFlags = List<bool>.filled(form.images.length, false);
+    int sentBeforeCurrentFile = 0;
+    _uploadCancelToken = CancelToken();
+
+    emit(
+      CreateStickerPackUploading(
+        title: form.title.trim(),
+        privacy: form.privacy,
+        images: form.images,
+        completedFlags: List<bool>.from(completedFlags),
+        uploadedBytes: 0,
+        totalBytes: totalBytes,
+      ),
+    );
+
     final uploaded = <Map<String, dynamic>>[];
+    final uploadedPublicIds = <String>[];
     try {
       for (var i = 0; i < form.images.length; i++) {
         final image = form.images[i];
@@ -222,15 +250,37 @@ class CreateStickerPackCubit extends Cubit<CreateStickerPackState> {
           'stickers',
           'user_${SupabaseProvider.id}',
           filePrefix: 'sticker_',
+          cancelToken: _uploadCancelToken,
+          onProgressBytes: (sent, total) {
+            final latest = state;
+            if (latest is CreateStickerPackUploading) {
+              emit(
+                latest.copyWith(uploadedBytes: sentBeforeCurrentFile + sent),
+              );
+            }
+          },
         );
+
+        sentBeforeCurrentFile += sizes[i];
+        completedFlags[i] = true;
+        uploadedPublicIds.add(result.publicId);
+
         uploaded.add({
           'image_url': result.secureUrl,
           'is_animated': false,
           'format': image.path.split('.').last.toLowerCase(),
+          'size_bytes': sizes[i],
         });
-        emit(
-          CreateStickerPackUploading(done: i + 1, total: form.images.length),
-        );
+
+        final latest = state;
+        if (latest is CreateStickerPackUploading) {
+          emit(
+            latest.copyWith(
+              completedFlags: List<bool>.from(completedFlags),
+              uploadedBytes: sentBeforeCurrentFile,
+            ),
+          );
+        }
       }
 
       final pack = await _repository.createUserPack(
@@ -239,10 +289,38 @@ class CreateStickerPackCubit extends Cubit<CreateStickerPackState> {
         stickers: uploaded,
         friendIds: form.selectedFriendIds,
       );
+      await _repository.markPackDownloaded(pack.id);
+
+      for (var i = 0; i < form.images.length; i++) {
+        unawaited(
+          _mediaCache.adoptUploadedFile(
+            uploaded[i]['image_url'] as String,
+            File(form.images[i].path),
+          ),
+        );
+      }
+
       emit(CreateStickerPackSuccess(pack));
     } catch (e) {
-      AppToast.error('Could not create the pack, please try again.');
-      emit(form.copyWith(isSubmitting: false));
+      if (e is UploadCanceledException) {
+        if (uploadedPublicIds.isNotEmpty) {
+          unawaited(
+            MediaCleanupService.instance.deleteRawAssets(
+              publicIds: List<String>.from(uploadedPublicIds),
+              resourceType: 'image',
+            ),
+          );
+        }
+        AppToast.warning('Upload cancelled.');
+        emit(form.copyWith(isSubmitting: false));
+      } else {
+        AppToast.error('Could not create the pack, please try again.');
+        emit(form.copyWith(isSubmitting: false));
+      }
     }
+  }
+
+  void cancelUpload() {
+    _uploadCancelToken?.cancel('user_cancelled');
   }
 }

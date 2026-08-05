@@ -8,9 +8,39 @@ abstract class CreateStickerPackState {}
 class CreateStickerPackLoading extends CreateStickerPackState {}
 
 class CreateStickerPackUploading extends CreateStickerPackState {
-  final int done;
-  final int total;
-  CreateStickerPackUploading({required this.done, required this.total});
+  final String title;
+  final StickerPackPrivacy privacy;
+  final List<XFile> images;
+  final List<bool> completedFlags;
+  final int uploadedBytes;
+  final int totalBytes;
+
+  CreateStickerPackUploading({
+    required this.title,
+    required this.privacy,
+    required this.images,
+    required this.completedFlags,
+    required this.uploadedBytes,
+    required this.totalBytes,
+  });
+
+  int get doneCount => completedFlags.where((c) => c).length;
+  double get overallProgress =>
+      totalBytes == 0 ? 0 : (uploadedBytes / totalBytes).clamp(0.0, 1.0);
+
+  CreateStickerPackUploading copyWith({
+    List<bool>? completedFlags,
+    int? uploadedBytes,
+  }) {
+    return CreateStickerPackUploading(
+      title: title,
+      privacy: privacy,
+      images: images,
+      completedFlags: completedFlags ?? this.completedFlags,
+      uploadedBytes: uploadedBytes ?? this.uploadedBytes,
+      totalBytes: totalBytes,
+    );
+  }
 }
 
 class CreateStickerPackSuccess extends CreateStickerPackState {
