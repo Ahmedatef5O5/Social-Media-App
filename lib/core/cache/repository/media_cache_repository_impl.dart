@@ -59,6 +59,7 @@ class MediaCacheRepositoryImpl implements MediaCacheRepository {
       final entry = await _localDataSource.cacheMedia(
         secureUrl,
         onProgress: onProgress,
+        cancelToken: cancelToken,
       );
       return entry.localFilePath;
     } on MediaCacheDownloadException catch (e) {

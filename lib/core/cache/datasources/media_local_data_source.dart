@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:dio/dio.dart';
 import '../entities/media_cache_entry.dart';
 
 abstract class MediaLocalDataSource {
@@ -9,6 +10,7 @@ abstract class MediaLocalDataSource {
   Future<MediaCacheEntry> cacheMedia(
     String secureUrl, {
     void Function(double progress)? onProgress,
+    CancelToken? cancelToken,
   });
 
   Future<MediaCacheEntry> adoptLocalFile(String secureUrl, File sourceFile);

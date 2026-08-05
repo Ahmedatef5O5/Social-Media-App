@@ -20,6 +20,16 @@ class FilePickerServices {
     }
   }
 
+  Future<List<XFile>> pickMultipleImagesFromGallery() async {
+    try {
+      final List<XFile> images = await _imagePicker.pickMultiImage();
+      return images;
+    } catch (e) {
+      debugPrint('Error picking multiple images from gallery: $e');
+      rethrow;
+    }
+  }
+
   Future<XFile?> takePhotoByCamera() async {
     try {
       final XFile? photo = await _imagePicker.pickImage(
