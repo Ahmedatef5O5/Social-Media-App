@@ -7,7 +7,7 @@ import '../cubit/sticker_send_picker_cubit/sticker_send_picker_cubit.dart';
 import '../cubit/sticker_send_picker_cubit/sticker_send_picker_state.dart';
 import '../views/empty_downloads_sheet_view.dart';
 import '../views/sticker_packs_browser_view.dart';
-import 'sticker_grid_item.dart';
+import 'sticker_thumbnail.dart';
 
 class StickerSendPickerSheet extends StatelessWidget {
   const StickerSendPickerSheet({super.key});
@@ -167,7 +167,28 @@ class _StickerSendPickerSheetBody extends StatelessWidget {
                         child:
                             loaded.isLoadingSelectedPack
                                 ? const Center(child: CustomLoadingIndicator())
-                                : StickerGridItem(loaded: loaded),
+                                : GridView.builder(
+                                  physics: const BouncingScrollPhysics(),
+                                  itemCount: loaded.selectedStickers.length,
+                                  gridDelegate:
+                                      const SliverGridDelegateWithFixedCrossAxisCount(
+                                        crossAxisCount: 4,
+                                        mainAxisSpacing: 16,
+                                        crossAxisSpacing: 16,
+                                      ),
+                                  itemBuilder: (context, index) {
+                                    final sticker =
+                                        loaded.selectedStickers[index];
+                                    return InkWell(
+                                      borderRadius: BorderRadius.circular(16),
+                                      onTap:
+                                          () => Navigator.of(
+                                            context,
+                                          ).pop(sticker),
+                                      child: StickerThumbnail(sticker: sticker),
+                                    );
+                                  },
+                                ),
                       ),
                     ],
                   );
