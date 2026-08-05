@@ -5,7 +5,8 @@ import 'privacy_option_card.dart';
 Future<ContentPrivacy?> showPrivacySelectorSheet(
   BuildContext context, {
   required ContentPrivacy currentPrivacy,
-  bool isStory = true,
+  bool isStory = false,
+  bool isPack = false,
 }) {
   final theme = Theme.of(context);
   final isDark = theme.brightness == Brightness.dark;
@@ -43,7 +44,7 @@ Future<ContentPrivacy?> showPrivacySelectorSheet(
             const SizedBox(height: 24),
 
             Text(
-              'Who can see this?',
+              isPack ? 'Who can see this pack?' : 'Who can see this?',
               style: theme.textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.w800,
                 letterSpacing: 0.2,
@@ -51,9 +52,11 @@ Future<ContentPrivacy?> showPrivacySelectorSheet(
             ),
             const SizedBox(height: 6),
             Text(
-              isStory
-                  ? 'Choose your audience for this story'
-                  : 'Choose your audience for this post',
+              isPack
+                  ? 'Choose your audience for this sticker pack'
+                  : (isStory
+                      ? 'Choose your audience for this story'
+                      : 'Choose your audience for this post'),
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: Colors.grey.shade600,
                 fontWeight: FontWeight.w500,
