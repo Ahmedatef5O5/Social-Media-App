@@ -13,6 +13,8 @@ import '../../../core/helpers/formatted_date.dart';
 import '../../../core/supabase/supabase_provider.dart';
 import '../cubit/chat_details_cubit/chat_details_cubit.dart';
 import '../helper/chat_date_separator_helper.dart';
+import '../helper/chat_system_event_separator.dart';
+import '../helper/chat_system_event_text_builder.dart';
 import '../models/chat_user_model.dart';
 import '../models/message_model.dart';
 
@@ -129,6 +131,26 @@ class _MessagesListViewState extends State<MessagesListView> {
                       index: msgIndex,
                       getCreatedAt: (m) => m.createdAt,
                     );
+
+                if (msg.isSystemEvent) {
+                  return Column(
+                    key: ValueKey('item_${msg.id}'),
+                    children: [
+                      if (showDateSeparator)
+                        DateSeparatorGlassmorphismWidget(
+                          key: ValueKey('date_${msg.id}'),
+                          date: FormattedDate.getChatTime(msg.createdAt),
+                        ),
+                      ChatSystemEventSeparator(
+                        text: ChatSystemEventTextBuilder.build(
+                          message: msg,
+                          currentUserId: SupabaseProvider.id,
+                          otherUserName: widget.receiverUser.name,
+                        ),
+                      ),
+                    ],
+                  );
+                }
 
                 final showAvatar =
                     ChatDateSeparatorHelper.isLastInSenderCluster<MessageModel>(

@@ -1,8 +1,10 @@
 import 'package:social_media_app/core/services/cloudinary_storage_services.dart';
 import 'package:social_media_app/features/single_chats/models/message_model.dart';
 import '../../../core/services/network_status_service.dart';
+import '../models/chat_block_status.dart';
 import '../models/chat_user_model.dart';
 import '../models/presence_snapshot.dart';
+import 'chat_block_service.dart';
 import 'chat_list_service.dart';
 import 'chat_messages_service.dart';
 import 'chat_presence_service.dart';
@@ -21,6 +23,7 @@ class ChatServices {
   late final _messages = ChatMessagesService();
   late final _reactions = ChatReactionsService();
   late final _presence = ChatPresenceService();
+  late final _block = ChatBlockService();
 
   // ── Chats list ──────────────────────────────────────────────────────────
   Future<ReceiverPushInfo?> getReceiverPushInfo(String receiverId) =>
@@ -223,4 +226,31 @@ class ChatServices {
 
   Stream<List<String>> getTypingUsersStream(String currentUserId) =>
       _presence.getTypingUsersStream(currentUserId);
+
+  // ── Block ───────────────────────────────────────────────────────────────
+  Future<ChatBlockStatus> getBlockStatus({
+    required String currentUserId,
+    required String otherUserId,
+  }) => _block.getBlockStatus(
+    currentUserId: currentUserId,
+    otherUserId: otherUserId,
+  );
+
+  Stream<ChatBlockStatus> watchBlockStatus({
+    required String currentUserId,
+    required String otherUserId,
+  }) => _block.watchBlockStatus(
+    currentUserId: currentUserId,
+    otherUserId: otherUserId,
+  );
+
+  Future<void> blockUser({
+    required String blockerId,
+    required String blockedId,
+  }) => _block.blockUser(blockerId: blockerId, blockedId: blockedId);
+
+  Future<void> unblockUser({
+    required String blockerId,
+    required String blockedId,
+  }) => _block.unblockUser(blockerId: blockerId, blockedId: blockedId);
 }
