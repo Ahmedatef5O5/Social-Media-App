@@ -5,8 +5,10 @@ import 'package:social_media_app/core/cache/constants/snapshot_keys.dart';
 import 'package:social_media_app/core/cache/services/local_snapshot_store.dart';
 import 'package:social_media_app/features/single_chats/models/chat_user_model.dart';
 import 'package:social_media_app/features/single_chats/services/chat_services.dart';
+import '../../../../core/helpers/chat_helper.dart';
 import '../../../../core/supabase/supabase_provider.dart';
 import '../../../auth/handler/auth_exception_handler.dart';
+import '../../helper/chat_clear_store.dart';
 part 'chats_state.dart';
 
 const int kMaxCachedChatsSnapshot = 50;
@@ -71,6 +73,38 @@ class ChatsCubit extends Cubit<ChatsState> {
     emit(ChatsSuccessloaded(chats: updatedChats));
   }
 
+  // ─── Local-only "Delete Chat" (multi-select) ───────────────────────────
+
+  bool _isHiddenByLocalClear(ChatUserModel chat) {
+    final clearedAt = ChatClearStore.instance.clearedAtFor(chat.id);
+    if (clearedAt == null) return false;
+    final lastMsgAt = chat.lastMessageTime;
+    if (lastMsgAt != null && lastMsgAt.isAfter(clearedAt)) return false;
+    return true;
+  }
+
+  Future<void> clearChatsLocally(Set<String> otherUserIds) async {
+    if (otherUserIds.isEmpty) return;
+
+    await ChatClearStore.instance.setClearedNow(otherUserIds);
+
+    for (final otherUserId in otherUserIds) {
+      final conversationId = ChatHelper.buildConversationId(
+        _currentUserId,
+        otherUserId,
+      );
+      await LocalSnapshotStore.instance.clear(
+        'chat_messages_snapshot_$conversationId',
+      );
+    }
+
+    final newList =
+        _cachedChats.where((c) => !otherUserIds.contains(c.id)).toList();
+    _cachedChats = newList;
+    emit(ChatsSuccessloaded(chats: newList));
+    _persistChatsSnapshot(newList);
+  }
+
   Future<void> getChats({bool isRefresh = false}) async {
     if (!isRefresh) {
       _showSkeleton = true;
@@ -79,7 +113,9 @@ class ChatsCubit extends Cubit<ChatsState> {
     try {
       final start = DateTime.now();
 
-      final chats = await _chatServices.getChatsList(_currentUserId);
+      final fetchedChats = await _chatServices.getChatsList(_currentUserId);
+      final chats =
+          fetchedChats.where((c) => !_isHiddenByLocalClear(c)).toList();
       _cachedChats = chats;
       _showSkeleton = false;
 

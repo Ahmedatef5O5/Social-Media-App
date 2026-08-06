@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
+import 'package:social_media_app/features/group_chats/cubit/group_selection_cubit/group_selection_cubit.dart';
 import '../../../core/helpers/chat_helper.dart';
 import '../../../core/helpers/formatted_date.dart';
 import '../../../core/presence/widgets/presence_avatar_widget.dart';
@@ -14,19 +16,47 @@ class ChatItemTile extends StatelessWidget {
   final ChatUserModel user;
   const ChatItemTile({super.key, required this.user});
 
+  bool get _isSystemEventPreview =>
+      user.lastMessageType == 'block_event' ||
+      user.lastMessageType == 'unblock_event';
+
   @override
   Widget build(BuildContext context) {
-    return ListTile(
-      contentPadding: EdgeInsets.zero,
-      leading: _buildUserAvatar(context),
-      title: _buildUserName(context),
-      subtitle: _buildLastMessage(context),
-      trailing: _buildTrailingSection(context),
-      onTap:
-          () => Navigator.of(
-            context,
-            rootNavigator: true,
-          ).pushNamed(AppRoutes.chatDetailsViewRoute, arguments: user),
+    return BlocBuilder<GroupSelectionCubit, GroupSelectionState>(
+      builder: (context, selection) {
+        final isSelecting = selection.isSelecting;
+        final isSelected = selection.isSelected(user.id);
+        final primary = Theme.of(context).primaryColor;
+
+        return Material(
+          color:
+              isSelected ? primary.withValues(alpha: 0.08) : Colors.transparent,
+          child: ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: _buildUserAvatar(
+              context,
+              isSelecting,
+              isSelected,
+              primary,
+            ),
+            title: _buildUserName(context),
+            subtitle: _buildLastMessage(context),
+            trailing: _buildTrailingSection(context),
+            onLongPress:
+                () => context.read<GroupSelectionCubit>().toggle(user.id),
+            onTap: () {
+              if (isSelecting) {
+                context.read<GroupSelectionCubit>().toggle(user.id);
+                return;
+              }
+              Navigator.of(
+                context,
+                rootNavigator: true,
+              ).pushNamed(AppRoutes.chatDetailsViewRoute, arguments: user);
+            },
+          ),
+        );
+      },
     );
   }
 
@@ -78,6 +108,14 @@ class ChatItemTile extends StatelessWidget {
         return '😊 Sticker';
       case 'file':
         return '📄 ${user.lastMessageType ?? 'File'}';
+      case 'block_event':
+        return user.lastMessageIsMe
+            ? 'You blocked ${user.name}'
+            : '${user.name} blocked you';
+      case 'unblock_event':
+        return user.lastMessageIsMe
+            ? 'You unblocked ${user.name}'
+            : '${user.name} unblocked you';
       default:
         return (user.lastMessage == null || user.lastMessage!.isEmpty)
             ? 'Tap to start chatting'
@@ -171,7 +209,7 @@ class ChatItemTile extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          if (user.lastMessageIsMe) ...[
+          if (user.lastMessageIsMe && !_isSystemEventPreview) ...[
             Icon(
               user.lastMessageIsRead ? Icons.done_all : Icons.done,
               size: 16,
@@ -200,25 +238,83 @@ class ChatItemTile extends StatelessWidget {
     );
   }
 
-  Widget _buildUserAvatar(BuildContext context) {
-    return PresenceAvatarWidget(
-      userId: user.id,
-      avatarSize: 52,
-      showDot: true,
-      showBorder: true,
+  Widget _buildUserAvatar(
+    BuildContext context,
+    bool isSelecting,
+    bool isSelected,
+    Color primary,
+  ) {
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        PresenceAvatarWidget(
+          userId: user.id,
+          avatarSize: 52,
+          showDot: true,
+          showBorder: true,
 
-      child: AppAvatar(
-        imageUrl: user.imageUrl,
-        size: 52,
-        heroTag: user.id,
-        onTap: () {
-          showDialog(
-            context: context,
-            builder:
-                (context) =>
-                    UserPreviewDialog(user: user, showContactOptions: true),
-          );
-        },
+          child: AppAvatar(
+            imageUrl: user.imageUrl,
+            size: 52,
+            heroTag: user.id,
+            onTap:
+                isSelecting
+                    ? null
+                    : () {
+                      showDialog(
+                        context: context,
+                        builder:
+                            (context) => UserPreviewDialog(
+                              user: user,
+                              showContactOptions: true,
+                            ),
+                      );
+                    },
+          ),
+        ),
+        if (isSelecting)
+          Positioned(
+            right: -2,
+            bottom: -2,
+            child: _ChatSelectionBadge(
+              isSelected: isSelected,
+              primary: primary,
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class _ChatSelectionBadge extends StatelessWidget {
+  final bool isSelected;
+  final Color primary;
+  const _ChatSelectionBadge({required this.isSelected, required this.primary});
+
+  @override
+  Widget build(BuildContext context) {
+    final ringColor = Theme.of(context).scaffoldBackgroundColor;
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 150),
+      width: 22,
+      height: 22,
+      padding: const EdgeInsets.all(2),
+      decoration: BoxDecoration(shape: BoxShape.circle, color: ringColor),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: isSelected ? primary : Colors.transparent,
+          border: Border.all(
+            color: isSelected ? primary : Colors.grey.shade400,
+            width: 1.5,
+          ),
+        ),
+        child:
+            isSelected
+                ? const Icon(Icons.check_rounded, color: Colors.white, size: 13)
+                : null,
       ),
     );
   }

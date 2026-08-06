@@ -40,9 +40,11 @@ class _ChatsViewState extends State<ChatsView>
       _canRefresh = _scrollController.offset <= 2;
     });
     _groupSelectionCubit = GroupSelectionCubit();
-    if (!_tabController.indexIsChanging && _tabController.index != 1) {
-      _groupSelectionCubit.clear();
-    }
+    _tabController.addListener(() {
+      if (_tabController.indexIsChanging) {
+        _groupSelectionCubit.clear();
+      }
+    });
   }
 
   @override
@@ -60,18 +62,22 @@ class _ChatsViewState extends State<ChatsView>
 
   Future<void> _confirmAndDeleteSelectedChats(
     BuildContext context,
-    Set<String> groupIds,
+    Set<String> selectedIds,
   ) async {
+    final isGroupsTab = _tabController.index == 1;
     final confirm = await showDialog<bool>(
       context: context,
       builder:
           (dialogContext) => AlertDialog(
             title: Text(
-              'Delete ${groupIds.length} chat${groupIds.length > 1 ? 's' : ''}?',
+              'Delete ${selectedIds.length} chat${selectedIds.length > 1 ? 's' : ''}?',
             ),
-            content: const Text(
-              'This clears the chat history on this device only. '
-              'You will stay a member of these groups.',
+            content: Text(
+              isGroupsTab
+                  ? 'This clears the chat history on this device only. '
+                      'You will stay a member of these groups.'
+                  : 'This clears the chat history on this device only. '
+                      'The other person will still see their own copy.',
             ),
             actions: [
               TextButton(
@@ -91,7 +97,11 @@ class _ChatsViewState extends State<ChatsView>
 
     if (confirm != true) return;
     if (!context.mounted) return;
-    await context.read<GroupListCubit>().clearChatsLocally(groupIds);
+    if (isGroupsTab) {
+      await context.read<GroupListCubit>().clearChatsLocally(selectedIds);
+    } else {
+      await context.read<ChatsCubit>().clearChatsLocally(selectedIds);
+    }
     if (context.mounted) context.read<GroupSelectionCubit>().clear();
   }
 
