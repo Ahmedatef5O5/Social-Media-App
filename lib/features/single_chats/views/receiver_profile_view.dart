@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import 'package:social_media_app/core/helpers/formatted_date.dart';
+import 'package:social_media_app/features/single_chats/models/chat_block_status.dart';
 import 'package:social_media_app/features/single_chats/models/chat_user_model.dart';
 import '../../../core/cache/services/starred_message_store.dart';
 import '../../../core/chat_shared/views/starred_messages_view.dart';
@@ -13,11 +14,10 @@ import '../../../core/chat_shared/widgets/starred_messages_row.dart';
 import '../../../core/presence/cubit/presence_cubit/presence_cubit.dart';
 import '../../../core/presence/model/presence_info.dart';
 import '../../../core/chat_shared/services/shared_media_data_source.dart';
+import '../../../core/widgets/calls/call_icon_button.dart';
 import '../../../core/widgets/custom_user_profile_image_section.dart';
-import '../../single_calls/cubits/single_call_cubit/call_cubit.dart';
 import '../../single_calls/model/call_model.dart';
 import '../cubit/chat_details_cubit/chat_details_cubit.dart';
-import '../helper/call_actions.dart';
 import '../helper/safe_pop.dart';
 import '../services/chat_services.dart';
 
@@ -229,39 +229,12 @@ class _ReceiverProfileViewState extends State<ReceiverProfileView> {
                   "Message",
                   () => safePop(context),
                 ),
-
-                _buildOptionItem(
-                  context,
-                  Icons.call_outlined,
-                  "Call",
-                  () async {
-                    final call = await CallActions.buildCall(
-                      type: CallType.audio,
-                      receiverId: widget.receiverUser.id,
-                      receiverName: widget.receiverUser.name,
-                      receiverAvatar: widget.receiverUser.imageUrl ?? '',
-                    );
-                    if (call == null || !context.mounted) return;
-
-                    context.read<CallCubit>().makeAudioCall(call);
-                  },
-                ),
-
+                _buildOptionItem(context, Icons.call_outlined, "Call", () {}),
                 _buildOptionItem(
                   context,
                   Icons.videocam_outlined,
                   "Video",
-                  () async {
-                    final call = await CallActions.buildCall(
-                      type: CallType.video,
-                      receiverId: widget.receiverUser.id,
-                      receiverName: widget.receiverUser.name,
-                      receiverAvatar: widget.receiverUser.imageUrl ?? '',
-                    );
-                    if (call == null || !context.mounted) return;
-
-                    context.read<CallCubit>().makeAudioCall(call);
-                  },
+                  () {},
                 ),
                 _buildOptionItem(
                   context,
@@ -281,6 +254,37 @@ class _ReceiverProfileViewState extends State<ReceiverProfileView> {
             const Divider(height: 40, thickness: 8, color: Color(0x00fff5f5)),
 
             SharedMediaPreviewSection(mediaCubit: _mediaCubit),
+
+            const Divider(height: 24, thickness: 8, color: Color(0x00fff5f5)),
+
+            ValueListenableBuilder<ChatBlockStatus>(
+              valueListenable: context.read<ChatDetailsCubit>().blockStatus,
+              builder: (context, status, _) {
+                final isBlockedByMe = status.blockedByMe;
+                return ListTile(
+                  leading: Icon(
+                    isBlockedByMe
+                        ? Icons.person_add_alt_1
+                        : Icons.block_rounded,
+                    color: isBlockedByMe ? null : Colors.red,
+                  ),
+                  title: Text(
+                    isBlockedByMe
+                        ? 'Unblock ${widget.receiverUser.name}'
+                        : 'Block ${widget.receiverUser.name}',
+                    style: TextStyle(
+                      color: isBlockedByMe ? null : Colors.red,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  onTap:
+                      () => context.read<ChatDetailsCubit>().toggleBlock(
+                        receiverId: widget.receiverUser.id,
+                        otherUserName: widget.receiverUser.name,
+                      ),
+                );
+              },
+            ),
           ],
         ),
       ),
@@ -293,18 +297,34 @@ class _ReceiverProfileViewState extends State<ReceiverProfileView> {
     String label,
     VoidCallback onTap,
   ) {
+    final buttonStyle = IconButton.styleFrom(
+      backgroundColor: Theme.of(context).primaryColor.withValues(alpha: 0.1),
+      padding: const EdgeInsets.all(12),
+    );
+
+    final lowerLabel = label.toLowerCase();
+
+    Widget iconWidget;
+
+    if (lowerLabel == 'call' || lowerLabel == 'video') {
+      iconWidget = CallIconButton(
+        type: lowerLabel == 'call' ? CallType.audio : CallType.video,
+        receiverId: widget.receiverUser.id,
+        receiverName: widget.receiverUser.name,
+        receiverAvatar: widget.receiverUser.imageUrl ?? '',
+        style: buttonStyle,
+      );
+    } else {
+      iconWidget = IconButton(
+        onPressed: onTap,
+        icon: Icon(icon, color: Theme.of(context).primaryColor),
+        style: buttonStyle,
+      );
+    }
+
     return Column(
       children: [
-        IconButton(
-          onPressed: onTap,
-          icon: Icon(icon, color: Theme.of(context).primaryColor),
-          style: IconButton.styleFrom(
-            backgroundColor: Theme.of(
-              context,
-            ).primaryColor.withValues(alpha: 0.1),
-            padding: const EdgeInsets.all(12),
-          ),
-        ),
+        iconWidget,
         const Gap(4),
         Text(
           label,

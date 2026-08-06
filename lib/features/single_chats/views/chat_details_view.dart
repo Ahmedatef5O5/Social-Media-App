@@ -8,6 +8,7 @@ import 'package:social_media_app/features/chat_forwarding/models/forwardable_mes
 import 'package:social_media_app/features/chat_forwarding/services/forward_service.dart';
 import 'package:social_media_app/features/chat_forwarding/views/forward_target_picker_view.dart';
 import 'package:social_media_app/features/single_chats/cubit/chat_details_cubit/chat_details_cubit.dart';
+import 'package:social_media_app/features/single_chats/models/chat_block_status.dart';
 import 'package:social_media_app/features/single_chats/models/chat_user_model.dart';
 import 'package:social_media_app/features/single_chats/models/message_model.dart';
 import 'package:social_media_app/features/single_chats/services/chat_services.dart';
@@ -19,6 +20,7 @@ import '../../../core/services/notification_services.dart';
 import '../../../core/themes/app_colors.dart';
 import '../../../core/toast/app_toast.dart';
 import '../../../core/widgets/multi_select_app_bar.dart';
+import '../helper/blocked_single_chat_bar_widget.dart';
 import '../services/chat_permission_service.dart';
 import '../widgets/text_input_area_section.dart';
 
@@ -66,6 +68,7 @@ class _ChatDetailsViewState extends State<ChatDetailsView>
 
     _chatCubit = context.read<ChatDetailsCubit>();
     _chatCubit.resolveChatPermission(_receiverId);
+    _chatCubit.watchBlockStatus(_receiverId);
     _chatCubit.getMessagesStream(receiverId: _receiverId);
     _chatCubit.watchReceiverTyping(_receiverId);
     _chatCubit.searchController.currentIndex.addListener(_onSearchMatchChanged);
@@ -457,8 +460,6 @@ class _ChatDetailsViewState extends State<ChatDetailsView>
                           _messageController.clear();
                         }
                       });
-                      // Auto-dismiss search mode (swipe/menu reply both
-                      // funnel through this same callback).
                       if (_chatCubit.searchController.isActive.value) {
                         _exitSearch();
                       }
@@ -480,64 +481,87 @@ class _ChatDetailsViewState extends State<ChatDetailsView>
                 ),
               ),
 
-              ValueListenableBuilder<ChatPermissionResult>(
-                valueListenable: _chatCubit.chatPermission,
-                builder: (context, result, _) {
-                  if (result.permission == ChatPermission.allowed) {
-                    return const SizedBox.shrink();
+              ValueListenableBuilder<ChatBlockStatus>(
+                valueListenable: _chatCubit.blockStatus,
+                builder: (context, status, _) {
+                  if (status.isBlocked) {
+                    return BlockedSingleChatBarWidget(
+                      widget: widget,
+                      chatCubit: _chatCubit,
+                      receiverId: _receiverId,
+                      context: context,
+                      status: status,
+                    );
                   }
-                  final isAwaitingMe =
-                      result.permission == ChatPermission.awaitingMyResponse;
-                  return Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 10,
-                    ),
-                    color:
-                        Theme.of(context).colorScheme.surfaceContainerHighest,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          isAwaitingMe
-                              ? '${widget.receiverUser} sent you a message request. Reply to accept, or decline.'
-                              : 'You are not friends or followers. Sending a message will send a message request.',
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                        if (isAwaitingMe) ...[
-                          const SizedBox(height: 6),
-                          Align(
-                            alignment: Alignment.centerRight,
-                            child: TextButton(
-                              onPressed: () async {
-                                await _chatCubit.declineMessageRequest();
-                                if (context.mounted) {
-                                  Navigator.of(context).pop();
-                                }
-                              },
-                              child: const Text('Decline'),
+                  return Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      ValueListenableBuilder<ChatPermissionResult>(
+                        valueListenable: _chatCubit.chatPermission,
+                        builder: (context, result, _) {
+                          if (result.permission == ChatPermission.allowed) {
+                            return const SizedBox.shrink();
+                          }
+                          final isAwaitingMe =
+                              result.permission ==
+                              ChatPermission.awaitingMyResponse;
+                          return Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 10,
                             ),
-                          ),
-                        ],
-                      ],
-                    ),
+                            color:
+                                Theme.of(
+                                  context,
+                                ).colorScheme.surfaceContainerHighest,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  isAwaitingMe
+                                      ? '${widget.receiverUser} sent you a message request. Reply to accept, or decline.'
+                                      : 'You are not friends or followers. Sending a message will send a message request.',
+                                  style: Theme.of(context).textTheme.bodySmall,
+                                ),
+                                if (isAwaitingMe) ...[
+                                  const SizedBox(height: 6),
+                                  Align(
+                                    alignment: Alignment.centerRight,
+                                    child: TextButton(
+                                      onPressed: () async {
+                                        await _chatCubit
+                                            .declineMessageRequest();
+                                        if (context.mounted) {
+                                          Navigator.of(context).pop();
+                                        }
+                                      },
+                                      child: const Text('Decline'),
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                      TextInputAreaSection(
+                        receiverUser: widget.receiverUser,
+                        messageController: _messageController,
+                        replyTo: _replyTo,
+                        editingMessage: _editingMessage,
+                        onCancelReply: () {
+                          if (mounted) setState(() => _replyTo = null);
+                        },
+                        onEditCancelled: () {
+                          if (mounted) {
+                            setState(() => _editingMessage = null);
+                            _messageController.clear();
+                          }
+                        },
+                      ),
+                    ],
                   );
-                },
-              ),
-              TextInputAreaSection(
-                receiverUser: widget.receiverUser,
-                messageController: _messageController,
-                replyTo: _replyTo,
-                editingMessage: _editingMessage,
-                onCancelReply: () {
-                  if (mounted) setState(() => _replyTo = null);
-                },
-                onEditCancelled: () {
-                  if (mounted) {
-                    setState(() => _editingMessage = null);
-                    _messageController.clear();
-                  }
                 },
               ),
             ],

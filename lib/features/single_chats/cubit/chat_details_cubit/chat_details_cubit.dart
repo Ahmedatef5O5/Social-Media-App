@@ -17,6 +17,8 @@ import '../../../../core/supabase/supabase_provider.dart';
 import '../../../../core/utilities/supabase_constants.dart';
 import '../../../notifications/repository/notifications_repository.dart';
 import '../../../settings/repository/settings_repository.dart';
+import '../../helper/chat_clear_store.dart';
+import '../../models/chat_block_status.dart';
 import '../../models/message_model.dart';
 import '../../services/chat_permission_service.dart';
 import '../../services/chat_services.dart';
@@ -44,6 +46,11 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
   final ValueNotifier<ChatPermissionResult> chatPermission = ValueNotifier(
     const ChatPermissionResult(permission: ChatPermission.allowed),
   );
+
+  final ValueNotifier<ChatBlockStatus> blockStatus = ValueNotifier(
+    const ChatBlockStatus(),
+  );
+  StreamSubscription<ChatBlockStatus>? _blockStatusSubscription;
 
   final ValueNotifier<MessageModel?> replyToMessage =
       ValueNotifier<MessageModel?>(null);
@@ -92,6 +99,50 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
       );
     } catch (e) {
       debugPrint('resolveChatPermission error: $e');
+    }
+  }
+
+  void watchBlockStatus(String receiverId) {
+    final cached = ChatBlockStatusCache.instance.read(receiverId);
+    if (cached != null) {
+      blockStatus.value = cached;
+    }
+
+    _blockStatusSubscription?.cancel();
+    _blockStatusSubscription = _chatServices
+        .watchBlockStatus(currentUserId: currentUserId, otherUserId: receiverId)
+        .listen((status) {
+          blockStatus.value = status;
+          unawaited(ChatBlockStatusCache.instance.write(receiverId, status));
+        }, onError: (e) => debugPrint('watchBlockStatus error: $e'));
+  }
+
+  Future<void> toggleBlock({
+    required String receiverId,
+    required String otherUserName,
+  }) async {
+    try {
+      if (blockStatus.value.blockedByMe) {
+        await _chatServices.unblockUser(
+          blockerId: currentUserId,
+          blockedId: receiverId,
+        );
+      } else {
+        await _chatServices.blockUser(
+          blockerId: currentUserId,
+          blockedId: receiverId,
+        );
+      }
+
+      blockStatus.value = blockStatus.value.copyWith(
+        blockedByMe: !blockStatus.value.blockedByMe,
+        isLoaded: true,
+      );
+      unawaited(
+        ChatBlockStatusCache.instance.write(receiverId, blockStatus.value),
+      );
+    } catch (e) {
+      debugPrint('toggleBlock error: $e');
     }
   }
 
@@ -183,7 +234,15 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
     _messageSubscription = _chatServices
         .getMessagesStream(senderId: currentUserId, receiverId: receiverId)
         .listen(
-          (messages) {
+          (rawMessages) {
+            final clearedAt = ChatClearStore.instance.clearedAtFor(receiverId);
+            final messages =
+                clearedAt == null
+                    ? rawMessages
+                    : rawMessages
+                        .where((m) => m.createdAt.isAfter(clearedAt))
+                        .toList();
+
             final currentIds = messages.map((m) => m.id).toSet();
             bubbleKeys.removeWhere((key, _) => !currentIds.contains(key));
             for (final msg in messages) {
@@ -269,6 +328,8 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
     String? caption,
     MessageModel? replyTo,
   }) async {
+    if (blockStatus.value.isBlocked) return;
+
     if (messageText.trim().isEmpty &&
         imageFile == null &&
         videoFile == null &&
@@ -691,6 +752,8 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
   @override
   Future<void> close() {
     chatPermission.dispose();
+    blockStatus.dispose();
+    _blockStatusSubscription?.cancel();
     highlightedMessageId.dispose();
     searchController.dispose();
     for (final notifier in uploadProgressNotifiers.values) {
