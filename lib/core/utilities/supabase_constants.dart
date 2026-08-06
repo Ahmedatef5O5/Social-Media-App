@@ -25,6 +25,7 @@ abstract class SupabaseConstants {
   static const String messageRequests = 'message_requests';
   static const String messageReactions = 'message_reactions';
   static const String typingStatus = 'typing_status';
+  static const String blockedUsers = 'blocked_users';
 
   //  Group Chat Feature
   static const String groups = 'groups';
@@ -56,7 +57,6 @@ abstract class SupabaseConstants {
   static const String createUserStickerPackRpc = 'create_user_sticker_pack';
   // comments_upgrade_migration.sql
   static const String addCommentWithMentionsRpc = 'add_comment_with_mentions';
-
   static const String getProfileOverviewRpc = 'get_profile_overview';
 
   // ── Reels Feature ──
@@ -295,6 +295,7 @@ abstract class StickerPackColumns {
   static const String title = 'title';
   static const String coverUrl = 'cover_url';
   static const String stickerCount = 'sticker_count';
+  static const String totalSizeBytes = 'total_size_bytes';
   static const String sortOrder = 'sort_order';
   static const String createdAt = 'created_at';
   static const String hasAnimated = 'has_animated';
@@ -316,6 +317,7 @@ abstract class StickerColumns {
   static const String imageUrl = 'image_url';
   static const String sortOrder = 'sort_order';
   static const String createdAt = 'created_at';
+  static const String sizeBytes = 'size_bytes';
 
   // ── Animation metadata (added for animated sticker support) ──
   static const String isAnimated = 'is_animated';
@@ -424,6 +426,14 @@ abstract class MessagesColumns {
 }
 
 // message_reactions
+// blocked_users
+abstract class BlockedUsersColumns {
+  static const String id = 'id';
+  static const String blockerId = 'blocker_id';
+  static const String blockedId = 'blocked_id';
+  static const String createdAt = 'created_at';
+}
+
 abstract class MessageReactionColumns {
   static const String id = 'id';
   static const String messageId = 'message_id';

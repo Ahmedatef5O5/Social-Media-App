@@ -74,6 +74,11 @@ class MessageModel {
   bool get isStoryReply => replyToStoryType != null;
   bool get isForwarded => forwardedFromUserId != null;
 
+  static const String blockEventType = 'block_event';
+  static const String unblockEventType = 'unblock_event';
+  bool get isSystemEvent =>
+      messageType == blockEventType || messageType == unblockEventType;
+
   MessageModel copyWith({
     String? id,
     String? senderId,
