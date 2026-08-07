@@ -3,7 +3,7 @@ import '../../../core/themes/app_colors.dart';
 
 class CustomIconBtnWidget extends StatelessWidget {
   final IconData icon;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
   final double? size;
   final double? radius;
   final EdgeInsetsGeometry? padding;

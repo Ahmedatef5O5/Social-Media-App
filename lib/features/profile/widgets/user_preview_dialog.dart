@@ -1,13 +1,11 @@
 import 'package:social_media_app/core/widgets/cached_cloudinary_image.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:social_media_app/core/constants/app_images.dart';
 import 'package:social_media_app/core/widgets/custom_loading_indicator.dart';
 import 'package:social_media_app/features/single_chats/models/chat_user_model.dart';
 import '../../../core/router/app_routes.dart';
-import '../../single_calls/cubits/single_call_cubit/call_cubit.dart';
+import '../../../core/widgets/calls/call_icon_button.dart';
 import '../../single_calls/model/call_model.dart';
-import '../../single_chats/helper/call_actions.dart';
 
 class UserPreviewDialog extends StatelessWidget {
   final ChatUserModel user;
@@ -137,32 +135,17 @@ class UserPreviewDialog extends StatelessWidget {
                   },
                 ),
                 if (showContactOptions) ...[
-                  IconButton(
-                    icon: Icon(Icons.call_outlined, color: iconColor),
-                    onPressed: () async {
-                      final call = await CallActions.buildCall(
-                        type: CallType.audio,
-                        receiverId: user.id,
-                        receiverName: user.name,
-                        receiverAvatar: user.imageUrl ?? '',
-                      );
-                      if (call == null || !context.mounted) return;
-                      context.read<CallCubit>().makeAudioCall(call);
-                    },
+                  CallIconButton(
+                    type: CallType.audio,
+                    receiverId: user.id,
+                    receiverName: user.name,
+                    receiverAvatar: user.imageUrl ?? '',
                   ),
-                  IconButton(
-                    icon: Icon(Icons.videocam_outlined, color: iconColor),
-                    onPressed: () async {
-                      final call = await CallActions.buildCall(
-                        type: CallType.video,
-                        receiverId: user.id,
-                        receiverName: user.name,
-                        receiverAvatar: user.imageUrl ?? '',
-                      );
-                      if (call == null || !context.mounted) return;
-
-                      context.read<CallCubit>().makeAudioCall(call);
-                    },
+                  CallIconButton(
+                    type: CallType.video,
+                    receiverId: user.id,
+                    receiverName: user.name,
+                    receiverAvatar: user.imageUrl ?? '',
                   ),
                 ],
                 IconButton(

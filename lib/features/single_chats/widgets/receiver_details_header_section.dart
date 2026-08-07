@@ -3,16 +3,14 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import 'package:social_media_app/core/router/app_routes.dart';
-import 'package:social_media_app/features/single_chats/widgets/custom_icon_btn_widget.dart';
 import '../../../core/helpers/formatted_date.dart';
 import '../../../core/presence/cubit/presence_cubit/presence_cubit.dart';
 import '../../../core/presence/model/presence_info.dart';
 import '../../../core/presence/widgets/presence_avatar_widget.dart';
 import '../../../core/widgets/app_avatar.dart';
-import '../../single_calls/cubits/single_call_cubit/call_cubit.dart';
+import '../../../core/widgets/calls/call_icon_button.dart';
 import '../../single_calls/model/call_model.dart';
 import '../cubit/chat_details_cubit/chat_details_cubit.dart';
-import '../helper/call_actions.dart';
 import '../helper/safe_pop.dart';
 import '../models/chat_user_model.dart';
 
@@ -152,9 +150,11 @@ class ReceiverDetailsHeaderSection extends StatelessWidget {
                             }
                             return Text(
                               "Last seen $lastSeenStr",
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
                                 color: Colors.grey,
-                                fontSize: 12,
+                                fontSize: 11,
                               ),
                             );
                           }
@@ -171,43 +171,39 @@ class ReceiverDetailsHeaderSection extends StatelessWidget {
 
           Row(
             children: [
-              CustomIconBtnWidget(
-                icon: Icons.call_outlined,
-                onTap: () async {
-                  final call = await CallActions.buildCall(
-                    type: CallType.audio,
-                    receiverId: receiverUser.id,
-                    receiverName: receiverUser.name,
-                    receiverAvatar: receiverUser.imageUrl ?? '',
-                  );
-                  if (call == null || !context.mounted) return;
-
-                  context.read<CallCubit>().makeAudioCall(call);
-                },
-                size: 24,
+              CallIconButton(
+                size: 21,
+                type: CallType.audio,
+                receiverId: receiverUser.id,
+                receiverName: receiverUser.name,
+                receiverAvatar: receiverUser.imageUrl ?? '',
+                padding: const EdgeInsets.symmetric(horizontal: 6),
+                style: IconButton.styleFrom(
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
               ),
-              const Gap(12),
-              CustomIconBtnWidget(
-                icon: Icons.videocam_outlined,
-                onTap: () async {
-                  final call = await CallActions.buildCall(
-                    type: CallType.video,
-                    receiverId: receiverUser.id,
-                    receiverName: receiverUser.name,
-                    receiverAvatar: receiverUser.imageUrl ?? '',
-                  );
-                  if (call == null || !context.mounted) return;
-
-                  context.read<CallCubit>().makeAudioCall(call);
-                },
-                size: 24,
+              CallIconButton(
+                size: 21,
+                type: CallType.video,
+                receiverId: receiverUser.id,
+                receiverName: receiverUser.name,
+                receiverAvatar: receiverUser.imageUrl ?? '',
+                padding: const EdgeInsets.symmetric(horizontal: 6),
+                style: IconButton.styleFrom(
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
               ),
-              const Gap(8),
               PopupMenuButton<String>(
-                icon: Icon(
-                  Icons.more_vert_outlined,
-                  color: Theme.of(context).primaryColor,
-                  size: 24,
+                padding: EdgeInsets.zero,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: Icon(
+                    Icons.more_vert_outlined,
+                    color: Theme.of(context).primaryColor,
+                    size: 21,
+                  ),
                 ),
                 onSelected: (value) {
                   if (value == 'search') {

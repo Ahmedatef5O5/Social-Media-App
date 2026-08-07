@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import '../../../core/supabase/supabase_provider.dart';
 import '../model/call_model.dart';
 
@@ -43,4 +44,29 @@ class CallSignalingService {
           .from('calls')
           .stream(primaryKey: ['call_id'])
           .eq('call_id', callId);
+
+  Future<bool> isUserBusy(String userId) async {
+    try {
+      final activeSingleCall =
+          await _supabase
+              .from('calls')
+              .select('call_id')
+              .or('caller_id.eq.$userId,receiver_id.eq.$userId')
+              .inFilter('status', ['ringing', 'accepted'])
+              .maybeSingle();
+      if (activeSingleCall != null) return true;
+
+      final activeGroupCallAsInitiator =
+          await _supabase
+              .from('group_calls')
+              .select('call_id')
+              .eq('initiator_id', userId)
+              .inFilter('status', ['ringing', 'accepted', 'ongoing'])
+              .maybeSingle();
+      return activeGroupCallAsInitiator != null;
+    } catch (e) {
+      debugPrint('isUserBusy check failed: $e');
+      return false;
+    }
+  }
 }
