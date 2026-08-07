@@ -3,6 +3,7 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/supabase/supabase_provider.dart';
+import '../../../core/widgets/calls/call_avatar_backdrop.dart';
 import '../../../core/widgets/calls/call_layout_metrics.dart';
 import '../../../core/widgets/calls/calls.dart';
 import '../models/group_call_model.dart';
@@ -145,9 +146,12 @@ class _OutgoingGroupCallScreenState extends State<OutgoingGroupCallScreen>
     return Scaffold(
       body: Stack(
         children: [
-          CallGradientBackground(baseColor: primary),
+          CallAvatarBackdrop(
+            avatarUrl: widget.groupAvatarUrl,
+            baseColor: primary,
+          ),
           CallAmbientBackground(
-            style: CallAmbientStyle.drift,
+            style: CallAmbientStyle.orbit,
             isVideo: isVideo,
           ),
           SafeArea(
@@ -170,16 +174,50 @@ class _OutgoingGroupCallScreenState extends State<OutgoingGroupCallScreen>
                             isVideo ? 'Group Video Call' : 'Group Voice Call',
                       ),
 
-                      Expanded(
-                        child: Center(
-                          child: _buildGroupInfoSection(metrics.avatarDiameter),
+                      SizedBox(height: metrics.midGap),
+
+                      RippleAvatar(
+                        avatarDiameter: metrics.avatarDiameter,
+                        rippleColor: Colors.white,
+                        avatar: CallAvatarImage(
+                          imageUrl: widget.groupAvatarUrl,
+                          fallbackLabel: widget.groupName,
+                          diameter: metrics.avatarDiameter,
                         ),
                       ),
+
+                      SizedBox(height: metrics.midGap),
+
+                      Text(
+                        widget.groupName,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 30,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.5,
+                          shadows: [
+                            Shadow(
+                              color: Colors.black45,
+                              blurRadius: 12,
+                              offset: Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        textAlign: TextAlign.center,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+
+                      const SizedBox(height: 10),
+
+                      _buildCallingStatus(isVideo),
+
+                      const Spacer(),
 
                       GlassCallActionButton(
                         icon: Icons.call_end_rounded,
                         label: 'Cancel',
-                        color: Colors.red.shade600,
+                        color: Colors.redAccent.shade700,
                         size: metrics.buttonSize,
                         onTap: () async {
                           _cleanup();
@@ -202,48 +240,31 @@ class _OutgoingGroupCallScreenState extends State<OutgoingGroupCallScreen>
     );
   }
 
-  Widget _buildGroupInfoSection(double avatarDiameter) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        RippleAvatar(
-          avatarDiameter: avatarDiameter,
-          rippleColor: Colors.white,
-          avatar: CallAvatarImage(
-            imageUrl: widget.groupAvatarUrl,
-            fallbackLabel: widget.groupName,
-            diameter: avatarDiameter,
-          ),
-        ),
-        const SizedBox(height: 32),
-        Text(
-          widget.groupName,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 28,
-            fontWeight: FontWeight.bold,
-            letterSpacing: 0.3,
-          ),
-          textAlign: TextAlign.center,
-        ),
-        const SizedBox(height: 12),
-        _buildCallingStatus(),
-      ],
-    );
-  }
-
-  Widget _buildCallingStatus() {
+  Widget _buildCallingStatus(bool isVideo) {
     return AnimatedBuilder(
       animation: _dotAnim,
       builder: (_, __) {
         final dots = '.' * (_dotAnim.value + 1);
-        return Text(
-          'Calling group members$dots',
-          style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.65),
-            fontSize: 16,
-            letterSpacing: 0.3,
-          ),
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(
+              Icons.phone_forwarded_rounded,
+              color: Colors.white60,
+              size: 15,
+            ),
+            const SizedBox(width: 6),
+            Text(
+              isVideo
+                  ? 'Calling group (Video)$dots'
+                  : 'Calling group (Audio)$dots',
+              style: const TextStyle(
+                color: Colors.white70,
+                fontSize: 16,
+                letterSpacing: 0.3,
+              ),
+            ),
+          ],
         );
       },
     );

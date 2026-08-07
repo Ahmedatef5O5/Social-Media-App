@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/utilities/supabase_constants.dart';
+import '../../../core/widgets/calls/call_avatar_backdrop.dart';
 import '../../../core/widgets/calls/call_layout_metrics.dart';
 import '../../../core/widgets/calls/calls.dart';
 import '../models/group_call_model.dart';
@@ -28,9 +29,9 @@ class _IncomingGroupCallScreenState extends State<IncomingGroupCallScreen>
   StreamSubscription? _statusSubscription;
   StreamSubscription? _membershipSubscription;
   late final GroupCallSignalingService _signaling;
-  late final AnimationController _titleController;
-  late final Animation<double> _titleFade;
-  late final Animation<Offset> _titleSlide;
+
+  late final AnimationController _shakeController;
+  late final Animation<double> _shakeAnim;
 
   @override
   void initState() {
@@ -44,23 +45,13 @@ class _IncomingGroupCallScreenState extends State<IncomingGroupCallScreen>
   }
 
   void _initAnimations() {
-    _titleController = AnimationController(
+    _shakeController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 800),
+      duration: const Duration(milliseconds: 500),
+    )..repeat(reverse: true);
+    _shakeAnim = Tween<double>(begin: -3, end: 3).animate(
+      CurvedAnimation(parent: _shakeController, curve: Curves.elasticIn),
     );
-    _titleFade = Tween<double>(
-      begin: 0,
-      end: 1,
-    ).animate(CurvedAnimation(parent: _titleController, curve: Curves.easeOut));
-    _titleSlide = Tween<Offset>(
-      begin: const Offset(0, 0.3),
-      end: Offset.zero,
-    ).animate(
-      CurvedAnimation(parent: _titleController, curve: Curves.easeOutCubic),
-    );
-    Future.delayed(const Duration(milliseconds: 400), () {
-      if (mounted) _titleController.forward();
-    });
   }
 
   void _listenToCallStatus() {
@@ -99,7 +90,6 @@ class _IncomingGroupCallScreenState extends State<IncomingGroupCallScreen>
 
   void _cleanup() => _audioPlayer.stop();
 
-  // if I get removed/leave while this dialog is on screen, dismiss it.
   void _listenToMembership() {
     final myId = SupabaseProvider.id;
     _membershipSubscription = SupabaseProvider.client
@@ -122,16 +112,6 @@ class _IncomingGroupCallScreenState extends State<IncomingGroupCallScreen>
         });
   }
 
-  @override
-  void dispose() {
-    _cleanup();
-    _statusSubscription?.cancel();
-    _membershipSubscription?.cancel();
-    _audioPlayer.dispose();
-    _titleController.dispose();
-    super.dispose();
-  }
-
   Future<void> _acceptCall(BuildContext context) async {
     _cleanup();
     final updatedCall = await _signaling.acceptCall(widget.call.callId);
@@ -150,6 +130,16 @@ class _IncomingGroupCallScreenState extends State<IncomingGroupCallScreen>
   }
 
   @override
+  void dispose() {
+    _cleanup();
+    _statusSubscription?.cancel();
+    _membershipSubscription?.cancel();
+    _audioPlayer.dispose();
+    _shakeController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final primary = Theme.of(context).primaryColor;
     final isVideo = widget.call.type == GroupCallType.video;
@@ -157,9 +147,12 @@ class _IncomingGroupCallScreenState extends State<IncomingGroupCallScreen>
     return Scaffold(
       body: Stack(
         children: [
-          CallGradientBackground(baseColor: primary),
+          CallAvatarBackdrop(
+            avatarUrl: widget.call.groupAvatarUrl,
+            baseColor: primary,
+          ),
           CallAmbientBackground(
-            style: CallAmbientStyle.drift,
+            style: CallAmbientStyle.orbit,
             isVideo: isVideo,
           ),
           SafeArea(
@@ -180,24 +173,66 @@ class _IncomingGroupCallScreenState extends State<IncomingGroupCallScreen>
                           isVideo
                               ? 'Incoming Group Video'
                               : 'Incoming Group Voice',
-                      showLiveDot: true,
+                      shake: _shakeAnim,
                     ),
 
-                    Expanded(
-                      child: Center(
-                        child: _buildGroupInfoSection(metrics.avatarDiameter),
+                    SizedBox(height: metrics.midGap),
+
+                    RippleAvatar(
+                      avatarDiameter: metrics.avatarDiameter,
+                      rippleColor: Colors.greenAccent,
+                      avatar: CallAvatarImage(
+                        imageUrl: widget.call.groupAvatarUrl,
+                        fallbackLabel: widget.call.groupName,
+                        diameter: metrics.avatarDiameter,
+                        borderColor: Colors.greenAccent,
                       ),
                     ),
 
+                    SizedBox(height: metrics.midGap),
+
+                    Text(
+                      widget.call.groupName,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 30,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 0.5,
+                        shadows: [
+                          Shadow(
+                            color: Colors.black45,
+                            blurRadius: 12,
+                            offset: Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      textAlign: TextAlign.center,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+
+                    const SizedBox(height: 8),
+
+                    Text(
+                      '${widget.call.initiatorName} is calling...',
+                      style: const TextStyle(
+                        color: Colors.white60,
+                        fontSize: 15,
+                        letterSpacing: 0.3,
+                      ),
+                    ),
+
+                    const Spacer(),
+
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 50),
+                      padding: const EdgeInsets.symmetric(horizontal: 60),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
                           GlassCallActionButton(
                             icon: Icons.call_end_rounded,
                             label: 'Decline',
-                            color: Colors.red.shade600,
+                            color: Colors.redAccent.shade700,
                             size: metrics.buttonSize,
                             onTap: () {
                               _cleanup();
@@ -211,7 +246,7 @@ class _IncomingGroupCallScreenState extends State<IncomingGroupCallScreen>
                                     ? Icons.videocam_rounded
                                     : Icons.call_rounded,
                             label: 'Accept',
-                            color: Colors.green.shade500,
+                            color: Colors.green.shade600,
                             size: metrics.buttonSize,
                             emphasized: true,
                             onTap: () => _acceptCall(context),
@@ -228,67 +263,6 @@ class _IncomingGroupCallScreenState extends State<IncomingGroupCallScreen>
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildGroupInfoSection(double avatarDiameter) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        RippleAvatar(
-          avatarDiameter: avatarDiameter,
-          rippleColor: Colors.greenAccent,
-          avatar: CallAvatarImage(
-            imageUrl: widget.call.groupAvatarUrl,
-            fallbackLabel: widget.call.groupName,
-            diameter: avatarDiameter,
-            borderColor: Colors.greenAccent,
-          ),
-        ),
-        const SizedBox(height: 32),
-        FadeTransition(
-          opacity: _titleFade,
-          child: SlideTransition(
-            position: _titleSlide,
-            child: Column(
-              children: [
-                Text(
-                  widget.call.groupName,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 0.3,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 10),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const DecoratedBox(
-                      decoration: BoxDecoration(
-                        color: Colors.greenAccent,
-                        shape: BoxShape.circle,
-                      ),
-                      child: SizedBox(width: 6, height: 6),
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      '${widget.call.initiatorName} is calling',
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.7),
-                        fontSize: 15,
-                        letterSpacing: 0.2,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
     );
   }
 }

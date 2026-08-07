@@ -10,8 +10,10 @@ import '../../../core/services/active_call/pip/call_pip_cubit.dart';
 import '../../../core/services/call_foreground_task_handler.dart';
 import '../../../core/services/livekit_token_service.dart';
 import '../../../core/supabase/supabase_provider.dart';
+import '../../../core/widgets/calls/call_control_button.dart';
 import '../../../core/widgets/calls/call_layout_metrics.dart';
 import '../../../core/widgets/calls/calls.dart';
+import '../../../core/widgets/calls/call_avatar_backdrop.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
 import '../models/group_call_model.dart';
 import '../services/group_call_signaling_service.dart';
@@ -337,7 +339,6 @@ class _LiveKitGroupCallViewState extends State<LiveKitGroupCallView> {
     await CallTerminationService.endActiveCall(
       pipCubit: _pipCubit,
       sessionCubit: _sessionCubit,
-
       signalEnd: () async {},
     );
     if (mounted) Navigator.of(context).pop();
@@ -355,7 +356,6 @@ class _LiveKitGroupCallViewState extends State<LiveKitGroupCallView> {
     await CallTerminationService.endActiveCall(
       pipCubit: _pipCubit,
       sessionCubit: _sessionCubit,
-
       signalEnd:
           () =>
               endForEveryone
@@ -422,7 +422,10 @@ class _LiveKitGroupCallViewState extends State<LiveKitGroupCallView> {
       child: Scaffold(
         body: Stack(
           children: [
-            CallGradientBackground(baseColor: primary),
+            CallAvatarBackdrop(
+              avatarUrl: widget.call.groupAvatarUrl,
+              baseColor: primary,
+            ),
             SafeArea(
               child: LayoutBuilder(
                 builder: (context, constraints) {
@@ -544,36 +547,41 @@ class _LiveKitGroupCallViewState extends State<LiveKitGroupCallView> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
-        GlassCallActionButton(
+        CallControlButton(
           icon: _micEnabled ? Icons.mic_rounded : Icons.mic_off_rounded,
           label: _micEnabled ? 'Mute' : 'Unmute',
-          color: _micEnabled ? Colors.white24 : Colors.redAccent,
+          variant:
+              _micEnabled
+                  ? CallControlVariant.neutral
+                  : CallControlVariant.warning,
           size: buttonSize,
           onTap: _toggleMic,
         ),
         if (_isVideo)
-          GlassCallActionButton(
+          CallControlButton(
             icon:
                 _cameraEnabled
                     ? Icons.videocam_rounded
                     : Icons.videocam_off_rounded,
             label: _cameraEnabled ? 'Camera' : 'Off',
-            color: _cameraEnabled ? Colors.white24 : Colors.redAccent,
+            variant:
+                _cameraEnabled
+                    ? CallControlVariant.neutral
+                    : CallControlVariant.warning,
             size: buttonSize,
             onTap: _toggleCamera,
           ),
         if (_isVideo)
-          GlassCallActionButton(
+          CallControlButton(
             icon: Icons.cameraswitch_rounded,
             label: 'Flip',
-            color: Colors.white24,
             size: buttonSize,
             onTap: _switchCamera,
           ),
-        GlassCallActionButton(
+        CallControlButton(
           icon: Icons.call_end_rounded,
           label: 'End',
-          color: Colors.redAccent.shade700,
+          variant: CallControlVariant.dangerSolid,
           size: buttonSize,
           emphasized: true,
           onTap: _terminateCall,
