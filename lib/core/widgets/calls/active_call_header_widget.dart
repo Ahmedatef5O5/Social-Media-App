@@ -2,24 +2,16 @@ import 'dart:async';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:zego_uikit_prebuilt_call/zego_uikit_prebuilt_call.dart';
-import 'package:social_media_app/core/services/notification_services.dart';
 import 'package:social_media_app/core/services/active_call/active_call_session_data.dart';
 import 'package:social_media_app/core/services/active_call/call_termination_service.dart';
 import 'package:social_media_app/core/widgets/app_avatar.dart';
 import 'package:social_media_app/features/single_calls/cubits/single_call_cubit/call_cubit.dart';
 import 'package:social_media_app/features/group_calls/services/group_call_signaling_service.dart';
-
+import '../../services/active_call/call_navigation_helper.dart';
 import '../../services/active_call/cubit/active_call_session_cubit.dart';
+import '../../services/active_call/pip/call_pip_cubit.dart';
+import '../../services/active_call/pip/call_pip_state.dart';
 
-/// Sticky, non-floating replacement for Zego's default draggable mini
-/// player.
-///
-/// Renders **nothing** unless there is currently an active call
-/// ([ActiveCallSessionCubit]) **and** that call is minimized
-/// (`ZegoUIKitPrebuiltCallController().minimize.isMinimizingNotifier`).
-/// Fully standalone and reusable — drop it as the first child of a
-/// `Column`, above any scrollable content, on any screen.
 class ActiveCallHeaderWidget extends StatelessWidget {
   const ActiveCallHeaderWidget({super.key});
 
@@ -28,35 +20,37 @@ class ActiveCallHeaderWidget extends StatelessWidget {
     return BlocBuilder<ActiveCallSessionCubit, ActiveCallSessionData?>(
       builder: (context, session) {
         if (session == null) return const SizedBox.shrink();
-
-        return ValueListenableBuilder<bool>(
-          valueListenable:
-              ZegoUIKitPrebuiltCallController().minimize.isMinimizingNotifier,
-          builder: (context, isMinimizing, _) {
-            if (!isMinimizing) return const SizedBox.shrink();
-
-            // This widget is mounted inside app.dart's root Stack — a
-            // SIBLING of the routed `MaterialApp` content, not a
-            // descendant of any screen's `Scaffold`. That means it sits
-            // outside every `Material` ancestor the app normally
-            // provides, so every `Text`/`Icon`/`InkWell` below used to
-            // fall back to Flutter's "No Material widget found" error
-            // rendering (the double yellow underline under each word).
-            //
-            // `MaterialType.transparency` gives this subtree a real
-            // Material ancestor — default text style, ink splashes,
-            // etc. — without painting any surface color of its own, so
-            // it stays fully invisible and doesn't fight with the
-            // glass/blur look below it.
-            return Material(
-              type: MaterialType.transparency,
-              child: _ActiveCallHeaderContent(session: session),
-            );
-          },
+        return BlocBuilder<CallPipCubit, CallPipState>(
+          builder: (context, pip) => _buildSwitcher(pip.isMinimized, session),
         );
       },
     );
   }
+}
+
+Widget _buildSwitcher(bool isMinimizing, ActiveCallSessionData session) {
+  return AnimatedSwitcher(
+    duration: const Duration(milliseconds: 220),
+    transitionBuilder:
+        (child, animation) => FadeTransition(
+          opacity: animation,
+          child: SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(0, -0.15),
+              end: Offset.zero,
+            ).animate(animation),
+            child: child,
+          ),
+        ),
+    child:
+        !isMinimizing
+            ? const SizedBox.shrink(key: ValueKey('hidden'))
+            : Material(
+              key: const ValueKey('header'),
+              type: MaterialType.transparency,
+              child: _ActiveCallHeaderContent(session: session),
+            ),
+  );
 }
 
 class _ActiveCallHeaderContent extends StatefulWidget {
@@ -111,9 +105,11 @@ class _ActiveCallHeaderContentState extends State<_ActiveCallHeaderContent> {
   }
 
   void _handleExpand() {
-    final navContext = navigatorKey.currentState?.context;
-    if (navContext == null) return;
-    ZegoUIKitPrebuiltCallController().minimize.restore(navContext);
+    final session = widget.session;
+    CallNavigationHelper.expandActiveCall(
+      context.read<CallPipCubit>(),
+      session,
+    );
   }
 
   Future<void> _handleEndCall() async {
@@ -125,6 +121,8 @@ class _ActiveCallHeaderContentState extends State<_ActiveCallHeaderContent> {
 
     if (session.isGroup) {
       await CallTerminationService.endActiveCall(
+        pipCubit: context.read<CallPipCubit>(),
+        sessionCubit: context.read<ActiveCallSessionCubit>(),
         signalEnd:
             () => context.read<GroupCallSignalingService>().endCall(
               session.callId,
@@ -133,12 +131,11 @@ class _ActiveCallHeaderContentState extends State<_ActiveCallHeaderContent> {
       );
     } else {
       await CallTerminationService.endActiveCall(
+        pipCubit: context.read<CallPipCubit>(),
+        sessionCubit: context.read<ActiveCallSessionCubit>(),
         signalEnd: () => context.read<CallCubit>().endCall(session.callId),
       );
     }
-
-    if (!mounted) return;
-    context.read<ActiveCallSessionCubit>().endSession();
   }
 
   @override
