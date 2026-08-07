@@ -7,6 +7,7 @@ class FcmService {
   static final FcmService instance = FcmService._();
 
   Future<void> sendChatNotification({
+    required String messageId,
     required String receiverFcmToken,
     required String senderId,
     required String senderName,
@@ -14,9 +15,29 @@ class FcmService {
     String messageType = 'text',
     String senderImageUrl = '',
     String? attachmentUrl,
+    String? caption,
+    int? durationSeconds,
+    String? fileName,
+    int? fileSizeBytes,
+    String? replyToMessageId,
+    String? replyToText,
+    String? replyToMessageType,
+    String? replyToSenderId,
+    String? replyToMediaUrl,
+    String? replyToStoryId,
+    String? replyToStoryAuthorId,
+    String? replyToStoryType,
+    String? replyToStoryMediaUrl,
+    String? replyToStoryText,
+    String? replyToStoryBgColor,
+    int? replyToStoryDurationSeconds,
+    String? forwardedFromUserId,
+    String? forwardedFromUserName,
+    String? forwardedFromUserAvatar,
   }) async {
     await _sendToEdgeFunction({
       'type': 'chat',
+      'messageId': messageId,
       'receiverFcmToken': receiverFcmToken,
       'senderId': senderId,
       'senderName': senderName,
@@ -24,6 +45,47 @@ class FcmService {
       'messageType': messageType,
       'senderImageUrl': senderImageUrl,
       if (attachmentUrl != null) 'attachmentUrl': attachmentUrl,
+      if (caption != null) 'caption': caption,
+      if (durationSeconds != null) 'durationSeconds': durationSeconds,
+
+      if (fileName != null) 'fileName': fileName,
+
+      if (fileSizeBytes != null) 'fileSizeBytes': fileSizeBytes,
+
+      if (replyToMessageId != null) 'replyToMessageId': replyToMessageId,
+
+      if (replyToText != null) 'replyToText': replyToText,
+
+      if (replyToMessageType != null) 'replyToMessageType': replyToMessageType,
+
+      if (replyToSenderId != null) 'replyToSenderId': replyToSenderId,
+      if (replyToMediaUrl != null) 'replyToMediaUrl': replyToMediaUrl,
+      if (replyToStoryId != null) 'replyToStoryId': replyToStoryId,
+
+      if (replyToStoryAuthorId != null)
+        'replyToStoryAuthorId': replyToStoryAuthorId,
+
+      if (replyToStoryType != null) 'replyToStoryType': replyToStoryType,
+
+      if (replyToStoryMediaUrl != null)
+        'replyToStoryMediaUrl': replyToStoryMediaUrl,
+
+      if (replyToStoryText != null) 'replyToStoryText': replyToStoryText,
+
+      if (replyToStoryBgColor != null)
+        'replyToStoryBgColor': replyToStoryBgColor,
+
+      if (replyToStoryDurationSeconds != null)
+        'replyToStoryDurationSeconds': replyToStoryDurationSeconds,
+
+      if (forwardedFromUserId != null)
+        'forwardedFromUserId': forwardedFromUserId,
+
+      if (forwardedFromUserName != null)
+        'forwardedFromUserName': forwardedFromUserName,
+
+      if (forwardedFromUserAvatar != null)
+        'forwardedFromUserAvatar': forwardedFromUserAvatar,
     });
   }
 
@@ -80,27 +142,60 @@ class FcmService {
   }
 
   Future<void> sendGroupNotification({
+    required String messageId,
     required String receiverFcmToken,
     required String groupId,
     required String groupName,
+    required String senderId,
     required String senderName,
     required String messageBody,
     String messageType = 'text',
     String senderImageUrl = '',
     String groupImageUrl = '',
+    String? attachmentUrl,
     bool isMention = false,
+    String? caption,
+    int? durationSeconds,
+    String? fileName,
+    int? fileSizeBytes,
+    String? replyToMessageId,
+    String? replyToText,
+    String? replyToMessageType,
+    String? replyToSenderId,
+    String? replyToMediaUrl,
+    String? forwardedFromUserId,
+    String? forwardedFromUserName,
+    String? forwardedFromUserAvatar,
   }) async {
     await _sendToEdgeFunction({
       'type': 'group',
+      'messageId': messageId,
       'receiverFcmToken': receiverFcmToken,
       'groupId': groupId,
       'groupName': groupName,
+      'senderId': senderId,
       'senderName': senderName,
       'messageBody': messageBody,
       'messageType': messageType,
       'senderImageUrl': senderImageUrl,
       'groupImageUrl': groupImageUrl,
+      if (attachmentUrl != null) 'attachmentUrl': attachmentUrl,
       if (isMention) 'isMention': 'true',
+      if (caption != null) 'caption': caption,
+      if (durationSeconds != null) 'durationSeconds': durationSeconds,
+      if (fileName != null) 'fileName': fileName,
+      if (fileSizeBytes != null) 'fileSizeBytes': fileSizeBytes,
+      if (replyToMessageId != null) 'replyToMessageId': replyToMessageId,
+      if (replyToText != null) 'replyToText': replyToText,
+      if (replyToMessageType != null) 'replyToMessageType': replyToMessageType,
+      if (replyToSenderId != null) 'replyToSenderId': replyToSenderId,
+      if (replyToMediaUrl != null) 'replyToMediaUrl': replyToMediaUrl,
+      if (forwardedFromUserId != null)
+        'forwardedFromUserId': forwardedFromUserId,
+      if (forwardedFromUserName != null)
+        'forwardedFromUserName': forwardedFromUserName,
+      if (forwardedFromUserAvatar != null)
+        'forwardedFromUserAvatar': forwardedFromUserAvatar,
     });
   }
 

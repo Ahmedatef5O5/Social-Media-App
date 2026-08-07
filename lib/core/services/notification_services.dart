@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 import 'package:dio/dio.dart' as dio_pkg;
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -19,7 +20,11 @@ import '../../features/posts/services/posts_services.dart';
 import '../../features/posts/views/post_details_view.dart';
 import '../../features/settings/repository/settings_repository.dart';
 import '../../features/stories/model/story_model.dart';
+import '../cache/services/local_snapshot_store.dart';
+import '../helpers/chat_helper.dart';
 import '../supabase/supabase_provider.dart';
+import '../utilities/supabase_constants.dart';
+import 'incoming_call_navigation_guard.dart';
 import 'notification_avatar_builder.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -80,7 +85,7 @@ class NotificationService {
 
   static final AndroidNotificationChannel _callChannel =
       AndroidNotificationChannel(
-        'incoming_call_channel',
+        'incoming_call_channel_v2',
         'Incoming Calls',
         description: 'Incoming call alerts',
         importance: Importance.max,
@@ -301,6 +306,9 @@ class NotificationService {
     );
   }
 
+  bool get _isAppInForeground =>
+      WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed;
+
   Future<void> _handleIncomingCallData(Map<String, dynamic> data) async {
     final callId = data['callId'] as String? ?? '';
     final callerId = data['callerId'] as String? ?? '';
@@ -308,25 +316,33 @@ class NotificationService {
     final callerAvatar = data['callerAvatar'] as String? ?? '';
     final callType = data['callType'] as String? ?? 'audio';
 
-    await showIncomingCallNotification(
-      callId: callId,
-      callerId: callerId,
-      callerName: callerName,
-      callerAvatar: callerAvatar,
-      callType: callType,
-    );
+    if (callerId.isNotEmpty && callerId == SupabaseProvider.idOrNull) return;
+
+    if (!_isAppInForeground) {
+      await showIncomingCallNotification(
+        callId: callId,
+        callerId: callerId,
+        callerName: callerName,
+        callerAvatar: callerAvatar,
+        callType: callType,
+      );
+    }
+
+    if (!IncomingCallNavigationGuard.claim(callId)) return;
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      navigatorKey.currentState?.pushNamed(
-        AppRoutes.incomingCallRoute,
-        arguments: {
-          'callId': callId,
-          'callerId': callerId,
-          'callerName': callerName,
-          'callerAvatar': callerAvatar,
-          'callType': callType,
-        },
-      );
+      navigatorKey.currentState
+          ?.pushNamed(
+            AppRoutes.incomingCallRoute,
+            arguments: {
+              'callId': callId,
+              'callerId': callerId,
+              'callerName': callerName,
+              'callerAvatar': callerAvatar,
+              'callType': callType,
+            },
+          )
+          .then((_) => IncomingCallNavigationGuard.release(callId));
     });
   }
 
@@ -386,14 +402,16 @@ class NotificationService {
     final callType = data['callType'] as String? ?? 'audio';
     final startedAt = data['startedAt'] as String?;
 
-    await showIncomingGroupCallNotification(
-      callId: callId,
-      groupId: groupId,
-      groupName: groupName,
-      groupAvatarUrl: groupAvatarUrl ?? '',
-      callerName: callerName,
-      callType: callType,
-    );
+    if (!_isAppInForeground) {
+      await showIncomingGroupCallNotification(
+        callId: callId,
+        groupId: groupId,
+        groupName: groupName,
+        groupAvatarUrl: groupAvatarUrl ?? '',
+        callerName: callerName,
+        callType: callType,
+      );
+    }
 
     final call = GroupCallModel(
       callId: callId,
@@ -410,10 +428,16 @@ class NotificationService {
               : DateTime.now(),
     );
 
+    if (!IncomingCallNavigationGuard.claim(callId)) return;
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      navigatorKey.currentState?.push(
-        MaterialPageRoute(builder: (_) => IncomingGroupCallScreen(call: call)),
-      );
+      navigatorKey.currentState
+          ?.push(
+            MaterialPageRoute(
+              builder: (_) => IncomingGroupCallScreen(call: call),
+            ),
+          )
+          .then((_) => IncomingCallNavigationGuard.release(callId));
     });
   }
 
@@ -423,6 +447,8 @@ class NotificationService {
 
     final String type = data['notificationType'] ?? 'chat';
     final bool isGroup = type == 'group_message';
+
+    await _hydrateMessageCache(data, isGroup);
 
     final String conversationId =
         isGroup ? (data['groupId'] ?? '') : (data['senderId'] ?? '');
@@ -534,6 +560,148 @@ class NotificationService {
               : '$conversationId|$senderName|$avatarUrl',
     );
   }
+
+  Future<void> _hydrateMessageCache(
+    Map<String, dynamic> data,
+    bool isGroup,
+  ) async {
+    try {
+      final String type = data['notificationType'] ?? 'chat';
+      if (type != 'chat' && type != 'group_message') return;
+
+      final String? messageId = data['messageId'] as String?;
+      if (messageId == null || messageId.isEmpty) return;
+
+      final String messageType = data['messageType'] ?? 'text';
+      final String? attachmentUrl = _s(data['attachmentUrl']);
+      final String createdAt = DateTime.now().toIso8601String();
+
+      final String key;
+      final Map<String, dynamic> shadowMessage;
+
+      if (isGroup) {
+        final String groupId = data['groupId'] ?? '';
+        if (groupId.isEmpty) return;
+        key = 'group_messages_snapshot_$groupId';
+
+        shadowMessage = {
+          'id': messageId,
+          GroupMemberColumns.groupId: groupId,
+          'sender_id': data['senderId'] ?? '',
+          'sender_name': data['senderName'] ?? 'Unknown',
+          'sender_avatar': _s(data['senderImageUrl']),
+          'message_text': data['messageBody'] ?? '',
+          'created_at': createdAt,
+          'message_type': messageType,
+          'image_url': messageType == 'image' ? attachmentUrl : null,
+          'video_url': messageType == 'video' ? attachmentUrl : null,
+          'voice_url': messageType == 'voice' ? attachmentUrl : null,
+          MessagesColumns.durationSeconds: int.tryParse(
+            data['durationSeconds'] ?? '',
+          ),
+          'file_url': messageType == 'file' ? attachmentUrl : null,
+          MessagesColumns.fileName: _s(data['fileName']),
+          MessagesColumns.fileSizeBytes: int.tryParse(
+            data['fileSizeBytes'] ?? '',
+          ),
+          MessagesColumns.caption: _s(data['caption']),
+          'reply_to_message_id': _s(data['replyToMessageId']),
+          'reply_to_text': _s(data['replyToText']),
+          'reply_to_sender_id': _s(data['replyToSenderId']),
+          'reply_to_sender_name': null,
+          'reply_to_message_type': _s(data['replyToMessageType']),
+          'reply_to_media_url': _s(data['replyToMediaUrl']),
+          'forwarded_from_user_id': _s(data['forwardedFromUserId']),
+          'forwarded_from_user_name': _s(data['forwardedFromUserName']),
+          'forwarded_from_user_avatar': _s(data['forwardedFromUserAvatar']),
+          'mentions': const [],
+          'reactions': const {},
+          'reactionsCreatedAt': const {},
+          'read_by': const [],
+          'is_edited': false,
+          'deleted_for': const [],
+          'system_event_data': null,
+          'target_id': null,
+          'target_name': null,
+        };
+      } else {
+        final String? senderId = data['senderId'] as String?;
+        final String? currentUserId = SupabaseProvider.idOrNull;
+        if (senderId == null || senderId.isEmpty || currentUserId == null) {
+          return;
+        }
+        final conversationId = ChatHelper.buildConversationId(
+          currentUserId,
+          senderId,
+        );
+        key = 'chat_messages_snapshot_$conversationId';
+
+        shadowMessage = {
+          MessagesColumns.id: messageId,
+          MessagesColumns.senderId: senderId,
+          MessagesColumns.receiverId: currentUserId,
+          MessagesColumns.messageText: data['messageBody'] ?? '',
+          MessagesColumns.createdAt: createdAt,
+          MessagesColumns.isRead: false,
+          MessagesColumns.isEdited: false,
+          MessagesColumns.messageType: messageType,
+          MessagesColumns.imageUrl:
+              messageType == 'image' ? attachmentUrl : null,
+          MessagesColumns.videoUrl:
+              messageType == 'video' ? attachmentUrl : null,
+          MessagesColumns.voiceUrl:
+              messageType == 'voice' ? attachmentUrl : null,
+          MessagesColumns.durationSeconds: int.tryParse(
+            data['durationSeconds'] ?? '',
+          ),
+          MessagesColumns.fileName: _s(data['fileName']),
+          MessagesColumns.fileSizeBytes: int.tryParse(
+            data['fileSizeBytes'] ?? '',
+          ),
+          MessagesColumns.caption: _s(data['caption']),
+          MessagesColumns.replyToMessageId: _s(data['replyToMessageId']),
+          MessagesColumns.replyToText: _s(data['replyToText']),
+          MessagesColumns.replyToMessageType: _s(data['replyToMessageType']),
+          MessagesColumns.replyToSenderId: _s(data['replyToSenderId']),
+          MessagesColumns.replyToMediaUrl: _s(data['replyToMediaUrl']),
+          MessagesColumns.replyToStoryId: _s(data['replyToStoryId']),
+          MessagesColumns.replyToStoryAuthorId: _s(
+            data['replyToStoryAuthorId'],
+          ),
+          MessagesColumns.replyToStoryType: _s(data['replyToStoryType']),
+          MessagesColumns.replyToStoryMediaUrl: _s(
+            data['replyToStoryMediaUrl'],
+          ),
+          MessagesColumns.replyToStoryText: _s(data['replyToStoryText']),
+          MessagesColumns.replyToStoryBgColor: _s(data['replyToStoryBgColor']),
+          MessagesColumns.replyToStoryDurationSeconds: int.tryParse(
+            data['replyToStoryDurationSeconds'] ?? '',
+          ),
+          MessagesColumns.forwardedFromUserId: _s(data['forwardedFromUserId']),
+          MessagesColumns.forwardedFromUserName: _s(
+            data['forwardedFromUserName'],
+          ),
+          MessagesColumns.forwardedFromUserAvatar: _s(
+            data['forwardedFromUserAvatar'],
+          ),
+          'reactionsCreatedAt': const {},
+          MessagesColumns.deletedFor: const <String>[],
+        };
+      }
+
+      final existing = LocalSnapshotStore.instance.readList(key);
+      if (existing.any((m) => m['id'] == messageId)) return;
+
+      await LocalSnapshotStore.instance.saveList(key, [
+        shadowMessage,
+        ...existing,
+      ]);
+    } catch (e) {
+      debugPrint('⚠️ _hydrateMessageCache silent error: $e');
+    }
+  }
+
+  static String? _s(dynamic v) => (v == null || v == '') ? null : v as String;
 
   Future<void> showSocialNotificationFromMessage(RemoteMessage message) async {
     final data = message.data;
@@ -661,6 +829,10 @@ class NotificationService {
     if (payload.startsWith('group_call|')) {
       final parts = payload.split('|');
       if (parts.length >= 6) {
+        final callId = parts[1];
+        if (!IncomingCallNavigationGuard.claim(callId)) return;
+        unawaited(instance.cancelCallNotification(callId));
+
         final call = GroupCallModel(
           callId: parts[1],
           groupId: parts[2],
@@ -673,11 +845,13 @@ class NotificationService {
           startedAt: DateTime.now(),
         );
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          navigatorKey.currentState?.push(
-            MaterialPageRoute(
-              builder: (_) => IncomingGroupCallScreen(call: call),
-            ),
-          );
+          navigatorKey.currentState
+              ?.push(
+                MaterialPageRoute(
+                  builder: (_) => IncomingGroupCallScreen(call: call),
+                ),
+              )
+              .then((_) => IncomingCallNavigationGuard.release(callId));
         });
       }
       return;
@@ -696,18 +870,21 @@ class NotificationService {
           _rejectCallViaRest(callId);
           return;
         }
-
+        if (!IncomingCallNavigationGuard.claim(callId)) return;
+        unawaited(instance.cancelCallNotification(callId));
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          navigatorKey.currentState?.pushNamed(
-            AppRoutes.incomingCallRoute,
-            arguments: {
-              'callId': callId,
-              'callerId': callerId,
-              'callerName': callerName,
-              'callerAvatar': callerAvatar,
-              'callType': callType,
-            },
-          );
+          navigatorKey.currentState
+              ?.pushNamed(
+                AppRoutes.incomingCallRoute,
+                arguments: {
+                  'callId': callId,
+                  'callerId': callerId,
+                  'callerName': callerName,
+                  'callerAvatar': callerAvatar,
+                  'callType': callType,
+                },
+              )
+              .then((_) => IncomingCallNavigationGuard.release(callId));
         });
       }
       return;

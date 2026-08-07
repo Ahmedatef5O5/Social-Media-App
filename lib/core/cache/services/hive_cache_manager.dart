@@ -10,7 +10,7 @@ class HiveCacheManager {
 
   static final HiveCacheManager instance = HiveCacheManager._();
 
-  static const String _cacheSubDirectory = 'social_media_cache';
+  static const String cacheSubDirectory = 'social_media_cache';
   bool _isInitialized = false;
 
   late final Box<CachedMediaModel> mediaCacheBox;
@@ -21,7 +21,7 @@ class HiveCacheManager {
     if (_isInitialized) return;
 
     final cacheDirectory = await getApplicationDocumentsDirectory();
-    Hive.init('${cacheDirectory.path}/$_cacheSubDirectory');
+    Hive.init('${cacheDirectory.path}/$cacheSubDirectory');
 
     _registerAdapters();
 

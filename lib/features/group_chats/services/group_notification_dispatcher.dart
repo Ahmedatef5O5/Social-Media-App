@@ -10,6 +10,7 @@ class GroupNotificationDispatcher {
   final _fcm = FcmService.instance;
 
   Future<void> notifyMessage({
+    required String messageId,
     required String groupId,
     required String groupName,
     required String groupImageUrl,
@@ -18,7 +19,20 @@ class GroupNotificationDispatcher {
     required String senderAvatar,
     required String messageBody,
     required String messageType,
+    String? attachmentUrl,
     List<String> mentionedUserIds = const [],
+    String? caption,
+    int? durationSeconds,
+    String? fileName,
+    int? fileSizeBytes,
+    String? replyToMessageId,
+    String? replyToText,
+    String? replyToMessageType,
+    String? replyToSenderId,
+    String? replyToMediaUrl,
+    String? forwardedFromUserId,
+    String? forwardedFromUserName,
+    String? forwardedFromUserAvatar,
   }) async {
     await _dispatchToMembers(
       groupId: groupId,
@@ -26,15 +40,30 @@ class GroupNotificationDispatcher {
       respectMute: true,
       payloadBuilder:
           (memberId, token) => _fcm.sendGroupNotification(
+            messageId: messageId,
             receiverFcmToken: token,
             groupId: groupId,
             groupName: groupName,
+            senderId: senderId,
             senderName: senderName,
             messageBody: messageBody,
             messageType: messageType,
             senderImageUrl: senderAvatar,
             groupImageUrl: groupImageUrl,
+            attachmentUrl: attachmentUrl,
             isMention: mentionedUserIds.contains(memberId),
+            caption: caption,
+            durationSeconds: durationSeconds,
+            fileName: fileName,
+            fileSizeBytes: fileSizeBytes,
+            replyToMessageId: replyToMessageId,
+            replyToText: replyToText,
+            replyToMessageType: replyToMessageType,
+            replyToSenderId: replyToSenderId,
+            replyToMediaUrl: replyToMediaUrl,
+            forwardedFromUserId: forwardedFromUserId,
+            forwardedFromUserName: forwardedFromUserName,
+            forwardedFromUserAvatar: forwardedFromUserAvatar,
           ),
     );
   }

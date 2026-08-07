@@ -4,8 +4,14 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:hive/hive.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:social_media_app/core/services/notification_services.dart';
 import 'package:social_media_app/firebase_options.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../cache/services/hive_cache_manager.dart';
+import '../cache/services/local_snapshot_store.dart';
+import '../secrets/app_secrets.dart';
 
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -33,7 +39,7 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
             >();
 
     final callChannel = AndroidNotificationChannel(
-      'incoming_call_channel',
+      'incoming_call_channel_v2',
       'Incoming Calls',
       importance: Importance.max,
       playSound: true,
@@ -65,7 +71,7 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
     }
 
     final androidDetails = AndroidNotificationDetails(
-      'incoming_call_channel',
+      'incoming_call_channel_v2',
       'Incoming Calls',
       importance: Importance.max,
       priority: Priority.max,
@@ -104,6 +110,19 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
           'call|$callId|$callerId|$callerName|$callerAvatar|$callType|$supabaseUrl|$supabaseAnonKey',
     );
     return;
+  }
+
+  final cacheDirectory = await getApplicationDocumentsDirectory();
+  Hive.init('${cacheDirectory.path}/${HiveCacheManager.cacheSubDirectory}');
+  await LocalSnapshotStore.instance.init();
+
+  try {
+    Supabase.instance;
+  } catch (_) {
+    await Supabase.initialize(
+      url: AppSecrets.supabaseUrl,
+      anonKey: AppSecrets.supabaseAnonKey,
+    );
   }
 
   await NotificationService.instance.initialize(isBackground: true);
