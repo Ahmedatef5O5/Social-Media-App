@@ -48,7 +48,7 @@ import '../../features/posts/views/saved_posts_view.dart';
 import '../../features/single_calls/model/call_model.dart';
 import '../../features/single_calls/views/dialing_view.dart';
 import '../../features/single_calls/views/incoming_call_view.dart';
-import '../../features/single_calls/views/zego_call_view.dart';
+import '../../features/single_calls/views/livekit_call_view.dart';
 import '../../features/single_chats/cubit/chats_cubit/chats_cubit.dart';
 import '../../features/group_chats/cubit/group_list_cubit/group_list_cubit.dart';
 import '../../features/group_chats/services/group_chat_services.dart';
@@ -553,7 +553,7 @@ class AppRouter {
           return _errorRoute(settings, 'Invalid or missing Call data');
         }
         return _buildRoute(
-          ZegoCallView(
+          LiveKitCallView(
             call: args['call'],
             currentUserId: args['userId'],
             currentUserName: args['userName'],

@@ -6,6 +6,7 @@ import '../../features/group_calls/services/group_call_signaling_service.dart';
 import '../../features/group_calls/views/incoming_group_call_screen.dart';
 import '../services/notification_services.dart';
 import '../supabase/supabase_provider.dart';
+import 'incoming_call_navigation_guard.dart';
 
 class GlobalGroupCallListener extends StatefulWidget {
   final Widget child;
@@ -20,10 +21,7 @@ class GlobalGroupCallListener extends StatefulWidget {
 class _GlobalGroupCallListenerState extends State<GlobalGroupCallListener> {
   StreamSubscription? _incomingCallSub;
   StreamSubscription<AuthState>? _authSub;
-
   late final GroupCallSignalingService _signaling;
-
-  String? _currentlyShowingCallId;
 
   @override
   void initState() {
@@ -65,25 +63,20 @@ class _GlobalGroupCallListenerState extends State<GlobalGroupCallListener> {
     _incomingCallSub = _signaling.incomingGroupCallsStream(userId).listen((
       calls,
     ) async {
-      if (!mounted) return;
-      if (calls.isEmpty) return;
-
+      if (!mounted || calls.isEmpty) return;
       final activeCall = calls.first;
-
       if (activeCall.initiatorId == userId) return;
-      if (_currentlyShowingCallId == activeCall.callId) return;
+
+      if (!IncomingCallNavigationGuard.claim(activeCall.callId)) return;
 
       final isMember = await _signaling.isActiveGroupMember(
         groupId: activeCall.groupId,
         userId: userId,
       );
-      if (!mounted) return;
-      if (!isMember) return;
-      if (_currentlyShowingCallId == activeCall.callId) {
+      if (!mounted || !isMember) {
+        IncomingCallNavigationGuard.release(activeCall.callId);
         return;
       }
-
-      _currentlyShowingCallId = activeCall.callId;
 
       navigatorKey.currentState
           ?.push(
@@ -91,16 +84,13 @@ class _GlobalGroupCallListenerState extends State<GlobalGroupCallListener> {
               builder: (_) => IncomingGroupCallScreen(call: activeCall),
             ),
           )
-          .then((_) {
-            _currentlyShowingCallId = null;
-          });
+          .then((_) => IncomingCallNavigationGuard.release(activeCall.callId));
     });
   }
 
   void _stopIncomingCallListener() {
     _incomingCallSub?.cancel();
     _incomingCallSub = null;
-    _currentlyShowingCallId = null;
   }
 
   @override

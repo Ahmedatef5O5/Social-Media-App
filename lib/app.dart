@@ -32,15 +32,16 @@ import 'package:social_media_app/features/posts/services/posts_services.dart';
 import 'package:social_media_app/features/profile/services/user_services.dart';
 import 'package:social_media_app/features/settings/widgets/app_lock_gate.dart';
 import 'package:social_media_app/features/stories/cubit/stories_cubit/stories_cubit.dart';
-import 'package:zego_uikit_prebuilt_call/zego_uikit_prebuilt_call.dart';
 import 'core/connectivity/cubit/connectivity_state.dart';
 import 'core/connectivity/widgets/connectivity_banner.dart';
 import 'core/presence/cubit/presence_cubit/presence_cubit.dart';
 import 'core/presence/services/presence_service.dart';
-import 'core/services/active_call/active_call_session_data.dart';
 import 'core/services/active_call/cubit/active_call_session_cubit.dart';
+import 'core/services/active_call/pip/call_pip_cubit.dart';
 import 'core/services/global_group_call_listener.dart';
+import 'core/services/incoming_call_navigation_guard.dart';
 import 'core/toast/app_toast_overlay.dart';
+import 'core/widgets/calls/call_pip_overlay.dart';
 import 'features/auth/cubit/auth_cubit/auth_cubit.dart';
 import 'features/posts/cubit/posts_cubit/posts_cubit.dart';
 import 'features/reels/cubit/reels_feed_cubit/reels_feed_cubit.dart';
@@ -93,7 +94,7 @@ Widget buildApp(String savedTheme) {
                     ..checkAuthStatus(),
         ),
 
-        BlocProvider(create: (_) => ActiveCallSessionCubit()),
+        BlocProvider(create: (_) => CallPipCubit()),
         BlocProvider(
           create:
               (context) => PostsCubit(
@@ -168,153 +169,134 @@ class MyApp extends StatelessWidget {
                     ),
               ),
               BlocProvider(create: (_) => PresenceCubit(), lazy: false),
+              BlocProvider(create: (_) => ActiveCallSessionCubit()),
             ],
             child: MaterialApp(
               locale: DevicePreview.locale(context),
               builder: (ctx, child) {
                 final devicePreviewChild = DevicePreview.appBuilder(ctx, child);
-                return ZegoUIKitPrebuiltCallMiniPopScope(
-                  child: AppLockGate(
-                    child: GlobalGroupCallListener(
-                      child: MultiBlocListener(
-                        listeners: [
-                          BlocListener<CallCubit, CallState>(
-                            listener: (context, callState) async {
-                              final nav = navigatorKey.currentState;
-                              if (nav == null) return;
+                return AppLockGate(
+                  child: GlobalGroupCallListener(
+                    child: MultiBlocListener(
+                      listeners: [
+                        BlocListener<CallCubit, CallState>(
+                          listener: (context, callState) async {
+                            final nav = navigatorKey.currentState;
+                            if (nav == null) return;
 
-                              if (callState is CallIncomingState) {
-                                nav.pushNamed(
-                                  AppRoutes.incomingCallRoute,
-                                  arguments: {
-                                    'callId': callState.call.callId,
-                                    'callerId': callState.call.callerId,
-                                    'callerName': callState.call.callerName,
-                                    'callerAvatar': callState.call.callerAvatar,
-                                    'callType':
-                                        callState.call.type == CallType.video
-                                            ? 'video'
-                                            : 'audio',
-                                  },
-                                );
-                              } else if (callState is CallDialingState) {
-                                nav.pushNamed(
-                                  AppRoutes.dialingRoute,
-                                  arguments: callState.call,
-                                );
-                              } else if (callState is CallConnectedState) {
-                                final currentUser = SupabaseProvider.user;
-                                if (currentUser == null) return;
-
-                                final userData =
-                                    await SupabaseProvider.client
-                                        .from('users')
-                                        .select('name')
-                                        .eq('id', currentUser.id)
-                                        .maybeSingle();
-
-                                final currentUserName =
-                                    (userData?['name'] as String?) ?? 'Unknown';
-
-                                final isCaller =
-                                    callState.call.callerId == currentUser.id;
-                                context
-                                    .read<ActiveCallSessionCubit>()
-                                    .startSingleCallSession(
-                                      callId: callState.call.callId,
-                                      title:
-                                          isCaller
-                                              ? callState.call.receiverName
-                                              : callState.call.callerName,
-                                      avatarUrl:
-                                          isCaller
-                                              ? callState.call.receiverAvatar
-                                              : callState.call.callerAvatar,
-                                      isVideo:
-                                          callState.call.type == CallType.video,
-                                      startedAt: DateTime.now(),
-                                    );
-
-                                nav.pushReplacementNamed(
-                                  AppRoutes.callRoute,
-                                  arguments: {
-                                    'call': callState.call,
-                                    'userId': currentUser.id,
-                                    'userName': currentUserName,
-                                  },
-                                );
-                                await FlutterForegroundTask.startService(
-                                  serviceId: 101,
-                                  notificationTitle: 'Ongoing Call',
-                                  notificationText: 'Tap to return to the call',
-                                  callback:
-                                      startCallServiceCallback, // top-level function to be added in core/services
-                                );
-                              } else if (callState is CallEndedState) {
-                                context
-                                    .read<ActiveCallSessionCubit>()
-                                    .endSession();
-                                await FlutterForegroundTask.stopService();
-                                nav.popUntil((route) {
-                                  return route.settings.name !=
-                                          AppRoutes.callRoute &&
-                                      route.settings.name !=
-                                          AppRoutes.dialingRoute;
-                                });
+                            if (callState is CallIncomingState) {
+                              final callId = callState.call.callId;
+                              if (!IncomingCallNavigationGuard.claim(callId)) {
+                                return;
                               }
-                            },
-                          ),
-                          BlocListener<ConnectivityCubit, ConnectivityState>(
-                            listener: (context, connState) {
-                              if (connState is ConnectivityRestored) {
-                                PresenceService.instance.forceSyncNow();
-                              }
-                            },
-                          ),
-                        ],
-                        child: Stack(
-                          children: [
-                            devicePreviewChild,
-                            const Directionality(
-                              textDirection: TextDirection.ltr,
-                              child: ConnectivityBanner(),
-                            ),
-                            const AppToastOverlay(),
-
-                            BlocBuilder<
-                              ActiveCallSessionCubit,
-                              ActiveCallSessionData?
-                            >(
-                              builder: (context, session) {
-                                final isVideoCall = session?.isVideo ?? false;
-
-                                if (isVideoCall) {
-                                  return ZegoUIKitPrebuiltCallMiniOverlayPage(
-                                    contextQuery:
-                                        () =>
-                                            navigatorKey.currentState!.context,
-                                  );
-                                } else {
-                                  return IgnorePointer(
-                                    child: Opacity(
-                                      opacity: 0,
-                                      child:
-                                          ZegoUIKitPrebuiltCallMiniOverlayPage(
-                                            contextQuery:
-                                                () =>
-                                                    navigatorKey
-                                                        .currentState!
-                                                        .context,
-                                          ),
+                              nav
+                                  .pushNamed(
+                                    AppRoutes.incomingCallRoute,
+                                    arguments: {
+                                      'callId': callState.call.callId,
+                                      'callerId': callState.call.callerId,
+                                      'callerName': callState.call.callerName,
+                                      'callerAvatar':
+                                          callState.call.callerAvatar,
+                                      'callType':
+                                          callState.call.type == CallType.video
+                                              ? 'video'
+                                              : 'audio',
+                                    },
+                                  )
+                                  .then(
+                                    (_) => IncomingCallNavigationGuard.release(
+                                      callId,
                                     ),
                                   );
-                                }
-                              },
-                            ),
+                            } else if (callState is CallDialingState) {
+                              nav.pushNamed(
+                                AppRoutes.dialingRoute,
+                                arguments: callState.call,
+                              );
+                            } else if (callState is CallConnectedState) {
+                              final currentUser = SupabaseProvider.user;
+                              if (currentUser == null) return;
 
-                            const ActiveCallHeaderWidget(),
-                          ],
+                              final userData =
+                                  await SupabaseProvider.client
+                                      .from('users')
+                                      .select('name')
+                                      .eq('id', currentUser.id)
+                                      .maybeSingle();
+
+                              final currentUserName =
+                                  (userData?['name'] as String?) ?? 'Unknown';
+
+                              final isCaller =
+                                  callState.call.callerId == currentUser.id;
+                              context
+                                  .read<ActiveCallSessionCubit>()
+                                  .startSingleCallSession(
+                                    callId: callState.call.callId,
+                                    title:
+                                        isCaller
+                                            ? callState.call.receiverName
+                                            : callState.call.callerName,
+                                    avatarUrl:
+                                        isCaller
+                                            ? callState.call.receiverAvatar
+                                            : callState.call.callerAvatar,
+                                    isVideo:
+                                        callState.call.type == CallType.video,
+                                    startedAt: DateTime.now(),
+                                  );
+
+                              nav.pushReplacementNamed(
+                                AppRoutes.callRoute,
+                                arguments: {
+                                  'call': callState.call,
+                                  'userId': currentUser.id,
+                                  'userName': currentUserName,
+                                },
+                              );
+                              await FlutterForegroundTask.startService(
+                                serviceId: 101,
+                                notificationTitle: 'Ongoing Call',
+                                notificationText: 'Tap to return to the call',
+                                callback:
+                                    startCallServiceCallback, // top-level function to be added in core/services
+                              );
+                            } else if (callState is CallEndedState) {
+                              context
+                                  .read<ActiveCallSessionCubit>()
+                                  .endSession();
+                              await context.read<CallPipCubit>().reset();
+
+                              await FlutterForegroundTask.stopService();
+                              nav.popUntil((route) {
+                                return route.settings.name !=
+                                        AppRoutes.callRoute &&
+                                    route.settings.name !=
+                                        AppRoutes.dialingRoute;
+                              });
+                            }
+                          },
                         ),
+                        BlocListener<ConnectivityCubit, ConnectivityState>(
+                          listener: (context, connState) {
+                            if (connState is ConnectivityRestored) {
+                              PresenceService.instance.forceSyncNow();
+                            }
+                          },
+                        ),
+                      ],
+                      child: Stack(
+                        children: [
+                          devicePreviewChild,
+                          const Directionality(
+                            textDirection: TextDirection.ltr,
+                            child: ConnectivityBanner(),
+                          ),
+                          const AppToastOverlay(),
+                          const CallPipOverlay(), // 1:1 + group calls (LiveKit)
+                          const ActiveCallHeaderWidget(),
+                        ],
                       ),
                     ),
                   ),
