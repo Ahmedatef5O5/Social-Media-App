@@ -79,7 +79,23 @@ class ChatServices {
     limit: limit,
   );
 
-  Future<void> sendMessage({
+  Future<void> upsertCallMessage({
+    required String callId,
+    required String senderId,
+    required String receiverId,
+    required String status,
+    required String callType,
+    String duration = '',
+  }) => _messages.upsertCallMessage(
+    callId: callId,
+    senderId: senderId,
+    receiverId: receiverId,
+    status: status,
+    callType: callType,
+    duration: duration,
+  );
+
+  Future<String> sendMessage({
     required String senderId,
     required String receiverId,
     required String text,
@@ -96,6 +112,7 @@ class ChatServices {
     String? replyToText,
     String? replyToMessageType,
     String? replyToSenderId,
+    String? replyToMediaUrl,
     String? imagePublicId,
     String? videoPublicId,
     String? voicePublicId,
@@ -127,6 +144,7 @@ class ChatServices {
     replyToText: replyToText,
     replyToMessageType: replyToMessageType,
     replyToSenderId: replyToSenderId,
+    replyToMediaUrl: replyToMediaUrl,
     imagePublicId: imagePublicId,
     videoPublicId: videoPublicId,
     voicePublicId: voicePublicId,

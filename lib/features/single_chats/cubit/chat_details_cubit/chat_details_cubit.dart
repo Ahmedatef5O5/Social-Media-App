@@ -56,6 +56,8 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
       ValueNotifier<MessageModel?>(null);
 
   StreamSubscription? _messageSubscription;
+  bool _hasReceivedFirstStreamEvent = false;
+  bool get hasConfirmedInitialLoad => _hasReceivedFirstStreamEvent;
 
   @override
   List<MessageModel> cachedMessages = [];
@@ -201,6 +203,7 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
 
   void getMessagesStream({required String receiverId}) {
     _messageSubscription?.cancel();
+    _hasReceivedFirstStreamEvent = false;
 
     final conversationId = ChatHelper.buildConversationId(
       currentUserId,
@@ -243,25 +246,32 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
                         .where((m) => m.createdAt.isAfter(clearedAt))
                         .toList();
 
-            final currentIds = messages.map((m) => m.id).toSet();
-            bubbleKeys.removeWhere((key, _) => !currentIds.contains(key));
-            for (final msg in messages) {
-              if (!bubbleKeys.containsKey(msg.id)) {
-                bubbleKeys[msg.id] = GlobalKey<ChatBubbleState>();
-              }
-            }
-            _registerBubbleKeys(messages);
-
             final enriched =
                 messages.map((m) {
                   final reactions = _reactionsCache[m.id] ?? {};
                   return m.copyWith(reactions: reactions);
                 }).toList();
 
-            cachedMessages = enriched;
-            emit(MessagesSuccessLoaded(messages: enriched));
+            List<MessageModel> resolved;
+            if (!_hasReceivedFirstStreamEvent && cachedMessages.isNotEmpty) {
+              final cachedIds = cachedMessages.map((m) => m.id).toSet();
+              resolved = [
+                ...enriched.where((m) => !cachedIds.contains(m.id)),
+                ...cachedMessages,
+              ]..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+            } else {
+              resolved = enriched;
+            }
+            _hasReceivedFirstStreamEvent = true;
 
-            _persistMessagesSnapshot(_messagesSnapshotKey!, enriched);
+            final currentIds = resolved.map((m) => m.id).toSet();
+            bubbleKeys.removeWhere((key, _) => !currentIds.contains(key));
+            _registerBubbleKeys(resolved);
+
+            cachedMessages = resolved;
+            emit(MessagesSuccessLoaded(messages: resolved));
+
+            _persistMessagesSnapshot(_messagesSnapshotKey!, resolved);
           },
           onError: (e) {
             debugPrint('Messages stream error: $e');
@@ -327,6 +337,9 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
     String? remoteImageUrl,
     String? caption,
     MessageModel? replyTo,
+    String? forwardedFromUserId,
+    String? forwardedFromUserName,
+    String? forwardedFromUserAvatar,
   }) async {
     if (blockStatus.value.isBlocked) return;
 
@@ -355,12 +368,28 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
       videoUrl: videoFile?.path,
       voiceUrl: voiceFile?.path,
       durationSeconds: durationSeconds,
+      caption: caption,
       fileName: fileName,
+      fileUrl: documentFile?.path,
       fileSizeBytes: fileSizeBytes,
-      replyToMessageId: replyToMessage.value?.id,
-      replyToText: replyToMessage.value?.text,
-      replyToMessageType: replyToMessage.value?.messageType,
-      replyToSenderId: replyToMessage.value?.senderId,
+      replyToMessageId: replyTo?.id,
+      replyToText:
+          (replyTo?.text != null && replyTo!.text.isNotEmpty)
+              ? replyTo.text
+              : replyTo?.caption,
+      replyToMessageType: replyTo?.messageType,
+      replyToSenderId: replyTo?.senderId,
+      replyToMediaUrl: MessageModel.replyMediaUrlFrom(replyTo),
+      forwardedFromUserId: forwardedFromUserId,
+      forwardedFromUserName: forwardedFromUserName,
+      forwardedFromUserAvatar: forwardedFromUserAvatar,
+      replyToStoryId: replyTo?.replyToStoryId,
+      replyToStoryAuthorId: replyTo?.replyToStoryAuthorId,
+      replyToStoryType: replyTo?.replyToStoryType,
+      replyToStoryMediaUrl: replyTo?.replyToStoryMediaUrl,
+      replyToStoryText: replyTo?.replyToStoryText,
+      replyToStoryBgColor: replyTo?.replyToStoryBgColor,
+      replyToStoryDurationSeconds: replyTo?.replyToStoryDurationSeconds,
     );
 
     final updatedMessages = [optimisticMessage, ...currentMessages];
@@ -495,7 +524,7 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
         }
       }
 
-      await _chatServices.sendMessage(
+      final newMessageId = await _chatServices.sendMessage(
         senderId: currentUserId,
         receiverId: receiverId,
         text: messageText,
@@ -509,15 +538,54 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
         fileSizeBytes: fileSizeBytes,
         caption: caption,
         replyToMessageId: replyTo?.id,
-        replyToText: _getReplyPreviewText(replyTo),
+        replyToText:
+            (replyTo?.text != null && replyTo!.text.isNotEmpty)
+                ? replyTo.text
+                : replyTo?.caption,
         replyToMessageType: replyTo?.messageType,
         replyToSenderId: replyTo?.senderId,
+        replyToMediaUrl: MessageModel.replyMediaUrlFrom(replyTo),
 
         imagePublicId: imagePublicId,
         videoPublicId: videoPublicId,
         voicePublicId: voicePublicId,
         filePublicId: filePublicId,
+        forwardedFromUserId: forwardedFromUserId,
+        forwardedFromUserName: forwardedFromUserName,
+        forwardedFromUserAvatar: forwardedFromUserAvatar,
       );
+
+      final pushMessage = optimisticMessage.copyWith(
+        id: newMessageId,
+        imageUrl: imageUrl,
+        videoUrl: videoUrl,
+        voiceUrl: voiceUrl,
+        fileUrl: fileUrl,
+        caption: caption,
+        durationSeconds: durationSeconds,
+        fileName: fileName,
+        fileSizeBytes: fileSizeBytes,
+        replyToMessageId: replyTo?.id,
+        replyToText:
+            (replyTo?.text != null && replyTo!.text.isNotEmpty)
+                ? replyTo.text
+                : replyTo?.caption,
+        replyToMessageType: replyTo?.messageType,
+        replyToSenderId: replyTo?.senderId,
+        replyToMediaUrl: optimisticMessage.replyToMediaUrl,
+        forwardedFromUserId: optimisticMessage.forwardedFromUserId,
+        forwardedFromUserName: optimisticMessage.forwardedFromUserName,
+        forwardedFromUserAvatar: optimisticMessage.forwardedFromUserAvatar,
+        replyToStoryId: optimisticMessage.replyToStoryId,
+        replyToStoryAuthorId: optimisticMessage.replyToStoryAuthorId,
+        replyToStoryType: optimisticMessage.replyToStoryType,
+        replyToStoryMediaUrl: optimisticMessage.replyToStoryMediaUrl,
+        replyToStoryText: optimisticMessage.replyToStoryText,
+        replyToStoryBgColor: optimisticMessage.replyToStoryBgColor,
+        replyToStoryDurationSeconds:
+            optimisticMessage.replyToStoryDurationSeconds,
+      );
+
       if (messageType != 'call') {
         await NotificationRepository.instance.notifyChatMessage(
           receiverId: receiverId,
@@ -537,12 +605,7 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
       }
       _cancelTokens.remove(tempId);
 
-      _sendPushNotification(
-        receiverId: receiverId,
-        messageText: caption ?? messageText,
-        messageType: messageType,
-        attachmentUrl: imageUrl ?? videoUrl ?? fileUrl,
-      );
+      await _sendPushNotification(message: pushMessage, receiverId: receiverId);
 
       Future.delayed(const Duration(seconds: 2), () {
         if (!isClosed) {
@@ -636,10 +699,8 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
   }
 
   Future<void> _sendPushNotification({
+    required MessageModel message,
     required String receiverId,
-    required String messageText,
-    required String messageType,
-    String? attachmentUrl,
   }) async {
     try {
       final receiverInfo = await _chatServices.getReceiverPushInfo(receiverId);
@@ -650,6 +711,7 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
       }
 
       await FcmService.instance.sendChatNotification(
+        messageId: message.id,
         receiverFcmToken: receiverInfo.fcmToken,
         senderId: currentUserId,
         senderName:
@@ -660,9 +722,34 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
             _resolvedSenderImageUrl.isNotEmpty
                 ? _resolvedSenderImageUrl
                 : (senderImageUrl ?? ''),
-        messageBody: messageText,
-        messageType: messageType,
-        attachmentUrl: attachmentUrl,
+        messageBody: message.text,
+        messageType: message.messageType,
+        attachmentUrl:
+            message.imageUrl ??
+            message.videoUrl ??
+            message.voiceUrl ??
+            message.fileUrl,
+        caption: message.caption,
+        durationSeconds: message.durationSeconds,
+        fileName: message.fileName,
+        fileSizeBytes: message.fileSizeBytes,
+
+        replyToMessageId: message.replyToMessageId,
+        replyToText: message.replyToText,
+        replyToMessageType: message.replyToMessageType,
+        replyToSenderId: message.replyToSenderId,
+        replyToMediaUrl: message.replyToMediaUrl,
+        replyToStoryId: message.replyToStoryId,
+        replyToStoryAuthorId: message.replyToStoryAuthorId,
+        replyToStoryType: message.replyToStoryType,
+        replyToStoryMediaUrl: message.replyToStoryMediaUrl,
+        replyToStoryText: message.replyToStoryText,
+        replyToStoryBgColor: message.replyToStoryBgColor,
+        replyToStoryDurationSeconds: message.replyToStoryDurationSeconds,
+
+        forwardedFromUserId: message.forwardedFromUserId,
+        forwardedFromUserName: message.forwardedFromUserName,
+        forwardedFromUserAvatar: message.forwardedFromUserAvatar,
       );
     } catch (e) {
       debugPrint('⚠️  _sendPushNotification silent error: $e');
@@ -691,23 +778,6 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
 
   void cancelReply() {
     replyToMessage.value = null;
-  }
-
-  String? _getReplyPreviewText(MessageModel? msg) {
-    if (msg == null) return null;
-    switch (msg.messageType) {
-      case 'image':
-        return '📷 Photo';
-      case 'video':
-        return '🎥 Video';
-      case 'voice':
-        return '🎤 Voice message';
-      case 'file':
-        return '📄 ${msg.fileName ?? 'File'}';
-      default:
-        final text = msg.caption ?? msg.text;
-        return text.length > 60 ? '${text.substring(0, 60)}...' : text;
-    }
   }
 
   int? findMessageIndex(String messageId) {

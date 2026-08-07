@@ -70,8 +70,12 @@ mixin ChatReactionsMixin on Cubit<ChatDetailsState> {
     _reactionsCache[messageId] ??= {};
     if (isRemoving) {
       _reactionsCache[messageId]!.remove(currentUserId);
+      _reactionsCreatedAtCache[messageId]?.remove(currentUserId);
     } else {
       _reactionsCache[messageId]![currentUserId] = emoji;
+      _reactionsCreatedAtCache[messageId] ??= {};
+      _reactionsCreatedAtCache[messageId]![currentUserId] =
+          DateTime.now().toIso8601String();
     }
     _applyReactionsCacheToMessages();
 
@@ -93,13 +97,13 @@ mixin ChatReactionsMixin on Cubit<ChatDetailsState> {
       }
     } catch (e) {
       if (isRemoving) {
-        _reactionsCache[messageId]!.remove(currentUserId);
-        _reactionsCreatedAtCache[messageId]?.remove(currentUserId);
-      } else {
-        _reactionsCache[messageId]![currentUserId] = emoji;
+        _reactionsCache[messageId]![currentUserId] = currentEmoji!;
         _reactionsCreatedAtCache[messageId] ??= {};
         _reactionsCreatedAtCache[messageId]![currentUserId] =
             DateTime.now().toIso8601String();
+      } else {
+        _reactionsCache[messageId]!.remove(currentUserId);
+        _reactionsCreatedAtCache[messageId]?.remove(currentUserId);
       }
       _applyReactionsCacheToMessages();
       debugPrint('error toggling reaction: $e');

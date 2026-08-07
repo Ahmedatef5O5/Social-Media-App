@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import '../../../core/helpers/chat_helper.dart';
 import '../../../core/services/media_cleanup_service.dart';
@@ -116,7 +118,7 @@ class ChatMessagesService {
         .toList();
   }
 
-  Future<void> sendMessage({
+  Future<String> sendMessage({
     required String senderId,
     required String receiverId,
     required String text,
@@ -133,6 +135,7 @@ class ChatMessagesService {
     String? replyToText,
     String? replyToMessageType,
     String? replyToSenderId,
+    String? replyToMediaUrl,
     String? imagePublicId,
     String? videoPublicId,
     String? voicePublicId,
@@ -148,53 +151,68 @@ class ChatMessagesService {
     String? forwardedFromUserName,
     String? forwardedFromUserAvatar,
   }) async {
-    await _supabase.from(SupabaseConstants.messages).insert({
-      MessagesColumns.senderId: senderId,
-      MessagesColumns.receiverId: receiverId,
-      MessagesColumns.messageText: text,
-      MessagesColumns.messageType: messageType,
-      if (imageUrl != null) MessagesColumns.imageUrl: imageUrl,
-      if (videoUrl != null) MessagesColumns.videoUrl: videoUrl,
-      if (voiceUrl != null) MessagesColumns.voiceUrl: voiceUrl,
-      if (durationSeconds != null)
-        MessagesColumns.durationSeconds: durationSeconds,
-      if (fileUrl != null) MessagesColumns.fileUrl: fileUrl,
-      if (fileName != null) MessagesColumns.fileName: fileName,
-      if (fileSizeBytes != null) MessagesColumns.fileSizeBytes: fileSizeBytes,
-      if (caption != null) MessagesColumns.caption: caption,
-      if (replyToMessageId != null)
-        MessagesColumns.replyToMessageId: replyToMessageId,
-      if (replyToText != null) MessagesColumns.replyToText: replyToText,
-      if (replyToMessageType != null)
-        MessagesColumns.replyToMessageType: replyToMessageType,
-      if (replyToSenderId != null)
-        MessagesColumns.replyToSenderId: replyToSenderId,
-      if (imagePublicId != null) MessagesColumns.imagePublicId: imagePublicId,
-      if (videoPublicId != null) MessagesColumns.videoPublicId: videoPublicId,
-      if (voicePublicId != null) MessagesColumns.voicePublicId: voicePublicId,
-      if (filePublicId != null) MessagesColumns.filePublicId: filePublicId,
-      if (replyToStoryId != null)
-        MessagesColumns.replyToStoryId: replyToStoryId,
-      if (replyToStoryAuthorId != null)
-        MessagesColumns.replyToStoryAuthorId: replyToStoryAuthorId,
-      if (replyToStoryType != null)
-        MessagesColumns.replyToStoryType: replyToStoryType,
-      if (replyToStoryMediaUrl != null)
-        MessagesColumns.replyToStoryMediaUrl: replyToStoryMediaUrl,
-      if (replyToStoryText != null)
-        MessagesColumns.replyToStoryText: replyToStoryText,
-      if (replyToStoryBgColor != null)
-        MessagesColumns.replyToStoryBgColor: replyToStoryBgColor,
-      if (replyToStoryDurationSeconds != null)
-        MessagesColumns.replyToStoryDurationSeconds:
-            replyToStoryDurationSeconds,
-      if (forwardedFromUserId != null)
-        MessagesColumns.forwardedFromUserId: forwardedFromUserId,
-      if (forwardedFromUserName != null)
-        MessagesColumns.forwardedFromUserName: forwardedFromUserName,
-      if (forwardedFromUserAvatar != null)
-        MessagesColumns.forwardedFromUserAvatar: forwardedFromUserAvatar,
-    });
+    final result =
+        await _supabase
+            .from(SupabaseConstants.messages)
+            .insert({
+              MessagesColumns.senderId: senderId,
+              MessagesColumns.receiverId: receiverId,
+              MessagesColumns.messageText: text,
+              MessagesColumns.messageType: messageType,
+              if (imageUrl != null) MessagesColumns.imageUrl: imageUrl,
+              if (videoUrl != null) MessagesColumns.videoUrl: videoUrl,
+              if (voiceUrl != null) MessagesColumns.voiceUrl: voiceUrl,
+              if (durationSeconds != null)
+                MessagesColumns.durationSeconds: durationSeconds,
+              if (fileUrl != null) MessagesColumns.fileUrl: fileUrl,
+              if (fileName != null) MessagesColumns.fileName: fileName,
+              if (fileSizeBytes != null)
+                MessagesColumns.fileSizeBytes: fileSizeBytes,
+              if (caption != null) MessagesColumns.caption: caption,
+              if (replyToMessageId != null)
+                MessagesColumns.replyToMessageId: replyToMessageId,
+              if (replyToText != null) MessagesColumns.replyToText: replyToText,
+              if (replyToMessageType != null)
+                MessagesColumns.replyToMessageType: replyToMessageType,
+              if (replyToSenderId != null)
+                MessagesColumns.replyToSenderId: replyToSenderId,
+              if (replyToMediaUrl != null)
+                MessagesColumns.replyToMediaUrl: replyToMediaUrl,
+              if (imagePublicId != null)
+                MessagesColumns.imagePublicId: imagePublicId,
+              if (videoPublicId != null)
+                MessagesColumns.videoPublicId: videoPublicId,
+              if (voicePublicId != null)
+                MessagesColumns.voicePublicId: voicePublicId,
+              if (filePublicId != null)
+                MessagesColumns.filePublicId: filePublicId,
+              if (replyToStoryId != null)
+                MessagesColumns.replyToStoryId: replyToStoryId,
+              if (replyToStoryAuthorId != null)
+                MessagesColumns.replyToStoryAuthorId: replyToStoryAuthorId,
+              if (replyToStoryType != null)
+                MessagesColumns.replyToStoryType: replyToStoryType,
+              if (replyToStoryMediaUrl != null)
+                MessagesColumns.replyToStoryMediaUrl: replyToStoryMediaUrl,
+              if (replyToStoryText != null)
+                MessagesColumns.replyToStoryText: replyToStoryText,
+              if (replyToStoryBgColor != null)
+                MessagesColumns.replyToStoryBgColor: replyToStoryBgColor,
+              if (replyToStoryDurationSeconds != null)
+                MessagesColumns.replyToStoryDurationSeconds:
+                    replyToStoryDurationSeconds,
+              if (forwardedFromUserId != null)
+                MessagesColumns.forwardedFromUserId: forwardedFromUserId,
+              if (forwardedFromUserName != null)
+                MessagesColumns.forwardedFromUserName: forwardedFromUserName,
+              if (forwardedFromUserAvatar != null)
+                MessagesColumns.forwardedFromUserAvatar:
+                    forwardedFromUserAvatar,
+            })
+            .select(MessagesColumns.id)
+            .single();
+
+    return result[MessagesColumns.id] as String;
   }
 
   Future<void> editMessage({
@@ -269,5 +287,44 @@ class ChatMessagesService {
       debugPrint('Error fetching user info: $e');
       return {'name': null, 'imageUrl': null};
     }
+  }
+
+  Future<void> upsertCallMessage({
+    required String callId,
+    required String senderId,
+    required String receiverId,
+    required String status,
+    required String callType,
+    String duration = '',
+  }) async {
+    final callInfoJson = jsonEncode({
+      'call_id': callId,
+      'status': status,
+      'call_type': callType,
+      'duration': duration,
+    });
+
+    final existing =
+        await _supabase
+            .from(SupabaseConstants.messages)
+            .select(MessagesColumns.id)
+            .eq(MessagesColumns.messageType, 'call')
+            .ilike(MessagesColumns.messageText, '%$callId%')
+            .maybeSingle();
+
+    if (existing != null) {
+      await _supabase
+          .from(SupabaseConstants.messages)
+          .update({MessagesColumns.messageText: callInfoJson})
+          .eq(MessagesColumns.id, existing[MessagesColumns.id] as String);
+      return;
+    }
+
+    await sendMessage(
+      senderId: senderId,
+      receiverId: receiverId,
+      text: callInfoJson,
+      messageType: 'call',
+    );
   }
 }
