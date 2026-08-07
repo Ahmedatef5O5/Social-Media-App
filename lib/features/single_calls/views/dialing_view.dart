@@ -1,6 +1,7 @@
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../core/widgets/calls/call_avatar_backdrop.dart';
 import '../../../core/widgets/calls/call_layout_metrics.dart';
 import '../../../core/widgets/calls/calls.dart';
 import '../cubits/single_call_cubit/call_cubit.dart';
@@ -57,7 +58,10 @@ class _DialingViewState extends State<DialingView>
     return Scaffold(
       body: Stack(
         children: [
-          CallGradientBackground(baseColor: primary),
+          CallAvatarBackdrop(
+            avatarUrl: widget.call.receiverAvatar,
+            baseColor: primary,
+          ),
           CallAmbientBackground(
             style: CallAmbientStyle.orbit,
             isVideo: isVideo,
@@ -100,6 +104,13 @@ class _DialingViewState extends State<DialingView>
                         fontSize: 30,
                         fontWeight: FontWeight.bold,
                         letterSpacing: 0.5,
+                        shadows: [
+                          Shadow(
+                            color: Colors.black45,
+                            blurRadius: 12,
+                            offset: Offset(0, 2),
+                          ),
+                        ],
                       ),
                       textAlign: TextAlign.center,
                       maxLines: 1,
