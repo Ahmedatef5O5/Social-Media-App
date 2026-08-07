@@ -2,7 +2,8 @@ import 'dart:async';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:zego_uikit/zego_uikit.dart';
+import 'package:livekit_client/livekit_client.dart';
+import '../../../core/services/active_call/pip/call_pip_cubit.dart';
 import '../../../core/services/notification_services.dart';
 import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/widgets/calls/call_avatar_image.dart';
@@ -14,8 +15,6 @@ import '../../group_chats/services/group_chat_services.dart';
 import '../../single_calls/cubits/single_call_cubit/call_cubit.dart';
 import '../models/group_call_model.dart';
 
-/// A single row-ready snapshot: a group's static member joined against
-/// whether that member currently has an active stream in the Zego room.
 class GroupCallMemberEntry {
   final GroupMemberModel member;
   final bool isActive;
@@ -23,16 +22,11 @@ class GroupCallMemberEntry {
   const GroupCallMemberEntry({required this.member, required this.isActive});
 }
 
-/// Bottom sheet showing a group call's full roster, split into members
-/// currently in the call (Active) and members who haven't joined yet
-/// (Offline, ringable). Kept out of `ZegoGroupCallView` on purpose so that
-/// view stays focused on the Zego SDK wiring.
 class GroupCallMembersSheet extends StatefulWidget {
   final GroupCallModel call;
 
   const GroupCallMembersSheet({super.key, required this.call});
 
-  /// Convenience launcher — call this from `ZegoGroupCallView` (Step 4.3).
   static Future<void> show(BuildContext context, GroupCallModel call) {
     final ctx = navigatorKey.currentContext ?? context;
     return showModalBottomSheet(
@@ -51,7 +45,7 @@ class _GroupCallMembersSheetState extends State<GroupCallMembersSheet> {
   late final GroupMembersCubit _membersCubit;
   late final ScrollController _scrollController;
 
-  StreamSubscription<List<ZegoUIKitUser>>? _activeUsersSub;
+  EventsListener<RoomEvent>? _roomListener;
   Set<String> _activeUserIds = {};
 
   // Optimistic "Ring" state — userId -> currently ringing.
@@ -69,30 +63,32 @@ class _GroupCallMembersSheetState extends State<GroupCallMembersSheet> {
 
     _scrollController = ScrollController()..addListener(_onScroll);
 
-    // Seed synchronously from the current snapshot so members already in
-    // the call don't flash as "Offline" for one frame.
-    try {
-      _activeUserIds = ZegoUIKit().getAllUsers().map((u) => u.id).toSet();
-    } catch (e) {
-      debugPrint('[GroupCallMembersSheet] getAllUsers failed: $e');
-      _activeUserIds = {};
+    final room = context.read<CallPipCubit>().state.room;
+    _syncActiveIds(room);
+    if (room != null) {
+      _roomListener = room.createListener();
+      _roomListener!
+        ..on<ParticipantConnectedEvent>((_) => _syncActiveIds(room))
+        ..on<ParticipantDisconnectedEvent>((_) => _syncActiveIds(room));
     }
-
-    _activeUsersSub = ZegoUIKit().getUserListStream().listen((users) {
-      if (!mounted) return;
-      final ids = users.map((u) => u.id).toSet();
-      setState(() {
-        _activeUserIds = ids;
-        // A member who just joined no longer needs a "Ringing…" state.
-        for (final id in ids) {
-          _ringingUserIds.remove(id);
-          _ringingCooldowns.remove(id)?.cancel();
-        }
-      });
-    }, onError: (e) => debugPrint('[GroupCallMembersSheet] stream error: $e'));
   }
 
-  // ── Infinite Scroll (same pattern as GroupInfoView) ──
+  void _syncActiveIds(Room? room) {
+    if (room == null || !mounted) return;
+    final ids =
+        {
+          room.localParticipant?.identity,
+          ...room.remoteParticipants.values.map((p) => p.identity),
+        }.whereType<String>().toSet();
+    setState(() {
+      _activeUserIds = ids;
+      for (final id in ids) {
+        _ringingUserIds.remove(id);
+        _ringingCooldowns.remove(id)?.cancel();
+      }
+    });
+  }
+
   void _onScroll() {
     if (_scrollController.position.pixels >=
         _scrollController.position.maxScrollExtent - 200) {
@@ -101,7 +97,7 @@ class _GroupCallMembersSheetState extends State<GroupCallMembersSheet> {
   }
 
   Future<void> _ringMember(GroupMemberModel member) async {
-    if (_ringingUserIds.contains(member.userId)) return; // prevent spam
+    if (_ringingUserIds.contains(member.userId)) return;
 
     setState(() => _ringingUserIds.add(member.userId));
 
@@ -118,7 +114,7 @@ class _GroupCallMembersSheetState extends State<GroupCallMembersSheet> {
 
   @override
   void dispose() {
-    _activeUsersSub?.cancel();
+    _roomListener?.dispose();
     for (final timer in _ringingCooldowns.values) {
       timer.cancel();
     }
@@ -127,8 +123,6 @@ class _GroupCallMembersSheetState extends State<GroupCallMembersSheet> {
     super.dispose();
   }
 
-  /// Joins the static roster with the live active-user set and sorts
-  /// Active members first, then alphabetically within each group.
   List<GroupCallMemberEntry> _mergeAndSort(List<GroupMemberModel> members) {
     final entries =
         members

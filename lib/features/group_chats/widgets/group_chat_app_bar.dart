@@ -3,12 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
+import 'package:social_media_app/features/group_calls/views/livekit_group_call_view.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/services/active_call/active_call_session_data.dart';
 import '../../../core/services/active_call/cubit/active_call_session_cubit.dart';
 import '../cubit/group_details_cubit/group_details_cubit.dart';
-import '../../group_calls/views/zego_group_call_view.dart';
 import '../cubit/group_list_cubit/group_list_cubit.dart';
 import '../../group_calls/models/group_call_model.dart';
 import '../helpers/group_call_initiator.dart';
@@ -142,7 +142,7 @@ class GroupChatAppBar extends StatelessWidget implements PreferredSizeWidget {
                               Navigator.of(context).push(
                                 MaterialPageRoute(
                                   builder:
-                                      (_) => ZegoGroupCallView(
+                                      (_) => LiveKitGroupCallView(
                                         call: activeCall,
                                         currentUserId:
                                             Supabase

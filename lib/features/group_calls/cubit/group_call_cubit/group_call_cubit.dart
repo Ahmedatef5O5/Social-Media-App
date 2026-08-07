@@ -72,7 +72,7 @@ class GroupCallCubit extends Cubit<GroupCallState> {
       if (call.status == GroupCallStatus.accepted ||
           call.status == GroupCallStatus.ongoing) {
         final joined = await _service.acceptCall(call.callId);
-        emit(GroupCallActive(joined));
+        if (!isClosed) emit(GroupCallActive(joined));
         return;
       }
 

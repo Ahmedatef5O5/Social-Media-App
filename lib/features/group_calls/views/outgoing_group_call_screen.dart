@@ -3,10 +3,11 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/supabase/supabase_provider.dart';
+import '../../../core/widgets/calls/call_layout_metrics.dart';
 import '../../../core/widgets/calls/calls.dart';
 import '../models/group_call_model.dart';
 import '../services/group_call_signaling_service.dart';
-import 'zego_group_call_view.dart';
+import 'livekit_group_call_view.dart';
 
 class OutgoingGroupCallScreen extends StatefulWidget {
   final String groupId;
@@ -96,18 +97,18 @@ class _OutgoingGroupCallScreenState extends State<OutgoingGroupCallScreen>
 
       if (call.status == GroupCallStatus.accepted ||
           call.status == GroupCallStatus.ongoing) {
-        _navigateToZego(call);
+        _navigateToLiveKit(call);
       }
     });
   }
 
-  void _navigateToZego(GroupCallModel call) {
+  void _navigateToLiveKit(GroupCallModel call) {
     _cleanup();
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
         builder:
-            (_) => ZegoGroupCallView(
+            (_) => LiveKitGroupCallView(
               call: call,
               currentUserId: SupabaseProvider.id,
               currentUserName: _currentUserName,
@@ -145,30 +146,33 @@ class _OutgoingGroupCallScreenState extends State<OutgoingGroupCallScreen>
       body: Stack(
         children: [
           CallGradientBackground(baseColor: primary),
-          CallAmbientBackground(style: CallAmbientStyle.drift, isVideo: isVideo),
+          CallAmbientBackground(
+            style: CallAmbientStyle.drift,
+            isVideo: isVideo,
+          ),
           SafeArea(
             child: FadeTransition(
               opacity: _fadeAnim,
               child: LayoutBuilder(
                 builder: (context, constraints) {
-                  final shortest = constraints.biggest.shortestSide;
-                  final avatarDiameter = (shortest.clamp(280.0, 460.0) * 0.34).toDouble();
-                  final buttonSize = (shortest.clamp(280.0, 460.0) * 0.19).toDouble();
-                  final isCompact = constraints.maxHeight < 620;
+                  final metrics = CallLayoutMetrics.of(constraints);
 
                   return Column(
                     children: [
-                      SizedBox(height: isCompact ? 16 : 28),
+                      SizedBox(height: metrics.topGap),
 
                       CallStatusPill(
                         icon:
-                            isVideo ? Icons.videocam_rounded : Icons.phone_rounded,
-                        label: isVideo ? 'Group Video Call' : 'Group Voice Call',
+                            isVideo
+                                ? Icons.videocam_rounded
+                                : Icons.phone_rounded,
+                        label:
+                            isVideo ? 'Group Video Call' : 'Group Voice Call',
                       ),
 
                       Expanded(
                         child: Center(
-                          child: _buildGroupInfoSection(avatarDiameter),
+                          child: _buildGroupInfoSection(metrics.avatarDiameter),
                         ),
                       ),
 
@@ -176,7 +180,7 @@ class _OutgoingGroupCallScreenState extends State<OutgoingGroupCallScreen>
                         icon: Icons.call_end_rounded,
                         label: 'Cancel',
                         color: Colors.red.shade600,
-                        size: buttonSize,
+                        size: metrics.buttonSize,
                         onTap: () async {
                           _cleanup();
                           if (_currentCallId != null) {
@@ -186,7 +190,7 @@ class _OutgoingGroupCallScreenState extends State<OutgoingGroupCallScreen>
                         },
                       ),
 
-                      SizedBox(height: isCompact ? 24 : 56),
+                      SizedBox(height: metrics.bottomGap),
                     ],
                   );
                 },

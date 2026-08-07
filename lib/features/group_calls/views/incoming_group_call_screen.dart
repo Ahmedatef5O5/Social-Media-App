@@ -4,10 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/utilities/supabase_constants.dart';
+import '../../../core/widgets/calls/call_layout_metrics.dart';
 import '../../../core/widgets/calls/calls.dart';
 import '../models/group_call_model.dart';
 import '../services/group_call_signaling_service.dart';
-import 'zego_group_call_view.dart';
+import 'livekit_group_call_view.dart';
 
 class IncomingGroupCallScreen extends StatefulWidget {
   final GroupCallModel call;
@@ -139,7 +140,7 @@ class _IncomingGroupCallScreenState extends State<IncomingGroupCallScreen>
       context,
       MaterialPageRoute(
         builder:
-            (_) => ZegoGroupCallView(
+            (_) => LiveKitGroupCallView(
               call: updatedCall,
               currentUserId: SupabaseProvider.id,
               currentUserName: _currentUserName,
@@ -164,16 +165,11 @@ class _IncomingGroupCallScreenState extends State<IncomingGroupCallScreen>
           SafeArea(
             child: LayoutBuilder(
               builder: (context, constraints) {
-                final shortest = constraints.biggest.shortestSide;
-                final avatarDiameter =
-                    (shortest.clamp(280.0, 460.0) * 0.34).toDouble();
-                final buttonSize =
-                    (shortest.clamp(280.0, 460.0) * 0.19).toDouble();
-                final isCompact = constraints.maxHeight < 620;
+                final metrics = CallLayoutMetrics.of(constraints);
 
                 return Column(
                   children: [
-                    SizedBox(height: isCompact ? 16 : 28),
+                    SizedBox(height: metrics.topGap),
 
                     CallStatusPill(
                       icon:
@@ -189,7 +185,7 @@ class _IncomingGroupCallScreenState extends State<IncomingGroupCallScreen>
 
                     Expanded(
                       child: Center(
-                        child: _buildGroupInfoSection(avatarDiameter),
+                        child: _buildGroupInfoSection(metrics.avatarDiameter),
                       ),
                     ),
 
@@ -202,7 +198,7 @@ class _IncomingGroupCallScreenState extends State<IncomingGroupCallScreen>
                             icon: Icons.call_end_rounded,
                             label: 'Decline',
                             color: Colors.red.shade600,
-                            size: buttonSize,
+                            size: metrics.buttonSize,
                             onTap: () {
                               _cleanup();
                               _signaling.rejectCall(widget.call.callId);
@@ -216,7 +212,7 @@ class _IncomingGroupCallScreenState extends State<IncomingGroupCallScreen>
                                     : Icons.call_rounded,
                             label: 'Accept',
                             color: Colors.green.shade500,
-                            size: buttonSize,
+                            size: metrics.buttonSize,
                             emphasized: true,
                             onTap: () => _acceptCall(context),
                           ),
@@ -224,7 +220,7 @@ class _IncomingGroupCallScreenState extends State<IncomingGroupCallScreen>
                       ),
                     ),
 
-                    SizedBox(height: isCompact ? 24 : 56),
+                    SizedBox(height: metrics.bottomGap),
                   ],
                 );
               },

@@ -8,6 +8,9 @@ import '../models/group_call_model.dart';
 
 class GroupCallSignalingService {
   final _supabase = SupabaseProvider.client;
+  final Map<String, Set<String>> _declinedBy = {};
+  bool _hasDeclined(String callId, String userId) =>
+      _declinedBy[callId]?.contains(userId) ?? false;
 
   Future<List<String>> getGroupMemberIds(String groupId) async {
     try {
@@ -153,7 +156,25 @@ class GroupCallSignalingService {
   }
 
   Future<void> rejectCall(String callId) async {
-    // reject call
+    final userId = SupabaseProvider.id;
+    (_declinedBy[callId] ??= {}).add(userId);
+    Timer(const Duration(seconds: 60), () => _declinedBy.remove(callId));
+  }
+
+  Future<void> leaveCall(String callId) async {
+    final existing =
+        await _supabase
+            .from('group_calls')
+            .select('participant_count')
+            .eq('call_id', callId)
+            .maybeSingle();
+    if (existing == null) return;
+    final count = (existing['participant_count'] as int?) ?? 0;
+    await _supabase
+        .from('group_calls')
+        .update({'participant_count': (count - 1).clamp(0, count)})
+        .eq('call_id', callId)
+        .eq('status', GroupCallStatus.ongoing.name);
   }
 
   Future<void> endCall(
@@ -276,6 +297,11 @@ class GroupCallSignalingService {
               .where((m) {
                 final initiatorId = m['initiator_id'] ?? m['initiatorId'];
                 if (initiatorId == myUserId) return false;
+
+                final callId = m['call_id'] as String?;
+                if (callId != null && _hasDeclined(callId, myUserId)) {
+                  return false;
+                }
 
                 final startedStr = m['started_at'];
                 if (startedStr != null) {

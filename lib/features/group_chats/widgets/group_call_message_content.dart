@@ -7,7 +7,7 @@ import '../../../core/utilities/supabase_constants.dart';
 import '../../../core/widgets/cached_cloudinary_image.dart';
 import '../../group_calls/models/group_call_model.dart';
 import '../../group_calls/services/group_call_signaling_service.dart';
-import '../../group_calls/views/zego_group_call_view.dart';
+import '../../group_calls/views/livekit_group_call_view.dart';
 import '../models/groupe_message_model.dart';
 
 class GroupCallMessageContent extends StatelessWidget {
@@ -337,7 +337,7 @@ class GroupCallMessageContent extends StatelessWidget {
                 context,
                 MaterialPageRoute(
                   builder:
-                      (_) => ZegoGroupCallView(
+                      (_) => LiveKitGroupCallView(
                         call: joined,
                         currentUserId: user.id,
                         currentUserName: userName,
