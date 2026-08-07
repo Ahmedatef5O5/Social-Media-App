@@ -83,13 +83,11 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState>
   String get currentUserId => SupabaseProvider.id;
   @override
   bool isMember = true;
+  bool get hasConfirmedInitialLoad => _hasReceivedFirstStreamEvent;
 
   final GroupChatReactionProfileResolver reactionProfileResolver =
       GroupChatReactionProfileResolver();
 
-  /// In-chat search (Step 3). Same rationale as ChatDetailsCubit: reads
-  /// straight off `cachedMessages`, which getGroupMessagesStream loads in
-  /// full (no `.limit()`), so search covers the whole group history.
   late final ChatSearchController<GroupMessageModel> searchController =
       ChatSearchController<GroupMessageModel>(
         getMessages: () => cachedMessages,

@@ -9,6 +9,7 @@ mixin GroupMessagesStreamMixin on Cubit<GroupDetailsState> {
   Map<String, List<MentionRef>> get _mentionsCache;
   Map<String, Map<String, String>> get _reactionsCache;
   bool _isFirstLoad = true;
+  bool _hasReceivedFirstStreamEvent = false;
   List<String> _typingUserIds = [];
   String? get _messagesSnapshotKey;
   String get currentUserId;
@@ -72,6 +73,8 @@ mixin GroupMessagesStreamMixin on Cubit<GroupDetailsState> {
     _messagesSubscription?.cancel();
     if (!isMember) return;
 
+    _hasReceivedFirstStreamEvent = false;
+
     final clearedAt = GroupChatClearStore.instance.clearedAtFor(group.id);
 
     _messagesSubscription = _services.getGroupMessagesStream(group.id).listen((
@@ -96,11 +99,23 @@ mixin GroupMessagesStreamMixin on Cubit<GroupDetailsState> {
             return msg.copyWith(mentions: mentions, reactions: reactions);
           }).toList();
 
-      cachedMessages = enriched;
+      List<GroupMessageModel> resolved;
+      if (!_hasReceivedFirstStreamEvent && cachedMessages.isNotEmpty) {
+        final cachedIds = cachedMessages.map((m) => m.id).toSet();
+        resolved = [
+          ...enriched.where((m) => !cachedIds.contains(m.id)),
+          ...cachedMessages,
+        ]..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      } else {
+        resolved = enriched;
+      }
+      _hasReceivedFirstStreamEvent = true;
+
+      cachedMessages = resolved;
       _isFirstLoad = false;
       _emitLoaded();
       if (_messagesSnapshotKey != null) {
-        _persistMessagesSnapshot(_messagesSnapshotKey!, enriched);
+        _persistMessagesSnapshot(_messagesSnapshotKey!, resolved);
       }
 
       markRead();
@@ -120,8 +135,8 @@ mixin GroupMessagesStreamMixin on Cubit<GroupDetailsState> {
         groupListCubit.updateGroupMembership(group.id, false);
       }
 
-      if (enriched.isNotEmpty) {
-        final latest = enriched.first;
+      if (resolved.isNotEmpty) {
+        final latest = resolved.first;
         groupListCubit.updateGroupLastMessage(
           groupId: group.id,
           message: latest.text,

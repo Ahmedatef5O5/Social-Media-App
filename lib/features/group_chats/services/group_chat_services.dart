@@ -459,6 +459,8 @@ class GroupChatServices {
         'reply_to_sender_id': replyTo.senderId,
         'reply_to_sender_name': replyTo.senderName,
         'reply_to_message_type': replyTo.messageType,
+        if (GroupMessageModel.replyMediaUrlFrom(replyTo) != null)
+          'reply_to_media_url': GroupMessageModel.replyMediaUrlFrom(replyTo),
       },
 
       if (forwardedFromUserId != null)
@@ -499,6 +501,7 @@ class GroupChatServices {
 
     unawaited(
       GroupNotificationDispatcher.instance.notifyMessage(
+        messageId: newMessageId,
         groupId: groupId,
         groupName: groupName,
         groupImageUrl: groupImageUrl ?? '',
@@ -507,7 +510,21 @@ class GroupChatServices {
         senderAvatar: senderAvatar,
         messageBody: text,
         messageType: messageType,
+        attachmentUrl: imageUrl ?? videoUrl ?? fileUrl,
         mentionedUserIds: mentions.map((m) => m.mentionedUserId).toList(),
+        caption: caption,
+        durationSeconds: durationSeconds,
+        fileName: fileName,
+        fileSizeBytes: fileSizeBytes,
+        replyToMessageId: replyTo?.id,
+        replyToText:
+            replyTo?.text.isNotEmpty == true ? replyTo?.text : replyTo?.caption,
+        replyToMessageType: replyTo?.messageType,
+        replyToSenderId: replyTo?.senderId,
+        replyToMediaUrl: GroupMessageModel.replyMediaUrlFrom(replyTo),
+        forwardedFromUserId: forwardedFromUserId,
+        forwardedFromUserName: forwardedFromUserName,
+        forwardedFromUserAvatar: forwardedFromUserAvatar,
       ),
     );
 

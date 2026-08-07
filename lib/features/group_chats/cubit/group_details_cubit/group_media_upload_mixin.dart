@@ -70,15 +70,22 @@ mixin GroupMediaUploadMixin on Cubit<GroupDetailsState> {
       imageUrl: remoteImageUrl ?? imageFile?.path,
       videoUrl: videoFile?.path,
       voiceUrl: voiceFile?.path,
+      caption: caption,
       durationSeconds: durationSeconds,
       fileName: fileName,
+      fileUrl: documentFile?.path,
       fileSizeBytes: fileSizeBytes,
       mentions: mentions,
       replyToMessageId: reply?.id,
-      replyToText: reply?.text,
+      replyToText:
+          (reply?.text != null && reply!.text.isNotEmpty)
+              ? reply.text
+              : reply?.caption,
       replyToSenderId: reply?.senderId,
       replyToSenderName: reply?.senderName,
       replyToMessageType: reply?.messageType,
+      replyToMediaUrl: GroupMessageModel.replyMediaUrlFrom(reply),
+
       forwardedFromUserId: forwardedFromUserId,
       forwardedFromUserName: forwardedFromUserName,
       forwardedFromUserAvatar: forwardedFromUserAvatar,
@@ -199,6 +206,7 @@ mixin GroupMediaUploadMixin on Cubit<GroupDetailsState> {
         fileSizeBytes: fileSizeBytes,
         caption: caption,
         replyTo: reply,
+
         imagePublicId: imagePublicId,
         videoPublicId: videoPublicId,
         voicePublicId: voicePublicId,

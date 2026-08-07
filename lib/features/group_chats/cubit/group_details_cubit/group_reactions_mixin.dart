@@ -24,6 +24,7 @@ mixin GroupReactionsMixin on Cubit<GroupDetailsState> {
       reactionsList,
     ) {
       _reactionsCache.clear();
+      _reactionsCreatedAtCache.clear();
       for (final r in reactionsList) {
         final msgId = r['message_id'] as String?;
         final userId = r[GroupMemberColumns.userId] as String?;
@@ -42,7 +43,10 @@ mixin GroupReactionsMixin on Cubit<GroupDetailsState> {
       cachedMessages =
           cachedMessages.map((msg) {
             final reactions = _reactionsCache[msg.id] ?? {};
-            return msg.copyWith(reactions: reactions);
+            return msg.copyWith(
+              reactions: reactions,
+              reactionsCreatedAt: _reactionsCreatedAtCache[msg.id],
+            );
           }).toList();
       _emitLoaded();
 
