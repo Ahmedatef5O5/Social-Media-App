@@ -1,6 +1,7 @@
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../core/widgets/calls/call_layout_metrics.dart';
 import '../../../core/widgets/calls/calls.dart';
 import '../cubits/single_call_cubit/call_cubit.dart';
 import '../model/call_model.dart';
@@ -57,37 +58,40 @@ class _DialingViewState extends State<DialingView>
       body: Stack(
         children: [
           CallGradientBackground(baseColor: primary),
-          CallAmbientBackground(style: CallAmbientStyle.orbit, isVideo: isVideo),
+          CallAmbientBackground(
+            style: CallAmbientStyle.orbit,
+            isVideo: isVideo,
+          ),
           SafeArea(
             child: LayoutBuilder(
               builder: (context, constraints) {
-                final shortest = constraints.biggest.shortestSide;
-                final avatarDiameter = (shortest.clamp(280.0, 460.0) * 0.34).toDouble();
-                final buttonSize = (shortest.clamp(280.0, 460.0) * 0.19).toDouble();
-                final isCompact = constraints.maxHeight < 620;
+                final metrics = CallLayoutMetrics.of(constraints);
 
                 return Column(
                   children: [
-                    SizedBox(height: isCompact ? 20 : 50),
+                    SizedBox(height: metrics.topGap),
 
                     CallStatusPill(
-                      icon: isVideo ? Icons.videocam_rounded : Icons.phone_rounded,
+                      icon:
+                          isVideo
+                              ? Icons.videocam_rounded
+                              : Icons.phone_rounded,
                       label: isVideo ? 'Video Call' : 'Voice Call',
                     ),
 
-                    SizedBox(height: isCompact ? 24 : 40),
+                    SizedBox(height: metrics.midGap),
 
                     RippleAvatar(
-                      avatarDiameter: avatarDiameter,
+                      avatarDiameter: metrics.avatarDiameter,
                       rippleColor: Colors.white,
                       avatar: CallAvatarImage(
                         imageUrl: widget.call.receiverAvatar,
                         fallbackLabel: widget.call.receiverName,
-                        diameter: avatarDiameter,
+                        diameter: metrics.avatarDiameter,
                       ),
                     ),
 
-                    SizedBox(height: isCompact ? 18 : 28),
+                    SizedBox(height: metrics.midGap),
 
                     Text(
                       widget.call.receiverName,
@@ -98,26 +102,26 @@ class _DialingViewState extends State<DialingView>
                         letterSpacing: 0.5,
                       ),
                       textAlign: TextAlign.center,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
 
                     const SizedBox(height: 10),
-
                     _buildCallingDots(isVideo),
-
                     const Spacer(),
 
                     GlassCallActionButton(
                       icon: Icons.call_end_rounded,
                       label: 'Cancel',
                       color: Colors.redAccent.shade700,
-                      size: buttonSize,
+                      size: metrics.buttonSize,
                       onTap: () {
                         context.read<CallCubit>().endCall(widget.call.callId);
                         Navigator.pop(context);
                       },
                     ),
 
-                    SizedBox(height: isCompact ? 28 : 60),
+                    SizedBox(height: metrics.bottomGap),
                   ],
                 );
               },

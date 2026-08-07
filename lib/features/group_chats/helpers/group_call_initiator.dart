@@ -4,8 +4,8 @@ import '../../../core/connectivity/services/connectivity_banner_controller.dart'
 import '../../../core/supabase/supabase_provider.dart';
 import '../../group_calls/models/group_call_model.dart';
 import '../../group_calls/services/group_call_signaling_service.dart';
+import '../../group_calls/views/livekit_group_call_view.dart';
 import '../../group_calls/views/outgoing_group_call_screen.dart';
-import '../../group_calls/views/zego_group_call_view.dart';
 import '../models/group_model.dart';
 
 class GroupCallInitiator {
@@ -43,7 +43,7 @@ class GroupCallInitiator {
         navigator.push(
           MaterialPageRoute(
             builder:
-                (_) => ZegoGroupCallView(
+                (_) => LiveKitGroupCallView(
                   call: joined,
                   currentUserId: user.id,
                   currentUserName: currentUserName,

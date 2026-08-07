@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:social_media_app/features/single_chats/services/chat_services.dart';
@@ -47,6 +46,7 @@ class CallCubit extends Cubit<CallState> {
       if (isClosed) return;
       if (data.isNotEmpty) {
         final call = CallModel.fromMap(data.first);
+        if (call.callerId == SupabaseProvider.idOrNull) return;
         emit(CallIncomingState(call));
       }
     });
@@ -60,6 +60,16 @@ class CallCubit extends Cubit<CallState> {
 
     await signalingService.sendCallRequest(call);
 
+    unawaited(
+      _chatServices.upsertCallMessage(
+        callId: call.callId,
+        senderId: call.callerId,
+        receiverId: call.receiverId,
+        status: 'ringing',
+        callType: call.type == CallType.video ? 'video' : 'audio',
+      ),
+    );
+
     await _sendCallFcm(call);
 
     _statusSubscription?.cancel();
@@ -72,18 +82,34 @@ class CallCubit extends Cubit<CallState> {
         if (updatedCall.status == CallStatus.accepted) {
           _callAcceptedAt = DateTime.now();
           _activeCall = updatedCall;
+          unawaited(
+            _chatServices.upsertCallMessage(
+              callId: call.callId,
+              senderId: call.callerId,
+              receiverId: call.receiverId,
+              status: 'ongoing',
+              callType: call.type == CallType.video ? 'video' : 'audio',
+            ),
+          );
           emit(CallConnectedState(updatedCall));
         } else if (updatedCall.status == CallStatus.rejected) {
-          _logCallToChat(
-            receiverId: call.receiverId,
-            status: 'missed',
-            callType: call.type == CallType.video ? 'video' : 'audio',
-            duration: '',
+          _statusSubscription?.cancel();
+          unawaited(
+            _chatServices.upsertCallMessage(
+              callId: call.callId,
+              senderId: call.callerId,
+              receiverId: call.receiverId,
+              status: 'missed',
+              callType: call.type == CallType.video ? 'video' : 'audio',
+            ),
           );
           emit(CallEndedState());
+          emit(CallInitial());
         } else if (updatedCall.status == CallStatus.ended) {
+          _statusSubscription?.cancel();
           _handleCallEnded(call);
           emit(CallEndedState());
+          emit(CallInitial());
         }
       },
     );
@@ -93,19 +119,22 @@ class CallCubit extends Cubit<CallState> {
     _callAcceptedAt = DateTime.now();
     _activeCall = call;
     await signalingService.updateCallStatus(call.callId, CallStatus.accepted);
-    emit(CallConnectedState(call));
+    if (!isClosed) emit(CallConnectedState(call));
   }
 
   Future<void> rejectCall(CallModel call) async {
     await signalingService.updateCallStatus(call.callId, CallStatus.rejected);
-    emit(CallInitial());
+    if (!isClosed) emit(CallInitial());
   }
 
   Future<void> endCall(String callId) async {
     _statusSubscription?.cancel();
     await signalingService.updateCallStatus(callId, CallStatus.ended);
     _handleCallEnded(_activeCall);
-    emit(CallEndedState());
+    if (!isClosed) {
+      emit(CallEndedState());
+      emit(CallInitial());
+    }
   }
 
   Future<void> _sendCallFcm(CallModel call) async {
@@ -178,6 +207,7 @@ class CallCubit extends Cubit<CallState> {
 
     if (_isCaller(call)) {
       await _logCallToChat(
+        callId: call.callId,
         receiverId: otherUserId,
         status: status,
         callType: callType,
@@ -210,6 +240,7 @@ class CallCubit extends Cubit<CallState> {
   }
 
   Future<void> _logCallToChat({
+    required String callId,
     required String receiverId,
     required String status,
     required String callType,
@@ -217,18 +248,13 @@ class CallCubit extends Cubit<CallState> {
   }) async {
     try {
       final senderId = SupabaseProvider.id;
-
-      final callInfoJson = jsonEncode({
-        'status': status,
-        'call_type': callType,
-        'duration': duration,
-      });
-
-      await _chatServices.sendMessage(
+      await _chatServices.upsertCallMessage(
+        callId: callId,
         senderId: senderId,
         receiverId: receiverId,
-        text: callInfoJson,
-        messageType: 'call',
+        status: status,
+        callType: callType,
+        duration: duration,
       );
     } catch (e) {
       debugPrint('_logCallToChat error: $e');

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:audioplayers/audioplayers.dart';
+import '../../../core/widgets/calls/call_layout_metrics.dart';
 import '../../../core/widgets/calls/calls.dart';
 import '../cubits/single_call_cubit/call_cubit.dart';
 import '../model/call_model.dart';
@@ -93,16 +94,11 @@ class _IncomingCallViewState extends State<IncomingCallView>
           SafeArea(
             child: LayoutBuilder(
               builder: (context, constraints) {
-                final shortest = constraints.biggest.shortestSide;
-                final avatarDiameter =
-                    (shortest.clamp(280.0, 460.0) * 0.34).toDouble();
-                final buttonSize =
-                    (shortest.clamp(280.0, 460.0) * 0.19).toDouble();
-                final isCompact = constraints.maxHeight < 620;
+                final metrics = CallLayoutMetrics.of(constraints);
 
                 return Column(
                   children: [
-                    SizedBox(height: isCompact ? 20 : 50),
+                    SizedBox(height: metrics.topGap),
 
                     CallStatusPill(
                       icon:
@@ -116,20 +112,20 @@ class _IncomingCallViewState extends State<IncomingCallView>
                       shake: _shakeAnim,
                     ),
 
-                    SizedBox(height: isCompact ? 20 : 36),
+                    SizedBox(height: metrics.midGap),
 
                     RippleAvatar(
-                      avatarDiameter: avatarDiameter,
+                      avatarDiameter: metrics.avatarDiameter,
                       rippleColor: Colors.greenAccent,
                       avatar: CallAvatarImage(
                         imageUrl: widget.call.callerAvatar,
                         fallbackLabel: widget.call.callerName,
-                        diameter: avatarDiameter,
+                        diameter: metrics.avatarDiameter,
                         borderColor: Colors.greenAccent,
                       ),
                     ),
 
-                    SizedBox(height: isCompact ? 16 : 24),
+                    SizedBox(height: metrics.midGap),
 
                     Text(
                       widget.call.callerName,
@@ -140,10 +136,11 @@ class _IncomingCallViewState extends State<IncomingCallView>
                         letterSpacing: 0.5,
                       ),
                       textAlign: TextAlign.center,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
 
                     const SizedBox(height: 8),
-
                     const Text(
                       'is calling you...',
                       style: TextStyle(
@@ -164,7 +161,7 @@ class _IncomingCallViewState extends State<IncomingCallView>
                             icon: Icons.call_end_rounded,
                             label: 'Decline',
                             color: Colors.redAccent.shade700,
-                            size: buttonSize,
+                            size: metrics.buttonSize,
                             onTap: () {
                               context.read<CallCubit>().rejectCall(widget.call);
                               Navigator.pop(context);
@@ -177,17 +174,18 @@ class _IncomingCallViewState extends State<IncomingCallView>
                                     : Icons.call_rounded,
                             label: 'Accept',
                             color: Colors.green.shade600,
-                            size: buttonSize,
+                            size: metrics.buttonSize,
                             emphasized: true,
-                            onTap: () {
-                              context.read<CallCubit>().acceptCall(widget.call);
-                            },
+                            onTap:
+                                () => context.read<CallCubit>().acceptCall(
+                                  widget.call,
+                                ),
                           ),
                         ],
                       ),
                     ),
 
-                    SizedBox(height: isCompact ? 28 : 60),
+                    SizedBox(height: metrics.bottomGap),
                   ],
                 );
               },
