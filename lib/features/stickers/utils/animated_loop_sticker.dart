@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import 'package:visibility_detector/visibility_detector.dart';
 
 class AnimatedLoopSticker extends StatefulWidget {
   final String? filePath;
@@ -41,7 +42,7 @@ class _AnimatedLoopStickerState extends State<AnimatedLoopSticker>
   // ignore: unused_field
   ui.FrameInfo? _currentFrame;
   ui.Image? _lastDecodedImage;
-
+  bool _isVisible = false;
   int _frameIndex = 0;
   int _completedLoops = 0;
   bool _isPlaying = false;
@@ -144,22 +145,23 @@ class _AnimatedLoopStickerState extends State<AnimatedLoopSticker>
   }
 
   void _replay() {
-    if (_codec == null) return;
-    setState(() {
-      _frameIndex = 0;
-      _completedLoops = 0;
-    });
+    if (_codec == null || _isPlaying) return;
+
+    _frameIndex = 0;
+    _completedLoops = 0;
+
     _startPlaying();
   }
 
   void _stop() {
     _frameTimer?.cancel();
-    setState(() => _isPlaying = false);
+    _frameTimer = null;
+    _isPlaying = false;
   }
 
   void _onTap() {
     if (_codec == null || _codec!.frameCount <= 1) {
-      return; // static, nothing to toggle
+      return;
     }
     if (_isPlaying) {
       _stop();
@@ -198,13 +200,33 @@ class _AnimatedLoopStickerState extends State<AnimatedLoopSticker>
           SizedBox(width: widget.width, height: widget.height);
     }
 
-    return GestureDetector(
-      onTap: _onTap,
-      child: RawImage(
-        image: _lastDecodedImage,
-        width: widget.width,
-        height: widget.height,
-        fit: widget.fit,
+    return VisibilityDetector(
+      key: ValueKey(widget.filePath ?? widget.hashCode),
+      onVisibilityChanged: (info) {
+        final visible = info.visibleFraction > 0.5;
+
+        if (visible == _isVisible) return;
+
+        _isVisible = visible;
+
+        if (visible) {
+          if (!_isPlaying) {
+            _replay();
+          }
+        } else {
+          if (_isPlaying) {
+            _stop();
+          }
+        }
+      },
+      child: GestureDetector(
+        onTap: _onTap,
+        child: RawImage(
+          image: _lastDecodedImage,
+          width: widget.width,
+          height: widget.height,
+          fit: widget.fit,
+        ),
       ),
     );
   }
