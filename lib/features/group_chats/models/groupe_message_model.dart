@@ -23,6 +23,7 @@ class GroupMessageModel {
   final String? replyToSenderId;
   final String? replyToSenderName;
   final String? replyToMessageType;
+  final String? replyToMediaUrl;
   final List<MentionRef> mentions;
   final Map<String, String> reactions;
   final Map<String, String>? reactionsCreatedAt;
@@ -63,6 +64,7 @@ class GroupMessageModel {
     this.replyToSenderId,
     this.replyToSenderName,
     this.replyToMessageType,
+    this.replyToMediaUrl,
     this.mentions = const [],
     this.reactions = const {},
     this.reactionsCreatedAt,
@@ -76,6 +78,18 @@ class GroupMessageModel {
     this.targetId,
     this.targetName,
   });
+
+  static String? replyMediaUrlFrom(GroupMessageModel? original) {
+    if (original == null) return null;
+    switch (original.messageType) {
+      case 'image':
+        return original.imageUrl;
+      case 'video':
+        return original.videoUrl;
+      default:
+        return null;
+    }
+  }
 
   GroupMessageModel copyWith({
     String? id,
@@ -99,6 +113,7 @@ class GroupMessageModel {
     String? replyToSenderId,
     String? replyToSenderName,
     String? replyToMessageType,
+    String? replyToMediaUrl,
     List<MentionRef>? mentions,
     Map<String, String>? reactions,
     Map<String, String>? reactionsCreatedAt,
@@ -134,6 +149,7 @@ class GroupMessageModel {
       replyToSenderId: replyToSenderId ?? this.replyToSenderId,
       replyToSenderName: replyToSenderName ?? this.replyToSenderName,
       replyToMessageType: replyToMessageType ?? this.replyToMessageType,
+      replyToMediaUrl: replyToMediaUrl ?? this.replyToMediaUrl,
       mentions: mentions ?? this.mentions,
       reactions: reactions ?? this.reactions,
       reactionsCreatedAt: reactionsCreatedAt ?? this.reactionsCreatedAt,
@@ -151,17 +167,23 @@ class GroupMessageModel {
     );
   }
 
+  static String? _nullIfEmpty(dynamic v) =>
+      (v == null || v == '') ? null : v as String;
+
   factory GroupMessageModel.fromMap(
     Map<String, dynamic> map, {
     List<MentionRef> mentions = const [],
     List<Map<String, dynamic>> reactionsList = const [],
   }) {
     final Map<String, String> reactionsMap = {};
+    final Map<String, String> reactionsCreatedAtMap = {};
     for (final r in reactionsList) {
       final userId = r[GroupMemberColumns.userId] as String?;
       final emoji = r['reaction'] as String?;
+      final createdAt = r[MessageReactionColumns.createdAt] as String?;
       if (userId != null && emoji != null) {
         reactionsMap[userId] = emoji;
+        if (createdAt != null) reactionsCreatedAtMap[userId] = createdAt;
       }
     }
 
@@ -186,28 +208,54 @@ class GroupMessageModel {
       text: (map['message_text'] ?? '') as String,
       createdAt: DateTime.parse(map['created_at'] as String),
       messageType: (map['message_type'] ?? 'text') as String,
-      imageUrl: map['image_url'] as String?,
-      videoUrl: map['video_url'] as String?,
-      voiceUrl: map['voice_url'] as String?,
+      imageUrl: _nullIfEmpty(map['image_url']),
+      videoUrl: _nullIfEmpty(map['video_url']),
+      voiceUrl: _nullIfEmpty(map['voice_url']),
       durationSeconds:
           (map[GroupMessageColumns.durationSeconds] as num?)?.toInt(),
-      fileUrl: map['file_url'] as String?,
-      fileName: map['file_name'] as String?,
+      fileUrl: _nullIfEmpty(map['file_url']),
+
+      fileName: map['file_name'] == '' ? null : map['file_name'] as String?,
       fileSizeBytes: (map['file_size_bytes'] as num?)?.toInt(),
-      caption: map['caption'] as String?,
-      replyToMessageId: map['reply_to_message_id'] as String?,
-      replyToText: map['reply_to_text'] as String?,
-      replyToSenderId: map['reply_to_sender_id'] as String?,
-      replyToSenderName: map['reply_to_sender_name'] as String?,
-      replyToMessageType: map['reply_to_message_type'] as String?,
+      caption: map['caption'] == '' ? null : map['caption'] as String?,
+      replyToMessageId:
+          map['reply_to_message_id'] == ''
+              ? null
+              : map['reply_to_message_id'] as String?,
+      replyToText:
+          map['reply_to_text'] == '' ? null : map['reply_to_text'] as String?,
+      replyToSenderId:
+          map['reply_to_sender_id'] == ''
+              ? null
+              : map['reply_to_sender_id'] as String?,
+      replyToSenderName:
+          map['reply_to_sender_name'] == ''
+              ? null
+              : map['reply_to_sender_name'] as String?,
+      replyToMessageType:
+          map['reply_to_message_type'] == ''
+              ? null
+              : map['reply_to_message_type'] as String?,
+      replyToMediaUrl: _nullIfEmpty(map['reply_to_media_url']),
       mentions: mentions,
       reactions: reactionsMap,
+      reactionsCreatedAt:
+          reactionsCreatedAtMap.isEmpty ? null : reactionsCreatedAtMap,
       readBy: readBySet,
       isEdited: (map[GroupMessageColumns.isEdited] as bool?) ?? false,
       deletedFor: deletedForList,
-      forwardedFromUserId: map['forwarded_from_user_id'] as String?,
-      forwardedFromUserName: map['forwarded_from_user_name'] as String?,
-      forwardedFromUserAvatar: map['forwarded_from_user_avatar'] as String?,
+      forwardedFromUserId:
+          map['forwarded_from_user_id'] == ''
+              ? null
+              : map['forwarded_from_user_id'] as String?,
+      forwardedFromUserName:
+          map['forwarded_from_user_name'] == ''
+              ? null
+              : map['forwarded_from_user_name'] as String?,
+      forwardedFromUserAvatar:
+          map['forwarded_from_user_avatar'] == ''
+              ? null
+              : map['forwarded_from_user_avatar'] as String?,
       systemEventData: map['system_event_data'] as Map<String, dynamic>?,
       targetId: map['target_id'] as String?,
       targetName: map['target_name'] as String?,
@@ -235,6 +283,7 @@ class GroupMessageModel {
       if (replyToSenderName != null) 'reply_to_sender_name': replyToSenderName,
       if (replyToMessageType != null)
         'reply_to_message_type': replyToMessageType,
+      if (replyToMediaUrl != null) 'reply_to_media_url': replyToMediaUrl,
       if (targetId != null) 'target_id': targetId,
       if (targetName != null) 'target_name': targetName,
     };
@@ -256,6 +305,13 @@ class GroupMessageModel {
               (key, value) => MapEntry(key.toString(), value.toString()),
             )
             : {};
+    final reactionsCreatedAtRaw = json['reactionsCreatedAt'];
+    final Map<String, String>? reactionsCreatedAtMap =
+        reactionsCreatedAtRaw is Map
+            ? reactionsCreatedAtRaw.map(
+              (key, value) => MapEntry(key.toString(), value.toString()),
+            )
+            : null;
 
     final readByRaw = json['read_by'];
     final Set<String> readBySet =
@@ -282,22 +338,47 @@ class GroupMessageModel {
       durationSeconds:
           (json[GroupMessageColumns.durationSeconds] as num?)?.toInt(),
       fileUrl: json['file_url'] as String?,
-      fileName: json['file_name'] as String?,
+      fileName: json['file_name'] == '' ? null : json['file_name'] as String?,
       fileSizeBytes: (json['file_size_bytes'] as num?)?.toInt(),
-      caption: json['caption'] as String?,
-      replyToMessageId: json['reply_to_message_id'] as String?,
-      replyToText: json['reply_to_text'] as String?,
-      replyToSenderId: json['reply_to_sender_id'] as String?,
-      replyToSenderName: json['reply_to_sender_name'] as String?,
-      replyToMessageType: json['reply_to_message_type'] as String?,
+      caption: json['caption'] == '' ? null : json['caption'] as String?,
+      replyToMessageId:
+          json['reply_to_message_id'] == ''
+              ? null
+              : json['reply_to_message_id'] as String?,
+      replyToText:
+          json['reply_to_text'] == '' ? null : json['reply_to_text'] as String?,
+      replyToSenderId:
+          json['reply_to_sender_id'] == ''
+              ? null
+              : json['reply_to_sender_id'] as String?,
+      replyToSenderName:
+          json['reply_to_sender_name'] == ''
+              ? null
+              : json['reply_to_sender_name'] as String?,
+      replyToMessageType:
+          json['reply_to_message_type'] == ''
+              ? null
+              : json['reply_to_message_type'] as String?,
+      replyToMediaUrl: _nullIfEmpty(json['reply_to_media_url']),
       mentions: mentionsList,
       reactions: reactionsMap,
+      reactionsCreatedAt: reactionsCreatedAtMap,
+
       readBy: readBySet,
       isEdited: (json['is_edited'] as bool?) ?? false,
       deletedFor: deletedForList,
-      forwardedFromUserId: json['forwarded_from_user_id'] as String?,
-      forwardedFromUserName: json['forwarded_from_user_name'] as String?,
-      forwardedFromUserAvatar: json['forwarded_from_user_avatar'] as String?,
+      forwardedFromUserId:
+          json['forwarded_from_user_id'] == ''
+              ? null
+              : json['forwarded_from_user_id'] as String?,
+      forwardedFromUserName:
+          json['forwarded_from_user_name'] == ''
+              ? null
+              : json['forwarded_from_user_name'] as String?,
+      forwardedFromUserAvatar:
+          json['forwarded_from_user_avatar'] == ''
+              ? null
+              : json['forwarded_from_user_avatar'] as String?,
       systemEventData: json['system_event_data'] as Map<String, dynamic>?,
       targetId: json['target_id'] as String?,
       targetName: json['target_name'] as String?,
@@ -327,8 +408,10 @@ class GroupMessageModel {
       'reply_to_sender_id': replyToSenderId,
       'reply_to_sender_name': replyToSenderName,
       'reply_to_message_type': replyToMessageType,
+      'reply_to_media_url': replyToMediaUrl,
       'mentions': mentions.map((m) => m.toCacheJson()).toList(),
       'reactions': reactions,
+      'reactionsCreatedAt': reactionsCreatedAt,
       'read_by': readBy.toList(),
       'is_edited': isEdited,
       'deleted_for': deletedFor,

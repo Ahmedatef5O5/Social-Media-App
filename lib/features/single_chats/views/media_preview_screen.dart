@@ -253,8 +253,9 @@ class _MediaPreviewScreenState extends State<MediaPreviewScreen> {
                       child: IconButton(
                         icon: const Icon(Icons.send, color: AppColors.white),
                         onPressed: () {
-                          widget.onSend(_captionController.text.trim());
+                          final caption = _captionController.text.trim();
                           Navigator.pop(context);
+                          widget.onSend(caption.isEmpty ? null : caption);
                         },
                       ),
                     ),

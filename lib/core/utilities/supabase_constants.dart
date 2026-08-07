@@ -402,6 +402,7 @@ abstract class MessagesColumns {
   static const String replyToText = 'reply_to_text';
   static const String replyToMessageType = 'reply_to_message_type';
   static const String replyToSenderId = 'reply_to_sender_id';
+  static const String replyToMediaUrl = 'reply_to_media_url';
 
   static const String deletedFor = 'deleted_for';
 

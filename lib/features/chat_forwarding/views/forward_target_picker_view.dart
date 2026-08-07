@@ -118,6 +118,8 @@ class _ForwardTargetPickerViewState extends State<ForwardTargetPickerView> {
         backgroundColor: theme.scaffoldBackgroundColor,
         appBar: AppBar(
           elevation: 0,
+          scrolledUnderElevation: 0,
+          shadowColor: Colors.transparent,
           backgroundColor: theme.scaffoldBackgroundColor,
           centerTitle: true,
           title: Column(

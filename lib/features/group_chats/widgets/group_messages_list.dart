@@ -38,8 +38,7 @@ class _GroupMessagesListState extends State<GroupMessagesList> {
   static String? _lastPlayedMessageId;
 
   int _lastMessageCount = 0;
-  // ignore: unused_field
-  bool _hasLoadedOnce = false;
+  bool _wasSyncConfirmed = false;
 
   Future<void> _playNotificationSound() async {
     try {
@@ -54,18 +53,25 @@ class _GroupMessagesListState extends State<GroupMessagesList> {
   void _handleNewMessages(BuildContext context, GroupDetailsState state) {
     if (state is! GroupDetailsLoaded || state.messages.isEmpty) return;
 
-    _hasLoadedOnce = true;
     final messages = state.messages;
     final currentUserId = SupabaseProvider.id;
+    final cubit = context.read<GroupDetailsCubit>();
 
     final bool isNewMessage = messages.length > _lastMessageCount;
     final int previousCount = _lastMessageCount;
     _lastMessageCount = messages.length;
 
+    final bool isSyncConfirmedNow = cubit.hasConfirmedInitialLoad;
+    final bool justCrossedSyncBaseline =
+        isSyncConfirmedNow && !_wasSyncConfirmed;
+    _wasSyncConfirmed = isSyncConfirmedNow;
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
 
       final atBottom = widget.isAtBottom();
+
+      if (!isSyncConfirmedNow || justCrossedSyncBaseline) return;
 
       if (!isNewMessage || previousCount == 0) return;
 
@@ -101,56 +107,66 @@ class _GroupMessagesListState extends State<GroupMessagesList> {
               curr is GroupDetailsInitial ||
               curr is GroupDetailsError,
       builder: (context, state) {
+        final cubit = context.read<GroupDetailsCubit>();
+        final bool hasCachedData = cubit.cachedMessages.isNotEmpty;
+
         if (state is GroupDetailsLoading || state is GroupDetailsInitial) {
           return const ChatLoadingSkeleton();
         }
         if (state is GroupDetailsError) {
           return Center(child: Text(state.message));
         }
-        if (state is GroupDetailsLoaded) {
-          final messages = state.messages;
-          final typing = state.typingUserIds;
-          final isMember = state.isMember;
-
-          if (messages.isEmpty && typing.isEmpty) {
-            return _groupEmptyState(context);
-          }
-
-          return Stack(
-            children: [
-              ScrollablePositionedList.separated(
-                reverse: true,
-                itemScrollController: widget.scrollController,
-                itemPositionsListener: widget.positionsListener,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
-                ),
-                itemCount: messages.length + (typing.isNotEmpty ? 1 : 0),
-                itemBuilder:
-                    (_, index) => GroupMessageItemBuilder(
-                      index: index,
-                      messages: messages,
-                      typing: typing,
-                      itemScrollController: widget.scrollController,
-                      isMember: isMember,
-                    ),
-                separatorBuilder: (_, __) => const Gap(4),
-              ),
-
-              Positioned(
-                bottom: 10,
-                left: 14,
-                child: _ScrollToBottomButton(
-                  showNotifier: widget.showScrollButtonNotifier,
-                  countNotifier: widget.unreadCountNotifier,
-                  onTap: widget.scrollToBottom,
-                ),
-              ),
-            ],
-          );
+        if ((state is GroupDetailsLoading || state is GroupDetailsInitial) &&
+            !hasCachedData) {
+          return const ChatLoadingSkeleton();
         }
-        return const SizedBox();
+
+        final messages =
+            state is GroupDetailsLoaded ? state.messages : cubit.cachedMessages;
+        final typing =
+            state is GroupDetailsLoaded
+                ? state.typingUserIds
+                : const <String>[];
+        final isMember =
+            state is GroupDetailsLoaded ? state.isMember : cubit.isMember;
+
+        if (messages.isEmpty && typing.isEmpty) {
+          if (!cubit.hasConfirmedInitialLoad) {
+            return const ChatLoadingSkeleton();
+          }
+          return _groupEmptyState(context);
+        }
+
+        return Stack(
+          children: [
+            ScrollablePositionedList.separated(
+              reverse: true,
+              itemScrollController: widget.scrollController,
+              itemPositionsListener: widget.positionsListener,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              itemCount: messages.length + (typing.isNotEmpty ? 1 : 0),
+              itemBuilder:
+                  (_, index) => GroupMessageItemBuilder(
+                    index: index,
+                    messages: messages,
+                    typing: typing,
+                    itemScrollController: widget.scrollController,
+                    isMember: isMember,
+                  ),
+              separatorBuilder: (_, __) => const Gap(4),
+            ),
+
+            Positioned(
+              bottom: 10,
+              left: 14,
+              child: _ScrollToBottomButton(
+                showNotifier: widget.showScrollButtonNotifier,
+                countNotifier: widget.unreadCountNotifier,
+                onTap: widget.scrollToBottom,
+              ),
+            ),
+          ],
+        );
       },
     );
   }

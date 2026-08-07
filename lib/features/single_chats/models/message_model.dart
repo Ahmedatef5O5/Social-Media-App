@@ -23,6 +23,7 @@ class MessageModel {
   final String? replyToText;
   final String? replyToMessageType;
   final String? replyToSenderId;
+  final String? replyToMediaUrl;
   final List<String> deletedFor;
   final String? replyToStoryId;
   final String? replyToStoryAuthorId;
@@ -58,6 +59,7 @@ class MessageModel {
     this.replyToText,
     this.replyToMessageType,
     this.replyToSenderId,
+    this.replyToMediaUrl,
     this.deletedFor = const [],
     this.replyToStoryId,
     this.replyToStoryAuthorId,
@@ -70,6 +72,18 @@ class MessageModel {
     this.forwardedFromUserName,
     this.forwardedFromUserAvatar,
   });
+
+  static String? replyMediaUrlFrom(MessageModel? original) {
+    if (original == null) return null;
+    switch (original.messageType) {
+      case 'image':
+        return original.imageUrl;
+      case 'video':
+        return original.videoUrl;
+      default:
+        return null;
+    }
+  }
 
   bool get isStoryReply => replyToStoryType != null;
   bool get isForwarded => forwardedFromUserId != null;
@@ -102,6 +116,7 @@ class MessageModel {
     String? replyToText,
     String? replyToMessageType,
     String? replyToSenderId,
+    String? replyToMediaUrl,
     List<String>? deletedFor,
     String? replyToStoryId,
     String? replyToStoryAuthorId,
@@ -137,6 +152,7 @@ class MessageModel {
       replyToText: replyToText ?? this.replyToText,
       replyToMessageType: replyToMessageType ?? this.replyToMessageType,
       replyToSenderId: replyToSenderId ?? this.replyToSenderId,
+      replyToMediaUrl: replyToMediaUrl ?? this.replyToMediaUrl,
       deletedFor: deletedFor ?? this.deletedFor,
       replyToStoryId: replyToStoryId ?? this.replyToStoryId,
       replyToStoryAuthorId: replyToStoryAuthorId ?? this.replyToStoryAuthorId,
@@ -154,7 +170,25 @@ class MessageModel {
     );
   }
 
+  static String? _nullIfEmpty(dynamic v) =>
+      (v == null || v == '') ? null : v as String;
+
   factory MessageModel.fromJson(Map<String, dynamic> json) {
+    final reactionsRaw = json['reactions'];
+    final Map<String, String> reactionsMap =
+        reactionsRaw is Map
+            ? reactionsRaw.map(
+              (key, value) => MapEntry(key.toString(), value.toString()),
+            )
+            : {};
+
+    final reactionsCreatedAtRaw = json['reactionsCreatedAt'];
+    final Map<String, String>? reactionsCreatedAtMap =
+        reactionsCreatedAtRaw is Map
+            ? reactionsCreatedAtRaw.map(
+              (key, value) => MapEntry(key.toString(), value.toString()),
+            )
+            : null;
     return MessageModel(
       id: json[MessagesColumns.id],
       senderId: json[MessagesColumns.senderId],
@@ -164,34 +198,85 @@ class MessageModel {
       isRead: json[MessagesColumns.isRead] ?? false,
       isEdited: json[MessagesColumns.isEdited] ?? false,
       messageType: json[MessagesColumns.messageType] ?? 'text',
-      imageUrl: json[MessagesColumns.imageUrl],
-      videoUrl: json[MessagesColumns.videoUrl],
-      voiceUrl: json[MessagesColumns.voiceUrl],
+      imageUrl: _nullIfEmpty(json[MessagesColumns.imageUrl]),
+      videoUrl: _nullIfEmpty(json[MessagesColumns.videoUrl]),
+      voiceUrl: _nullIfEmpty(json[MessagesColumns.voiceUrl]),
       durationSeconds: (json[MessagesColumns.durationSeconds] as num?)?.toInt(),
-      fileUrl: json[MessagesColumns.fileUrl],
-      fileName: json[MessagesColumns.fileName],
+      fileUrl: _nullIfEmpty(json[MessagesColumns.fileUrl]),
+      fileName:
+          json[MessagesColumns.fileName] == ''
+              ? null
+              : json[MessagesColumns.fileName],
       fileSizeBytes: (json[MessagesColumns.fileSizeBytes] as num?)?.toInt(),
-      caption: json[MessagesColumns.caption],
-      replyToMessageId: json[MessagesColumns.replyToMessageId],
-      replyToText: json[MessagesColumns.replyToText],
-      replyToMessageType: json[MessagesColumns.replyToMessageType],
-      replyToSenderId: json[MessagesColumns.replyToSenderId],
+      caption:
+          json[MessagesColumns.caption] == ''
+              ? null
+              : json[MessagesColumns.caption],
+      reactions: reactionsMap,
+      reactionsCreatedAt: reactionsCreatedAtMap,
+      replyToMessageId:
+          json[MessagesColumns.replyToMessageId] == ''
+              ? null
+              : json[MessagesColumns.replyToMessageId],
+      replyToText:
+          json[MessagesColumns.replyToText] == ''
+              ? null
+              : json[MessagesColumns.replyToText],
+      replyToMessageType:
+          json[MessagesColumns.replyToMessageType] == ''
+              ? null
+              : json[MessagesColumns.replyToMessageType],
+      replyToSenderId:
+          json[MessagesColumns.replyToSenderId] == ''
+              ? null
+              : json[MessagesColumns.replyToSenderId],
+      replyToMediaUrl: _nullIfEmpty(
+        json[MessagesColumns.replyToMediaUrl],
+      ), // NEW
+
       deletedFor:
           (json[MessagesColumns.deletedFor] as List<dynamic>?)
               ?.map((e) => e.toString())
               .toList() ??
           const [],
-      replyToStoryId: json[MessagesColumns.replyToStoryId],
-      replyToStoryAuthorId: json[MessagesColumns.replyToStoryAuthorId],
-      replyToStoryType: json[MessagesColumns.replyToStoryType],
-      replyToStoryMediaUrl: json[MessagesColumns.replyToStoryMediaUrl],
-      replyToStoryText: json[MessagesColumns.replyToStoryText],
-      replyToStoryBgColor: json[MessagesColumns.replyToStoryBgColor],
+      replyToStoryId:
+          json[MessagesColumns.replyToStoryId] == ''
+              ? null
+              : json[MessagesColumns.replyToStoryId],
+      replyToStoryAuthorId:
+          json[MessagesColumns.replyToStoryAuthorId] == ''
+              ? null
+              : json[MessagesColumns.replyToStoryAuthorId],
+      replyToStoryType:
+          json[MessagesColumns.replyToStoryType] == ''
+              ? null
+              : json[MessagesColumns.replyToStoryType],
+      replyToStoryMediaUrl:
+          json[MessagesColumns.replyToStoryMediaUrl] == ''
+              ? null
+              : json[MessagesColumns.replyToStoryMediaUrl],
+      replyToStoryText:
+          json[MessagesColumns.replyToStoryText] == ''
+              ? null
+              : json[MessagesColumns.replyToStoryText],
+      replyToStoryBgColor:
+          json[MessagesColumns.replyToStoryBgColor] == ''
+              ? null
+              : json[MessagesColumns.replyToStoryBgColor],
       replyToStoryDurationSeconds:
           (json[MessagesColumns.replyToStoryDurationSeconds] as num?)?.toInt(),
-      forwardedFromUserId: json[MessagesColumns.forwardedFromUserId],
-      forwardedFromUserName: json[MessagesColumns.forwardedFromUserName],
-      forwardedFromUserAvatar: json[MessagesColumns.forwardedFromUserAvatar],
+      forwardedFromUserId:
+          json[MessagesColumns.forwardedFromUserId] == ''
+              ? null
+              : json[MessagesColumns.forwardedFromUserId],
+      forwardedFromUserName:
+          json[MessagesColumns.forwardedFromUserName] == ''
+              ? null
+              : json[MessagesColumns.forwardedFromUserName],
+      forwardedFromUserAvatar:
+          json[MessagesColumns.forwardedFromUserAvatar] == ''
+              ? null
+              : json[MessagesColumns.forwardedFromUserAvatar],
     );
   }
 
@@ -213,10 +298,13 @@ class MessageModel {
       MessagesColumns.fileName: fileName,
       MessagesColumns.fileSizeBytes: fileSizeBytes,
       MessagesColumns.caption: caption,
+      'reactions': reactions,
+      'reactionsCreatedAt': reactionsCreatedAt,
       MessagesColumns.replyToMessageId: replyToMessageId,
       MessagesColumns.replyToText: replyToText,
       MessagesColumns.replyToMessageType: replyToMessageType,
       MessagesColumns.replyToSenderId: replyToSenderId,
+      MessagesColumns.replyToMediaUrl: replyToMediaUrl,
       MessagesColumns.deletedFor: deletedFor,
       MessagesColumns.replyToStoryId: replyToStoryId,
       MessagesColumns.replyToStoryAuthorId: replyToStoryAuthorId,

@@ -49,8 +49,7 @@ class _MessagesListViewState extends State<MessagesListView> {
 
   int _lastMessageCount = 0;
   String? _lastAutoScrolledSendingId;
-
-  bool _hasLoadedOnce = false;
+  bool _wasSyncConfirmed = false;
 
   Future<void> _playNotificationSound() async {
     try {
@@ -79,20 +78,15 @@ class _MessagesListViewState extends State<MessagesListView> {
         final isTyping = state is ReceiverTypingState ? state.isTyping : false;
 
         if (messages.isEmpty) {
-          if (state is ChatDetailsInitial ||
-              state is MessagesLoading ||
-              state is MessagesSending) {
+          if (state is MessagesError) {
+            return Center(child: Text(state.message));
+          }
+          if (!cubit.hasConfirmedInitialLoad) {
             return const ChatLoadingSkeleton();
           }
-          if (_hasLoadedOnce || state is MessagesSuccessLoaded) {
-            return _buildEmptyState(context);
-          }
-          return const ChatLoadingSkeleton();
+          return _buildEmptyState(context);
         }
 
-        if (state is MessagesError && messages.isEmpty) {
-          return Center(child: Text(state.message));
-        }
         return Stack(
           children: [
             ScrollablePositionedList.separated(
@@ -208,13 +202,20 @@ class _MessagesListViewState extends State<MessagesListView> {
     }
 
     if (state is MessagesSuccessLoaded && state.messages.isNotEmpty) {
-      _hasLoadedOnce = true;
       final messages = state.messages;
       final currentUserId = SupabaseProvider.id;
+      final cubit = context.read<ChatDetailsCubit>();
 
       final bool isNewMessage = messages.length > _lastMessageCount;
       final int previousCount = _lastMessageCount;
       _lastMessageCount = messages.length;
+
+      final bool isSyncConfirmedNow = cubit.hasConfirmedInitialLoad;
+      final bool justCrossedSyncBaseline =
+          isSyncConfirmedNow && !_wasSyncConfirmed;
+      _wasSyncConfirmed = isSyncConfirmedNow;
+
+      if (!isSyncConfirmedNow || justCrossedSyncBaseline) return;
 
       if (!isNewMessage || previousCount == 0) return;
 

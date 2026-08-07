@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import '../../../core/cache/utils/cloudinary_url_extensions.dart';
 import '../../../core/themes/app_colors.dart';
+import '../../../core/widgets/cached_cloudinary_image.dart';
 import '../models/groupe_message_model.dart';
 
 class GroupReplyBubblePreview extends StatelessWidget {
@@ -14,9 +16,18 @@ class GroupReplyBubblePreview extends StatelessWidget {
     required this.currentUserId,
   });
 
+  static const double _thumbnailSize = 40;
+
   @override
   Widget build(BuildContext context) {
-    if (message.replyToText == null) {
+    final hasText =
+        message.replyToText != null && message.replyToText!.isNotEmpty;
+    final hasThumbnail =
+        message.replyToMediaUrl != null &&
+        (message.replyToMessageType == 'image' ||
+            message.replyToMessageType == 'video');
+
+    if (!hasText && !hasThumbnail && message.replyToMessageType == null) {
       return const SizedBox.shrink();
     }
 
@@ -53,32 +64,43 @@ class GroupReplyBubblePreview extends StatelessWidget {
                               context,
                             ).primaryColor.withValues(alpha: 0.08),
                   ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      Text(
-                        senderName,
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                          color:
-                              isMe
-                                  ? Colors.white.withValues(alpha: 0.9)
-                                  : Theme.of(context).primaryColor,
+                      Expanded(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              senderName,
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                                color:
+                                    isMe
+                                        ? Colors.white.withValues(alpha: 0.9)
+                                        : Theme.of(context).primaryColor,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              _previewText(),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color:
+                                    isMe ? Colors.white70 : AppColors.greyColor,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      const SizedBox(height: 2),
-
-                      Text(
-                        _previewText(),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: isMe ? Colors.white70 : AppColors.greyColor,
-                        ),
-                      ),
+                      if (hasThumbnail) ...[
+                        const SizedBox(width: 8),
+                        _buildThumbnail(),
+                      ],
                     ],
                   ),
                 ),
@@ -102,5 +124,40 @@ class GroupReplyBubblePreview extends StatelessWidget {
         final t = message.replyToText ?? '';
         return t.length > 60 ? '${t.substring(0, 60)}...' : t;
     }
+  }
+
+  Widget _buildThumbnail() {
+    final url = message.replyToMediaUrl!;
+    final isVideo = message.replyToMessageType == 'video';
+    final displayUrl = isVideo ? (url.cloudinaryVideoThumbnailUrl ?? url) : url;
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(6),
+      child: SizedBox(
+        width: _thumbnailSize,
+        height: _thumbnailSize,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            CachedCloudinaryImage(
+              secureUrl: displayUrl,
+              width: _thumbnailSize,
+              height: _thumbnailSize,
+              fit: BoxFit.cover,
+              errorWidget:
+                  (context, error) => Container(color: Colors.grey.shade400),
+            ),
+            if (isVideo)
+              const Center(
+                child: Icon(
+                  Icons.play_circle_fill,
+                  color: Colors.white,
+                  size: 18,
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
   }
 }
