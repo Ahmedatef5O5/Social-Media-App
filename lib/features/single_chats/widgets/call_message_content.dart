@@ -1,6 +1,11 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
+import '../../../core/services/active_call/call_navigation_helper.dart';
+import '../../../core/services/active_call/cubit/active_call_session_cubit.dart';
+import '../../../core/services/active_call/pip/call_pip_cubit.dart';
+import '../helper/return_to_ongoing_single_call_btn.dart';
 import '../models/message_model.dart';
 import 'message_time_and_status.dart';
 
@@ -25,12 +30,23 @@ class CallMessageContent extends StatelessWidget {
       callData = jsonDecode(message.text) as Map<String, dynamic>;
     } catch (_) {}
 
+    final callId = callData['call_id'] as String?;
     final status = callData['status'] as String? ?? 'ended';
     final callType = callData['call_type'] as String? ?? 'audio';
     final duration = callData['duration'] as String? ?? '';
 
+    final activeSession = context.watch<ActiveCallSessionCubit>().state;
+    final isReturnable =
+        callId != null &&
+        activeSession != null &&
+        !activeSession.isGroup &&
+        activeSession.callId == callId;
+
     final bool isAudio = callType == 'audio';
-    final bool isMissed = status == 'rejected' || status == 'missed';
+    final bool isRinging =
+        !isReturnable && (status == 'ringing' || status == 'ongoing');
+    final bool isMissed =
+        !isReturnable && (status == 'rejected' || status == 'missed');
 
     final colorScheme = Theme.of(context).colorScheme;
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
@@ -66,8 +82,10 @@ class CallMessageContent extends StatelessWidget {
             ? Colors.white.withValues(alpha: 0.5)
             : iconColor.withValues(alpha: 0.15);
 
-    String title =
-        isMissed
+    final String title =
+        isRinging
+            ? (isAudio ? 'Calling…' : 'Video calling…')
+            : isMissed
             ? (isAudio ? 'Missed voice call' : 'Missed video call')
             : (isAudio ? 'Voice call' : 'Video call');
 
@@ -124,7 +142,7 @@ class CallMessageContent extends StatelessWidget {
                             fontWeight: FontWeight.w600,
                           ),
                         ),
-                        if (duration.isNotEmpty && !isMissed) ...[
+                        if (duration.isNotEmpty && !isMissed && !isRinging) ...[
                           Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
@@ -153,6 +171,20 @@ class CallMessageContent extends StatelessWidget {
                   ),
                 ],
               ),
+
+              if (isReturnable) ...[
+                const Gap(10),
+                ReturnToOngoingSingleCallButton(
+                  isVideo: !isAudio,
+                  onTap:
+                      () => CallNavigationHelper.expandActiveCall(
+                        context.read<CallPipCubit>(),
+                        activeSession,
+                      ),
+                  isMe: isMe,
+                ),
+              ],
+
               const Gap(6),
               Align(
                 alignment: Alignment.bottomRight,

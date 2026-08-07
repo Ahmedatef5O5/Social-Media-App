@@ -176,9 +176,8 @@ class _MessageContentContainerState extends State<MessageContentContainer> {
                 isStickerOrGif
                     ? Colors.transparent
                     : (isImage || isVideo) &&
-                        (isUploading ||
-                            widget.message.imageUrl == null &&
-                                widget.message.videoUrl == null)
+                        (widget.message.imageUrl == null &&
+                            widget.message.videoUrl == null)
                     ? AppColors.transparent
                     : (widget.isMe
                         ? Theme.of(context).primaryColor
