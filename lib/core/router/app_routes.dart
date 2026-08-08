@@ -9,6 +9,7 @@ class AppRoutes {
   static const String newChatViewRoute = '/chat/new';
   static const String archivedChatsViewRoute = '/archived-chats-view';
   static const String chatDetailsViewRoute = '/chat-details-view';
+  static const String aiChatViewRoute = '/ai-chat-view';
   static const String receiverProfileViewRoute = '/receiver-profile-view';
 
   // Friends list
@@ -17,6 +18,8 @@ class AppRoutes {
   // AI Settings
   static const String aiSettingsViewRoute = '/ai-settings';
 
+  // select themes
+  static const String themesSelectViewRoute = '/themes-select-view';
   //
   static const String aboutUsViewRoute = '/about-us';
 

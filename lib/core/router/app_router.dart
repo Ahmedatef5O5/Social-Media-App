@@ -38,6 +38,7 @@ import 'package:social_media_app/features/settings/views/ai_settings_view.dart';
 import 'package:social_media_app/features/settings/views/settings_view.dart';
 import 'package:social_media_app/features/splash/views/on_boarding_view.dart';
 import 'package:social_media_app/features/splash/views/splash_view.dart';
+import '../../features/ai_chat/views/ai_chat_view.dart';
 import '../../features/auth/data/models/user_data.dart';
 import '../../features/posts/cubit/posts_cubit/posts_cubit.dart';
 import '../../features/posts/cubit/saved_posts_cubit/saved_posts_cubit.dart';
@@ -46,6 +47,7 @@ import '../../features/posts/model/post_details_route_args.dart';
 import '../../features/posts/services/posts_services.dart';
 import '../../features/posts/views/post_details_view.dart';
 import '../../features/posts/views/saved_posts_view.dart';
+import '../../features/settings/views/themes_select_view.dart';
 import '../../features/single_calls/model/call_model.dart';
 import '../../features/single_calls/views/dialing_view.dart';
 import '../../features/single_calls/views/incoming_call_view.dart';
@@ -193,6 +195,7 @@ class AppRouter {
       case AppRoutes.receiverProfileViewRoute:
       case AppRoutes.archivedChatsViewRoute:
       case AppRoutes.newChatViewRoute:
+      case AppRoutes.aiChatViewRoute:
         return _chatRoutes(settings);
 
       case AppRoutes.createGroupRoute:
@@ -210,6 +213,7 @@ class AppRouter {
       case AppRoutes.aboutUsViewRoute:
       case AppRoutes.savedPostsViewRoute:
       case AppRoutes.settingsViewRoute:
+      case AppRoutes.themesSelectViewRoute:
       case AppRoutes.aiSettingsViewRoute:
         return _profileAndSettingsRoutes(settings);
 
@@ -491,6 +495,12 @@ class AppRouter {
           ),
           settings: settings,
         );
+      case AppRoutes.aiChatViewRoute:
+        return _buildRoute(
+          AiChatView(initialSessionId: _args<String>(settings)),
+          settings: settings,
+          typeOfRoute: TypeOfRoute.fade,
+        );
       default:
         return _errorRoute(settings, 'Chat route not found');
     }
@@ -668,6 +678,16 @@ class AppRouter {
         return _buildRoute(AboutUsView(), settings: settings);
       case AppRoutes.aiSettingsViewRoute:
         return _buildRoute(const AiSettingsView(), settings: settings);
+
+      case AppRoutes.themesSelectViewRoute:
+        final userId = _args<String>(settings);
+        if (userId == null) {
+          return _errorRoute(settings, 'Missing User ID for Themes');
+        }
+        return _buildRoute(
+          ThemesSelectView(userId: userId),
+          settings: settings,
+        );
       case AppRoutes.settingsViewRoute:
         final cubit = _args<ProfileCubit>(settings);
         if (cubit == null) {
