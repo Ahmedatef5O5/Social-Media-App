@@ -3,15 +3,14 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../constants/app_images.dart';
 import '../../themes/app_colors.dart';
 import '../../widgets/custom_loading_indicator.dart';
-import '../../widgets/multi_select_app_bar.dart';
 import '../cubits/conversation_selection_cubit/conversation_selection_cubit.dart';
 import '../cubits/conversations_cubit/conversations_cubit.dart';
 import '../helpers/conversation_delete_confirmation.dart';
 import '../models/conversation_item.dart';
-import '../models/conversation_ref.dart';
 import '../../../features/group_chats/widgets/group_tile_item_widget.dart';
 import '../../../features/single_chats/widgets/chat_item_tile.dart';
 import '../../../features/single_chats/widgets/empty_placeholder_state.dart';
+import '../widgets/archived_selection_header_bar.dart';
 
 class ArchivedChatsView extends StatefulWidget {
   const ArchivedChatsView({super.key});
@@ -35,33 +34,6 @@ class _ArchivedChatsViewState extends State<ArchivedChatsView> {
     super.dispose();
   }
 
-  MultiSelectAction _buildPinAction(
-    BuildContext context,
-    ConversationsCubit cubit,
-    Set<ConversationRef> refs,
-  ) {
-    final flagState = cubit.archivePinnedState(refs);
-    final isMixed = flagState == SelectionFlagState.mixed;
-    final isOn = flagState == SelectionFlagState.allOn;
-    return MultiSelectAction(
-      icon: isOn ? Icons.push_pin_rounded : Icons.push_pin_outlined,
-      color: isMixed ? Theme.of(context).disabledColor : null,
-      tooltip: isMixed ? 'Mixed selection' : (isOn ? 'Unpin' : 'Pin'),
-      onPressed: isMixed ? null : () => cubit.bulkSetArchivePinned(refs, !isOn),
-    );
-  }
-
-  Future<void> _unarchiveSelected(
-    BuildContext context,
-    ConversationsCubit cubit,
-    Set<ConversationRef> refs,
-  ) async {
-    await cubit.bulkSetArchived(refs, false);
-    if (context.mounted) {
-      context.read<ConversationSelectionCubit>().clear();
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return BlocProvider.value(
@@ -74,7 +46,6 @@ class _ArchivedChatsViewState extends State<ArchivedChatsView> {
             ConversationSelectionState
           >(
             builder: (context, selection) {
-              final cubit = context.read<ConversationsCubit>();
               final refs = selection.selectedRefs;
 
               return AnimatedSwitcher(
@@ -93,34 +64,17 @@ class _ArchivedChatsViewState extends State<ArchivedChatsView> {
                 },
                 child:
                     selection.isSelecting
-                        ? MultiSelectChatAppBar(
+                        ? ArchivedSelectionHeaderBar(
                           key: const ValueKey('archive_selection'),
-                          selectedCount: refs.length,
+                          selectedRefs: refs,
                           onCancel:
                               () =>
                                   context
                                       .read<ConversationSelectionCubit>()
                                       .clear(),
-                          actions: [
-                            _buildPinAction(context, cubit, refs),
-                            MultiSelectAction(
-                              icon: Icons.unarchive_rounded,
-                              tooltip: 'Unarchive',
-                              onPressed:
-                                  () =>
-                                      _unarchiveSelected(context, cubit, refs),
-                            ),
-                            MultiSelectAction(
-                              icon: Icons.delete_outline_rounded,
-                              tooltip: 'Delete',
-                              isDestructive: true,
-                              onPressed:
-                                  () => confirmAndDeleteConversations(
-                                    context,
-                                    refs,
-                                  ),
-                            ),
-                          ],
+                          onDelete:
+                              () =>
+                                  confirmAndDeleteConversations(context, refs),
                         )
                         : AppBar(
                           key: const ValueKey('archive_normal'),
@@ -152,7 +106,8 @@ class _ArchivedChatsViewState extends State<ArchivedChatsView> {
             }
 
             return ListView.separated(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+
               itemCount: items.length,
               itemBuilder: (context, index) {
                 final item = items[index];
@@ -162,6 +117,7 @@ class _ArchivedChatsViewState extends State<ArchivedChatsView> {
                       isPinned: item.flags.isPinnedInArchive,
                       isFavorite: item.isFavorite,
                       isMuted: item.isMuted,
+                      enableHero: false,
                     )
                     : GroupTileItem(
                       group: item.group!,
