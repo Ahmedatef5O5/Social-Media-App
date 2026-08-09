@@ -45,6 +45,7 @@ import 'core/widgets/calls/call_pip_overlay.dart';
 import 'features/auth/cubit/auth_cubit/auth_cubit.dart';
 import 'features/posts/cubit/posts_cubit/posts_cubit.dart';
 import 'features/reels/cubit/reels_feed_cubit/reels_feed_cubit.dart';
+import 'features/single_chats/services/chat_presence_service.dart';
 import 'features/single_chats/services/chat_services.dart';
 import 'features/discover/services/discover_people_services.dart';
 import 'features/group_calls/services/group_call_signaling_service.dart';
@@ -57,6 +58,7 @@ Widget buildApp(String savedTheme) {
     providers: [
       RepositoryProvider(create: (_) => SupabaseAuthServices()),
       RepositoryProvider(create: (_) => ChatServices()),
+      RepositoryProvider(create: (_) => ChatPresenceService()),
       RepositoryProvider(create: (_) => GroupChatServices()),
       RepositoryProvider(create: (_) => CallSignalingService()),
       RepositoryProvider(create: (_) => UserService()),

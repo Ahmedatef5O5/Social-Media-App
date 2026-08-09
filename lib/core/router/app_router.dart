@@ -54,6 +54,7 @@ import '../../features/group_chats/cubit/group_list_cubit/group_list_cubit.dart'
 import '../../features/group_chats/services/group_chat_services.dart';
 import '../../features/group_chats/views/create_group_view.dart';
 import '../../features/about_us/views/about_us_view.dart';
+import '../../features/single_chats/services/chat_presence_service.dart';
 import '../../features/stories/cubit/stories_cubit/stories_cubit.dart';
 import '../../features/stories/model/story_model.dart';
 import '../../features/stories/views/creat_text_story_view.dart';
@@ -412,6 +413,7 @@ class AppRouter {
                   context.read<ChatServices>(),
                   user.name,
                   context.read<MediaCacheRepository>(),
+                  presenceService: context.read<ChatPresenceService>(),
                 )..loadCurrentUserInfo(),
             child: ChatDetailsView(receiverUser: user),
           ),
@@ -447,7 +449,8 @@ class AppRouter {
                       context.read<ChatServices>(),
                       user.name,
                       context.read<MediaCacheRepository>(),
-                    )..watchReceiverTyping(user.id),
+                      presenceService: context.read<ChatPresenceService>(),
+                    )..watchReceiverAction(user.id),
                 child: ReceiverProfileView(
                   receiverUser: user,
                   itemScrollController: itemScrollController,
