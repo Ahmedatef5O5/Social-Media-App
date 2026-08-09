@@ -10,7 +10,9 @@ mixin GroupMessagesStreamMixin on Cubit<GroupDetailsState> {
   Map<String, Map<String, String>> get _reactionsCache;
   bool _isFirstLoad = true;
   bool _hasReceivedFirstStreamEvent = false;
-  List<String> _typingUserIds = [];
+  GroupPresenceSnapshot _presence = GroupPresenceSnapshot.empty;
+  Timer? _recordingHeartbeat;
+  bool _isRecordingActionActive = false;
   String? get _messagesSnapshotKey;
   String get currentUserId;
   bool get isMember;
@@ -64,7 +66,7 @@ mixin GroupMessagesStreamMixin on Cubit<GroupDetailsState> {
           } else {
             _listenMessages();
             _listenReadReceipts();
-            _listenTyping();
+            _listenPresence();
           }
         });
   }
@@ -187,28 +189,85 @@ mixin GroupMessagesStreamMixin on Cubit<GroupDetailsState> {
         });
   }
 
-  void _listenTyping() {
+  void _listenPresence() {
     _typingSubscription?.cancel();
     if (!isMember) return;
-    _typingSubscription = _services.getTypingUsersStream(group.id).listen((
-      typingIds,
+    _typingSubscription = _services.watchGroupPresence(group.id).listen((
+      snapshot,
     ) {
-      _typingUserIds = typingIds;
+      _presence = snapshot;
       _emitLoaded();
     });
   }
 
   void onTyping() {
     if (!isMember) return;
-    _services.setTyping(group.id, true, isMember: isMember);
+    _services.setGroupAction(
+      group.id,
+      ChatActionType.typing,
+      isMember: isMember,
+    );
     _typingDebounce?.cancel();
     _typingDebounce = Timer(const Duration(seconds: 3), () {
-      _services.setTyping(group.id, false, isMember: isMember);
+      _services.setGroupAction(
+        group.id,
+        ChatActionType.none,
+        isMember: isMember,
+      );
     });
   }
 
+  void startRecordingAction() {
+    if (!isMember) return;
+    _isRecordingActionActive = true;
+    _services.setGroupAction(
+      group.id,
+      ChatActionType.recording,
+      isMember: isMember,
+    );
+    _recordingHeartbeat?.cancel();
+    _recordingHeartbeat = Timer.periodic(const Duration(seconds: 2), (timer) {
+      if (!_isRecordingActionActive) {
+        timer.cancel();
+        return;
+      }
+      _services.setGroupAction(
+        group.id,
+        ChatActionType.recording,
+        isMember: isMember,
+      );
+    });
+  }
+
+  void pauseRecordingAction() {
+    _recordingHeartbeat?.cancel();
+    _services.setGroupAction(group.id, ChatActionType.none, isMember: isMember);
+  }
+
+  void resumeRecordingAction() => startRecordingAction();
+
+  void stopRecordingAction() {
+    _isRecordingActionActive = false;
+    _recordingHeartbeat?.cancel();
+
+    _services.setGroupAction(group.id, ChatActionType.none, isMember: isMember);
+
+    Future.delayed(const Duration(milliseconds: 1000), () {
+      if (!isClosed) {
+        _services.setGroupAction(
+          group.id,
+          ChatActionType.none,
+          isMember: isMember,
+        );
+      }
+    });
+  }
+
+  void cancelRecordingAction() => stopRecordingAction();
+
   @override
   Future<void> close() {
+    stopRecordingAction();
     _messagesSubscription?.cancel();
     _readReceiptsSubscription?.cancel();
     _typingSubscription?.cancel();

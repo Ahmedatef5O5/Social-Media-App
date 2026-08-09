@@ -9,7 +9,9 @@ import '../../../../core/supabase/supabase_provider.dart';
 import '../../../../core/utilities/supabase_constants.dart';
 import '../../../auth/handler/auth_exception_handler.dart';
 import '../../helpers/group_chat_clear_store.dart';
+import '../../models/group_member_model.dart';
 import '../../models/group_model.dart';
+import '../../models/group_presence_entry.dart';
 import '../../services/group_chat_services.dart';
 part 'group_list_state.dart';
 
@@ -19,7 +21,9 @@ class GroupListCubit extends Cubit<GroupListState> {
   final GroupChatServices _services;
   RealtimeChannel? _channel;
   StreamSubscription? _messagesStreamSub;
+  StreamSubscription? _presenceSub;
   List<GroupModel> _cached = [];
+  final Map<String, List<GroupMemberModel>> _membersByGroupId = {};
   Timer? _activeGroupTimer;
   String? _activeGroupId;
 
@@ -73,10 +77,11 @@ class GroupListCubit extends Cubit<GroupListState> {
     }
   }
 
-  void monitorGroups() {
-    loadGroups();
+  Future<void> monitorGroups() async {
+    await loadGroups();
     _subscribeRealtime();
     _subscribeMessagesStream();
+    _subscribeGroupsPresence();
   }
 
   void _subscribeMessagesStream() {
@@ -280,6 +285,31 @@ class GroupListCubit extends Cubit<GroupListState> {
           },
         )
         .subscribe();
+  }
+
+  void _subscribeGroupsPresence() {
+    _presenceSub?.cancel();
+    if (state is! GroupListLoaded) return;
+
+    _presenceSub = _services.watchAllGroupsPresence().listen((map) {
+      if (state is! GroupListLoaded) return;
+      final current = state as GroupListLoaded;
+      final updated =
+          current.groups.map((g) {
+            final snapshot = map[g.id] ?? GroupPresenceSnapshot.empty;
+            return g.copyWith(presence: snapshot);
+          }).toList();
+      _cached = updated;
+      emit(GroupListLoaded(updated));
+    });
+  }
+
+  List<GroupMemberModel> membersOf(String groupId) =>
+      _membersByGroupId[groupId] ?? const <GroupMemberModel>[];
+
+  GroupPresenceSnapshot presenceOf(String groupId) {
+    final match = _cached.where((g) => g.id == groupId);
+    return match.isEmpty ? GroupPresenceSnapshot.empty : match.first.presence;
   }
 
   // ─── State helpers ────────────────────────────────────────────────────────
@@ -548,7 +578,11 @@ class GroupListCubit extends Cubit<GroupListState> {
             ..removeWhere((g) => _locallyDeletedGroupIds.contains(g.id))
             ..removeWhere(_isHiddenByLocalClear);
 
-      final fetchedIds = fetchedGroups.map((g) => g.id).toSet();
+      final fetchedIds = fetchedGroups.map((g) => g.id).toList();
+
+      _membersByGroupId
+        ..clear()
+        ..addAll(await _services.getMembersForGroups(fetchedIds));
 
       final leftGroupsStillTracked = _cached.where(
         (g) => !g.isMember && !fetchedIds.contains(g.id),

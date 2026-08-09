@@ -4,14 +4,18 @@ import 'package:flutter/material.dart';
 import 'package:social_media_app/core/mentions/mentions.dart';
 import 'package:social_media_app/features/group_chats/services/group_notification_dispatcher.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../core/presence/model/chat_action_type.dart';
+import '../../../core/presence/services/presence_service.dart';
 import '../../../core/services/cloudinary_storage_services.dart';
 import '../../../core/services/cloudinary_upload_result.dart';
 import '../../../core/services/media_cleanup_service.dart';
 import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/utilities/supabase_constants.dart';
 import '../models/group_add_members_result.dart';
+import '../models/group_header_stats.dart';
 import '../models/group_member_model.dart';
 import '../models/group_model.dart';
+import '../models/group_presence_entry.dart';
 import '../models/groupe_message_model.dart';
 
 class GroupChatServices {
@@ -661,45 +665,360 @@ class GroupChatServices {
         .map((data) => data.cast<Map<String, dynamic>>());
   }
 
-  Future<void> setTyping(
+  static const int _presenceStaleAfterSeconds = 5;
+  static const int _presenceWatchdogTickSeconds = 2;
+
+  Stream<Map<String, GroupPresenceSnapshot>> watchAllGroupsPresence() {
+    final controller =
+        StreamController<Map<String, GroupPresenceSnapshot>>.broadcast();
+    List<Map<String, dynamic>> latestRows = const [];
+
+    final Map<String, Map<String, String?>> userCache = {};
+    final Map<String, DateTime> localReceiveTime = {};
+    final Map<String, String> lastUpdatedAt = {};
+
+    Future<Map<String, GroupPresenceSnapshot>> computeSnapshot() async {
+      final now = DateTime.now();
+      final nowUtc = now.toUtc();
+      final Map<String, Map<ChatActionType, List<GroupPresenceEntry>>> grouped =
+          {};
+
+      for (final row in latestRows) {
+        final actionType = ChatActionTypeX.fromValue(row['action_type']);
+        if (actionType == ChatActionType.none) continue;
+
+        final groupId = row[GroupTypingColumns.groupId] as String;
+        final userId = row[GroupTypingColumns.userId] as String;
+        if (userId == currentUserId) continue;
+
+        final updatedAtRaw = row[GroupTypingColumns.updatedAt];
+        if (updatedAtRaw != null) {
+          final updatedAt = DateTime.parse(updatedAtRaw.toString()).toUtc();
+          if (nowUtc.difference(updatedAt).inMinutes > 5) {
+            continue;
+          }
+        }
+
+        if (!localReceiveTime.containsKey(userId)) continue;
+        final receivedAt = localReceiveTime[userId]!;
+        if (now.difference(receivedAt).inSeconds > _presenceStaleAfterSeconds) {
+          continue;
+        }
+
+        if (!userCache.containsKey(userId)) {
+          try {
+            final data =
+                await _supabase
+                    .from('users')
+                    .select('name, image_url')
+                    .eq('id', userId)
+                    .maybeSingle();
+            userCache[userId] = {
+              'name': data?['name'] as String? ?? 'Someone',
+              'avatar': data?['image_url'] as String?,
+            };
+          } catch (_) {
+            userCache[userId] = {'name': 'Someone', 'avatar': null};
+          }
+        }
+
+        final userInfo = userCache[userId]!;
+        grouped.putIfAbsent(groupId, () => {});
+        grouped[groupId]!.putIfAbsent(actionType, () => []);
+        grouped[groupId]![actionType]!.add(
+          GroupPresenceEntry(
+            userId: userId,
+            userName: userInfo['name'] ?? 'Someone',
+            userAvatar: userInfo['avatar'],
+            actionType: actionType,
+          ),
+        );
+      }
+      return grouped.map((k, v) => MapEntry(k, GroupPresenceSnapshot(v)));
+    }
+
+    void emit() async {
+      if (controller.isClosed) return;
+      controller.add(await computeSnapshot());
+    }
+
+    final sub = SupabaseProvider.client
+        .from(SupabaseConstants.groupTypingStatus)
+        .stream(
+          primaryKey: [GroupTypingColumns.groupId, GroupTypingColumns.userId],
+        )
+        .listen(
+          (rows) {
+            for (final row in rows) {
+              final uId = row[GroupTypingColumns.userId] as String;
+              if (row['action_type'] != 'none') {
+                final updatedAtStr =
+                    row[GroupTypingColumns.updatedAt]?.toString() ?? '';
+                if (lastUpdatedAt[uId] != updatedAtStr) {
+                  localReceiveTime[uId] = DateTime.now();
+                  lastUpdatedAt[uId] = updatedAtStr;
+                }
+              }
+            }
+            latestRows = rows;
+            emit();
+          },
+          onError:
+              (e) => debugPrint('[watchAllGroupsPresence] stream error: $e'),
+        );
+
+    final watchdog = Timer.periodic(
+      const Duration(seconds: _presenceWatchdogTickSeconds),
+      (_) => emit(),
+    );
+
+    controller.onCancel = () {
+      sub.cancel();
+      watchdog.cancel();
+      controller.close();
+    };
+
+    return controller.stream;
+  }
+
+  Future<void> setGroupAction(
     String groupId,
-    bool isTyping, {
+    ChatActionType actionType, {
     required bool isMember,
   }) async {
     if (!isMember) return;
-    await _supabase.from(SupabaseConstants.groupTypingStatus).upsert({
-      GroupMemberColumns.groupId: groupId,
-      GroupMemberColumns.userId: currentUserId,
-      'is_typing': isTyping,
-      PresenceColumns.updatedAt: DateTime.now().toIso8601String(),
-    });
+    try {
+      await _supabase.from(SupabaseConstants.groupTypingStatus).upsert(
+        {
+          GroupTypingColumns.groupId: groupId,
+          GroupTypingColumns.userId: currentUserId,
+          'action_type': actionType.value,
+          GroupTypingColumns.updatedAt:
+              DateTime.now().toUtc().toIso8601String(),
+        },
+        onConflict:
+            '${GroupTypingColumns.groupId},${GroupTypingColumns.userId}',
+      );
+    } catch (e) {
+      debugPrint('[setGroupAction] FAILED to write presence: $e');
+    }
   }
 
-  Stream<List<String>> getTypingUsersStream(String groupId) {
-    return _supabase
+  Stream<GroupPresenceSnapshot> watchGroupPresence(String groupId) {
+    final controller = StreamController<GroupPresenceSnapshot>.broadcast();
+    List<Map<String, dynamic>> latestRows = const [];
+
+    final Map<String, Map<String, String?>> userCache = {};
+    final Map<String, DateTime> localReceiveTime = {};
+    final Map<String, String> lastUpdatedAt = {};
+
+    Future<GroupPresenceSnapshot> computeSnapshot() async {
+      final Map<ChatActionType, List<GroupPresenceEntry>> grouped = {};
+      final now = DateTime.now();
+      final nowUtc = now.toUtc();
+
+      for (final row in latestRows) {
+        final actionType = ChatActionTypeX.fromValue(row['action_type']);
+        if (actionType == ChatActionType.none) continue;
+
+        final userId = row[GroupTypingColumns.userId] as String;
+        if (userId == currentUserId) continue;
+
+        final updatedAtRaw = row[GroupTypingColumns.updatedAt];
+        if (updatedAtRaw != null) {
+          final updatedAt = DateTime.parse(updatedAtRaw.toString()).toUtc();
+          if (nowUtc.difference(updatedAt).inMinutes > 5) {
+            continue;
+          }
+        }
+
+        if (!localReceiveTime.containsKey(userId)) continue;
+        final receivedAt = localReceiveTime[userId]!;
+        if (now.difference(receivedAt).inSeconds > _presenceStaleAfterSeconds) {
+          continue;
+        }
+
+        if (!userCache.containsKey(userId)) {
+          try {
+            final data =
+                await _supabase
+                    .from('users')
+                    .select('name, image_url')
+                    .eq('id', userId)
+                    .maybeSingle();
+            userCache[userId] = {
+              'name': data?['name'] as String? ?? 'Someone',
+              'avatar': data?['image_url'] as String?,
+            };
+          } catch (_) {
+            userCache[userId] = {'name': 'Someone', 'avatar': null};
+          }
+        }
+
+        final userInfo = userCache[userId]!;
+        grouped.putIfAbsent(actionType, () => []);
+        grouped[actionType]!.add(
+          GroupPresenceEntry(
+            userId: userId,
+            userName: userInfo['name'] ?? 'Someone',
+            userAvatar: userInfo['avatar'],
+            actionType: actionType,
+          ),
+        );
+      }
+      return GroupPresenceSnapshot(grouped);
+    }
+
+    void emit() async {
+      if (controller.isClosed) return;
+      controller.add(await computeSnapshot());
+    }
+
+    final sub = _supabase
         .from(SupabaseConstants.groupTypingStatus)
         .stream(
-          primaryKey: [GroupMemberColumns.groupId, GroupMemberColumns.userId],
+          primaryKey: [GroupTypingColumns.groupId, GroupTypingColumns.userId],
         )
-        .eq(GroupMemberColumns.groupId, groupId)
-        .map((data) {
-          final cutoff = DateTime.now().subtract(const Duration(seconds: 10));
-          return data
-              .where((row) {
-                final isTyping = row['is_typing'] as bool? ?? false;
-                final updatedAt =
-                    row[PresenceColumns.updatedAt] != null
-                        ? DateTime.parse(
-                          row[PresenceColumns.updatedAt] as String,
-                        )
-                        : DateTime.fromMillisecondsSinceEpoch(0);
-                return isTyping &&
-                    updatedAt.isAfter(cutoff) &&
-                    row[GroupMemberColumns.userId] != currentUserId;
-              })
-              .map((row) => row[GroupMemberColumns.userId] as String)
-              .toList();
-        });
+        .eq(GroupTypingColumns.groupId, groupId)
+        .listen((rows) {
+          for (final row in rows) {
+            final uId = row[GroupTypingColumns.userId] as String;
+            if (row['action_type'] != 'none') {
+              final updatedAtStr =
+                  row[GroupTypingColumns.updatedAt]?.toString() ?? '';
+              if (lastUpdatedAt[uId] != updatedAtStr) {
+                localReceiveTime[uId] = DateTime.now();
+                lastUpdatedAt[uId] = updatedAtStr;
+              }
+            }
+          }
+          latestRows = rows;
+          emit();
+        }, onError: (e) => debugPrint('[watchGroupPresence] stream error: $e'));
+
+    final watchdog = Timer.periodic(
+      const Duration(seconds: _presenceWatchdogTickSeconds),
+      (_) => emit(),
+    );
+
+    controller.onCancel = () {
+      sub.cancel();
+      watchdog.cancel();
+      controller.close();
+    };
+
+    return controller.stream;
+  }
+
+  // Group members and their status
+
+  Future<Map<String, List<GroupMemberModel>>> getMembersForGroups(
+    List<String> groupIds,
+  ) async {
+    if (groupIds.isEmpty) return {};
+    final rows = await _supabase
+        .from(SupabaseConstants.groupMembers)
+        .select(
+          '${GroupMemberColumns.groupId}, ${GroupMemberColumns.userId}, users(${UserColumns.name}, ${UserColumns.imageUrl})',
+        )
+        .inFilter(GroupMemberColumns.groupId, groupIds)
+        .eq(GroupMemberColumns.membershipStatus, 'active');
+    final Map<String, List<GroupMemberModel>> result = {};
+    for (final row in (rows as List)) {
+      final gId = row[GroupMemberColumns.groupId] as String;
+      final userInfo = row['users'] as Map<String, dynamic>? ?? {};
+      result
+          .putIfAbsent(gId, () => [])
+          .add(
+            GroupMemberModel.fromMap({
+              ...row,
+              'user_name': userInfo[UserColumns.name],
+              'user_avatar': userInfo[UserColumns.imageUrl],
+            }),
+          );
+    }
+    return result;
+  }
+
+  // Group Header stats
+
+  Stream<GroupHeaderStats> watchGroupHeaderStats(String groupId) {
+    final controller = StreamController<GroupHeaderStats>.broadcast();
+    Set<String> memberIds = {};
+    final Map<String, bool> onlineMap = {};
+
+    void emitStats() {
+      if (controller.isClosed) return;
+      final online = memberIds.where((id) => onlineMap[id] == true).length;
+      controller.add(
+        GroupHeaderStats(totalMembers: memberIds.length, onlineCount: online),
+      );
+    }
+
+    Future<void> refreshMembers() async {
+      final rows = await _supabase
+          .from(SupabaseConstants.groupMembers)
+          .select(GroupMemberColumns.userId)
+          .eq(GroupMemberColumns.groupId, groupId)
+          .eq(GroupMemberColumns.membershipStatus, 'active');
+      memberIds =
+          (rows as List)
+              .map((r) => r[GroupMemberColumns.userId] as String)
+              .toSet();
+      emitStats();
+    }
+
+    refreshMembers();
+
+    final membersChannel =
+        _supabase
+            .channel('group_header_members_$groupId')
+            .onPostgresChanges(
+              event: PostgresChangeEvent.all,
+              schema: 'public',
+              table: SupabaseConstants.groupMembers,
+              filter: PostgresChangeFilter(
+                type: PostgresChangeFilterType.eq,
+                column: GroupMemberColumns.groupId,
+                value: groupId,
+              ),
+              callback: (_) => refreshMembers(),
+            )
+            .subscribe();
+
+    final presenceChannel =
+        _supabase
+            .channel('group_header_presence_$groupId')
+            .onPostgresChanges(
+              event: PostgresChangeEvent.all,
+              schema: 'public',
+              table: SupabaseConstants.userPresence,
+              callback: (payload) {
+                final record =
+                    payload.eventType == PostgresChangeEvent.delete
+                        ? payload.oldRecord
+                        : payload.newRecord;
+                final userId = record[PresenceColumns.userId] as String?;
+                if (userId == null || !memberIds.contains(userId)) return;
+                final updatedAtRaw = record[PresenceColumns.updatedAt];
+                onlineMap[userId] = PresenceService.isConsideredOnline(
+                  isOnline: record[PresenceColumns.isOnline] as bool? ?? false,
+                  updatedAt:
+                      updatedAtRaw != null
+                          ? DateTime.parse(updatedAtRaw.toString())
+                          : null,
+                );
+                emitStats();
+              },
+            )
+            .subscribe();
+
+    controller.onCancel = () {
+      _supabase.removeChannel(membersChannel);
+      _supabase.removeChannel(presenceChannel);
+      controller.close();
+    };
+    return controller.stream;
   }
 
   Future<void> markGroupMessagesRead(String groupId) async {

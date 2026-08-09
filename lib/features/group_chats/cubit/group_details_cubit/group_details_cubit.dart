@@ -9,6 +9,7 @@ import 'package:social_media_app/core/connectivity/services/connectivity_banner_
 import 'package:social_media_app/core/mentions/mentions.dart';
 import '../../../../core/cache/repository/media_cache_repository.dart';
 import '../../../../core/cache/services/messages_snapshot_cache.dart';
+import '../../../../core/presence/model/chat_action_type.dart';
 import '../../../../core/services/fcm_services.dart';
 import '../../../../core/services/supabase_storage_services.dart';
 import '../../../../core/supabase/supabase_provider.dart';
@@ -18,7 +19,9 @@ import '../../../../core/helpers/selected_message_star_controller.dart';
 import '../../../notifications/repository/notifications_repository.dart';
 import '../../../reactions/services/reaction_profile_resolver.dart';
 import '../../helpers/group_chat_clear_store.dart';
+import '../../models/group_header_stats.dart';
 import '../../models/group_model.dart';
+import '../../models/group_presence_entry.dart';
 import '../../models/groupe_message_model.dart';
 import '../../services/group_chat_services.dart';
 import '../group_list_cubit/group_list_cubit.dart';
@@ -69,6 +72,10 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState>
   List<GroupMessageModel> cachedMessages = [];
   @override
   String? _messagesSnapshotKey;
+
+  GroupPresenceSnapshot get presence => _presence;
+  Stream<GroupHeaderStats> watchHeaderStats() =>
+      _services.watchGroupHeaderStats(group.id);
 
   @override
   final Map<String, double> uploadProgressMap = {};
@@ -124,7 +131,7 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState>
       emit(
         GroupDetailsLoaded(
           messages: cachedMessages,
-          typingUserIds: _typingUserIds,
+          presence: _presence,
           uploadProgress: uploadProgressMap,
           isMember: isMember,
         ),
@@ -139,7 +146,7 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState>
     _listenReactions();
     _listenMessages();
     _listenReadReceipts();
-    _listenTyping();
+    _listenPresence();
     markRead();
   }
 
@@ -149,7 +156,7 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState>
     emit(
       GroupDetailsLoaded(
         messages: cachedMessages,
-        typingUserIds: _typingUserIds,
+        presence: _presence,
         uploadProgress: uploadProgressMap,
         isMember: isMember,
       ),
