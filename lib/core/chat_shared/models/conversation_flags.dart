@@ -8,6 +8,8 @@ class ConversationFlags {
   final bool autoMutedByArchive;
   final DateTime? pinnedAt;
   final DateTime? archivedAt;
+  final bool isPinnedInArchive;
+  final DateTime? archivePinnedAt;
 
   const ConversationFlags({
     this.isPinned = false,
@@ -17,6 +19,8 @@ class ConversationFlags {
     this.autoMutedByArchive = false,
     this.pinnedAt,
     this.archivedAt,
+    this.isPinnedInArchive = false,
+    this.archivePinnedAt,
   });
 
   static const none = ConversationFlags();
@@ -29,6 +33,8 @@ class ConversationFlags {
     bool? autoMutedByArchive,
     Object? pinnedAt = _unsetFlag,
     Object? archivedAt = _unsetFlag,
+    bool? isPinnedInArchive,
+    Object? archivePinnedAt = _unsetFlag,
   }) {
     return ConversationFlags(
       isPinned: isPinned ?? this.isPinned,
@@ -47,6 +53,11 @@ class ConversationFlags {
           identical(archivedAt, _unsetFlag)
               ? this.archivedAt
               : archivedAt as DateTime?,
+      isPinnedInArchive: isPinnedInArchive ?? this.isPinnedInArchive,
+      archivePinnedAt:
+          identical(archivePinnedAt, _unsetFlag)
+              ? this.archivePinnedAt
+              : archivePinnedAt as DateTime?,
     );
   }
 
@@ -58,6 +69,8 @@ class ConversationFlags {
     'am': autoMutedByArchive,
     'pAt': pinnedAt?.toIso8601String(),
     'aAt': archivedAt?.toIso8601String(),
+    'ap': isPinnedInArchive,
+    'apAt': archivePinnedAt?.toIso8601String(),
   };
 
   factory ConversationFlags.fromJson(Map<String, dynamic> map) {
@@ -71,6 +84,9 @@ class ConversationFlags {
           map['pAt'] != null ? DateTime.tryParse(map['pAt'] as String) : null,
       archivedAt:
           map['aAt'] != null ? DateTime.tryParse(map['aAt'] as String) : null,
+      isPinnedInArchive: map['ap'] as bool? ?? false,
+      archivePinnedAt:
+          map['apAt'] != null ? DateTime.tryParse(map['apAt'] as String) : null,
     );
   }
 }

@@ -70,7 +70,7 @@ class ConversationsCubit extends Cubit<ConversationsState> {
     final visible =
         merged.where((i) => !i.isArchived).toList()..sort(_comparator);
     final archived =
-        merged.where((i) => i.isArchived).toList()..sort(_comparator);
+        merged.where((i) => i.isArchived).toList()..sort(_archiveComparator);
 
     emit(ConversationsLoaded(items: visible, archivedItems: archived));
   }
@@ -80,6 +80,23 @@ class ConversationsCubit extends Cubit<ConversationsState> {
     if (a.isPinned && b.isPinned) {
       final aPin = a.flags.pinnedAt ?? DateTime.fromMillisecondsSinceEpoch(0);
       final bPin = b.flags.pinnedAt ?? DateTime.fromMillisecondsSinceEpoch(0);
+      final pinCmp = bPin.compareTo(aPin);
+      if (pinCmp != 0) return pinCmp;
+    }
+    final aTime = a.lastActivityAt ?? DateTime.fromMillisecondsSinceEpoch(0);
+    final bTime = b.lastActivityAt ?? DateTime.fromMillisecondsSinceEpoch(0);
+    return bTime.compareTo(aTime);
+  }
+
+  int _archiveComparator(ConversationItem a, ConversationItem b) {
+    if (a.flags.isPinnedInArchive != b.flags.isPinnedInArchive) {
+      return a.flags.isPinnedInArchive ? -1 : 1;
+    }
+    if (a.flags.isPinnedInArchive && b.flags.isPinnedInArchive) {
+      final aPin =
+          a.flags.archivePinnedAt ?? DateTime.fromMillisecondsSinceEpoch(0);
+      final bPin =
+          b.flags.archivePinnedAt ?? DateTime.fromMillisecondsSinceEpoch(0);
       final pinCmp = bPin.compareTo(aPin);
       if (pinCmp != 0) return pinCmp;
     }
@@ -128,6 +145,8 @@ class ConversationsCubit extends Cubit<ConversationsState> {
       _flagState(refs, (f) => f.isFavorite);
   SelectionFlagState archivedState(Set<ConversationRef> refs) =>
       _flagState(refs, (f) => f.isArchived);
+  SelectionFlagState archivePinnedState(Set<ConversationRef> refs) =>
+      _flagState(refs, (f) => f.isPinnedInArchive);
 
   SelectionFlagState mutedState(Set<ConversationRef> refs) {
     final items =
@@ -160,12 +179,18 @@ class ConversationsCubit extends Cubit<ConversationsState> {
 
   Future<void> _applyArchived(ConversationRef ref, bool value) async {
     await ConversationFlagsStore.instance.setArchived(ref, value);
+    if (!value) {
+      await ConversationFlagsStore.instance.setArchivePinned(ref, false);
+    }
     if (ref.type == ConversationType.group) {
       await _syncGroupMuteWithArchive(ref, archiving: value);
     } else {
       await _syncSingleChatMuteWithArchive(ref, archiving: value);
     }
   }
+
+  Future<void> _applyArchivePinned(ConversationRef ref, bool value) =>
+      ConversationFlagsStore.instance.setArchivePinned(ref, value);
 
   Future<void> setPinned(ConversationRef ref, bool value) async {
     await _applyPinned(ref, value);
@@ -179,6 +204,21 @@ class ConversationsCubit extends Cubit<ConversationsState> {
 
   Future<void> setArchived(ConversationRef ref, bool value) async {
     await _applyArchived(ref, value);
+    _recompute();
+  }
+
+  Future<void> setArchivePinned(ConversationRef ref, bool value) async {
+    await _applyArchivePinned(ref, value);
+    _recompute();
+  }
+
+  Future<void> bulkSetArchivePinned(
+    Set<ConversationRef> refs,
+    bool value,
+  ) async {
+    for (final ref in refs) {
+      await _applyArchivePinned(ref, value);
+    }
     _recompute();
   }
 
@@ -237,12 +277,12 @@ class ConversationsCubit extends Cubit<ConversationsState> {
     final flags = ConversationFlagsStore.instance.flagsFor(ref);
 
     if (archiving) {
-      if (group.isMuted) return; 
+      if (group.isMuted) return;
       await _setGroupMuteOnBackend(ref.id, true);
       await ConversationFlagsStore.instance.setAutoMutedByArchive(ref, true);
     } else {
       if (!flags.autoMutedByArchive) {
-        return; 
+        return;
       }
       await _setGroupMuteOnBackend(ref.id, false);
       await ConversationFlagsStore.instance.setAutoMutedByArchive(ref, false);
@@ -250,14 +290,11 @@ class ConversationsCubit extends Cubit<ConversationsState> {
   }
 
   Future<void> _setGroupMuteOnBackend(String groupId, bool muted) async {
-    groupListCubit.toggleGroupMute(
-      groupId,
-      muted,
-    ); 
+    groupListCubit.toggleGroupMute(groupId, muted);
     try {
       await groupChatServices.toggleMute(groupId, muted);
     } catch (e) {
-      groupListCubit.toggleGroupMute(groupId, !muted); 
+      groupListCubit.toggleGroupMute(groupId, !muted);
       debugPrint('[ConversationsCubit] group mute sync failed: $e');
     }
   }
@@ -268,13 +305,22 @@ class ConversationsCubit extends Cubit<ConversationsState> {
   }) async {
     final flags = ConversationFlagsStore.instance.flagsFor(ref);
     if (flags.muteOverride != null) {
-      return; 
+      return;
     }
     try {
       await _chatMuteService.setMuted(peerId: ref.id, muted: archiving);
     } catch (e) {
       debugPrint('[ConversationsCubit] chat_mutes sync skipped: $e');
     }
+  }
+
+  int unreadCountFor(ConversationTab tab) =>
+      filtered(tab).fold<int>(0, (sum, item) => sum + item.unreadCount);
+
+  int get archivedUnreadCount {
+    final s = state;
+    if (s is! ConversationsLoaded) return 0;
+    return s.archivedItems.fold<int>(0, (sum, item) => sum + item.unreadCount);
   }
 
   @override

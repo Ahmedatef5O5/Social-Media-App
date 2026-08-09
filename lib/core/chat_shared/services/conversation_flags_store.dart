@@ -50,6 +50,14 @@ class ConversationFlagsStore {
     ),
   );
 
+  Future<void> setArchivePinned(ConversationRef ref, bool value) => _mutate(
+    ref,
+    (f) => f.copyWith(
+      isPinnedInArchive: value,
+      archivePinnedAt: value ? DateTime.now().toUtc() : null,
+    ),
+  );
+
   Future<void> setMuteOverride(ConversationRef ref, bool? value) =>
       _mutate(ref, (f) => f.copyWith(muteOverride: value));
 
