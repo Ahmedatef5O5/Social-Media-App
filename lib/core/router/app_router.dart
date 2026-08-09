@@ -63,6 +63,8 @@ import '../../features/profile/views/profile_view.dart';
 import '../../features/stories/views/my_stories_list_view.dart';
 import '../../features/stories/views/pending_story_resolver_view.dart';
 import '../cache/repository/media_cache_repository.dart';
+import '../chat_shared/cubits/conversations_cubit/conversations_cubit.dart';
+import '../chat_shared/views/archived_chats_view.dart';
 import '../connectivity/cubit/connectivity_cubit.dart';
 import '../supabase/supabase_provider.dart';
 
@@ -185,6 +187,7 @@ class AppRouter {
       case AppRoutes.chatsViewRoute:
       case AppRoutes.chatDetailsViewRoute:
       case AppRoutes.receiverProfileViewRoute:
+      case AppRoutes.archivedChatsViewRoute:
         return _chatRoutes(settings);
 
       case AppRoutes.createGroupRoute:
@@ -456,6 +459,18 @@ class AppRouter {
                   itemScrollController: itemScrollController,
                 ),
               ),
+          settings: settings,
+        );
+      case AppRoutes.archivedChatsViewRoute:
+        final cubit = _args<ConversationsCubit>(settings);
+        if (cubit == null) {
+          return _errorRoute(settings, 'Missing ConversationsCubit data');
+        }
+        return _buildRoute(
+          BlocProvider<ConversationsCubit>.value(
+            value: cubit,
+            child: const ArchivedChatsView(),
+          ),
           settings: settings,
         );
       default:
