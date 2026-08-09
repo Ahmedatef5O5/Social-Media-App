@@ -9,15 +9,16 @@ import '../../single_chats/widgets/date_separator_glassmorphism_widget.dart';
 import '../cubit/group_details_cubit/group_details_cubit.dart';
 import '../../group_calls/models/group_call_model.dart';
 import '../helpers/group_system_event_text_builder.dart';
+import '../models/group_presence_entry.dart';
 import '../models/groupe_message_model.dart';
 import 'group_message_bubble.dart';
+import 'group_presence_bubble_row.dart';
 import 'group_system_event_separator.dart';
-import 'group_typing_indicator_widget.dart';
 
 class GroupMessageItemBuilder extends StatelessWidget {
   final int index;
   final List<GroupMessageModel> messages;
-  final List<String> typing;
+  final GroupPresenceSnapshot presence;
   final ItemScrollController itemScrollController;
   final bool isMember;
 
@@ -25,18 +26,18 @@ class GroupMessageItemBuilder extends StatelessWidget {
     super.key,
     required this.index,
     required this.messages,
-    required this.typing,
+    required this.presence,
     required this.itemScrollController,
     required this.isMember,
   });
 
   @override
   Widget build(BuildContext context) {
-    if (typing.isNotEmpty && index == 0) {
-      return GroupTypingIndicator(typingUserIds: typing);
+    if (!presence.isEmpty && index == 0) {
+      return GroupPresenceBubbleRow(snapshot: presence);
     }
 
-    final msgIndex = typing.isNotEmpty ? index - 1 : index;
+    final msgIndex = !presence.isEmpty ? index - 1 : index;
 
     if (msgIndex < 0 || msgIndex >= messages.length) {
       return const SizedBox();

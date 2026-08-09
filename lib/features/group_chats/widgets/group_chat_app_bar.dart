@@ -12,8 +12,10 @@ import '../cubit/group_details_cubit/group_details_cubit.dart';
 import '../cubit/group_list_cubit/group_list_cubit.dart';
 import '../../group_calls/models/group_call_model.dart';
 import '../helpers/group_call_initiator.dart';
+import '../helpers/group_members_online_label.dart';
 import '../models/group_model.dart';
 import '../../group_calls/services/group_call_signaling_service.dart';
+import 'presence_animated_subtitle.dart';
 
 class GroupChatAppBar extends StatelessWidget implements PreferredSizeWidget {
   final GroupModel group;
@@ -108,13 +110,16 @@ class GroupChatAppBar extends StatelessWidget implements PreferredSizeWidget {
                                     .copyWith(color: primary),
                                 overflow: TextOverflow.ellipsis,
                               ),
-                              Text(
-                                'Tap for group info',
-                                style: Theme.of(
-                                  context,
-                                ).textTheme.titleSmall!.copyWith(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w300,
+                              PresenceAnimatedSubtitle(
+                                presence: updatedGroup.presence,
+                                fallback: GroupMembersOnlineLabel(
+                                  groupId: updatedGroup.id,
+                                  style: Theme.of(
+                                    context,
+                                  ).textTheme.titleSmall!.copyWith(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w300,
+                                  ),
                                 ),
                               ),
                             ],

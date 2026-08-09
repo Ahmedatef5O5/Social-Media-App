@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../helpers/group_presence_text_formatter.dart';
-import '../../../core/presence/helpers/presence_rotation_controller.dart';
+import '../helpers/presence_rotation_controller.dart';
 import '../../../core/presence/model/chat_action_type.dart';
 import '../models/group_presence_entry.dart';
 

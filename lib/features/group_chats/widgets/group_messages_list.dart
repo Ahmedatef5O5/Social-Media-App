@@ -123,14 +123,12 @@ class _GroupMessagesListState extends State<GroupMessagesList> {
 
         final messages =
             state is GroupDetailsLoaded ? state.messages : cubit.cachedMessages;
-        final typing =
-            state is GroupDetailsLoaded
-                ? state.typingUserIds
-                : const <String>[];
+
         final isMember =
             state is GroupDetailsLoaded ? state.isMember : cubit.isMember;
-
-        if (messages.isEmpty && typing.isEmpty) {
+        final presence =
+            state is GroupDetailsLoaded ? state.presence : cubit.presence;
+        if (messages.isEmpty && presence.isEmpty) {
           if (!cubit.hasConfirmedInitialLoad) {
             return const ChatLoadingSkeleton();
           }
@@ -144,12 +142,12 @@ class _GroupMessagesListState extends State<GroupMessagesList> {
               itemScrollController: widget.scrollController,
               itemPositionsListener: widget.positionsListener,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              itemCount: messages.length + (typing.isNotEmpty ? 1 : 0),
+              itemCount: messages.length + (presence.isEmpty ? 0 : 1),
               itemBuilder:
                   (_, index) => GroupMessageItemBuilder(
                     index: index,
                     messages: messages,
-                    typing: typing,
+                    presence: presence,
                     itemScrollController: widget.scrollController,
                     isMember: isMember,
                   ),
