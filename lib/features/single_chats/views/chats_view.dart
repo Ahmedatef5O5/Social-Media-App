@@ -209,7 +209,7 @@ class _ChatsViewState extends State<ChatsView>
                               SliverToBoxAdapter(
                                 child: Column(
                                   children: [
-                                    const SizedBox(height: 50),
+                                    const SizedBox(height: 40),
                                     BlocBuilder<
                                       ConversationSelectionCubit,
                                       ConversationSelectionState
@@ -284,7 +284,10 @@ class _ChatsViewState extends State<ChatsView>
                             children:
                                 _tabOrder
                                     .map(
-                                      (tab) => ConversationsTabBody(tab: tab),
+                                      (tab) => ConversationsTabBody(
+                                        tab: tab,
+                                        tabController: _tabController,
+                                      ),
                                     )
                                     .toList(),
                           ),

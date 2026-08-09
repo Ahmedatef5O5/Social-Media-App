@@ -37,7 +37,7 @@ class MessagesHeaderSection extends StatelessWidget {
         context.watch<ConversationsCubit>().archivedUnreadCount;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
+      padding: const EdgeInsets.symmetric(horizontal: 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -132,18 +132,19 @@ class MessagesHeaderSection extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 12),
 
           TabBar(
             controller: tabController,
             isScrollable: true,
             tabAlignment: TabAlignment.start,
+            padding: EdgeInsets.zero,
             indicator: const BoxDecoration(),
             dividerColor: Colors.transparent,
             splashFactory: NoSplash.splashFactory,
             overlayColor: const WidgetStatePropertyAll(Colors.transparent),
             splashBorderRadius: BorderRadius.circular(25),
-            labelPadding: const EdgeInsets.symmetric(horizontal: 6),
+            labelPadding: const EdgeInsets.only(right: 8),
             tabs: List.generate(
               _tabTitles.length,
               (i) => _TabItem(
@@ -156,6 +157,7 @@ class MessagesHeaderSection extends StatelessWidget {
               ),
             ),
           ),
+          const SizedBox(height: 6),
         ],
       ),
     );
@@ -233,7 +235,7 @@ class _TabItem extends StatelessWidget {
 
         return Container(
           height: 40,
-          margin: const EdgeInsets.symmetric(horizontal: 2),
+          margin: EdgeInsets.zero,
           padding: const EdgeInsets.symmetric(horizontal: 16),
           alignment: Alignment.center,
           decoration: BoxDecoration.lerp(

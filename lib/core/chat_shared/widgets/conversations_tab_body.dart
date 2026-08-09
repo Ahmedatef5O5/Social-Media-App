@@ -11,7 +11,13 @@ import '../models/conversation_item.dart';
 
 class ConversationsTabBody extends StatefulWidget {
   final ConversationTab tab;
-  const ConversationsTabBody({super.key, required this.tab});
+  final TabController tabController;
+
+  const ConversationsTabBody({
+    super.key,
+    required this.tab,
+    required this.tabController,
+  });
 
   @override
   State<ConversationsTabBody> createState() => _ConversationsTabBodyState();
@@ -21,6 +27,8 @@ class _ConversationsTabBodyState extends State<ConversationsTabBody>
     with AutomaticKeepAliveClientMixin {
   @override
   bool get wantKeepAlive => true;
+
+  late final int _tabIndex = ConversationTab.values.indexOf(widget.tab);
 
   String _emptyMessageFor(ConversationTab tab) {
     switch (tab) {
@@ -41,7 +49,7 @@ class _ConversationsTabBodyState extends State<ConversationsTabBody>
   Widget build(BuildContext context) {
     super.build(context);
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20.0),
+      padding: const EdgeInsets.symmetric(horizontal: 8.0),
       child: BlocBuilder<ConversationsCubit, ConversationsState>(
         builder: (context, state) {
           if (state is! ConversationsLoaded) {
@@ -63,29 +71,37 @@ class _ConversationsTabBodyState extends State<ConversationsTabBody>
             );
           }
 
-          return ListView.separated(
-            padding: const EdgeInsets.only(bottom: 100),
-            physics: const AlwaysScrollableScrollPhysics(
-              parent: ClampingScrollPhysics(),
-            ),
-            itemCount: items.length,
-            itemBuilder: (context, index) {
-              final item = items[index];
-              return item.kind == ConversationKind.single
-                  ? ChatItemTile(
-                    user: item.chat!,
-                    isPinned: item.isPinned,
-                    isFavorite: item.isFavorite,
-                    isMuted: item.isMuted,
-                  )
-                  : GroupTileItem(
-                    group: item.group!,
-                    isPinned: item.isPinned,
-                    isFavorite: item.isFavorite,
-                  );
+          return AnimatedBuilder(
+            animation: widget.tabController,
+            builder: (context, _) {
+              final isActiveTab = widget.tabController.index == _tabIndex;
+
+              return ListView.separated(
+                padding: const EdgeInsets.only(bottom: 100),
+                physics: const AlwaysScrollableScrollPhysics(
+                  parent: ClampingScrollPhysics(),
+                ),
+                itemCount: items.length,
+                itemBuilder: (context, index) {
+                  final item = items[index];
+                  return item.kind == ConversationKind.single
+                      ? ChatItemTile(
+                        user: item.chat!,
+                        isPinned: item.isPinned,
+                        isFavorite: item.isFavorite,
+                        isMuted: item.isMuted,
+                        enableHero: isActiveTab,
+                      )
+                      : GroupTileItem(
+                        group: item.group!,
+                        isPinned: item.isPinned,
+                        isFavorite: item.isFavorite,
+                      );
+                },
+                separatorBuilder:
+                    (_, __) => const Divider(color: AppColors.black12),
+              );
             },
-            separatorBuilder:
-                (_, __) => const Divider(color: AppColors.black12),
           );
         },
       ),

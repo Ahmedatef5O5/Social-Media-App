@@ -19,6 +19,7 @@ class ChatItemTile extends StatelessWidget {
   final bool isPinned;
   final bool isFavorite;
   final bool isMuted;
+  final bool enableHero;
 
   const ChatItemTile({
     super.key,
@@ -26,6 +27,7 @@ class ChatItemTile extends StatelessWidget {
     this.isPinned = false,
     this.isFavorite = false,
     this.isMuted = false,
+    this.enableHero = true,
   });
 
   bool get _isSystemEventPreview =>
@@ -339,7 +341,7 @@ class ChatItemTile extends StatelessWidget {
           child: AppAvatar(
             imageUrl: user.imageUrl,
             size: 52,
-            heroTag: user.id,
+            heroTag: enableHero ? user.id : null,
             onTap:
                 isSelecting
                     ? null
