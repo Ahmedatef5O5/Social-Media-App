@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:social_media_app/core/router/app_routes.dart';
-
 import '../../../core/chat_shared/cubits/conversations_cubit/conversations_cubit.dart';
+import '../../../core/widgets/custom_badge.dart';
 
 class MessagesHeaderSection extends StatelessWidget {
   final bool isDark;
@@ -23,8 +24,18 @@ class MessagesHeaderSection extends StatelessWidget {
     'Unread',
   ];
 
+  void _openArchivedChats(BuildContext context) {
+    Navigator.of(context, rootNavigator: true).pushNamed(
+      AppRoutes.archivedChatsViewRoute,
+      arguments: context.read<ConversationsCubit>(),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final archivedUnreadCount =
+        context.watch<ConversationsCubit>().archivedUnreadCount;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
@@ -40,63 +51,84 @@ class MessagesHeaderSection extends StatelessWidget {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              AnimatedBuilder(
-                animation: tabController,
-                builder: (context, child) {
-                  final tab = ConversationTab.values[tabController.index];
-                  final showNewChat = tab != ConversationTab.groups;
-                  final showCreateGroup = tab != ConversationTab.chats;
-                  return PopupMenuButton<String>(
-                    color: Theme.of(context).scaffoldBackgroundColor,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CustomBadge(
+                    count: archivedUnreadCount,
+                    size: 15,
+                    fontSize: 8.2,
+                    top: 4.2,
+                    right: 4.2,
+                    child: IconButton(
+                      icon: Icon(
+                        Icons.archive_outlined,
+                        color: Theme.of(context).primaryColor,
+                        size: 24,
+                      ),
+                      tooltip: 'Archived chats',
+                      onPressed: () => _openArchivedChats(context),
                     ),
-                    onSelected: (value) {
-                      if (value == 'create_group') {
-                        Navigator.of(
-                          context,
-                          rootNavigator: true,
-                        ).pushNamed(AppRoutes.createGroupRoute);
-                      } else if (value == 'new_chat') {}
+                  ),
+                  AnimatedBuilder(
+                    animation: tabController,
+                    builder: (context, child) {
+                      final tab = ConversationTab.values[tabController.index];
+                      final showNewChat = tab != ConversationTab.groups;
+                      final showCreateGroup = tab != ConversationTab.chats;
+                      return PopupMenuButton<String>(
+                        color: Theme.of(context).scaffoldBackgroundColor,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        onSelected: (value) {
+                          if (value == 'create_group') {
+                            Navigator.of(
+                              context,
+                              rootNavigator: true,
+                            ).pushNamed(AppRoutes.createGroupRoute);
+                          } else if (value == 'new_chat') {}
+                        },
+                        itemBuilder:
+                            (context) => [
+                              if (showNewChat)
+                                PopupMenuItem(
+                                  value: 'new_chat',
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        Icons.chat_bubble_outline,
+                                        color: Theme.of(context).primaryColor,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      const Text('New Chat'),
+                                    ],
+                                  ),
+                                ),
+                              if (showCreateGroup)
+                                PopupMenuItem(
+                                  value: 'create_group',
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        Icons.group_add,
+                                        color: Theme.of(context).primaryColor,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      const Text('Create Group'),
+                                    ],
+                                  ),
+                                ),
+                            ],
+                        child: Icon(
+                          Icons.more_vert_outlined,
+                          color: Theme.of(context).primaryColor,
+                          size: 26,
+                        ),
+                      );
                     },
-                    itemBuilder:
-                        (context) => [
-                          if (showNewChat)
-                            PopupMenuItem(
-                              value: 'new_chat',
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    Icons.chat_bubble_outline,
-                                    color: Theme.of(context).primaryColor,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  const Text('New Chat'),
-                                ],
-                              ),
-                            ),
-                          if (showCreateGroup)
-                            PopupMenuItem(
-                              value: 'create_group',
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    Icons.group_add,
-                                    color: Theme.of(context).primaryColor,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  const Text('Create Group'),
-                                ],
-                              ),
-                            ),
-                        ],
-                    child: Icon(
-                      Icons.more_vert_outlined,
-                      color: Theme.of(context).primaryColor,
-                      size: 26,
-                    ),
-                  );
-                },
+                  ),
+                ],
               ),
             ],
           ),
@@ -117,6 +149,7 @@ class MessagesHeaderSection extends StatelessWidget {
               (i) => _TabItem(
                 controller: tabController,
                 title: _tabTitles[i],
+                tab: ConversationTab.values[i],
                 index: i,
                 primary: primary,
                 isDark: isDark,
@@ -132,14 +165,15 @@ class MessagesHeaderSection extends StatelessWidget {
 class _TabItem extends StatelessWidget {
   final TabController controller;
   final String title;
+  final ConversationTab tab;
   final int index;
   final Color primary;
   final bool isDark;
 
   const _TabItem({
     required this.controller,
-
     required this.title,
+    required this.tab,
     required this.index,
     required this.primary,
     required this.isDark,
@@ -147,41 +181,127 @@ class _TabItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final unreadCount = context.watch<ConversationsCubit>().unreadCountFor(tab);
+
     return AnimatedBuilder(
-      animation: controller,
+      animation: controller.animation ?? controller,
       builder: (context, _) {
-        final isActive = controller.index == index;
+        final double value =
+            controller.animation?.value ?? controller.index.toDouble();
+        final double distance = (value - index).abs();
+        final double progress = (1.0 - distance).clamp(0.0, 1.0);
+
+        final activeDecoration = BoxDecoration(
+          gradient: LinearGradient(
+            colors: [primary, primary.withValues(alpha: 0.75)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(25),
+          border: Border.all(color: Colors.transparent, width: 1),
+          boxShadow: [
+            BoxShadow(
+              color: primary.withValues(alpha: 0.35),
+              blurRadius: 2,
+              offset: const Offset(0, 1),
+            ),
+          ],
+        );
+
+        final inactiveDecoration = BoxDecoration(
+          color:
+              isDark
+                  ? Colors.white.withValues(alpha: 0.06)
+                  : Colors.black.withValues(alpha: 0.035),
+          borderRadius: BorderRadius.circular(25),
+          border: Border.all(
+            color:
+                isDark
+                    ? Colors.white.withValues(alpha: 0.10)
+                    : Colors.black.withValues(alpha: 0.08),
+            width: 1,
+          ),
+        );
+
+        final textColor = Color.lerp(
+          isDark ? Colors.white60 : Colors.black54,
+          Colors.white,
+          progress,
+        );
+
+        final fontWeight = progress > 0.5 ? FontWeight.w700 : FontWeight.w500;
 
         return Container(
           height: 40,
+          margin: const EdgeInsets.symmetric(horizontal: 2),
+          padding: const EdgeInsets.symmetric(horizontal: 16),
           alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color:
-                isActive ? primary.withValues(alpha: 0.15) : Colors.transparent,
-            borderRadius: BorderRadius.circular(25),
-            border: Border.all(
-              color:
-                  isActive
-                      ? primary.withValues(alpha: 0.35)
-                      : (isDark
-                          ? Colors.white.withValues(alpha: 0.12)
-                          : Colors.black.withValues(alpha: 0.12)),
-              width: 1,
-            ),
+          decoration: BoxDecoration.lerp(
+            inactiveDecoration,
+            activeDecoration,
+            progress,
           ),
-          child: Text(
-            title,
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: isActive ? FontWeight.bold : FontWeight.w500,
-              color:
-                  isActive
-                      ? primary
-                      : (isDark ? Colors.white60 : Colors.black54),
-            ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (unreadCount > 0)
+                ClipRect(
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    widthFactor: progress,
+                    child: Opacity(
+                      opacity: progress,
+                      child: _TabUnreadBadge(
+                        count: unreadCount,
+                        activeColor: primary,
+                      ),
+                    ),
+                  ),
+                ),
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 14.5,
+                  fontWeight: fontWeight,
+                  color: textColor,
+                ),
+              ),
+            ],
           ),
         );
       },
+    );
+  }
+}
+
+class _TabUnreadBadge extends StatelessWidget {
+  final int count;
+  final Color activeColor;
+
+  const _TabUnreadBadge({required this.count, required this.activeColor});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 6),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+        constraints: const BoxConstraints(minWidth: 20, minHeight: 20),
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          shape: count > 99 ? BoxShape.rectangle : BoxShape.circle,
+          borderRadius: count > 99 ? BorderRadius.circular(10) : null,
+        ),
+        child: Text(
+          count > 99 ? '99+' : '$count',
+          style: TextStyle(
+            color: activeColor,
+            fontSize: 10,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
     );
   }
 }
