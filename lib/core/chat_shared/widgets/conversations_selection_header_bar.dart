@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../cubits/conversations_cubit/conversations_cubit.dart';
 import '../models/conversation_ref.dart';
+import 'premium_selection_bar_pieces.dart';
 
 class ConversationsSelectionHeaderBar extends StatelessWidget {
   final Set<ConversationRef> selectedRefs;
@@ -23,118 +24,115 @@ class ConversationsSelectionHeaderBar extends StatelessWidget {
     if (context.mounted) onCancel();
   }
 
+  Widget _toggleAction(
+    BuildContext context,
+    ConversationsCubit cubit, {
+    required SelectionFlagState flagState,
+    required IconData onIcon,
+    required IconData offIcon,
+    required String onLabel,
+    required String offLabel,
+    required Future<void> Function(bool) apply,
+    bool hideOnMixed = false,
+  }) {
+    final isMixed = flagState == SelectionFlagState.mixed;
+
+    if (isMixed && hideOnMixed) return const SizedBox.shrink();
+
+    final isOn = flagState == SelectionFlagState.allOn;
+    return PremiumSelectionActionIcon(
+      state:
+          isMixed
+              ? PremiumActionVisualState.mixed
+              : (isOn
+                  ? PremiumActionVisualState.on
+                  : PremiumActionVisualState.off),
+      onIcon: onIcon,
+      offIcon: offIcon,
+      onLabel: onLabel,
+      offLabel: offLabel,
+      onTap: isMixed ? null : () => _runAndClose(context, () => apply(!isOn)),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final cubit = context.read<ConversationsCubit>();
+    final primary = Theme.of(context).primaryColor;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 4),
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+      decoration: BoxDecoration(
+        color: primary.withValues(alpha: isDark ? 0.16 : 0.08),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: primary.withValues(alpha: 0.18), width: 1),
+      ),
       child: Row(
         children: [
-          IconButton(
-            icon: const Icon(Icons.close_rounded),
-            onPressed: onCancel,
+          PremiumSelectionCloseButton(onPressed: onCancel, color: primary),
+          const SizedBox(width: 4),
+          PremiumSelectionCountLabel(
+            count: selectedRefs.length,
+            color: Theme.of(context).colorScheme.onSurface,
           ),
-          Expanded(
-            child: Text(
-              '${selectedRefs.length} selected',
-              style: Theme.of(context).textTheme.titleLarge!.copyWith(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-          _SelectionActionIcon(
-            state: cubit.mutedState(selectedRefs),
+          const Spacer(),
+
+          _toggleAction(
+            context,
+            cubit,
+            flagState: cubit.mutedState(selectedRefs),
             onIcon: Icons.notifications_active_outlined,
             offIcon: Icons.notifications_off_rounded,
             onLabel: 'Unmute',
             offLabel: 'Mute',
             hideOnMixed: true,
-            onTap:
-                (target) => _runAndClose(
-                  context,
-                  () => cubit.bulkSetMuted(selectedRefs, target),
-                ),
+            apply: (v) => cubit.bulkSetMuted(selectedRefs, v),
           ),
-          _SelectionActionIcon(
-            state: cubit.favoriteState(selectedRefs),
+
+          _toggleAction(
+            context,
+            cubit,
+            flagState: cubit.favoriteState(selectedRefs),
             onIcon: Icons.star_rounded,
             offIcon: Icons.star_border_rounded,
             onLabel: 'Unstar',
             offLabel: 'Star',
-            onTap:
-                (target) => _runAndClose(
-                  context,
-                  () => cubit.bulkSetFavorite(selectedRefs, target),
-                ),
+            apply: (v) => cubit.bulkSetFavorite(selectedRefs, v),
           ),
-          _SelectionActionIcon(
-            state: cubit.pinnedState(selectedRefs),
+
+          _toggleAction(
+            context,
+            cubit,
+            flagState: cubit.pinnedState(selectedRefs),
             onIcon: Icons.push_pin_rounded,
             offIcon: Icons.push_pin_outlined,
             onLabel: 'Unpin',
             offLabel: 'Pin',
-            onTap:
-                (target) => _runAndClose(
-                  context,
-                  () => cubit.bulkSetPinned(selectedRefs, target),
-                ),
+            apply: (v) => cubit.bulkSetPinned(selectedRefs, v),
           ),
-          _SelectionActionIcon(
-            state: cubit.archivedState(selectedRefs),
+
+          _toggleAction(
+            context,
+            cubit,
+            flagState: cubit.archivedState(selectedRefs),
             onIcon: Icons.unarchive_rounded,
             offIcon: Icons.archive_outlined,
             onLabel: 'Unarchive',
             offLabel: 'Archive',
-            onTap:
-                (target) => _runAndClose(
-                  context,
-                  () => cubit.bulkSetArchived(selectedRefs, target),
-                ),
+            apply: (v) => cubit.bulkSetArchived(selectedRefs, v),
           ),
-          IconButton(
-            tooltip: 'Delete',
-            icon: const Icon(Icons.delete_outline_rounded, color: Colors.red),
-            onPressed: onDelete,
+
+          PremiumSelectionActionIcon(
+            state: PremiumActionVisualState.on,
+            onIcon: Icons.delete_outline_rounded,
+            onLabel: 'Delete',
+            isDestructive: true,
+            onTap: onDelete,
           ),
         ],
       ),
-    );
-  }
-}
-
-class _SelectionActionIcon extends StatelessWidget {
-  final SelectionFlagState state;
-  final IconData onIcon;
-  final IconData offIcon;
-  final String onLabel;
-  final String offLabel;
-  final ValueChanged<bool> onTap;
-  final bool hideOnMixed;
-
-  const _SelectionActionIcon({
-    required this.state,
-    required this.onIcon,
-    required this.offIcon,
-    required this.onLabel,
-    required this.offLabel,
-    required this.onTap,
-    this.hideOnMixed = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final isMixed = state == SelectionFlagState.mixed;
-
-    if (isMixed && hideOnMixed) return const SizedBox.shrink();
-
-    final isOn = state == SelectionFlagState.allOn;
-    return IconButton(
-      tooltip: isMixed ? 'Mixed selection' : (isOn ? onLabel : offLabel),
-      icon: Icon(isOn ? onIcon : offIcon),
-      color: isMixed ? Theme.of(context).disabledColor : null,
-      onPressed: isMixed ? null : () => onTap(!isOn),
     );
   }
 }
