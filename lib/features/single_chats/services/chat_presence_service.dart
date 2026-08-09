@@ -1,6 +1,7 @@
 import 'dart:async';
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../core/presence/model/chat_action_type.dart';
 import '../../../core/presence/services/presence_service.dart';
 import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/utilities/supabase_constants.dart';
@@ -115,6 +116,78 @@ class ChatPresenceService {
     return controller.stream;
   }
 
+  Future<void> setAction({
+    required String chatId,
+    required String currentUserId,
+    required ChatActionType actionType,
+  }) async {
+    await _supabase.from(SupabaseConstants.typingStatus).upsert({
+      TypingStatusColumns.chatId: chatId,
+      TypingStatusColumns.userId: currentUserId,
+      TypingStatusColumns.isTyping: actionType == ChatActionType.typing,
+      'action_type': actionType.value,
+      TypingStatusColumns.updatedAt: DateTime.now().toUtc().toIso8601String(),
+    });
+  }
+
+  static const int _presenceStaleAfterSeconds = 5;
+  static const int _presenceWatchdogTickSeconds = 2;
+
+  Stream<ChatActionType> getActionStream({
+    required String chatId,
+    required String receiverId,
+  }) {
+    final controller = StreamController<ChatActionType>.broadcast();
+    List<Map<String, dynamic>> latestRows = const [];
+
+    ChatActionType computeCurrent() {
+      final row = latestRows.where(
+        (r) => r[TypingStatusColumns.userId] == receiverId,
+      );
+      if (row.isEmpty) return ChatActionType.none;
+
+      final actionType = ChatActionTypeX.fromValue(row.first['action_type']);
+      if (actionType == ChatActionType.none) return ChatActionType.none;
+
+      final updatedAtRaw = row.first[TypingStatusColumns.updatedAt];
+      if (updatedAtRaw == null) return ChatActionType.none;
+      final updatedAt = DateTime.parse(updatedAtRaw.toString()).toUtc();
+      if (DateTime.now().toUtc().difference(updatedAt).inSeconds >
+          _presenceStaleAfterSeconds) {
+        return ChatActionType.none;
+      }
+      return actionType;
+    }
+
+    void emit() {
+      if (!controller.isClosed) controller.add(computeCurrent());
+    }
+
+    final sub = _supabase
+        .from(SupabaseConstants.typingStatus)
+        .stream(
+          primaryKey: [TypingStatusColumns.chatId, TypingStatusColumns.userId],
+        )
+        .eq(TypingStatusColumns.chatId, chatId)
+        .listen((rows) {
+          latestRows = rows;
+          emit();
+        }, onError: (e) => debugPrint('[getActionStream] stream error: $e'));
+
+    final watchdog = Timer.periodic(
+      const Duration(seconds: _presenceWatchdogTickSeconds),
+      (_) => emit(),
+    );
+
+    controller.onCancel = () {
+      sub.cancel();
+      watchdog.cancel();
+      controller.close();
+    };
+
+    return controller.stream;
+  }
+
   Future<void> setTyping({
     required String chatId,
     required String currentUserId,
@@ -162,15 +235,38 @@ class ChatPresenceService {
         });
   }
 
-  Stream<List<String>> getTypingUsersStream(String currentUserId) {
-    final controller = StreamController<List<String>>.broadcast();
+  Stream<Map<String, ChatActionType>> getGlobalActionsStream(
+    String currentUserId,
+  ) {
+    final controller =
+        StreamController<Map<String, ChatActionType>>.broadcast();
 
-    final Map<String, ({String userId, DateTime updatedAt})> typingMap = {};
+    final Map<
+      String,
+      ({String userId, ChatActionType action, DateTime updatedAt})
+    >
+    byChatId = {};
 
-    const channelName = 'typing_watcher';
+    Map<String, ChatActionType> computeCurrent() {
+      final now = DateTime.now().toUtc();
+      byChatId.removeWhere(
+        (_, v) =>
+            now.difference(v.updatedAt).inSeconds > _presenceStaleAfterSeconds,
+      );
+      return {for (final v in byChatId.values) v.userId: v.action};
+    }
+
+    Map<String, ChatActionType> lastEmitted = const {};
+    void emitIfChanged() {
+      if (controller.isClosed) return;
+      final current = computeCurrent();
+      if (mapEquals(current, lastEmitted)) return;
+      lastEmitted = current;
+      controller.add(current);
+    }
+
+    const channelName = 'global_actions_watcher';
     _supabase.removeChannel(_supabase.channel(channelName));
-
-    Timer? cleanupTimer;
 
     final channel =
         _supabase
@@ -189,16 +285,15 @@ class ChatPresenceService {
 
                 final userId = record[TypingStatusColumns.userId] as String?;
                 final chatId = record[TypingStatusColumns.chatId] as String?;
-
                 if (userId == null || chatId == null) return;
-
                 if (userId == currentUserId) return;
 
                 final ids = chatId.split('_');
                 if (!ids.contains(currentUserId)) return;
 
-                final isTyping =
-                    record[TypingStatusColumns.isTyping] as bool? ?? false;
+                final actionType = ChatActionTypeX.fromValue(
+                  record['action_type'] as String?,
+                );
                 final updatedAtRaw =
                     record[TypingStatusColumns.updatedAt] as String?;
                 final updatedAt =
@@ -206,42 +301,32 @@ class ChatPresenceService {
                         ? DateTime.tryParse(updatedAtRaw)?.toUtc()
                         : null;
 
-                if (isTyping && updatedAt != null) {
-                  typingMap[chatId] = (userId: userId, updatedAt: updatedAt);
+                if (actionType != ChatActionType.none && updatedAt != null) {
+                  byChatId[chatId] = (
+                    userId: userId,
+                    action: actionType,
+                    updatedAt: updatedAt,
+                  );
                 } else {
-                  typingMap.remove(chatId);
+                  byChatId.remove(chatId);
                 }
 
-                controller.add(_getActiveTypers(typingMap));
+                emitIfChanged();
               },
             )
             .subscribe();
 
-    cleanupTimer = Timer.periodic(const Duration(seconds: 2), (_) {
-      if (controller.isClosed) return;
-      final now = DateTime.now().toUtc();
-      typingMap.removeWhere(
-        (_, v) => now.difference(v.updatedAt).inSeconds > 4,
-      );
-      controller.add(_getActiveTypers(typingMap));
-    });
+    final watchdog = Timer.periodic(
+      const Duration(seconds: _presenceWatchdogTickSeconds),
+      (_) => emitIfChanged(),
+    );
 
     controller.onCancel = () {
       _supabase.removeChannel(channel);
-      cleanupTimer?.cancel();
+      watchdog.cancel();
       controller.close();
     };
 
     return controller.stream;
-  }
-
-  List<String> _getActiveTypers(
-    Map<String, ({String userId, DateTime updatedAt})> map,
-  ) {
-    final now = DateTime.now().toUtc();
-    return map.entries
-        .where((e) => now.difference(e.value.updatedAt).inSeconds <= 4)
-        .map((e) => e.value.userId)
-        .toList();
   }
 }

@@ -2,14 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:social_media_app/features/single_chats/cubit/chats_cubit/chats_cubit.dart';
 import 'package:social_media_app/features/group_chats/cubit/group_list_cubit/group_list_cubit.dart';
+import '../../../core/chat_shared/cubits/conversation_selection_cubit/conversation_selection_cubit.dart';
+import '../../../core/chat_shared/cubits/conversations_cubit/conversations_cubit.dart';
+import '../../../core/chat_shared/models/conversation_ref.dart';
+import '../../../core/chat_shared/widgets/conversations_selection_header_bar.dart';
+import '../../../core/chat_shared/widgets/conversations_tab_body.dart';
 import '../../../core/widgets/custom_pull_to_refresh.dart';
 import '../../../core/widgets/custom_tab_wrapper.dart';
 import '../../../core/widgets/global_refresh_indicator.dart';
-import '../../group_chats/cubit/group_selection_cubit/group_selection_cubit.dart';
-import '../../group_chats/widgets/groups_selection_header_bar.dart';
+import '../../group_chats/services/group_chat_services.dart';
 import '../widgets/messages_header_section.dart';
-import '../widgets/chats_view_body.dart';
-import '../../group_chats/views/group_list_view_body.dart';
 import 'chats_view_skeleton.dart';
 
 class ChatsView extends StatefulWidget {
@@ -24,27 +26,44 @@ class _ChatsViewState extends State<ChatsView>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   late ScrollController _scrollController;
-  late final GroupSelectionCubit _groupSelectionCubit;
+  late final ConversationSelectionCubit _selectionCubit;
+  late final ConversationsCubit _conversationsCubit;
+  bool _conversationsCubitReady = false;
   final ValueNotifier<double> _refreshProgress = ValueNotifier(0.0);
   final ValueNotifier<bool> _isRefreshing = ValueNotifier(false);
   final ValueNotifier<bool> isPullRefreshing = ValueNotifier(false);
   double _dragStartY = 0;
   bool _canRefresh = true;
 
+  static const List<ConversationTab> _tabOrder = ConversationTab.values;
+
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: _tabOrder.length, vsync: this);
     _scrollController = widget.scrollController ?? ScrollController();
     _scrollController.addListener(() {
       _canRefresh = _scrollController.offset <= 2;
     });
-    _groupSelectionCubit = GroupSelectionCubit();
+    _selectionCubit = ConversationSelectionCubit();
     _tabController.addListener(() {
       if (_tabController.indexIsChanging) {
-        _groupSelectionCubit.clear();
+        _selectionCubit.clear();
       }
     });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_conversationsCubitReady) {
+      _conversationsCubitReady = true;
+      _conversationsCubit = ConversationsCubit(
+        chatsCubit: context.read<ChatsCubit>(),
+        groupListCubit: context.read<GroupListCubit>(),
+        groupChatServices: context.read<GroupChatServices>(),
+      );
+    }
   }
 
   @override
@@ -53,31 +72,43 @@ class _ChatsViewState extends State<ChatsView>
     if (widget.scrollController == null) {
       _scrollController.dispose();
     }
-    _groupSelectionCubit.close();
+    _selectionCubit.close();
+    _conversationsCubit.close();
     _refreshProgress.dispose();
     _isRefreshing.dispose();
     isPullRefreshing.dispose();
     super.dispose();
   }
 
-  Future<void> _confirmAndDeleteSelectedChats(
+  ConversationTab get _activeTab => _tabOrder[_tabController.index];
+  bool get _tabNeedsChats => _activeTab != ConversationTab.groups;
+  bool get _tabNeedsGroups => _activeTab != ConversationTab.chats;
+
+  Future<void> _refreshActiveSources(BuildContext context) async {
+    final futures = <Future>[];
+    if (_tabNeedsChats) {
+      futures.add(context.read<ChatsCubit>().getChats(isRefresh: true));
+    }
+    if (_tabNeedsGroups) {
+      futures.add(context.read<GroupListCubit>().loadGroups(isRefresh: true));
+    }
+    await Future.wait(futures);
+  }
+
+  Future<void> _confirmAndDeleteSelected(
     BuildContext context,
-    Set<String> selectedIds,
+    Set<ConversationRef> refs,
   ) async {
-    final isGroupsTab = _tabController.index == 1;
     final confirm = await showDialog<bool>(
       context: context,
       builder:
           (dialogContext) => AlertDialog(
             title: Text(
-              'Delete ${selectedIds.length} chat${selectedIds.length > 1 ? 's' : ''}?',
+              'Delete ${refs.length} chat${refs.length > 1 ? 's' : ''}?',
             ),
-            content: Text(
-              isGroupsTab
-                  ? 'This clears the chat history on this device only. '
-                      'You will stay a member of these groups.'
-                  : 'This clears the chat history on this device only. '
-                      'The other person will still see their own copy.',
+            content: const Text(
+              'This clears the chat history on this device only. '
+              'Other participants keep their own copy.',
             ),
             actions: [
               TextButton(
@@ -97,12 +128,25 @@ class _ChatsViewState extends State<ChatsView>
 
     if (confirm != true) return;
     if (!context.mounted) return;
-    if (isGroupsTab) {
-      await context.read<GroupListCubit>().clearChatsLocally(selectedIds);
-    } else {
-      await context.read<ChatsCubit>().clearChatsLocally(selectedIds);
+
+    final singleIds =
+        refs
+            .where((r) => r.type == ConversationType.single)
+            .map((r) => r.id)
+            .toSet();
+    final groupIds =
+        refs
+            .where((r) => r.type == ConversationType.group)
+            .map((r) => r.id)
+            .toSet();
+
+    if (singleIds.isNotEmpty) {
+      await context.read<ChatsCubit>().clearChatsLocally(singleIds);
     }
-    if (context.mounted) context.read<GroupSelectionCubit>().clear();
+    if (groupIds.isNotEmpty) {
+      await context.read<GroupListCubit>().clearChatsLocally(groupIds);
+    }
+    if (context.mounted) context.read<ConversationSelectionCubit>().clear();
   }
 
   @override
@@ -110,12 +154,35 @@ class _ChatsViewState extends State<ChatsView>
     final primary = Theme.of(context).primaryColor;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return BlocProvider.value(
-      value: _groupSelectionCubit,
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider.value(value: _selectionCubit),
+        BlocProvider.value(value: _conversationsCubit),
+      ],
       child: BlocBuilder<ChatsCubit, ChatsState>(
         builder: (context, chatsState) {
           return BlocBuilder<GroupListCubit, GroupListState>(
             builder: (context, groupsState) {
+              final chatsLoading =
+                  (context.read<ChatsCubit>().showSkeleton &&
+                      chatsState is! ChatsSuccessloaded) ||
+                  isPullRefreshing.value;
+              final groupsLoading =
+                  groupsState is GroupListInitial ||
+                  groupsState is GroupListLoading ||
+                  isPullRefreshing.value;
+
+              final isLoading =
+                  (_tabNeedsChats && chatsLoading) ||
+                  (_tabNeedsGroups && groupsLoading);
+
+              final errorMsg =
+                  (_tabNeedsChats && chatsState is ChatsError)
+                      ? chatsState.message
+                      : (_tabNeedsGroups && groupsState is GroupListError)
+                      ? groupsState.message
+                      : null;
+
               return Stack(
                 children: [
                   Listener(
@@ -143,16 +210,9 @@ class _ChatsViewState extends State<ChatsView>
                       if (_refreshProgress.value >= 1.0 &&
                           !_isRefreshing.value) {
                         _isRefreshing.value = true;
-
                         isPullRefreshing.value = true;
 
-                        if (_tabController.index == 0) {
-                          await context.read<ChatsCubit>().getChats(
-                            isRefresh: true,
-                          );
-                        } else {
-                          await context.read<GroupListCubit>().loadGroups();
-                        }
+                        await _refreshActiveSources(context);
 
                         await Future.delayed(const Duration(milliseconds: 300));
 
@@ -173,40 +233,15 @@ class _ChatsViewState extends State<ChatsView>
                         isPullRefreshing,
                       ]),
                       builder: (context, child) {
-                        bool isLoading = false;
-                        String? errorMsg;
-
-                        if (_tabController.index == 0) {
-                          final cubit = context.read<ChatsCubit>();
-                          final showSkeleton =
-                              (cubit.showSkeleton &&
-                                  chatsState is! ChatsSuccessloaded) ||
-                              isPullRefreshing.value;
-                          isLoading = showSkeleton;
-                          errorMsg =
-                              chatsState is ChatsError
-                                  ? chatsState.message
-                                  : null;
-                        } else {
-                          isLoading =
-                              groupsState is GroupListInitial ||
-                              groupsState is GroupListLoading;
-                          errorMsg =
-                              groupsState is GroupListError
-                                  ? groupsState.message
-                                  : null;
-                        }
-
                         return CustomTabWrapper(
                           isLoading: isLoading,
                           loadingSkeleton: const ChatsViewSkeleton(),
                           errorMessage: errorMsg,
                           onRetry: () {
-                            if (_tabController.index == 0) {
+                            if (_tabNeedsChats)
                               context.read<ChatsCubit>().getChats();
-                            } else {
+                            if (_tabNeedsGroups)
                               context.read<GroupListCubit>().loadGroups();
-                            }
                           },
                           child: child!,
                         );
@@ -215,17 +250,8 @@ class _ChatsViewState extends State<ChatsView>
                       child: CustomPullToRefresh(
                         onRefresh: () async {
                           isPullRefreshing.value = true;
-
-                          if (_tabController.index == 0) {
-                            await context.read<ChatsCubit>().getChats(
-                              isRefresh: true,
-                            );
-                          } else {
-                            await context.read<GroupListCubit>().loadGroups(
-                              isRefresh: true,
-                            );
-                            isPullRefreshing.value = false;
-                          }
+                          await _refreshActiveSources(context);
+                          isPullRefreshing.value = false;
                         },
 
                         child: NestedScrollView(
@@ -237,27 +263,26 @@ class _ChatsViewState extends State<ChatsView>
                                   children: [
                                     const SizedBox(height: 50),
                                     BlocBuilder<
-                                      GroupSelectionCubit,
-                                      GroupSelectionState
+                                      ConversationSelectionCubit,
+                                      ConversationSelectionState
                                     >(
                                       builder: (context, selection) {
                                         if (selection.isSelecting) {
-                                          return GroupsSelectionHeaderBar(
-                                            selectedCount:
-                                                selection.selectedIds.length,
+                                          return ConversationsSelectionHeaderBar(
+                                            selectedRefs:
+                                                selection.selectedRefs,
                                             onCancel:
                                                 () =>
                                                     context
                                                         .read<
-                                                          GroupSelectionCubit
+                                                          ConversationSelectionCubit
                                                         >()
                                                         .clear(),
                                             onDelete:
-                                                () =>
-                                                    _confirmAndDeleteSelectedChats(
-                                                      context,
-                                                      selection.selectedIds,
-                                                    ),
+                                                () => _confirmAndDeleteSelected(
+                                                  context,
+                                                  selection.selectedRefs,
+                                                ),
                                           );
                                         }
                                         return MessagesHeaderSection(
@@ -275,8 +300,13 @@ class _ChatsViewState extends State<ChatsView>
                           },
                           body: TabBarView(
                             controller: _tabController,
-                            physics: NeverScrollableScrollPhysics(),
-                            children: [ChatsViewBody(), GroupsListViewBody()],
+                            physics: const NeverScrollableScrollPhysics(),
+                            children:
+                                _tabOrder
+                                    .map(
+                                      (tab) => ConversationsTabBody(tab: tab),
+                                    )
+                                    .toList(),
                           ),
                         ),
                       ),

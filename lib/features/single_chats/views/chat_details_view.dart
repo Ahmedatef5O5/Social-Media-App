@@ -70,7 +70,7 @@ class _ChatDetailsViewState extends State<ChatDetailsView>
     _chatCubit.resolveChatPermission(_receiverId);
     _chatCubit.watchBlockStatus(_receiverId);
     _chatCubit.getMessagesStream(receiverId: _receiverId);
-    _chatCubit.watchReceiverTyping(_receiverId);
+    _chatCubit.watchReceiverAction(_receiverId);
     _chatCubit.searchController.currentIndex.addListener(_onSearchMatchChanged);
     _chatCubit.searchController.isActive.addListener(_onSearchActiveChanged);
   }

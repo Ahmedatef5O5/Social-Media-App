@@ -12,6 +12,7 @@ import '../../../core/chat_shared/widgets/shared_media_preview_section.dart';
 import '../../../core/chat_shared/models/starred_message_entry.dart';
 import '../../../core/chat_shared/widgets/starred_messages_row.dart';
 import '../../../core/presence/cubit/presence_cubit/presence_cubit.dart';
+import '../../../core/presence/model/chat_action_type.dart';
 import '../../../core/presence/model/presence_info.dart';
 import '../../../core/chat_shared/services/shared_media_data_source.dart';
 import '../../../core/widgets/calls/call_icon_button.dart';
@@ -158,61 +159,74 @@ class _ReceiverProfileViewState extends State<ReceiverProfileView> {
             ),
             BlocBuilder<ChatDetailsCubit, ChatDetailsState>(
               builder: (context, state) {
-                final isTyping = state is ReceiverTypingState && state.isTyping;
-                if (isTyping) {
-                  return const Text(
-                    'typing...',
-                    style: TextStyle(
-                      color: Colors.green,
-                      fontWeight: FontWeight.w500,
-                      fontStyle: FontStyle.italic,
-                    ),
-                  );
-                }
-
-                return Builder(
-                  builder: (context) {
-                    final presenceInfo = context
-                        .select<PresenceCubit, PresenceInfo?>(
-                          (cubit) => cubit.of(widget.receiverUser.id),
-                        );
-                    final isOnline =
-                        presenceInfo?.isEffectivelyOnline ??
-                        widget.receiverUser.isOnline;
-                    final lastSeen =
-                        presenceInfo?.lastSeen ?? widget.receiverUser.lastSeen;
-
-                    if (isOnline) {
-                      return const Text(
-                        'Online',
+                return ValueListenableBuilder<ChatActionType>(
+                  valueListenable:
+                      context.read<ChatDetailsCubit>().receiverAction,
+                  builder: (context, action, _) {
+                    if (action != ChatActionType.none) {
+                      return Text(
+                        action == ChatActionType.recording
+                            ? 'recording audio...'
+                            : 'typing...',
                         style: TextStyle(
-                          color: Colors.green,
+                          color:
+                              action == ChatActionType.recording
+                                  ? Colors.red.shade700
+                                  : Colors.green,
                           fontWeight: FontWeight.w500,
+                          fontStyle: FontStyle.italic,
                         ),
                       );
                     }
 
-                    if (lastSeen != null) {
-                      final lastSeenStr = FormattedDate.getLastSeen(lastSeen);
+                    return Builder(
+                      builder: (context) {
+                        final presenceInfo = context
+                            .select<PresenceCubit, PresenceInfo?>(
+                              (cubit) => cubit.of(widget.receiverUser.id),
+                            );
+                        final isOnline =
+                            presenceInfo?.isEffectivelyOnline ??
+                            widget.receiverUser.isOnline;
+                        final lastSeen =
+                            presenceInfo?.lastSeen ??
+                            widget.receiverUser.lastSeen;
 
-                      if (lastSeenStr == 'Online' ||
-                          lastSeenStr == 'just now') {
-                        return const Text(
-                          'Online',
-                          style: TextStyle(
-                            color: Colors.green,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        );
-                      }
+                        if (isOnline) {
+                          return const Text(
+                            'Online',
+                            style: TextStyle(
+                              color: Colors.green,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          );
+                        }
 
-                      return Text(
-                        "Last seen $lastSeenStr",
-                        style: const TextStyle(color: Colors.grey),
-                      );
-                    }
+                        if (lastSeen != null) {
+                          final lastSeenStr = FormattedDate.getLastSeen(
+                            lastSeen,
+                          );
 
-                    return const SizedBox.shrink();
+                          if (lastSeenStr == 'Online' ||
+                              lastSeenStr == 'just now') {
+                            return const Text(
+                              'Online',
+                              style: TextStyle(
+                                color: Colors.green,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            );
+                          }
+
+                          return Text(
+                            "Last seen $lastSeenStr",
+                            style: const TextStyle(color: Colors.grey),
+                          );
+                        }
+
+                        return const SizedBox.shrink();
+                      },
+                    );
                   },
                 );
               },

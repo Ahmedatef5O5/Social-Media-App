@@ -11,6 +11,7 @@ class ChatUserModel {
   final bool lastMessageIsMe;
   final bool lastMessageIsRead;
   final bool? isTyping;
+  final bool isRecording;
   final int unreadCount;
   final DateTime? lastSeen;
   final bool isOnline;
@@ -25,6 +26,7 @@ class ChatUserModel {
     this.lastMessageIsMe = false,
     this.lastMessageIsRead = false,
     this.isTyping,
+    this.isRecording = false,
     this.unreadCount = 0,
     this.lastSeen,
     this.isOnline = false,
@@ -47,6 +49,7 @@ class ChatUserModel {
       lastMessageIsMe: map['last_message_sender_id'] == currentUserId,
       lastMessageIsRead: map['last_message_is_read'] ?? false,
       isTyping: map[UserColumns.isTypingTo] == currentUserId,
+      isRecording: false,
       unreadCount: (map['unread_count'] as num?)?.toInt() ?? 0,
       lastSeen:
           map['last_seen'] != null
@@ -68,6 +71,7 @@ class ChatUserModel {
     int? unreadCount,
     DateTime? lastSeen,
     bool? isTyping,
+    bool? isRecording,
     bool? isOnline,
   }) {
     return ChatUserModel(
@@ -82,6 +86,7 @@ class ChatUserModel {
       unreadCount: unreadCount ?? this.unreadCount,
       lastSeen: lastSeen ?? this.lastSeen,
       isTyping: isTyping ?? this.isTyping,
+      isRecording: isRecording ?? this.isRecording,
       isOnline: isOnline ?? this.isOnline,
     );
   }
@@ -131,6 +136,7 @@ class ChatUserModel {
               ? DateTime.parse(map['last_seen'] as String)
               : null,
       isTyping: false,
+      isRecording: false,
       isOnline: false,
     );
   }
