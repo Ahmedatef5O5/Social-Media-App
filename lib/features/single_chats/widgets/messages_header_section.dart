@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:social_media_app/core/router/app_routes.dart';
 
+import '../../../core/chat_shared/cubits/conversations_cubit/conversations_cubit.dart';
+
 class MessagesHeaderSection extends StatelessWidget {
   final bool isDark;
   final Color primary;
@@ -12,6 +14,14 @@ class MessagesHeaderSection extends StatelessWidget {
     required this.primary,
     required this.tabController,
   });
+
+  static const List<String> _tabTitles = [
+    'All',
+    'Chats',
+    'Groups',
+    'Favorites',
+    'Unread',
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -33,7 +43,9 @@ class MessagesHeaderSection extends StatelessWidget {
               AnimatedBuilder(
                 animation: tabController,
                 builder: (context, child) {
-                  final isGroupsTab = tabController.index == 1;
+                  final tab = ConversationTab.values[tabController.index];
+                  final showNewChat = tab != ConversationTab.groups;
+                  final showCreateGroup = tab != ConversationTab.chats;
                   return PopupMenuButton<String>(
                     color: Theme.of(context).scaffoldBackgroundColor,
                     shape: RoundedRectangleBorder(
@@ -47,41 +59,37 @@ class MessagesHeaderSection extends StatelessWidget {
                         ).pushNamed(AppRoutes.createGroupRoute);
                       } else if (value == 'new_chat') {}
                     },
-                    itemBuilder: (context) {
-                      if (isGroupsTab) {
-                        return [
-                          PopupMenuItem(
-                            value: 'create_group',
-                            child: Row(
-                              children: [
-                                Icon(
-                                  Icons.group_add,
-                                  color: Theme.of(context).primaryColor,
-                                ),
-                                const SizedBox(width: 8),
-                                const Text('Create Group'),
-                              ],
+                    itemBuilder:
+                        (context) => [
+                          if (showNewChat)
+                            PopupMenuItem(
+                              value: 'new_chat',
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.chat_bubble_outline,
+                                    color: Theme.of(context).primaryColor,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  const Text('New Chat'),
+                                ],
+                              ),
                             ),
-                          ),
-                        ];
-                      } else {
-                        return [
-                          PopupMenuItem(
-                            value: 'new_chat',
-                            child: Row(
-                              children: [
-                                Icon(
-                                  Icons.chat_bubble_outline,
-                                  color: Theme.of(context).primaryColor,
-                                ),
-                                const SizedBox(width: 8),
-                                const Text('New Chat'),
-                              ],
+                          if (showCreateGroup)
+                            PopupMenuItem(
+                              value: 'create_group',
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.group_add,
+                                    color: Theme.of(context).primaryColor,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  const Text('Create Group'),
+                                ],
+                              ),
                             ),
-                          ),
-                        ];
-                      }
-                    },
+                        ],
                     child: Icon(
                       Icons.more_vert_outlined,
                       color: Theme.of(context).primaryColor,
@@ -96,28 +104,24 @@ class MessagesHeaderSection extends StatelessWidget {
 
           TabBar(
             controller: tabController,
+            isScrollable: true,
+            tabAlignment: TabAlignment.start,
             indicator: const BoxDecoration(),
             dividerColor: Colors.transparent,
             splashFactory: NoSplash.splashFactory,
-            overlayColor: WidgetStatePropertyAll(Colors.transparent),
+            overlayColor: const WidgetStatePropertyAll(Colors.transparent),
             splashBorderRadius: BorderRadius.circular(25),
             labelPadding: const EdgeInsets.symmetric(horizontal: 6),
-            tabs: [
-              _TabItem(
+            tabs: List.generate(
+              _tabTitles.length,
+              (i) => _TabItem(
                 controller: tabController,
-                title: 'Chats',
-                index: 0,
+                title: _tabTitles[i],
+                index: i,
                 primary: primary,
                 isDark: isDark,
               ),
-              _TabItem(
-                controller: tabController,
-                title: 'Groups',
-                index: 1,
-                primary: primary,
-                isDark: isDark,
-              ),
-            ],
+            ),
           ),
         ],
       ),

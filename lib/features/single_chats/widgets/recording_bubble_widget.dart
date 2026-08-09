@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:social_media_app/features/single_chats/widgets/typing_indicator_widget.dart';
 import 'package:social_media_app/features/single_chats/widgets/user_chat_avatar_widget.dart';
+import '../../../core/audio/helpers/pulsing_mic_dot.dart';
 import '../../../core/constants/app_images.dart';
-import '../helper/chat_bubble_colors.dart';
 
-class TypingBubbleWidget extends StatelessWidget {
+class RecordingBubbleWidget extends StatelessWidget {
   final String? receiverUserImgUrl;
   final String receiverUserId;
-  const TypingBubbleWidget({
+
+  const RecordingBubbleWidget({
     super.key,
     this.receiverUserImgUrl,
     required this.receiverUserId,
@@ -15,8 +15,6 @@ class TypingBubbleWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bubbleColor = getReceiverBubbleColor(context);
-
     return Padding(
       padding: const EdgeInsets.only(left: 3, bottom: 8, top: 4),
       child: Row(
@@ -34,7 +32,8 @@ class TypingBubbleWidget extends StatelessWidget {
             margin: const EdgeInsets.only(bottom: 4),
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
-              color: getReceiverBubbleColor(context),
+              color: Colors.red.shade50,
+              border: Border.all(color: Colors.red.shade200, width: 0.8),
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(18),
                 topRight: Radius.circular(18),
@@ -42,13 +41,21 @@ class TypingBubbleWidget extends StatelessWidget {
                 bottomLeft: Radius.circular(4),
               ),
             ),
-            child: TypingIndicatorWidget(
-              color:
-                  ThemeData.estimateBrightnessForColor(bubbleColor) ==
-                          Brightness.dark
-                      ? Colors.white70
-                      : Colors.black54,
-              dotSize: 5,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const PulsingMicDot(),
+                const SizedBox(width: 8),
+                Text(
+                  'recording audio...',
+                  style: TextStyle(
+                    color: Colors.red.shade700,
+                    fontSize: 12,
+                    fontStyle: FontStyle.italic,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
             ),
           ),
         ],

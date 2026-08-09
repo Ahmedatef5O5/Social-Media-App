@@ -2,7 +2,9 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
-import 'package:social_media_app/features/group_chats/cubit/group_selection_cubit/group_selection_cubit.dart';
+import '../../../core/chat_shared/cubits/conversation_selection_cubit/conversation_selection_cubit.dart';
+import '../../../core/chat_shared/models/conversation_ref.dart';
+import '../../../core/chat_shared/widgets/recording_indicator_widget.dart';
 import '../../../core/helpers/chat_helper.dart';
 import '../../../core/helpers/formatted_date.dart';
 import '../../../core/presence/widgets/presence_avatar_widget.dart';
@@ -14,7 +16,17 @@ import 'typing_indicator_widget.dart';
 
 class ChatItemTile extends StatelessWidget {
   final ChatUserModel user;
-  const ChatItemTile({super.key, required this.user});
+  final bool isPinned;
+  final bool isFavorite;
+  final bool isMuted;
+
+  const ChatItemTile({
+    super.key,
+    required this.user,
+    this.isPinned = false,
+    this.isFavorite = false,
+    this.isMuted = false,
+  });
 
   bool get _isSystemEventPreview =>
       user.lastMessageType == 'block_event' ||
@@ -22,10 +34,12 @@ class ChatItemTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<GroupSelectionCubit, GroupSelectionState>(
+    final ref = ConversationRef(type: ConversationType.single, id: user.id);
+
+    return BlocBuilder<ConversationSelectionCubit, ConversationSelectionState>(
       builder: (context, selection) {
         final isSelecting = selection.isSelecting;
-        final isSelected = selection.isSelected(user.id);
+        final isSelected = selection.isSelected(ref);
         final primary = Theme.of(context).primaryColor;
 
         return Material(
@@ -43,10 +57,10 @@ class ChatItemTile extends StatelessWidget {
             subtitle: _buildLastMessage(context),
             trailing: _buildTrailingSection(context),
             onLongPress:
-                () => context.read<GroupSelectionCubit>().toggle(user.id),
+                () => context.read<ConversationSelectionCubit>().toggle(ref),
             onTap: () {
               if (isSelecting) {
-                context.read<GroupSelectionCubit>().toggle(user.id);
+                context.read<ConversationSelectionCubit>().toggle(ref);
                 return;
               }
               Navigator.of(
@@ -60,34 +74,92 @@ class ChatItemTile extends StatelessWidget {
     );
   }
 
-  Column _buildTrailingSection(context) {
+  Column _buildTrailingSection(BuildContext context) {
+    final primary = Theme.of(context).primaryColor;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final hasStatusRow =
+        isFavorite || isPinned || isMuted || user.unreadCount > 0;
+    final isUnread = user.unreadCount > 0;
+
     return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
+      mainAxisAlignment: MainAxisAlignment.end,
       crossAxisAlignment: CrossAxisAlignment.end,
+      mainAxisSize: MainAxisSize.min,
       children: [
         if (user.lastMessageTime != null) ...[
           const Gap(2),
+
           Text(
             FormattedDate.getChatTime(user.lastMessageTime!, isChatList: true),
-            style: const TextStyle(color: Colors.grey, fontSize: 10),
+            style: TextStyle(
+              color:
+                  isUnread
+                      ? primary
+                      : (isDark ? Colors.white38 : Colors.black38),
+              fontSize: 11,
+              fontWeight: isUnread ? FontWeight.w500 : FontWeight.w400,
+            ),
           ),
         ],
-        if (user.unreadCount > 0) ...[
+        if (hasStatusRow) ...[
           const Gap(4),
-          Container(
-            padding: const EdgeInsets.all(6),
-            decoration: BoxDecoration(
-              color: Theme.of(context).primaryColor,
-              shape: BoxShape.circle,
-            ),
-            child: Text(
-              user.unreadCount > 99 ? '99+' : '${user.unreadCount}',
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 11,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              if (isFavorite) ...[
+                Icon(
+                  Icons.star_rounded,
+                  size: 16,
+                  color: Colors.amber.shade600,
+                ),
+                const Gap(4),
+              ],
+              if (isPinned) ...[
+                const Icon(
+                  Icons.push_pin_rounded,
+                  size: 15,
+                  color: Colors.grey,
+                ),
+                const Gap(4),
+              ],
+              if (isMuted) ...[
+                const Icon(
+                  Icons.notifications_off_rounded,
+                  size: 16,
+                  color: Colors.grey,
+                ),
+                if (user.unreadCount > 0) const Gap(4),
+              ],
+              if (user.unreadCount > 0)
+                Container(
+                  padding: const EdgeInsets.all(5),
+                  constraints: const BoxConstraints(
+                    minWidth: 20,
+                    minHeight: 20,
+                  ),
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).primaryColor,
+                    shape:
+                        user.unreadCount > 99
+                            ? BoxShape.rectangle
+                            : BoxShape.circle,
+                    borderRadius:
+                        user.unreadCount > 99
+                            ? BorderRadius.circular(11)
+                            : null,
+                  ),
+                  child: Text(
+                    user.unreadCount > 99 ? '99+' : '${user.unreadCount}',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+            ],
           ),
         ],
       ],
@@ -127,7 +199,7 @@ class ChatItemTile extends StatelessWidget {
     final bool isUnread = user.unreadCount > 0;
     final textStyle = Theme.of(context).textTheme.labelSmall!.copyWith(
       fontWeight: isUnread ? FontWeight.w500 : FontWeight.w400,
-      fontSize: 14,
+      fontSize: 13,
       color:
           isUnread
               ? Theme.of(context).colorScheme.onSurface
@@ -191,6 +263,20 @@ class ChatItemTile extends StatelessWidget {
   }
 
   Widget _buildLastMessage(BuildContext context) {
+    if (user.isRecording) {
+      return Row(
+        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          const RecordingIndicatorWidget(size: 14),
+          const SizedBox(width: 6),
+          Text(
+            'recording audio...',
+            style: TextStyle(color: Colors.red.shade600, fontSize: 14),
+          ),
+        ],
+      );
+    }
     if (user.isTyping == true) {
       return Row(
         mainAxisAlignment: MainAxisAlignment.start,
@@ -231,10 +317,7 @@ class ChatItemTile extends StatelessWidget {
   Text _buildUserName(BuildContext context) {
     return Text(
       user.name,
-      style: Theme.of(context).textTheme.labelLarge!.copyWith(
-        fontWeight: FontWeight.w600,
-        fontSize: 17,
-      ),
+      style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 17),
     );
   }
 

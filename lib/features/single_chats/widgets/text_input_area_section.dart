@@ -232,7 +232,24 @@ class _TextInputAreaSectionState extends State<TextInputAreaSection> {
                   if (cubit.searchController.isActive.value) {
                     cubit.searchController.deactivate();
                   }
+                  cubit.startRecordingAction(widget.receiverUser.id);
                 },
+                onRecordingPause:
+                    () => context.read<ChatDetailsCubit>().pauseRecordingAction(
+                      widget.receiverUser.id,
+                    ),
+                onRecordingResume:
+                    () => context
+                        .read<ChatDetailsCubit>()
+                        .resumeRecordingAction(widget.receiverUser.id),
+                onRecordingStop:
+                    () => context.read<ChatDetailsCubit>().stopRecordingAction(
+                      widget.receiverUser.id,
+                    ),
+                onRecordingCancel:
+                    () => context
+                        .read<ChatDetailsCubit>()
+                        .cancelRecordingAction(widget.receiverUser.id),
               ),
             ),
           ),
@@ -351,47 +368,5 @@ class _TextInputAreaSectionState extends State<TextInputAreaSection> {
       case AttachmentKind.voice:
         break;
     }
-  }
-}
-
-class _PulsingDot extends StatefulWidget {
-  @override
-  State<_PulsingDot> createState() => _PulsingDotState();
-}
-
-class _PulsingDotState extends State<_PulsingDot>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _ctrl;
-  late Animation<double> _anim;
-
-  @override
-  void initState() {
-    super.initState();
-    _ctrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 700),
-    )..repeat(reverse: true);
-    _anim = Tween<double>(begin: 0.3, end: 1.0).animate(_ctrl);
-  }
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return FadeTransition(
-      opacity: _anim,
-      child: Container(
-        width: 8,
-        height: 8,
-        decoration: const BoxDecoration(
-          color: Colors.red,
-          shape: BoxShape.circle,
-        ),
-      ),
-    );
   }
 }

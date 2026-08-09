@@ -5,6 +5,7 @@ import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import 'package:social_media_app/core/router/app_routes.dart';
 import '../../../core/helpers/formatted_date.dart';
 import '../../../core/presence/cubit/presence_cubit/presence_cubit.dart';
+import '../../../core/presence/model/chat_action_type.dart';
 import '../../../core/presence/model/presence_info.dart';
 import '../../../core/presence/widgets/presence_avatar_widget.dart';
 import '../../../core/widgets/app_avatar.dart';
@@ -93,22 +94,26 @@ class ReceiverDetailsHeaderSection extends StatelessWidget {
                     ),
                   ),
 
-                  BlocBuilder<ChatDetailsCubit, ChatDetailsState>(
-                    builder: (context, state) {
-                      final isTyping =
-                          state is ReceiverTypingState && state.isTyping;
-                      if (isTyping) {
-                        return const Text(
-                          'typing...',
+                  ValueListenableBuilder<ChatActionType>(
+                    valueListenable:
+                        context.read<ChatDetailsCubit>().receiverAction,
+                    builder: (context, action, _) {
+                      if (action != ChatActionType.none) {
+                        return Text(
+                          action == ChatActionType.recording
+                              ? 'recording audio...'
+                              : 'typing...',
                           style: TextStyle(
-                            color: Colors.green,
+                            color:
+                                action == ChatActionType.recording
+                                    ? Colors.red.shade700
+                                    : Colors.green,
                             fontSize: 12,
                             fontWeight: FontWeight.w500,
                             fontStyle: FontStyle.italic,
                           ),
                         );
                       }
-
                       return Builder(
                         builder: (context) {
                           final presenceInfo = context
