@@ -6,6 +6,7 @@ import 'package:social_media_app/core/cache/services/local_snapshot_store.dart';
 import 'package:social_media_app/features/single_chats/models/chat_user_model.dart';
 import 'package:social_media_app/features/single_chats/services/chat_services.dart';
 import '../../../../core/helpers/chat_helper.dart';
+import '../../../../core/presence/model/chat_action_type.dart';
 import '../../../../core/supabase/supabase_provider.dart';
 import '../../../auth/handler/auth_exception_handler.dart';
 import '../../helper/chat_clear_store.dart';
@@ -17,11 +18,11 @@ class ChatsCubit extends Cubit<ChatsState> {
   final ChatServices _chatServices;
   final _currentUserId = SupabaseProvider.id;
   StreamSubscription? _chatsSubscription;
-  StreamSubscription? _typingSubscription;
+  StreamSubscription? _actionsSubscription;
   Timer? _refreshDebounce;
 
   List<ChatUserModel> _cachedChats = [];
-  List<String> _typingUserIds = [];
+  Map<String, ChatActionType> _actionsByUserId = {};
 
   bool _showSkeleton = true;
 
@@ -29,12 +30,15 @@ class ChatsCubit extends Cubit<ChatsState> {
 
   ChatsCubit(this._chatServices) : super(ChatsInitial());
 
+  ChatActionType actionFor(String otherUserId) =>
+      _actionsByUserId[otherUserId] ?? ChatActionType.none;
+
   void monitorChats() {
     getChats();
     _chatsSubscription?.cancel();
 
     _listenToChatsStream();
-    _listenToTypingStream();
+    _listenToActionsStream();
   }
 
   void _listenToChatsStream() {
@@ -49,25 +53,29 @@ class ChatsCubit extends Cubit<ChatsState> {
     }, onError: (error) => debugPrint('Stream Error: $error'));
   }
 
-  void _listenToTypingStream() {
-    _typingSubscription?.cancel();
-    _typingSubscription = _chatServices
-        .getTypingUsersStream(_currentUserId)
-        .listen((typingUserIds) {
-          _typingUserIds = typingUserIds;
-          _emitWithTyping();
+  void _listenToActionsStream() {
+    _actionsSubscription?.cancel();
+    _actionsSubscription = _chatServices
+        .getGlobalActionsStream(_currentUserId)
+        .listen((actionsByUserId) {
+          _actionsByUserId = actionsByUserId;
+          _emitWithPresence();
         });
   }
 
-  void _emitWithTyping() {
+  void _emitWithPresence() {
     if (_cachedChats.isEmpty) return;
 
     final updatedChats =
         _cachedChats.map((chat) {
-          final isTyping = _typingUserIds.contains(chat.id);
+          final action = actionFor(chat.id);
+          final isTyping = action == ChatActionType.typing;
+          final isRecording = action == ChatActionType.recording;
 
-          if (chat.isTyping == isTyping) return chat;
-          return chat.copyWith(isTyping: isTyping);
+          if (chat.isTyping == isTyping && chat.isRecording == isRecording) {
+            return chat;
+          }
+          return chat.copyWith(isTyping: isTyping, isRecording: isRecording);
         }).toList();
 
     emit(ChatsSuccessloaded(chats: updatedChats));
@@ -126,7 +134,7 @@ class ChatsCubit extends Cubit<ChatsState> {
           await Future.delayed(const Duration(milliseconds: 500) - elapsed);
         }
       }
-      _emitWithTyping();
+      _emitWithPresence();
       _persistChatsSnapshot(chats);
     } catch (e) {
       _showSkeleton = false;
@@ -179,7 +187,7 @@ class ChatsCubit extends Cubit<ChatsState> {
   @override
   Future<void> close() {
     _chatsSubscription?.cancel();
-    _typingSubscription?.cancel();
+    _actionsSubscription?.cancel();
     _refreshDebounce?.cancel();
     return super.close();
   }

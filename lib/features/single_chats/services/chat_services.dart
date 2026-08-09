@@ -1,5 +1,6 @@
 import 'package:social_media_app/core/services/cloudinary_storage_services.dart';
 import 'package:social_media_app/features/single_chats/models/message_model.dart';
+import '../../../core/presence/model/chat_action_type.dart';
 import '../../../core/services/network_status_service.dart';
 import '../models/chat_block_status.dart';
 import '../models/chat_user_model.dart';
@@ -242,8 +243,9 @@ class ChatServices {
     currentUserId: currentUserId,
   );
 
-  Stream<List<String>> getTypingUsersStream(String currentUserId) =>
-      _presence.getTypingUsersStream(currentUserId);
+  Stream<Map<String, ChatActionType>> getGlobalActionsStream(
+    String currentUserId,
+  ) => _presence.getGlobalActionsStream(currentUserId);
 
   // ── Block ───────────────────────────────────────────────────────────────
   Future<ChatBlockStatus> getBlockStatus({

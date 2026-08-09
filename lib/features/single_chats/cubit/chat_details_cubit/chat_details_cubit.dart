@@ -11,6 +11,7 @@ import '../../../../core/chat_shared/controllers/chat_search_controller.dart';
 import '../../../../core/connectivity/services/connectivity_banner_controller.dart';
 import '../../../../core/helpers/chat_helper.dart';
 import '../../../../core/helpers/selected_message_star_controller.dart';
+import '../../../../core/presence/model/chat_action_type.dart';
 import '../../../../core/services/fcm_services.dart';
 import '../../../../core/services/supabase_storage_services.dart';
 import '../../../../core/supabase/supabase_provider.dart';
@@ -21,17 +22,20 @@ import '../../helper/chat_clear_store.dart';
 import '../../models/chat_block_status.dart';
 import '../../models/message_model.dart';
 import '../../services/chat_permission_service.dart';
+import '../../services/chat_presence_service.dart';
 import '../../services/chat_services.dart';
 import '../../widgets/chat_bubble.dart';
 part 'chat_details_state.dart';
 part 'chat_reactions_mixin.dart';
 part 'chat_selection_mixin.dart';
-part 'chat_typing_status_mixin.dart';
+part 'chat_presence_action_mixin.dart';
 
 class ChatDetailsCubit extends Cubit<ChatDetailsState>
-    with ChatReactionsMixin, ChatSelectionMixin, ChatTypingStatusMixin {
+    with ChatReactionsMixin, ChatSelectionMixin, ChatPresenceActionMixin {
   @override
   final ChatServices _chatServices;
+  @override
+  final ChatPresenceService _presenceService;
   final MediaCacheRepository _mediaCacheRepository;
   final ChatPermissionService _chatPermissionService;
   final AudioCompressionService _audioCompressionService;
@@ -87,7 +91,9 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
     this.currentUserName = 'Someone',
     ChatPermissionService? chatPermissionService,
     AudioCompressionService? audioCompressionService,
-  }) : _chatPermissionService =
+    required ChatPresenceService presenceService,
+  }) : _presenceService = presenceService,
+       _chatPermissionService =
            chatPermissionService ?? ChatPermissionService(),
        _audioCompressionService =
            audioCompressionService ?? AudioCompressionService(),
@@ -703,6 +709,14 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
     required String receiverId,
   }) async {
     try {
+      final muted =
+          await SupabaseProvider.client.rpc(
+                'is_chat_muted',
+                params: {'p_owner': receiverId, 'p_peer': currentUserId},
+              )
+              as bool? ??
+          false;
+      if (muted) return;
       final receiverInfo = await _chatServices.getReceiverPushInfo(receiverId);
 
       if (receiverInfo == null) {
