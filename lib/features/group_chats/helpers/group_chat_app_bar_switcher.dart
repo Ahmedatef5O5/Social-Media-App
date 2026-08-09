@@ -7,7 +7,7 @@ import 'package:social_media_app/features/chat_forwarding/models/forward_target_
 import 'package:social_media_app/features/chat_forwarding/models/forwardable_message.dart';
 import 'package:social_media_app/features/chat_forwarding/services/forward_service.dart';
 import 'package:social_media_app/features/chat_forwarding/views/forward_target_picker_view.dart';
-import '../../../core/widgets/multi_select_app_bar.dart';
+import '../../../core/chat_shared/widgets/message_selection_header_bar.dart';
 import '../cubit/group_details_cubit/group_details_cubit.dart';
 import '../models/group_model.dart';
 import '../widgets/group_chat_app_bar.dart';
@@ -110,41 +110,19 @@ class GroupChatAppBarSwitcher extends StatelessWidget
             return ValueListenableBuilder<bool>(
               valueListenable: cubit.starController.isSelectedStarred,
               builder: (context, isStarred, __) {
-                return MultiSelectChatAppBar(
+                return MessageSelectionHeaderBar(
                   selectedCount: selectedIds.length,
                   onCancel: cubit.clearSelection,
-                  actions: [
-                    if (selectedIds.length == 1)
-                      MultiSelectAction(
-                        icon:
-                            isStarred
-                                ? Icons.star_rounded
-                                : Icons.star_border_rounded,
-                        color: isStarred ? Colors.amber : null,
-                        tooltip: isStarred ? 'Unstar' : 'Star',
-                        onPressed: cubit.toggleStarSelected,
+                  showStar: selectedIds.length == 1,
+                  isStarred: isStarred,
+                  onStarToggle: cubit.toggleStarSelected,
+                  onInfoTap: () => _showComingSoon(context, 'Info'),
+                  onForwardTap:
+                      () => _openForwardPicker(
+                        context,
+                        messageCount: selectedIds.length,
                       ),
-                    MultiSelectAction(
-                      icon: Icons.info_outline,
-                      tooltip: 'Info',
-                      onPressed: () => _showComingSoon(context, 'Info'),
-                    ),
-                    MultiSelectAction(
-                      icon: Icons.forward_rounded,
-                      tooltip: 'Forward',
-                      onPressed:
-                          () => _openForwardPicker(
-                            context,
-                            messageCount: selectedIds.length,
-                          ),
-                    ),
-                    MultiSelectAction(
-                      icon: Icons.delete_outline,
-                      color: Colors.red,
-                      tooltip: 'Delete',
-                      onPressed: () => _showBulkDeleteMenu(context, cubit),
-                    ),
-                  ],
+                  onDeleteTap: () => _showBulkDeleteMenu(context, cubit),
                 );
               },
             );

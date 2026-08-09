@@ -14,12 +14,12 @@ import 'package:social_media_app/features/single_chats/models/message_model.dart
 import 'package:social_media_app/features/single_chats/services/chat_services.dart';
 import 'package:social_media_app/features/single_chats/widgets/messages_list_view.dart';
 import 'package:social_media_app/features/single_chats/widgets/receiver_details_header_section.dart';
+import '../../../core/chat_shared/widgets/message_selection_header_bar.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/services/active_screen_tracker.dart';
 import '../../../core/services/notification_services.dart';
 import '../../../core/themes/app_colors.dart';
 import '../../../core/toast/app_toast.dart';
-import '../../../core/widgets/multi_select_app_bar.dart';
 import '../helper/blocked_single_chat_bar_widget.dart';
 import '../services/chat_permission_service.dart';
 import '../widgets/text_input_area_section.dart';
@@ -399,46 +399,20 @@ class _ChatDetailsViewState extends State<ChatDetailsView>
                         valueListenable:
                             _chatCubit.starController.isSelectedStarred,
                         builder: (context, isStarred, __) {
-                          return MultiSelectChatAppBar(
+                          return MessageSelectionHeaderBar(
                             selectedCount: selectedIds.length,
                             onCancel: _chatCubit.clearSelection,
-                            actions: [
-                              if (selectedIds.length == 1)
-                                MultiSelectAction(
-                                  icon:
-                                      isStarred
-                                          ? Icons.star_rounded
-                                          : Icons.star_border_rounded,
-                                  color: isStarred ? Colors.amber : null,
-                                  tooltip: isStarred ? 'Unstar' : 'Star',
-                                  onPressed: _chatCubit.toggleStarSelected,
+                            showStar: selectedIds.length == 1,
+                            isStarred: isStarred,
+                            onStarToggle: _chatCubit.toggleStarSelected,
+                            onInfoTap: () => _showComingSoon(context, 'Info'),
+                            onForwardTap:
+                                () => _openForwardPicker(
+                                  context,
+                                  messageCount: selectedIds.length,
                                 ),
-                              MultiSelectAction(
-                                icon: Icons.info_outline,
-                                tooltip: 'Info',
-                                onPressed:
-                                    () => _showComingSoon(context, 'Info'),
-                              ),
-                              MultiSelectAction(
-                                icon: Icons.forward_rounded,
-                                tooltip: 'Forward',
-                                onPressed:
-                                    () => _openForwardPicker(
-                                      context,
-                                      messageCount: selectedIds.length,
-                                    ),
-                              ),
-                              MultiSelectAction(
-                                icon: Icons.delete_outline,
-                                color: Colors.red,
-                                tooltip: 'Delete',
-                                onPressed:
-                                    () => _showBulkDeleteMenu(
-                                      context,
-                                      _chatCubit,
-                                    ),
-                              ),
-                            ],
+                            onDeleteTap:
+                                () => _showBulkDeleteMenu(context, _chatCubit),
                           );
                         },
                       );
