@@ -4,7 +4,7 @@ import 'package:social_media_app/features/single_chats/cubit/chats_cubit/chats_c
 import 'package:social_media_app/features/group_chats/cubit/group_list_cubit/group_list_cubit.dart';
 import '../../../core/chat_shared/cubits/conversation_selection_cubit/conversation_selection_cubit.dart';
 import '../../../core/chat_shared/cubits/conversations_cubit/conversations_cubit.dart';
-import '../../../core/chat_shared/models/conversation_ref.dart';
+import '../../../core/chat_shared/helpers/conversation_delete_confirmation.dart';
 import '../../../core/chat_shared/widgets/conversations_selection_header_bar.dart';
 import '../../../core/chat_shared/widgets/conversations_tab_body.dart';
 import '../../../core/widgets/custom_pull_to_refresh.dart';
@@ -93,60 +93,6 @@ class _ChatsViewState extends State<ChatsView>
       futures.add(context.read<GroupListCubit>().loadGroups(isRefresh: true));
     }
     await Future.wait(futures);
-  }
-
-  Future<void> _confirmAndDeleteSelected(
-    BuildContext context,
-    Set<ConversationRef> refs,
-  ) async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder:
-          (dialogContext) => AlertDialog(
-            title: Text(
-              'Delete ${refs.length} chat${refs.length > 1 ? 's' : ''}?',
-            ),
-            content: const Text(
-              'This clears the chat history on this device only. '
-              'Other participants keep their own copy.',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(dialogContext, false),
-                child: const Text('Cancel'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(dialogContext, true),
-                child: const Text(
-                  'Delete',
-                  style: TextStyle(color: Colors.red),
-                ),
-              ),
-            ],
-          ),
-    );
-
-    if (confirm != true) return;
-    if (!context.mounted) return;
-
-    final singleIds =
-        refs
-            .where((r) => r.type == ConversationType.single)
-            .map((r) => r.id)
-            .toSet();
-    final groupIds =
-        refs
-            .where((r) => r.type == ConversationType.group)
-            .map((r) => r.id)
-            .toSet();
-
-    if (singleIds.isNotEmpty) {
-      await context.read<ChatsCubit>().clearChatsLocally(singleIds);
-    }
-    if (groupIds.isNotEmpty) {
-      await context.read<GroupListCubit>().clearChatsLocally(groupIds);
-    }
-    if (context.mounted) context.read<ConversationSelectionCubit>().clear();
   }
 
   @override
@@ -238,10 +184,12 @@ class _ChatsViewState extends State<ChatsView>
                           loadingSkeleton: const ChatsViewSkeleton(),
                           errorMessage: errorMsg,
                           onRetry: () {
-                            if (_tabNeedsChats)
+                            if (_tabNeedsChats) {
                               context.read<ChatsCubit>().getChats();
-                            if (_tabNeedsGroups)
+                            }
+                            if (_tabNeedsGroups) {
                               context.read<GroupListCubit>().loadGroups();
+                            }
                           },
                           child: child!,
                         );
@@ -267,28 +215,60 @@ class _ChatsViewState extends State<ChatsView>
                                       ConversationSelectionState
                                     >(
                                       builder: (context, selection) {
-                                        if (selection.isSelecting) {
-                                          return ConversationsSelectionHeaderBar(
-                                            selectedRefs:
-                                                selection.selectedRefs,
-                                            onCancel:
-                                                () =>
-                                                    context
-                                                        .read<
-                                                          ConversationSelectionCubit
-                                                        >()
-                                                        .clear(),
-                                            onDelete:
-                                                () => _confirmAndDeleteSelected(
-                                                  context,
-                                                  selection.selectedRefs,
-                                                ),
-                                          );
-                                        }
-                                        return MessagesHeaderSection(
-                                          tabController: _tabController,
-                                          isDark: isDark,
-                                          primary: primary,
+                                        return AnimatedSwitcher(
+                                          duration: const Duration(
+                                            milliseconds: 260,
+                                          ),
+                                          switchInCurve: Curves.easeOutCubic,
+                                          switchOutCurve: Curves.easeInCubic,
+                                          transitionBuilder: (
+                                            child,
+                                            animation,
+                                          ) {
+                                            final slide = Tween<Offset>(
+                                              begin: const Offset(0, -0.2),
+                                              end: Offset.zero,
+                                            ).animate(animation);
+                                            return FadeTransition(
+                                              opacity: animation,
+                                              child: SlideTransition(
+                                                position: slide,
+                                                child: child,
+                                              ),
+                                            );
+                                          },
+                                          child:
+                                              selection.isSelecting
+                                                  ? ConversationsSelectionHeaderBar(
+                                                    key: const ValueKey(
+                                                      'selection_bar',
+                                                    ),
+                                                    selectedRefs:
+                                                        selection.selectedRefs,
+                                                    onCancel:
+                                                        () =>
+                                                            context
+                                                                .read<
+                                                                  ConversationSelectionCubit
+                                                                >()
+                                                                .clear(),
+                                                    onDelete:
+                                                        () =>
+                                                            confirmAndDeleteConversations(
+                                                              context,
+                                                              selection
+                                                                  .selectedRefs,
+                                                            ),
+                                                  )
+                                                  : MessagesHeaderSection(
+                                                    key: const ValueKey(
+                                                      'normal_header',
+                                                    ),
+                                                    tabController:
+                                                        _tabController,
+                                                    isDark: isDark,
+                                                    primary: primary,
+                                                  ),
                                         );
                                       },
                                     ),
