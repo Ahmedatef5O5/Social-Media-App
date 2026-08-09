@@ -19,6 +19,10 @@ class VoiceRecorderInputSection extends StatefulWidget {
   final VoidCallback onShowAttachments;
   final void Function(File file, int durationSeconds) onSendVoice;
   final VoidCallback? onRecordingStart;
+  final VoidCallback? onRecordingPause;
+  final VoidCallback? onRecordingResume;
+  final VoidCallback? onRecordingStop;
+  final VoidCallback? onRecordingCancel;
 
   const VoiceRecorderInputSection({
     super.key,
@@ -28,6 +32,10 @@ class VoiceRecorderInputSection extends StatefulWidget {
     required this.onShowAttachments,
     required this.onSendVoice,
     this.onRecordingStart,
+    this.onRecordingPause,
+    this.onRecordingResume,
+    this.onRecordingStop,
+    this.onRecordingCancel,
   });
 
   @override
@@ -187,6 +195,7 @@ class _VoiceRecorderInputSectionState extends State<VoiceRecorderInputSection> {
     if (mounted) {
       setState(() {
         _isPaused = true;
+        widget.onRecordingPause?.call();
         _previewFile = preview;
         _previewDuration = Duration.zero;
         _previewPosition = Duration.zero;
@@ -204,6 +213,7 @@ class _VoiceRecorderInputSectionState extends State<VoiceRecorderInputSection> {
     if (mounted) {
       setState(() {
         _isPaused = false;
+        widget.onRecordingResume?.call();
         _previewPosition = Duration.zero;
       });
     }
@@ -223,6 +233,7 @@ class _VoiceRecorderInputSectionState extends State<VoiceRecorderInputSection> {
   }
 
   Future<void> _cancelRecording() async {
+    widget.onRecordingCancel?.call();
     HapticFeedback.lightImpact();
     _ticker?.cancel();
     _ticker = null;
@@ -259,6 +270,7 @@ class _VoiceRecorderInputSectionState extends State<VoiceRecorderInputSection> {
   }
 
   Future<void> _finishAndSend() async {
+    widget.onRecordingStop?.call();
     _ticker?.cancel();
     _ticker = null;
     _amplitudeTimer?.cancel();

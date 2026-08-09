@@ -24,6 +24,10 @@ class GroupInputBar extends StatelessWidget {
   final String? replyToAuthorName;
   final VoidCallback? onSlashAiTrigger;
   final VoidCallback? onRecordingStart;
+  final VoidCallback? onRecordingPause;
+  final VoidCallback? onRecordingResume;
+  final VoidCallback? onRecordingStop;
+  final VoidCallback? onRecordingCancel;
 
   const GroupInputBar({
     super.key,
@@ -40,6 +44,10 @@ class GroupInputBar extends StatelessWidget {
     this.replyToAuthorName,
     this.onSlashAiTrigger,
     this.onRecordingStart,
+    this.onRecordingPause,
+    this.onRecordingResume,
+    this.onRecordingStop,
+    this.onRecordingCancel,
   });
 
   void _send() {
@@ -86,6 +94,10 @@ class GroupInputBar extends StatelessWidget {
         sendButton: SendButton(primary: primary, onTap: _send),
         onSendVoice: onSendVoice,
         onRecordingStart: onRecordingStart,
+        onRecordingPause: onRecordingPause,
+        onRecordingResume: onRecordingResume,
+        onRecordingStop: onRecordingStop,
+        onRecordingCancel: onRecordingCancel,
       ),
     );
   }

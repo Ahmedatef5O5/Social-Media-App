@@ -258,7 +258,12 @@ class _GroupChatInputBarSectionState extends State<GroupChatInputBarSection> {
                 if (_cubit.searchController.isActive.value) {
                   _cubit.searchController.deactivate();
                 }
+                _cubit.startRecordingAction();
               },
+              onRecordingPause: () => _cubit.pauseRecordingAction(),
+              onRecordingResume: () => _cubit.resumeRecordingAction(),
+              onRecordingStop: () => _cubit.stopRecordingAction(),
+              onRecordingCancel: () => _cubit.cancelRecordingAction(),
             );
           },
         ),
