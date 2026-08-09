@@ -1,4 +1,5 @@
 import 'package:social_media_app/features/group_chats/models/group_member_model.dart';
+import 'group_presence_entry.dart';
 
 const _unset = Object();
 
@@ -20,6 +21,7 @@ class GroupModel {
   final int unreadCount;
   final String? title;
   final bool isMuted;
+  final GroupPresenceSnapshot presence;
 
   const GroupModel({
     required this.id,
@@ -39,6 +41,7 @@ class GroupModel {
     this.unreadCount = 0,
     this.title,
     this.isMuted = false,
+    this.presence = GroupPresenceSnapshot.empty,
   });
 
   GroupModel copyWith({
@@ -59,6 +62,7 @@ class GroupModel {
     String? lastMessageTargetName,
     int? unreadCount,
     bool? isMuted,
+    GroupPresenceSnapshot? presence,
   }) {
     return GroupModel(
       id: id ?? this.id,
@@ -81,6 +85,7 @@ class GroupModel {
           lastMessageTargetName ?? this.lastMessageTargetName,
       unreadCount: unreadCount ?? this.unreadCount,
       isMuted: isMuted ?? this.isMuted,
+      presence: presence ?? this.presence,
     );
   }
 
