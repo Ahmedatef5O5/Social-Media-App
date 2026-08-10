@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:social_media_app/core/widgets/cached_cloudinary_image.dart';
-import 'package:social_media_app/core/constants/app_images.dart';
 import 'package:social_media_app/core/widgets/custom_loading_indicator.dart';
 import 'package:social_media_app/core/themes/app_colors.dart';
+import '../helpers/circle_default_user_img.dart';
 
 class CreateStoryCardWidget extends StatelessWidget {
   static const double cardWidth = 107;
@@ -53,9 +53,9 @@ class CreateStoryCardWidget extends StatelessWidget {
                   height: topHeight,
                   child:
                       avatarUrl == null || avatarUrl!.isEmpty
-                          ? Image.asset(
-                            AppImages.defaultUserImg,
-                            fit: BoxFit.cover,
+                          ? CircleDefaultUserImage(
+                            theme: theme,
+                            cardWidth: cardWidth,
                           )
                           : CachedCloudinaryImage(
                             secureUrl: avatarUrl!,
@@ -66,9 +66,9 @@ class CreateStoryCardWidget extends StatelessWidget {
                             placeholder:
                                 (_) => Container(color: theme.dividerColor),
                             errorWidget:
-                                (_, __) => Image.asset(
-                                  AppImages.defaultUserImg,
-                                  fit: BoxFit.cover,
+                                (_, __) => CircleDefaultUserImage(
+                                  theme: theme,
+                                  cardWidth: cardWidth,
                                 ),
                           ),
                 ),
