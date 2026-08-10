@@ -7,7 +7,7 @@ class GroupModel {
   final String id;
   final String name;
   final String? avatarUrl;
-  final String createdBy;
+  final String? createdBy;
   final DateTime createdAt;
   final bool isMember;
   final List<GroupMemberModel> members;
@@ -20,6 +20,7 @@ class GroupModel {
   final String? lastMessageTargetName;
   final int unreadCount;
   final String? title;
+  final bool isBlocked;
   final bool isMuted;
   final GroupPresenceSnapshot presence;
 
@@ -40,6 +41,7 @@ class GroupModel {
     this.lastMessageTargetName,
     this.unreadCount = 0,
     this.title,
+    this.isBlocked = false,
     this.isMuted = false,
     this.presence = GroupPresenceSnapshot.empty,
   });
@@ -61,6 +63,7 @@ class GroupModel {
     String? lastMessageTargetId,
     String? lastMessageTargetName,
     int? unreadCount,
+    bool? isBlocked,
     bool? isMuted,
     GroupPresenceSnapshot? presence,
   }) {
@@ -84,6 +87,7 @@ class GroupModel {
       lastMessageTargetName:
           lastMessageTargetName ?? this.lastMessageTargetName,
       unreadCount: unreadCount ?? this.unreadCount,
+      isBlocked: isBlocked ?? this.isBlocked,
       isMuted: isMuted ?? this.isMuted,
       presence: presence ?? this.presence,
     );
@@ -95,7 +99,7 @@ class GroupModel {
       name: map['name'] ?? '',
       avatarUrl: map['avatar_url'],
       title: map['title'] as String?,
-      createdBy: map['created_by'] as String,
+      createdBy: map['created_by'] as String?,
       createdAt:
           DateTime.tryParse((map['created_at']) as String? ?? '') ??
           DateTime.now(),
@@ -111,6 +115,7 @@ class GroupModel {
       lastMessageTargetId: map['last_message_target_id'] as String?,
       lastMessageTargetName: map['last_message_target_name'] as String?,
       unreadCount: (map['unread_count'] as int?) ?? 0,
+      isBlocked: (map['is_blocked'] as bool?) ?? false,
       isMuted: (map['is_muted'] as bool?) ?? false,
     );
   }

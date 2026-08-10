@@ -31,44 +31,21 @@ class GroupChatServices {
     String? avatarPublicId,
     required List<String> memberIds,
   }) async {
-    final groupData =
+    final row =
         await _supabase
-            .from(SupabaseConstants.groups)
-            .insert({
-              GroupColumns.name: name,
-              if (avatarUrl != null) GroupColumns.avatarUrl: avatarUrl,
-              if (avatarPublicId != null)
-                GroupColumns.avatarPublicId: avatarPublicId,
-              GroupColumns.createdBy: currentUserId,
-            })
-            .select()
+            .rpc(
+              'create_group_with_members',
+              params: {
+                'p_creator_id': currentUserId,
+                'p_name': name,
+                'p_avatar_url': avatarUrl,
+                'p_avatar_public_id': avatarPublicId,
+                'p_member_ids': memberIds,
+              },
+            )
             .single();
 
-    final newGroupId = groupData['id'] as String;
-
-    await _supabase.from(SupabaseConstants.groupMembers).insert({
-      GroupMemberColumns.groupId: newGroupId,
-      GroupMemberColumns.userId: currentUserId,
-      'role': 'admin',
-    });
-
-    if (memberIds.isNotEmpty) {
-      await _supabase
-          .from(SupabaseConstants.groupMembers)
-          .insert(
-            memberIds
-                .map(
-                  (uid) => {
-                    GroupMemberColumns.groupId: newGroupId,
-                    GroupMemberColumns.userId: uid,
-                    'role': 'member',
-                  },
-                )
-                .toList(),
-          );
-    }
-
-    return GroupModel.fromMap(groupData);
+    return GroupModel.fromMap(row);
   }
 
   Future<List<GroupModel>> getMyGroups() async {
@@ -77,9 +54,16 @@ class GroupChatServices {
       params: {'p_user_id': currentUserId},
     );
     if (response == null) return [];
-    return (response as List)
-        .map((e) => GroupModel.fromMap(e as Map<String, dynamic>))
-        .toList();
+
+    final groups = <GroupModel>[];
+    for (final row in (response as List)) {
+      try {
+        groups.add(GroupModel.fromMap(row as Map<String, dynamic>));
+      } catch (e) {
+        debugPrint('⚠️ Skipping malformed group row: $e — data: $row');
+      }
+    }
+    return groups;
   }
 
   Future<List<GroupModel>> searchMyGroups({
@@ -97,9 +81,16 @@ class GroupChatServices {
       },
     );
     if (response == null) return [];
-    return (response as List)
-        .map((e) => GroupModel.fromMap(e as Map<String, dynamic>))
-        .toList();
+    final groups = <GroupModel>[];
+    for (final row in (response as List)) {
+      try {
+        groups.add(GroupModel.fromMap(row as Map<String, dynamic>));
+      } catch (e) {
+        debugPrint('⚠️ Skipping malformed group row: $e — data: $row');
+      }
+    }
+
+    return groups;
   }
 
   static const int _membersPageSize = 20;
@@ -919,23 +910,29 @@ class GroupChatServices {
     final rows = await _supabase
         .from(SupabaseConstants.groupMembers)
         .select(
-          '${GroupMemberColumns.groupId}, ${GroupMemberColumns.userId}, users(${UserColumns.name}, ${UserColumns.imageUrl})',
+          'id, ${GroupMemberColumns.groupId}, ${GroupMemberColumns.userId}, '
+          'users(${UserColumns.name}, ${UserColumns.imageUrl})',
         )
         .inFilter(GroupMemberColumns.groupId, groupIds)
         .eq(GroupMemberColumns.membershipStatus, 'active');
+
     final Map<String, List<GroupMemberModel>> result = {};
     for (final row in (rows as List)) {
-      final gId = row[GroupMemberColumns.groupId] as String;
-      final userInfo = row['users'] as Map<String, dynamic>? ?? {};
-      result
-          .putIfAbsent(gId, () => [])
-          .add(
-            GroupMemberModel.fromMap({
-              ...row,
-              'user_name': userInfo[UserColumns.name],
-              'user_avatar': userInfo[UserColumns.imageUrl],
-            }),
-          );
+      try {
+        final gId = row[GroupMemberColumns.groupId] as String;
+        final userInfo = row['users'] as Map<String, dynamic>? ?? {};
+        result
+            .putIfAbsent(gId, () => [])
+            .add(
+              GroupMemberModel.fromMap({
+                ...row,
+                'user_name': userInfo[UserColumns.name],
+                'user_avatar': userInfo[UserColumns.imageUrl],
+              }),
+            );
+      } catch (e) {
+        debugPrint('⚠️ Skipping malformed group-member row: $e — data: $row');
+      }
     }
     return result;
   }

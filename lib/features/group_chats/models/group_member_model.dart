@@ -22,8 +22,11 @@ class GroupMemberModel {
   });
 
   factory GroupMemberModel.fromMap(Map<String, dynamic> map) {
+    final groupId = map[GroupMemberColumns.groupId] as String;
+    final userId = map[GroupMemberColumns.userId] as String;
+
     return GroupMemberModel(
-      id: map['id'] as String,
+      id: (map['id'] as String?) ?? '${groupId}_$userId',
       groupId: map[GroupMemberColumns.groupId] as String,
       userId: map[GroupMemberColumns.userId] as String,
       userName: (map['user_name'] ?? map['name'] ?? 'Unknown') as String,

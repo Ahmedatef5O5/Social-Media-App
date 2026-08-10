@@ -579,10 +579,13 @@ class GroupListCubit extends Cubit<GroupListState> {
             ..removeWhere(_isHiddenByLocalClear);
 
       final fetchedIds = fetchedGroups.map((g) => g.id).toList();
-
-      _membersByGroupId
-        ..clear()
-        ..addAll(await _services.getMembersForGroups(fetchedIds));
+      try {
+        _membersByGroupId
+          ..clear()
+          ..addAll(await _services.getMembersForGroups(fetchedIds));
+      } catch (e) {
+        debugPrint('⚠️ Failed to load group members (non-fatal): $e');
+      }
 
       final leftGroupsStillTracked = _cached.where(
         (g) => !g.isMember && !fetchedIds.contains(g.id),
@@ -709,31 +712,34 @@ class GroupListCubit extends Cubit<GroupListState> {
     String? lastMessageTargetName,
   }) {
     final currentState = state;
-    if (currentState is GroupListLoaded) {
-      final updatedGroups =
-          currentState.groups.map((g) {
-            if (g.id == groupId) {
-              return g.copyWith(
-                lastMessage: message,
-                lastMessageType: messageType,
-                lastMessageAt: createdAt,
-                lastMessageSenderId: lastMessageSenderId,
-                lastMessageSenderName: lastMessageSenderName,
-                lastMessageTargetId: lastMessageTargetId,
-                lastMessageTargetName: lastMessageTargetName,
-              );
-            }
-            return g;
-          }).toList();
+    if (currentState is! GroupListLoaded) return;
 
-      updatedGroups.sort(
-        (a, b) => (b.lastMessageAt ?? b.createdAt).compareTo(
-          a.lastMessageAt ?? a.createdAt,
-        ),
-      );
+    final idx = currentState.groups.indexWhere((g) => g.id == groupId);
 
-      emit(GroupListLoaded(updatedGroups));
+    if (idx == -1) {
+      loadGroups(isRefresh: true);
+      return;
     }
+
+    final updatedGroups = List<GroupModel>.from(currentState.groups);
+    updatedGroups[idx] = updatedGroups[idx].copyWith(
+      lastMessage: message,
+      lastMessageType: messageType,
+      lastMessageAt: createdAt,
+      lastMessageSenderId: lastMessageSenderId,
+      lastMessageSenderName: lastMessageSenderName,
+      lastMessageTargetId: lastMessageTargetId,
+      lastMessageTargetName: lastMessageTargetName,
+    );
+
+    updatedGroups.sort(
+      (a, b) => (b.lastMessageAt ?? b.createdAt).compareTo(
+        a.lastMessageAt ?? a.createdAt,
+      ),
+    );
+
+    _cached = updatedGroups;
+    emit(GroupListLoaded(updatedGroups));
   }
 
   void resetGroupUnreadCount(String groupId) {
