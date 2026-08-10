@@ -9,6 +9,7 @@ class GroupInfoHeader extends StatelessWidget {
   final GroupModel group;
   final bool isAdmin;
   final bool isEditingName;
+  final bool isUploadingPhoto;
   final TextEditingController controller;
   final VoidCallback onEditTap;
   final VoidCallback onSubmit;
@@ -20,6 +21,7 @@ class GroupInfoHeader extends StatelessWidget {
     required this.group,
     required this.isAdmin,
     required this.isEditingName,
+    required this.isUploadingPhoto,
     required this.controller,
     required this.onEditTap,
     required this.onSubmit,
@@ -35,6 +37,7 @@ class GroupInfoHeader extends StatelessWidget {
         group: group,
         isAdmin: isAdmin,
         isEditingName: isEditingName,
+        isUploadingPhoto: isUploadingPhoto,
         controller: controller,
         onEditTap: onEditTap,
         onSubmit: onSubmit,
@@ -58,6 +61,7 @@ class _GroupInfoHeaderDelegate extends SliverPersistentHeaderDelegate {
   final GroupModel group;
   final bool isAdmin;
   final bool isEditingName;
+  final bool isUploadingPhoto;
   final TextEditingController controller;
   final VoidCallback onEditTap;
   final VoidCallback onSubmit;
@@ -70,6 +74,7 @@ class _GroupInfoHeaderDelegate extends SliverPersistentHeaderDelegate {
     required this.group,
     required this.isAdmin,
     required this.isEditingName,
+    required this.isUploadingPhoto,
     required this.controller,
     required this.onEditTap,
     required this.onSubmit,
@@ -277,7 +282,7 @@ class _GroupInfoHeaderDelegate extends SliverPersistentHeaderDelegate {
             child: Opacity(
               opacity: (1 - (t / 0.5)).clamp(0.0, 1.0),
               child: GestureDetector(
-                onTap: onChangePhoto,
+                onTap: isUploadingPhoto ? null : onChangePhoto,
                 child: Container(
                   padding: const EdgeInsets.all(6),
                   decoration: BoxDecoration(
@@ -285,10 +290,33 @@ class _GroupInfoHeaderDelegate extends SliverPersistentHeaderDelegate {
                     shape: BoxShape.circle,
                     border: Border.all(color: Colors.white, width: .8),
                   ),
-                  child: const Icon(
-                    Icons.camera_alt_rounded,
-                    size: 14,
-                    color: Colors.white,
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 300),
+                    transitionBuilder:
+                        (child, animation) => ScaleTransition(
+                          scale: animation,
+                          child: FadeTransition(
+                            opacity: animation,
+                            child: child,
+                          ),
+                        ),
+                    child:
+                        isUploadingPhoto
+                            ? const SizedBox(
+                              key: ValueKey('header_loading'),
+                              width: 14,
+                              height: 14,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              ),
+                            )
+                            : const Icon(
+                              Icons.camera_alt_rounded,
+                              key: ValueKey('header_camera_icon'),
+                              size: 14,
+                              color: Colors.white,
+                            ),
                   ),
                 ),
               ),
@@ -373,6 +401,7 @@ class _GroupInfoHeaderDelegate extends SliverPersistentHeaderDelegate {
     return oldDelegate.group != group ||
         oldDelegate.isAdmin != isAdmin ||
         oldDelegate.isEditingName != isEditingName ||
+        oldDelegate.isUploadingPhoto != isUploadingPhoto ||
         oldDelegate.topPadding != topPadding ||
         oldDelegate.primary != primary;
   }

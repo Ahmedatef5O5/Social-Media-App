@@ -1,14 +1,18 @@
 import 'dart:io';
+import 'dart:ui';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:social_media_app/core/widgets/full_screen_image_viewer.dart';
+import '../../../core/themes/app_colors.dart';
 import '../../../core/toast/app_toast.dart';
-import '../../../core/widgets/custom_loading_indicator.dart';
 import '../cubit/group_details_cubit/group_details_cubit.dart';
 import '../cubit/group_list_cubit/group_list_cubit.dart';
 import '../cubit/group_members_cubit/group_members_cubit.dart';
 import '../helpers/group_info_action_btn_widget.dart';
 import '../models/group_model.dart';
+import '../models/group_member_model.dart';
 import '../services/group_chat_services.dart';
 
 class GroupSettingsView extends StatefulWidget {
@@ -37,12 +41,21 @@ class _GroupSettingsViewState extends State<GroupSettingsView> {
   late final GroupChatServices _services;
   late final TextEditingController _titleController;
   bool _isSavingTitle = false;
+  String? _currentAvatarUrl;
+
+  bool _isUploadingPhoto = false;
+  bool _isRemovingPhoto = false;
 
   @override
   void initState() {
     super.initState();
     _services = context.read<GroupChatServices>();
     _titleController = TextEditingController(text: widget.group.title ?? '');
+    _currentAvatarUrl = widget.group.avatarUrl;
+
+    if (widget.membersCubit.state is! GroupMembersLoaded) {
+      widget.membersCubit.loadMembers();
+    }
   }
 
   @override
@@ -54,6 +67,7 @@ class _GroupSettingsViewState extends State<GroupSettingsView> {
   Future<void> _saveTitle() async {
     final newTitle = _titleController.text.trim();
     if (newTitle == (widget.group.title ?? '')) return;
+
     setState(() => _isSavingTitle = true);
     try {
       final value = newTitle.isEmpty ? null : newTitle;
@@ -77,11 +91,9 @@ class _GroupSettingsViewState extends State<GroupSettingsView> {
       maxWidth: 800,
     );
     if (picked == null || !mounted) return;
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => const Center(child: CustomLoadingIndicator()),
-    );
+
+    setState(() => _isUploadingPhoto = true);
+
     try {
       final result = await _services.uploadGroupAvatar(File(picked.path));
       await _services.updateGroupAvatarUrl(
@@ -93,12 +105,19 @@ class _GroupSettingsViewState extends State<GroupSettingsView> {
         groupId: widget.group.id,
         newAvatarUrl: result.secureUrl,
       );
-      if (mounted) Navigator.pop(context);
+      if (mounted) {
+        setState(() => _currentAvatarUrl = result.secureUrl);
+        if (widget.group.avatarUrl != null &&
+            widget.group.avatarUrl!.isNotEmpty) {
+          await CachedNetworkImage.evictFromCache(widget.group.avatarUrl!);
+        }
+      }
     } catch (e) {
       if (mounted) {
-        Navigator.pop(context);
         AppToast.error('Failed to update photo: $e');
       }
+    } finally {
+      if (mounted) setState(() => _isUploadingPhoto = false);
     }
   }
 
@@ -111,50 +130,21 @@ class _GroupSettingsViewState extends State<GroupSettingsView> {
       confirmColor: Colors.red,
     );
     if (confirm != true) return;
+
+    setState(() => _isRemovingPhoto = true);
+
     try {
       await _services.removeGroupAvatar(widget.group.id);
       widget.groupListCubit.clearGroupAvatar(widget.group.id);
-      if (mounted) AppToast.success('Group photo removed');
+      if (mounted) {
+        setState(() => _currentAvatarUrl = null);
+        AppToast.success('Group photo removed');
+      }
     } catch (e) {
       if (mounted) AppToast.error('Failed to remove photo: $e');
+    } finally {
+      if (mounted) setState(() => _isRemovingPhoto = false);
     }
-  }
-
-  void _showPhotoOptions() {
-    showModalBottomSheet(
-      context: context,
-      builder:
-          (_) => SafeArea(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ListTile(
-                  leading: const Icon(Icons.photo_camera_outlined),
-                  title: const Text('Change Group Photo'),
-                  onTap: () {
-                    Navigator.pop(context);
-                    _changePhoto();
-                  },
-                ),
-                if ((widget.group.avatarUrl ?? '').isNotEmpty)
-                  ListTile(
-                    leading: const Icon(
-                      Icons.delete_outline,
-                      color: Colors.red,
-                    ),
-                    title: const Text(
-                      'Remove Group Photo',
-                      style: TextStyle(color: Colors.red),
-                    ),
-                    onTap: () {
-                      Navigator.pop(context);
-                      _removePhoto();
-                    },
-                  ),
-              ],
-            ),
-          ),
-    );
   }
 
   Future<bool?> _confirm(
@@ -207,32 +197,6 @@ class _GroupSettingsViewState extends State<GroupSettingsView> {
     }
   }
 
-  // Future<void> _deleteGroup(BuildContext context, GroupModel liveGroup) async {
-  //   final confirm = await _confirm(
-  //     context,
-  //     title: 'Delete Group',
-  //     body:
-  //         liveGroup.isMember
-  //             ? 'This will remove you from the group and delete the chat history on this device only. Continue?'
-  //             : 'This will delete the chat history on this device only. Continue?',
-  //     confirmLabel: 'Delete',
-  //     confirmColor: Colors.red,
-  //   );
-  //   if (confirm != true) return;
-  //   try {
-  //     await widget.membersCubit.deleteGroup(
-  //       currentUserId: widget.currentUserId,
-  //       groupListCubit: widget.groupListCubit,
-  //       isCurrentlyMember: liveGroup.isMember,
-  //     );
-  //     if (context.mounted) {
-  //       Navigator.of(context, rootNavigator: true).popUntil((r) => r.isFirst);
-  //     }
-  //   } catch (e) {
-  //     if (context.mounted) AppToast.error('Failed to delete group: $e');
-  //   }
-  // }
-
   Future<void> _blockGroup(BuildContext context, GroupModel liveGroup) async {
     final confirm = await _confirm(
       context,
@@ -259,6 +223,23 @@ class _GroupSettingsViewState extends State<GroupSettingsView> {
     }
   }
 
+  void _openFullScreenAvatar(BuildContext context) {
+    if (_currentAvatarUrl == null || _currentAvatarUrl!.isEmpty) return;
+
+    Navigator.of(context, rootNavigator: true).push(
+      MaterialPageRoute(
+        builder: (_) => const FullScreenImageViewer(),
+        settings: RouteSettings(
+          arguments: {
+            'url': widget.group.avatarUrl!,
+            'tag': 'group-avatar-${widget.group.id}',
+            'isAsset': false,
+          },
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final detailsCubit = widget.detailsCubit;
@@ -278,6 +259,8 @@ class _GroupSettingsViewState extends State<GroupSettingsView> {
   }
 
   Widget _buildBody(BuildContext context, {required bool? isMemberOverride}) {
+    final primary = Theme.of(context).primaryColor;
+
     return BlocBuilder<GroupListCubit, GroupListState>(
       bloc: widget.groupListCubit,
       builder: (context, listState) {
@@ -290,75 +273,489 @@ class _GroupSettingsViewState extends State<GroupSettingsView> {
                 : widget.group;
         final isMember = isMemberOverride ?? liveGroup.isMember;
 
-        return Scaffold(
-          appBar: AppBar(title: const Text('Group Settings')),
-          body: ListView(
-            padding: const EdgeInsets.all(20),
-            children: [
-              if (widget.isAdmin) ...[
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: const Icon(Icons.image_outlined),
-                  title: const Text('Group Photo'),
-                  subtitle: const Text('Change or remove the group photo'),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: _showPhotoOptions,
+        return GestureDetector(
+          onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+          child: Scaffold(
+            body: CustomScrollView(
+              slivers: [
+                SliverAppBar(
+                  title: const Text(
+                    'Group Settings',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  centerTitle: true,
+                  elevation: 0,
+                  scrolledUnderElevation: 0,
+                  backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+                  pinned: false,
+                  floating: true,
+                  leading: IconButton(
+                    icon: const Icon(
+                      Icons.arrow_back_ios_new_rounded,
+                      size: 22,
+                    ),
+                    onPressed: () => Navigator.pop(context),
+                  ),
                 ),
-                const Divider(height: 24),
-                const Text(
-                  'Group Title',
-                  style: TextStyle(fontWeight: FontWeight.w600),
-                ),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: _titleController,
-                  decoration: InputDecoration(
-                    hintText: 'Add a title (optional)',
-                    border: const OutlineInputBorder(),
-                    suffixIcon:
-                        _isSavingTitle
-                            ? const Padding(
-                              padding: EdgeInsets.all(12),
-                              child: SizedBox(
-                                width: 16,
-                                height: 16,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
+
+                SliverPadding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 16,
+                  ),
+                  sliver: SliverList.list(
+                    children: [
+                      if (widget.isAdmin) ...[
+                        Center(
+                          child: Stack(
+                            clipBehavior: Clip.none,
+                            children: [
+                              GestureDetector(
+                                onTap: () => _openFullScreenAvatar(context),
+                                child: Hero(
+                                  tag: 'group-avatar-${widget.group.id}',
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                        color: primary.withValues(alpha: 0.185),
+                                        width: 5.5,
+                                      ),
+                                    ),
+                                    child: CircleAvatar(
+                                      radius: 72,
+                                      backgroundColor: AppColors.black12,
+                                      backgroundImage:
+                                          _currentAvatarUrl != null
+                                              ? CachedNetworkImageProvider(
+                                                _currentAvatarUrl!,
+                                              )
+                                              : null,
+                                      child:
+                                          _currentAvatarUrl == null
+                                              ? Icon(
+                                                Icons.group,
+                                                size: 72,
+                                                color: Colors.grey.shade400,
+                                              )
+                                              : null,
+                                    ),
+                                  ),
                                 ),
                               ),
-                            )
-                            : IconButton(
-                              icon: const Icon(Icons.check),
-                              onPressed: _saveTitle,
-                            ),
-                  ),
-                  onSubmitted: (_) => _saveTitle(),
-                ),
-                const Divider(height: 32),
-              ],
-              if (isMember) ...[
-                GroupInfoActionButton(
-                  icon: Icons.exit_to_app_rounded,
-                  label: 'Leave Group',
-                  color: Colors.orange,
-                  onTap: () => _leaveGroup(context, liveGroup),
-                ),
-                const SizedBox(height: 8),
-              ],
 
-              // GroupInfoActionButton(
-              //   icon: Icons.delete_forever_rounded,
-              //   label: 'Delete Group',
-              //   color: Colors.red,
-              //   onTap: () => _deleteGroup(context, liveGroup),
-              // ),
-              GroupInfoActionButton(
-                icon: Icons.block_rounded,
-                label: 'Block Group',
-                color: Colors.red,
-                onTap: () => _blockGroup(context, liveGroup),
-              ),
-            ],
+                              Positioned(
+                                bottom: 0,
+                                left: 0,
+                                child: GestureDetector(
+                                  onTap:
+                                      _isUploadingPhoto ? null : _changePhoto,
+                                  child: ClipOval(
+                                    child: BackdropFilter(
+                                      filter: ImageFilter.blur(
+                                        sigmaX: 12,
+                                        sigmaY: 12,
+                                      ),
+                                      child: Container(
+                                        padding: const EdgeInsets.all(9),
+                                        decoration: BoxDecoration(
+                                          color: primary.withValues(
+                                            alpha: 0.85,
+                                          ),
+                                          shape: BoxShape.circle,
+                                          border: Border.all(
+                                            color: Colors.white.withValues(
+                                              alpha: 0.5,
+                                            ),
+                                            width: 1.5,
+                                          ),
+                                        ),
+                                        child: AnimatedSwitcher(
+                                          duration: const Duration(
+                                            milliseconds: 300,
+                                          ),
+                                          transitionBuilder:
+                                              (child, animation) =>
+                                                  ScaleTransition(
+                                                    scale: animation,
+                                                    child: FadeTransition(
+                                                      opacity: animation,
+                                                      child: child,
+                                                    ),
+                                                  ),
+                                          child:
+                                              _isUploadingPhoto
+                                                  ? const SizedBox(
+                                                    key: ValueKey('loading'),
+                                                    width: 18,
+                                                    height: 18,
+                                                    child:
+                                                        CircularProgressIndicator(
+                                                          color: Colors.white,
+                                                          strokeWidth: 2,
+                                                        ),
+                                                  )
+                                                  : const Icon(
+                                                    Icons.camera_alt_rounded,
+                                                    key: ValueKey(
+                                                      'camera_icon',
+                                                    ),
+                                                    size: 18,
+                                                    color: Colors.white,
+                                                  ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+
+                              if (_currentAvatarUrl != null &&
+                                  _currentAvatarUrl!.isNotEmpty)
+                                Positioned(
+                                  bottom: 0,
+                                  right: 0,
+                                  child: GestureDetector(
+                                    onTap:
+                                        _isRemovingPhoto ? null : _removePhoto,
+                                    child: ClipOval(
+                                      child: BackdropFilter(
+                                        filter: ImageFilter.blur(
+                                          sigmaX: 12,
+                                          sigmaY: 12,
+                                        ),
+                                        child: Container(
+                                          padding: const EdgeInsets.all(9),
+                                          decoration: BoxDecoration(
+                                            color: Colors.red.shade500
+                                                .withValues(alpha: 0.85),
+                                            shape: BoxShape.circle,
+                                            border: Border.all(
+                                              color: Colors.white.withValues(
+                                                alpha: 0.5,
+                                              ),
+                                              width: 1.5,
+                                            ),
+                                          ),
+                                          child: AnimatedSwitcher(
+                                            duration: const Duration(
+                                              milliseconds: 300,
+                                            ),
+                                            transitionBuilder:
+                                                (child, animation) =>
+                                                    ScaleTransition(
+                                                      scale: animation,
+                                                      child: FadeTransition(
+                                                        opacity: animation,
+                                                        child: child,
+                                                      ),
+                                                    ),
+                                            child:
+                                                _isRemovingPhoto
+                                                    ? const SizedBox(
+                                                      key: ValueKey(
+                                                        'loading_remove',
+                                                      ),
+                                                      width: 18,
+                                                      height: 18,
+                                                      child:
+                                                          CircularProgressIndicator(
+                                                            color: Colors.white,
+                                                            strokeWidth: 2,
+                                                          ),
+                                                    )
+                                                    : const Icon(
+                                                      Icons
+                                                          .delete_outline_rounded,
+                                                      key: ValueKey(
+                                                        'delete_icon',
+                                                      ),
+                                                      size: 18,
+                                                      color: Colors.white,
+                                                    ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+
+                        // --- Live Group Name & Title Preview ---
+                        Center(
+                          child: Text(
+                            liveGroup.name,
+                            style: Theme.of(
+                              context,
+                            ).textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 22,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Center(
+                          child: AnimatedBuilder(
+                            animation: _titleController,
+                            builder: (context, _) {
+                              final titleText = _titleController.text.trim();
+                              if (titleText.isEmpty) {
+                                return const SizedBox.shrink();
+                              }
+                              return Text(
+                                titleText,
+                                style: Theme.of(
+                                  context,
+                                ).textTheme.titleMedium?.copyWith(
+                                  color: Colors.grey.shade600,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                textAlign: TextAlign.center,
+                              );
+                            },
+                          ),
+                        ),
+
+                        const SizedBox(height: 32),
+
+                        // --- Group Title Section ---
+                        Text(
+                          'Group Title',
+                          style: Theme.of(
+                            context,
+                          ).textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        AnimatedBuilder(
+                          animation: _titleController,
+                          builder: (context, _) {
+                            final currentText = _titleController.text.trim();
+                            final isChanged =
+                                currentText != (widget.group.title ?? '');
+
+                            return TextField(
+                              controller: _titleController,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w500,
+                              ),
+                              decoration: InputDecoration(
+                                hintText: 'Add a title for this group',
+                                hintStyle: TextStyle(
+                                  color: Colors.grey.shade400,
+                                  fontWeight: FontWeight.w400,
+                                ),
+                                filled: true,
+                                fillColor: Theme.of(context).cardColor,
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 14,
+                                ),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(
+                                    color: Colors.grey.shade300,
+                                  ),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(
+                                    color: Colors.grey.shade300,
+                                  ),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(
+                                    color: primary,
+                                    width: 1.5,
+                                  ),
+                                ),
+                                suffixIcon:
+                                    _isSavingTitle
+                                        ? const Padding(
+                                          padding: EdgeInsets.all(14),
+                                          child: SizedBox(
+                                            width: 16,
+                                            height: 16,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                            ),
+                                          ),
+                                        )
+                                        : IconButton(
+                                          icon: Icon(
+                                            Icons.check_circle,
+                                            color:
+                                                isChanged
+                                                    ? primary
+                                                    : Colors.grey.shade300,
+                                          ),
+                                          onPressed:
+                                              isChanged ? _saveTitle : null,
+                                          tooltip: 'Save Title',
+                                        ),
+                              ),
+                              onSubmitted:
+                                  isChanged ? (_) => _saveTitle() : null,
+                            );
+                          },
+                        ),
+                        const SizedBox(height: 32),
+
+                        // --- Group Admins Section ---
+                        BlocBuilder<GroupMembersCubit, GroupMembersState>(
+                          bloc: widget.membersCubit,
+                          builder: (context, memberState) {
+                            List<GroupMemberModel> admins = [];
+
+                            if (memberState is GroupMembersLoaded) {
+                              admins =
+                                  memberState.members
+                                      .where(
+                                        (m) => m.role == GroupMemberRole.admin,
+                                      )
+                                      .toList();
+                            }
+
+                            if (admins.isEmpty) return const SizedBox.shrink();
+
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Group Admins',
+                                  style: Theme.of(
+                                    context,
+                                  ).textTheme.titleSmall?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.grey.shade600,
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                Container(
+                                  decoration: BoxDecoration(
+                                    color: Theme.of(context).cardColor,
+                                    borderRadius: BorderRadius.circular(16),
+                                    border: Border.all(
+                                      color: Colors.grey.shade200,
+                                    ),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withValues(
+                                          alpha: 0.02,
+                                        ),
+                                        blurRadius: 8,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ],
+                                  ),
+                                  child: ListView.separated(
+                                    shrinkWrap: true,
+                                    physics:
+                                        const NeverScrollableScrollPhysics(),
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 8,
+                                    ),
+                                    itemCount: admins.length,
+                                    separatorBuilder:
+                                        (_, __) => const Divider(
+                                          height: 1,
+                                          indent: 64,
+                                        ),
+                                    itemBuilder: (context, index) {
+                                      final admin = admins[index];
+                                      final isMe =
+                                          admin.userId == widget.currentUserId;
+
+                                      return ListTile(
+                                        leading: CircleAvatar(
+                                          radius: 22,
+                                          backgroundColor: Colors.grey.shade200,
+                                          backgroundImage:
+                                              admin.userAvatar != null
+                                                  ? CachedNetworkImageProvider(
+                                                    admin.userAvatar!,
+                                                  )
+                                                  : null,
+                                          child:
+                                              admin.userAvatar == null
+                                                  ? Icon(
+                                                    Icons.person,
+                                                    color: Colors.grey.shade400,
+                                                  )
+                                                  : null,
+                                        ),
+                                        title: Text(
+                                          isMe ? 'You' : admin.userName,
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: 15,
+                                          ),
+                                        ),
+                                        trailing: Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 10,
+                                            vertical: 4,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: primary.withValues(
+                                              alpha: 0.1,
+                                            ),
+                                            borderRadius: BorderRadius.circular(
+                                              20,
+                                            ),
+                                          ),
+                                          child: Text(
+                                            'Admin',
+                                            style: TextStyle(
+                                              color: primary,
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ),
+                              ],
+                            );
+                          },
+                        ),
+                        const SizedBox(height: 32),
+                        const Divider(height: 1),
+                        const SizedBox(height: 24),
+                      ],
+
+                      // --- Danger Zone ---
+                      if (isMember) ...[
+                        GroupInfoActionButton(
+                          icon: Icons.exit_to_app_rounded,
+                          label: 'Leave Group',
+                          color: Colors.orange,
+                          onTap: () => _leaveGroup(context, liveGroup),
+                        ),
+                        const SizedBox(height: 12),
+                      ],
+                      GroupInfoActionButton(
+                        icon: Icons.block_rounded,
+                        label: 'Block Group',
+                        color: Colors.red,
+                        onTap: () => _blockGroup(context, liveGroup),
+                      ),
+
+                      const SizedBox(height: 40),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         );
       },

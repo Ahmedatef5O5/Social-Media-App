@@ -47,8 +47,8 @@ class GroupInfoView extends StatefulWidget {
 
 class _GroupInfoViewState extends State<GroupInfoView> {
   bool _isEditingName = false;
-  String? _currentAvatarUrl;
   bool _isMuted = false;
+  bool _isUploadingPhoto = false;
 
   final _nameController = TextEditingController();
   late final GroupChatServices _services;
@@ -67,7 +67,6 @@ class _GroupInfoViewState extends State<GroupInfoView> {
       ..loadMembers();
     _scrollController = ScrollController()..addListener(_onScroll);
     _nameController.text = widget.group.name;
-    _currentAvatarUrl = widget.group.avatarUrl;
     _mediaCubit = SharedMediaCubit(
       GroupChatMediaDataSource(services: _services, groupId: widget.group.id),
     );
@@ -125,11 +124,7 @@ class _GroupInfoViewState extends State<GroupInfoView> {
     );
     if (picked == null || !mounted) return;
 
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => const Center(child: CustomLoadingIndicator()),
-    );
+    setState(() => _isUploadingPhoto = true);
 
     try {
       final result = await _services.uploadGroupAvatar(File(picked.path));
@@ -140,10 +135,6 @@ class _GroupInfoViewState extends State<GroupInfoView> {
       );
 
       if (mounted) {
-        Navigator.pop(context);
-
-        setState(() => _currentAvatarUrl = result.secureUrl);
-
         context.read<GroupListCubit>().updateGroupAvatar(
           groupId: widget.group.id,
           newAvatarUrl: result.secureUrl,
@@ -156,9 +147,11 @@ class _GroupInfoViewState extends State<GroupInfoView> {
       }
     } catch (e) {
       if (mounted) {
-        Navigator.pop(context);
-
         AppToast.error('Failed to update photo: $e');
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isUploadingPhoto = false);
       }
     }
   }
@@ -170,7 +163,13 @@ class _GroupInfoViewState extends State<GroupInfoView> {
       return;
     }
     await _services.updateGroup(groupId: widget.group.id, name: name);
-    if (mounted) setState(() => _isEditingName = false);
+    if (mounted) {
+      context.read<GroupListCubit>().updateGroupTitle(
+        groupId: widget.group.id,
+        newTitle: name,
+      );
+      setState(() => _isEditingName = false);
+    }
   }
 
   Future<void> _removeMember(GroupMemberModel member) async {
@@ -313,6 +312,11 @@ class _GroupInfoViewState extends State<GroupInfoView> {
                   orElse: () => widget.group,
                 )
                 : widget.group;
+
+        if (!_isEditingName && _nameController.text != liveGroup.name) {
+          _nameController.text = liveGroup.name;
+        }
+
         return Scaffold(
           body: Column(
             children: [
@@ -343,12 +347,11 @@ class _GroupInfoViewState extends State<GroupInfoView> {
                       controller: _scrollController,
                       slivers: [
                         GroupInfoHeader(
-                          group: liveGroup.copyWith(
-                            avatarUrl: _currentAvatarUrl,
-                          ),
+                          group: liveGroup,
                           isAdmin: isAdmin,
                           isEditingName: _isEditingName,
                           controller: _nameController,
+                          isUploadingPhoto: _isUploadingPhoto,
                           onEditTap:
                               () => setState(() => _isEditingName = true),
                           onSubmit: _updateGroupName,
