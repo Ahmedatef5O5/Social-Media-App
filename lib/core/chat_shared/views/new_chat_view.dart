@@ -2,6 +2,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/router/app_routes.dart';
+import '../../../features/group_chats/cubit/group_list_cubit/group_list_cubit.dart';
+import '../../../features/single_chats/cubit/chats_cubit/chats_cubit.dart';
 import '../helpers/avatar_stack.dart';
 import '../../../features/home/cubits/home_cubit/home_cubit.dart';
 import '../../../features/search/utils/chat_tile_skeleton_list.dart';
@@ -28,18 +30,26 @@ class _NewChatViewState extends State<NewChatView> {
     super.dispose();
   }
 
-  void _openChat(BuildContext context, NewChatListItem item) {
+  void _openChat(BuildContext context, NewChatListItem item) async {
     if (item.isGroup) {
-      Navigator.of(
+      await Navigator.of(
         context,
         rootNavigator: true,
       ).pushNamed(AppRoutes.groupChatRoute, arguments: item.group);
+
+      if (context.mounted) {
+        context.read<GroupListCubit>().loadGroups(isRefresh: true);
+      }
     } else {
       final chatUser = ChatUserModel.fromEntity(item.person!);
-      Navigator.of(
+      await Navigator.of(
         context,
         rootNavigator: true,
       ).pushNamed(AppRoutes.chatDetailsViewRoute, arguments: chatUser);
+
+      if (context.mounted) {
+        context.read<ChatsCubit>().getChats(isRefresh: true);
+      }
     }
   }
 

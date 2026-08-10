@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lottie/lottie.dart';
 import '../../../core/router/app_routes.dart';
+import '../../../features/group_chats/cubit/group_list_cubit/group_list_cubit.dart';
+import '../../../features/single_chats/cubit/chats_cubit/chats_cubit.dart';
 import '../helpers/avatar_stack.dart';
 import '../../../features/group_chats/widgets/group_tile_item_widget.dart';
 import '../../../features/single_chats/widgets/chat_item_tile.dart';
@@ -192,17 +194,28 @@ class _InteractiveEmptyState extends StatelessWidget {
               child: Material(
                 color: Colors.transparent,
                 child: InkWell(
-                  onTap: () {
+                  onTap: () async {
                     if (isGroupTab) {
-                      Navigator.of(
+                      await Navigator.of(
                         context,
                         rootNavigator: true,
                       ).pushNamed(AppRoutes.createGroupRoute);
+                      if (context.mounted) {
+                        context.read<GroupListCubit>().loadGroups(
+                          isRefresh: true,
+                        );
+                      }
                     } else {
-                      Navigator.of(
+                      await Navigator.of(
                         context,
                         rootNavigator: true,
                       ).pushNamed(AppRoutes.newChatViewRoute);
+                      if (context.mounted) {
+                        context.read<ChatsCubit>().getChats(isRefresh: true);
+                        context.read<GroupListCubit>().loadGroups(
+                          isRefresh: true,
+                        );
+                      }
                     }
                   },
                   borderRadius: BorderRadius.circular(100),

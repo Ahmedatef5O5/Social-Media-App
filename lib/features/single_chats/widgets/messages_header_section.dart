@@ -3,6 +3,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:social_media_app/core/router/app_routes.dart';
 import '../../../core/chat_shared/cubits/conversations_cubit/conversations_cubit.dart';
 import '../../../core/widgets/custom_badge.dart';
+import '../../group_chats/cubit/group_list_cubit/group_list_cubit.dart';
+import '../cubit/chats_cubit/chats_cubit.dart';
 
 class MessagesHeaderSection extends StatelessWidget {
   final bool isDark;
@@ -35,6 +37,8 @@ class MessagesHeaderSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final archivedUnreadCount =
         context.watch<ConversationsCubit>().archivedUnreadCount;
+    final hasArchivedConversations =
+        context.watch<ConversationsCubit>().hasArchivedConversations;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -54,21 +58,35 @@ class MessagesHeaderSection extends StatelessWidget {
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  CustomBadge(
-                    count: archivedUnreadCount,
-                    size: 15,
-                    fontSize: 8.2,
-                    top: 4.2,
-                    right: 4.2,
-                    child: IconButton(
-                      icon: Icon(
-                        Icons.archive_outlined,
-                        color: Theme.of(context).primaryColor,
-                        size: 24,
-                      ),
-                      tooltip: 'Archived chats',
-                      onPressed: () => _openArchivedChats(context),
-                    ),
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 220),
+                    transitionBuilder:
+                        (child, animation) => ScaleTransition(
+                          scale: animation,
+                          child: FadeTransition(
+                            opacity: animation,
+                            child: child,
+                          ),
+                        ),
+                    child:
+                        hasArchivedConversations
+                            ? CustomBadge(
+                              count: archivedUnreadCount,
+                              size: 15,
+                              fontSize: 8.2,
+                              top: 4.2,
+                              right: 4.2,
+                              child: IconButton(
+                                icon: Icon(
+                                  Icons.archive_outlined,
+                                  color: Theme.of(context).primaryColor,
+                                  size: 24,
+                                ),
+                                tooltip: 'Archived chats',
+                                onPressed: () => _openArchivedChats(context),
+                              ),
+                            )
+                            : const SizedBox.shrink(),
                   ),
                   AnimatedBuilder(
                     animation: tabController,
@@ -81,13 +99,32 @@ class MessagesHeaderSection extends StatelessWidget {
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        onSelected: (value) {
+                        onSelected: (value) async {
                           if (value == 'create_group') {
-                            Navigator.of(
+                            await Navigator.of(
                               context,
                               rootNavigator: true,
                             ).pushNamed(AppRoutes.createGroupRoute);
-                          } else if (value == 'new_chat') {}
+
+                            if (context.mounted) {
+                              context.read<GroupListCubit>().loadGroups(
+                                isRefresh: true,
+                              );
+                            }
+                          } else if (value == 'new_chat') {
+                            await Navigator.of(
+                              context,
+                              rootNavigator: true,
+                            ).pushNamed(AppRoutes.newChatViewRoute);
+                            if (context.mounted) {
+                              context.read<ChatsCubit>().getChats(
+                                isRefresh: true,
+                              );
+                              context.read<GroupListCubit>().loadGroups(
+                                isRefresh: true,
+                              );
+                            }
+                          }
                         },
                         itemBuilder:
                             (context) => [

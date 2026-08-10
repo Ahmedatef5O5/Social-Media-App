@@ -323,6 +323,12 @@ class ConversationsCubit extends Cubit<ConversationsState> {
     return s.archivedItems.fold<int>(0, (sum, item) => sum + item.unreadCount);
   }
 
+  bool get hasArchivedConversations {
+    final s = state;
+    if (s is! ConversationsLoaded) return false;
+    return s.archivedItems.isNotEmpty;
+  }
+
   @override
   Future<void> close() {
     _chatsSub?.cancel();
