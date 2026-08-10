@@ -192,7 +192,8 @@ class ChatItemTile extends StatelessWidget {
             : '${user.name} unblocked you';
       default:
         return (user.lastMessage == null || user.lastMessage!.isEmpty)
-            ? 'Tap to start chatting'
+            ? 'No messages yet'
+            // ? 'Tap to start chatting'
             : user.lastMessage!;
     }
   }

@@ -7,7 +7,7 @@ import '../../../../core/widgets/empty_findings_animation_widget.dart';
 import '../../group_chats/cubit/group_list_cubit/group_list_cubit.dart';
 import '../../group_chats/models/group_model.dart';
 import '../cubit/search_groups_cubit/search_groups_cubit.dart';
-import '../utils/groups_tab_skeleton_list.dart';
+import '../utils/chat_tile_skeleton_list.dart';
 import '../utils/search_view_metrics.dart';
 import 'group_search_result_tile.dart';
 
@@ -56,7 +56,7 @@ class _GroupsTabViewState extends State<GroupsTabView>
             builder: (context, groupListState) {
               if (groupListState is GroupListInitial ||
                   groupListState is GroupListLoading) {
-                return const GroupsTabSkeletonList();
+                return const ChatTileSkeletonList();
               }
 
               if (groupListState is GroupListLoaded) {
@@ -77,7 +77,7 @@ class _GroupsTabViewState extends State<GroupsTabView>
         return BlocBuilder<SearchGroupsCubit, SearchGroupsState>(
           builder: (context, state) {
             if (state is SearchGroupsLoading) {
-              return const GroupsTabSkeletonList();
+              return const ChatTileSkeletonList();
             }
 
             if (state is SearchGroupsError) {

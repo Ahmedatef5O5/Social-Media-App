@@ -4,8 +4,8 @@ import 'package:shimmer/shimmer.dart';
 import '../../../core/widgets/skeleton_shapes.dart';
 import 'search_view_metrics.dart';
 
-class GroupsTabSkeletonList extends StatelessWidget {
-  const GroupsTabSkeletonList({super.key});
+class ChatTileSkeletonList extends StatelessWidget {
+  const ChatTileSkeletonList({super.key});
 
   @override
   Widget build(BuildContext context) {
