@@ -3,11 +3,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import 'package:social_media_app/core/router/app_routes.dart';
-import '../../../core/helpers/formatted_date.dart';
-import '../../../core/presence/cubit/presence_cubit/presence_cubit.dart';
 import '../../../core/presence/model/chat_action_type.dart';
-import '../../../core/presence/model/presence_info.dart';
 import '../../../core/presence/widgets/presence_avatar_widget.dart';
+import '../../../core/presence/widgets/presence_status_text.dart';
 import '../../../core/widgets/app_avatar.dart';
 import '../../../core/widgets/calls/call_icon_button.dart';
 import '../../single_calls/model/call_model.dart';
@@ -114,58 +112,10 @@ class ReceiverDetailsHeaderSection extends StatelessWidget {
                           ),
                         );
                       }
-                      return Builder(
-                        builder: (context) {
-                          final presenceInfo = context
-                              .select<PresenceCubit, PresenceInfo?>(
-                                (cubit) => cubit.of(receiverUser.id),
-                              );
-
-                          final isOnline =
-                              presenceInfo?.isEffectivelyOnline ??
-                              receiverUser.isOnline;
-                          final lastSeen =
-                              presenceInfo?.lastSeen ?? receiverUser.lastSeen;
-
-                          if (isOnline) {
-                            return const Text(
-                              'Online',
-                              style: TextStyle(
-                                color: Colors.green,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            );
-                          }
-
-                          if (lastSeen != null) {
-                            final lastSeenStr = FormattedDate.getLastSeen(
-                              lastSeen,
-                            );
-                            if (lastSeenStr == 'Online' ||
-                                lastSeenStr == 'just now') {
-                              return const Text(
-                                'Online',
-                                style: TextStyle(
-                                  color: Colors.green,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              );
-                            }
-                            return Text(
-                              "Last seen $lastSeenStr",
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                color: Colors.grey,
-                                fontSize: 11,
-                              ),
-                            );
-                          }
-
-                          return const SizedBox.shrink();
-                        },
+                      return PresenceStatusText(
+                        userId: receiverUser.id,
+                        fallbackIsOnline: receiverUser.isOnline,
+                        fallbackLastSeen: receiverUser.lastSeen,
                       );
                     },
                   ),
