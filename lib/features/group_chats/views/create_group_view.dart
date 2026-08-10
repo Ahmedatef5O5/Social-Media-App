@@ -6,12 +6,14 @@ import 'package:gap/gap.dart';
 import '../../../core/toast/app_toast.dart';
 import 'package:social_media_app/core/widgets/custom_loading_indicator.dart';
 import 'package:social_media_app/features/social_graph/services/connections_service.dart';
+import '../../../core/chat_shared/helpers/avatar_stack.dart';
 import '../cubit/group_list_cubit/group_list_cubit.dart';
 import '../helpers/group_user_list_tile.dart';
 import '../services/group_chat_services.dart';
 import '../widgets/group_header_section_widget.dart';
 import '../widgets/group_search_field_widget.dart';
 import '../widgets/selected_members_section_widget.dart';
+import '../../home/cubits/home_cubit/home_cubit.dart';
 
 class CreateGroupView extends StatefulWidget {
   const CreateGroupView({super.key});
@@ -26,6 +28,7 @@ class _CreateGroupViewState extends State<CreateGroupView> {
 
   File? _groupImage;
   bool _isCreating = false;
+  bool _isLoadingUsers = true;
 
   List<Map<String, dynamic>> _allUsers = [];
   List<Map<String, dynamic>> _filteredUsers = [];
@@ -40,11 +43,13 @@ class _CreateGroupViewState extends State<CreateGroupView> {
   }
 
   Future<void> _loadUsers() async {
+    setState(() => _isLoadingUsers = true);
     final data = await ConnectionsService().getMyConnections();
     if (mounted) {
       setState(() {
         _allUsers = data;
         _filteredUsers = _allUsers;
+        _isLoadingUsers = false;
       });
     }
   }
@@ -108,6 +113,179 @@ class _CreateGroupViewState extends State<CreateGroupView> {
     _nameController.dispose();
     _searchController.dispose();
     super.dispose();
+  }
+
+  Widget _buildPremiumEmptyState(BuildContext context) {
+    final query = _searchController.text.trim();
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    if (query.isNotEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.only(top: 40.0),
+          child: Text(
+            'No results found for "$query"',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: Colors.grey,
+              fontSize: 15,
+            ),
+          ),
+        ),
+      );
+    }
+
+    final dummyAvatars = List.generate(
+      28,
+      (index) => 'https://i.pravatar.cc/150?img=${(index % 70) + 12}',
+    );
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 20.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(28),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: theme.primaryColor.withValues(alpha: 0.04),
+              ),
+              child: Icon(
+                Icons.groups_rounded,
+                size: 65,
+                color: theme.primaryColor.withValues(alpha: 0.8),
+              ),
+            ),
+            const SizedBox(height: 28),
+            Text(
+              'Build Your Community',
+              style: theme.textTheme.headlineSmall!.copyWith(
+                color: theme.primaryColor,
+                fontWeight: FontWeight.w800,
+                letterSpacing: -0.5,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 44),
+              child: Text(
+                'You haven\'t added any connections yet.\nDiscover people nearby or explore suggested profiles to create your first group.', // تغيير النص الفرعي
+                textAlign: TextAlign.center,
+                style: theme.textTheme.bodyMedium!.copyWith(
+                  color: isDark ? Colors.white60 : Colors.black54,
+                  fontSize: 14.5,
+                  height: 1.6,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+            const SizedBox(height: 40),
+
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: () {
+                    Navigator.of(context).popUntil((route) => route.isFirst);
+                    final navController =
+                        context.read<HomeCubit>().navController;
+                    if (navController != null) {
+                      navController.jumpToTab(1);
+                    }
+                  },
+                  borderRadius: BorderRadius.circular(100),
+                  highlightColor: theme.primaryColor.withValues(alpha: 0.05),
+                  splashColor: theme.primaryColor.withValues(alpha: 0.1),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color:
+                          isDark
+                              ? Colors.white.withValues(alpha: 0.03)
+                              : Colors.white,
+                      borderRadius: BorderRadius.circular(100),
+                      border: Border.all(
+                        color:
+                            isDark
+                                ? Colors.white.withValues(alpha: 0.08)
+                                : Colors.black.withValues(alpha: 0.05),
+                        width: 1,
+                      ),
+                      boxShadow:
+                          isDark
+                              ? null
+                              : [
+                                BoxShadow(
+                                  color: theme.primaryColor.withValues(
+                                    alpha: 0.08,
+                                  ),
+                                  blurRadius: 24,
+                                  offset: const Offset(0, 8),
+                                ),
+                              ],
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.only(left: 4),
+                          child: AvatarStack(
+                            imageUrls: dummyAvatars,
+                            maxVisible: 7,
+                            avatarSize: 30,
+                            overlapOffset: 18,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Text(
+                          'Discover People',
+                          style: TextStyle(
+                            color: isDark ? Colors.white : Colors.black87,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 14,
+                            letterSpacing: -0.2,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Container(
+                          height: 36,
+                          width: 36,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: theme.primaryColor,
+                            boxShadow: [
+                              BoxShadow(
+                                color: theme.primaryColor.withValues(
+                                  alpha: 0.4,
+                                ),
+                                blurRadius: 10,
+                                offset: const Offset(0, 3),
+                              ),
+                            ],
+                          ),
+                          child: const Icon(
+                            Icons.person_search_rounded,
+                            color: Colors.white,
+                            size: 18,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -204,29 +382,39 @@ class _CreateGroupViewState extends State<CreateGroupView> {
               ),
             ),
 
-            SliverPadding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              sliver: SliverList(
-                delegate: SliverChildBuilderDelegate((context, index) {
-                  final user = _filteredUsers[index];
-                  final uid = user['id'] as String;
-                  final isSelected = _selectedUserIds.contains(uid);
+            if (_isLoadingUsers)
+              const SliverFillRemaining(
+                child: Center(child: CustomLoadingIndicator()),
+              )
+            else if (_filteredUsers.isEmpty)
+              SliverFillRemaining(
+                hasScrollBody: false,
+                child: _buildPremiumEmptyState(context),
+              )
+            else
+              SliverPadding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                sliver: SliverList(
+                  delegate: SliverChildBuilderDelegate((context, index) {
+                    final user = _filteredUsers[index];
+                    final uid = user['id'] as String;
+                    final isSelected = _selectedUserIds.contains(uid);
 
-                  return GroupUserListTile(
-                    user: user,
-                    isSelected: isSelected,
-                    primary: primary,
-                    onTap: () {
-                      setState(() {
-                        isSelected
-                            ? _selectedUserIds.remove(uid)
-                            : _selectedUserIds.add(uid);
-                      });
-                    },
-                  );
-                }, childCount: _filteredUsers.length),
+                    return GroupUserListTile(
+                      user: user,
+                      isSelected: isSelected,
+                      primary: primary,
+                      onTap: () {
+                        setState(() {
+                          isSelected
+                              ? _selectedUserIds.remove(uid)
+                              : _selectedUserIds.add(uid);
+                        });
+                      },
+                    );
+                  }, childCount: _filteredUsers.length),
+                ),
               ),
-            ),
 
             const SliverToBoxAdapter(child: Gap(120)),
           ],
@@ -234,7 +422,7 @@ class _CreateGroupViewState extends State<CreateGroupView> {
 
         floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
         floatingActionButton:
-            isKeyboardOpen
+            isKeyboardOpen || _allUsers.isEmpty
                 ? null
                 : Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -247,8 +435,8 @@ class _CreateGroupViewState extends State<CreateGroupView> {
                         if (_canCreate)
                           BoxShadow(
                             color: primary.withValues(alpha: 0.35),
-                            blurRadius: 20,
-                            offset: const Offset(0, 8),
+                            blurRadius: 6,
+                            offset: const Offset(0, 4),
                           ),
                       ],
                     ),
