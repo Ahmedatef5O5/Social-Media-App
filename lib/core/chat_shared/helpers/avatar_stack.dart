@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:social_media_app/core/widgets/cached_cloudinary_image.dart';
-import '../../../core/constants/app_images.dart';
-import '../../../core/themes/app_colors.dart';
-import '../../../core/widgets/custom_loading_indicator.dart';
+import '../../constants/app_images.dart';
+import '../../themes/app_colors.dart';
+import '../../widgets/custom_loading_indicator.dart';
 
-class ReactorsAvatarStack extends StatelessWidget {
+class AvatarStack extends StatelessWidget {
   final List<String> imageUrls;
   final int maxVisible;
   final double avatarSize;
   final double overlapOffset;
 
-  const ReactorsAvatarStack({
+  const AvatarStack({
     super.key,
     required this.imageUrls,
     this.maxVisible = 8,

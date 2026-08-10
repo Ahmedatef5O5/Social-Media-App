@@ -15,7 +15,7 @@ import '../../posts/widgets/post_reactions_bottom_sheet.dart';
 import '../helper/comment_sheet_shared_widgets.dart';
 import '../helper/comments_count_skeleton.dart';
 import '../helper/editing_comment_banner.dart';
-import '../helper/reactor_avatar_stack.dart';
+import '../../../core/chat_shared/helpers/avatar_stack.dart';
 import '../helper/replying_to_banner.dart';
 import 'send_comment_section.dart';
 import 'ai_comment_suggestions_row.dart';
@@ -208,9 +208,7 @@ class _CommentsSheetSectionState extends State<CommentsSheetSection> {
                                     .copyWith(color: AppColors.grey7),
                               ),
                               Gap(12),
-                              ReactorsAvatarStack(
-                                imageUrls: post.likersImages ?? [],
-                              ),
+                              AvatarStack(imageUrls: post.likersImages ?? []),
                             ],
                           ),
                         ),

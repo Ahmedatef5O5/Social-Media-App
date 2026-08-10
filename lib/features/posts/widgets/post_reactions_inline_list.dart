@@ -7,7 +7,7 @@ import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/themes/app_colors.dart';
 import '../../../core/utilities/supabase_constants.dart';
 import '../../../core/widgets/app_avatar.dart';
-import '../../comments/helper/reactor_avatar_stack.dart';
+import '../../../core/chat_shared/helpers/avatar_stack.dart';
 import '../../home/cubits/home_cubit/home_cubit.dart';
 import '../../profile/widgets/user_preview_dialog.dart';
 import '../../reactions/model/reaction_entry.dart';
@@ -210,7 +210,7 @@ class _PostReactionsInlineListState extends State<PostReactionsInlineList> {
                     ).textTheme.titleMedium!.copyWith(color: AppColors.grey7),
                   ),
                   const SizedBox(width: 12),
-                  ReactorsAvatarStack(
+                  AvatarStack(
                     imageUrls:
                         entries.map((e) => e.userImageUrl ?? '').toList(),
                   ),

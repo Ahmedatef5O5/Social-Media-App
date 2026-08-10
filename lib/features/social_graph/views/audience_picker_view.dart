@@ -112,7 +112,6 @@ class _AudiencePickerViewState extends State<AudiencePickerView> {
         ),
         body: Column(
           children: [
-            // شريط البحث المطور
             if (!_isLoading && _errorMessage == null && _connections.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
@@ -322,7 +321,6 @@ class _AudiencePickerViewState extends State<AudiencePickerView> {
                       ),
                     ),
                   ),
-                  // Custom Checkbox أنيق
                   AnimatedContainer(
                     duration: const Duration(milliseconds: 200),
                     curve: Curves.easeInOut,
