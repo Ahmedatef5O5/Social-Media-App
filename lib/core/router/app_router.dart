@@ -55,6 +55,7 @@ import '../../features/group_chats/services/group_chat_services.dart';
 import '../../features/group_chats/views/create_group_view.dart';
 import '../../features/about_us/views/about_us_view.dart';
 import '../../features/single_chats/services/chat_presence_service.dart';
+import '../../features/social_graph/services/connections_service.dart';
 import '../../features/stories/cubit/stories_cubit/stories_cubit.dart';
 import '../../features/stories/model/story_model.dart';
 import '../../features/stories/views/creat_text_story_view.dart';
@@ -64,7 +65,9 @@ import '../../features/stories/views/my_stories_list_view.dart';
 import '../../features/stories/views/pending_story_resolver_view.dart';
 import '../cache/repository/media_cache_repository.dart';
 import '../chat_shared/cubits/conversations_cubit/conversations_cubit.dart';
+import '../chat_shared/cubits/new_chat_cubit/new_chat_cubit.dart';
 import '../chat_shared/views/archived_chats_view.dart';
+import '../chat_shared/views/new_chat_view.dart';
 import '../connectivity/cubit/connectivity_cubit.dart';
 import '../supabase/supabase_provider.dart';
 
@@ -188,6 +191,7 @@ class AppRouter {
       case AppRoutes.chatDetailsViewRoute:
       case AppRoutes.receiverProfileViewRoute:
       case AppRoutes.archivedChatsViewRoute:
+      case AppRoutes.newChatViewRoute:
         return _chatRoutes(settings);
 
       case AppRoutes.createGroupRoute:
@@ -470,6 +474,18 @@ class AppRouter {
           BlocProvider<ConversationsCubit>.value(
             value: cubit,
             child: const ArchivedChatsView(),
+          ),
+          settings: settings,
+        );
+      case AppRoutes.newChatViewRoute:
+        return _buildRoute(
+          BlocProvider(
+            create:
+                (context) => NewChatCubit(
+                  context.read<ConnectionsService>(),
+                  context.read<GroupChatServices>(),
+                )..loadNewChatCandidates(),
+            child: const NewChatView(),
           ),
           settings: settings,
         );
