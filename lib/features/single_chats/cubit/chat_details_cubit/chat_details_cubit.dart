@@ -200,11 +200,15 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
     }
   }
 
-  // ignore: unused_field
-  bool _isUserAtBottom = true;
+  @override
+  final ValueNotifier<bool> isAtBottomNotifier = ValueNotifier<bool>(true);
+  bool get isUserAtBottom => isAtBottomNotifier.value;
 
+  List<MessageModel> _pendingMessagesSnapshot = [];
+  final ValueNotifier<int> pendingNewCountNotifier = ValueNotifier<int>(0);
+  bool get hasPendingMessages => pendingNewCountNotifier.value > 0;
   void setUserAtBottom(bool isAtBottom) {
-    _isUserAtBottom = isAtBottom;
+    isAtBottomNotifier.value = isAtBottom;
   }
 
   void getMessagesStream({required String receiverId}) {
@@ -270,6 +274,19 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
             }
             _hasReceivedFirstStreamEvent = true;
 
+            final existingIds = cachedMessages.map((m) => m.id).toSet();
+            final incomingIds = resolved.map((m) => m.id).toSet();
+            final hasGenuinelyNewMessages =
+                incomingIds.difference(existingIds).isNotEmpty;
+
+            if (!isAtBottomNotifier.value && hasGenuinelyNewMessages) {
+              _pendingMessagesSnapshot = resolved;
+              pendingNewCountNotifier.value =
+                  incomingIds.difference(existingIds).length;
+              _persistMessagesSnapshot(_messagesSnapshotKey!, resolved);
+              return;
+            }
+
             final currentIds = resolved.map((m) => m.id).toSet();
             bubbleKeys.removeWhere((key, _) => !currentIds.contains(key));
             _registerBubbleKeys(resolved);
@@ -283,6 +300,17 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
             debugPrint('Messages stream error: $e');
           },
         );
+  }
+
+  void flushPendingMessages() {
+    if (_pendingMessagesSnapshot.isEmpty) return;
+    final currentIds = _pendingMessagesSnapshot.map((m) => m.id).toSet();
+    bubbleKeys.removeWhere((key, _) => !currentIds.contains(key));
+    _registerBubbleKeys(_pendingMessagesSnapshot);
+    cachedMessages = _pendingMessagesSnapshot;
+    _pendingMessagesSnapshot = [];
+    pendingNewCountNotifier.value = 0;
+    emit(MessagesSuccessLoaded(messages: cachedMessages));
   }
 
   void _registerBubbleKeys(List<MessageModel> messages) {
@@ -844,6 +872,8 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
       notifier.dispose();
     }
     _messageSubscription?.cancel();
+    isAtBottomNotifier.dispose();
+    pendingNewCountNotifier.dispose();
     return super.close();
   }
 }

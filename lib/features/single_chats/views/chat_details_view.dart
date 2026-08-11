@@ -43,7 +43,6 @@ class _ChatDetailsViewState extends State<ChatDetailsView>
   MessageModel? _replyTo;
 
   final ValueNotifier<bool> _showScrollButtonNotifier = ValueNotifier(false);
-  final ValueNotifier<int> _unreadCountNotifier = ValueNotifier(0);
 
   final ItemScrollController _itemScrollController = ItemScrollController();
   final ItemPositionsListener _itemPositionsListener =
@@ -134,9 +133,16 @@ class _ChatDetailsViewState extends State<ChatDetailsView>
   // ignore: unused_field
   bool _isCurrentlyAtBottom = true;
 
-  void _scrollListener() {
-    if (!mounted) return;
+  static const double _bottomEdgeTolerance = 0.05;
 
+  bool _computeIsAtBottom(Iterable<ItemPosition> positions) {
+    if (positions.isEmpty) return true;
+    final minPosition = positions.reduce((a, b) => a.index < b.index ? a : b);
+    return minPosition.index == 0 &&
+        minPosition.itemLeadingEdge >= -_bottomEdgeTolerance;
+  }
+
+  void _scrollListener() {
     final positions = _itemPositionsListener.itemPositions.value;
     if (positions.isEmpty) return;
 
@@ -144,15 +150,15 @@ class _ChatDetailsViewState extends State<ChatDetailsView>
     final int minIndex = minPosition.index;
     final double leadingEdge = minPosition.itemLeadingEdge;
 
-    final bool isAtBottom = minIndex == 0;
+    final bool isAtBottom = _computeIsAtBottom(positions);
 
     if (isAtBottom) {
       _isCurrentlyAtBottom = true;
       _showScrollButtonNotifier.value = false;
-      _unreadCountNotifier.value = 0;
       if (!_chatCubit.isClosed) {
-        _chatCubit.markAsRead(senderId: _receiverId);
         _chatCubit.setUserAtBottom(true);
+        _chatCubit.flushPendingMessages();
+        _chatCubit.markAsRead(senderId: _receiverId);
       }
       _lastMinIndex = minIndex;
       _lastLeadingEdge = leadingEdge;
@@ -188,7 +194,7 @@ class _ChatDetailsViewState extends State<ChatDetailsView>
     if (goingTowardNewer) {
       _showScrollButtonNotifier.value = true;
     } else if (goingTowardOlder) {
-      if (_unreadCountNotifier.value == 0) {
+      if (_chatCubit.pendingNewCountNotifier.value == 0) {
         _showScrollButtonNotifier.value = false;
       }
     }
@@ -197,11 +203,8 @@ class _ChatDetailsViewState extends State<ChatDetailsView>
     _lastLeadingEdge = leadingEdge;
   }
 
-  bool _isAtBottom() {
-    final positions = _itemPositionsListener.itemPositions.value;
-    if (positions.isEmpty) return true;
-    return positions.map((p) => p.index).reduce((a, b) => a < b ? a : b) == 0;
-  }
+  bool _isAtBottom() =>
+      _computeIsAtBottom(_itemPositionsListener.itemPositions.value);
 
   void _scrollToBottom() {
     if (_itemScrollController.isAttached) {
@@ -213,14 +216,13 @@ class _ChatDetailsViewState extends State<ChatDetailsView>
           )
           .then((_) {
             if (mounted) {
+              _chatCubit.flushPendingMessages();
               _showScrollButtonNotifier.value = false;
-              _unreadCountNotifier.value = 0;
               _lastMinIndex = 0;
               _lastLeadingEdge = null;
               _isCurrentlyAtBottom = true;
             }
           });
-      _unreadCountNotifier.value = 0;
     }
   }
 
@@ -233,7 +235,6 @@ class _ChatDetailsViewState extends State<ChatDetailsView>
     ActiveScreenTracker.setActiveChatReceiver(null);
     _messageController.dispose();
     _showScrollButtonNotifier.dispose();
-    _unreadCountNotifier.dispose();
     if (!_chatCubit.isClosed) {
       _chatCubit.clearSelection();
       _chatCubit.searchController.currentIndex.removeListener(
@@ -458,7 +459,6 @@ class _ChatDetailsViewState extends State<ChatDetailsView>
                     });
                   },
                   showScrollButtonNotifier: _showScrollButtonNotifier,
-                  unreadCountNotifier: _unreadCountNotifier,
                   scrollToBottom: _scrollToBottom,
                 ),
               ),

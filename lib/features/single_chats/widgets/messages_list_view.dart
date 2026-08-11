@@ -27,7 +27,6 @@ class MessagesListView extends StatefulWidget {
   final Function(MessageModel) onReply;
   final Function(MessageModel) onEdit;
   final ValueNotifier<bool> showScrollButtonNotifier;
-  final ValueNotifier<int> unreadCountNotifier;
   final VoidCallback scrollToBottom;
   const MessagesListView({
     super.key,
@@ -37,7 +36,6 @@ class MessagesListView extends StatefulWidget {
     required this.onReply,
     required this.onEdit,
     required this.showScrollButtonNotifier,
-    required this.unreadCountNotifier,
     required this.scrollToBottom,
   });
 
@@ -63,79 +61,109 @@ class _MessagesListViewState extends State<MessagesListView> {
     }
   }
 
- @override
-Widget build(BuildContext context) {
-  final cubit = context.read<ChatDetailsCubit>();
-  return ValueListenableBuilder<ChatActionType>(
-    valueListenable: cubit.receiverAction,
-    builder: (context, action, _) {
-      final hasBubble = action != ChatActionType.none;
+  @override
+  Widget build(BuildContext context) {
+    final cubit = context.read<ChatDetailsCubit>();
+    return ValueListenableBuilder<ChatActionType>(
+      valueListenable: cubit.listVisibleAction,
+      builder: (context, action, _) {
+        final hasBubble = action != ChatActionType.none;
 
-      return BlocConsumer<ChatDetailsCubit, ChatDetailsState>(
-        listener: _handleMessagesLogic,
-        buildWhen:
-            (prev, curr) =>
-                curr is MessagesSuccessLoaded ||
-                curr is MessagesSending ||
-                curr is ChatDetailsInitial,
-        builder: (context, state) {
-          final cubit = context.read<ChatDetailsCubit>();
-          final messages = cubit.cachedMessages;
+        return BlocConsumer<ChatDetailsCubit, ChatDetailsState>(
+          listener: _handleMessagesLogic,
+          buildWhen:
+              (prev, curr) =>
+                  curr is MessagesSuccessLoaded ||
+                  curr is MessagesSending ||
+                  curr is ChatDetailsInitial,
+          builder: (context, state) {
+            final cubit = context.read<ChatDetailsCubit>();
+            final messages = cubit.cachedMessages;
 
-          if (messages.isEmpty) {
-            if (state is MessagesError) {
-              return Center(child: Text(state.message));
+            if (messages.isEmpty) {
+              if (state is MessagesError) {
+                return Center(child: Text(state.message));
+              }
+              if (!cubit.hasConfirmedInitialLoad) {
+                return const ChatLoadingSkeleton();
+              }
+              return _buildEmptyState(context);
             }
-            if (!cubit.hasConfirmedInitialLoad) {
-              return const ChatLoadingSkeleton();
-            }
-            return _buildEmptyState(context);
-          }
 
-          return Stack(
-            children: [
-              ScrollablePositionedList.separated(
-                physics: const AlwaysScrollableScrollPhysics(
-                  parent: ClampingScrollPhysics(),
-                ),
-                padding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                itemScrollController: widget.itemScrollController,
-                itemPositionsListener: widget.itemPositionsListener,
-                reverse: true,
+            return Stack(
+              children: [
+                ScrollablePositionedList.separated(
+                  physics: const AlwaysScrollableScrollPhysics(
+                    parent: ClampingScrollPhysics(),
+                  ),
+                  padding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                  itemScrollController: widget.itemScrollController,
+                  itemPositionsListener: widget.itemPositionsListener,
+                  reverse: true,
 
-                itemCount: messages.length + (hasBubble ? 1 : 0),
+                  itemCount: messages.length + (hasBubble ? 1 : 0),
 
-                itemBuilder: (BuildContext context, int index) {
-                  final cubit = context.read<ChatDetailsCubit>();
+                  itemBuilder: (BuildContext context, int index) {
+                    final cubit = context.read<ChatDetailsCubit>();
 
-                  if (hasBubble && index == 0) {
-                    return action == ChatActionType.recording
-                        ? RecordingBubbleWidget(
-                          receiverUserId: widget.receiverUser.id,
-                          receiverUserImgUrl: widget.receiverUser.imageUrl,
-                        )
-                        : TypingBubbleWidget(
-                          receiverUserId: widget.receiverUser.id,
-                          receiverUserImgUrl: widget.receiverUser.imageUrl,
+                    if (hasBubble && index == 0) {
+                      return action == ChatActionType.recording
+                          ? RecordingBubbleWidget(
+                            receiverUserId: widget.receiverUser.id,
+                            receiverUserImgUrl: widget.receiverUser.imageUrl,
+                          )
+                          : TypingBubbleWidget(
+                            receiverUserId: widget.receiverUser.id,
+                            receiverUserImgUrl: widget.receiverUser.imageUrl,
+                          );
+                    }
+                    final msgIndex = hasBubble ? index - 1 : index;
+                    if (msgIndex < 0 || msgIndex >= messages.length) {
+                      return const SizedBox.shrink();
+                    }
+
+                    final msg = messages[msgIndex];
+                    final bool isMe = msg.senderId == SupabaseProvider.id;
+                    final double? currentProgress =
+                        cubit.uploadProgressMap[msg.id];
+
+                    final showDateSeparator =
+                        ChatDateSeparatorHelper.shouldShowDate<MessageModel>(
+                          messages: messages,
+                          index: msgIndex,
+                          getCreatedAt: (m) => m.createdAt,
                         );
-                  }
-                  final msgIndex = hasBubble ? index - 1 : index;
-                  if (msgIndex < 0 || msgIndex >= messages.length) {
-                    return const SizedBox.shrink();
-                  }
 
-                  final msg = messages[msgIndex];
-                  final bool isMe = msg.senderId == SupabaseProvider.id;
-                  final double? currentProgress = cubit.uploadProgressMap[msg.id];
-
-                  final showDateSeparator =
-                      ChatDateSeparatorHelper.shouldShowDate<MessageModel>(
-                        messages: messages,
-                        index: msgIndex,
-                        getCreatedAt: (m) => m.createdAt,
+                    if (msg.isSystemEvent) {
+                      return Column(
+                        key: ValueKey('item_${msg.id}'),
+                        children: [
+                          if (showDateSeparator)
+                            DateSeparatorGlassmorphismWidget(
+                              key: ValueKey('date_${msg.id}'),
+                              date: FormattedDate.getChatTime(msg.createdAt),
+                            ),
+                          ChatSystemEventSeparator(
+                            text: ChatSystemEventTextBuilder.build(
+                              message: msg,
+                              currentUserId: SupabaseProvider.id,
+                              otherUserName: widget.receiverUser.name,
+                            ),
+                          ),
+                        ],
                       );
+                    }
 
-                  if (msg.isSystemEvent) {
+                    final showAvatar =
+                        ChatDateSeparatorHelper.isLastInSenderCluster<
+                          MessageModel
+                        >(
+                          messages: messages,
+                          index: msgIndex,
+                          getSenderId: (m) => m.senderId,
+                          getCreatedAt: (m) => m.createdAt,
+                        );
+
                     return Column(
                       key: ValueKey('item_${msg.id}'),
                       children: [
@@ -144,59 +172,33 @@ Widget build(BuildContext context) {
                             key: ValueKey('date_${msg.id}'),
                             date: FormattedDate.getChatTime(msg.createdAt),
                           ),
-                        ChatSystemEventSeparator(
-                          text: ChatSystemEventTextBuilder.build(
-                            message: msg,
-                            currentUserId: SupabaseProvider.id,
-                            otherUserName: widget.receiverUser.name,
-                          ),
+                        ChatBubble(
+                          userImgUrl:
+                              isMe ? null : widget.receiverUser.imageUrl,
+                          receiverUser: widget.receiverUser,
+                          message: msg,
+                          onReply: widget.onReply,
+                          onEdit: widget.onEdit,
+                          itemScrollController: widget.itemScrollController,
+                          isMe: isMe,
+                          uploadProgress: currentProgress,
+                          showAvatar: showAvatar,
                         ),
                       ],
                     );
-                  }
-
-                  final showAvatar =
-                      ChatDateSeparatorHelper.isLastInSenderCluster<MessageModel>(
-                        messages: messages,
-                        index: msgIndex,
-                        getSenderId: (m) => m.senderId,
-                        getCreatedAt: (m) => m.createdAt,
-                      );
-
-                  return Column(
-                    key: ValueKey('item_${msg.id}'),
-                    children: [
-                      if (showDateSeparator)
-                        DateSeparatorGlassmorphismWidget(
-                          key: ValueKey('date_${msg.id}'),
-                          date: FormattedDate.getChatTime(msg.createdAt),
-                        ),
-                      ChatBubble(
-                        userImgUrl: isMe ? null : widget.receiverUser.imageUrl,
-                        receiverUser: widget.receiverUser,
-                        message: msg,
-                        onReply: widget.onReply,
-                        onEdit: widget.onEdit,
-                        itemScrollController: widget.itemScrollController,
-                        isMe: isMe,
-                        uploadProgress: currentProgress,
-                        showAvatar: showAvatar,
-                      ),
-                    ],
-                  );
-                },
-                separatorBuilder:
-                    (context, index) =>
-                        __buildSeparator(index, messages, hasBubble),
-              ),
-              _buildScrollToBottomButton(context),
-            ],
-          );
-        },
-      );
-    },
-  );
-}
+                  },
+                  separatorBuilder:
+                      (context, index) =>
+                          __buildSeparator(index, messages, hasBubble),
+                ),
+                _buildScrollToBottomButton(context),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
 
   void _handleMessagesLogic(BuildContext context, ChatDetailsState state) {
     if (state is MessagesSending &&
@@ -230,9 +232,7 @@ Widget build(BuildContext context) {
 
       if (!isNewMessage || previousCount == 0) return;
 
-      final positions = widget.itemPositionsListener.itemPositions.value;
-      final isAtBottom =
-          positions.isEmpty || positions.any((p) => p.index <= 1);
+      // final isAtBottom = cubit.isUserAtBottom;
       final lastMsg = messages.first;
 
       if (lastMsg.senderId != currentUserId &&
@@ -241,16 +241,7 @@ Widget build(BuildContext context) {
         _playNotificationSound();
       }
 
-      if (lastMsg.senderId == currentUserId) {
-        widget.scrollToBottom();
-      } else {
-        if (isAtBottom) {
-          widget.scrollToBottom();
-        } else {
-          widget.unreadCountNotifier.value++;
-          widget.showScrollButtonNotifier.value = true;
-        }
-      }
+      widget.scrollToBottom();
     }
   }
 
@@ -290,11 +281,13 @@ Widget build(BuildContext context) {
   }
 
   Widget _buildScrollToBottomButton(BuildContext context) {
+    final cubit = context.read<ChatDetailsCubit>();
+
     return ValueListenableBuilder<bool>(
       valueListenable: widget.showScrollButtonNotifier,
       builder: (context, showButton, _) {
         return ValueListenableBuilder<int>(
-          valueListenable: widget.unreadCountNotifier,
+          valueListenable: cubit.pendingNewCountNotifier,
           builder: (context, unreadCount, _) {
             final visible = showButton || unreadCount > 0;
 

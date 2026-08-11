@@ -3,6 +3,7 @@ part of 'chat_details_cubit.dart';
 mixin ChatPresenceActionMixin on Cubit<ChatDetailsState> {
   String get currentUserId;
   ChatPresenceService get _presenceService;
+  ValueNotifier<bool> get isAtBottomNotifier;
 
   Timer? _typingDebounce;
   Timer? _recordingHeartbeat;
@@ -11,6 +12,14 @@ mixin ChatPresenceActionMixin on Cubit<ChatDetailsState> {
   final ValueNotifier<ChatActionType> receiverAction = ValueNotifier(
     ChatActionType.none,
   );
+  final ValueNotifier<ChatActionType> listVisibleAction = ValueNotifier(
+    ChatActionType.none,
+  );
+
+  void _recomputeListVisibleAction() {
+    listVisibleAction.value =
+        isAtBottomNotifier.value ? receiverAction.value : ChatActionType.none;
+  }
 
   String getChatId(String u1, String u2) {
     final ids = [u1, u2]..sort();
@@ -24,11 +33,12 @@ mixin ChatPresenceActionMixin on Cubit<ChatDetailsState> {
         .getActionStream(chatId: chatId, receiverId: receiverId)
         .listen((action) {
           receiverAction.value = action;
-
           // if (receiverAction.value != action) {
           //   receiverAction.value = action;
           // }
+          _recomputeListVisibleAction();
         });
+    isAtBottomNotifier.addListener(_recomputeListVisibleAction);
   }
 
   void onUserTyping(String receiverId) {
@@ -97,7 +107,9 @@ mixin ChatPresenceActionMixin on Cubit<ChatDetailsState> {
     _typingDebounce?.cancel();
     _recordingHeartbeat?.cancel();
     _actionSubscription?.cancel();
+    isAtBottomNotifier.removeListener(_recomputeListVisibleAction);
     receiverAction.dispose();
+    listVisibleAction.dispose();
     return super.close();
   }
 }
