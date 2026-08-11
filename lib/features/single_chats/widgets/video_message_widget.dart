@@ -130,12 +130,21 @@ class _VideoMessageWidgetState extends State<VideoMessageWidget> {
             onTap:
                 () => Navigator.push(
                   context,
-                  MaterialPageRoute(
-                    builder:
-                        (context) => FullScreenMediaView(
+                  PageRouteBuilder(
+                    opaque: false,
+                    pageBuilder:
+                        (_, __, ___) => FullScreenMediaView(
                           videoUrl: widget.videoUrl,
                           caption: widget.caption,
                         ),
+                    transitionsBuilder: (
+                      context,
+                      animation,
+                      secondaryAnimation,
+                      child,
+                    ) {
+                      return FadeTransition(opacity: animation, child: child);
+                    },
                   ),
                 ),
             child: frame(const SizedBox.shrink(), showPlay: true),

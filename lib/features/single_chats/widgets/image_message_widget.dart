@@ -71,12 +71,21 @@ class ImageMessageWidget extends StatelessWidget {
             onTap:
                 () => Navigator.push(
                   context,
-                  MaterialPageRoute(
-                    builder:
-                        (context) => FullScreenMediaView(
+                  PageRouteBuilder(
+                    opaque: false,
+                    pageBuilder:
+                        (_, __, ___) => FullScreenMediaView(
                           imageUrl: imageUrl,
                           caption: caption,
                         ),
+                    transitionsBuilder: (
+                      context,
+                      animation,
+                      secondaryAnimation,
+                      child,
+                    ) {
+                      return FadeTransition(opacity: animation, child: child);
+                    },
                   ),
                 ),
             child: CachedCloudinaryImage(
