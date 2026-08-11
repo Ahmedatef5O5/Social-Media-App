@@ -8,6 +8,7 @@ import 'package:social_media_app/features/single_chats/helper/glass_icon_btn.dar
 import 'package:video_player/video_player.dart';
 import '../../../core/cache/repository/media_cache_repository.dart';
 import '../../../core/services/gallery_services.dart';
+import '../../../core/widgets/blurred_media_placeholders.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
 import '../../../core/widgets/vertical_volume_indicator.dart';
 import '../../../core/widgets/video_progress_slider.dart';
@@ -18,6 +19,7 @@ class FullScreenMediaView extends StatefulWidget {
   final String? caption;
   final bool isLocal;
   final bool showActions;
+  final bool isActive;
   final VideoPlayerController? controller;
 
   const FullScreenMediaView({
@@ -27,6 +29,7 @@ class FullScreenMediaView extends StatefulWidget {
     this.caption,
     this.isLocal = false,
     this.showActions = true,
+    this.isActive = true,
     this.controller,
   });
 
@@ -40,6 +43,7 @@ class _FullScreenMediaViewState extends State<FullScreenMediaView>
   bool _isExternalController = false;
   bool _showControls = true;
   double _playbackSpeed = 1.0;
+  bool _isDragging = false;
   double _dragOffset = 0;
   double _lastNonZeroVolume = 1.0;
 
@@ -172,12 +176,28 @@ class _FullScreenMediaViewState extends State<FullScreenMediaView>
         0,
         100,
       );
-      if (!_videoController!.value.isPlaying) {
+      if (widget.isActive && !_videoController!.value.isPlaying) {
         _videoController!.play();
       }
-      _hideControlsAfterDelay();
+      if (widget.isActive) _hideControlsAfterDelay();
     } else if (widget.videoUrl != null) {
       _initializeVideo(widget.videoUrl!);
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant FullScreenMediaView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.isActive == widget.isActive || _videoController == null) {
+      return;
+    }
+
+    if (widget.isActive) {
+      _videoController!.play();
+      setState(() => _showControls = true);
+      _hideControlsAfterDelay();
+    } else {
+      _videoController!.pause();
     }
   }
 
@@ -202,8 +222,10 @@ class _FullScreenMediaViewState extends State<FullScreenMediaView>
       100,
     );
     setState(() {});
-    _videoController!.play();
-    _hideControlsAfterDelay();
+    if (widget.isActive) {
+      _videoController!.play();
+      _hideControlsAfterDelay();
+    }
   }
 
   void _hideControlsAfterDelay() {
@@ -254,30 +276,28 @@ class _FullScreenMediaViewState extends State<FullScreenMediaView>
 
   @override
   Widget build(BuildContext context) {
-    final enableDismissDrag = widget.videoUrl == null;
-
     return GestureDetector(
-      onScaleUpdate:
-          enableDismissDrag
-              ? (details) {
-                if (_transformationController.value.getMaxScaleOnAxis() <=
-                    1.0) {
-                  setState(() => _dragOffset += details.focalPointDelta.dy);
-                }
-              }
-              : null,
-      onScaleEnd:
-          enableDismissDrag
-              ? (details) {
-                final velocity = details.velocity.pixelsPerSecond.dy;
+      onVerticalDragUpdate: (details) {
+        if (_transformationController.value.getMaxScaleOnAxis() <= 1.0) {
+          setState(() {
+            _isDragging = true;
+            _dragOffset += details.primaryDelta ?? 0;
+          });
+        }
+      },
+      onVerticalDragEnd: (details) {
+        final velocity = details.primaryVelocity ?? 0;
 
-                if (_dragOffset.abs() > 100 || velocity.abs() > 250) {
-                  Navigator.pop(context);
-                } else {
-                  setState(() => _dragOffset = 0);
-                }
-              }
-              : null,
+        if (_dragOffset.abs() > 100 || velocity.abs() > 250) {
+          Navigator.pop(context);
+        } else {
+          setState(() {
+            _isDragging = false;
+            _dragOffset = 0;
+          });
+        }
+      },
+
       onTap: () {
         FocusScope.of(context).unfocus();
         setState(() => _showControls = !_showControls);
@@ -400,15 +420,26 @@ class _FullScreenMediaViewState extends State<FullScreenMediaView>
         body: Stack(
           alignment: Alignment.center,
           children: [
-            Transform.translate(
-              offset: Offset(0, _dragOffset),
-              child: _buildMainContent(),
+            AnimatedContainer(
+              duration:
+                  _isDragging
+                      ? Duration.zero
+                      : const Duration(milliseconds: 300),
+              curve: Curves.easeOut,
+              transform: Matrix4.translationValues(0, _dragOffset, 0),
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  _buildMainContent(),
+
+                  if (_hasReadyVideo) _buildVolumeGestureZone(),
+                  if (_hasReadyVideo) _buildVideoOverlay(),
+                  if (_hasReadyVideo) _buildVolumeIndicator(),
+                  if (widget.caption != null && widget.caption!.isNotEmpty)
+                    _buildCaption(),
+                ],
+              ),
             ),
-            if (_hasReadyVideo) _buildVolumeGestureZone(),
-            if (_hasReadyVideo) _buildVideoOverlay(),
-            if (_hasReadyVideo) _buildVolumeIndicator(),
-            if (widget.caption != null && widget.caption!.isNotEmpty)
-              _buildCaption(),
           ],
         ),
       ),
@@ -432,7 +463,10 @@ class _FullScreenMediaViewState extends State<FullScreenMediaView>
                       fit: BoxFit.contain,
                       width: double.infinity,
                       height: double.infinity,
-                      placeholder: (context) => const CustomLoadingIndicator(),
+                      placeholder:
+                          (context) => BlurredImagePlaceholder(
+                            secureUrl: widget.imageUrl!,
+                          ),
                       errorWidget:
                           (context, error) => const Icon(
                             Icons.broken_image,
@@ -452,6 +486,10 @@ class _FullScreenMediaViewState extends State<FullScreenMediaView>
         ),
       );
     }
+    if (widget.videoUrl != null) {
+      return BlurredVideoPlaceholder(videoUrl: widget.videoUrl!);
+    }
+
     return const CustomLoadingIndicator();
   }
 
