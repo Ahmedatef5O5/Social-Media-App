@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:math' as math;
 
 class TypingIndicatorWidget extends StatefulWidget {
   final Color color;
@@ -17,73 +18,55 @@ class TypingIndicatorWidget extends StatefulWidget {
 }
 
 class _TypingIndicatorWidgetState extends State<TypingIndicatorWidget>
-    with TickerProviderStateMixin {
-  late List<AnimationController> _controllers;
-  late List<Animation<double>> _animations;
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
 
   @override
   void initState() {
     super.initState();
-
-    _controllers = List.generate(3, (index) {
-      return AnimationController(
-        vsync: this,
-        duration: const Duration(milliseconds: 600),
-      );
-    });
-
-    _animations =
-        _controllers.map((controller) {
-          return Tween<double>(begin: 0, end: -1.0).animate(
-            CurvedAnimation(parent: controller, curve: Curves.easeInOut),
-          );
-        }).toList();
-
-    _startAnimations();
-  }
-
-  void _startAnimations() async {
-    for (int i = 0; i < _controllers.length; i++) {
-      Future.delayed(Duration(milliseconds: i * 200), () {
-        if (mounted) {
-          _controllers[i].repeat(reverse: true);
-        }
-      });
-    }
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1400),
+    )..repeat();
   }
 
   @override
   void dispose() {
-    for (var controller in _controllers) {
-      controller.dispose();
-    }
+    _controller.dispose();
     super.dispose();
+  }
+
+  Widget _buildDot(int index) {
+    return AnimatedBuilder(
+      animation: _controller,
+      child: Container(
+        width: widget.dotSize,
+        height: widget.dotSize,
+        margin: EdgeInsets.symmetric(horizontal: widget.spacing),
+        decoration: BoxDecoration(color: widget.color, shape: BoxShape.circle),
+      ),
+      builder: (context, child) {
+        final double delay = index * 0.18;
+        double t = (_controller.value - delay) % 1.0;
+        if (t < 0) t += 1.0;
+
+        double dy = 0.0;
+
+        if (t < 0.45) {
+          double scaledT = (t / 0.45) * math.pi;
+          dy = -math.sin(scaledT) * (widget.dotSize * 1.5);
+        }
+
+        return Transform.translate(offset: Offset(0, dy), child: child);
+      },
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Row(
       mainAxisSize: MainAxisSize.min,
-      children: List.generate(3, (i) {
-        return AnimatedBuilder(
-          animation: _animations[i],
-          child: Container(
-            width: widget.dotSize,
-            height: widget.dotSize,
-            margin: EdgeInsets.symmetric(horizontal: widget.spacing),
-            decoration: BoxDecoration(
-              color: widget.color,
-              shape: BoxShape.circle,
-            ),
-          ),
-          builder: (context, child) {
-            return Transform.translate(
-              offset: Offset(0, _animations[i].value * (widget.dotSize * 1.2)),
-              child: child,
-            );
-          },
-        );
-      }),
+      children: List.generate(3, (i) => _buildDot(i)),
     );
   }
 }

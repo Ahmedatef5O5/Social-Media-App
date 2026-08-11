@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/audio/helpers/pulsing_mic_dot.dart';
 import '../../../core/presence/model/chat_action_type.dart';
 import '../../../core/presence/widgets/presence_avatar_widget.dart';
+import '../../../core/widgets/animated_activity_text.dart';
 import '../../../core/widgets/overlapping_avatar_stack.dart';
 import '../../single_chats/widgets/typing_indicator_widget.dart';
 import '../models/group_presence_entry.dart';
@@ -40,6 +41,19 @@ class _ActionBubble extends StatelessWidget {
   Widget build(BuildContext context) {
     final isRecording = action == ChatActionType.recording;
     final primary = Theme.of(context).primaryColor;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final bubbleColor =
+        isRecording
+            ? (isDark ? Colors.red.withValues(alpha: 0.2) : Colors.red.shade50)
+            : (isDark ? Colors.grey.shade800 : Colors.grey.shade200);
+
+    final borderColor =
+        isRecording
+            ? (isDark ? Colors.red.shade700 : Colors.red.shade200)
+            : Colors.transparent;
+
+    final dotColor = isDark ? Colors.white70 : Colors.black54;
 
     Widget avatarWidget;
     if (entries.length == 1) {
@@ -88,9 +102,8 @@ class _ActionBubble extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
-              color: isRecording ? Colors.red.shade50 : Colors.grey.shade200,
-              border:
-                  isRecording ? Border.all(color: Colors.red.shade200) : null,
+              color: bubbleColor,
+              border: isRecording ? Border.all(color: borderColor) : null,
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(18),
                 topRight: Radius.circular(18),
@@ -105,19 +118,23 @@ class _ActionBubble extends StatelessWidget {
                       children: [
                         const PulsingMicDot(),
                         const SizedBox(width: 8),
-                        Text(
-                          entries.length == 1
-                              ? '${entries.first.userName} recording audio...'
-                              : '${entries.length} people recording audio...',
+                        AnimatedActivityText(
+                          text:
+                              entries.length == 1
+                                  ? '${entries.first.userName} recording audio...'
+                                  : '${entries.length} people recording audio...',
                           style: TextStyle(
-                            color: Colors.red.shade700,
+                            color:
+                                isDark
+                                    ? Colors.red.shade400
+                                    : Colors.red.shade700,
                             fontSize: 12,
                             fontStyle: FontStyle.italic,
                           ),
                         ),
                       ],
                     )
-                    : TypingIndicatorWidget(color: Colors.black54, dotSize: 5),
+                    : TypingIndicatorWidget(color: dotColor, dotSize: 5),
           ),
         ],
       ),
