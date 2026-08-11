@@ -73,6 +73,15 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState>
   @override
   String? _messagesSnapshotKey;
 
+  @override
+  final ValueNotifier<bool> isAtBottomNotifier = ValueNotifier<bool>(true);
+
+  bool get isUserAtBottom => isAtBottomNotifier.value;
+
+  void setUserAtBottom(bool isAtBottom) {
+    isAtBottomNotifier.value = isAtBottom;
+  }
+
   GroupPresenceSnapshot get presence => _presence;
   Stream<GroupHeaderStats> watchHeaderStats() =>
       _services.watchGroupHeaderStats(group.id);
@@ -131,7 +140,6 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState>
       emit(
         GroupDetailsLoaded(
           messages: cachedMessages,
-          presence: _presence,
           uploadProgress: uploadProgressMap,
           isMember: isMember,
         ),
@@ -147,6 +155,7 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState>
     _listenMessages();
     _listenReadReceipts();
     _listenPresence();
+    isAtBottomNotifier.addListener(_recomputeListVisiblePresence);
     markRead();
   }
 
@@ -156,7 +165,6 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState>
     emit(
       GroupDetailsLoaded(
         messages: cachedMessages,
-        presence: _presence,
         uploadProgress: uploadProgressMap,
         isMember: isMember,
       ),
@@ -229,7 +237,7 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState>
       _services.markGroupMessagesRead(group.id);
     }
     groupListCubit.setActiveGroupId(null);
-
+    isAtBottomNotifier.dispose();
     _messagesSubscription?.cancel();
     _readReceiptsSubscription?.cancel();
     _typingSubscription?.cancel();

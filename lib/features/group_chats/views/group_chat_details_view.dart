@@ -46,7 +46,6 @@ class _GroupChatDetailsBodyState extends State<_GroupChatDetailsBody> {
       ItemPositionsListener.create();
 
   final ValueNotifier<bool> _showScrollButtonNotifier = ValueNotifier(false);
-  final ValueNotifier<int> _unreadCountNotifier = ValueNotifier(0);
 
   final TextEditingController _searchTextController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
@@ -108,31 +107,13 @@ class _GroupChatDetailsBodyState extends State<_GroupChatDetailsBody> {
     _groupDetailsCubit.markRead();
   }
 
-  @override
-  void dispose() {
-    _groupDetailsCubit.markRead();
-    _groupListCubit.resetGroupUnreadCount(widget.group.id);
+  static const double _bottomEdgeTolerance = 0.05;
 
-    _groupListCubit.setActiveGroupId(null);
-    ActiveScreenTracker.setActiveGroupId(null);
-
-    _positionsListener.itemPositions.removeListener(_scrollListener);
-    _controller.dispose();
-    _showScrollButtonNotifier.dispose();
-    _unreadCountNotifier.dispose();
-    if (!_groupDetailsCubit.isClosed) {
-      _groupDetailsCubit.clearSelection();
-      _groupDetailsCubit.searchController.currentIndex.removeListener(
-        _onSearchMatchChanged,
-      );
-      _groupDetailsCubit.searchController.isActive.removeListener(
-        _onSearchActiveChanged,
-      );
-      _groupDetailsCubit.replyToMessage.removeListener(_onReplyChanged);
-    }
-    _searchTextController.dispose();
-    _searchFocusNode.dispose();
-    super.dispose();
+  bool _computeIsAtBottom(Iterable<ItemPosition> positions) {
+    if (positions.isEmpty) return true;
+    final minPosition = positions.reduce((a, b) => a.index < b.index ? a : b);
+    return minPosition.index == 0 &&
+        minPosition.itemLeadingEdge >= -_bottomEdgeTolerance;
   }
 
   void _scrollListener() {
@@ -145,22 +126,28 @@ class _GroupChatDetailsBodyState extends State<_GroupChatDetailsBody> {
     final int minIndex = minPosition.index;
     final double leadingEdge = minPosition.itemLeadingEdge;
 
-    final bool isAtBottom = minIndex == 0;
+    final bool isAtBottom = _computeIsAtBottom(positions);
 
     if (isAtBottom) {
       _isCurrentlyAtBottom = true;
       _showScrollButtonNotifier.value = false;
-      _unreadCountNotifier.value = 0;
       _lastMinIndex = minIndex;
       _lastLeadingEdge = leadingEdge;
 
-      // update unread count
+      if (!_groupDetailsCubit.isClosed) {
+        _groupDetailsCubit.setUserAtBottom(true);
+        _groupDetailsCubit.flushPendingMessages();
+      }
+
       _markAsReadIfNeeded();
       _groupListCubit.resetGroupUnreadCount(widget.group.id);
       return;
     }
 
     _isCurrentlyAtBottom = false;
+    if (!_groupDetailsCubit.isClosed) {
+      _groupDetailsCubit.setUserAtBottom(false);
+    }
 
     if (_lastMinIndex == null || _lastLeadingEdge == null) {
       _lastMinIndex = minIndex;
@@ -186,7 +173,7 @@ class _GroupChatDetailsBodyState extends State<_GroupChatDetailsBody> {
     if (goingTowardNewer) {
       _showScrollButtonNotifier.value = true;
     } else if (goingTowardOlder) {
-      if (_unreadCountNotifier.value == 0) {
+      if (_groupDetailsCubit.pendingNewCountNotifier.value == 0) {
         _showScrollButtonNotifier.value = false;
       }
     }
@@ -195,11 +182,8 @@ class _GroupChatDetailsBodyState extends State<_GroupChatDetailsBody> {
     _lastLeadingEdge = leadingEdge;
   }
 
-  bool _isAtBottom() {
-    final positions = _positionsListener.itemPositions.value;
-    if (positions.isEmpty) return true;
-    return positions.map((p) => p.index).reduce((a, b) => a < b ? a : b) == 0;
-  }
+  bool _isAtBottom() =>
+      _computeIsAtBottom(_positionsListener.itemPositions.value);
 
   void _scrollToBottom() {
     if (_scrollController.isAttached) {
@@ -212,17 +196,44 @@ class _GroupChatDetailsBodyState extends State<_GroupChatDetailsBody> {
           .then((_) {
             if (mounted) {
               _showScrollButtonNotifier.value = false;
-              _unreadCountNotifier.value = 0;
               _lastMinIndex = 0;
               _lastLeadingEdge = null;
               _isCurrentlyAtBottom = true;
 
+              if (!_groupDetailsCubit.isClosed) {
+                _groupDetailsCubit.flushPendingMessages();
+              }
               _groupListCubit.resetGroupUnreadCount(widget.group.id);
               _markAsReadIfNeeded();
             }
           });
-      _unreadCountNotifier.value = 0;
     }
+  }
+
+  @override
+  void dispose() {
+    _groupDetailsCubit.markRead();
+    _groupListCubit.resetGroupUnreadCount(widget.group.id);
+
+    _groupListCubit.setActiveGroupId(null);
+    ActiveScreenTracker.setActiveGroupId(null);
+
+    _positionsListener.itemPositions.removeListener(_scrollListener);
+    _controller.dispose();
+    _showScrollButtonNotifier.dispose();
+    if (!_groupDetailsCubit.isClosed) {
+      _groupDetailsCubit.clearSelection();
+      _groupDetailsCubit.searchController.currentIndex.removeListener(
+        _onSearchMatchChanged,
+      );
+      _groupDetailsCubit.searchController.isActive.removeListener(
+        _onSearchActiveChanged,
+      );
+      _groupDetailsCubit.replyToMessage.removeListener(_onReplyChanged);
+    }
+    _searchTextController.dispose();
+    _searchFocusNode.dispose();
+    super.dispose();
   }
 
   @override
@@ -263,7 +274,6 @@ class _GroupChatDetailsBodyState extends State<_GroupChatDetailsBody> {
                     scrollController: _scrollController,
                     positionsListener: _positionsListener,
                     showScrollButtonNotifier: _showScrollButtonNotifier,
-                    unreadCountNotifier: _unreadCountNotifier,
                     scrollToBottom: _scrollToBottom,
                     isAtBottom: _isAtBottom,
                   ),

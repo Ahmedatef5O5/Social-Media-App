@@ -6,11 +6,22 @@ mixin GroupMessagesStreamMixin on Cubit<GroupDetailsState> {
   GroupListCubit get groupListCubit;
   List<GroupMessageModel> get cachedMessages;
   set cachedMessages(List<GroupMessageModel> value);
+  ValueNotifier<bool> get isAtBottomNotifier;
   Map<String, List<MentionRef>> get _mentionsCache;
   Map<String, Map<String, String>> get _reactionsCache;
   bool _isFirstLoad = true;
   bool _hasReceivedFirstStreamEvent = false;
   GroupPresenceSnapshot _presence = GroupPresenceSnapshot.empty;
+  final ValueNotifier<GroupPresenceSnapshot> presenceNotifier = ValueNotifier(
+    GroupPresenceSnapshot.empty,
+  );
+  final ValueNotifier<GroupPresenceSnapshot> listVisiblePresenceNotifier =
+      ValueNotifier(GroupPresenceSnapshot.empty);
+
+  List<GroupMessageModel> _pendingMessagesSnapshot = [];
+  final ValueNotifier<int> pendingNewCountNotifier = ValueNotifier<int>(0);
+  bool get hasPendingMessages => pendingNewCountNotifier.value > 0;
+
   Timer? _recordingHeartbeat;
   bool _isRecordingActionActive = false;
   String? get _messagesSnapshotKey;
@@ -76,7 +87,6 @@ mixin GroupMessagesStreamMixin on Cubit<GroupDetailsState> {
     if (!isMember) return;
 
     _hasReceivedFirstStreamEvent = false;
-
     final clearedAt = GroupChatClearStore.instance.clearedAtFor(group.id);
 
     _messagesSubscription = _services.getGroupMessagesStream(group.id).listen((
@@ -88,7 +98,6 @@ mixin GroupMessagesStreamMixin on Cubit<GroupDetailsState> {
               : messages.where((m) => m.createdAt.isAfter(clearedAt)).toList();
 
       final existingById = {for (final c in cachedMessages) c.id: c};
-
       final enriched =
           visibleMessages.map((msg) {
             final existing = existingById[msg.id];
@@ -102,6 +111,8 @@ mixin GroupMessagesStreamMixin on Cubit<GroupDetailsState> {
           }).toList();
 
       List<GroupMessageModel> resolved;
+      final bool isFirstEventThisTime = !_hasReceivedFirstStreamEvent;
+
       if (!_hasReceivedFirstStreamEvent && cachedMessages.isNotEmpty) {
         final cachedIds = cachedMessages.map((m) => m.id).toSet();
         resolved = [
@@ -113,7 +124,26 @@ mixin GroupMessagesStreamMixin on Cubit<GroupDetailsState> {
       }
       _hasReceivedFirstStreamEvent = true;
 
+      if (!isFirstEventThisTime) {
+        final existingIds = cachedMessages.map((m) => m.id).toSet();
+        final incomingIds = resolved.map((m) => m.id).toSet();
+        final hasGenuinelyNewMessages =
+            incomingIds.difference(existingIds).isNotEmpty;
+
+        if (!isAtBottomNotifier.value && hasGenuinelyNewMessages) {
+          _pendingMessagesSnapshot = resolved;
+          pendingNewCountNotifier.value =
+              incomingIds.difference(existingIds).length;
+          if (_messagesSnapshotKey != null) {
+            _persistMessagesSnapshot(_messagesSnapshotKey!, resolved);
+          }
+          _checkRemovalAndUpdatePreview(resolved, visibleMessages);
+          return;
+        }
+      }
       cachedMessages = resolved;
+      _pendingMessagesSnapshot = [];
+      pendingNewCountNotifier.value = 0;
       _isFirstLoad = false;
       _emitLoaded();
       if (_messagesSnapshotKey != null) {
@@ -121,37 +151,43 @@ mixin GroupMessagesStreamMixin on Cubit<GroupDetailsState> {
       }
 
       markRead();
+      _checkRemovalAndUpdatePreview(resolved, visibleMessages);
+    });
+  }
 
-      bool amIRemoved = false;
-      for (final msg in visibleMessages) {
-        if (msg.isSystemEvent) {
-          final type = msg.systemEventData?['type'];
-          final targetId = msg.targetId ?? msg.systemEventData?['target_id'];
-          if (targetId == currentUserId && type == 'member_removed') {
-            amIRemoved = true;
-            break;
-          }
+  void _checkRemovalAndUpdatePreview(
+    List<GroupMessageModel> resolved,
+    List<GroupMessageModel> visibleMessages,
+  ) {
+    bool amIRemoved = false;
+    for (final msg in visibleMessages) {
+      if (msg.isSystemEvent) {
+        final type = msg.systemEventData?['type'];
+        final targetId = msg.targetId ?? msg.systemEventData?['target_id'];
+        if (targetId == currentUserId && type == 'member_removed') {
+          amIRemoved = true;
+          break;
         }
       }
-      if (amIRemoved) {
-        groupListCubit.updateGroupMembership(group.id, false);
-      }
+    }
+    if (amIRemoved) {
+      groupListCubit.updateGroupMembership(group.id, false);
+    }
 
-      if (resolved.isNotEmpty) {
-        final latest = resolved.first;
-        groupListCubit.updateGroupLastMessage(
-          groupId: group.id,
-          message: latest.text,
-          messageId: latest.id,
-          messageType: latest.messageType,
-          createdAt: latest.createdAt,
-          lastMessageSenderId: latest.senderId,
-          lastMessageSenderName: latest.senderName,
-          lastMessageTargetId: latest.targetId,
-          lastMessageTargetName: latest.targetName,
-        );
-      }
-    });
+    if (resolved.isNotEmpty) {
+      final latest = resolved.first;
+      groupListCubit.updateGroupLastMessage(
+        groupId: group.id,
+        message: latest.text,
+        messageId: latest.id,
+        messageType: latest.messageType,
+        createdAt: latest.createdAt,
+        lastMessageSenderId: latest.senderId,
+        lastMessageSenderName: latest.senderName,
+        lastMessageTargetId: latest.targetId,
+        lastMessageTargetName: latest.targetName,
+      );
+    }
   }
 
   void _listenReadReceipts() {
@@ -196,8 +232,25 @@ mixin GroupMessagesStreamMixin on Cubit<GroupDetailsState> {
       snapshot,
     ) {
       _presence = snapshot;
-      _emitLoaded();
+      presenceNotifier.value = snapshot;
+      _recomputeListVisiblePresence();
     });
+  }
+
+  void flushPendingMessages() {
+    if (_pendingMessagesSnapshot.isEmpty) return;
+    cachedMessages = _pendingMessagesSnapshot;
+    _pendingMessagesSnapshot = [];
+    pendingNewCountNotifier.value = 0;
+    _emitLoaded();
+    markRead();
+  }
+
+  void _recomputeListVisiblePresence() {
+    listVisiblePresenceNotifier.value =
+        isAtBottomNotifier.value
+            ? presenceNotifier.value
+            : GroupPresenceSnapshot.empty;
   }
 
   void onTyping() {
@@ -273,6 +326,10 @@ mixin GroupMessagesStreamMixin on Cubit<GroupDetailsState> {
     _typingSubscription?.cancel();
     _membershipSubscription?.cancel();
     _typingDebounce?.cancel();
+    isAtBottomNotifier.removeListener(_recomputeListVisiblePresence);
+    presenceNotifier.dispose();
+    listVisiblePresenceNotifier.dispose();
+    pendingNewCountNotifier.dispose();
     return super.close();
   }
 }

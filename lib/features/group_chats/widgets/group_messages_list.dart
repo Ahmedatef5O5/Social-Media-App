@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
+import 'package:social_media_app/features/group_chats/models/group_presence_entry.dart';
 import '../../../core/constants/app_images.dart';
 import '../../../core/supabase/supabase_provider.dart';
 import '../../single_chats/widgets/chat_loading_skeleton.dart';
@@ -13,9 +14,7 @@ import 'group_message_item_builder.dart';
 class GroupMessagesList extends StatefulWidget {
   final ItemScrollController scrollController;
   final ItemPositionsListener positionsListener;
-
   final ValueNotifier<bool> showScrollButtonNotifier;
-  final ValueNotifier<int> unreadCountNotifier;
   final VoidCallback scrollToBottom;
   final bool Function() isAtBottom;
 
@@ -24,7 +23,6 @@ class GroupMessagesList extends StatefulWidget {
     required this.scrollController,
     required this.positionsListener,
     required this.showScrollButtonNotifier,
-    required this.unreadCountNotifier,
     required this.scrollToBottom,
     required this.isAtBottom,
   });
@@ -69,8 +67,6 @@ class _GroupMessagesListState extends State<GroupMessagesList> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
 
-      final atBottom = widget.isAtBottom();
-
       if (!isSyncConfirmedNow || justCrossedSyncBaseline) return;
 
       if (!isNewMessage || previousCount == 0) return;
@@ -82,90 +78,94 @@ class _GroupMessagesListState extends State<GroupMessagesList> {
         _lastPlayedMessageId = lastMsg.id;
         _playNotificationSound();
       }
-
-      if (lastMsg.senderId == currentUserId) {
-        widget.scrollToBottom();
-      } else {
-        if (atBottom) {
-          widget.scrollToBottom();
-        } else {
-          widget.unreadCountNotifier.value++;
-          widget.showScrollButtonNotifier.value = true;
-        }
-      }
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    return BlocConsumer<GroupDetailsCubit, GroupDetailsState>(
-      listener: _handleNewMessages,
-      buildWhen:
-          (prev, curr) =>
-              curr is GroupDetailsLoaded ||
-              curr is GroupDetailsLoading ||
-              curr is GroupDetailsInitial ||
-              curr is GroupDetailsError,
-      builder: (context, state) {
-        final cubit = context.read<GroupDetailsCubit>();
-        final bool hasCachedData = cubit.cachedMessages.isNotEmpty;
+    final cubit = context.read<GroupDetailsCubit>();
 
-        if (state is GroupDetailsLoading || state is GroupDetailsInitial) {
-          return const ChatLoadingSkeleton();
-        }
-        if (state is GroupDetailsError) {
-          return Center(child: Text(state.message));
-        }
-        if ((state is GroupDetailsLoading || state is GroupDetailsInitial) &&
-            !hasCachedData) {
-          return const ChatLoadingSkeleton();
-        }
+    return ValueListenableBuilder<GroupPresenceSnapshot>(
+      valueListenable: cubit.listVisiblePresenceNotifier,
+      builder:
+          (context, presence, _) =>
+              BlocConsumer<GroupDetailsCubit, GroupDetailsState>(
+                listener: _handleNewMessages,
+                buildWhen:
+                    (prev, curr) =>
+                        curr is GroupDetailsLoaded ||
+                        curr is GroupDetailsLoading ||
+                        curr is GroupDetailsInitial ||
+                        curr is GroupDetailsError,
+                builder: (context, state) {
+                  final cubit = context.read<GroupDetailsCubit>();
+                  final bool hasCachedData = cubit.cachedMessages.isNotEmpty;
 
-        final messages =
-            state is GroupDetailsLoaded ? state.messages : cubit.cachedMessages;
+                  if (state is GroupDetailsLoading ||
+                      state is GroupDetailsInitial) {
+                    return const ChatLoadingSkeleton();
+                  }
+                  if (state is GroupDetailsError) {
+                    return Center(child: Text(state.message));
+                  }
+                  if ((state is GroupDetailsLoading ||
+                          state is GroupDetailsInitial) &&
+                      !hasCachedData) {
+                    return const ChatLoadingSkeleton();
+                  }
 
-        final isMember =
-            state is GroupDetailsLoaded ? state.isMember : cubit.isMember;
-        final presence =
-            state is GroupDetailsLoaded ? state.presence : cubit.presence;
-        if (messages.isEmpty && presence.isEmpty) {
-          if (!cubit.hasConfirmedInitialLoad) {
-            return const ChatLoadingSkeleton();
-          }
-          return _groupEmptyState(context);
-        }
+                  final messages =
+                      state is GroupDetailsLoaded
+                          ? state.messages
+                          : cubit.cachedMessages;
 
-        return Stack(
-          children: [
-            ScrollablePositionedList.separated(
-              reverse: true,
-              itemScrollController: widget.scrollController,
-              itemPositionsListener: widget.positionsListener,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              itemCount: messages.length + (presence.isEmpty ? 0 : 1),
-              itemBuilder:
-                  (_, index) => GroupMessageItemBuilder(
-                    index: index,
-                    messages: messages,
-                    presence: presence,
-                    itemScrollController: widget.scrollController,
-                    isMember: isMember,
-                  ),
-              separatorBuilder: (_, __) => const Gap(4),
-            ),
+                  final isMember =
+                      state is GroupDetailsLoaded
+                          ? state.isMember
+                          : cubit.isMember;
 
-            Positioned(
-              bottom: 10,
-              left: 14,
-              child: _ScrollToBottomButton(
-                showNotifier: widget.showScrollButtonNotifier,
-                countNotifier: widget.unreadCountNotifier,
-                onTap: widget.scrollToBottom,
+                  if (messages.isEmpty && presence.isEmpty) {
+                    if (!cubit.hasConfirmedInitialLoad) {
+                      return const ChatLoadingSkeleton();
+                    }
+                    return _groupEmptyState(context);
+                  }
+
+                  return Stack(
+                    children: [
+                      ScrollablePositionedList.separated(
+                        reverse: true,
+                        itemScrollController: widget.scrollController,
+                        itemPositionsListener: widget.positionsListener,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                        itemCount: messages.length + (presence.isEmpty ? 0 : 1),
+                        itemBuilder:
+                            (_, index) => GroupMessageItemBuilder(
+                              index: index,
+                              messages: messages,
+                              presence: presence,
+                              itemScrollController: widget.scrollController,
+                              isMember: isMember,
+                            ),
+                        separatorBuilder: (_, __) => const Gap(4),
+                      ),
+
+                      Positioned(
+                        bottom: 10,
+                        left: 14,
+                        child: _ScrollToBottomButton(
+                          showNotifier: widget.showScrollButtonNotifier,
+                          countNotifier: cubit.pendingNewCountNotifier,
+                          onTap: widget.scrollToBottom,
+                        ),
+                      ),
+                    ],
+                  );
+                },
               ),
-            ),
-          ],
-        );
-      },
     );
   }
 
@@ -201,71 +201,77 @@ class _ScrollToBottomButton extends StatelessWidget {
     return ValueListenableBuilder<bool>(
       valueListenable: showNotifier,
       builder: (context, showButton, _) {
-        return AnimatedSwitcher(
-          duration: const Duration(milliseconds: 200),
-          child:
-              showButton
-                  ? GestureDetector(
-                    key: const ValueKey('btn'),
-                    onTap: onTap,
-                    child: ValueListenableBuilder<int>(
-                      valueListenable: countNotifier,
-                      builder: (context, count, _) {
-                        return Stack(
-                          clipBehavior: Clip.none,
-                          children: [
-                            Material(
-                              elevation: 4,
-                              shape: const CircleBorder(),
-                              color: primary,
-                              child: const Padding(
-                                padding: EdgeInsets.all(6),
-                                child: Icon(
-                                  Icons.keyboard_arrow_down_rounded,
-                                  color: Colors.white,
-                                  size: 22,
-                                ),
-                              ),
-                            ),
-                            if (count > 0)
-                              Positioned(
-                                top: -6,
-                                left: -4,
-                                // right: -4,
-                                child: Container(
-                                  constraints: const BoxConstraints(
-                                    minWidth: 18,
-                                    minHeight: 18,
-                                  ),
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 4,
-                                    vertical: 1,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Colors.red,
-                                    borderRadius: BorderRadius.circular(10),
-                                    border: Border.all(
+        return ValueListenableBuilder<int>(
+          valueListenable: countNotifier,
+          builder: (context, count, _) {
+            final visible = showButton || count > 0;
+            return AnimatedSwitcher(
+              duration: const Duration(milliseconds: 200),
+              child:
+                  visible
+                      ? GestureDetector(
+                        key: const ValueKey('btn'),
+                        onTap: onTap,
+                        child: ValueListenableBuilder<int>(
+                          valueListenable: countNotifier,
+                          builder: (context, count, _) {
+                            return Stack(
+                              clipBehavior: Clip.none,
+                              children: [
+                                Material(
+                                  elevation: 4,
+                                  shape: const CircleBorder(),
+                                  color: primary,
+                                  child: const Padding(
+                                    padding: EdgeInsets.all(6),
+                                    child: Icon(
+                                      Icons.keyboard_arrow_down_rounded,
                                       color: Colors.white,
-                                      width: 1.5,
+                                      size: 22,
                                     ),
                                   ),
-                                  child: Text(
-                                    count > 99 ? '99+' : '$count',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 9,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                    textAlign: TextAlign.center,
-                                  ),
                                 ),
-                              ),
-                          ],
-                        );
-                      },
-                    ),
-                  )
-                  : const SizedBox.shrink(key: ValueKey('empty')),
+                                if (count > 0)
+                                  Positioned(
+                                    top: -6,
+                                    left: -4,
+                                    // right: -4,
+                                    child: Container(
+                                      constraints: const BoxConstraints(
+                                        minWidth: 18,
+                                        minHeight: 18,
+                                      ),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 4,
+                                        vertical: 1,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: Colors.red,
+                                        borderRadius: BorderRadius.circular(10),
+                                        border: Border.all(
+                                          color: Colors.white,
+                                          width: 1.5,
+                                        ),
+                                      ),
+                                      child: Text(
+                                        count > 99 ? '99+' : '$count',
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 9,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            );
+                          },
+                        ),
+                      )
+                      : const SizedBox.shrink(key: ValueKey('empty')),
+            );
+          },
         );
       },
     );
