@@ -439,6 +439,17 @@ class _GroupInfoViewState extends State<GroupInfoView> {
                           SliverToBoxAdapter(
                             child: SharedMediaPreviewSection(
                               mediaCubit: _mediaCubit,
+                              onShowInChat: (sheetContext, messageId) {
+                                Navigator.of(sheetContext).pop();
+                                Navigator.of(sheetContext).pop();
+                                final controller = widget.itemScrollController;
+                                if (controller != null) {
+                                  widget.detailsCubit?.scrollToMessage(
+                                    messageId: messageId,
+                                    itemScrollController: controller,
+                                  );
+                                }
+                              },
                             ),
                           ),
                         ],

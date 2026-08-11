@@ -267,8 +267,25 @@ class _ReceiverProfileViewState extends State<ReceiverProfileView> {
 
             const Divider(height: 40, thickness: 8, color: Color(0x00fff5f5)),
 
-            SharedMediaPreviewSection(mediaCubit: _mediaCubit),
-
+            Builder(
+              builder: (context) {
+                final chatCubit = context.read<ChatDetailsCubit>();
+                return SharedMediaPreviewSection(
+                  mediaCubit: _mediaCubit,
+                  onShowInChat: (sheetContext, messageId) {
+                    Navigator.of(sheetContext).pop();
+                    Navigator.of(sheetContext).pop();
+                    final controller = widget.itemScrollController;
+                    if (controller != null) {
+                      chatCubit.scrollToMessage(
+                        messageId: messageId,
+                        itemScrollController: controller,
+                      );
+                    }
+                  },
+                );
+              },
+            ),
             const Divider(height: 24, thickness: 8, color: Color(0x00fff5f5)),
 
             ValueListenableBuilder<ChatBlockStatus>(
