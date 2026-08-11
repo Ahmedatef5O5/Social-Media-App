@@ -9,10 +9,10 @@ import '../../../core/helpers/chat_helper.dart';
 import '../../../core/helpers/formatted_date.dart';
 import '../../../core/presence/widgets/presence_avatar_widget.dart';
 import '../../../core/router/app_routes.dart';
+import '../../../core/widgets/animated_activity_text.dart';
 import '../../../core/widgets/app_avatar.dart';
 import '../../profile/widgets/user_preview_dialog.dart';
 import '../models/chat_user_model.dart';
-import 'typing_indicator_widget.dart';
 
 class ChatItemTile extends StatelessWidget {
   final ChatUserModel user;
@@ -273,8 +273,8 @@ class ChatItemTile extends StatelessWidget {
         children: [
           const RecordingIndicatorWidget(size: 14),
           const SizedBox(width: 6),
-          Text(
-            'recording audio...',
+          AnimatedActivityText(
+            text: 'recording audio...',
             style: TextStyle(color: Colors.red.shade600, fontSize: 14),
           ),
         ],
@@ -285,12 +285,10 @@ class ChatItemTile extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          const Text(
-            'typing',
+          const AnimatedActivityText(
+            text: 'typing',
             style: TextStyle(color: Colors.green, fontSize: 14),
           ),
-          const SizedBox(width: 5),
-          const TypingIndicatorWidget(dotSize: 2.8, color: Colors.green),
         ],
       );
     } else {

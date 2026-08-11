@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/widgets/animated_activity_text.dart';
 import '../helpers/group_presence_text_formatter.dart';
 import '../helpers/presence_rotation_controller.dart';
 import '../../../core/presence/model/chat_action_type.dart';
@@ -58,8 +59,8 @@ class _PresenceAnimatedSubtitleState extends State<PresenceAnimatedSubtitle> {
             child:
                 phrase == null
                     ? widget.fallback
-                    : Text(
-                      phrase.text,
+                    : AnimatedActivityText(
+                      text: phrase.text,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: (widget.activeStyle ??

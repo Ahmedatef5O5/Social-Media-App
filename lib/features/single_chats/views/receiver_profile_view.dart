@@ -15,6 +15,7 @@ import '../../../core/presence/cubit/presence_cubit/presence_cubit.dart';
 import '../../../core/presence/model/chat_action_type.dart';
 import '../../../core/presence/model/presence_info.dart';
 import '../../../core/chat_shared/services/shared_media_data_source.dart';
+import '../../../core/widgets/animated_activity_text.dart';
 import '../../../core/widgets/calls/call_icon_button.dart';
 import '../../../core/widgets/custom_user_profile_image_section.dart';
 import '../../single_calls/model/call_model.dart';
@@ -92,8 +93,6 @@ class _ReceiverProfileViewState extends State<ReceiverProfileView> {
                     messageId: messageId,
                   ),
               onTapEntry: (messageId) {
-                // Pop StarredMessagesView, then this profile view, landing
-                // back on the actual open chat, then scroll+highlight.
                 Navigator.of(context).pop();
                 Navigator.of(context).pop();
                 final controller = widget.itemScrollController;
@@ -164,15 +163,17 @@ class _ReceiverProfileViewState extends State<ReceiverProfileView> {
                       context.read<ChatDetailsCubit>().receiverAction,
                   builder: (context, action, _) {
                     if (action != ChatActionType.none) {
-                      return Text(
-                        action == ChatActionType.recording
-                            ? 'recording audio...'
-                            : 'typing...',
+                      return AnimatedActivityText(
+                        text:
+                            action == ChatActionType.recording
+                                ? 'recording audio...'
+                                : 'typing...',
                         style: TextStyle(
                           color:
                               action == ChatActionType.recording
                                   ? Colors.red.shade700
                                   : Colors.green,
+                          fontSize: 12,
                           fontWeight: FontWeight.w500,
                           fontStyle: FontStyle.italic,
                         ),

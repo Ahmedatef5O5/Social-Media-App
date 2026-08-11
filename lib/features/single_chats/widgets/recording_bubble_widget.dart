@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:social_media_app/features/single_chats/widgets/user_chat_avatar_widget.dart';
 import '../../../core/audio/helpers/pulsing_mic_dot.dart';
 import '../../../core/constants/app_images.dart';
+import '../../../core/widgets/animated_activity_text.dart';
 
 class RecordingBubbleWidget extends StatelessWidget {
   final String? receiverUserImgUrl;
@@ -46,8 +47,8 @@ class RecordingBubbleWidget extends StatelessWidget {
               children: [
                 const PulsingMicDot(),
                 const SizedBox(width: 8),
-                Text(
-                  'recording audio...',
+                AnimatedActivityText(
+                  text: 'recording audio...',
                   style: TextStyle(
                     color: Colors.red.shade700,
                     fontSize: 12,

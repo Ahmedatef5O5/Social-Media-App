@@ -6,6 +6,7 @@ import 'package:social_media_app/core/router/app_routes.dart';
 import '../../../core/presence/model/chat_action_type.dart';
 import '../../../core/presence/widgets/presence_avatar_widget.dart';
 import '../../../core/presence/widgets/presence_status_text.dart';
+import '../../../core/widgets/animated_activity_text.dart';
 import '../../../core/widgets/app_avatar.dart';
 import '../../../core/widgets/calls/call_icon_button.dart';
 import '../../single_calls/model/call_model.dart';
@@ -97,10 +98,11 @@ class ReceiverDetailsHeaderSection extends StatelessWidget {
                         context.read<ChatDetailsCubit>().receiverAction,
                     builder: (context, action, _) {
                       if (action != ChatActionType.none) {
-                        return Text(
-                          action == ChatActionType.recording
-                              ? 'recording audio...'
-                              : 'typing...',
+                        return AnimatedActivityText(
+                          text:
+                              action == ChatActionType.recording
+                                  ? 'recording audio...'
+                                  : 'typing...',
                           style: TextStyle(
                             color:
                                 action == ChatActionType.recording
