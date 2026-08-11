@@ -19,6 +19,7 @@ import '../cubit/group_details_cubit/group_details_cubit.dart';
 import '../cubit/group_list_cubit/group_list_cubit.dart';
 import '../cubit/group_members_cubit/group_members_cubit.dart';
 import '../helpers/group_call_initiator.dart';
+import '../helpers/members_list_skeleton.dart';
 import '../models/group_member_model.dart';
 import '../models/group_model.dart';
 import '../services/group_chat_services.dart';
@@ -386,72 +387,72 @@ class _GroupInfoViewState extends State<GroupInfoView> {
                               onTap: () => _openStarredMessages(context),
                             ),
                           ),
-                        GroupMembersHeaderWidget(
-                          count: totalCount,
-                          primary: primary,
-                          isAdmin: isAdmin,
-                          onAddTap: () => _openAddMembers(membersList),
-                        ),
 
                         if (isLoading)
-                          const SliverToBoxAdapter(
-                            child: Padding(
-                              padding: EdgeInsets.all(40),
-                              child: Center(child: CustomLoadingIndicator()),
-                            ),
-                          )
-                        else if (isError)
-                          SliverToBoxAdapter(
-                            child: Padding(
-                              padding: const EdgeInsets.all(40),
-                              child: Center(
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    const Text('Failed to load members'),
-                                    TextButton(
-                                      onPressed:
-                                          () => _membersCubit.loadMembers(),
-                                      child: const Text('Retry'),
-                                    ),
-                                  ],
+                          const SliverToBoxAdapter(child: MembersListSkeleton())
+                        else ...[
+                          GroupMembersHeaderWidget(
+                            count: totalCount,
+                            primary: primary,
+                            isAdmin: isAdmin,
+                            onAddTap: () => _openAddMembers(membersList),
+                          ),
+                          if (isError)
+                            SliverToBoxAdapter(
+                              child: Padding(
+                                padding: const EdgeInsets.all(40),
+                                child: Center(
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Text('Failed to load members'),
+                                      TextButton(
+                                        onPressed:
+                                            () => _membersCubit.loadMembers(),
+                                        child: const Text('Retry'),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
+                            )
+                          else ...[
+                            GroupInfoMembersList(
+                              members: membersList,
+                              currentUserId: _currentUserId,
+                              isAdmin: isAdmin,
+                              primary: primary,
+                              onRemove: _removeMember,
                             ),
-                          )
-                        else ...[
-                          GroupInfoMembersList(
-                            members: membersList,
-                            currentUserId: _currentUserId,
-                            isAdmin: isAdmin,
-                            primary: primary,
-                            onRemove: _removeMember,
-                          ),
 
-                          if (isLoadingMore)
-                            const SliverToBoxAdapter(
-                              child: Padding(
-                                padding: EdgeInsets.all(16),
-                                child: Center(child: CustomLoadingIndicator()),
+                            if (isLoadingMore)
+                              const SliverToBoxAdapter(
+                                child: Padding(
+                                  padding: EdgeInsets.all(16),
+                                  child: Center(
+                                    child: CustomLoadingIndicator(),
+                                  ),
+                                ),
+                              ),
+
+                            SliverToBoxAdapter(
+                              child: SharedMediaPreviewSection(
+                                mediaCubit: _mediaCubit,
+                                onShowInChat: (sheetContext, messageId) {
+                                  Navigator.of(sheetContext).pop();
+                                  Navigator.of(sheetContext).pop();
+                                  final controller =
+                                      widget.itemScrollController;
+                                  if (controller != null) {
+                                    widget.detailsCubit?.scrollToMessage(
+                                      messageId: messageId,
+                                      itemScrollController: controller,
+                                    );
+                                  }
+                                },
                               ),
                             ),
-
-                          SliverToBoxAdapter(
-                            child: SharedMediaPreviewSection(
-                              mediaCubit: _mediaCubit,
-                              onShowInChat: (sheetContext, messageId) {
-                                Navigator.of(sheetContext).pop();
-                                Navigator.of(sheetContext).pop();
-                                final controller = widget.itemScrollController;
-                                if (controller != null) {
-                                  widget.detailsCubit?.scrollToMessage(
-                                    messageId: messageId,
-                                    itemScrollController: controller,
-                                  );
-                                }
-                              },
-                            ),
-                          ),
+                          ],
                         ],
                       ],
                     );
