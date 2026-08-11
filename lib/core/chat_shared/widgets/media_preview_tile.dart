@@ -1,19 +1,19 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:gap/gap.dart';
-import '../../../features/single_chats/widgets/full_screen_media_view.dart';
+import 'package:social_media_app/core/cache/utils/cloudinary_url_extensions.dart';
 import '../models/shared_media_item.dart';
+import '../views/full_screen_media_pager.dart';
+import 'voice_grid_tile.dart';
 
 class MediaPreviewTile extends StatelessWidget {
   final SharedMediaItem item;
-  const MediaPreviewTile({super.key, required this.item});
+  final List<SharedMediaItem> items;
+  const MediaPreviewTile({super.key, required this.item, required this.items});
 
   @override
   Widget build(BuildContext context) {
-    final primary = Theme.of(context).primaryColor;
-
     return GestureDetector(
-      onTap: () => _openMedia(context),
+      onTap: () => _openFullScreenMedia(context, items, item),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(10),
         child: switch (item.messageType) {
@@ -25,7 +25,10 @@ class MediaPreviewTile extends StatelessWidget {
             fit: StackFit.expand,
             children: [
               CachedNetworkImage(
-                imageUrl: item.videoUrl ?? '',
+                imageUrl:
+                    item.videoUrl?.cloudinaryVideoThumbnailUrl ??
+                    item.videoUrl ??
+                    '',
                 fit: BoxFit.cover,
                 errorWidget: (_, __, ___) => Container(color: Colors.black26),
               ),
@@ -33,40 +36,45 @@ class MediaPreviewTile extends StatelessWidget {
                 child: Icon(
                   Icons.play_circle_fill_rounded,
                   color: Colors.white,
-                  size: 30,
+                  size: 24,
                 ),
               ),
             ],
           ),
-          _ => Container(
-            color: primary.withValues(alpha: 0.12),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.mic_rounded, color: primary),
-                const Gap(4),
-                Text('Voice', style: TextStyle(color: primary, fontSize: 11)),
-              ],
-            ),
-          ),
+          _ => VoiceGridTile(item: item),
         },
       ),
     );
   }
 
-  void _openMedia(BuildContext context) {
-    if (item.messageType == 'image' && item.imageUrl != null) {
-      Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (_) => FullScreenMediaView(imageUrl: item.imageUrl!),
-        ),
-      );
-    } else if (item.messageType == 'video' && item.videoUrl != null) {
-      Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (_) => FullScreenMediaView(videoUrl: item.videoUrl!),
-        ),
-      );
-    }
+  void _openFullScreenMedia(
+    BuildContext context,
+    List<SharedMediaItem> tabItems,
+    SharedMediaItem tappedItem,
+  ) {
+    final playable =
+        tabItems
+            .where(
+              (i) =>
+                  i.messageType == 'image' ||
+                  i.messageType == 'video' ||
+                  (i.voiceUrl ?? '').isNotEmpty,
+            )
+            .toList();
+    final initialIndex = playable.indexWhere((i) => i.id == tappedItem.id);
+
+    Navigator.of(context).push(
+      PageRouteBuilder(
+        opaque: false,
+        pageBuilder:
+            (_, __, ___) => FullScreenMediaPager(
+              items: playable,
+              initialIndex: initialIndex < 0 ? 0 : initialIndex,
+            ),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return FadeTransition(opacity: animation, child: child);
+        },
+      ),
+    );
   }
 }
