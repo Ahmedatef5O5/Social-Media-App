@@ -101,49 +101,51 @@ class GroupTileItem extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
             ),
             subtitle: Row(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                PresenceAnimatedSubtitle(
-                  presence: group.presence,
+                Expanded(
+                  child: PresenceAnimatedSubtitle(
+                    presence: group.presence,
 
-                  activeStyle: TextStyle(
-                    fontSize: 14,
-                    fontWeight:
-                        highlightUnreadMessage
-                            ? FontWeight.w500
-                            : FontWeight.w400,
-                    color: Colors.green.shade600,
-                    fontStyle: FontStyle.italic,
+                    activeStyle: TextStyle(
+                      fontSize: 14,
+                      fontWeight:
+                          highlightUnreadMessage
+                              ? FontWeight.w500
+                              : FontWeight.w400,
+                      color: Colors.green.shade600,
+                      fontStyle: FontStyle.italic,
+                    ),
+                    fallback:
+                        group.lastMessage != null
+                            ? Text(
+                              buildGroupLastMessagePreview(
+                                group: group,
+                                currentUserId: currentUserId,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color:
+                                    highlightUnreadMessage
+                                        ? Theme.of(
+                                          context,
+                                        ).colorScheme.onSurface
+                                        : Colors.grey.shade600,
+                                fontSize: 13,
+                                fontWeight:
+                                    highlightUnreadMessage
+                                        ? FontWeight.w500
+                                        : FontWeight.w400,
+                              ),
+                            )
+                            : Text(
+                              'Tap to open group chat',
+                              style: TextStyle(
+                                color: isDark ? Colors.white38 : Colors.black38,
+                                fontSize: 13,
+                              ),
+                            ),
                   ),
-                  fallback:
-                      group.lastMessage != null
-                          ? Text(
-                            buildGroupLastMessagePreview(
-                              group: group,
-                              currentUserId: currentUserId,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              color:
-                                  highlightUnreadMessage
-                                      ? Theme.of(context).colorScheme.onSurface
-                                      : Colors.grey.shade600,
-                              fontSize: 13,
-                              fontWeight:
-                                  highlightUnreadMessage
-                                      ? FontWeight.w500
-                                      : FontWeight.w400,
-                            ),
-                          )
-                          : Text(
-                            'Tap to open group chat',
-                            style: TextStyle(
-                              color: isDark ? Colors.white38 : Colors.black38,
-                              fontSize: 13,
-                            ),
-                          ),
                 ),
               ],
             ),

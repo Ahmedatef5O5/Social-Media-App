@@ -49,32 +49,33 @@ class _PresenceAnimatedSubtitleState extends State<PresenceAnimatedSubtitle> {
       builder: (context, phrase, _) {
         return AnimatedSwitcher(
           duration: const Duration(milliseconds: 250),
-          transitionBuilder:
-              (child, anim) => FadeTransition(opacity: anim, child: child),
-          child:
-              phrase == null
-                  ? KeyedSubtree(
-                    key: const ValueKey('fallback'),
-                    child: widget.fallback,
-                  )
-                  : Text(
-                    phrase.text,
-                    key: ValueKey(phrase.text),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: (widget.activeStyle ??
-                            const TextStyle(
-                              fontSize: 11,
-                              fontStyle: FontStyle.italic,
-                            ))
-                        .copyWith(
-                          color:
-                              phrase.action == ChatActionType.recording
-                                  ? Colors.red.shade700
-                                  : (widget.activeStyle?.color ??
-                                      Colors.green.shade600),
-                        ),
-                  ),
+          transitionBuilder: (child, animation) {
+            return FadeTransition(opacity: animation, child: child);
+          },
+          child: Align(
+            key: ValueKey(phrase == null ? 'fallback' : phrase.text),
+            alignment: Alignment.centerLeft,
+            child:
+                phrase == null
+                    ? widget.fallback
+                    : Text(
+                      phrase.text,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: (widget.activeStyle ??
+                              const TextStyle(
+                                fontSize: 11,
+                                fontStyle: FontStyle.italic,
+                              ))
+                          .copyWith(
+                            color:
+                                phrase.action == ChatActionType.recording
+                                    ? Colors.red.shade700
+                                    : (widget.activeStyle?.color ??
+                                        Colors.green.shade600),
+                          ),
+                    ),
+          ),
         );
       },
     );
