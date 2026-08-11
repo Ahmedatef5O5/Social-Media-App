@@ -7,11 +7,11 @@ import '../../../core/presence/widgets/presence_avatar_widget.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/widgets/app_avatar.dart';
-import '../../../core/widgets/custom_loading_indicator.dart';
 import '../../home/cubits/home_cubit/home_cubit.dart';
 import '../../profile/widgets/user_preview_dialog.dart';
 import '../../single_chats/models/chat_user_model.dart';
 import '../model/reaction_entry.dart';
+import 'reactions_bottom_sheet_skeleton.dart';
 
 class ReactionsBottomSheet extends StatefulWidget {
   final Future<List<ReactionEntry>> Function() fetchReactions;
@@ -210,7 +210,7 @@ class _ReactionsBottomSheetState extends State<ReactionsBottomSheet> {
                   Expanded(
                     child:
                         _isLoading
-                            ? const CustomLoadingIndicator()
+                            ? const ReactionsBottomSheetSkeleton()
                             : displayed.isEmpty
                             ? const Center(child: Text('No reactions yet.'))
                             : ListView.builder(

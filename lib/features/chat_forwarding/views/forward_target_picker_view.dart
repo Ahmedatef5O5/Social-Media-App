@@ -1,6 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:social_media_app/core/widgets/custom_loading_indicator.dart';
+import 'package:social_media_app/features/search/utils/chat_tile_skeleton_list.dart';
 import '../../../core/presence/widgets/presence_avatar_widget.dart';
 import '../../../core/widgets/app_avatar.dart';
 import '../../group_chats/models/group_model.dart';
@@ -149,9 +149,8 @@ class _ForwardTargetPickerViewState extends State<ForwardTargetPickerView> {
         ),
         body: Column(
           children: [
-            if (!_isLoading &&
-                _errorMessage == null &&
-                (_people.isNotEmpty || _groups.isNotEmpty))
+            if (_errorMessage == null &&
+                (_isLoading || _people.isNotEmpty || _groups.isNotEmpty))
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
                 child: TextField(
@@ -252,7 +251,7 @@ class _ForwardTargetPickerViewState extends State<ForwardTargetPickerView> {
     ThemeData theme,
   ) {
     if (_isLoading) {
-      return const Center(child: CustomLoadingIndicator());
+      return const ChatTileSkeletonList();
     }
 
     if (_errorMessage != null) {
