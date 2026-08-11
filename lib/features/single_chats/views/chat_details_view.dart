@@ -20,6 +20,8 @@ import '../../../core/services/active_screen_tracker.dart';
 import '../../../core/services/notification_services.dart';
 import '../../../core/themes/app_colors.dart';
 import '../../../core/toast/app_toast.dart';
+import '../../group_chats/cubit/group_list_cubit/group_list_cubit.dart';
+import '../cubit/chats_cubit/chats_cubit.dart';
 import '../helper/blocked_single_chat_bar_widget.dart';
 import '../services/chat_permission_service.dart';
 import '../widgets/text_input_area_section.dart';
@@ -346,6 +348,12 @@ class _ChatDetailsViewState extends State<ChatDetailsView>
       );
       if (context.mounted) {
         AppToast.info('Forwarded to ${result.length} chat(s)');
+        Future.delayed(const Duration(milliseconds: 400), () {
+          if (context.mounted) {
+            context.read<ChatsCubit>().getChats(isRefresh: true);
+            context.read<GroupListCubit>().loadGroups(isRefresh: true);
+          }
+        });
       }
     } catch (e) {
       if (context.mounted) AppToast.info('Failed to forward. Try again.');

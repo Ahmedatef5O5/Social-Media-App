@@ -8,7 +8,9 @@ import 'package:social_media_app/features/chat_forwarding/models/forwardable_mes
 import 'package:social_media_app/features/chat_forwarding/services/forward_service.dart';
 import 'package:social_media_app/features/chat_forwarding/views/forward_target_picker_view.dart';
 import '../../../core/chat_shared/widgets/message_selection_header_bar.dart';
+import '../../single_chats/cubit/chats_cubit/chats_cubit.dart';
 import '../cubit/group_details_cubit/group_details_cubit.dart';
+import '../cubit/group_list_cubit/group_list_cubit.dart';
 import '../models/group_model.dart';
 import '../widgets/group_chat_app_bar.dart';
 
@@ -66,6 +68,12 @@ class GroupChatAppBarSwitcher extends StatelessWidget
       );
       if (context.mounted) {
         AppToast.info('Forwarded to ${result.length} chat(s)');
+        Future.delayed(const Duration(milliseconds: 400), () {
+          if (context.mounted) {
+            context.read<ChatsCubit>().getChats(isRefresh: true);
+            context.read<GroupListCubit>().loadGroups(isRefresh: true);
+          }
+        });
       }
     } catch (e) {
       if (context.mounted) AppToast.info('Failed to forward. Try again.');
