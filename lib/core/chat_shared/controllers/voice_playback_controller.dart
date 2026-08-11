@@ -37,6 +37,14 @@ class VoicePlaybackController {
     activeVoiceUrl.value = url;
   }
 
+  void pauseActive() {
+    final active = activeVoiceUrl.value;
+    if (active != null) {
+      cache[active]?.pause();
+      activeVoiceUrl.value = null;
+    }
+  }
+
   Future<Duration?> fetchDuration(String url) async {
     if (durationCache.containsKey(url)) return durationCache[url];
     if (_preloadFutures.containsKey(url)) {
