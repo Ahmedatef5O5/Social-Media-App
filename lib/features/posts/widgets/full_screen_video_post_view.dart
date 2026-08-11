@@ -42,6 +42,7 @@ class _FullScreenVideoPostViewState extends State<FullScreenVideoPostView> {
 
   bool _wasPlaying = false;
   double _dragOffset = 0.0;
+  bool _isDragging = false;
 
   VideoPlayerController get _controller => widget.handle.controller;
   final ValueNotifier<bool> _showOverlays = ValueNotifier<bool>(true);
@@ -103,6 +104,7 @@ class _FullScreenVideoPostViewState extends State<FullScreenVideoPostView> {
 
   void _handleVerticalDragUpdate(DragUpdateDetails details) {
     setState(() {
+      _isDragging = true;
       _dragOffset += details.primaryDelta!;
     });
   }
@@ -113,6 +115,7 @@ class _FullScreenVideoPostViewState extends State<FullScreenVideoPostView> {
       Navigator.of(context).pop();
     } else {
       setState(() {
+        _isDragging = false;
         _dragOffset = 0.0;
       });
     }
@@ -136,32 +139,45 @@ class _FullScreenVideoPostViewState extends State<FullScreenVideoPostView> {
                 fit: StackFit.expand,
                 children: [
                   _buildFullBleedVideo(),
-                  _generateCenterPlayPauseWidget(),
-                  TopOverlays(
-                    showOverlays: _showOverlays,
-                    fadeDuration: _fadeDuration,
-                  ),
-                  BottomOverlays(),
-                  SafeArea(
-                    child: Stack(
-                      children: [
-                        PostVideoHeaderWidget(
-                          showOverlays: _showOverlays,
-                          fadeDuration: _fadeDuration,
-                          controller: _controller,
-                          context: context,
-                        ),
-                        _buildBottomInfoRow(context),
-                        _buildRightColumn(),
-                      ],
+
+                  IgnorePointer(
+                    ignoring: _isDragging,
+                    child: AnimatedOpacity(
+                      opacity: _isDragging ? 0.0 : 1.0,
+                      duration: const Duration(milliseconds: 200),
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          _generateCenterPlayPauseWidget(),
+                          TopOverlays(
+                            showOverlays: _showOverlays,
+                            fadeDuration: _fadeDuration,
+                          ),
+                          BottomOverlays(),
+                          SafeArea(
+                            child: Stack(
+                              children: [
+                                PostVideoHeaderWidget(
+                                  showOverlays: _showOverlays,
+                                  fadeDuration: _fadeDuration,
+                                  controller: _controller,
+                                  context: context,
+                                ),
+                                _buildBottomInfoRow(context),
+                                _buildRightColumn(),
+                              ],
+                            ),
+                          ),
+                          VideoDurationDisplay(
+                            showOverlays: _showOverlays,
+                            fadeDuration: _fadeDuration,
+                            controller: _controller,
+                          ),
+                          _buildDraggableProgressBar(),
+                        ],
+                      ),
                     ),
                   ),
-                  VideoDurationDisplay(
-                    showOverlays: _showOverlays,
-                    fadeDuration: _fadeDuration,
-                    controller: _controller,
-                  ),
-                  _buildDraggableProgressBar(),
                 ],
               ),
             ),

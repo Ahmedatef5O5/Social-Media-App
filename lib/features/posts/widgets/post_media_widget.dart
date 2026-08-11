@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:social_media_app/core/widgets/cached_cloudinary_image.dart';
 import 'package:social_media_app/features/posts/widgets/post_video_player.dart';
 import '../../../core/router/app_routes.dart';
-import '../../../core/themes/app_colors.dart';
-import '../../../core/widgets/custom_loading_indicator.dart';
+import '../../../core/widgets/blurred_media_placeholders.dart';
 import '../cubit/posts_cubit/posts_cubit.dart';
 import '../model/post_model.dart';
 import 'file_attachment_preview.dart';
@@ -42,14 +41,8 @@ class PostMediaWidget extends StatelessWidget {
                   height: double.infinity,
                   fit: BoxFit.cover,
                   placeholder:
-                      (context) => Container(
-                        height: MediaQuery.sizeOf(context).height * 0.3,
-                        decoration: BoxDecoration(
-                          color: AppColors.grey4.withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(15),
-                        ),
-                        child: const CustomLoadingIndicator(),
-                      ),
+                      (context) =>
+                          BlurredImagePlaceholder(secureUrl: post.imageUrl!),
                   errorWidget:
                       (context, error) => SizedBox(
                         height: MediaQuery.sizeOf(context).height * 0.3,

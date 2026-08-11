@@ -9,7 +9,7 @@ import '../../../core/cache/repository/media_cache_repository.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/services/network_status_service.dart';
-import '../../../core/widgets/custom_loading_indicator.dart';
+import '../../../core/widgets/blurred_media_placeholders.dart';
 import '../cubit/posts_cubit/posts_cubit.dart';
 import '../helper/global_video_pause_gate.dart';
 import '../helper/shared_video_controller_handle.dart';
@@ -210,7 +210,17 @@ class _PostVideoPlayerState extends State<PostVideoPlayer> with RouteAware {
   Widget build(BuildContext context) {
     switch (_status) {
       case _VideoLoadStatus.loading:
-        return _buildPlaceholder();
+        return AspectRatio(
+          aspectRatio: widget.aspectRatio ?? 16 / 9,
+          child: Container(
+            clipBehavior: Clip.antiAlias,
+            decoration: BoxDecoration(
+              color: Colors.black,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: BlurredVideoPlaceholder(videoUrl: widget.videoUrl),
+          ),
+        );
       case _VideoLoadStatus.unavailableOffline:
         return _buildMessageBox(
           icon: Icons.wifi_off_rounded,
@@ -390,33 +400,29 @@ class _PostVideoPlayerState extends State<PostVideoPlayer> with RouteAware {
 
     Navigator.of(context, rootNavigator: true)
         .push(
-          MaterialPageRoute(
-            builder:
-                (context) => FullScreenVideoPostView(
+          PageRouteBuilder(
+            opaque: false,
+            pageBuilder:
+                (_, __, ___) => FullScreenVideoPostView(
                   post: widget.post,
                   handle: _handle!,
                   postsCubit: widget.postsCubit,
                   currentUserId: widget.currentUserId,
                 ),
+            transitionsBuilder: (
+              context,
+              animation,
+              secondaryAnimation,
+              child,
+            ) {
+              return FadeTransition(opacity: animation, child: child);
+            },
           ),
         )
         .then((_) {
           _isLentToFullScreen = false;
           if (mounted) _showControls.value = false;
         });
-  }
-
-  Widget _buildPlaceholder() {
-    return AspectRatio(
-      aspectRatio: widget.aspectRatio ?? 16 / 9,
-      child: Container(
-        decoration: BoxDecoration(
-          color: AppColors.grey4.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: const Center(child: CustomLoadingIndicator()),
-      ),
-    );
   }
 
   Widget _buildMessageBox({

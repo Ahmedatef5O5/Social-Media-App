@@ -117,14 +117,23 @@ class _CreatePostVideoPreviewState extends State<CreatePostVideoPreview>
   void _openFullScreen() {
     Navigator.of(context, rootNavigator: true)
         .push(
-          MaterialPageRoute(
-            builder:
-                (_) => FullScreenMediaView(
+          PageRouteBuilder(
+            opaque: false,
+            pageBuilder:
+                (_, __, ___) => FullScreenMediaView(
                   videoUrl: widget.videoPath,
                   isLocal: true,
                   controller: _controller,
                   showActions: false,
                 ),
+            transitionsBuilder: (
+              context,
+              animation,
+              secondaryAnimation,
+              child,
+            ) {
+              return FadeTransition(opacity: animation, child: child);
+            },
           ),
         )
         .then((_) {
