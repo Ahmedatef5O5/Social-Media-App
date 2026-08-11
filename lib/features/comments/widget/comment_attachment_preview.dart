@@ -127,12 +127,21 @@ class _PreviewThumbnail extends StatelessWidget {
                 attachment.localFile?.path ?? attachment.remoteUrl;
             if (videoPath != null) {
               Navigator.of(context, rootNavigator: true).push(
-                MaterialPageRoute(
-                  builder:
-                      (_) => FullScreenMediaView(
+                PageRouteBuilder(
+                  opaque: false,
+                  pageBuilder:
+                      (_, __, ___) => FullScreenMediaView(
                         videoUrl: videoPath,
                         isLocal: attachment.localFile != null,
                       ),
+                  transitionsBuilder: (
+                    context,
+                    animation,
+                    secondaryAnimation,
+                    child,
+                  ) {
+                    return FadeTransition(opacity: animation, child: child);
+                  },
                 ),
               );
             }

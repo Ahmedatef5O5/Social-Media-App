@@ -375,14 +375,23 @@ class _InlineVideoPlayerState extends State<_InlineVideoPlayer> {
     _hideTimer?.cancel();
     Navigator.of(context, rootNavigator: true)
         .push(
-          MaterialPageRoute(
-            builder:
-                (_) => FullScreenMediaView(
+          PageRouteBuilder(
+            opaque: false,
+            pageBuilder:
+                (_, __, ___) => FullScreenMediaView(
                   videoUrl: widget.localPath,
                   isLocal: true,
                   caption: widget.caption,
                   controller: _controller,
                 ),
+            transitionsBuilder: (
+              context,
+              animation,
+              secondaryAnimation,
+              child,
+            ) {
+              return FadeTransition(opacity: animation, child: child);
+            },
           ),
         )
         .then((_) {
