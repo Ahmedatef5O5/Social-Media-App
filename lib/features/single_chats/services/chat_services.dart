@@ -175,8 +175,13 @@ class ChatServices {
   Future<void> deleteMessage({required String messageId}) =>
       _messages.deleteMessage(messageId: messageId);
 
-  Future<void> deleteMessagesForEveryone(List<String> messageIds) =>
-      _messages.deleteMessagesForEveryone(messageIds);
+  Future<void> deleteMessageForMe({
+    required String messageId,
+    required String currentUserId,
+  }) => _messages.deleteMessageForMe(
+    messageId: messageId,
+    currentUserId: currentUserId,
+  );
 
   Future<void> deleteMessagesForMe({
     required List<MessageModel> messages,
@@ -185,6 +190,9 @@ class ChatServices {
     messages: messages,
     currentUserId: currentUserId,
   );
+
+  Future<void> deleteMessagesForEveryone(List<String> messageIds) =>
+      _messages.deleteMessagesForEveryone(messageIds);
 
   Future<void> markMessagesAsRead({
     required String senderId,

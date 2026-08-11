@@ -592,6 +592,27 @@ class GroupChatServices {
     );
   }
 
+  Future<void> deleteGroupMessageForMe({
+    required String messageId,
+    required String currentUserId,
+  }) async {
+    final row =
+        await _supabase
+            .from(SupabaseConstants.groupMessages)
+            .select(GroupMessageColumns.deletedFor)
+            .eq('id', messageId)
+            .maybeSingle();
+
+    final current =
+        (row?[GroupMessageColumns.deletedFor] as List?)?.cast<String>() ?? [];
+    final updated = {...current, currentUserId}.toList();
+
+    await _supabase
+        .from(SupabaseConstants.groupMessages)
+        .update({GroupMessageColumns.deletedFor: updated})
+        .eq('id', messageId);
+  }
+
   Future<void> deleteGroupMessagesForMe({
     required List<GroupMessageModel> messages,
     required String currentUserId,

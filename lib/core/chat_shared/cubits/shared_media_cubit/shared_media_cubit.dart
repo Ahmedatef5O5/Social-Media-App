@@ -67,6 +67,31 @@ class SharedMediaCubit extends Cubit<SharedMediaState> {
     }
   }
 
+  Future<void> deleteItem(
+    SharedMediaItem item, {
+    required bool forEveryone,
+  }) async {
+    if (forEveryone) {
+      await _dataSource.deleteItemForEveryone(item.id);
+    } else {
+      await _dataSource.deleteItemForMe(item.id);
+    }
+    _removeItemLocally(item.id);
+  }
+
+  void _removeItemLocally(String messageId) {
+    final updatedItems = <SharedMediaTab, List<SharedMediaItem>>{
+      for (final entry in state.items.entries)
+        entry.key: entry.value.where((m) => m.id != messageId).toList(),
+    };
+    emit(
+      state.copyWith(
+        items: updatedItems,
+        preview: state.preview.where((m) => m.id != messageId).toList(),
+      ),
+    );
+  }
+
   String _messageTypeFor(SharedMediaTab tab) {
     switch (tab) {
       case SharedMediaTab.all:

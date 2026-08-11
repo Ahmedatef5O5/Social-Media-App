@@ -2,6 +2,7 @@ import 'package:social_media_app/features/group_chats/services/group_chat_servic
 import 'package:social_media_app/features/single_chats/models/chat_user_model.dart';
 import 'package:social_media_app/features/single_chats/models/message_model.dart';
 import 'package:social_media_app/features/single_chats/services/chat_services.dart';
+import '../../supabase/supabase_provider.dart';
 import '../models/shared_media_item.dart';
 
 abstract class SharedMediaDataSource {
@@ -11,6 +12,10 @@ abstract class SharedMediaDataSource {
     int limit = 100,
   });
   Future<List<SharedMediaItem>> loadLinks({int limit = 100});
+
+  Future<void> deleteItemForMe(String messageId);
+
+  Future<void> deleteItemForEveryone(String messageId);
 }
 
 class GroupChatMediaDataSource implements SharedMediaDataSource {
@@ -49,6 +54,17 @@ class GroupChatMediaDataSource implements SharedMediaDataSource {
     );
     return items.map((m) => m.toSharedMediaItem()).toList();
   }
+
+  @override
+  Future<void> deleteItemForMe(String messageId) =>
+      services.deleteGroupMessageForMe(
+        messageId: messageId,
+        currentUserId: SupabaseProvider.id,
+      );
+
+  @override
+  Future<void> deleteItemForEveryone(String messageId) =>
+      services.deleteGroupMessagesForEveryone([messageId]);
 }
 
 class SingleChatMediaDataSource implements SharedMediaDataSource {
@@ -107,4 +123,14 @@ class SingleChatMediaDataSource implements SharedMediaDataSource {
     );
     return items.map(_map).toList();
   }
+
+  @override
+  Future<void> deleteItemForMe(String messageId) => services.deleteMessageForMe(
+    messageId: messageId,
+    currentUserId: currentUserId,
+  );
+
+  @override
+  Future<void> deleteItemForEveryone(String messageId) =>
+      services.deleteMessagesForEveryone([messageId]);
 }

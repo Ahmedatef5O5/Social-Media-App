@@ -237,13 +237,25 @@ class ChatMessagesService {
     );
   }
 
-  Future<void> deleteMessagesForEveryone(List<String> messageIds) async {
-    for (final id in messageIds) {
-      await MediaCleanupService.instance.deleteWithMedia(
-        table: SupabaseConstants.messages,
-        id: id,
-      );
-    }
+  Future<void> deleteMessageForMe({
+    required String messageId,
+    required String currentUserId,
+  }) async {
+    final row =
+        await _supabase
+            .from(SupabaseConstants.messages)
+            .select(MessagesColumns.deletedFor)
+            .eq(MessagesColumns.id, messageId)
+            .maybeSingle();
+
+    final current =
+        (row?[MessagesColumns.deletedFor] as List?)?.cast<String>() ?? [];
+    final updated = {...current, currentUserId}.toList();
+
+    await _supabase
+        .from(SupabaseConstants.messages)
+        .update({MessagesColumns.deletedFor: updated})
+        .eq(MessagesColumns.id, messageId);
   }
 
   Future<void> deleteMessagesForMe({
@@ -256,6 +268,15 @@ class ChatMessagesService {
           .from(SupabaseConstants.messages)
           .update({MessagesColumns.deletedFor: updated})
           .eq(MessagesColumns.id, m.id);
+    }
+  }
+
+  Future<void> deleteMessagesForEveryone(List<String> messageIds) async {
+    for (final id in messageIds) {
+      await MediaCleanupService.instance.deleteWithMedia(
+        table: SupabaseConstants.messages,
+        id: id,
+      );
     }
   }
 
