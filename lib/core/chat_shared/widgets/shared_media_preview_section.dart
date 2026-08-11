@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 import '../cubits/shared_media_cubit/shared_media_cubit.dart';
+import '../helpers/shared_media_preview_skeleton.dart';
 import '../views/shared_media_view.dart';
 import 'media_preview_tile.dart';
 
@@ -66,10 +67,7 @@ class SharedMediaPreviewSection extends StatelessWidget {
               ),
               const Gap(4),
               if (state.previewLoading)
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 20),
-                  child: Center(child: CircularProgressIndicator()),
-                )
+                const SharedMediaPreviewSkeleton()
               else
                 GridView.builder(
                   shrinkWrap: true,
