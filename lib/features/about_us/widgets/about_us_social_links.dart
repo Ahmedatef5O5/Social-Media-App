@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:gap/gap.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -16,29 +17,69 @@ class AboutUsSocialLinks extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final links = [
+      // _SocialLink(
+      //   icon: Icons.language,
+      //   label: 'Website',
+      //   value: 'www.social-media-app.com',
+      //   url: 'https://github.com/Ahmedatef5O5/Social-Media-App',
+      //   color: Colors.blue,
+      // ),
       _SocialLink(
-        icon: Icons.language,
-        label: 'Website',
-        value: 'www.social-media-app.com',
-        url: 'https://github.com/Ahmedatef5O5/Social-Media-App',
+        iconBuilder:
+            (color, size) =>
+                FaIcon(FontAwesomeIcons.briefcase, color: color, size: size),
+
+        label: 'Portfolio',
+        value: 'ahmed-portfolio.web.app',
+        url: 'https://ahmed-portfolio-cd0a3.web.app',
         color: Colors.blue,
       ),
       _SocialLink(
-        icon: Icons.email,
+        iconBuilder:
+            (color, size) =>
+                FaIcon(FontAwesomeIcons.linkedin, color: color, size: size),
+
+        label: 'LinkedIn',
+        value: 'linkedin.com/in/ahmed-ateif-00b77b28a',
+        url: 'https://www.linkedin.com/in/ahmed-ateif-00b77b28a/',
+        color: const Color(0xFF0A66C2),
+      ),
+      _SocialLink(
+        iconBuilder:
+            (color, size) =>
+                FaIcon(FontAwesomeIcons.github, color: color, size: size),
+
+        label: 'GitHub',
+        value: 'github.com/Ahmedatef5O5',
+        url: 'https://github.com/Ahmedatef5O5',
+        color: isDark ? Colors.white70 : Colors.black87,
+      ),
+
+      _SocialLink(
+        iconBuilder:
+            (color, size) =>
+                FaIcon(FontAwesomeIcons.whatsapp, color: color, size: size),
+
+        label: 'WhatsApp',
+        value: 'Contact with me',
+        url: 'https://wa.me/201550835238',
+        color: const Color(0xFF25D366),
+      ),
+      _SocialLink(
+        iconBuilder:
+            (color, size) => FaIcon(
+              FontAwesomeIcons.solidEnvelope,
+              color: color,
+              size: size,
+            ),
+
         label: 'Email',
         value: 'ahmedateif0@gmail.com',
         url:
             'mailto:ahmedateif0@gmail.com'
             '?subject=Contact%20from%20Social%20App'
             '&body=Hello%20Ahmed,',
-        color: Colors.green,
-      ),
-      _SocialLink(
-        icon: Icons.code,
-        label: 'GitHub',
-        value: 'github.com/Ahmedatef5O5',
-        url: 'https://github.com/Ahmedatef5O5',
-        color: isDark ? Colors.white70 : Colors.black87,
+        color: const Color(0xFFEA4335),
       ),
     ];
 
@@ -105,7 +146,9 @@ class AboutUsSocialLinks extends StatelessWidget {
                               color: link.color.withValues(alpha: 0.12),
                               borderRadius: BorderRadius.circular(11),
                             ),
-                            child: Icon(link.icon, color: link.color, size: 18),
+                            child: Center(
+                              child: link.iconBuilder(link.color, 18),
+                            ),
                           ),
                           const Gap(14),
                           Expanded(
@@ -162,11 +205,12 @@ class AboutUsSocialLinks extends StatelessWidget {
 }
 
 class _SocialLink {
-  final IconData icon;
+  final Widget Function(Color color, double size) iconBuilder;
   final String label, value, url;
   final Color color;
+
   const _SocialLink({
-    required this.icon,
+    required this.iconBuilder,
     required this.label,
     required this.value,
     required this.url,

@@ -50,7 +50,7 @@ class AboutUsVersionFooter extends StatelessWidget {
           'Version 1.0.0  •  Made with ❤️',
           style: TextStyle(
             fontSize: 12,
-            color: isDark ? Colors.white30 : Colors.grey.shade400,
+            color: isDark ? Colors.white30 : Colors.grey.shade600,
           ),
         ),
         const Gap(6),
@@ -58,7 +58,7 @@ class AboutUsVersionFooter extends StatelessWidget {
           '© ${DateTime.now().year} Social App. All rights reserved.',
           style: TextStyle(
             fontSize: 11,
-            color: isDark ? Colors.white24 : Colors.grey.shade300,
+            color: isDark ? Colors.white24 : Colors.grey.shade500,
           ),
         ),
         const Gap(20),
