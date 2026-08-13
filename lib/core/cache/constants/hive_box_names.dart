@@ -7,4 +7,5 @@ class HiveBoxNames {
   static const String storyReactions = 'story_reactions_box';
   static const String reelsPreferences = 'reels_preferences_box';
   static const String starredMessages = 'starred_messages_box';
+  static const String aiPreferences = 'ai_preferences_box';
 }

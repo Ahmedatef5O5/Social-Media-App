@@ -19,6 +19,7 @@ import 'package:social_media_app/core/services/notification_services.dart';
 import 'package:social_media_app/core/supabase/supabase_provider.dart';
 import 'package:social_media_app/core/themes/cubit/theme_cubit.dart';
 import 'package:social_media_app/core/widgets/calls/active_call_header_widget.dart';
+import 'package:social_media_app/features/ai_assistant/cubits/ai_preferences_cubit/ai_preferences_cubit.dart';
 import 'package:social_media_app/features/auth/services/supabase_auth_services.dart';
 import 'package:social_media_app/features/comments/services/comments_service.dart';
 import 'package:social_media_app/features/single_calls/cubits/single_call_cubit/call_cubit.dart';
@@ -99,6 +100,7 @@ Widget buildApp(String savedTheme) {
         ),
 
         BlocProvider(create: (_) => CallPipCubit()),
+        BlocProvider(create: (_) => AiPreferencesCubit()..init(), lazy: false),
         BlocProvider(
           create:
               (context) => PostsCubit(
