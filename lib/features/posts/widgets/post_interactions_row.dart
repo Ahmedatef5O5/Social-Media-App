@@ -33,7 +33,9 @@ class PostInteractionsRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<PostsCubit, PostsState>(
       buildWhen: (prev, curr) {
-        if (prev is! PostsLoaded || curr is! PostsLoaded) return false;
+        if (curr is! PostsLoaded) return false;
+
+        if (prev is! PostsLoaded) return true;
 
         final oldPost = prev.posts.findById(postId);
         final newPost = curr.posts.findById(postId);

@@ -9,9 +9,8 @@ class CreatePostInputField extends StatelessWidget {
   final MentionTextEditingController _textEditingController;
   final bool _hasText;
   final FocusNode focusNode;
-
   final bool hasMediaAttached;
-
+  final AiTargetMediaType targetMediaType;
   final Future<Uint8List?> Function()? imageBytesProvider;
 
   const CreatePostInputField({
@@ -20,6 +19,7 @@ class CreatePostInputField extends StatelessWidget {
     required bool hasText,
     required this.focusNode,
     this.hasMediaAttached = false,
+    this.targetMediaType = AiTargetMediaType.none,
     this.imageBytesProvider,
   }) : _textEditingController = textEditingController,
        _hasText = hasText;
@@ -57,7 +57,9 @@ class CreatePostInputField extends StatelessWidget {
         controller: _textEditingController,
         surface: AiSurfaceType.post,
         generationAction: AiActionType.autocompleteCaption,
+        actionContext: AiActionContext.postCreation,
         hasMediaAttached: hasMediaAttached,
+        targetMediaType: targetMediaType,
         imageBytesProvider: imageBytesProvider,
       ),
     );

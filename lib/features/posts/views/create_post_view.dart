@@ -13,6 +13,7 @@ import '../../../core/helpers/modern_circle_progress.dart';
 import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/toast/app_toast.dart';
 import '../../../core/utilities/file_size_formatter.dart';
+import '../../ai_assistant/entities/ai_request_context.dart';
 import '../../social_graph/models/content_privacy.dart';
 import '../cubit/posts_cubit/posts_cubit.dart';
 import '../widgets/add_post_options_bottom_sheet.dart';
@@ -219,6 +220,12 @@ class _CreatePostViewState extends State<CreatePostView> {
                                 hasMediaAttached:
                                     postsCubit.selectedImage != null ||
                                     postsCubit.selectedVideo != null,
+                                targetMediaType:
+                                    postsCubit.selectedImage != null
+                                        ? AiTargetMediaType.image
+                                        : postsCubit.selectedVideo != null
+                                        ? AiTargetMediaType.video
+                                        : AiTargetMediaType.none,
                                 imageBytesProvider:
                                     postsCubit.selectedImage == null
                                         ? null
