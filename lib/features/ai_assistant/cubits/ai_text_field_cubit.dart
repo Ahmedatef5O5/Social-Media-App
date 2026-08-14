@@ -10,6 +10,8 @@ class AiTextFieldCubit extends Cubit<AiTextFieldState> {
   final AiRepository _repository;
   final AiActionType generationAction;
   final AiSurfaceType surface;
+  final void Function(AiQuotaInfo quota, String? provider, String? modelId)?
+  onQuotaUpdated;
 
   static const _debounceDuration = Duration(milliseconds: 900);
   static const _cooldownDuration = Duration(seconds: 5);
@@ -17,8 +19,11 @@ class AiTextFieldCubit extends Cubit<AiTextFieldState> {
 
   bool _hasMediaAttached;
   bool _hasReplyContext;
+  bool _autoCompleteEnabled;
+  bool _autoDetectEnabled;
   Timer? _debounce;
   bool _inCooldown = false;
+  bool _isTargetUsable;
 
   AiTextFieldCubit({
     required AiRepository repository,
@@ -26,32 +31,62 @@ class AiTextFieldCubit extends Cubit<AiTextFieldState> {
     required this.surface,
     bool hasMediaAttached = false,
     bool hasReplyContext = false,
+    bool autoCompleteEnabled = true,
+    bool autoDetectEnabled = true,
+    bool isTargetUsable = true,
+    this.onQuotaUpdated,
   }) : _repository = repository,
        _hasMediaAttached = hasMediaAttached,
        _hasReplyContext = hasReplyContext,
+       _autoCompleteEnabled = autoCompleteEnabled,
+       _autoDetectEnabled = autoDetectEnabled,
+       _isTargetUsable = isTargetUsable,
        super(
-         (hasMediaAttached || hasReplyContext)
+         (autoCompleteEnabled && (hasMediaAttached || hasReplyContext))
              ? const AiFieldIdle()
              : const AiFieldHidden(),
        );
 
-  bool get _hasAutoCompleteContext => _hasMediaAttached || _hasReplyContext;
+  bool get _hasAutoCompleteContext =>
+      _autoCompleteEnabled && (_hasMediaAttached || _hasReplyContext);
 
   AiTextFieldState get _restingState =>
       _hasAutoCompleteContext ? const AiFieldIdle() : const AiFieldHidden();
 
-  void updateExternalContext({bool? hasMediaAttached, bool? hasReplyContext}) {
+  void updateExternalContext({
+    bool? hasMediaAttached,
+    bool? hasReplyContext,
+    bool? isTargetUsable,
+  }) {
     _hasMediaAttached = hasMediaAttached ?? _hasMediaAttached;
     _hasReplyContext = hasReplyContext ?? _hasReplyContext;
+    _isTargetUsable = isTargetUsable ?? _isTargetUsable;
 
     if (state is AiFieldHidden || state is AiFieldIdle) {
       emit(_restingState);
     }
   }
 
+  void updatePreferences({bool? autoCompleteEnabled, bool? autoDetectEnabled}) {
+    final nextAutoComplete = autoCompleteEnabled ?? _autoCompleteEnabled;
+    final nextAutoDetect = autoDetectEnabled ?? _autoDetectEnabled;
+
+    if (nextAutoComplete == _autoCompleteEnabled &&
+        nextAutoDetect == _autoDetectEnabled) {
+      return;
+    }
+
+    _autoCompleteEnabled = nextAutoComplete;
+    _autoDetectEnabled = nextAutoDetect;
+
+    _debounce?.cancel();
+    emit(_restingState);
+  }
+
   void onTextChanged(String text) {
     _debounce?.cancel();
-
+    if (!_isTargetUsable) return;
+    if (!_autoDetectEnabled) return;
     if (state is AiFieldQuotaExceeded) return;
 
     if (text.trim().isEmpty) {
@@ -73,8 +108,16 @@ class AiTextFieldCubit extends Cubit<AiTextFieldState> {
     emit(const AiFieldChecking());
 
     final result = await _repository.checkSpelling(
-      AiRequestContext(surface: surface, currentText: text),
+      AiRequestContext(
+        surface: surface,
+        actionContext: AiActionContext.spellCheck,
+        userDraft: text,
+      ),
     );
+
+    if (result.quota != null) {
+      onQuotaUpdated?.call(result.quota!, result.provider, result.model);
+    }
 
     if (!result.success) {
       if (result.isQuotaExceeded) {
@@ -105,6 +148,7 @@ class AiTextFieldCubit extends Cubit<AiTextFieldState> {
   }
 
   Future<void> onIconTapped(AiRequestContext context) async {
+    if (!_isTargetUsable) return;
     final current = state;
 
     if (current is AiFieldQuotaExceeded) return;
@@ -113,6 +157,8 @@ class AiTextFieldCubit extends Cubit<AiTextFieldState> {
       emit(AiFieldResultReady(current.correctedText));
       return;
     }
+
+    if (!_autoCompleteEnabled) return;
 
     emit(const AiFieldLoading());
 
@@ -125,6 +171,10 @@ class AiTextFieldCubit extends Cubit<AiTextFieldState> {
         effectiveAction == AiActionType.replySuggestion
             ? await _repository.suggestReply(context)
             : await _repository.generateCaption(context);
+
+    if (result.quota != null) {
+      onQuotaUpdated?.call(result.quota!, result.provider, result.model);
+    }
 
     if (!result.success) {
       if (result.isQuotaExceeded) {
