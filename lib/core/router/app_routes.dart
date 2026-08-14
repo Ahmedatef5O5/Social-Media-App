@@ -14,6 +14,9 @@ class AppRoutes {
   // Friends list
   static const String friendsListViewRoute = '/friends-list';
 
+  // AI Settings
+  static const String aiSettingsViewRoute = '/ai-settings';
+
   //
   static const String aboutUsViewRoute = '/about-us';
 

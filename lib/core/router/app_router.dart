@@ -34,6 +34,7 @@ import 'package:social_media_app/core/widgets/full_screen_image_viewer.dart';
 import 'package:social_media_app/features/profile/cubits/edit_profile_cubit/edit_profile_cubit.dart';
 import 'package:social_media_app/features/profile/services/edit_profile_services.dart';
 import 'package:social_media_app/features/profile/views/edit_profile_view.dart';
+import 'package:social_media_app/features/settings/views/ai_settings_view.dart';
 import 'package:social_media_app/features/settings/views/settings_view.dart';
 import 'package:social_media_app/features/splash/views/on_boarding_view.dart';
 import 'package:social_media_app/features/splash/views/splash_view.dart';
@@ -209,6 +210,7 @@ class AppRouter {
       case AppRoutes.aboutUsViewRoute:
       case AppRoutes.savedPostsViewRoute:
       case AppRoutes.settingsViewRoute:
+      case AppRoutes.aiSettingsViewRoute:
         return _profileAndSettingsRoutes(settings);
 
       default:
@@ -664,6 +666,8 @@ class AppRouter {
         );
       case AppRoutes.aboutUsViewRoute:
         return _buildRoute(AboutUsView(), settings: settings);
+      case AppRoutes.aiSettingsViewRoute:
+        return _buildRoute(const AiSettingsView(), settings: settings);
       case AppRoutes.settingsViewRoute:
         final cubit = _args<ProfileCubit>(settings);
         if (cubit == null) {
