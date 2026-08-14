@@ -236,9 +236,30 @@ class _SettingsViewState extends State<SettingsView>
                   ),
                   const Gap(10),
                   SettingsSection(
+                    title: 'Artificial Intelligence',
+                    icon: Icons.auto_awesome_rounded,
+                    delay: 3,
+                    items: [
+                      SettingsItemData(
+                        icon: Icons.psychology_rounded,
+
+                        label: 'AI Settings',
+                        subtitle: 'Personalize your AI-powered experience',
+
+                        // subtitle:
+                        //     '${[aiState.autoCompleteEnabled, aiState.autoDetectEnabled, aiState.commentSuggestionsEnabled].where((e) => e).length} of 3 features enabled',
+                        onTap:
+                            () => Navigator.of(
+                              context,
+                            ).pushNamed(AppRoutes.aiSettingsViewRoute),
+                      ),
+                    ],
+                  ),
+                  const Gap(10),
+                  SettingsSection(
                     title: 'Appearance',
                     icon: Icons.palette_outlined,
-                    delay: 3,
+                    delay: 4,
                     items: [
                       SettingsItemData(
                         icon: Icons.color_lens_outlined,
@@ -260,7 +281,7 @@ class _SettingsViewState extends State<SettingsView>
                   SettingsSection(
                     title: 'Support',
                     icon: CupertinoIcons.question_circle_fill,
-                    delay: 4,
+                    delay: 5,
                     items: [
                       SettingsItemData(
                         icon: Icons.info_outline_rounded,

@@ -167,6 +167,13 @@ class SettingsSection extends StatelessWidget {
             ),
           ),
         ),
+
+        AnimatedSize(
+          duration: const Duration(milliseconds: 260),
+          curve: Curves.easeOutCubic,
+          alignment: Alignment.topCenter,
+          child: item.footer ?? const SizedBox.shrink(),
+        ),
         if (!isLast)
           Divider(
             height: 1,
