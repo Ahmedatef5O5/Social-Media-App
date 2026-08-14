@@ -1,14 +1,23 @@
 class AiQuotaInfo {
   final int? userRemaining;
   final int? globalRemaining;
+  final int? effectiveUserLimit;
+  final int? bonusGranted;
 
-  const AiQuotaInfo({this.userRemaining, this.globalRemaining});
+  const AiQuotaInfo({
+    this.userRemaining,
+    this.globalRemaining,
+    this.effectiveUserLimit,
+    this.bonusGranted,
+  });
 
   factory AiQuotaInfo.fromJson(Map<String, dynamic>? json) {
     if (json == null) return const AiQuotaInfo();
     return AiQuotaInfo(
       userRemaining: json['user_remaining'] as int?,
       globalRemaining: json['global_remaining'] as int?,
+      effectiveUserLimit: json['effective_user_limit'] as int?,
+      bonusGranted: json['bonus_granted'] as int?,
     );
   }
 }
@@ -26,6 +35,9 @@ class AiResult {
   final List<String>? suggestions;
   final String? failureReason;
   final AiQuotaInfo? quota;
+  final String? provider;
+  final String? model;
+  final bool degraded;
 
   const AiResult({
     required this.success,
@@ -33,6 +45,9 @@ class AiResult {
     this.suggestions,
     this.failureReason,
     this.quota,
+    this.provider,
+    this.model,
+    this.degraded = false,
   });
 
   bool get isQuotaExceeded =>
@@ -52,15 +67,28 @@ class AiResult {
 
     final result = json['result'];
     final quota = AiQuotaInfo.fromJson(json['quota'] as Map<String, dynamic>?);
+    final provider = json['provider'] as String?;
+    final model = json['model'] as String?;
+    final degraded = json['degraded'] == true;
 
     if (result is List) {
       return AiResult(
         success: true,
         suggestions: result.map((e) => e.toString()).toList(),
         quota: quota,
+        provider: provider,
+        model: model,
+        degraded: degraded,
       );
     }
 
-    return AiResult(success: true, text: result?.toString(), quota: quota);
+    return AiResult(
+      success: true,
+      text: result?.toString(),
+      quota: quota,
+      provider: provider,
+      model: model,
+      degraded: degraded,
+    );
   }
 }
