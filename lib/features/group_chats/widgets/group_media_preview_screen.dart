@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:video_player/video_player.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
+import '../../../core/widgets/directional_text_field.dart';
 import '../../ai_assistant/entities/ai_action_type.dart';
 import '../../ai_assistant/entities/ai_request_context.dart';
 import '../../ai_assistant/widgets/ai_action_icon.dart';
@@ -216,9 +217,11 @@ class _GroupMediaPreviewScreenState extends State<GroupMediaPreviewScreen> {
                 child: Row(
                   children: [
                     Expanded(
-                      child: TextField(
+                      child: DirectionalTextField(
                         controller: _captionController,
                         style: const TextStyle(color: Colors.white),
+                        minLines: 1,
+                        maxLines: 4,
                         decoration: InputDecoration(
                           hintText: 'Add a caption…',
                           hintStyle: const TextStyle(color: Colors.white54),
@@ -236,7 +239,12 @@ class _GroupMediaPreviewScreenState extends State<GroupMediaPreviewScreen> {
                             controller: _captionController,
                             surface: AiSurfaceType.chatMessage,
                             generationAction: AiActionType.autocompleteCaption,
+                            actionContext: AiActionContext.mediaCaption,
                             hasMediaAttached: true,
+                            targetMediaType:
+                                widget.type == 'image'
+                                    ? AiTargetMediaType.image
+                                    : AiTargetMediaType.video,
                             imageBytesProvider:
                                 widget.type == 'image'
                                     ? () => widget.file.readAsBytes()

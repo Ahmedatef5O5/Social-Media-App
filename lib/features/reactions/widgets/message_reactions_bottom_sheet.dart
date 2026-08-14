@@ -3,10 +3,10 @@ import 'package:flutter/services.dart';
 import '../../../core/helpers/formatted_date.dart';
 import '../../../core/presence/widgets/presence_avatar_widget.dart';
 import '../../../core/widgets/app_avatar.dart';
-import '../../../core/widgets/custom_loading_indicator.dart';
 import '../model/live_reaction.dart';
 import '../model/reaction_entry.dart';
 import '../services/reaction_profile_resolver.dart';
+import 'reactions_bottom_sheet_skeleton.dart';
 
 class MessageReactionsBottomSheet {
   static Future<void> show({
@@ -266,7 +266,7 @@ class _MessageReactionsSheetBodyState
                     ),
                   ),
                   const SizedBox(height: 12),
-                  if (widget.reactions.isNotEmpty) ...[
+                  if (!_isResolvingInitial && widget.reactions.isNotEmpty) ...[
                     SizedBox(
                       height: 40,
                       child: ListView(
@@ -294,7 +294,7 @@ class _MessageReactionsSheetBodyState
                   Expanded(
                     child:
                         _isResolvingInitial
-                            ? const CustomLoadingIndicator()
+                            ? const ReactionsBottomSheetSkeleton()
                             : displayed.isEmpty
                             ? const Center(child: Text('No reactions yet.'))
                             : ListView.builder(

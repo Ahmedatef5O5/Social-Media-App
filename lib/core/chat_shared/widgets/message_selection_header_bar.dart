@@ -79,8 +79,8 @@ class MessageSelectionHeaderBar extends StatelessWidget
 
             PremiumSelectionActionIcon(
               state: PremiumActionVisualState.off,
-              onIcon: Icons.forward_rounded,
-              offIcon: Icons.forward_rounded,
+              onIcon: Icons.shortcut_rounded,
+              offIcon: Icons.shortcut_rounded,
               onLabel: 'Forward',
               offLabel: 'Forward',
               onTap: onForwardTap,

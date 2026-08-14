@@ -7,6 +7,7 @@ import 'package:social_media_app/features/group_chats/widgets/group_input_bar.da
 import 'package:social_media_app/features/group_chats/widgets/group_media_preview_screen.dart';
 import '../../../core/attachment/attachment_sheet/attachment_kind.dart';
 import '../../../core/attachment/attachment_sheet/attachment_picker_sheet.dart';
+import '../../ai_assistant/entities/ai_request_context.dart';
 import '../../ai_assistant/widgets/ai_chat_command_trigger.dart';
 import '../cubit/group_details_cubit/group_details_cubit.dart';
 import '../models/groupe_message_model.dart';
@@ -228,13 +229,27 @@ class _GroupChatInputBarSectionState extends State<GroupChatInputBarSection> {
               onSend: _handleSend,
               onShowMedia: _openAttachmentSheet,
               hasReplyContext: replyTo != null,
-              replyToText: replyTo?.text,
-              replyToAuthorName:
+              targetText:
+                  (replyTo == null || replyTo.messageType == 'text')
+                      ? replyTo?.text
+                      : null,
+              mediaCaption:
+                  (replyTo != null && replyTo.messageType != 'text')
+                      ? replyTo.caption
+                      : null,
+              targetMediaType: AiTargetMediaType.fromWireMessageType(
+                replyTo?.messageType,
+              ),
+              targetUserName:
                   replyTo == null
                       ? null
                       : (replyTo.senderId == _cubit.currentUserId
                           ? 'You'
                           : replyTo.senderName),
+              targetImageUrl:
+                  (replyTo != null && replyTo.messageType == 'image')
+                      ? replyTo.imageUrl
+                      : null,
               onSendVoice: (file, seconds) {
                 context.read<GroupDetailsCubit>().sendMessage(
                   text: '',
