@@ -345,7 +345,12 @@ class _AddStoryPreviewViewState extends State<AddStoryPreviewView> {
                   controller: _captionController,
                   surface: AiSurfaceType.story,
                   generationAction: AiActionType.autocompleteCaption,
-                  hasMediaAttached: true, // media file already picked here
+                  actionContext: AiActionContext.storyCreation,
+                  hasMediaAttached: true,
+                  targetMediaType:
+                      widget.isVideo
+                          ? AiTargetMediaType.video
+                          : AiTargetMediaType.image,
                   imageBytesProvider:
                       widget.isVideo ? null : () => widget.file.readAsBytes(),
                 ),
