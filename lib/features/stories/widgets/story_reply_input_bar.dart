@@ -3,10 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 import 'package:social_media_app/core/widgets/custom_loading_indicator.dart';
+import 'package:social_media_app/core/widgets/directional_text_field.dart';
 import '../../../core/services/file_picker_services.dart';
 import '../../../core/toast/app_toast.dart';
 import '../../ai_assistant/entities/ai_action_type.dart';
 import '../../ai_assistant/entities/ai_request_context.dart';
+import '../../ai_assistant/helpers/remote_media_fetcher.dart';
 import '../../ai_assistant/widgets/ai_action_icon.dart';
 import '../../single_chats/widgets/full_screen_media_view.dart';
 import '../cubit/story_reply_cubit/story_reply_cubit.dart';
@@ -38,6 +40,7 @@ class _StoryReplyInputBarState extends State<StoryReplyInputBar> {
 
   File? _pickedFile;
   String? _pickedType;
+  bool _isAiGenerating = false;
 
   bool get _hasContent =>
       _controller.text.trim().isNotEmpty || _pickedFile != null;
@@ -51,6 +54,7 @@ class _StoryReplyInputBarState extends State<StoryReplyInputBar> {
       } else if (!_hasContent) {
         widget.onComposingEnd();
       }
+      if (mounted) setState(() {});
     });
     _controller.addListener(() => setState(() {}));
   }
@@ -244,12 +248,13 @@ class _StoryReplyInputBarState extends State<StoryReplyInputBar> {
             onPressed: isSending ? null : _showAttachSheet,
           ),
           Expanded(
-            child: TextField(
+            child: DirectionalTextField(
               controller: _controller,
               focusNode: _focusNode,
               enabled: !isSending,
               style: const TextStyle(color: Colors.white),
-              maxLines: null,
+              minLines: 1,
+              maxLines: 4,
               textInputAction: TextInputAction.send,
               onSubmitted: (_) => _send(),
               decoration: InputDecoration(
@@ -260,16 +265,47 @@ class _StoryReplyInputBarState extends State<StoryReplyInputBar> {
                 ),
                 border: InputBorder.none,
                 contentPadding: const EdgeInsets.symmetric(vertical: 5),
-                suffixIcon: AiActionIcon(
-                  controller: _controller,
-                  surface: AiSurfaceType.chatMessage,
-                  generationAction: AiActionType.replySuggestion,
-                  hasReplyContext: true,
-                  replyToText:
-                      widget.story.storyType == StoryType.text
-                          ? widget.story.contentText
-                          : widget.story.caption,
-                  replyToAuthorName: widget.story.authorName,
+                suffixIcon: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 200),
+                  child:
+                      (_focusNode.hasFocus || _isAiGenerating)
+                          ? AiActionIcon(
+                            key: const ValueKey('story_ai_icon'),
+                            controller: _controller,
+                            surface: AiSurfaceType.story,
+                            generationAction: AiActionType.replySuggestion,
+                            actionContext: AiActionContext.storyReply,
+                            hasReplyContext: true,
+                            targetText:
+                                widget.story.storyType == StoryType.text
+                                    ? widget.story.contentText
+                                    : null,
+                            mediaCaption:
+                                widget.story.storyType == StoryType.text
+                                    ? null
+                                    : widget.story.caption,
+                            targetMediaType: switch (widget.story.storyType) {
+                              StoryType.text => AiTargetMediaType.text,
+                              StoryType.image => AiTargetMediaType.image,
+                              StoryType.video => AiTargetMediaType.video,
+                            },
+                            targetUserName: widget.story.authorName,
+                            targetImageBytesProvider:
+                                widget.story.storyType == StoryType.image &&
+                                        widget.story.imageUrl != null
+                                    ? () => RemoteMediaFetcher.fetchBytes(
+                                      widget.story.imageUrl!,
+                                    )
+                                    : null,
+                            onGeneratingChanged: (generating) {
+                              if (mounted) {
+                                setState(() => _isAiGenerating = generating);
+                              }
+                            },
+                          )
+                          : const SizedBox.shrink(
+                            key: ValueKey('story_ai_icon_hidden'),
+                          ),
                 ),
               ),
             ),

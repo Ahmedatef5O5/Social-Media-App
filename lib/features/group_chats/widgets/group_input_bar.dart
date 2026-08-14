@@ -6,6 +6,7 @@ import '../../../core/mentions/models/mention_ref.dart';
 import '../../../core/mentions/widgets/mention_text_editing_controller.dart';
 import '../../ai_assistant/entities/ai_action_type.dart';
 import '../../ai_assistant/entities/ai_request_context.dart';
+import '../../ai_assistant/helpers/remote_media_fetcher.dart';
 import '../../ai_assistant/widgets/ai_action_icon.dart';
 import '../helpers/send_button.dart';
 
@@ -14,14 +15,16 @@ class GroupInputBar extends StatelessWidget {
   final MentionTextEditingController controller;
   final FocusNode focusNode;
   final List<String>? mentionCandidateIds;
-
   final VoidCallback onTyping;
   final void Function(String text, List<MentionRef> mentions) onSend;
   final VoidCallback onShowMedia;
   final void Function(File file, int durationSeconds) onSendVoice;
   final bool hasReplyContext;
-  final String? replyToText;
-  final String? replyToAuthorName;
+  final String? targetText;
+  final String? mediaCaption;
+  final String? targetUserName;
+  final AiTargetMediaType targetMediaType;
+  final String? targetImageUrl;
   final VoidCallback? onSlashAiTrigger;
   final VoidCallback? onRecordingStart;
   final VoidCallback? onRecordingPause;
@@ -40,8 +43,11 @@ class GroupInputBar extends StatelessWidget {
     required this.onShowMedia,
     required this.onSendVoice,
     this.hasReplyContext = false,
-    this.replyToText,
-    this.replyToAuthorName,
+    this.targetText,
+    this.mediaCaption,
+    this.targetUserName,
+    this.targetMediaType = AiTargetMediaType.none,
+    this.targetImageUrl,
     this.onSlashAiTrigger,
     this.onRecordingStart,
     this.onRecordingPause,
@@ -83,9 +89,16 @@ class GroupInputBar extends StatelessWidget {
             controller: controller,
             surface: AiSurfaceType.chatMessage,
             generationAction: AiActionType.replySuggestion,
+            actionContext: AiActionContext.chatReply,
             hasReplyContext: hasReplyContext,
-            replyToText: replyToText,
-            replyToAuthorName: replyToAuthorName,
+            targetText: targetText,
+            mediaCaption: mediaCaption,
+            targetUserName: targetUserName,
+            targetMediaType: targetMediaType,
+            targetImageBytesProvider:
+                targetImageUrl != null
+                    ? () => RemoteMediaFetcher.fetchBytes(targetImageUrl!)
+                    : null,
           ),
           onSlashAiTrigger: onSlashAiTrigger,
         ),

@@ -12,6 +12,7 @@ import '../../../core/toast/app_toast.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
 import '../../ai_assistant/entities/ai_action_type.dart';
 import '../../ai_assistant/entities/ai_request_context.dart';
+import '../../ai_assistant/helpers/remote_media_fetcher.dart';
 import '../../ai_assistant/widgets/ai_action_icon.dart';
 import '../../posts/model/post_model.dart';
 import '../model/comment_attachment_draft.dart';
@@ -176,6 +177,34 @@ class _SendCommentSectionState extends State<SendCommentSection> {
     AttachmentKind.sticker => CommentType.sticker,
   };
 
+  CommentModel? _findRepliedComment(List<CommentModel> comments, String id) {
+    for (final comment in comments) {
+      if (comment.id == id) return comment;
+      final nested = _findRepliedComment(comment.replies, id);
+      if (nested != null) return nested;
+    }
+    return null;
+  }
+
+  AiTargetMediaType _mapCommentType(CommentType type) {
+    switch (type) {
+      case CommentType.text:
+        return AiTargetMediaType.text;
+      case CommentType.image:
+        return AiTargetMediaType.image;
+      case CommentType.video:
+        return AiTargetMediaType.video;
+      case CommentType.voice:
+        return AiTargetMediaType.voiceRecord;
+      case CommentType.file:
+        return AiTargetMediaType.document;
+      case CommentType.gif:
+        return AiTargetMediaType.gif;
+      case CommentType.sticker:
+        return AiTargetMediaType.sticker;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isReplying = widget.replyingToCommentId != null;
@@ -207,6 +236,13 @@ class _SendCommentSectionState extends State<SendCommentSection> {
                   final isMediaCaptionable =
                       pendingMedia?.type == CommentType.image ||
                       pendingMedia?.type == CommentType.video;
+                  final repliedComment =
+                      widget.replyingToCommentId == null
+                          ? null
+                          : _findRepliedComment(
+                            cubit.comments,
+                            widget.replyingToCommentId!,
+                          );
 
                   return Container(
                     padding: const EdgeInsets.symmetric(vertical: 4),
@@ -241,6 +277,10 @@ class _SendCommentSectionState extends State<SendCommentSection> {
                               controller: _commentController,
                               surface: AiSurfaceType.comment,
                               generationAction: AiActionType.replySuggestion,
+                              actionContext:
+                                  isMediaCaptionable
+                                      ? AiActionContext.mediaCaption
+                                      : AiActionContext.commentReply,
                               hasMediaAttached: isMediaCaptionable,
                               hasReplyContext: isReplying,
                               imageBytesProvider:
@@ -249,8 +289,37 @@ class _SendCommentSectionState extends State<SendCommentSection> {
                                       ? () =>
                                           pendingMedia!.localFile!.readAsBytes()
                                       : null,
-                              replyToAuthorName: widget.replyingToAuthorName,
-                              parentContentText: widget.post.text,
+                              targetUserName: widget.replyingToAuthorName,
+                              targetText:
+                                  (repliedComment == null)
+                                      ? widget.post.text
+                                      : (repliedComment.commentType ==
+                                              CommentType.text
+                                          ? repliedComment.text
+                                          : null),
+                              targetImageBytesProvider:
+                                  (repliedComment != null &&
+                                          repliedComment.commentType ==
+                                              CommentType.image &&
+                                          repliedComment.imageUrl != null)
+                                      ? () => RemoteMediaFetcher.fetchBytes(
+                                        repliedComment.imageUrl!,
+                                      )
+                                      : null,
+                              mediaCaption:
+                                  (repliedComment != null &&
+                                          repliedComment.commentType !=
+                                              CommentType.text)
+                                      ? repliedComment.text
+                                      : null,
+                              targetMediaType:
+                                  isMediaCaptionable
+                                      ? _mapCommentType(pendingMedia!.type)
+                                      : (repliedComment != null
+                                          ? _mapCommentType(
+                                            repliedComment.commentType,
+                                          )
+                                          : AiTargetMediaType.text),
                             ),
                           ),
                         ),
