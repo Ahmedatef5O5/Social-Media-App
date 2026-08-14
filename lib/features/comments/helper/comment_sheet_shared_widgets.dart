@@ -24,7 +24,7 @@ class CommentSortMenu extends StatelessWidget {
       shadowColor: Colors.black.withValues(alpha: 0.2),
       color: isDark ? Colors.grey[900] : Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      offset: const Offset(0, 40),
+      offset: const Offset(0, 46),
       icon: Icon(Icons.sort_rounded, color: AppColors.grey7, size: 26),
       itemBuilder:
           (context) =>
