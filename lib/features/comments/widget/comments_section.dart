@@ -23,25 +23,25 @@ class CommentsSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (comments.isEmpty) {
-      return SizedBox(
-        height: MediaQuery.of(context).size.height * 0.45,
-        child: EmptyPlaceholderState(
-          img: AppImages.smileFaceLot,
-          imgHeight: MediaQuery.of(context).size.height * 0.2,
-          title: 'No comments yet.',
-          style: Theme.of(context).textTheme.titleMedium!.copyWith(
-            color: Theme.of(context).primaryColor,
-            fontWeight: FontWeight.w600,
-            fontSize: 18,
+      return SliverToBoxAdapter(
+        child: SizedBox(
+          height: MediaQuery.of(context).size.height * 0.45,
+          child: EmptyPlaceholderState(
+            img: AppImages.smileFaceLot,
+            imgHeight: MediaQuery.of(context).size.height * 0.2,
+            title: 'No comments yet.',
+            style: Theme.of(context).textTheme.titleMedium!.copyWith(
+              color: Theme.of(context).primaryColor,
+              fontWeight: FontWeight.w600,
+              fontSize: 18,
+            ),
           ),
         ),
       );
     }
 
-    return ListView.separated(
+    return SliverList.separated(
       itemCount: comments.length,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
       separatorBuilder: (context, index) => const SizedBox(height: 16),
       itemBuilder: (context, index) {
         final comment = comments[index];
