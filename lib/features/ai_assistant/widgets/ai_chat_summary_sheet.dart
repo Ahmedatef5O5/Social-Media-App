@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:social_media_app/core/toast/app_toast.dart';
+import '../../../core/helpers/bidi_text_helper.dart';
+import '../cubits/ai_preferences_cubit/ai_preferences_cubit.dart';
 import '../data/repositories/ai_repository_impl.dart';
 import '../entities/ai_action_type.dart';
 import '../entities/ai_result.dart';
@@ -51,6 +54,14 @@ class _AiChatSummarySheetState extends State<AiChatSummarySheet> {
     );
 
     if (!mounted) return;
+
+    if (result.quota != null) {
+      context.read<AiPreferencesCubit>().recordUsageFromQuota(
+        result.quota!,
+        provider: result.provider,
+        modelId: result.model,
+      );
+    }
     setState(() {
       _loading = false;
       if (result.success) {
@@ -64,41 +75,47 @@ class _AiChatSummarySheetState extends State<AiChatSummarySheet> {
   String get _title {
     switch (widget.mode) {
       case AiActionType.chatSummaryShort:
-        return 'ملخص المحادثة';
+        return 'Chat Summary';
       case AiActionType.chatSummaryDetailed:
-        return 'ملخص تفصيلي';
+        return 'Detailed Summary';
       case AiActionType.chatSummaryTopic:
-        return 'عن إيه الكلام؟';
+        return 'What is the topic?';
       default:
-        return 'ملخص';
+        return 'Summary';
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Container(
-        margin: const EdgeInsets.all(12),
-        padding: const EdgeInsets.all(20),
-        constraints: const BoxConstraints(maxHeight: 420),
-        decoration: BoxDecoration(
-          color: Theme.of(context).cardColor,
-          borderRadius: BorderRadius.circular(18),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Icon(Icons.auto_awesome_rounded, size: 18),
-                const SizedBox(width: 8),
-                Text(_title, style: Theme.of(context).textTheme.titleMedium),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Flexible(child: SingleChildScrollView(child: _buildBody(context))),
-          ],
+    final direction = BidiTextHelper.detectDirection(_text ?? '');
+    return Directionality(
+      textDirection: direction,
+      child: SafeArea(
+        child: Container(
+          margin: const EdgeInsets.all(12),
+          padding: const EdgeInsets.all(20),
+          constraints: const BoxConstraints(maxHeight: 420),
+          decoration: BoxDecoration(
+            color: Theme.of(context).cardColor,
+            borderRadius: BorderRadius.circular(18),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.auto_awesome_rounded, size: 18),
+                  const SizedBox(width: 8),
+                  Text(_title, style: Theme.of(context).textTheme.titleMedium),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Flexible(
+                child: SingleChildScrollView(child: _buildBody(context)),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -119,10 +136,10 @@ class _AiChatSummarySheetState extends State<AiChatSummarySheet> {
 
       final message =
           _failureReason == 'empty_chat'
-              ? 'مفيش رسائل كفاية في المحادثة عشان نلخصها.'
+              ? 'There aren\'t enough messages in the chat to summarize.'
               : isQuota
-              ? 'خلصت حصتك اليومية من الذكاء الاصطناعي، جرب تاني بكرة.'
-              : 'حصل خطأ، جرب تاني كمان شوية.';
+              ? 'You have used up your daily AI quota. Please try again tomorrow.'
+              : 'An error occurred. Please try again later.';
 
       return Text(message, style: Theme.of(context).textTheme.bodyMedium);
     }
@@ -131,17 +148,28 @@ class _AiChatSummarySheetState extends State<AiChatSummarySheet> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(_text ?? '', style: Theme.of(context).textTheme.bodyLarge),
+        Builder(
+          builder: (context) {
+            final direction = BidiTextHelper.detectDirection(_text ?? '');
+
+            return Text(
+              _text ?? '',
+              textDirection: direction,
+              textAlign: BidiTextHelper.alignFor(direction),
+              style: Theme.of(context).textTheme.bodyLarge,
+            );
+          },
+        ),
         const SizedBox(height: 16),
         Align(
           alignment: AlignmentDirectional.centerEnd,
           child: TextButton.icon(
             onPressed: () {
               Clipboard.setData(ClipboardData(text: _text ?? ''));
-              AppToast.success('اتنسخ');
+              AppToast.success('Copied successfully');
             },
             icon: const Icon(Icons.copy_rounded, size: 18),
-            label: const Text('نسخ'),
+            label: const Text('Copy'),
           ),
         ),
       ],
