@@ -6,8 +6,10 @@ import '../../../core/attachment/attachment_sheet/attachment_picker_sheet.dart';
 import '../../../core/audio/voice_recorder/widgets/voice_recorder_input_section.dart';
 import '../../../core/constants/app_images.dart';
 import '../../../core/themes/app_colors.dart';
+import '../../../core/widgets/directional_text_field.dart';
 import '../../ai_assistant/entities/ai_action_type.dart';
 import '../../ai_assistant/entities/ai_request_context.dart';
+import '../../ai_assistant/helpers/remote_media_fetcher.dart';
 import '../../ai_assistant/widgets/ai_action_icon.dart';
 import '../../ai_assistant/widgets/ai_chat_command_trigger.dart';
 import '../helper/chat_transcript_builder.dart';
@@ -144,7 +146,7 @@ class _TextInputAreaSectionState extends State<TextInputAreaSection> {
               top: false,
               bottom: true,
               child: VoiceRecorderInputSection(
-                textField: TextField(
+                textField: DirectionalTextField(
                   controller: widget.messageController,
                   focusNode: _focusNode,
                   minLines: 1,
@@ -163,17 +165,29 @@ class _TextInputAreaSectionState extends State<TextInputAreaSection> {
                       controller: widget.messageController,
                       surface: AiSurfaceType.chatMessage,
                       generationAction: AiActionType.replySuggestion,
+                      actionContext: AiActionContext.chatReply,
                       hasReplyContext: widget.replyTo != null,
-                      replyToText: widget.replyTo?.text,
-                      replyToAuthorName:
-                          widget.replyTo == null
-                              ? null
-                              : (widget.replyTo!.senderId ==
-                                      context
-                                          .read<ChatDetailsCubit>()
-                                          .currentUserId
-                                  ? 'You'
-                                  : widget.receiverUser.name),
+                      targetText:
+                          (widget.replyTo == null ||
+                                  widget.replyTo!.messageType == 'text')
+                              ? widget.replyTo?.text
+                              : null,
+                      mediaCaption:
+                          (widget.replyTo != null &&
+                                  widget.replyTo!.messageType != 'text')
+                              ? widget.replyTo!.caption
+                              : null,
+                      targetMediaType: AiTargetMediaType.fromWireMessageType(
+                        widget.replyTo?.messageType,
+                      ),
+                      targetImageBytesProvider:
+                          (widget.replyTo != null &&
+                                  widget.replyTo!.messageType == 'image' &&
+                                  widget.replyTo!.imageUrl != null)
+                              ? () => RemoteMediaFetcher.fetchBytes(
+                                widget.replyTo!.imageUrl!,
+                              )
+                              : null,
                     ),
                   ),
                 ),

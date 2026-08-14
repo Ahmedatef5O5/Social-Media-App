@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '../../helpers/bidi_text_helper.dart';
 import '../../themes/app_colors.dart';
 import '../../widgets/app_avatar.dart';
 import '../../widgets/custom_loading_indicator.dart';
@@ -79,6 +80,9 @@ class _MentionAwareTextFieldState extends State<MentionAwareTextField> {
   bool _isSearching = false;
   int? _triggerStart;
   Timer? _debounce;
+  late TextDirection _direction = BidiTextHelper.detectDirection(
+    widget.controller.text,
+  );
 
   @override
   void initState() {
@@ -105,6 +109,11 @@ class _MentionAwareTextFieldState extends State<MentionAwareTextField> {
 
   void _onTextChanged() {
     final text = widget.controller.text;
+
+    final newDirection = BidiTextHelper.detectDirection(text);
+    if (newDirection != _direction) {
+      setState(() => _direction = newDirection);
+    }
 
     if (widget.onSlashAiTrigger != null && text.trim().toLowerCase() == '/ai') {
       widget.controller.clear();
@@ -252,6 +261,10 @@ class _MentionAwareTextFieldState extends State<MentionAwareTextField> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final effectiveTextAlign =
+        widget.textAlign == TextAlign.start
+            ? BidiTextHelper.alignFor(_direction)
+            : widget.textAlign;
 
     return TapRegion(
       groupId: _fieldKey,
@@ -270,7 +283,8 @@ class _MentionAwareTextFieldState extends State<MentionAwareTextField> {
           minLines: widget.minLines,
           maxLines: widget.maxLines,
           maxLength: widget.maxLength,
-          textAlign: widget.textAlign,
+          textDirection: _direction,
+          textAlign: effectiveTextAlign,
           textCapitalization: widget.textCapitalization,
           style: widget.style,
           onSubmitted: widget.onSubmitted,

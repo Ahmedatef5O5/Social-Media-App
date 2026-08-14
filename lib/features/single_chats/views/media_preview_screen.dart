@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:social_media_app/core/widgets/custom_loading_indicator.dart';
 import 'package:video_player/video_player.dart';
 import '../../../core/themes/app_colors.dart';
+import '../../../core/widgets/directional_text_field.dart';
 import '../../ai_assistant/entities/ai_action_type.dart';
 import '../../ai_assistant/entities/ai_request_context.dart';
 import '../../ai_assistant/widgets/ai_action_icon.dart';
@@ -219,9 +220,11 @@ class _MediaPreviewScreenState extends State<MediaPreviewScreen> {
                 child: Row(
                   children: [
                     Expanded(
-                      child: TextField(
+                      child: DirectionalTextField(
                         controller: _captionController,
                         style: const TextStyle(color: AppColors.white),
+                        minLines: 1,
+                        maxLines: 4,
                         decoration: InputDecoration(
                           hintText: "Add an optional caption...",
                           hintStyle: const TextStyle(color: AppColors.white60),
@@ -237,8 +240,13 @@ class _MediaPreviewScreenState extends State<MediaPreviewScreen> {
                           suffixIcon: AiActionIcon(
                             controller: _captionController,
                             surface: AiSurfaceType.chatMessage,
+                            actionContext: AiActionContext.mediaCaption,
                             generationAction: AiActionType.autocompleteCaption,
                             hasMediaAttached: true,
+                            targetMediaType:
+                                widget.type == 'image'
+                                    ? AiTargetMediaType.image
+                                    : AiTargetMediaType.video,
                             imageBytesProvider:
                                 widget.type == 'image'
                                     ? () => widget.file.readAsBytes()
