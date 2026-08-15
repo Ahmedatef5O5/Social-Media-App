@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../../core/cache/utils/cloudinary_url_extensions.dart';
 import '../../../core/themes/app_colors.dart';
-import '../../../core/widgets/cached_cloudinary_image.dart';
+import '../../../core/chat_shared/widgets/reply_preview_thumbnail.dart';
 import '../models/groupe_message_model.dart';
 
 class GroupReplyBubblePreview extends StatelessWidget {
@@ -22,10 +21,13 @@ class GroupReplyBubblePreview extends StatelessWidget {
   Widget build(BuildContext context) {
     final hasText =
         message.replyToText != null && message.replyToText!.isNotEmpty;
+
     final hasThumbnail =
         message.replyToMediaUrl != null &&
         (message.replyToMessageType == 'image' ||
-            message.replyToMessageType == 'video');
+            message.replyToMessageType == 'video' ||
+            message.replyToMessageType == 'gif' ||
+            message.replyToMessageType == 'sticker');
 
     if (!hasText && !hasThumbnail && message.replyToMessageType == null) {
       return const SizedBox.shrink();
@@ -118,6 +120,10 @@ class GroupReplyBubblePreview extends StatelessWidget {
         return '📷 Photo';
       case 'video':
         return '🎥 Video';
+      case 'gif':
+        return '🖼️ GIF';
+      case 'sticker':
+        return '🏷️ Sticker';
       case 'voice':
         return '🎤 Voice message';
       default:
@@ -127,37 +133,10 @@ class GroupReplyBubblePreview extends StatelessWidget {
   }
 
   Widget _buildThumbnail() {
-    final url = message.replyToMediaUrl!;
-    final isVideo = message.replyToMessageType == 'video';
-    final displayUrl = isVideo ? (url.cloudinaryVideoThumbnailUrl ?? url) : url;
-
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(6),
-      child: SizedBox(
-        width: _thumbnailSize,
-        height: _thumbnailSize,
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            CachedCloudinaryImage(
-              secureUrl: displayUrl,
-              width: _thumbnailSize,
-              height: _thumbnailSize,
-              fit: BoxFit.cover,
-              errorWidget:
-                  (context, error) => Container(color: Colors.grey.shade400),
-            ),
-            if (isVideo)
-              const Center(
-                child: Icon(
-                  Icons.play_circle_fill,
-                  color: Colors.white,
-                  size: 18,
-                ),
-              ),
-          ],
-        ),
-      ),
+    return ReplyPreviewThumbnail(
+      messageType: message.replyToMessageType!,
+      mediaUrl: message.replyToMediaUrl,
+      size: _thumbnailSize,
     );
   }
 }

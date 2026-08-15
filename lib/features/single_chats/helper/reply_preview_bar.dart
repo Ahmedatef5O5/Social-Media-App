@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
+import '../../../core/chat_shared/widgets/reply_preview_thumbnail.dart';
 import '../../../core/themes/app_colors.dart';
 import '../models/message_model.dart';
 
@@ -16,11 +17,26 @@ class ReplyPreviewBar extends StatelessWidget {
     required this.senderName,
   });
 
+  String? get _mediaUrl {
+    switch (replyTo.messageType) {
+      case 'image':
+      case 'gif':
+      case 'sticker':
+        return replyTo.imageUrl;
+      case 'video':
+        return replyTo.videoUrl;
+      default:
+        return null;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final preview = _previewText();
+    final mediaUrl = _mediaUrl;
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
       margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
         color: Theme.of(context).primaryColor.withValues(alpha: 0.08),
@@ -31,6 +47,15 @@ class ReplyPreviewBar extends StatelessWidget {
       ),
       child: Row(
         children: [
+          if (mediaUrl != null) ...[
+            ReplyPreviewThumbnail(
+              messageType: replyTo.messageType,
+              mediaUrl: mediaUrl,
+              size: 44,
+            ),
+            const Gap(8),
+          ] else
+            const Gap(4),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -74,8 +99,14 @@ class ReplyPreviewBar extends StatelessWidget {
         return '📷 Photo';
       case 'video':
         return '🎥 Video';
+      case 'gif':
+        return '🖼️ GIF';
+      case 'sticker':
+        return '🏷️ Sticker';
       case 'voice':
         return '🎤 Voice message';
+      case 'file':
+        return '📄 ${replyTo.fileName ?? 'File'}';
       default:
         final t = replyTo.caption ?? replyTo.text;
         return t.length > 60 ? '${t.substring(0, 60)}...' : t;

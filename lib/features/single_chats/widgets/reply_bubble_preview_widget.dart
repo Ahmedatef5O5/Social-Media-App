@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../../core/cache/utils/cloudinary_url_extensions.dart';
 import '../../../core/themes/app_colors.dart';
-import '../../../core/widgets/cached_cloudinary_image.dart';
+import '../../../core/chat_shared/widgets/reply_preview_thumbnail.dart';
 import '../models/message_model.dart';
 
 class ReplyBubblePreview extends StatelessWidget {
@@ -53,14 +52,16 @@ class ReplyBubblePreview extends StatelessWidget {
             ? replyText!
             : _fallbackLabel();
 
-    // Nothing to show at all (e.g. deleted/unresolvable original message).
     if (displayText.isEmpty && message.replyToMediaUrl == null) {
       return const SizedBox.shrink();
     }
 
     final bool hasThumbnail =
         message.replyToMediaUrl != null &&
-        (replyType == 'image' || replyType == 'video');
+        (replyType == 'image' ||
+            replyType == 'video' ||
+            replyType == 'gif' ||
+            replyType == 'sticker');
 
     return Container(
       width: double.infinity,
@@ -117,7 +118,12 @@ class ReplyBubblePreview extends StatelessWidget {
                               style: TextStyle(
                                 fontSize: 12,
                                 color:
-                                    isMe ? Colors.white70 : AppColors.greyColor,
+                                    isMe
+                                        ? Color.alphaBlend(
+                                          Colors.white70,
+                                          Theme.of(context).primaryColor,
+                                        )
+                                        : AppColors.greyColor,
                               ),
                             ),
                           ],
@@ -139,37 +145,10 @@ class ReplyBubblePreview extends StatelessWidget {
   }
 
   Widget _buildThumbnail() {
-    final url = message.replyToMediaUrl!;
-    final displayUrl =
-        replyType == 'video' ? (url.cloudinaryVideoThumbnailUrl ?? url) : url;
-
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(6),
-      child: SizedBox(
-        width: _thumbnailSize,
-        height: _thumbnailSize,
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            CachedCloudinaryImage(
-              secureUrl: displayUrl,
-              width: _thumbnailSize,
-              height: _thumbnailSize,
-              fit: BoxFit.cover,
-              errorWidget:
-                  (context, error) => Container(color: Colors.grey.shade400),
-            ),
-            if (replyType == 'video')
-              const Center(
-                child: Icon(
-                  Icons.play_circle_fill,
-                  color: Colors.white,
-                  size: 18,
-                ),
-              ),
-          ],
-        ),
-      ),
+    return ReplyPreviewThumbnail(
+      messageType: replyType!,
+      mediaUrl: message.replyToMediaUrl,
+      size: _thumbnailSize,
     );
   }
 }
