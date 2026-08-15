@@ -4,9 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 import 'package:social_media_app/core/router/app_routes.dart';
-import 'package:social_media_app/core/themes/cubit/theme_cubit.dart';
 import 'package:social_media_app/features/profile/cubits/profile_cubit/profile_cubit.dart';
-import 'package:social_media_app/features/settings/widgets/theme_picker_sheet_widget.dart';
 import '../../../core/presence/model/presence_privacy.dart';
 import '../../../core/presence/widgets/presence_privacy_sheet.dart';
 import '../../../core/toast/app_toast.dart';
@@ -265,7 +263,7 @@ class _SettingsViewState extends State<SettingsView>
                         icon: Icons.color_lens_outlined,
                         label: 'Theme',
                         subtitle: 'Personalize your app colors',
-                        onTap: () => _showThemeSheet(context),
+                        onTap: () => _openThemesSelectView(context),
                       ),
                       SettingsItemData(
                         icon: Icons.language_rounded,
@@ -324,33 +322,13 @@ class _SettingsViewState extends State<SettingsView>
     );
   }
 
-  void _showThemeSheet(BuildContext context) {
+  void _openThemesSelectView(BuildContext context) {
     final profileState = context.read<ProfileCubit>().state;
     if (profileState is! ProfileLoaded) return;
-    final userId = profileState.user.id;
-    final themeCubit = context.read<ThemeCubit>();
 
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder:
-          (_) => BlocProvider.value(
-            value: themeCubit,
-            child: DraggableScrollableSheet(
-              initialChildSize: 0.7,
-              minChildSize: 0.3,
-              maxChildSize: 0.95,
-              expand: false,
-              snap: true,
-              builder: (context, scrollController) {
-                return ThemePickerSheetWidget(
-                  userId: userId,
-                  scrollController: scrollController,
-                );
-              },
-            ),
-          ),
+    Navigator.of(context, rootNavigator: true).pushNamed(
+      AppRoutes.themesSelectViewRoute,
+      arguments: profileState.user.id,
     );
   }
 

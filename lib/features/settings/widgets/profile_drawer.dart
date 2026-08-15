@@ -6,9 +6,7 @@ import 'package:persistent_bottom_nav_bar_v2/persistent_bottom_nav_bar_v2.dart';
 import 'package:social_media_app/features/auth/cubit/auth_cubit/auth_cubit.dart';
 import 'package:social_media_app/features/profile/cubits/profile_cubit/profile_cubit.dart';
 import 'package:social_media_app/features/settings/widgets/drawer_item_widget.dart';
-import 'package:social_media_app/features/settings/widgets/theme_picker_sheet_widget.dart';
 import '../../../core/router/app_routes.dart';
-import '../../../core/themes/cubit/theme_cubit.dart';
 import '../../../core/toast/app_toast.dart';
 import '../../discover/views/discover_people_search_view.dart';
 import '../utils/drawer_header_shimmer.dart';
@@ -118,7 +116,7 @@ class ProfileDrawer extends StatelessWidget {
                 DrawerItemWidget(
                   icon: Icons.color_lens_sharp,
                   title: "Your Themes",
-                  onTap: () => _showThemeSheet(context),
+                  onTap: () => _openThemesSelectView(context),
                 ),
                 DrawerItemWidget(
                   icon: Icons.settings_outlined,
@@ -175,34 +173,14 @@ class ProfileDrawer extends StatelessWidget {
       ),
     );
   }
-}
 
-void _showThemeSheet(BuildContext context) {
-  final profileState = context.read<ProfileCubit>().state;
-  if (profileState is! ProfileLoaded) return;
-  final userId = profileState.user.id;
-  final themeCubit = context.read<ThemeCubit>();
+  void _openThemesSelectView(BuildContext context) {
+    final profileState = context.read<ProfileCubit>().state;
+    if (profileState is! ProfileLoaded) return;
 
-  showModalBottomSheet(
-    context: context,
-    backgroundColor: Colors.transparent,
-    isScrollControlled: true,
-    builder:
-        (_) => BlocProvider.value(
-          value: themeCubit,
-          child: DraggableScrollableSheet(
-            initialChildSize: 0.7,
-            minChildSize: 0.3,
-            maxChildSize: 0.95,
-            expand: false,
-            snap: true,
-            builder: (context, scrollController) {
-              return ThemePickerSheetWidget(
-                userId: userId,
-                scrollController: scrollController,
-              );
-            },
-          ),
-        ),
-  );
+    Navigator.of(context, rootNavigator: true).pushNamed(
+      AppRoutes.themesSelectViewRoute,
+      arguments: profileState.user.id,
+    );
+  }
 }
