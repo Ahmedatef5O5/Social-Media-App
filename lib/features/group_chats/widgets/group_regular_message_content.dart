@@ -18,6 +18,8 @@ import 'group_message_reply_preview.dart';
 import 'group_time_row.dart';
 import 'group_voice_message_bubble.dart';
 
+const double _kVoiceBubbleContentWidth = 220;
+
 class GroupRegularMessageContent extends StatelessWidget {
   final GroupMessageModel message;
   final bool isMe;
@@ -184,12 +186,15 @@ class GroupRegularMessageContent extends StatelessWidget {
                 ],
               ),
             if (isVoice)
-              GroupVoiceMessageBubbleWidget(
-                voiceUrl: message.voiceUrl ?? '',
-                isMe: isMe,
-                timestamp: message.createdAt,
-                isUploading: isUploading,
-                initialDurationSeconds: message.durationSeconds,
+              SizedBox(
+                width: _kVoiceBubbleContentWidth,
+                child: GroupVoiceMessageBubbleWidget(
+                  voiceUrl: message.voiceUrl ?? '',
+                  isMe: isMe,
+                  timestamp: message.createdAt,
+                  isUploading: isUploading,
+                  initialDurationSeconds: message.durationSeconds,
+                ),
               ),
             if (isFile && (message.fileUrl != null || isUploading))
               Padding(

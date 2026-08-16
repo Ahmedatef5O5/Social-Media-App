@@ -16,6 +16,8 @@ import '../../stickers/widgets/sticker_message_bubble.dart';
 import '../models/message_model.dart';
 import 'message_time_and_status.dart';
 
+const double _kVoiceBubbleContentWidth = 260;
+
 class RegularMessageContent extends StatelessWidget {
   final MessageModel message;
   final bool isMe;
@@ -97,13 +99,16 @@ class RegularMessageContent extends StatelessWidget {
             ),
 
           if (message.messageType == 'voice' && message.voiceUrl != null)
-            VoiceMessageBubbleWidget(
-              voiceUrl: message.voiceUrl!,
-              isMe: isMe,
-              timestamp: message.createdAt,
-              isRead: message.isRead,
-              initialDurationSeconds: message.durationSeconds,
-              isUploading: isUploading,
+            SizedBox(
+              width: _kVoiceBubbleContentWidth,
+              child: VoiceMessageBubbleWidget(
+                voiceUrl: message.voiceUrl!,
+                isMe: isMe,
+                timestamp: message.createdAt,
+                isRead: message.isRead,
+                initialDurationSeconds: message.durationSeconds,
+                isUploading: isUploading,
+              ),
             ),
 
           if (message.messageType == 'file' &&
@@ -232,9 +237,7 @@ class RegularMessageContent extends StatelessWidget {
             color:
                 isMe
                     ? Theme.of(context).colorScheme.onPrimary
-                    : (Theme.of(
-                      context,
-                    ).colorScheme.onSurface.withValues(alpha: 0.7)),
+                    : Theme.of(context).colorScheme.onSurface,
             fontSize: 15,
             height: 1.3,
             fontWeight: FontWeight.w500,

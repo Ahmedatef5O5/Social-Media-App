@@ -107,3 +107,74 @@ class BlurredVideoPlaceholder extends StatelessWidget {
     );
   }
 }
+
+class CompactBlurredImagePlaceholder extends StatelessWidget {
+  final String secureUrl;
+
+  const CompactBlurredImagePlaceholder({super.key, required this.secureUrl});
+
+  @override
+  Widget build(BuildContext context) {
+    final lowResUrl = secureUrl.cloudinaryLowResPreviewUrl;
+
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        const ColoredBox(color: Colors.black12),
+        ImageFiltered(
+          imageFilter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Image.network(
+            lowResUrl,
+            fit: BoxFit.cover,
+            gaplessPlayback: true,
+            errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class CompactBlurredVideoPlaceholder extends StatelessWidget {
+  final String videoUrl;
+  final Uint8List? localThumbnailBytes;
+
+  const CompactBlurredVideoPlaceholder({
+    super.key,
+    required this.videoUrl,
+    this.localThumbnailBytes,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final networkThumbnailUrl = videoUrl.cloudinaryVideoThumbnailUrl;
+
+    Widget? thumbnail;
+    if (localThumbnailBytes != null) {
+      thumbnail = Image.memory(
+        localThumbnailBytes!,
+        fit: BoxFit.cover,
+        gaplessPlayback: true,
+      );
+    } else if (networkThumbnailUrl != null) {
+      thumbnail = CachedCloudinaryImage(
+        secureUrl: networkThumbnailUrl,
+        fit: BoxFit.cover,
+        placeholder: (_) => const ColoredBox(color: Colors.black12),
+        errorWidget: (_, __) => const ColoredBox(color: Colors.black12),
+      );
+    }
+
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        const ColoredBox(color: Colors.black12),
+        if (thumbnail != null)
+          ImageFiltered(
+            imageFilter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            child: thumbnail,
+          ),
+      ],
+    );
+  }
+}
