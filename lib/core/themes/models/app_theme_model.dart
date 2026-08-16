@@ -70,7 +70,7 @@ class AppThemeModel {
     AppThemeModel(
       type: AppThemeType.gold,
       name: 'Royal Gold',
-      emoji: '✨',
+      emoji: '👑',
       bgBase: Color(0xFFF9F6F0),
       bgCircle: Color(0xFFF3E5AB),
       primaryColor: Color(0xFFC5A059),
