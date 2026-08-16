@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -6,6 +7,7 @@ import '../../../core/services/media_cleanup_service.dart';
 import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/utilities/supabase_constants.dart';
 import '../models/message_model.dart';
+import 'chat_notification_dispatcher.dart';
 
 class ChatMessagesService {
   final _supabase = SupabaseProvider.client;
@@ -212,7 +214,44 @@ class ChatMessagesService {
             .select(MessagesColumns.id)
             .single();
 
-    return result[MessagesColumns.id] as String;
+    final newMessageId = result[MessagesColumns.id] as String;
+
+    if (messageType != 'call') {
+      final senderInfo = await getCurrentUserInfo(senderId);
+      unawaited(
+        ChatNotificationDispatcher.instance.notifyMessage(
+          messageId: newMessageId,
+          senderId: senderId,
+          receiverId: receiverId,
+          senderName: senderInfo['name'] ?? 'Unknown',
+          senderImageUrl: senderInfo['imageUrl'] ?? '',
+          messageBody: text,
+          messageType: messageType,
+          attachmentUrl: imageUrl ?? videoUrl ?? voiceUrl ?? fileUrl,
+          caption: caption,
+          durationSeconds: durationSeconds,
+          fileName: fileName,
+          fileSizeBytes: fileSizeBytes,
+          replyToMessageId: replyToMessageId,
+          replyToText: replyToText,
+          replyToMessageType: replyToMessageType,
+          replyToSenderId: replyToSenderId,
+          replyToMediaUrl: replyToMediaUrl,
+          replyToStoryId: replyToStoryId,
+          replyToStoryAuthorId: replyToStoryAuthorId,
+          replyToStoryType: replyToStoryType,
+          replyToStoryMediaUrl: replyToStoryMediaUrl,
+          replyToStoryText: replyToStoryText,
+          replyToStoryBgColor: replyToStoryBgColor,
+          replyToStoryDurationSeconds: replyToStoryDurationSeconds,
+          forwardedFromUserId: forwardedFromUserId,
+          forwardedFromUserName: forwardedFromUserName,
+          forwardedFromUserAvatar: forwardedFromUserAvatar,
+        ),
+      );
+    }
+
+    return newMessageId;
   }
 
   Future<void> editMessage({
