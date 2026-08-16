@@ -6,9 +6,13 @@ import '../../helpers/chat_helper.dart';
 
 class LinkPreviewCard extends StatelessWidget {
   final LinkPreviewData data;
-  final bool isMe;
+  final bool onColoredBubble;
 
-  const LinkPreviewCard({super.key, required this.data, this.isMe = false});
+  const LinkPreviewCard({
+    super.key,
+    required this.data,
+    this.onColoredBubble = false,
+  });
 
   bool get _looksLikeVideo {
     final host = data.domain.toLowerCase();
@@ -23,19 +27,24 @@ class LinkPreviewCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final bubbleColor = theme.primaryColor;
+    final bubbleIsDark =
+        ThemeData.estimateBrightnessForColor(bubbleColor) == Brightness.dark;
+    final useLightContent = onColoredBubble && bubbleIsDark;
 
     final borderColor =
-        isMe
+        useLightContent
             ? Colors.white.withValues(alpha: 0.15)
             : theme.dividerColor.withValues(alpha: 0.08);
 
     final bgColor =
-        isMe
+        useLightContent
             ? Colors.white.withValues(alpha: 0.08)
             : (isDark ? Colors.grey.shade900 : Colors.grey.shade50);
 
-    final fg = isMe ? Colors.white : theme.colorScheme.onSurface;
-    final domainColor = isMe ? Colors.white70 : theme.colorScheme.primary;
+    final fg = useLightContent ? Colors.white : theme.colorScheme.onSurface;
+    final domainColor =
+        useLightContent ? Colors.white70 : theme.colorScheme.primary;
 
     return InkWell(
       borderRadius: BorderRadius.circular(16),
@@ -72,7 +81,8 @@ class LinkPreviewCard extends StatelessWidget {
                             'image/avif,image/webp,image/apng,image/*,*/*;q=0.8',
                       },
                       errorWidget:
-                          (context, url, error) => _buildElegantFallback(theme),
+                          (context, url, error) =>
+                              _buildElegantFallback(theme, useLightContent),
                     ),
                   ),
                   if (_looksLikeVideo)
@@ -123,7 +133,7 @@ class LinkPreviewCard extends StatelessWidget {
                       ),
                       style: TextStyle(
                         color:
-                            isMe
+                            useLightContent
                                 ? Colors.white60
                                 : theme.colorScheme.onSurfaceVariant,
                         fontSize: 12,
@@ -174,10 +184,10 @@ class LinkPreviewCard extends StatelessWidget {
     );
   }
 
-  Widget _buildElegantFallback(ThemeData theme) {
+  Widget _buildElegantFallback(ThemeData theme, bool useLightContent) {
     return Container(
       color:
-          isMe
+          useLightContent
               ? Colors.white.withValues(alpha: 0.1)
               : theme.colorScheme.surfaceContainerHighest.withValues(
                 alpha: 0.4,
@@ -188,7 +198,7 @@ class LinkPreviewCard extends StatelessWidget {
           Icon(
             Icons.public_rounded,
             color:
-                isMe
+                useLightContent
                     ? Colors.white54
                     : theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
             size: 32,
@@ -198,7 +208,7 @@ class LinkPreviewCard extends StatelessWidget {
             'Preview not available',
             style: TextStyle(
               color:
-                  isMe
+                  useLightContent
                       ? Colors.white54
                       : theme.colorScheme.onSurfaceVariant.withValues(
                         alpha: 0.7,

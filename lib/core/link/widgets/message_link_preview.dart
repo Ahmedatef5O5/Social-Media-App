@@ -31,27 +31,32 @@ class MessageLinkPreview extends StatefulWidget {
   State<MessageLinkPreview> createState() => _MessageLinkPreviewState();
 }
 
-class _MessageLinkPreviewState extends State<MessageLinkPreview> {
+class _MessageLinkPreviewState extends State<MessageLinkPreview>
+    with AutomaticKeepAliveClientMixin<MessageLinkPreview> {
   String? _url;
   bool _isOnlyUrl = false;
-  Future<LinkPreviewData?>? _future;
+  LinkPreviewData? _data;
+  bool _hasResolved = false;
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
     super.initState();
-    _load();
+    _resolve();
   }
 
   @override
   void didUpdateWidget(covariant MessageLinkPreview oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.text != widget.text) _load();
+    if (oldWidget.text != widget.text) _resolve();
   }
 
-  void _load() {
+  void _resolve() {
     if (widget.text.trim().isEmpty) {
       _url = null;
-      _future = null;
+      _data = null;
+      _hasResolved = true;
       return;
     }
 
@@ -59,54 +64,62 @@ class _MessageLinkPreviewState extends State<MessageLinkPreview> {
       widget.text,
       options: const linkify_pkg.LinkifyOptions(humanize: false),
     );
-
     final urlElements = elements.whereType<linkify_pkg.UrlElement>().toList();
 
-    if (urlElements.isNotEmpty) {
-      _url = urlElements.first.url;
-
-      final originalTextWithoutUrl =
-          widget.text.replaceFirst(urlElements.first.text, '').trim();
-      _isOnlyUrl = originalTextWithoutUrl.isEmpty;
-
-      _future = LinkPreviewService.instance.fetch(_url!);
-    } else {
+    if (urlElements.isEmpty) {
       _url = null;
-      _future = null;
+      _data = null;
+      _hasResolved = true;
+      return;
     }
+
+    final url = urlElements.first.url;
+    _url = url;
+    final withoutUrl =
+        widget.text.replaceFirst(urlElements.first.text, '').trim();
+    _isOnlyUrl = withoutUrl.isEmpty;
+
+    final cached = LinkPreviewService.instance.peek(url);
+    if (cached != null) {
+      _data = cached;
+      _hasResolved = true;
+      return;
+    }
+
+    _hasResolved = false;
+    LinkPreviewService.instance.fetch(url).then((result) {
+      if (!mounted || _url != url) return;
+      setState(() {
+        _data = result;
+        _hasResolved = true;
+      });
+    });
   }
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
+
     if (_url == null) return widget.textWidget;
+    if (!_hasResolved || _data == null || !_data!.hasContent) {
+      return widget.textWidget;
+    }
 
-    return FutureBuilder<LinkPreviewData?>(
-      future: _future,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState != ConnectionState.done) {
-          return widget.textWidget;
-        }
+    if (_isOnlyUrl) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 4.0),
+        child: LinkPreviewCard(data: _data!, onColoredBubble: widget.isMe),
+      );
+    }
 
-        final data = snapshot.data;
-        if (data == null || !data.hasContent) return widget.textWidget;
-
-        if (_isOnlyUrl) {
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 4.0),
-            child: LinkPreviewCard(data: data, isMe: widget.isMe),
-          );
-        } else {
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              LinkPreviewCard(data: data, isMe: widget.isMe),
-              const SizedBox(height: 6),
-              widget.textWidget,
-            ],
-          );
-        }
-      },
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        LinkPreviewCard(data: _data!, onColoredBubble: widget.isMe),
+        const SizedBox(height: 6),
+        widget.textWidget,
+      ],
     );
   }
 }

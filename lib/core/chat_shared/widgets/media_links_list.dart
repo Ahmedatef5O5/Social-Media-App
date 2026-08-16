@@ -144,7 +144,7 @@ class _LinkTileState extends State<_LinkTile> {
                             maxLines: 2,
                           ),
                         )
-                        : LinkPreviewCard(data: data, isMe: isMe),
+                        : LinkPreviewCard(data: data, onColoredBubble: false),
               );
             },
           ),
