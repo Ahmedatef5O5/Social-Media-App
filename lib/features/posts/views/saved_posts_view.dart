@@ -3,11 +3,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 import '../../../core/constants/app_images.dart';
 import '../../../core/toast/app_toast.dart';
-import '../../../core/widgets/custom_loading_indicator.dart';
 import '../../../core/widgets/custom_tab_wrapper.dart';
 import '../../../core/widgets/empty_findings_animation_widget.dart';
 import '../cubit/posts_cubit/posts_cubit.dart';
 import '../cubit/saved_posts_cubit/saved_posts_cubit.dart';
+import '../helper/saved_posts_skeleton_items.dart';
 import '../model/post_model.dart';
 import '../widgets/post_item_widget.dart';
 
@@ -33,51 +33,64 @@ class _SavedPostsViewState extends State<SavedPostsView> {
     final postsCubit = context.read<PostsCubit>();
 
     return Scaffold(
-      appBar: AppBar(
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        backgroundColor: theme.scaffoldBackgroundColor,
-        leading: InkWell(
-          onTap: () => Navigator.of(context).pop(),
-          borderRadius: BorderRadius.circular(50),
-          child: Icon(
-            Icons.arrow_back_ios_new_rounded,
-            color: theme.primaryColor,
-            size: 22,
-          ),
-        ),
-        title: Text(
-          'Saved Posts',
-          style: theme.textTheme.titleMedium!.copyWith(
-            color: theme.primaryColor,
-            fontWeight: FontWeight.w500,
-            letterSpacing: 0.5,
-            fontSize: 20,
-          ),
-        ),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.more_vert_rounded, color: theme.primaryColor),
-            onPressed: () {
-              AppToast.info('this feature is coming soon');
-            },
-          ),
-          const Gap(8),
-        ],
-      ),
-      body: BlocBuilder<SavedPostsCubit, SavedPostsState>(
-        builder: (context, state) {
-          return CustomTabWrapper(
-            isLoading: state is SavedPostsInitial || state is SavedPostsLoading,
-            errorMessage: state is SavedPostsError ? state.message : null,
-            loadingSkeleton: const Center(child: CustomLoadingIndicator()),
-            onRetry:
-                () => context.read<SavedPostsCubit>().fetchSavedPosts(
-                  widget.userId,
+      backgroundColor: theme.scaffoldBackgroundColor,
+      body: NestedScrollView(
+        headerSliverBuilder: (context, innerBoxIsScrolled) {
+          return [
+            SliverAppBar(
+              floating: true,
+              snap: true,
+              elevation: 0,
+              scrolledUnderElevation: 0,
+              backgroundColor: theme.scaffoldBackgroundColor,
+              leading: InkWell(
+                onTap: () => Navigator.of(context).pop(),
+                borderRadius: BorderRadius.circular(50),
+                child: Icon(
+                  Icons.arrow_back_ios_new_rounded,
+                  color: theme.primaryColor,
+                  size: 22,
                 ),
-            child: _SavedPostsList(state: state, postsCubit: postsCubit),
-          );
+              ),
+              title: Text(
+                'Saved Posts',
+                style: theme.textTheme.titleMedium!.copyWith(
+                  color: theme.primaryColor,
+                  fontWeight: FontWeight.w500,
+                  letterSpacing: 0.5,
+                  fontSize: 20,
+                ),
+              ),
+              actions: [
+                IconButton(
+                  icon: Icon(
+                    Icons.more_vert_rounded,
+                    color: theme.primaryColor,
+                  ),
+                  onPressed: () {
+                    AppToast.info('this feature is coming soon');
+                  },
+                ),
+                const Gap(8),
+              ],
+            ),
+          ];
         },
+        body: BlocBuilder<SavedPostsCubit, SavedPostsState>(
+          builder: (context, state) {
+            return CustomTabWrapper(
+              isLoading:
+                  state is SavedPostsInitial || state is SavedPostsLoading,
+              errorMessage: state is SavedPostsError ? state.message : null,
+              loadingSkeleton: const SavedPostsSkeletonItems(),
+              onRetry:
+                  () => context.read<SavedPostsCubit>().fetchSavedPosts(
+                    widget.userId,
+                  ),
+              child: _SavedPostsList(state: state, postsCubit: postsCubit),
+            );
+          },
+        ),
       ),
     );
   }
