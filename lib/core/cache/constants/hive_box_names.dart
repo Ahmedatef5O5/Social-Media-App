@@ -8,4 +8,8 @@ class HiveBoxNames {
   static const String reelsPreferences = 'reels_preferences_box';
   static const String starredMessages = 'starred_messages_box';
   static const String aiPreferences = 'ai_preferences_box';
+
+  // --- Syncra (ai_chat feature) ---------------------------------------
+  static const String aiChatSessions = 'ai_chat_sessions_box';
+  static const String aiChatMessages = 'ai_chat_messages_box';
 }
