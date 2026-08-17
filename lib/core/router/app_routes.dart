@@ -38,6 +38,7 @@ class AppRoutes {
   static const String storyDisplayViewRoute = '/story-display-view';
   static const String addStoryPreviewViewRoute = '/add-Story-Preview-View-';
   static const String myStoriesListViewRoute = '/my-stories-list-view';
+  static const String userStoriesGridViewRoute = '/user-stories-grid-view';
 
   // Posts / Profile / Settings
   static const String createPostViewRoute = '/home-create-post-view';

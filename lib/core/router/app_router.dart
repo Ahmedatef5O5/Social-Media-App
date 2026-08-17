@@ -66,6 +66,7 @@ import '../../features/profile/cubits/profile_cubit/profile_cubit.dart';
 import '../../features/profile/views/profile_view.dart';
 import '../../features/stories/views/my_stories_list_view.dart';
 import '../../features/stories/views/pending_story_resolver_view.dart';
+import '../../features/stories/views/user_stories_grid_view.dart';
 import '../cache/repository/media_cache_repository.dart';
 import '../chat_shared/cubits/conversations_cubit/conversations_cubit.dart';
 import '../chat_shared/cubits/new_chat_cubit/new_chat_cubit.dart';
@@ -188,6 +189,7 @@ class AppRouter {
       case AppRoutes.storyDisplayViewRoute:
       case AppRoutes.addStoryPreviewViewRoute:
       case AppRoutes.myStoriesListViewRoute:
+      case AppRoutes.userStoriesGridViewRoute:
         return _storyRoutes(settings);
 
       case AppRoutes.chatsViewRoute:
@@ -402,6 +404,24 @@ class AppRouter {
           MyStoriesListView(
             storiesCubit: args['storiesCubit'] as StoriesCubit,
             myStories: args['myStories'] as List<StoryModel>,
+          ),
+          settings: settings,
+        );
+      case AppRoutes.userStoriesGridViewRoute:
+        final args = _args<Map<String, dynamic>>(settings);
+        if (args == null ||
+            args['userId'] is! String ||
+            args['storiesCubit'] is! StoriesCubit) {
+          return _errorRoute(
+            settings,
+            'Missing arguments for User Stories Grid',
+          );
+        }
+        return _buildRoute(
+          UserStoriesGridView(
+            userId: args['userId'] as String,
+            authorName: args['authorName'] as String? ?? '',
+            storiesCubit: args['storiesCubit'] as StoriesCubit,
           ),
           settings: settings,
         );
