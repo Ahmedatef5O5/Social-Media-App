@@ -275,14 +275,27 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
             _hasReceivedFirstStreamEvent = true;
 
             final existingIds = cachedMessages.map((m) => m.id).toSet();
-            final incomingIds = resolved.map((m) => m.id).toSet();
-            final hasGenuinelyNewMessages =
-                incomingIds.difference(existingIds).isNotEmpty;
+            final newIds = resolved
+                .map((m) => m.id)
+                .toSet()
+                .difference(existingIds);
 
-            if (!isAtBottomNotifier.value && hasGenuinelyNewMessages) {
+            final bool hasOwnNewMessage = resolved.any(
+              (m) => newIds.contains(m.id) && m.senderId == currentUserId,
+            );
+            final int otherNewCount =
+                resolved
+                    .where(
+                      (m) =>
+                          newIds.contains(m.id) && m.senderId != currentUserId,
+                    )
+                    .length;
+
+            if (!isAtBottomNotifier.value &&
+                otherNewCount > 0 &&
+                !hasOwnNewMessage) {
               _pendingMessagesSnapshot = resolved;
-              pendingNewCountNotifier.value =
-                  incomingIds.difference(existingIds).length;
+              pendingNewCountNotifier.value = otherNewCount;
               _persistMessagesSnapshot(_messagesSnapshotKey!, resolved);
               return;
             }
@@ -292,6 +305,8 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
             _registerBubbleKeys(resolved);
 
             cachedMessages = resolved;
+            _pendingMessagesSnapshot = [];
+            pendingNewCountNotifier.value = 0;
             emit(MessagesSuccessLoaded(messages: resolved));
 
             _persistMessagesSnapshot(_messagesSnapshotKey!, resolved);
@@ -589,36 +604,12 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
         forwardedFromUserAvatar: forwardedFromUserAvatar,
       );
 
-      final pushMessage = optimisticMessage.copyWith(
-        id: newMessageId,
-        imageUrl: imageUrl,
-        videoUrl: videoUrl,
-        voiceUrl: voiceUrl,
-        fileUrl: fileUrl,
-        caption: caption,
-        durationSeconds: durationSeconds,
-        fileName: fileName,
-        fileSizeBytes: fileSizeBytes,
-        replyToMessageId: replyTo?.id,
-        replyToText:
-            (replyTo?.text != null && replyTo!.text.isNotEmpty)
-                ? replyTo.text
-                : replyTo?.caption,
-        replyToMessageType: replyTo?.messageType,
-        replyToSenderId: replyTo?.senderId,
-        replyToMediaUrl: optimisticMessage.replyToMediaUrl,
-        forwardedFromUserId: optimisticMessage.forwardedFromUserId,
-        forwardedFromUserName: optimisticMessage.forwardedFromUserName,
-        forwardedFromUserAvatar: optimisticMessage.forwardedFromUserAvatar,
-        replyToStoryId: optimisticMessage.replyToStoryId,
-        replyToStoryAuthorId: optimisticMessage.replyToStoryAuthorId,
-        replyToStoryType: optimisticMessage.replyToStoryType,
-        replyToStoryMediaUrl: optimisticMessage.replyToStoryMediaUrl,
-        replyToStoryText: optimisticMessage.replyToStoryText,
-        replyToStoryBgColor: optimisticMessage.replyToStoryBgColor,
-        replyToStoryDurationSeconds:
-            optimisticMessage.replyToStoryDurationSeconds,
-      );
+      final index = cachedMessages.indexWhere((m) => m.id == tempId);
+      if (index != -1) {
+        cachedMessages[index] = cachedMessages[index].copyWith(
+          id: newMessageId,
+        );
+      }
 
       if (messageType != 'call') {
         await NotificationRepository.instance.notifyChatMessage(
@@ -638,8 +629,6 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
         );
       }
       _cancelTokens.remove(tempId);
-
-      await _sendPushNotification(message: pushMessage, receiverId: receiverId);
 
       Future.delayed(const Duration(seconds: 2), () {
         if (!isClosed) {
@@ -730,72 +719,6 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
       _resolvedCurrentUserName = info['name'] ?? currentUserName;
       _resolvedSenderImageUrl = info['imageUrl'] ?? senderImageUrl ?? '';
     } catch (_) {}
-  }
-
-  Future<void> _sendPushNotification({
-    required MessageModel message,
-    required String receiverId,
-  }) async {
-    try {
-      final muted =
-          await SupabaseProvider.client.rpc(
-                'is_chat_muted',
-                params: {'p_owner': receiverId, 'p_peer': currentUserId},
-              )
-              as bool? ??
-          false;
-      if (muted) return;
-      final receiverInfo = await _chatServices.getReceiverPushInfo(receiverId);
-
-      if (receiverInfo == null) {
-        debugPrint('ℹ️  No FCM token for receiver — skipping notification');
-        return;
-      }
-
-      await FcmService.instance.sendChatNotification(
-        messageId: message.id,
-        receiverFcmToken: receiverInfo.fcmToken,
-        senderId: currentUserId,
-        senderName:
-            _resolvedCurrentUserName.isNotEmpty
-                ? _resolvedCurrentUserName
-                : currentUserName,
-        senderImageUrl:
-            _resolvedSenderImageUrl.isNotEmpty
-                ? _resolvedSenderImageUrl
-                : (senderImageUrl ?? ''),
-        messageBody: message.text,
-        messageType: message.messageType,
-        attachmentUrl:
-            message.imageUrl ??
-            message.videoUrl ??
-            message.voiceUrl ??
-            message.fileUrl,
-        caption: message.caption,
-        durationSeconds: message.durationSeconds,
-        fileName: message.fileName,
-        fileSizeBytes: message.fileSizeBytes,
-
-        replyToMessageId: message.replyToMessageId,
-        replyToText: message.replyToText,
-        replyToMessageType: message.replyToMessageType,
-        replyToSenderId: message.replyToSenderId,
-        replyToMediaUrl: message.replyToMediaUrl,
-        replyToStoryId: message.replyToStoryId,
-        replyToStoryAuthorId: message.replyToStoryAuthorId,
-        replyToStoryType: message.replyToStoryType,
-        replyToStoryMediaUrl: message.replyToStoryMediaUrl,
-        replyToStoryText: message.replyToStoryText,
-        replyToStoryBgColor: message.replyToStoryBgColor,
-        replyToStoryDurationSeconds: message.replyToStoryDurationSeconds,
-
-        forwardedFromUserId: message.forwardedFromUserId,
-        forwardedFromUserName: message.forwardedFromUserName,
-        forwardedFromUserAvatar: message.forwardedFromUserAvatar,
-      );
-    } catch (e) {
-      debugPrint('⚠️  _sendPushNotification silent error: $e');
-    }
   }
 
   final Map<String, dio_pkg.CancelToken> _cancelTokens = {};

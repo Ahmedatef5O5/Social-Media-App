@@ -77,6 +77,8 @@ class MessageModel {
     if (original == null) return null;
     switch (original.messageType) {
       case 'image':
+      case 'gif':
+      case 'sticker':
         return original.imageUrl;
       case 'video':
         return original.videoUrl;

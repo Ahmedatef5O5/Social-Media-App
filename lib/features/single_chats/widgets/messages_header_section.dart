@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:gap/gap.dart';
 import 'package:social_media_app/core/router/app_routes.dart';
 import '../../../core/chat_shared/cubits/conversations_cubit/conversations_cubit.dart';
 import '../../../core/widgets/custom_badge.dart';
@@ -88,6 +89,22 @@ class MessagesHeaderSection extends StatelessWidget {
                             )
                             : const SizedBox.shrink(),
                   ),
+                  IconButton(
+                    icon: Icon(
+                      Icons.smart_toy_rounded,
+                      color: Theme.of(context).primaryColor,
+                      size: 24,
+                    ),
+
+                    tooltip: 'Syncra AI',
+                    onPressed: () {
+                      Navigator.of(
+                        context,
+                        rootNavigator: true,
+                      ).pushNamed(AppRoutes.aiChatViewRoute);
+                    },
+                  ),
+                  Gap(4),
                   AnimatedBuilder(
                     animation: tabController,
                     builder: (context, child) {
