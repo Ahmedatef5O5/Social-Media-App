@@ -1,0 +1,1028 @@
+import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
+import 'dart:typed_data';
+import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show compute;
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:image/image.dart' as img;
+import '../../../core/attachment/attachment_sheet/attachment_kind.dart';
+import '../../../core/attachment/attachment_sheet/attachment_picker_sheet.dart';
+import '../../../core/attachment/attachment_sheet/picked_attachment.dart';
+import '../../../core/router/app_routes.dart';
+import '../../../core/services/cloudinary_storage_services.dart';
+import '../../../core/supabase/supabase_provider.dart';
+import '../../../core/toast/app_toast.dart';
+import '../../auth/data/models/user_data.dart';
+import '../../chat_forwarding/models/forward_target_selection.dart';
+import '../../chat_forwarding/models/forwardable_message.dart';
+import '../../chat_forwarding/services/forward_service.dart';
+import '../../chat_forwarding/views/forward_target_picker_view.dart';
+import '../../home/cubits/home_cubit/home_cubit.dart';
+import '../../single_chats/helper/glass_icon_btn.dart';
+import '../cubit/ai_chat_cubit/ai_chat_cubit.dart';
+import '../di/ai_chat_dependencies.dart';
+import '../models/ai_chat_message.dart';
+import '../models/ai_chat_session.dart';
+import '../models/ai_model_option.dart';
+import '../models/ai_reply_phase.dart';
+import '../models/ai_suggestion_item.dart';
+import '../widgets/ai_chat_greeting_header.dart';
+import '../widgets/ai_chat_input_bar.dart';
+import '../widgets/ai_chat_message_list.dart';
+import '../widgets/ai_chat_sessions_drawer.dart';
+import '../widgets/ai_chat_shimmer.dart';
+import '../widgets/ai_suggestion_grid.dart';
+
+/// Runs off the UI isolate via [compute] — resizes to a 1024px-max edge
+/// and re-encodes as JPEG before base64. This is what actually gets sent
+/// to the gateway for vision, completely separate from the full-quality
+/// file [CloudinaryStorageServices] uploads for persistence/display —
+/// Gemini/OpenRouter vision doesn't need (and shouldn't be paying
+/// latency/payload-size for) full camera resolution.
+///
+/// Caveat: the pure-Dart `image` package can't decode every format (some
+/// HEIC variants in particular). If decoding fails, this falls back to
+/// sending the original bytes as-is — the vision call may reject those;
+/// there's no silent corruption, just a possible "couldn't read that
+/// image" from the model itself.
+String _downscaleAndEncodeImage(Uint8List bytes) {
+  final decoded = img.decodeImage(bytes);
+  if (decoded == null) return base64Encode(bytes);
+
+  final needsResize = decoded.width > 1024 || decoded.height > 1024;
+  final resized =
+      needsResize
+          ? img.copyResize(
+            decoded,
+            width: decoded.width >= decoded.height ? 1024 : null,
+            height: decoded.height > decoded.width ? 1024 : null,
+          )
+          : decoded;
+
+  return base64Encode(img.encodeJpg(resized, quality: 85));
+}
+
+class AiChatView extends StatefulWidget {
+  final String? initialSessionId;
+  final String? initialDraftText;
+
+  const AiChatView({super.key, this.initialSessionId, this.initialDraftText});
+
+  @override
+  State<AiChatView> createState() => _AiChatViewState();
+}
+
+class _AiChatViewState extends State<AiChatView> with TickerProviderStateMixin {
+  late final AnimationController _entranceController;
+  late final Animation<double> _headerFade;
+  late final Animation<Offset> _headerSlide;
+  late final Animation<double> _greetingFade;
+  late final Animation<Offset> _greetingSlide;
+  late final Animation<double> _gridFade;
+  late final Animation<Offset> _gridSlide;
+  late final AnimationController _morphController;
+  late bool _showWelcome;
+
+  late final TextEditingController _textController;
+  late final FocusNode _textFocusNode;
+  AiModelOption _selectedModel = AiModelCatalog.defaultModel;
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
+  // --- Live backend wiring ------------------------------------------
+  AiChatDependencies? _deps;
+  AiChatCubit? _chatCubit;
+  String? _activeSessionId;
+  bool _isUploadingImage = false;
+
+  /// Ids that already existed the moment this session's history finished
+  /// loading. Anything NOT in this set the first time it's rendered is a
+  /// message that arrived live during this screen visit, so the
+  /// assistant's text gets the typewriter treatment; history never does.
+  final Set<String> _historicalMessageIds = {};
+
+  // Thinking / Analyzing / Generating cycle — driven by AiChatCubit's
+  // real `isSending` flag (see _onChatStateChanged), not a fixed timer.
+  AiReplyPhase? _replyPhase;
+  Timer? _phaseTimer;
+  bool _wasSending = false;
+  static const _replyPhases = [
+    AiReplyPhase.thinking,
+    AiReplyPhase.analyzing,
+    AiReplyPhase.generating,
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _textController = TextEditingController();
+    _textFocusNode = FocusNode();
+    _showWelcome = widget.initialSessionId == null;
+
+    _entranceController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    );
+
+    _headerFade = CurvedAnimation(
+      parent: _entranceController,
+      curve: const Interval(0.0, 0.45, curve: Curves.easeOut),
+    );
+    _headerSlide = Tween<Offset>(
+      begin: const Offset(0, -0.2),
+      end: Offset.zero,
+    ).animate(_headerFade);
+
+    _greetingFade = CurvedAnimation(
+      parent: _entranceController,
+      curve: const Interval(0.2, 0.7, curve: Curves.easeOutCubic),
+    );
+    _greetingSlide = Tween<Offset>(
+      begin: const Offset(0, 0.12),
+      end: Offset.zero,
+    ).animate(_greetingFade);
+
+    _gridFade = CurvedAnimation(
+      parent: _entranceController,
+      curve: const Interval(0.4, 1.0, curve: Curves.easeOutCubic),
+    );
+    _gridSlide = Tween<Offset>(
+      begin: const Offset(0, 0.12),
+      end: Offset.zero,
+    ).animate(_gridFade);
+
+    _entranceController.forward();
+
+    _morphController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 550),
+    );
+    if (!_showWelcome) {
+      // Reopening an existing session — skip the welcome -> chat morph
+      // entirely, land directly on the message list.
+      _morphController.value = 1;
+    }
+
+    if (widget.initialDraftText?.trim().isNotEmpty == true) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _prefillAndFocus(widget.initialDraftText!.trim());
+      });
+    }
+
+    _bootstrap();
+  }
+
+  @override
+  void dispose() {
+    _entranceController.dispose();
+    _morphController.dispose();
+    _textController.dispose();
+    _textFocusNode.dispose();
+    _phaseTimer?.cancel();
+    _chatCubit?.close();
+    super.dispose();
+  }
+
+  Future<void> _bootstrap() async {
+    final deps = await AiChatDependencies.instance();
+    if (!mounted) return;
+    setState(() {
+      _deps = deps;
+      // Hydrate the composer chip from whatever provider preference was
+      // last persisted, instead of always defaulting back to Gemini.
+      final savedProvider = deps.modelSelectorCubit.state.preferredProvider;
+      if (savedProvider != null) {
+        _selectedModel = _catalogOptionFor(savedProvider);
+      }
+      if (widget.initialSessionId != null) {
+        _attachCubit(widget.initialSessionId!, isExisting: true);
+      } else if (widget.initialDraftText?.trim().isEmpty ?? true) {
+        // No explicit target and no forwarded draft — resume whatever
+        // session was open earlier THIS process run, if any. Purely
+        // in-memory: a fresh cold start always falls through to welcome.
+        final resumeId = deps.lastActiveSessionId;
+        if (resumeId != null) {
+          _showWelcome = false;
+          _morphController.value = 1; // skip the welcome->chat morph
+          _attachCubit(resumeId, isExisting: true);
+        }
+      }
+    });
+  }
+
+  void _attachCubit(
+    String sessionId, {
+    required bool isExisting,
+    AiChatSession? newlyCreatedSession,
+  }) {
+    final cubit = AiChatCubit(
+      repository: _deps!.repository,
+      gatewayService: _deps!.gatewayService,
+      sessionId: sessionId,
+      isExisting: isExisting,
+    );
+    _chatCubit = cubit;
+    _activeSessionId = sessionId;
+
+    // In-memory "resume last session" bookkeeping — see
+    // AiChatDependencies.lastActiveSessionId.
+    _deps?.lastActiveSessionId = sessionId;
+    if (!isExisting && newlyCreatedSession != null) {
+      _deps?.sessionsCubit.trackNewSession(newlyCreatedSession);
+    }
+
+    if (isExisting) {
+      _historicalMessageIds
+        ..clear()
+        ..addAll(_deps!.repository.localMessages(sessionId).map((m) => m.id));
+      cubit.loadMessages().then((_) {
+        if (!mounted) return;
+        final state = cubit.state;
+        if (state is AiChatMessagesLoaded) {
+          _historicalMessageIds
+            ..clear()
+            ..addAll(state.messages.map((m) => m.id));
+        }
+      });
+    }
+    // A brand-new session starts with zero history, so there's nothing
+    // to mark as "historical" and nothing to fetch.
+  }
+
+  // ---------------------------------------------------------------------
+  // Model preference <-> backend provider mapping. The composer's chip
+  // only ever deals with the 3 real backend buckets (gemini/groq/
+  // openrouter) — see ai_model_option.dart for why "Claude" was removed.
+  // ---------------------------------------------------------------------
+
+  String _providerStringFor(AiModelOption option) => switch (option.provider) {
+    AiModelProvider.gemini => 'gemini',
+    AiModelProvider.llama => 'groq',
+    AiModelProvider.openrouter => 'openrouter',
+  };
+
+  AiModelOption _catalogOptionFor(String provider) => switch (provider) {
+    'groq' => AiModelCatalog.all.firstWhere(
+      (m) => m.provider == AiModelProvider.llama,
+    ),
+    'openrouter' => AiModelCatalog.all.firstWhere(
+      (m) => m.provider == AiModelProvider.openrouter,
+    ),
+    _ => AiModelCatalog.all.firstWhere(
+      (m) => m.provider == AiModelProvider.gemini,
+    ),
+  };
+
+  void _onModelChanged(AiModelOption model) {
+    setState(() => _selectedModel = model);
+    _deps?.modelSelectorCubit.setPreferredProvider(_providerStringFor(model));
+  }
+
+  /// Builds a signature deep, two-tone gradient derived from the active
+  /// theme's `primaryColor`, so every one of the 12 app themes (Ocean,
+  /// Sunset, Midnight, Carbon...) gets its own tinted, premium "Syncra"
+  /// backdrop instead of a single hardcoded color.
+  List<Color> _gradientColors(Color primary) {
+    final hsl = HSLColor.fromColor(primary);
+    final top =
+        hsl
+            .withLightness(0.22)
+            .withSaturation((hsl.saturation * 0.85).clamp(0.0, 1.0))
+            .toColor();
+    final bottom =
+        hsl
+            .withLightness(0.05)
+            .withSaturation((hsl.saturation * 0.55).clamp(0.0, 1.0))
+            .toColor();
+    return [top, bottom];
+  }
+
+  // ---------------------------------------------------------------------
+  // Morph trigger — one AnimationController drives both halves at once:
+  // welcome fades/scales OUT as the value rises from 0 -> 1, the message
+  // list fades/slides IN using that exact same value (and back on
+  // "New chat" — see _startNewChatInPlace).
+  // ---------------------------------------------------------------------
+  void _startConversationIfNeeded() {
+    if (_chatCubit == null && _morphController.isDismissed) {
+      _morphController.forward().whenCompleteOrCancel(() {
+        if (mounted) setState(() => _showWelcome = false);
+      });
+    }
+  }
+
+  // ---------------------------------------------------------------------
+  // Header menu — New chat / Delete chat
+  // ---------------------------------------------------------------------
+
+  void _showHeaderMenu(BuildContext context) {
+    final canDelete = _chatCubit != null;
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Theme.of(context).cardColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder:
+          (ctx) => SafeArea(
+            child: Wrap(
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.add_comment_outlined),
+                  title: const Text('New chat'),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    _startNewChatInPlace();
+                  },
+                ),
+                if (canDelete)
+                  ListTile(
+                    leading: const Icon(
+                      Icons.delete_outline_rounded,
+                      color: Colors.red,
+                    ),
+                    title: Text(
+                      'Delete chat',
+                      style: Theme.of(
+                        context,
+                      ).textTheme.titleMedium?.copyWith(color: Colors.red),
+                    ),
+                    onTap: () {
+                      Navigator.pop(ctx);
+                      _confirmDeleteChat(context);
+                    },
+                  ),
+              ],
+            ),
+          ),
+    );
+  }
+
+  /// Resets this same screen back to the welcome state — the previous
+  /// session is left exactly as-is in Supabase/Hive, this just detaches
+  /// from it. The next message sent lazily creates a brand-new session,
+  /// identical to what a fresh `AiChatView()` would do.
+  void _startNewChatInPlace() {
+    _textController.clear();
+    _deps?.lastActiveSessionId = null; // "New Chat" must not resume this
+
+    if (_chatCubit == null) {
+      // Already on a fresh, empty welcome screen — nothing to reset.
+      _textFocusNode.requestFocus();
+      return;
+    }
+
+    final oldCubit = _chatCubit;
+    _phaseTimer?.cancel();
+    _phaseTimer = null;
+    _wasSending = false;
+    _replyPhase = null;
+
+    setState(() => _showWelcome = true); // welcome fades back in immediately
+    _morphController.reverse().whenCompleteOrCancel(() {
+      if (!mounted) return;
+      setState(() {
+        _chatCubit = null;
+        _activeSessionId = null;
+        _historicalMessageIds.clear();
+      });
+      // Close AFTER the widget tree has already dropped its reference,
+      // so nothing can rebuild against a closed cubit mid-transition.
+      oldCubit?.close();
+    });
+  }
+
+  Future<void> _confirmDeleteChat(BuildContext context) async {
+    final deps = _deps;
+    final sessionId = _activeSessionId;
+    if (deps == null || sessionId == null) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder:
+          (ctx) => AlertDialog(
+            title: const Text('Delete this chat?'),
+            content: const Text(
+              "This permanently deletes the conversation from Syncra. This can't be undone.",
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                child: const Text(
+                  'Delete',
+                  style: TextStyle(color: Colors.red),
+                ),
+              ),
+            ],
+          ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    try {
+      await deps.repository.deleteSession(sessionId);
+      if (mounted) Navigator.of(context).maybePop();
+    } catch (_) {
+      if (mounted) {
+        AppToast.error('Failed to delete this chat. Please try again.');
+      }
+    }
+  }
+
+  // ---------------------------------------------------------------------
+  // Sessions Drawer — Open / New chat / Delete intents bubbled up from
+  // AiChatSessionsDrawer. Kept here, not inside the drawer widget, so
+  // the "is this the currently open session" check stays next to its
+  // single source of truth: _activeSessionId.
+  // ---------------------------------------------------------------------
+
+  void _startNewChatFromDrawer() {
+    Navigator.of(context).pop(); // close the drawer
+    _startNewChatInPlace();
+  }
+
+  void _openSessionFromDrawer(AiChatSession session) {
+    Navigator.of(context).pop(); // close the drawer
+    if (session.id == _activeSessionId) return; // already open
+    Navigator.of(
+      context,
+      rootNavigator: true,
+    ).pushReplacementNamed(AppRoutes.aiChatViewRoute, arguments: session.id);
+  }
+
+  Future<void> _deleteSessionFromDrawer(AiChatSession session) async {
+    Navigator.of(context).pop(); // close the drawer before the dialog
+    final deps = _deps;
+    if (deps == null) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder:
+          (ctx) => AlertDialog(
+            title: const Text('Delete this chat?'),
+            content: Text(
+              'Delete "${session.title}"? This permanently removes it '
+              "from Syncra and can't be undone.",
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                child: const Text(
+                  'Delete',
+                  style: TextStyle(color: Colors.red),
+                ),
+              ),
+            ],
+          ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    try {
+      await deps.sessionsCubit.delete(session.id);
+      if (deps.lastActiveSessionId == session.id) {
+        deps.lastActiveSessionId = null;
+      }
+      if (session.id == _activeSessionId) {
+        _startNewChatInPlace();
+      }
+    } catch (_) {
+      if (mounted) {
+        AppToast.error('Failed to delete this chat. Please try again.');
+      }
+    }
+  }
+
+  void _handleForward(AiChatMessage message) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Theme.of(context).cardColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder:
+          (ctx) => SafeArea(
+            child: Wrap(
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.shortcut_rounded),
+                  title: const Text('Forward'),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    _forwardMessage(message);
+                  },
+                ),
+              ],
+            ),
+          ),
+    );
+  }
+
+  Future<void> _forwardMessage(AiChatMessage message) async {
+    final result = await Navigator.of(context).push<ForwardTargetSelection>(
+      MaterialPageRoute(
+        builder: (_) => const ForwardTargetPickerView(messageCount: 1),
+      ),
+    );
+    if (result == null || result.isEmpty || !mounted) return;
+    if (result.toAi) return; // forwarding an AI reply back into itself — n/a
+
+    try {
+      await ForwardService().forwardMessages(
+        messages: [ForwardableMessage.fromAiChatMessage(message)],
+        targets: result,
+        currentUserId: SupabaseProvider.id,
+      );
+      if (mounted) AppToast.info('Forwarded to ${result.length} chat(s)');
+    } catch (_) {
+      if (mounted) AppToast.error('Failed to forward. Please try again.');
+    }
+  }
+
+  // ---------------------------------------------------------------------
+  // Suggestion taps
+  // ---------------------------------------------------------------------
+
+  void _prefillAndFocus(String text) {
+    _textController.text = text;
+    _textController.selection = TextSelection.collapsed(offset: text.length);
+    _textFocusNode.requestFocus();
+  }
+
+  Future<void> _openFilesSuggestion() async {
+    final picked = await AttachmentPickerSheet.show(
+      context,
+      showVoiceOption: false,
+      showFileOption: true,
+      showCameraOption: false,
+    );
+    if (picked == null || !mounted) return;
+    _handleAttachmentPicked(picked);
+  }
+
+  List<AiSuggestionItem> _buildSuggestions(BuildContext context) {
+    return [
+      AiSuggestionItem(
+        icon: Icons.image_rounded,
+        label: 'Image',
+        accentColor: Colors.purpleAccent,
+        onTap: () => _prefillAndFocus('Create an image of '),
+      ),
+      AiSuggestionItem(
+        icon: Icons.translate_rounded,
+        label: 'Translate',
+        accentColor: Colors.lightBlueAccent,
+        onTap: () => _prefillAndFocus('Translate this to '),
+      ),
+      AiSuggestionItem(
+        icon: Icons.graphic_eq_rounded,
+        label: 'Audio Chat',
+        accentColor: Colors.orangeAccent,
+        onTap: () => _textFocusNode.requestFocus(),
+      ),
+      AiSuggestionItem(
+        icon: Icons.description_rounded,
+        label: 'Chat Files',
+        accentColor: Colors.tealAccent,
+        onTap: _openFilesSuggestion,
+      ),
+    ];
+  }
+
+  // ---------------------------------------------------------------------
+  // Composer callbacks
+  // ---------------------------------------------------------------------
+
+  Future<void> _onSendText(String text) async {
+    final deps = _deps;
+    if (deps == null) {
+      AppToast.info('Still getting Syncra ready — try again in a second.');
+      return;
+    }
+    _startConversationIfNeeded();
+    try {
+      if (_chatCubit == null) {
+        final session = await deps.repository.createSession(firstMessage: text);
+        if (!mounted) return;
+        setState(
+          () => _attachCubit(
+            session.id,
+            isExisting: false,
+            newlyCreatedSession: session,
+          ),
+        );
+      }
+      await _chatCubit!.sendMessage(text: text);
+    } catch (_) {
+      if (mounted) {
+        AppToast.error('Failed to send your message. Please try again.');
+      }
+    }
+  }
+
+  void _handleSendVoice(File file, int durationSeconds) {
+    AppToast.info('Voice messages in Syncra are coming soon.');
+  }
+
+  /// Images are the one attachment kind actually wired end-to-end — see
+  /// `_sendImage`. Everything else stays a friendly stub for now.
+  void _handleAttachmentPicked(PickedAttachment attachment) {
+    if (attachment.kind == AttachmentKind.image &&
+        attachment.localFile != null) {
+      _sendImage(attachment.localFile!);
+      return;
+    }
+    AppToast.info('Sharing this with Syncra is coming soon.');
+  }
+
+  Future<void> _sendImage(File file) async {
+    if (_isUploadingImage) return;
+    final deps = _deps;
+    if (deps == null) {
+      AppToast.info('Still getting Syncra ready — try again in a second.');
+      return;
+    }
+
+    setState(() => _isUploadingImage = true);
+    try {
+      final bytes = await file.readAsBytes();
+      final imageBase64 = await compute(_downscaleAndEncodeImage, bytes);
+
+      final uploadResult = await CloudinaryStorageServices.instance.uploadFile(
+        file,
+        'ai_chat',
+        'images',
+      );
+      if (!mounted) return;
+
+      final caption = _textController.text.trim();
+      _textController.clear();
+
+      _startConversationIfNeeded();
+      if (_chatCubit == null) {
+        final session = await deps.repository.createSession(
+          firstMessage: caption.isEmpty ? '📷 Photo' : caption,
+        );
+        if (!mounted) return;
+        setState(
+          () => _attachCubit(
+            session.id,
+            isExisting: false,
+            newlyCreatedSession: session,
+          ),
+        );
+      }
+
+      await _chatCubit!.sendMessage(
+        text: caption,
+        mediaType: 'image',
+        mediaUrl: uploadResult.secureUrl,
+        fileSizeBytes: bytes.length,
+        imageBase64: imageBase64,
+      );
+    } catch (_) {
+      if (mounted) {
+        AppToast.error('Failed to send the photo. Please try again.');
+      }
+    } finally {
+      if (mounted) setState(() => _isUploadingImage = false);
+    }
+  }
+
+  void _handleRetry(AiChatMessage message) {
+    _chatCubit?.sendMessage(text: message.text);
+  }
+
+  void _onChatStateChanged(BuildContext context, AiChatMessagesState state) {
+    if (state is! AiChatMessagesLoaded) return;
+
+    if (state.isSending && !_wasSending) {
+      _startPhaseCycle();
+    } else if (!state.isSending && _wasSending) {
+      _stopPhaseCycle();
+    }
+    _wasSending = state.isSending;
+
+    if (state.error != null) {
+      AppToast.error(_friendlyErrorMessage(state.error!));
+    }
+  }
+
+  void _startPhaseCycle() {
+    _phaseTimer?.cancel();
+    var index = 0;
+    setState(() => _replyPhase = _replyPhases[index]);
+    _phaseTimer = Timer.periodic(const Duration(milliseconds: 900), (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+      index = (index + 1) % _replyPhases.length;
+      setState(() => _replyPhase = _replyPhases[index]);
+    });
+  }
+
+  void _stopPhaseCycle() {
+    _phaseTimer?.cancel();
+    _phaseTimer = null;
+    if (mounted) setState(() => _replyPhase = null);
+  }
+
+  String _friendlyErrorMessage(String reason) {
+    switch (reason) {
+      case 'user_quota_exceeded':
+        return "You've reached today's Syncra limit — try again tomorrow.";
+      case 'global_quota_exceeded':
+        return 'Syncra is a bit busy right now — please try again shortly.';
+      case 'all_providers_unavailable':
+        return "Syncra couldn't reach any AI provider — please try again.";
+      default:
+        return 'Something went wrong. Please try again.';
+    }
+  }
+
+  Widget _buildLoadError(String message) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Text(
+          "Couldn't load this conversation.\n$message",
+          textAlign: TextAlign.center,
+          style: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final gradient = _gradientColors(theme.primaryColor);
+    final currentUser = context.read<HomeCubit>().currentUserData;
+    final firstName =
+        (currentUser?.name ?? '').trim().isEmpty
+            ? 'there'
+            : currentUser!.name.trim().split(' ').first;
+
+    return GestureDetector(
+      onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+      child: Scaffold(
+        key: _scaffoldKey,
+        backgroundColor: gradient.last,
+        drawer: AiChatSessionsDrawer(
+          deps: _deps,
+          activeSessionId: _activeSessionId,
+          selectedModel: _selectedModel,
+          onModelChanged: _onModelChanged,
+          onStartNewChat: _startNewChatFromDrawer,
+          onOpenSession: _openSessionFromDrawer,
+          onDeleteSession: _deleteSessionFromDrawer,
+        ),
+        body: Stack(
+          children: [
+            Positioned.fill(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: gradient,
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              top: -90,
+              right: -60,
+              child: _GlowBlob(color: theme.primaryColor, size: 240),
+            ),
+            Positioned(
+              bottom: -110,
+              left: -80,
+              child: _GlowBlob(color: theme.primaryColor, size: 280),
+            ),
+            SafeArea(
+              child: Column(
+                children: [
+                  FadeTransition(
+                    opacity: _headerFade,
+                    child: SlideTransition(
+                      position: _headerSlide,
+                      child: _buildHeader(context),
+                    ),
+                  ),
+                  Expanded(
+                    child: Stack(
+                      children: [
+                        if (_showWelcome)
+                          AnimatedBuilder(
+                            animation: _morphController,
+                            child: _buildWelcomeContent(
+                              context,
+                              firstName,
+                              currentUser,
+                            ),
+                            builder: (context, child) {
+                              final morph = _morphController.value;
+                              return IgnorePointer(
+                                ignoring: morph > 0.02,
+                                child: Opacity(
+                                  opacity: (1 - morph).clamp(0.0, 1.0),
+                                  child: Transform.scale(
+                                    scale: 1 - (morph * 0.06),
+                                    child: child,
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        if (_chatCubit != null)
+                          AnimatedBuilder(
+                            animation: _morphController,
+                            child: BlocProvider.value(
+                              value: _chatCubit!,
+                              child: BlocConsumer<
+                                AiChatCubit,
+                                AiChatMessagesState
+                              >(
+                                listener: _onChatStateChanged,
+                                builder: (context, state) {
+                                  if (state is AiChatMessagesLoading) {
+                                    return const AiChatMessagesShimmerList();
+                                  }
+                                  if (state is AiChatMessagesError) {
+                                    return _buildLoadError(state.message);
+                                  }
+                                  final loaded = state as AiChatMessagesLoaded;
+                                  return AiChatMessageList(
+                                    messages: loaded.messages,
+                                    activePhase: _replyPhase,
+                                    activeModel: _selectedModel,
+                                    shouldAnimateText:
+                                        (m) =>
+                                            m.role == AiChatRole.assistant &&
+                                            !_historicalMessageIds.contains(
+                                              m.id,
+                                            ),
+                                    onCancelUpload: null,
+                                    onRetry: _handleRetry,
+                                    onForward: _handleForward,
+                                  );
+                                },
+                              ),
+                            ),
+                            builder: (context, child) {
+                              final morph = _morphController.value;
+                              return IgnorePointer(
+                                ignoring: morph < 0.98,
+                                child: Opacity(
+                                  opacity: morph.clamp(0.0, 1.0),
+                                  child: Transform.translate(
+                                    offset: Offset(0, (1 - morph) * 16),
+                                    child: child,
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                      ],
+                    ),
+                  ),
+                  if (_isUploadingImage)
+                    LinearProgressIndicator(
+                      minHeight: 2,
+                      backgroundColor: Colors.white.withValues(alpha: 0.08),
+                      color: theme.primaryColor,
+                    ),
+                  SafeArea(
+                    top: false,
+                    child: AiChatInputBar(
+                      controller: _textController,
+                      focusNode: _textFocusNode,
+                      selectedModel: _selectedModel,
+                      onModelChanged: _onModelChanged,
+                      onSendText: _onSendText,
+                      onSendVoice: _handleSendVoice,
+                      onAttachmentPicked: _handleAttachmentPicked,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildWelcomeContent(
+    BuildContext context,
+    String firstName,
+    UserData? currentUser,
+  ) {
+    return SingleChildScrollView(
+      physics: const BouncingScrollPhysics(),
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: 12),
+          FadeTransition(
+            opacity: _greetingFade,
+            child: SlideTransition(
+              position: _greetingSlide,
+              child: AiChatGreetingHeader(
+                userName: firstName,
+                avatarUrl: currentUser?.imageUrl,
+              ),
+            ),
+          ),
+          const SizedBox(height: 40),
+          FadeTransition(
+            opacity: _gridFade,
+            child: SlideTransition(
+              position: _gridSlide,
+              child: AiSuggestionGrid(items: _buildSuggestions(context)),
+            ),
+          ),
+          const SizedBox(height: 24),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeader(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+      child: Row(
+        children: [
+          GlassIconButton(
+            icon: Icons.menu_rounded,
+            iconSize: 20,
+            size: 42,
+            onTap: () => _scaffoldKey.currentState?.openDrawer(),
+          ),
+          const Expanded(
+            child: Center(
+              child: Text(
+                'Syncra',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 16,
+                  letterSpacing: -0.2,
+                ),
+              ),
+            ),
+          ),
+
+          GlassIconButton(
+            icon: Icons.more_vert_rounded,
+            iconSize: 20,
+            size: 42,
+            onTap: () => _showHeaderMenu(context),
+          ),
+          const SizedBox(width: 8),
+          GlassIconButton(
+            icon: Icons.close_rounded,
+            iconSize: 20,
+            size: 42,
+            onTap: () => Navigator.of(context).popUntil((r) => r.isFirst),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _GlowBlob extends StatelessWidget {
+  final Color color;
+  final double size;
+  const _GlowBlob({required this.color, required this.size});
+
+  @override
+  Widget build(BuildContext context) {
+    return IgnorePointer(
+      child: Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: RadialGradient(
+            colors: [
+              color.withValues(alpha: 0.35),
+              color.withValues(alpha: 0.0),
+            ],
+            stops: const [0.0, 1.0],
+          ),
+        ),
+      ),
+    );
+  }
+}
