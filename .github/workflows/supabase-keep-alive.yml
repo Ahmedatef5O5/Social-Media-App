@@ -1,0 +1,23 @@
+# .github/workflows/supabase-keep-alive.yml
+name: Supabase Keep-Alive
+
+on:
+  schedule:
+    - cron: '0 6 */3 * *'
+  workflow_dispatch: {}   
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase keep-alive function
+        run: |
+          response=$(curl -s -o /dev/null -w "%{http_code}" \
+            -X POST "${{ secrets.SUPABASE_FUNCTIONS_URL }}/keep-alive" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
+            -H "Content-Type: application/json")
+          echo "Response code: $response"
+          if [ "$response" -ne 200 ]; then
+            echo "Keep-alive ping failed with status $response"
+            exit 1
+          fi
