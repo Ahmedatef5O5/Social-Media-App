@@ -7,9 +7,11 @@ import 'package:social_media_app/core/themes/app_colors.dart';
 import 'package:social_media_app/core/themes/background_theme_widget.dart';
 import 'package:social_media_app/features/auth/data/models/user_data.dart';
 import 'package:social_media_app/features/profile/cubits/edit_profile_cubit/edit_profile_cubit.dart';
+import 'package:social_media_app/features/profile/models/social_platform_info.dart';
 import 'package:social_media_app/features/profile/widgets/edit_profile_action_btn.dart';
 import 'package:social_media_app/features/profile/widgets/edit_profile_form.dart';
 import 'package:social_media_app/features/profile/widgets/edit_profile_images_section.dart';
+import 'package:social_media_app/features/profile/widgets/edit_social_links_section.dart';
 import 'package:social_media_app/features/profile/widgets/image_picker_bottom_sheet.dart';
 import '../../../core/toast/app_toast.dart';
 
@@ -26,6 +28,7 @@ class _EditProfileViewState extends State<EditProfileView> {
   late TextEditingController _userNameController;
   late TextEditingController _titleController;
   late TextEditingController _bioController;
+  late Map<String, TextEditingController> _socialLinkControllers;
   //
   File? selectedProfileImage;
   File? selectedBackgroundImage;
@@ -71,6 +74,14 @@ class _EditProfileViewState extends State<EditProfileView> {
     );
     _titleController = TextEditingController(text: widget.userData?.title);
     _bioController = TextEditingController(text: widget.userData?.bio);
+
+    final existingSocialLinks = widget.userData?.socialLinks ?? const {};
+    _socialLinkControllers = {
+      for (final platform in SocialPlatformInfo.all)
+        platform.key: TextEditingController(
+          text: existingSocialLinks[platform.key],
+        ),
+    };
   }
 
   @override
@@ -80,6 +91,9 @@ class _EditProfileViewState extends State<EditProfileView> {
     _userNameController.dispose();
     _titleController.dispose();
     _bioController.dispose();
+    for (final controller in _socialLinkControllers.values) {
+      controller.dispose();
+    }
   }
 
   @override
@@ -145,7 +159,11 @@ class _EditProfileViewState extends State<EditProfileView> {
                       titleController: _titleController,
                       bioController: _bioController,
                     ),
-                    Gap(20),
+                    Gap(24),
+                    const Divider(),
+                    Gap(16),
+                    EditSocialLinksSection(controllers: _socialLinkControllers),
+                    Gap(8),
                     EditProfileActionButton(onPressed: () => _onSavePressed()),
                   ],
                 ),
@@ -158,6 +176,12 @@ class _EditProfileViewState extends State<EditProfileView> {
   }
 
   void _onSavePressed() {
+    final socialLinks = <String, String>{
+      for (final entry in _socialLinkControllers.entries)
+        if (entry.value.text.trim().isNotEmpty)
+          entry.key: entry.value.text.trim(),
+    };
+
     context.read<EditProfileCubit>().updateProfile(
       oldUser: widget.userData!,
       name: _nameController.text,
@@ -166,6 +190,7 @@ class _EditProfileViewState extends State<EditProfileView> {
       bio: _bioController.text,
       profileImage: selectedProfileImage,
       backgroundImage: selectedBackgroundImage,
+      socialLinks: socialLinks,
     );
   }
 }

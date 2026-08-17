@@ -187,6 +187,9 @@ abstract class UserColumns {
   // ── Presence Privacy (new) ──
   static const String presencePrivacy = 'presence_privacy';
   static const String presenceVisibleTo = 'presence_visible_to';
+
+  // --- Social Links for Users --
+  static const String socialLinks = 'social_links';
 }
 
 // subClass for stories column table
