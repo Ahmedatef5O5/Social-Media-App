@@ -62,7 +62,7 @@ class AiUsageSnapshot {
 
   Map<String, dynamic> toJson() => {
     'active_provider': activeProvider.wireValue,
-    'active_model_id': activeModelId, // [NEW]
+    'active_model_id': activeModelId,
     'used_today': usedToday,
     'daily_limit': dailyLimit,
     'bonus_granted': bonusGranted,
