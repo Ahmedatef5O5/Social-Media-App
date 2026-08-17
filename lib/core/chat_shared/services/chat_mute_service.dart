@@ -7,6 +7,6 @@ class ChatMuteService {
       'peer_id': peerId,
       'is_muted': muted,
       'updated_at': DateTime.now().toUtc().toIso8601String(),
-    });
+    }, onConflict: 'owner_id,peer_id');
   }
 }

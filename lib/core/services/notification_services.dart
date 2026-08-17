@@ -5,11 +5,14 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:hive/hive.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:social_media_app/core/router/app_routes.dart';
 import 'package:social_media_app/core/services/active_screen_tracker.dart';
 import 'package:social_media_app/core/toast/app_toast.dart';
 import 'package:social_media_app/features/single_chats/models/chat_user_model.dart';
 import 'package:social_media_app/features/stories/cubit/stories_cubit/stories_cubit.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../features/group_calls/models/group_call_model.dart';
 import '../../features/group_calls/views/incoming_group_call_screen.dart';
 import '../../features/group_chats/services/group_chat_services.dart';
@@ -19,13 +22,19 @@ import '../../features/posts/model/post_details_route_args.dart';
 import '../../features/posts/services/posts_services.dart';
 import '../../features/posts/views/post_details_view.dart';
 import '../../features/settings/repository/settings_repository.dart';
+import '../../features/single_chats/services/chat_services.dart';
 import '../../features/stories/model/story_model.dart';
+import '../cache/services/hive_cache_manager.dart';
 import '../cache/services/local_snapshot_store.dart';
+import '../chat_shared/services/chat_mute_service.dart';
 import '../helpers/chat_helper.dart';
+import '../secrets/app_secrets.dart';
 import '../supabase/supabase_provider.dart';
 import '../utilities/supabase_constants.dart';
 import 'incoming_call_navigation_guard.dart';
 import 'notification_avatar_builder.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:social_media_app/firebase_options.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -41,14 +50,239 @@ class _StoredMessage {
   });
 }
 
+// ============================================================================
+// TOP-LEVEL BACKGROUND FUNCTIONS (Must be outside any class)
+// ============================================================================
+
+@pragma('vm:entry-point')
+void onBgNotificationActionTapped(NotificationResponse response) async {
+  debugPrint(
+    '[NotifTap] Background action fired — actionId=${response.actionId}, payload=${response.payload}',
+  );
+  final actionId = response.actionId;
+  if (actionId == 'reply_action' ||
+      actionId == 'mark_read_action' ||
+      actionId == 'mute_action') {
+    await handleBackgroundChatAction(response);
+    return;
+  }
+  // For normal taps in background, we just route it.
+  NotificationService._handleTap(response);
+}
+
+Future<void> handleBackgroundChatAction(NotificationResponse response) async {
+  debugPrint('[BackgroundChatAction] fired — actionId=${response.actionId}');
+
+  final payload = response.payload;
+  if (payload == null) return;
+
+  final isGroup = payload.startsWith('group|');
+  final parts = payload.split('|');
+  if (parts.length < 4) return;
+
+  final conversationId = isGroup ? parts[1] : parts[0];
+  final conversationTitle = isGroup ? parts[2] : parts[1];
+  final latestMessageId = parts[3];
+
+  try {
+    WidgetsFlutterBinding.ensureInitialized();
+
+    try {
+      Firebase.app();
+    } catch (_) {
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
+    }
+    await NotificationService.instance.initialize(isBackground: true);
+
+    // 1. Hive Init
+    try {
+      final cacheDirectory = await getApplicationDocumentsDirectory();
+      Hive.init('${cacheDirectory.path}/${HiveCacheManager.cacheSubDirectory}');
+      await LocalSnapshotStore.instance.init();
+    } catch (e) {
+      debugPrint('[BackgroundChatAction] Hive init failed: $e');
+    }
+
+    // 2. Supabase Init
+    try {
+      Supabase.instance;
+    } catch (_) {
+      await Supabase.initialize(
+        url: AppSecrets.supabaseUrl,
+        anonKey: AppSecrets.supabaseAnonKey,
+      );
+    }
+
+    // FIX #2: Session restoration can lag behind Supabase.initialize()
+    // completing, especially cold-start (Terminated state). Retry briefly
+    // instead of trusting a single immediate read.
+    final currentUserId = await _resolveCurrentUserId();
+    if (currentUserId == null) {
+      debugPrint('[BackgroundChatAction] no restored session — aborting');
+      await NotificationService.instance._localNotifications.cancel(
+        conversationId.hashCode,
+      );
+      return;
+    }
+
+    // FIX #3: Each action now has its own try/catch so a failure in one
+    // step (e.g. cancelling the notification) can never mask whether the
+    // underlying data mutation (mute / mark-as-read / send) succeeded.
+    switch (response.actionId) {
+      case 'mark_read_action':
+        await _handleMarkAsRead(
+          isGroup: isGroup,
+          conversationId: conversationId,
+          currentUserId: currentUserId,
+        );
+        break;
+
+      case 'mute_action':
+        await _handleMute(isGroup: isGroup, conversationId: conversationId);
+        break;
+
+      case 'reply_action':
+        await _handleReply(
+          response: response,
+          parts: parts,
+          isGroup: isGroup,
+          conversationId: conversationId,
+          conversationTitle: conversationTitle,
+          latestMessageId: latestMessageId,
+          currentUserId: currentUserId,
+        );
+        break;
+    }
+  } catch (e, st) {
+    debugPrint('[BackgroundChatAction] UNCAUGHT ERROR: $e\n$st');
+    await NotificationService.instance._localNotifications.cancel(
+      conversationId.hashCode,
+    );
+  }
+}
+
+/// Retries reading the restored session for a short window to close the
+/// race between Supabase.initialize() resolving and GoTrue finishing
+/// local-storage session recovery in a cold background isolate.
+Future<String?> _resolveCurrentUserId() async {
+  for (var attempt = 0; attempt < 5; attempt++) {
+    final id = Supabase.instance.client.auth.currentUser?.id;
+    if (id != null) return id;
+    await Future.delayed(const Duration(milliseconds: 200));
+  }
+  return null;
+}
+
+Future<void> _handleMarkAsRead({
+  required bool isGroup,
+  required String conversationId,
+  required String currentUserId,
+}) async {
+  try {
+    if (!isGroup) {
+      await ChatServices().markMessagesAsRead(
+        senderId: conversationId,
+        currentUserId: currentUserId,
+      );
+    }
+    debugPrint('[BackgroundChatAction] mark_read_action → DB write OK');
+  } catch (e) {
+    debugPrint('[BackgroundChatAction] mark_read_action → DB write FAILED: $e');
+  } finally {
+    await NotificationService.instance.cancelNotificationsForSender(
+      conversationId,
+    );
+  }
+}
+
+Future<void> _handleMute({
+  required bool isGroup,
+  required String conversationId,
+}) async {
+  try {
+    if (isGroup) {
+      await GroupChatServices().toggleMute(conversationId, true);
+    } else {
+      await ChatMuteService().setMuted(peerId: conversationId, muted: true);
+    }
+    debugPrint('[BackgroundChatAction] mute_action → DB write OK');
+  } catch (e) {
+    debugPrint('[BackgroundChatAction] mute_action → DB write FAILED: $e');
+  } finally {
+    await NotificationService.instance.cancelNotificationsForSender(
+      conversationId,
+    );
+  }
+}
+
+Future<void> _handleReply({
+  required NotificationResponse response,
+  required List<String> parts,
+  required bool isGroup,
+  required String conversationId,
+  required String conversationTitle,
+  required String latestMessageId,
+  required String currentUserId,
+}) async {
+  final replyText = response.input?.trim();
+  if (replyText == null || replyText.isEmpty) {
+    await NotificationService.instance._localNotifications.cancel(
+      conversationId.hashCode,
+    );
+    return;
+  }
+
+  final avatarUrl = isGroup ? null : (parts.length > 2 ? parts[2] : null);
+
+  try {
+    final String newMessageId;
+    if (isGroup) {
+      final result = await GroupChatServices().sendGroupMessage(
+        groupId: conversationId,
+        groupName: conversationTitle,
+        text: replyText,
+      );
+      newMessageId = result.id;
+    } else {
+      newMessageId = await ChatServices().sendMessage(
+        senderId: currentUserId,
+        receiverId: conversationId,
+        text: replyText,
+        replyToMessageId: latestMessageId.isEmpty ? null : latestMessageId,
+      );
+    }
+
+    // This clears the native "sending…" spinner by replacing the
+    // notification in-place with the same ID, no actions, autoCancel true.
+    await NotificationService.instance._updateNotificationAfterReply(
+      conversationId: conversationId,
+      isGroup: isGroup,
+      conversationTitle: conversationTitle,
+      replyText: replyText,
+      avatarUrl: avatarUrl,
+      newMessageId: newMessageId,
+    );
+  } catch (e, st) {
+    debugPrint('[BackgroundChatAction] reply_action → send FAILED: $e\n$st');
+    // Send failed — clear the spinner by cancelling rather than leaving
+    // it stuck, since we have nothing successful to show.
+    await NotificationService.instance._localNotifications.cancel(
+      conversationId.hashCode,
+    );
+  }
+}
+
+// ============================================================================
+// MAIN SERVICE CLASS
+// ============================================================================
+
 class NotificationService {
   NotificationService._();
   static final NotificationService instance = NotificationService._();
 
-  static final Map<String, List<_StoredMessage>> _messagesByConversation = {};
-
   final NotificationAvatarBuilder _avatarBuilder = NotificationAvatarBuilder();
-
   final FlutterLocalNotificationsPlugin _localNotifications =
       FlutterLocalNotificationsPlugin();
   final FirebaseMessaging _fcm = FirebaseMessaging.instance;
@@ -76,7 +310,6 @@ class NotificationService {
       AndroidNotificationChannel(
         'chat_messages_channel',
         'Chat Messages',
-        description: 'New chat message notifications',
         importance: Importance.high,
         playSound: true,
         sound: const RawResourceAndroidNotificationSound('message_tone'),
@@ -115,10 +348,11 @@ class NotificationService {
     );
     const initSettings = InitializationSettings(android: androidInit);
 
+    // HERE IS THE FIX: Passing the top-level function directly.
     await _localNotifications.initialize(
       initSettings,
       onDidReceiveNotificationResponse: _onNotificationTapped,
-      onDidReceiveBackgroundNotificationResponse: _onBgNotificationTapped,
+      onDidReceiveBackgroundNotificationResponse: onBgNotificationActionTapped,
     );
 
     final androidPlugin =
@@ -141,7 +375,7 @@ class NotificationService {
 
   Future<void> cancelNotificationsForSender(String senderId) async {
     await _localNotifications.cancel(senderId.hashCode);
-    _messagesByConversation.remove(senderId);
+    await LocalSnapshotStore.instance.clear('notif_style_history_$senderId');
   }
 
   Future<void> cancelCallNotification(String callId) async {
@@ -458,8 +692,9 @@ class NotificationService {
 
     final String conversationTitle =
         isGroup ? (data['groupName'] ?? 'Group') : senderName;
+    final bool isForwarded = data['is_forwarded'] == 'true';
 
-    final String body =
+    final String rawBody =
         SettingsRepository.instance.messagePreviews
             ? _buildStyleBody(
               data['messageType'] ?? 'text',
@@ -467,6 +702,7 @@ class NotificationService {
             )
             : 'New message';
 
+    final String body = isForwarded ? '↪️ Forwarded: $rawBody' : rawBody;
     final String? avatarUrl = data['senderImageUrl'];
 
     Future<Uint8List> getGroupAvatarBitmap(
@@ -481,23 +717,18 @@ class NotificationService {
       return await _avatarBuilder.buildLetterAvatar(groupName);
     }
 
-    final stored = _messagesByConversation.putIfAbsent(
+    final stored = await _appendToMessageHistory(
       conversationId,
-      () => [],
-    );
-    stored.add(
       _StoredMessage(
         text: body,
         senderName: senderName,
         timestamp: DateTime.now().millisecondsSinceEpoch,
       ),
     );
-    if (stored.length > 7) stored.removeAt(0);
 
     final Uint8List senderBitmap = await _avatarBuilder.getAvatarBitmap(
       avatarUrl,
     );
-
     final Uint8List headerBitmap =
         isGroup
             ? await getGroupAvatarBitmap(
@@ -547,7 +778,34 @@ class NotificationService {
       autoCancel: true,
       ongoing: false,
       color: const Color(0xFF2196F3),
+      actions: [
+        const AndroidNotificationAction(
+          'mute_action',
+          'Mute',
+          showsUserInterface: false,
+          cancelNotification: true,
+        ),
+
+        AndroidNotificationAction(
+          'reply_action',
+          'Reply',
+          inputs: const [
+            AndroidNotificationActionInput(label: 'Type a message...'),
+          ],
+          showsUserInterface: false,
+          cancelNotification: false,
+          allowGeneratedReplies: false,
+        ),
+        const AndroidNotificationAction(
+          'mark_read_action',
+          'Mark as Read',
+          showsUserInterface: false,
+          cancelNotification: true,
+        ),
+      ],
     );
+
+    final String? latestMessageId = data['messageId'] as String?;
 
     await _localNotifications.show(
       conversationId.hashCode,
@@ -556,9 +814,47 @@ class NotificationService {
       NotificationDetails(android: androidDetails),
       payload:
           isGroup
-              ? 'group|$conversationId|$conversationTitle'
-              : '$conversationId|$senderName|$avatarUrl',
+              ? 'group|$conversationId|$conversationTitle|${latestMessageId ?? ''}'
+              : '$conversationId|$senderName|${avatarUrl ?? ''}|${latestMessageId ?? ''}',
     );
+  }
+
+  Future<List<_StoredMessage>> _appendToMessageHistory(
+    String conversationId,
+    _StoredMessage message,
+  ) async {
+    final key = 'notif_style_history_$conversationId';
+    final raw = LocalSnapshotStore.instance.readList(key);
+    final history =
+        raw
+            .map(
+              (m) => _StoredMessage(
+                text: m['text'] as String? ?? '',
+                senderName: m['senderName'] as String? ?? '',
+                timestamp:
+                    (m['timestamp'] as num?)?.toInt() ??
+                    DateTime.now().millisecondsSinceEpoch,
+              ),
+            )
+            .toList();
+
+    history.add(message);
+    if (history.length > 7) history.removeAt(0);
+
+    await LocalSnapshotStore.instance.saveList(
+      key,
+      history
+          .map(
+            (m) => {
+              'text': m.text,
+              'senderName': m.senderName,
+              'timestamp': m.timestamp,
+            },
+          )
+          .toList(),
+    );
+
+    return history;
   }
 
   Future<void> _hydrateMessageCache(
@@ -723,11 +1019,11 @@ class NotificationService {
 
     final String title =
         (data['title'] as String?)?.isNotEmpty == true
-            ? data['title']
+            ? data['title']!
             : actorName;
     final String body =
         (data['body'] as String?)?.isNotEmpty == true
-            ? data['body']
+            ? data['body']!
             : 'New notification';
 
     Uint8List avatarBitmap;
@@ -784,19 +1080,101 @@ class NotificationService {
         return '🖼️ GIF';
       case 'sticker':
         return '🏷️ Sticker';
+      case 'file':
+        return '📄 File';
       default:
         return body;
     }
   }
 
   @pragma('vm:entry-point')
-  static void _onNotificationTapped(NotificationResponse response) {
+  static void _onNotificationTapped(NotificationResponse response) async {
+    final actionId = response.actionId;
+    if (actionId == 'reply_action' ||
+        actionId == 'mark_read_action' ||
+        actionId == 'mute_action') {
+      await handleBackgroundChatAction(response);
+      return;
+    }
     _handleTap(response);
   }
 
-  @pragma('vm:entry-point')
-  static void _onBgNotificationTapped(NotificationResponse response) {
-    _handleTap(response);
+  Future<void> _updateNotificationAfterReply({
+    required String conversationId,
+    required bool isGroup,
+    required String conversationTitle,
+    required String replyText,
+    required String? avatarUrl,
+    required String newMessageId,
+  }) async {
+    final stored = await _appendToMessageHistory(
+      conversationId,
+      _StoredMessage(
+        text: replyText,
+        senderName: 'You',
+        timestamp: DateTime.now().millisecondsSinceEpoch,
+      ),
+    );
+
+    final Uint8List senderBitmap = await _avatarBuilder.getAvatarBitmap(
+      avatarUrl,
+    );
+    final Uint8List headerBitmap =
+        isGroup
+            ? (await _avatarBuilder.fetchBitmap(avatarUrl ?? '') ??
+                await _avatarBuilder.buildLetterAvatar(conversationTitle))
+            : senderBitmap;
+
+    const Person me = Person(name: 'You', important: true);
+    final Person remotePerson = Person(
+      name: conversationTitle,
+      icon: ByteArrayAndroidIcon(headerBitmap),
+    );
+
+    final List<Message> styleMessages =
+        stored.map((m) {
+          final isMine = m.senderName == 'You';
+          final text =
+              (isGroup && !isMine) ? '${m.senderName}: ${m.text}' : m.text;
+          return Message(
+            text,
+            DateTime.fromMillisecondsSinceEpoch(m.timestamp),
+            isMine ? null : remotePerson,
+          );
+        }).toList();
+
+    final messagingStyle = MessagingStyleInformation(
+      me,
+      conversationTitle: null,
+      groupConversation: false,
+      messages: styleMessages,
+    );
+
+    final androidDetails = AndroidNotificationDetails(
+      _messageChannel.id,
+      _messageChannel.name,
+      channelDescription: _messageChannel.description,
+      importance: Importance.high,
+      priority: Priority.high,
+      category: AndroidNotificationCategory.message,
+      icon: '@drawable/ic_notification',
+      largeIcon: ByteArrayAndroidBitmap(headerBitmap),
+      styleInformation: messagingStyle,
+      autoCancel: true,
+      ongoing: false,
+      color: const Color(0xFF2196F3),
+    );
+
+    await _localNotifications.show(
+      conversationId.hashCode,
+      conversationTitle,
+      replyText,
+      NotificationDetails(android: androidDetails),
+      payload:
+          isGroup
+              ? 'group|$conversationId|$conversationTitle|$newMessageId'
+              : '$conversationId|$conversationTitle|${avatarUrl ?? ''}|$newMessageId',
+    );
   }
 
   static void _handleTap(NotificationResponse response) {
@@ -861,11 +1239,6 @@ class NotificationService {
       final parts = payload.split('|');
       if (parts.length >= 6) {
         final callId = parts[1];
-        final callerId = parts[2];
-        final callerName = parts[3];
-        final callerAvatar = parts[4];
-        final callType = parts[5];
-
         if (response.actionId == 'decline_call') {
           _rejectCallViaRest(callId);
           return;
@@ -878,10 +1251,10 @@ class NotificationService {
                 AppRoutes.incomingCallRoute,
                 arguments: {
                   'callId': callId,
-                  'callerId': callerId,
-                  'callerName': callerName,
-                  'callerAvatar': callerAvatar,
-                  'callType': callType,
+                  'callerId': parts[2],
+                  'callerName': parts[3],
+                  'callerAvatar': parts[4],
+                  'callType': parts[5],
                 },
               )
               .then((_) => IncomingCallNavigationGuard.release(callId));
@@ -905,13 +1278,10 @@ class NotificationService {
     if (payload.startsWith('social|')) {
       final parts = payload.split('|');
       if (parts.length >= 2) {
-        final type = parts[1];
-        final referenceId = parts.length > 2 ? parts[2] : '';
-        final commentContext = parts.length > 6 ? parts[6] : null;
         _routeSocialEvent(
-          type: type,
-          referenceId: referenceId,
-          commentContext: commentContext,
+          type: parts[1],
+          referenceId: parts.length > 2 ? parts[2] : '',
+          commentContext: parts.length > 6 ? parts[6] : null,
         );
       }
       return;
@@ -981,7 +1351,6 @@ class NotificationService {
       }
       return;
     }
-
     if (notifType == 'group_message') {
       _openGroupChat(
         data['groupId'] as String? ?? '',
@@ -989,12 +1358,10 @@ class NotificationService {
       );
       return;
     }
-
     if (isSocialType(notifType)) {
-      final referenceId = _resolveReferenceId(data);
       _routeSocialEvent(
         type: notifType,
-        referenceId: referenceId,
+        referenceId: _resolveReferenceId(data),
         commentContext: data['context'] as String?,
       );
       return;
@@ -1078,8 +1445,7 @@ class NotificationService {
     PostDetailsActiveMode initialActiveMode = PostDetailsActiveMode.none,
   ]) async {
     final post = await PostsServices().fetchPostById(postId);
-    if (post == null) return; // post was deleted or unavailable — no-op
-
+    if (post == null) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       navigatorKey.currentState?.pushNamedAndRemoveUntil(
         AppRoutes.homeRoute,
