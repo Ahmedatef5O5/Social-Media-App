@@ -68,6 +68,7 @@ class AppImages {
   static const String microsoft = 'assets/icons/microsoft.png';
 
   // create post themes images
+  static const String storyIcon = 'assets/icons/story_icon.png';
   static const String textStoryIcon = 'assets/icons/textstory.png';
   static const String musicIcon = 'assets/icons/music.png';
 
