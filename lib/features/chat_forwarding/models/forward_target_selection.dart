@@ -2,12 +2,20 @@ class ForwardTargetSelection {
   final Set<String> userIds;
   final Map<String, String> groups; // groupId -> groupName
 
+  /// True when the user tapped the "AI Assistant" tile in the picker
+  /// instead of selecting people/groups. Mutually exclusive with
+  /// [userIds]/[groups] in practice — the picker disables normal
+  /// multi-select the moment this tile is tapped and pops immediately,
+  /// see ForwardTargetPickerView._aiTile.
+  final bool toAi;
+
   const ForwardTargetSelection({
     this.userIds = const {},
     this.groups = const {},
+    this.toAi = false,
   });
 
-  bool get isEmpty => userIds.isEmpty && groups.isEmpty;
+  bool get isEmpty => userIds.isEmpty && groups.isEmpty && !toAi;
   int get length => userIds.length + groups.length;
 }
 

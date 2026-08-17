@@ -94,6 +94,10 @@ class _ForwardTargetPickerViewState extends State<ForwardTargetPickerView> {
 
   int get _totalSelected => _selectedUserIds.length + _selectedGroupIds.length;
 
+  void _selectAi() {
+    Navigator.pop(context, const ForwardTargetSelection(toAi: true));
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -190,6 +194,19 @@ class _ForwardTargetPickerViewState extends State<ForwardTargetPickerView> {
                   ),
                 ),
               ),
+
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _sectionHeader('AI Assistant', theme),
+                  _aiTile(theme),
+                  const SizedBox(height: 4),
+                  const Divider(height: 17),
+                ],
+              ),
+            ),
 
             Expanded(
               child: _buildContent(displayedPeople, displayedGroups, theme),
@@ -379,6 +396,65 @@ class _ForwardTargetPickerViewState extends State<ForwardTargetPickerView> {
           isSelected
               ? const Icon(Icons.check_rounded, size: 16, color: Colors.white)
               : null,
+    );
+  }
+
+  Widget _aiTile(ThemeData theme) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: InkWell(
+        onTap: _selectAi,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          decoration: BoxDecoration(borderRadius: BorderRadius.circular(12)),
+          child: Row(
+            children: [
+              Container(
+                width: 46,
+                height: 46,
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [Color(0xFF7C5CFC), Color(0xFFDA7756)],
+                  ),
+                ),
+                child: const Icon(
+                  Icons.auto_awesome_rounded,
+                  color: Colors.white,
+                  size: 22,
+                ),
+              ),
+              const SizedBox(width: 14),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Syncra',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    Text(
+                      'Ask the AI assistant about this',
+                      style: TextStyle(fontSize: 12.5, color: Colors.grey),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.arrow_forward_ios_rounded,
+                size: 14,
+                color: Colors.grey.shade400,
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 

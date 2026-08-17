@@ -8,6 +8,7 @@ import 'package:social_media_app/features/chat_forwarding/models/forwardable_mes
 import 'package:social_media_app/features/chat_forwarding/services/forward_service.dart';
 import 'package:social_media_app/features/chat_forwarding/views/forward_target_picker_view.dart';
 import '../../../core/chat_shared/widgets/message_selection_header_bar.dart';
+import '../../ai_chat/views/ai_chat_view.dart';
 import '../../single_chats/cubit/chats_cubit/chats_cubit.dart';
 import '../cubit/group_details_cubit/group_details_cubit.dart';
 import '../cubit/group_list_cubit/group_list_cubit.dart';
@@ -59,6 +60,29 @@ class GroupChatAppBarSwitcher extends StatelessWidget
         selectedMessages
             .map((m) => ForwardableMessage.fromGroupMessage(m))
             .toList();
+
+    if (result.toAi) {
+      final draftText = forwardableMessages
+          .map((m) => m.text.trim())
+          .where((t) => t.isNotEmpty)
+          .join('\n\n');
+      if (draftText.isEmpty) {
+        if (context.mounted) {
+          AppToast.info(
+            "Syncra can't read media messages yet — try a text message.",
+          );
+        }
+        return;
+      }
+      if (context.mounted) {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => AiChatView(initialDraftText: draftText),
+          ),
+        );
+      }
+      return;
+    }
 
     try {
       await ForwardService().forwardMessages(

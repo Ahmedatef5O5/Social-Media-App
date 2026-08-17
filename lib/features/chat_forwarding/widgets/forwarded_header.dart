@@ -1,25 +1,27 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:social_media_app/core/widgets/app_avatar.dart';
 import '../../../core/constants/app_images.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/supabase/supabase_provider.dart';
 import '../../single_chats/models/chat_user_model.dart';
 import '../../profile/widgets/user_preview_dialog.dart';
 import '../../home/cubits/home_cubit/home_cubit.dart';
+import '../models/forwardable_message.dart';
 
 class ForwardedHeader extends StatefulWidget {
   final String originalSenderId;
   final String name;
   final String? avatarUrl;
-  final bool isMe;
+  final bool onColoredBubble;
 
   const ForwardedHeader({
     super.key,
     required this.originalSenderId,
     required this.name,
     this.avatarUrl,
-    required this.isMe,
+    required this.onColoredBubble,
   });
 
   @override
@@ -28,6 +30,7 @@ class ForwardedHeader extends StatefulWidget {
 
 class _ForwardedHeaderState extends State<ForwardedHeader> {
   late TapGestureRecognizer _nameTapRecognizer;
+  bool get _isAi => widget.originalSenderId == ForwardableMessage.aiSenderId;
 
   @override
   void initState() {
@@ -42,6 +45,8 @@ class _ForwardedHeaderState extends State<ForwardedHeader> {
   }
 
   void _onAvatarTap() {
+    if (_isAi) return; // no profile to show for Syncra
+
     final currentUserId = SupabaseProvider.id;
     final isOriginalSenderMe = widget.originalSenderId == currentUserId;
 
@@ -53,6 +58,8 @@ class _ForwardedHeaderState extends State<ForwardedHeader> {
   }
 
   void _onNameTap() {
+    if (_isAi) return; // no profile to show for Syncra
+
     final currentUserId = SupabaseProvider.id;
     final isOriginalSenderMe = widget.originalSenderId == currentUserId;
 
@@ -104,15 +111,18 @@ class _ForwardedHeaderState extends State<ForwardedHeader> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    final bubbleIsDark =
+        ThemeData.estimateBrightnessForColor(theme.primaryColor) ==
+        Brightness.dark;
+
     final labelColor =
-        widget.isMe
-            ? Colors.white.withValues(alpha: 0.9)
-            : Theme.of(context).primaryColor;
-    final hasAvatar = widget.avatarUrl?.isNotEmpty == true;
-    final ImageProvider avatarImageProvider =
-        hasAvatar
-            ? NetworkImage(widget.avatarUrl!) as ImageProvider
-            : const AssetImage(AppImages.defaultUserImg);
+        widget.onColoredBubble
+            ? (bubbleIsDark
+                ? Colors.white.withValues(alpha: 0.9)
+                : Colors.black.withValues(alpha: 0.75))
+            : theme.primaryColor;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 4, top: 1),
@@ -139,24 +149,50 @@ class _ForwardedHeaderState extends State<ForwardedHeader> {
             ),
             WidgetSpan(
               alignment: PlaceholderAlignment.middle,
-              child: GestureDetector(
-                onTap: _onAvatarTap,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 3),
-                  child: CircleAvatar(
-                    radius: 7.5,
-                    backgroundImage: avatarImageProvider,
-                  ),
-                ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 3),
+                child:
+                    _isAi
+                        ? const _AiAvatar()
+                        : AppAvatar(
+                          imageUrl: widget.avatarUrl,
+                          size: 15,
+                          onTap: _onAvatarTap,
+                        ),
               ),
             ),
             TextSpan(
               text: widget.name,
               style: const TextStyle(fontWeight: FontWeight.w700),
-              recognizer: _nameTapRecognizer,
+              recognizer: _isAi ? null : _nameTapRecognizer,
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _AiAvatar extends StatelessWidget {
+  const _AiAvatar();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 15,
+      height: 15,
+      decoration: const BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF7C5CFC), Color(0xFFDA7756)],
+        ),
+      ),
+      child: const Icon(
+        Icons.auto_awesome_rounded,
+        size: 9,
+        color: Colors.white,
       ),
     );
   }

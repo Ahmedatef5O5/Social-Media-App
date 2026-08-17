@@ -20,6 +20,7 @@ import '../../../core/services/active_screen_tracker.dart';
 import '../../../core/services/notification_services.dart';
 import '../../../core/themes/app_colors.dart';
 import '../../../core/toast/app_toast.dart';
+import '../../ai_chat/views/ai_chat_view.dart';
 import '../../group_chats/cubit/group_list_cubit/group_list_cubit.dart';
 import '../cubit/chats_cubit/chats_cubit.dart';
 import '../helper/blocked_single_chat_bar_widget.dart';
@@ -340,6 +341,29 @@ class _ChatDetailsViewState extends State<ChatDetailsView>
               ),
             )
             .toList();
+
+    if (result.toAi) {
+      final draftText = forwardableMessages
+          .map((m) => m.text.trim())
+          .where((t) => t.isNotEmpty)
+          .join('\n\n');
+      if (draftText.isEmpty) {
+        if (context.mounted) {
+          AppToast.info(
+            "Syncra can't read media messages yet — try a text message.",
+          );
+        }
+        return;
+      }
+      if (context.mounted) {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => AiChatView(initialDraftText: draftText),
+          ),
+        );
+      }
+      return;
+    }
 
     try {
       await ForwardService().forwardMessages(

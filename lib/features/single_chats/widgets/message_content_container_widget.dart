@@ -211,7 +211,7 @@ class _MessageContentContainerState extends State<MessageContentContainer> {
                           avatarUrl: widget.message.forwardedFromUserAvatar,
                           originalSenderId:
                               widget.message.forwardedFromUserId ?? '',
-                          isMe: widget.isMe,
+                          onColoredBubble: widget.isMe && !isStickerOrGif,
                         ),
                         regularContent,
                       ],
