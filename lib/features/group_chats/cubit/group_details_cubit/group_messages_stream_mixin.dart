@@ -126,14 +126,26 @@ mixin GroupMessagesStreamMixin on Cubit<GroupDetailsState> {
 
       if (!isFirstEventThisTime) {
         final existingIds = cachedMessages.map((m) => m.id).toSet();
-        final incomingIds = resolved.map((m) => m.id).toSet();
-        final hasGenuinelyNewMessages =
-            incomingIds.difference(existingIds).isNotEmpty;
+        final newIds = resolved
+            .map((m) => m.id)
+            .toSet()
+            .difference(existingIds);
 
-        if (!isAtBottomNotifier.value && hasGenuinelyNewMessages) {
+        final bool hasOwnNewMessage = resolved.any(
+          (m) => newIds.contains(m.id) && m.senderId == currentUserId,
+        );
+        final int otherNewCount =
+            resolved
+                .where(
+                  (m) => newIds.contains(m.id) && m.senderId != currentUserId,
+                )
+                .length;
+
+        if (!isAtBottomNotifier.value &&
+            otherNewCount > 0 &&
+            !hasOwnNewMessage) {
           _pendingMessagesSnapshot = resolved;
-          pendingNewCountNotifier.value =
-              incomingIds.difference(existingIds).length;
+          pendingNewCountNotifier.value = otherNewCount;
           if (_messagesSnapshotKey != null) {
             _persistMessagesSnapshot(_messagesSnapshotKey!, resolved);
           }

@@ -10,6 +10,7 @@ import '../../single_chats/widgets/chat_loading_skeleton.dart';
 import '../../single_chats/widgets/empty_placeholder_state.dart';
 import '../cubit/group_details_cubit/group_details_cubit.dart';
 import 'group_message_item_builder.dart';
+import 'group_presence_bubble_row.dart';
 
 class GroupMessagesList extends StatefulWidget {
   final ItemScrollController scrollController;
@@ -66,15 +67,17 @@ class _GroupMessagesListState extends State<GroupMessagesList> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-
       if (!isSyncConfirmedNow || justCrossedSyncBaseline) return;
-
       if (!isNewMessage || previousCount == 0) return;
 
       final lastMsg = messages.first;
 
-      if (lastMsg.senderId != currentUserId &&
-          _lastPlayedMessageId != lastMsg.id) {
+      if (lastMsg.senderId == currentUserId) {
+        widget.scrollToBottom();
+        return;
+      }
+
+      if (_lastPlayedMessageId != lastMsg.id) {
         _lastPlayedMessageId = lastMsg.id;
         _playNotificationSound();
       }
@@ -85,87 +88,99 @@ class _GroupMessagesListState extends State<GroupMessagesList> {
   Widget build(BuildContext context) {
     final cubit = context.read<GroupDetailsCubit>();
 
-    return ValueListenableBuilder<GroupPresenceSnapshot>(
-      valueListenable: cubit.listVisiblePresenceNotifier,
-      builder:
-          (context, presence, _) =>
-              BlocConsumer<GroupDetailsCubit, GroupDetailsState>(
-                listener: _handleNewMessages,
-                buildWhen:
-                    (prev, curr) =>
-                        curr is GroupDetailsLoaded ||
-                        curr is GroupDetailsLoading ||
-                        curr is GroupDetailsInitial ||
-                        curr is GroupDetailsError,
-                builder: (context, state) {
-                  final cubit = context.read<GroupDetailsCubit>();
-                  final bool hasCachedData = cubit.cachedMessages.isNotEmpty;
+    return Column(
+      children: [
+        Expanded(
+          child: BlocConsumer<GroupDetailsCubit, GroupDetailsState>(
+            listener: _handleNewMessages,
+            buildWhen:
+                (prev, curr) =>
+                    curr is GroupDetailsLoaded ||
+                    curr is GroupDetailsLoading ||
+                    curr is GroupDetailsInitial ||
+                    curr is GroupDetailsError,
+            builder: (context, state) {
+              final cubit = context.read<GroupDetailsCubit>();
+              final bool hasCachedData = cubit.cachedMessages.isNotEmpty;
 
-                  if (state is GroupDetailsLoading ||
-                      state is GroupDetailsInitial) {
-                    return const ChatLoadingSkeleton();
-                  }
-                  if (state is GroupDetailsError) {
-                    return Center(child: Text(state.message));
-                  }
-                  if ((state is GroupDetailsLoading ||
-                          state is GroupDetailsInitial) &&
-                      !hasCachedData) {
-                    return const ChatLoadingSkeleton();
-                  }
+              if (state is GroupDetailsLoading ||
+                  state is GroupDetailsInitial) {
+                return const ChatLoadingSkeleton();
+              }
+              if (state is GroupDetailsError) {
+                return Center(child: Text(state.message));
+              }
+              if ((state is GroupDetailsLoading ||
+                      state is GroupDetailsInitial) &&
+                  !hasCachedData) {
+                return const ChatLoadingSkeleton();
+              }
 
-                  final messages =
-                      state is GroupDetailsLoaded
-                          ? state.messages
-                          : cubit.cachedMessages;
+              final messages =
+                  state is GroupDetailsLoaded
+                      ? state.messages
+                      : cubit.cachedMessages;
 
-                  final isMember =
-                      state is GroupDetailsLoaded
-                          ? state.isMember
-                          : cubit.isMember;
+              final isMember =
+                  state is GroupDetailsLoaded ? state.isMember : cubit.isMember;
 
-                  if (messages.isEmpty && presence.isEmpty) {
-                    if (!cubit.hasConfirmedInitialLoad) {
-                      return const ChatLoadingSkeleton();
-                    }
-                    return _groupEmptyState(context);
-                  }
+              if (messages.isEmpty) {
+                if (!cubit.hasConfirmedInitialLoad) {
+                  return const ChatLoadingSkeleton();
+                }
+                return _groupEmptyState(context);
+              }
 
-                  return Stack(
-                    children: [
-                      ScrollablePositionedList.separated(
-                        reverse: true,
-                        itemScrollController: widget.scrollController,
-                        itemPositionsListener: widget.positionsListener,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
+              return Stack(
+                children: [
+                  ScrollablePositionedList.separated(
+                    reverse: true,
+                    itemScrollController: widget.scrollController,
+                    itemPositionsListener: widget.positionsListener,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    itemCount: messages.length,
+                    itemBuilder:
+                        (_, index) => GroupMessageItemBuilder(
+                          index: index,
+                          messages: messages,
+                          itemScrollController: widget.scrollController,
+                          isMember: isMember,
                         ),
-                        itemCount: messages.length + (presence.isEmpty ? 0 : 1),
-                        itemBuilder:
-                            (_, index) => GroupMessageItemBuilder(
-                              index: index,
-                              messages: messages,
-                              presence: presence,
-                              itemScrollController: widget.scrollController,
-                              isMember: isMember,
-                            ),
-                        separatorBuilder: (_, __) => const Gap(4),
-                      ),
+                    separatorBuilder: (_, __) => const Gap(4),
+                  ),
 
-                      Positioned(
-                        bottom: 10,
-                        left: 14,
-                        child: _ScrollToBottomButton(
-                          showNotifier: widget.showScrollButtonNotifier,
-                          countNotifier: cubit.pendingNewCountNotifier,
-                          onTap: widget.scrollToBottom,
-                        ),
-                      ),
-                    ],
-                  );
-                },
+                  Positioned(
+                    bottom: 10,
+                    left: 14,
+                    child: _ScrollToBottomButton(
+                      showNotifier: widget.showScrollButtonNotifier,
+                      countNotifier: cubit.pendingNewCountNotifier,
+                      onTap: widget.scrollToBottom,
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+        ),
+
+        ValueListenableBuilder<GroupPresenceSnapshot>(
+          valueListenable: cubit.listVisiblePresenceNotifier,
+          builder: (context, presence, _) {
+            if (presence.isEmpty) return const SizedBox.shrink();
+            return Padding(
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: GroupPresenceBubbleRow(snapshot: presence),
               ),
+            );
+          },
+        ),
+      ],
     );
   }
 
@@ -235,7 +250,6 @@ class _ScrollToBottomButton extends StatelessWidget {
                                   Positioned(
                                     top: -6,
                                     left: -4,
-                                    // right: -4,
                                     child: Container(
                                       constraints: const BoxConstraints(
                                         minWidth: 18,

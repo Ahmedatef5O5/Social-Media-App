@@ -65,7 +65,7 @@ class _GroupChatDetailsBodyState extends State<_GroupChatDetailsBody> {
     _groupDetailsCubit = context.read<GroupDetailsCubit>();
     context.read<GroupListCubit>().setActiveGroupId(widget.group.id);
     context.read<GroupDetailsCubit>().markRead();
-
+    _groupListCubit.resetGroupUnreadCount(widget.group.id);
     ActiveScreenTracker.setActiveGroupId(widget.group.id);
     _positionsListener.itemPositions.addListener(_scrollListener);
     _groupDetailsCubit.searchController.currentIndex.addListener(

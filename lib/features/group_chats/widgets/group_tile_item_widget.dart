@@ -8,7 +8,6 @@ import '../../../core/chat_shared/models/conversation_ref.dart';
 import '../../../core/helpers/formatted_date.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/supabase/supabase_provider.dart';
-import '../cubit/group_list_cubit/group_list_cubit.dart';
 import '../helpers/last_message_group_preview.dart';
 import '../models/group_model.dart';
 import 'presence_animated_subtitle.dart';
@@ -239,7 +238,6 @@ class GroupTileItem extends StatelessWidget {
                 context.read<ConversationSelectionCubit>().toggle(ref);
                 return;
               }
-              context.read<GroupListCubit>().resetGroupUnreadCount(group.id);
               Navigator.of(
                 context,
                 rootNavigator: true,

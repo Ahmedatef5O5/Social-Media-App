@@ -331,6 +331,31 @@ class _GroupMessageContentState extends State<GroupMessageContent> {
               itemScrollController: widget.itemScrollController,
             );
 
+    final Widget innerContent = Padding(
+      padding:
+          isStickerOrGif
+              ? EdgeInsets.zero
+              : (isImage || isVideo)
+              ? const EdgeInsets.all(3)
+              : const EdgeInsets.only(left: 10, right: 10, bottom: 8, top: 6),
+      child:
+          widget.message.isForwarded
+              ? Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ForwardedHeader(
+                    name: widget.message.forwardedFromUserName ?? 'Unknown',
+                    originalSenderId: widget.message.forwardedFromUserId ?? '',
+                    avatarUrl: widget.message.forwardedFromUserAvatar,
+                    onColoredBubble: widget.isMe && !isStickerOrGif,
+                  ),
+                  content,
+                ],
+              )
+              : content,
+    );
+
     return LayoutBuilder(
       builder: (context, constraints) {
         final double screenCap = MediaQuery.of(context).size.width * 0.70;
@@ -368,48 +393,18 @@ class _GroupMessageContentState extends State<GroupMessageContent> {
                     bottomRight: Radius.circular(widget.isMe ? 0 : 20),
                   ),
                 ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.only(
-                    topLeft: const Radius.circular(20),
-                    topRight: const Radius.circular(20),
-                    bottomLeft: Radius.circular(widget.isMe ? 20 : 0),
-                    bottomRight: Radius.circular(widget.isMe ? 0 : 20),
-                  ),
-                  child: Padding(
-                    padding:
-                        isStickerOrGif
-                            ? EdgeInsets.zero
-                            : (isImage || isVideo)
-                            ? const EdgeInsets.all(3)
-                            : const EdgeInsets.only(
-                              left: 10,
-                              right: 10,
-                              bottom: 8,
-                              top: 6,
-                            ),
-                    child:
-                        widget.message.isForwarded
-                            ? Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                ForwardedHeader(
-                                  name:
-                                      widget.message.forwardedFromUserName ??
-                                      'Unknown',
-                                  originalSenderId:
-                                      widget.message.forwardedFromUserId ?? '',
-                                  avatarUrl:
-                                      widget.message.forwardedFromUserAvatar,
-
-                                  isMe: widget.isMe,
-                                ),
-                                content,
-                              ],
-                            )
-                            : content,
-                  ),
-                ),
+                child:
+                    isStickerOrGif
+                        ? innerContent
+                        : ClipRRect(
+                          borderRadius: BorderRadius.only(
+                            topLeft: const Radius.circular(20),
+                            topRight: const Radius.circular(20),
+                            bottomLeft: Radius.circular(widget.isMe ? 20 : 0),
+                            bottomRight: Radius.circular(widget.isMe ? 0 : 20),
+                          ),
+                          child: innerContent,
+                        ),
               ),
             ),
 

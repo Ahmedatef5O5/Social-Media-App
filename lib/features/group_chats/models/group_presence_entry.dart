@@ -1,3 +1,4 @@
+import 'package:collection/collection.dart';
 import '../../../core/presence/model/chat_action_type.dart';
 
 class GroupPresenceEntry {
@@ -12,6 +13,18 @@ class GroupPresenceEntry {
     required this.actionType,
     this.userAvatar,
   });
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is GroupPresenceEntry &&
+          userId == other.userId &&
+          userName == other.userName &&
+          userAvatar == other.userAvatar &&
+          actionType == other.actionType);
+
+  @override
+  int get hashCode => Object.hash(userId, userName, userAvatar, actionType);
 }
 
 class GroupPresenceSnapshot {
@@ -30,4 +43,18 @@ class GroupPresenceSnapshot {
 
   int get activeActionCount =>
       byAction.values.where((l) => l.isNotEmpty).length;
+
+  static const _mapEquality =
+      MapEquality<ChatActionType, List<GroupPresenceEntry>>(
+        values: ListEquality<GroupPresenceEntry>(),
+      );
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is GroupPresenceSnapshot &&
+          _mapEquality.equals(byAction, other.byAction));
+
+  @override
+  int get hashCode => _mapEquality.hash(byAction);
 }
