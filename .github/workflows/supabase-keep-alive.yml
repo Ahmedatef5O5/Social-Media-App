@@ -1,4 +1,3 @@
-# .github/workflows/supabase-keep-alive.yml
 name: Supabase Keep-Alive
 
 on:
