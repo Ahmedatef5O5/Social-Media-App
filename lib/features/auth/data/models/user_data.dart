@@ -1,5 +1,4 @@
 import 'package:social_media_app/core/utilities/supabase_constants.dart';
-
 import '../../../../core/presence/model/presence_privacy.dart';
 
 class UserData {
@@ -14,6 +13,7 @@ class UserData {
   final DateTime? lastSeen;
   final PresencePrivacy presencePrivacy;
   final List<String> presenceVisibleTo;
+  final Map<String, String> socialLinks;
 
   const UserData({
     required this.id,
@@ -27,6 +27,7 @@ class UserData {
     this.lastSeen,
     this.presencePrivacy = PresencePrivacy.friends,
     this.presenceVisibleTo = const [],
+    this.socialLinks = const {},
   });
 
   Map<String, dynamic> toMap() {
@@ -42,6 +43,7 @@ class UserData {
       UserColumns.lastSeen: lastSeen,
       UserColumns.presencePrivacy: presencePrivacy.value,
       UserColumns.presenceVisibleTo: presenceVisibleTo,
+      UserColumns.socialLinks: socialLinks,
     };
   }
 
@@ -70,6 +72,9 @@ class UserData {
       presenceVisibleTo: List<String>.from(
         map[UserColumns.presenceVisibleTo] as List? ?? const [],
       ),
+      socialLinks: Map<String, String>.from(
+        (map[UserColumns.socialLinks] as Map?) ?? const {},
+      ),
     );
   }
 
@@ -85,6 +90,7 @@ class UserData {
     'last_seen': lastSeen?.toIso8601String(),
     'presence_privacy': presencePrivacy.value,
     'presence_visible_to': presenceVisibleTo,
+    'social_links': socialLinks,
   };
 
   factory UserData.fromCacheJson(Map<String, dynamic> map) {
@@ -107,6 +113,9 @@ class UserData {
       presenceVisibleTo: List<String>.from(
         map['presence_visible_to'] as List? ?? const [],
       ),
+      socialLinks: Map<String, String>.from(
+        (map['social_links'] as Map?) ?? const {},
+      ),
     );
   }
 
@@ -122,6 +131,7 @@ class UserData {
     final DateTime? lastSeen,
     PresencePrivacy? presencePrivacy,
     List<String>? presenceVisibleTo,
+    Map<String, String>? socialLinks,
   }) {
     return UserData(
       id: id ?? this.id,
@@ -135,6 +145,7 @@ class UserData {
       lastSeen: lastSeen ?? this.lastSeen,
       presencePrivacy: presencePrivacy ?? this.presencePrivacy,
       presenceVisibleTo: presenceVisibleTo ?? this.presenceVisibleTo,
+      socialLinks: socialLinks ?? this.socialLinks,
     );
   }
 }

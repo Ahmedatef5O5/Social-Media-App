@@ -35,6 +35,27 @@ class LinkPreviewService {
 
   final Map<String, Future<LinkPreviewData?>> _inFlight = {};
 
+  static const _authWalledDomains = ['linkedin.com'];
+
+  static const _genericGateTitleMarkers = [
+    'sign up',
+    'log in',
+    'log into',
+    'welcome back',
+    'join linkedin',
+    'authwall',
+  ];
+
+  bool _looksLikeGenericGatePage(String domain, String? title) {
+    final isAuthWalled = _authWalledDomains.any((d) => domain.contains(d));
+    if (!isAuthWalled) return false;
+
+    final normalizedTitle = (title ?? '').trim().toLowerCase();
+    if (normalizedTitle.isEmpty) return true;
+    if (normalizedTitle == 'linkedin') return true;
+    return _genericGateTitleMarkers.any(normalizedTitle.contains);
+  }
+
   LinkPreviewData? peek(String url) {
     if (_memoryCache.containsKey(url)) return _memoryCache[url];
 
@@ -53,6 +74,20 @@ class LinkPreviewService {
     final data = isFailure ? null : LinkPreviewData.fromCacheJson(cached);
     _memoryCache[url] = data;
     return data;
+  }
+
+  bool hasFreshCacheEntry(String url) {
+    if (_memoryCache.containsKey(url)) return true;
+
+    final cached = LocalSnapshotStore.instance.readObject(
+      '$_cacheKeyPrefix$url',
+    );
+    if (cached == null) return false;
+
+    final cachedAt = DateTime.tryParse(cached['cachedAt'] as String? ?? '');
+    final isFailure = cached['isFailure'] == true;
+    final ttl = isFailure ? _failureTtl : _successTtl;
+    return cachedAt != null && DateTime.now().difference(cachedAt) < ttl;
   }
 
   Future<LinkPreviewData?> fetch(String url) async {
@@ -98,6 +133,8 @@ class LinkPreviewService {
       );
       final html = response.data ?? '';
       final data = _parseHtml(url, html);
+
+      if (_looksLikeGenericGatePage(data.domain, data.title)) return null;
       return data.hasContent ? data : null;
     } catch (e) {
       debugPrint('[LinkPreviewService] direct fetch failed for $url: $e');
@@ -122,13 +159,17 @@ class LinkPreviewService {
         return null;
       }
 
+      final domain =
+          (d['domain'] as String?) ?? (Uri.tryParse(url)?.host ?? url);
+      if (_looksLikeGenericGatePage(domain, title)) return null;
+
       return LinkPreviewData(
         url: url,
         title: title,
         description: d['description'] as String?,
         imageUrl: imageUrl,
         siteName: d['site_name'] as String?,
-        domain: (d['domain'] as String?) ?? (Uri.tryParse(url)?.host ?? url),
+        domain: domain,
       );
     } catch (e) {
       debugPrint('[LinkPreviewService] edge function failed for $url: $e');

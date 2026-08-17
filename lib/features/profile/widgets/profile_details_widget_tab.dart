@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import '../../../core/themes/app_colors.dart';
 import '../../auth/data/models/user_data.dart';
+import '../models/social_platform_info.dart';
+import 'social_media_preview_card.dart';
 
 class ProfileDetailsWidgetTab extends StatelessWidget {
   final UserData user;
@@ -17,6 +19,14 @@ class ProfileDetailsWidgetTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final populatedSocialLinks =
+        SocialPlatformInfo.all
+            .where(
+              (platform) =>
+                  (user.socialLinks[platform.key] ?? '').trim().isNotEmpty,
+            )
+            .toList();
+
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(
         parent: ClampingScrollPhysics(),
@@ -39,6 +49,33 @@ class ProfileDetailsWidgetTab extends StatelessWidget {
         _buildInfoRow(CupertinoIcons.info, 'Bio', user.bio, context),
         const Gap(15),
         _buildInfoRow(CupertinoIcons.calendar, 'Joined', 'March 2026', context),
+
+        if (populatedSocialLinks.isNotEmpty) ...[
+          const Gap(25),
+          Row(
+            children: [
+              Icon(
+                Icons.share_rounded,
+                size: 18,
+                color: Theme.of(context).primaryColor,
+              ),
+              const Gap(8),
+              Text(
+                'Social Media',
+                style: Theme.of(
+                  context,
+                ).textTheme.headlineSmall!.copyWith(fontSize: 16),
+              ),
+            ],
+          ),
+          const Gap(14),
+          for (final platform in populatedSocialLinks)
+            SocialMediaPreviewCard(
+              platform: platform,
+              rawValue: user.socialLinks[platform.key]!.trim(),
+            ),
+        ],
+
         const Gap(50),
       ],
     );

@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:social_media_app/features/auth/data/models/user_data.dart';
 import 'package:social_media_app/features/profile/services/edit_profile_services.dart';
+import '../../../../core/utilities/supabase_constants.dart';
 part 'edit_profile_state.dart';
 
 class EditProfileCubit extends Cubit<EditProfileState> {
@@ -23,6 +24,7 @@ class EditProfileCubit extends Cubit<EditProfileState> {
     required String bio,
     File? profileImage,
     File? backgroundImage,
+    Map<String, String>? socialLinks,
   }) async {
     emit(EditProfileLoading());
     try {
@@ -59,6 +61,8 @@ class EditProfileCubit extends Cubit<EditProfileState> {
           'image_public_id': profileImagePublicId,
         if (backgroundImagePublicId != null)
           'background_image_public_id': backgroundImagePublicId,
+
+        if (socialLinks != null) UserColumns.socialLinks: socialLinks,
       };
       await _editProfileServices.updateUserData(oldUser.id, updates);
       final updatedUser = oldUser.copyWith(
@@ -68,6 +72,7 @@ class EditProfileCubit extends Cubit<EditProfileState> {
         bio: bio,
         imageUrl: profileImageUrl ?? oldUser.imageUrl,
         backgroundImageUrl: backgroundImageUrl ?? oldUser.backgroundImageUrl,
+        socialLinks: socialLinks ?? oldUser.socialLinks,
       );
       emit(EditProfileSuccess(updatedUser));
     } catch (e) {
