@@ -110,6 +110,7 @@ class _UserStoryGroupContainerState extends State<UserStoryGroupContainer>
       );
     } else {
       _isCompleted = true;
+      _dismissKeyboardIfOpen();
       widget.onAllStoriesComplete();
     }
   }
@@ -127,6 +128,7 @@ class _UserStoryGroupContainerState extends State<UserStoryGroupContainer>
         widget.userStories[_currentStoryIndex],
       );
     } else {
+      _dismissKeyboardIfOpen();
       widget.onPrevGroup();
     }
   }
@@ -135,6 +137,12 @@ class _UserStoryGroupContainerState extends State<UserStoryGroupContainer>
 
   void _resumeProgress() {
     if (_mediaReady) _progressController.forward();
+  }
+
+  void _dismissKeyboardIfOpen() {
+    if (MediaQuery.of(context).viewInsets.bottom > 0) {
+      FocusScope.of(context).unfocus();
+    }
   }
 
   @override
