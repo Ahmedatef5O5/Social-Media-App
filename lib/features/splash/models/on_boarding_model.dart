@@ -14,18 +14,18 @@ List<OnBoardingModel> onboardingPages = [
     image: AppImages.onBoardingOne,
     title: 'Find Friends & Get Inspiration',
     subTitle:
-        'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Erat vitae quis quam augue quam a.',
+        'Discover creative content, explore new ideas, and connect with a global community that shares your interests.',
   ),
   OnBoardingModel(
     image: AppImages.onBoardingTwo,
     title: 'Meet Awesome People & Enjoy yourself',
     subTitle:
-        'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Erat vitae quis quam augue quam a.',
+        'Expand your social network, engage in meaningful conversations, and share your favorite moments with others.',
   ),
   OnBoardingModel(
     image: AppImages.onBoardingThree,
-    title: 'Hangout with with Friends',
+    title: 'Hangout with Friends',
     subTitle:
-        'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Erat vitae quis quam augue quam a.',
+        'Stay close to your loved ones through seamless video, voice, and text chats no matter where you are.',
   ),
 ];

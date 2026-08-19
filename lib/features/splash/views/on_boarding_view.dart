@@ -39,7 +39,7 @@ class _OnBoardingViewState extends State<OnBoardingView> {
         child: Column(
           children: [
             Padding(
-              padding: const EdgeInsets.only(right: 8.5, top: 20.0),
+              padding: const EdgeInsets.only(right: 7.2, top: 26.0),
               child: Align(
                 alignment: Alignment.topRight,
                 child: TextButton(
@@ -49,7 +49,7 @@ class _OnBoardingViewState extends State<OnBoardingView> {
                     style: Theme.of(context).textTheme.titleMedium!.copyWith(
                       color: AppColors.grey,
                       fontWeight: FontWeight.bold,
-                      fontSize: 15,
+                      fontSize: 13,
                       letterSpacing: 1.3,
                     ),
                   ),
