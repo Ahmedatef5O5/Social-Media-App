@@ -341,14 +341,10 @@ class _TabUnreadBadge extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(right: 6),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+        padding: const EdgeInsets.all(4),
         constraints: const BoxConstraints(minWidth: 20, minHeight: 20),
         alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          shape: count > 99 ? BoxShape.rectangle : BoxShape.circle,
-          borderRadius: count > 99 ? BorderRadius.circular(10) : null,
-        ),
+        decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle),
         child: Text(
           count > 99 ? '99+' : '$count',
           style: TextStyle(

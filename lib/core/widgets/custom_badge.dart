@@ -38,7 +38,7 @@ class CustomBadge extends StatelessWidget {
           left: left,
           bottom: bottom,
           child: Container(
-            padding: const EdgeInsets.all(2),
+            padding: const EdgeInsets.all(1.5),
             decoration: BoxDecoration(
               color: Theme.of(context).primaryColor,
               shape: BoxShape.circle,
@@ -54,14 +54,18 @@ class CustomBadge extends StatelessWidget {
             child: Center(
               widthFactor: 1,
               heightFactor: 1,
-              child: Text(
-                count > 99 ? '99+' : '$count',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: fontSize ?? (size! * 0.5),
-                  fontWeight: FontWeight.bold,
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  count > 99 ? '99+' : '$count',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize:
+                        fontSize ?? (count > 99 ? size! * 0.42 : size! * 0.5),
+                    fontWeight: FontWeight.bold,
+                  ),
+                  textAlign: TextAlign.center,
                 ),
-                textAlign: TextAlign.center,
               ),
             ),
           ),
