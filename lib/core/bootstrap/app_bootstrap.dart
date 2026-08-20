@@ -19,66 +19,83 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../features/home/cubits/home_cubit/home_cubit.dart';
 import '../../features/posts/cubit/posts_cubit/posts_cubit.dart';
 import '../../features/stories/cubit/stories_cubit/stories_cubit.dart';
+import '../errors/supabase_error_mapper.dart';
 import '../supabase/supabase_provider.dart';
+import '../toast/app_toast.dart';
 
 Future<void> initializeApp() async {
   await _lockOrientation();
   AppSecrets.assertSecretsLoaded();
   await SettingsRepository.instance.init();
   await _initHiveCache();
-  await _initFirebase();
   await _initSupabase();
-  await _initNotifications();
+  await _safely('Firebase', _initFirebase);
+  await _safely('Notifications', _initNotifications);
   _initForegroundTask();
-  await PresenceService.instance.init();
+  await _safely('Presence', PresenceService.instance.init);
+
   _setupAuthListener();
 }
 
-void _setupAuthListener() {
-  SupabaseProvider.authChanges.listen((data) async {
-    final event = data.event;
-    final session = data.session;
+Future<void> _safely(String label, Future<void> Function() step) async {
+  try {
+    await step();
+  } catch (e, s) {
+    debugPrint('⚠️ Non-critical bootstrap step "$label" failed: $e\n$s');
+  }
+}
 
-    if (event == AuthChangeEvent.signedIn && session != null) {
-      debugPrint('✅ Logged in: ${session.user.email}');
-      await PresenceService.instance.init();
+void _setupAuthListener() {
+  SupabaseProvider.authChanges.listen(
+    (data) async {
+      final event = data.event;
+      final session = data.session;
+
+      if (event == AuthChangeEvent.signedIn && session != null) {
+        debugPrint('✅ Logged in: ${session.user.email}');
+        await PresenceService.instance.init();
+        final context = navigatorKey.currentContext;
+
+        if (context != null) {
+          if (!context.mounted) return;
+          _refetchSessionCubits(context);
+        }
+        return;
+      }
+      final bool looksLikeSignOut =
+          event == AuthChangeEvent.signedOut ||
+          (event == AuthChangeEvent.tokenRefreshed && session == null);
+
+      if (!looksLikeSignOut) {
+        return;
+      }
+      final bool isOnline = await NetworkStatusService.instance.isConnected();
+      if (!isOnline) {
+        debugPrint(
+          '⚠️ Auth event ($event) received while OFFLINE — ignoring, keeping cached session.',
+        );
+        return;
+      }
+
+      debugPrint('⚠️ Session expired or signed out. Redirecting to Login...');
+      await PresenceService.instance.dispose();
       final context = navigatorKey.currentContext;
 
       if (context != null) {
         if (!context.mounted) return;
-        _refetchSessionCubits(context);
+        _resetSessionCubits(context);
       }
-      return;
-    }
-    final bool looksLikeSignOut =
-        event == AuthChangeEvent.signedOut ||
-        (event == AuthChangeEvent.tokenRefreshed && session == null);
 
-    if (!looksLikeSignOut) {
-      return;
-    }
-    final bool isOnline = await NetworkStatusService.instance.isConnected();
-    if (!isOnline) {
-      debugPrint(
-        '⚠️ Auth event ($event) received while OFFLINE — ignoring, keeping cached session.',
+      navigatorKey.currentState?.pushNamedAndRemoveUntil(
+        AppRoutes.authRoute,
+        (route) => false,
       );
-      return;
-    }
-
-    debugPrint('⚠️ Session expired or signed out. Redirecting to Login...');
-    await PresenceService.instance.dispose();
-    final context = navigatorKey.currentContext;
-
-    if (context != null) {
-      if (!context.mounted) return;
-      _resetSessionCubits(context);
-    }
-
-    navigatorKey.currentState?.pushNamedAndRemoveUntil(
-      AppRoutes.authRoute,
-      (route) => false,
-    );
-  });
+    },
+    onError: (e, s) {
+      debugPrint('⚠️ Auth stream error: $e\n$s');
+      AppToast.error(SupabaseErrorMapper.toUserMessage(e));
+    },
+  );
 }
 
 void _resetSessionCubits(BuildContext context) {
@@ -112,6 +129,14 @@ Future<void> _lockOrientation() async {
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
+}
+
+Future<void> requestBatteryOptimizationExemptionIfNeeded() async {
+  final alreadyIgnoring =
+      await FlutterForegroundTask.isIgnoringBatteryOptimizations;
+  if (alreadyIgnoring) return;
+
+  await FlutterForegroundTask.requestIgnoreBatteryOptimization();
 }
 
 Future<void> _initFirebase() async {
