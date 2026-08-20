@@ -35,14 +35,7 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   Hive.init('${cacheDirectory.path}/${HiveCacheManager.cacheSubDirectory}');
   await LocalSnapshotStore.instance.init();
 
-  try {
-    Supabase.instance;
-  } catch (_) {
-    await Supabase.initialize(
-      url: AppSecrets.supabaseUrl,
-      anonKey: AppSecrets.supabaseAnonKey,
-    );
-  }
+  await ensureSupabaseReady();
 
   if (type == 'incoming_group_call') {
     await NotificationService.instance.showIncomingGroupCallNotification(

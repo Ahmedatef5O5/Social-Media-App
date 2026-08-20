@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:typed_data';
 import 'package:dio/dio.dart' as dio_pkg;
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -7,6 +8,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:hive/hive.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:social_media_app/core/router/app_routes.dart';
 import 'package:social_media_app/core/services/active_screen_tracker.dart';
 import 'package:social_media_app/core/toast/app_toast.dart';
@@ -26,7 +28,6 @@ import '../../features/single_chats/services/chat_services.dart';
 import '../../features/stories/model/story_model.dart';
 import '../cache/services/hive_cache_manager.dart';
 import '../cache/services/local_snapshot_store.dart';
-import '../chat_shared/services/chat_mute_service.dart';
 import '../helpers/chat_helper.dart';
 import '../secrets/app_secrets.dart';
 import '../supabase/supabase_provider.dart';
@@ -37,6 +38,32 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:social_media_app/firebase_options.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
+Future<void>? _supabaseInitFuture;
+
+Future<void> ensureSupabaseReady() {
+  if (_supabaseInitFuture != null) return _supabaseInitFuture!;
+
+  _supabaseInitFuture = () async {
+    try {
+      Supabase.instance.client;
+      return;
+    } catch (_) {}
+
+    try {
+      await Supabase.initialize(
+        url: AppSecrets.supabaseUrl,
+        anonKey: AppSecrets.supabaseAnonKey,
+      );
+    } catch (e) {
+      debugPrint('[Supabase] init failed in background isolate: $e');
+      _supabaseInitFuture = null;
+      rethrow;
+    }
+  }();
+
+  return _supabaseInitFuture!;
+}
 
 class _StoredMessage {
   final String text;
@@ -59,19 +86,55 @@ void onBgNotificationActionTapped(NotificationResponse response) async {
   debugPrint(
     '[NotifTap] Background action fired — actionId=${response.actionId}, payload=${response.payload}',
   );
-  final actionId = response.actionId;
-  if (actionId == 'reply_action' ||
-      actionId == 'mark_read_action' ||
-      actionId == 'mute_action') {
-    await handleBackgroundChatAction(response);
-    return;
+  try {
+    final actionId = response.actionId;
+    if (actionId == 'reply_action' ||
+        actionId == 'mark_read_action' ||
+        actionId == 'mute_action') {
+      await handleBackgroundChatAction(response);
+      return;
+    }
+    // For normal taps in background, we just route it.
+    NotificationService._handleTap(response);
+  } catch (e, st) {
+    debugPrint('[NotifTap] UNCAUGHT top-level error: $e\n$st');
   }
-  // For normal taps in background, we just route it.
-  NotificationService._handleTap(response);
+}
+
+Future<void> _ensureFirebaseReady() async {
+  try {
+    Firebase.app();
+  } catch (_) {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+  }
+}
+
+Future<void> _ensureHiveReady() async {
+  try {
+    final cacheDirectory = await getApplicationDocumentsDirectory();
+    Hive.init('${cacheDirectory.path}/${HiveCacheManager.cacheSubDirectory}');
+    await LocalSnapshotStore.instance.init();
+  } catch (e) {
+    debugPrint('[BackgroundChatAction] Hive init failed: $e');
+  }
+}
+
+Future<bool> _tryAcquireActionLock(String key) async {
+  final prefs = await SharedPreferences.getInstance();
+  final existing = prefs.getInt(key);
+  final now = DateTime.now().millisecondsSinceEpoch;
+  if (existing != null && now - existing < 8000) return false;
+  await prefs.setInt(key, now);
+  return true;
 }
 
 Future<void> handleBackgroundChatAction(NotificationResponse response) async {
-  debugPrint('[BackgroundChatAction] fired — actionId=${response.actionId}');
+  final entryTime = DateTime.now();
+  debugPrint(
+    '[BackgroundChatAction] ENTRY actionId=${response.actionId} at=$entryTime',
+  );
 
   final payload = response.payload;
   if (payload == null) return;
@@ -84,52 +147,43 @@ Future<void> handleBackgroundChatAction(NotificationResponse response) async {
   final conversationTitle = isGroup ? parts[2] : parts[1];
   final latestMessageId = parts[3];
 
+  final lockKey = 'action_lock_${response.actionId}_$conversationId';
+  if (!await _tryAcquireActionLock(lockKey)) {
+    debugPrint('[BackgroundChatAction] duplicate ${response.actionId} ignored');
+    return;
+  }
+
   try {
     WidgetsFlutterBinding.ensureInitialized();
 
-    try {
-      Firebase.app();
-    } catch (_) {
-      await Firebase.initializeApp(
-        options: DefaultFirebaseOptions.currentPlatform,
-      );
-    }
+    await _ensureFirebaseReady();
+
     await NotificationService.instance.initialize(isBackground: true);
 
-    // 1. Hive Init
-    try {
-      final cacheDirectory = await getApplicationDocumentsDirectory();
-      Hive.init('${cacheDirectory.path}/${HiveCacheManager.cacheSubDirectory}');
-      await LocalSnapshotStore.instance.init();
-    } catch (e) {
-      debugPrint('[BackgroundChatAction] Hive init failed: $e');
-    }
-
-    // 2. Supabase Init
-    try {
-      Supabase.instance;
-    } catch (_) {
-      await Supabase.initialize(
-        url: AppSecrets.supabaseUrl,
-        anonKey: AppSecrets.supabaseAnonKey,
+    if (response.actionId == 'mute_action' ||
+        response.actionId == 'mark_read_action') {
+      unawaited(
+        NotificationService.instance._stripActionsInstantly(
+          conversationId,
+          conversationTitle,
+        ),
       );
     }
 
-    // FIX #2: Session restoration can lag behind Supabase.initialize()
-    // completing, especially cold-start (Terminated state). Retry briefly
-    // instead of trusting a single immediate read.
+    await Future.wait([_ensureHiveReady(), ensureSupabaseReady()]);
+
     final currentUserId = await _resolveCurrentUserId();
     if (currentUserId == null) {
-      debugPrint('[BackgroundChatAction] no restored session — aborting');
+      debugPrint(
+        '[BackgroundChatAction] no restored session after '
+        '${DateTime.now().difference(entryTime).inMilliseconds}ms — aborting',
+      );
       await NotificationService.instance._localNotifications.cancel(
-        conversationId.hashCode,
+        NotificationService.createUniqueId(conversationId),
       );
       return;
     }
 
-    // FIX #3: Each action now has its own try/catch so a failure in one
-    // step (e.g. cancelling the notification) can never mask whether the
-    // underlying data mutation (mute / mark-as-read / send) succeeded.
     switch (response.actionId) {
       case 'mark_read_action':
         await _handleMarkAsRead(
@@ -138,11 +192,13 @@ Future<void> handleBackgroundChatAction(NotificationResponse response) async {
           currentUserId: currentUserId,
         );
         break;
-
       case 'mute_action':
-        await _handleMute(isGroup: isGroup, conversationId: conversationId);
+        await _handleMute(
+          isGroup: isGroup,
+          conversationId: conversationId,
+          currentUserId: currentUserId,
+        );
         break;
-
       case 'reply_action':
         await _handleReply(
           response: response,
@@ -155,22 +211,33 @@ Future<void> handleBackgroundChatAction(NotificationResponse response) async {
         );
         break;
     }
+
+    debugPrint(
+      '[BackgroundChatAction] EXIT actionId=${response.actionId} '
+      'elapsedMs=${DateTime.now().difference(entryTime).inMilliseconds}',
+    );
   } catch (e, st) {
-    debugPrint('[BackgroundChatAction] UNCAUGHT ERROR: $e\n$st');
+    debugPrint(
+      '[BackgroundChatAction] UNCAUGHT ERROR after '
+      '${DateTime.now().difference(entryTime).inMilliseconds}ms: $e\n$st',
+    );
     await NotificationService.instance._localNotifications.cancel(
-      conversationId.hashCode,
+      NotificationService.createUniqueId(conversationId),
     );
   }
 }
 
-/// Retries reading the restored session for a short window to close the
-/// race between Supabase.initialize() resolving and GoTrue finishing
-/// local-storage session recovery in a cold background isolate.
 Future<String?> _resolveCurrentUserId() async {
-  for (var attempt = 0; attempt < 5; attempt++) {
-    final id = Supabase.instance.client.auth.currentUser?.id;
-    if (id != null) return id;
-    await Future.delayed(const Duration(milliseconds: 200));
+  for (var attempt = 0; attempt < 12; attempt++) {
+    try {
+      final id = Supabase.instance.client.auth.currentUser?.id;
+      if (id != null) return id;
+    } catch (e) {
+      debugPrint(
+        '[BackgroundChatAction] Supabase not ready (attempt $attempt): $e',
+      );
+    }
+    await Future.delayed(const Duration(milliseconds: 250));
   }
   return null;
 }
@@ -181,13 +248,19 @@ Future<void> _handleMarkAsRead({
   required String currentUserId,
 }) async {
   try {
-    if (!isGroup) {
-      await ChatServices().markMessagesAsRead(
-        senderId: conversationId,
-        currentUserId: currentUserId,
-      );
+    if (isGroup) {
+      await GroupChatServices().markGroupMessagesRead(conversationId);
+    } else {
+      await Supabase.instance.client
+          .from('messages')
+          .update({'is_read': true})
+          .eq('sender_id', conversationId)
+          .eq('receiver_id', currentUserId)
+          .eq('is_read', false);
     }
-    debugPrint('[BackgroundChatAction] mark_read_action → DB write OK');
+    debugPrint(
+      '[BackgroundChatAction] mark_read_action → DB write OK (isGroup=$isGroup)',
+    );
   } catch (e) {
     debugPrint('[BackgroundChatAction] mark_read_action → DB write FAILED: $e');
   } finally {
@@ -200,14 +273,26 @@ Future<void> _handleMarkAsRead({
 Future<void> _handleMute({
   required bool isGroup,
   required String conversationId,
+  required String currentUserId,
 }) async {
   try {
     if (isGroup) {
-      await GroupChatServices().toggleMute(conversationId, true);
+      await Supabase.instance.client
+          .from('group_members')
+          .update({'is_muted': true})
+          .eq('group_id', conversationId)
+          .eq('user_id', currentUserId);
     } else {
-      await ChatMuteService().setMuted(peerId: conversationId, muted: true);
+      await Supabase.instance.client.from('chat_mutes').upsert({
+        'owner_id': currentUserId,
+        'peer_id': conversationId,
+        'is_muted': true,
+        'updated_at': DateTime.now().toUtc().toIso8601String(),
+      });
     }
-    debugPrint('[BackgroundChatAction] mute_action → DB write OK');
+    debugPrint(
+      '[BackgroundChatAction] mute_action → DB write OK (isGroup=$isGroup)',
+    );
   } catch (e) {
     debugPrint('[BackgroundChatAction] mute_action → DB write FAILED: $e');
   } finally {
@@ -229,15 +314,25 @@ Future<void> _handleReply({
   final replyText = response.input?.trim();
   if (replyText == null || replyText.isEmpty) {
     await NotificationService.instance._localNotifications.cancel(
-      conversationId.hashCode,
+      NotificationService.createUniqueId(conversationId),
     );
     return;
   }
 
-  final avatarUrl = isGroup ? null : (parts.length > 2 ? parts[2] : null);
+  final avatarUrl =
+      isGroup
+          ? (parts.length > 4 && parts[4].isNotEmpty ? parts[4] : null)
+          : (parts.length > 2 ? parts[2] : null);
 
   try {
     final String newMessageId;
+
+    final userFuture =
+        Supabase.instance.client
+            .from('users')
+            .select('image_url')
+            .eq('id', currentUserId)
+            .maybeSingle();
     if (isGroup) {
       final result = await GroupChatServices().sendGroupMessage(
         groupId: conversationId,
@@ -254,8 +349,9 @@ Future<void> _handleReply({
       );
     }
 
-    // This clears the native "sending…" spinner by replacing the
-    // notification in-place with the same ID, no actions, autoCancel true.
+    final userData = await userFuture;
+    final myAvatarUrl = userData?['image_url'] as String?;
+
     await NotificationService.instance._updateNotificationAfterReply(
       conversationId: conversationId,
       isGroup: isGroup,
@@ -263,13 +359,12 @@ Future<void> _handleReply({
       replyText: replyText,
       avatarUrl: avatarUrl,
       newMessageId: newMessageId,
+      myAvatarUrl: myAvatarUrl,
     );
   } catch (e, st) {
     debugPrint('[BackgroundChatAction] reply_action → send FAILED: $e\n$st');
-    // Send failed — clear the spinner by cancelling rather than leaving
-    // it stuck, since we have nothing successful to show.
     await NotificationService.instance._localNotifications.cancel(
-      conversationId.hashCode,
+      NotificationService.createUniqueId(conversationId),
     );
   }
 }
@@ -302,6 +397,14 @@ class NotificationService {
     'story_react',
     'message_react',
   };
+
+  static int createUniqueId(String input) {
+    int hash = 0;
+    for (int i = 0; i < input.length; i++) {
+      hash = 31 * hash + input.codeUnitAt(i);
+    }
+    return hash & 0x7FFFFFFF;
+  }
 
   static bool isSocialType(String type) =>
       _socialNotificationTypes.contains(type);
@@ -374,12 +477,42 @@ class NotificationService {
   }
 
   Future<void> cancelNotificationsForSender(String senderId) async {
-    await _localNotifications.cancel(senderId.hashCode);
-    await LocalSnapshotStore.instance.clear('notif_style_history_$senderId');
+    await _localNotifications.cancel(createUniqueId(senderId));
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('notif_style_history_$senderId');
+    unawaited(
+      LocalSnapshotStore.instance.clear('notif_style_history_$senderId'),
+    );
   }
 
   Future<void> cancelCallNotification(String callId) async {
-    await _localNotifications.cancel(callId.hashCode);
+    await _localNotifications.cancel(createUniqueId(callId));
+  }
+
+  Future<void> _stripActionsInstantly(
+    String conversationId,
+    String title,
+  ) async {
+    try {
+      await _localNotifications.show(
+        createUniqueId(conversationId),
+        title,
+        'Updating...',
+        const NotificationDetails(
+          android: AndroidNotificationDetails(
+            'chat_messages_channel',
+            'Chat Messages',
+            importance: Importance.high,
+            priority: Priority.high,
+            icon: '@drawable/ic_notification',
+            onlyAlertOnce: true,
+            actions: [],
+          ),
+        ),
+      );
+    } catch (e) {
+      debugPrint('[BackgroundChatAction] strip actions failed: $e');
+    }
   }
 
   Future<void> _requestPermissions() async {
@@ -532,7 +665,7 @@ class NotificationService {
     );
 
     await _localNotifications.show(
-      callId.hashCode,
+      createUniqueId(callId),
       callerName,
       subtitle,
       NotificationDetails(android: androidDetails),
@@ -616,7 +749,7 @@ class NotificationService {
     );
 
     await _localNotifications.show(
-      callId.hashCode,
+      createUniqueId(callId),
       groupName,
       subtitle,
       NotificationDetails(android: androidDetails),
@@ -760,8 +893,8 @@ class NotificationService {
 
     final messagingStyle = MessagingStyleInformation(
       me,
-      conversationTitle: null,
-      groupConversation: false,
+      conversationTitle: isGroup ? conversationTitle : null,
+      groupConversation: isGroup,
       messages: styleMessages,
     );
 
@@ -786,6 +919,14 @@ class NotificationService {
           cancelNotification: true,
         ),
 
+        // if (!isGroup)
+        const AndroidNotificationAction(
+          'mark_read_action',
+          'Mark as Read',
+          showsUserInterface: false,
+          cancelNotification: true,
+        ),
+
         AndroidNotificationAction(
           'reply_action',
           'Reply',
@@ -796,25 +937,21 @@ class NotificationService {
           cancelNotification: false,
           allowGeneratedReplies: false,
         ),
-        const AndroidNotificationAction(
-          'mark_read_action',
-          'Mark as Read',
-          showsUserInterface: false,
-          cancelNotification: true,
-        ),
       ],
     );
 
     final String? latestMessageId = data['messageId'] as String?;
+    final String? groupImageUrl = data['groupImageUrl'] as String?;
 
     await _localNotifications.show(
-      conversationId.hashCode,
+      createUniqueId(conversationId),
       conversationTitle,
       body,
       NotificationDetails(android: androidDetails),
+
       payload:
           isGroup
-              ? 'group|$conversationId|$conversationTitle|${latestMessageId ?? ''}'
+              ? 'group|$conversationId|$conversationTitle|${latestMessageId ?? ''}|${groupImageUrl ?? ''}'
               : '$conversationId|$senderName|${avatarUrl ?? ''}|${latestMessageId ?? ''}',
     );
   }
@@ -824,7 +961,18 @@ class NotificationService {
     _StoredMessage message,
   ) async {
     final key = 'notif_style_history_$conversationId';
-    final raw = LocalSnapshotStore.instance.readList(key);
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.reload();
+
+    final rawString = prefs.getString(key);
+    List<dynamic> raw = [];
+    if (rawString != null) {
+      try {
+        raw = jsonDecode(rawString) as List<dynamic>;
+      } catch (_) {}
+    }
+
     final history =
         raw
             .map(
@@ -839,19 +987,22 @@ class NotificationService {
             .toList();
 
     history.add(message);
+
     if (history.length > 7) history.removeAt(0);
 
-    await LocalSnapshotStore.instance.saveList(
+    await prefs.setString(
       key,
-      history
-          .map(
-            (m) => {
-              'text': m.text,
-              'senderName': m.senderName,
-              'timestamp': m.timestamp,
-            },
-          )
-          .toList(),
+      jsonEncode(
+        history
+            .map(
+              (m) => {
+                'text': m.text,
+                'senderName': m.senderName,
+                'timestamp': m.timestamp,
+              },
+            )
+            .toList(),
+      ),
     );
 
     return history;
@@ -922,7 +1073,8 @@ class NotificationService {
         };
       } else {
         final String? senderId = data['senderId'] as String?;
-        final String? currentUserId = SupabaseProvider.idOrNull;
+        final String? currentUserId =
+            Supabase.instance.client.auth.currentUser?.id;
         if (senderId == null || senderId.isEmpty || currentUserId == null) {
           return;
         }
@@ -1049,7 +1201,7 @@ class NotificationService {
     final String mentionContext = data['context'] ?? '';
 
     await _localNotifications.show(
-      '$type|$referenceId|$actorId'.hashCode,
+      createUniqueId('$type|$referenceId|$actorId'),
       title,
       body,
       NotificationDetails(android: androidDetails),
@@ -1106,6 +1258,7 @@ class NotificationService {
     required String replyText,
     required String? avatarUrl,
     required String newMessageId,
+    String? myAvatarUrl,
   }) async {
     final stored = await _appendToMessageHistory(
       conversationId,
@@ -1119,13 +1272,25 @@ class NotificationService {
     final Uint8List senderBitmap = await _avatarBuilder.getAvatarBitmap(
       avatarUrl,
     );
+
     final Uint8List headerBitmap =
         isGroup
-            ? (await _avatarBuilder.fetchBitmap(avatarUrl ?? '') ??
-                await _avatarBuilder.buildLetterAvatar(conversationTitle))
+            ? ((avatarUrl != null && avatarUrl.isNotEmpty)
+                ? (await _avatarBuilder.fetchBitmap(avatarUrl) ??
+                    await _avatarBuilder.buildLetterAvatar(conversationTitle))
+                : await _avatarBuilder.buildLetterAvatar(conversationTitle))
             : senderBitmap;
 
-    const Person me = Person(name: 'You', important: true);
+    final Uint8List myBitmap = await _avatarBuilder.getAvatarBitmap(
+      myAvatarUrl,
+    );
+
+    final Person me = Person(
+      name: 'You',
+      important: true,
+      icon: ByteArrayAndroidIcon(myBitmap),
+    );
+
     final Person remotePerson = Person(
       name: conversationTitle,
       icon: ByteArrayAndroidIcon(headerBitmap),
@@ -1145,8 +1310,8 @@ class NotificationService {
 
     final messagingStyle = MessagingStyleInformation(
       me,
-      conversationTitle: null,
-      groupConversation: false,
+      conversationTitle: isGroup ? conversationTitle : null,
+      groupConversation: isGroup,
       messages: styleMessages,
     );
 
@@ -1166,13 +1331,15 @@ class NotificationService {
     );
 
     await _localNotifications.show(
-      conversationId.hashCode,
+      createUniqueId(conversationId),
       conversationTitle,
       replyText,
       NotificationDetails(android: androidDetails),
+      // Keep the avatar threaded through so a *second* reply on the same
+      // notification (before the user reopens the app) still has it.
       payload:
           isGroup
-              ? 'group|$conversationId|$conversationTitle|$newMessageId'
+              ? 'group|$conversationId|$conversationTitle|$newMessageId|${avatarUrl ?? ''}'
               : '$conversationId|$conversationTitle|${avatarUrl ?? ''}|$newMessageId',
     );
   }
