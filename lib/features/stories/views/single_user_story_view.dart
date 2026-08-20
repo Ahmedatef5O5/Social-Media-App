@@ -203,6 +203,14 @@ class _SingleUserStoryViewState extends State<SingleUserStoryView>
                             color: Colors.white,
                             fontWeight: FontWeight.w500,
                           ),
+                          collapsedMaxLines: 9,
+                          onExpandChanged: (expanded) {
+                            if (expanded) {
+                              _pauseStory();
+                            } else {
+                              _resumeStory();
+                            }
+                          },
                           onMentionTap:
                               (userId, name) => _openProfile(context, userId),
                           onLinkTap: _showLinkPreviewSheet,
@@ -291,6 +299,14 @@ class _SingleUserStoryViewState extends State<SingleUserStoryView>
                                 color: Colors.white,
                                 fontSize: 16,
                               ),
+                              collapsedMaxLines: 9,
+                              onExpandChanged: (expanded) {
+                                if (expanded) {
+                                  _pauseStory();
+                                } else {
+                                  _resumeStory();
+                                }
+                              },
                               onMentionTap:
                                   (userId, name) =>
                                       _openProfile(context, userId),

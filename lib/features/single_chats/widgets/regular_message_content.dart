@@ -10,9 +10,12 @@ import 'package:social_media_app/features/single_chats/widgets/video_message_wid
 import 'package:social_media_app/features/single_chats/widgets/voice_message_bubble_widget.dart';
 import '../../../core/attachment/widgets/file_message_bubble.dart';
 import '../../../core/chat_shared/widgets/highlighted_linkify_text.dart';
+import '../../../core/helpers/link_color_helper.dart';
 import '../../../core/link/widgets/message_link_preview.dart';
+import '../../../core/widgets/read_more_text.dart';
 import '../../gifs/widgets/gif_message_bubble.dart';
 import '../../stickers/widgets/sticker_message_bubble.dart';
+import '../helper/chat_bubble_colors.dart';
 import '../models/message_model.dart';
 import 'message_time_and_status.dart';
 
@@ -53,8 +56,29 @@ class RegularMessageContent extends StatelessWidget {
           if (message.replyToMessageId != null)
             GestureDetector(
               onTap: () => _navigateToOriginalMessage(context),
-              child: SizedBox(
+              child: Container(
                 width: double.infinity,
+                margin:
+                    (isGif || isSticker)
+                        ? const EdgeInsets.only(bottom: 6)
+                        : null,
+                padding:
+                    (isGif || isSticker)
+                        ? const EdgeInsets.all(4)
+                        : EdgeInsets.zero,
+                decoration:
+                    (isGif || isSticker)
+                        ? BoxDecoration(
+                          color:
+                              isMe
+                                  ? Theme.of(context).primaryColor
+                                  : Theme.of(context).brightness ==
+                                      Brightness.light
+                                  ? Colors.grey.shade200
+                                  : Colors.grey.shade800,
+                          borderRadius: BorderRadius.circular(10),
+                        )
+                        : null,
                 child: ReplyBubblePreview(
                   replyText: message.replyToText,
                   replyType: message.replyToMessageType,
@@ -154,10 +178,14 @@ class RegularMessageContent extends StatelessWidget {
                     MessageLinkPreview(
                       text: displayDraft,
                       isMe: isMe,
-                      textWidget: _buildLinkifyText(context, displayDraft),
+                      textWidget: _buildLinkifyText(
+                        context,
+                        displayDraft,
+                        maxLines: 7,
+                      ),
                     )
                   else
-                    _buildLinkifyText(context, displayDraft),
+                    _buildLinkifyText(context, displayDraft, maxLines: 4),
 
                   Align(
                     alignment: Alignment.bottomRight,
@@ -222,30 +250,72 @@ class RegularMessageContent extends StatelessWidget {
     );
   }
 
-  Widget _buildLinkifyText(BuildContext context, String text) {
+  Widget _buildLinkifyText(
+    BuildContext context,
+    String text, {
+    required int maxLines,
+  }) {
     final searchController = context.read<ChatDetailsCubit>().searchController;
+    final linkColor = LinkColorHelper.forBubble(
+      isMe ? getSenderBubbleColor(context) : getReceiverBubbleColor(context),
+    );
+    final textStyle = Theme.of(context).textTheme.titleMedium!.copyWith(
+      color:
+          isMe
+              ? Theme.of(context).colorScheme.onPrimary
+              : Theme.of(context).colorScheme.onSurface,
+      fontSize: 15,
+      height: 1.3,
+      fontWeight: FontWeight.w500,
+    );
+
+    final double estimatedMaxWidth =
+        MediaQuery.sizeOf(context).width * 0.75 - 24;
 
     return ValueListenableBuilder<String>(
       valueListenable: searchController.query,
       builder: (context, query, _) {
-        return HighlightedLinkifyText(
+        if (query.isNotEmpty) {
+          return HighlightedLinkifyText(
+            text: text,
+            highlightQuery: query,
+            style: textStyle,
+            linkStyle: TextStyle(
+              color: linkColor,
+              fontWeight: FontWeight.w600,
+              decoration: TextDecoration.underline,
+              decorationColor: linkColor,
+              decorationThickness: 0.8,
+            ),
+          );
+        }
+
+        return ReadMoreText(
           text: text,
-          maxLines: 4,
-          overflow: TextOverflow.ellipsis,
-          highlightQuery: query,
-          style: Theme.of(context).textTheme.titleMedium!.copyWith(
+          style: textStyle,
+          textMaxWidth: estimatedMaxWidth,
+          collapsedMaxLines: maxLines,
+          toggleTextStyle: textStyle.copyWith(
+            fontWeight: FontWeight.w700,
             color:
                 isMe
-                    ? Theme.of(context).colorScheme.onPrimary
-                    : Theme.of(context).colorScheme.onSurface,
-            fontSize: 15,
-            height: 1.3,
-            fontWeight: FontWeight.w500,
+                    ? Theme.of(
+                      context,
+                    ).colorScheme.onPrimary.withValues(alpha: 0.75)
+                    : Theme.of(context).colorScheme.outline,
           ),
-          linkStyle: TextStyle(
-            color: isMe ? Colors.black45 : Colors.blue,
-            decorationColor: isMe ? Colors.black45 : Colors.blue,
-          ),
+          contentBuilder: (context, effectiveMaxLines, overflow) {
+            return HighlightedLinkifyText(
+              text: text,
+              maxLines: effectiveMaxLines,
+              overflow: overflow,
+              style: textStyle,
+              linkStyle: TextStyle(
+                color: isMe ? Colors.black45 : Colors.blue,
+                decorationColor: isMe ? Colors.black45 : Colors.blue,
+              ),
+            );
+          },
         );
       },
     );

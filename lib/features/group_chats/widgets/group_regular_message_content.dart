@@ -5,6 +5,7 @@ import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import 'package:social_media_app/core/mentions/widgets/mention_rich_text.dart';
 import 'package:social_media_app/core/router/app_routes.dart';
 import '../../../core/attachment/widgets/file_message_bubble.dart';
+import '../../../core/helpers/link_color_helper.dart';
 import '../../../core/link/widgets/message_link_preview.dart';
 import '../../../core/supabase/supabase_provider.dart';
 import '../../gifs/widgets/gif_message_bubble.dart';
@@ -19,6 +20,7 @@ import 'group_time_row.dart';
 import 'group_voice_message_bubble.dart';
 
 const double _kVoiceBubbleContentWidth = 220;
+const int _uncollapsedMaxLines = 1000;
 
 class GroupRegularMessageContent extends StatelessWidget {
   final GroupMessageModel message;
@@ -249,6 +251,7 @@ class GroupRegularMessageContent extends StatelessWidget {
                           primary: primary,
                           bubbleMaxWidth: bubbleMaxWidth,
                           message: message,
+                          collapsedMaxLines: 7,
                         ),
                       )
                     else
@@ -259,6 +262,7 @@ class GroupRegularMessageContent extends StatelessWidget {
                         primary: primary,
                         bubbleMaxWidth: bubbleMaxWidth,
                         message: message,
+                        collapsedMaxLines: 4,
                       ),
                     Align(alignment: Alignment.bottomRight, child: timeWidget),
                   ],
@@ -306,6 +310,7 @@ class _MentionRichText extends StatelessWidget {
     required this.primary,
     required this.bubbleMaxWidth,
     required this.message,
+    required this.collapsedMaxLines,
   });
 
   final String displayText;
@@ -314,6 +319,7 @@ class _MentionRichText extends StatelessWidget {
   final Color primary;
   final double bubbleMaxWidth;
   final GroupMessageModel message;
+  final int collapsedMaxLines;
 
   @override
   Widget build(BuildContext context) {
@@ -326,9 +332,12 @@ class _MentionRichText extends StatelessWidget {
           text: displayText,
           style: TextStyle(color: textColor, fontSize: 15, height: 1.3),
           mentionColor: isMe ? Colors.white : primary,
+          linkColor: LinkColorHelper.forBubble(isMe ? primary : Colors.grey),
           maxTextWidth: bubbleMaxWidth,
           mentions: message.mentions,
           highlightQuery: query,
+          collapsedMaxLines:
+              query.isNotEmpty ? _uncollapsedMaxLines : collapsedMaxLines,
           onMentionTap: (userId, name) {
             final currentUserId = SupabaseProvider.idOrNull;
             final navController = context.read<HomeCubit>().navController;
