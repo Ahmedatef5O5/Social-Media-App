@@ -1,3 +1,4 @@
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:social_media_app/core/widgets/cached_cloudinary_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -189,9 +190,9 @@ class GroupTileItem extends StatelessWidget {
                         const Gap(4),
                       ],
                       if (group.isMuted) ...[
-                        Icon(
-                          Icons.notifications_off_rounded,
-                          size: 16,
+                        FaIcon(
+                          FontAwesomeIcons.bellSlash,
+                          size: 12,
                           color: isDark ? Colors.white38 : Colors.black38,
                         ),
                         if (group.unreadCount > 0) const Gap(4),

@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import 'package:social_media_app/core/router/app_routes.dart';
+import '../../../core/chat_shared/helpers/muted_badge_icon.dart';
 import '../../../core/presence/model/chat_action_type.dart';
 import '../../../core/presence/widgets/presence_avatar_widget.dart';
 import '../../../core/presence/widgets/presence_status_text.dart';
@@ -83,43 +84,64 @@ class ReceiverDetailsHeaderSection extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(
-                    receiverUser.name,
-                    style: Theme.of(context).textTheme.titleSmall!.copyWith(
-                      color: Theme.of(context).primaryColor,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      overflow: TextOverflow.ellipsis,
-                    ),
+                  Row(
+                    children: [
+                      Flexible(
+                        child: Text(
+                          receiverUser.name,
+                          style: Theme.of(
+                            context,
+                          ).textTheme.titleSmall!.copyWith(
+                            color: Theme.of(context).primaryColor,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ),
+                      ValueListenableBuilder<bool>(
+                        valueListenable:
+                            context.read<ChatDetailsCubit>().muteStatus,
+                        builder:
+                            (context, isMuted, _) =>
+                                isMuted
+                                    ? const MutedBadgeIcon(size: 10)
+                                    : const SizedBox.shrink(),
+                      ),
+                    ],
                   ),
 
-                  ValueListenableBuilder<ChatActionType>(
-                    valueListenable:
-                        context.read<ChatDetailsCubit>().receiverAction,
-                    builder: (context, action, _) {
-                      if (action != ChatActionType.none) {
-                        return AnimatedActivityText(
-                          text:
-                              action == ChatActionType.recording
-                                  ? 'recording audio...'
-                                  : 'typing...',
-                          style: TextStyle(
-                            color:
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: AlignmentDirectional.centerStart,
+                    child: ValueListenableBuilder<ChatActionType>(
+                      valueListenable:
+                          context.read<ChatDetailsCubit>().receiverAction,
+                      builder: (context, action, _) {
+                        if (action != ChatActionType.none) {
+                          return AnimatedActivityText(
+                            text:
                                 action == ChatActionType.recording
-                                    ? Colors.red.shade700
-                                    : Colors.green,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                            fontStyle: FontStyle.italic,
-                          ),
+                                    ? 'recording audio...'
+                                    : 'typing...',
+                            style: TextStyle(
+                              color:
+                                  action == ChatActionType.recording
+                                      ? Colors.red.shade700
+                                      : Colors.green,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                              fontStyle: FontStyle.italic,
+                            ),
+                          );
+                        }
+                        return PresenceStatusText(
+                          userId: receiverUser.id,
+                          fallbackIsOnline: receiverUser.isOnline,
+                          fallbackLastSeen: receiverUser.lastSeen,
                         );
-                      }
-                      return PresenceStatusText(
-                        userId: receiverUser.id,
-                        fallbackIsOnline: receiverUser.isOnline,
-                        fallbackLastSeen: receiverUser.lastSeen,
-                      );
-                    },
+                      },
+                    ),
                   ),
                 ],
               ),

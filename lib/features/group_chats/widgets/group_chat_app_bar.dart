@@ -5,6 +5,7 @@ import 'package:gap/gap.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import 'package:social_media_app/features/group_calls/views/livekit_group_call_view.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../core/chat_shared/helpers/muted_badge_icon.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/services/active_call/active_call_session_data.dart';
 import '../../../core/services/active_call/cubit/active_call_session_cubit.dart';
@@ -94,7 +95,7 @@ class GroupChatAppBar extends StatelessWidget implements PreferredSizeWidget {
                           child:
                               !hasAvatar
                                   ? Text(
-                                    group.name[0].toUpperCase(),
+                                    updatedGroup.name[0].toUpperCase(),
                                     style: TextStyle(color: primary),
                                   )
                                   : null,
@@ -104,11 +105,23 @@ class GroupChatAppBar extends StatelessWidget implements PreferredSizeWidget {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
-                                group.name,
-                                style: Theme.of(context).textTheme.titleLarge!
-                                    .copyWith(color: primary),
-                                overflow: TextOverflow.ellipsis,
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Flexible(
+                                    child: Text(
+                                      updatedGroup.name,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .titleLarge!
+                                          .copyWith(color: primary),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  if (updatedGroup.isMuted)
+                                    const MutedBadgeIcon(size: 10),
+                                ],
                               ),
                               PresenceAnimatedSubtitle(
                                 presence: updatedGroup.presence,

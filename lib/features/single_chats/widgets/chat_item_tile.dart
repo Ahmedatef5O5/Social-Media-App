@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:gap/gap.dart';
 import '../../../core/chat_shared/cubits/conversation_selection_cubit/conversation_selection_cubit.dart';
 import '../../../core/chat_shared/models/conversation_ref.dart';
@@ -126,9 +127,9 @@ class ChatItemTile extends StatelessWidget {
                 const Gap(4),
               ],
               if (isMuted) ...[
-                const Icon(
-                  Icons.notifications_off_rounded,
-                  size: 16,
+                const FaIcon(
+                  FontAwesomeIcons.bellSlash,
+                  size: 12,
                   color: Colors.grey,
                 ),
                 if (user.unreadCount > 0) const Gap(4),

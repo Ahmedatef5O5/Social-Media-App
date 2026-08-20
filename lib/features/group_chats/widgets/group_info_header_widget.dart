@@ -2,12 +2,14 @@ import 'dart:math' as math;
 import 'dart:ui';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import '../../../core/chat_shared/helpers/muted_badge_icon.dart';
 import '../../../core/widgets/full_screen_image_viewer.dart';
 import '../models/group_model.dart';
 
-class GroupInfoHeader extends StatelessWidget {
+class GroupInfoHeaderWidget extends StatelessWidget {
   final GroupModel group;
   final bool isAdmin;
+  final bool isSavingName;
   final bool isEditingName;
   final bool isUploadingPhoto;
   final TextEditingController controller;
@@ -15,11 +17,13 @@ class GroupInfoHeader extends StatelessWidget {
   final VoidCallback onSubmit;
   final VoidCallback onChangePhoto;
   final VoidCallback onSettingsTap;
+  final bool isMuted;
 
-  const GroupInfoHeader({
+  const GroupInfoHeaderWidget({
     super.key,
     required this.group,
     required this.isAdmin,
+    required this.isSavingName,
     required this.isEditingName,
     required this.isUploadingPhoto,
     required this.controller,
@@ -27,6 +31,7 @@ class GroupInfoHeader extends StatelessWidget {
     required this.onSubmit,
     required this.onChangePhoto,
     required this.onSettingsTap,
+    required this.isMuted,
   });
 
   @override
@@ -43,8 +48,10 @@ class GroupInfoHeader extends StatelessWidget {
         onSubmit: onSubmit,
         onChangePhoto: onChangePhoto,
         onSettingsTap: onSettingsTap,
+        isMuted: isMuted,
         topPadding: MediaQuery.paddingOf(context).top,
         primary: Theme.of(context).primaryColor,
+        isSavingName: isSavingName,
       ),
     );
   }
@@ -61,12 +68,14 @@ class _GroupInfoHeaderDelegate extends SliverPersistentHeaderDelegate {
   final GroupModel group;
   final bool isAdmin;
   final bool isEditingName;
+  final bool isSavingName;
   final bool isUploadingPhoto;
   final TextEditingController controller;
   final VoidCallback onEditTap;
   final VoidCallback onSubmit;
   final VoidCallback onChangePhoto;
   final VoidCallback onSettingsTap;
+  final bool isMuted;
   final double topPadding;
   final Color primary;
 
@@ -74,12 +83,14 @@ class _GroupInfoHeaderDelegate extends SliverPersistentHeaderDelegate {
     required this.group,
     required this.isAdmin,
     required this.isEditingName,
+    required this.isSavingName,
     required this.isUploadingPhoto,
     required this.controller,
     required this.onEditTap,
     required this.onSubmit,
     required this.onChangePhoto,
     required this.onSettingsTap,
+    required this.isMuted,
     required this.topPadding,
     required this.primary,
   });
@@ -201,15 +212,25 @@ class _GroupInfoHeaderDelegate extends SliverPersistentHeaderDelegate {
                 opacity: smallTitleOpacity,
                 child: Align(
                   alignment: Alignment.centerLeft,
-                  child: Text(
-                    group.name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 17,
-                      fontWeight: FontWeight.w600,
-                    ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: [
+                      Flexible(
+                        child: Text(
+                          group.name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 17,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                      if (isMuted)
+                        const MutedBadgeIcon(size: 10, color: Colors.white70),
+                    ],
                   ),
                 ),
               ),
@@ -327,54 +348,100 @@ class _GroupInfoHeaderDelegate extends SliverPersistentHeaderDelegate {
   }
 
   Widget _buildBigTitle() {
+    final Widget nameSection;
+
     if (isEditingName) {
-      return Padding(
+      nameSection = Padding(
         padding: const EdgeInsets.symmetric(horizontal: 40),
-        child: TextField(
-          controller: controller,
-          autofocus: true,
-          textAlign: TextAlign.center,
-          onSubmitted: (_) => onSubmit(),
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
-          ),
-          decoration: const InputDecoration(
-            border: UnderlineInputBorder(
-              borderSide: BorderSide(color: Colors.white54),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+
+          children: [
+            Expanded(
+              child: TextField(
+                controller: controller,
+                autofocus: true,
+                textAlign: TextAlign.center,
+                onSubmitted: (_) => onSubmit(),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                ),
+                decoration: const InputDecoration(
+                  border: UnderlineInputBorder(
+                    borderSide: BorderSide(color: Colors.white54),
+                  ),
+                  isDense: true,
+                ),
+              ),
             ),
-            isDense: true,
-          ),
+            const SizedBox(width: 6),
+            isSavingName
+                ? const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
+                )
+                : IconButton(
+                  icon: const Icon(Icons.check, color: Colors.white, size: 20),
+                  onPressed: onSubmit,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                ),
+          ],
+        ),
+      );
+    } else {
+      nameSection = GestureDetector(
+        onTap: isAdmin ? onEditTap : null,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Flexible(
+              child: Text(
+                group.name,
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  shadows: [
+                    Shadow(
+                      color: Colors.black26,
+                      blurRadius: 4,
+                      offset: Offset(0, 2),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            if (isMuted) ...[
+              const SizedBox(width: 6),
+              const MutedBadgeIcon(size: 13, color: Colors.white70),
+              const SizedBox(width: 3),
+            ],
+
+            if (isAdmin) ...[
+              const SizedBox(width: 6),
+              const Icon(Icons.edit, color: Colors.white70, size: 15),
+            ],
+          ],
         ),
       );
     }
+
     return Column(
       mainAxisSize: MainAxisSize.min,
 
       children: [
-        GestureDetector(
-          onTap: isAdmin ? onEditTap : null,
-          child: Text(
-            group.name,
-            textAlign: TextAlign.center,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              shadows: [
-                Shadow(
-                  color: Colors.black26,
-                  blurRadius: 4,
-                  offset: Offset(0, 2),
-                ),
-              ],
-            ),
-          ),
-        ),
-
+        nameSection,
         if (group.title?.isNotEmpty == true) ...[
           const SizedBox(height: 4),
           Padding(

@@ -6,6 +6,7 @@ import 'package:social_media_app/core/helpers/formatted_date.dart';
 import 'package:social_media_app/features/single_chats/models/chat_block_status.dart';
 import 'package:social_media_app/features/single_chats/models/chat_user_model.dart';
 import '../../../core/cache/services/starred_message_store.dart';
+import '../../../core/chat_shared/helpers/muted_badge_icon.dart';
 import '../../../core/chat_shared/views/starred_messages_view.dart';
 import '../../../core/chat_shared/cubits/shared_media_cubit/shared_media_cubit.dart';
 import '../../../core/chat_shared/widgets/shared_media_preview_section.dart';
@@ -150,11 +151,27 @@ class _ReceiverProfileViewState extends State<ReceiverProfileView> {
               ],
             ),
             const Gap(10),
-            Text(
-              widget.receiverUser.name,
-              style: Theme.of(
-                context,
-              ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+
+              children: [
+                Flexible(
+                  child: Text(
+                    widget.receiverUser.name,
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                ValueListenableBuilder<bool>(
+                  valueListenable: context.read<ChatDetailsCubit>().muteStatus,
+                  builder:
+                      (context, isMuted, _) =>
+                          isMuted
+                              ? const MutedBadgeIcon(size: 10)
+                              : const SizedBox.shrink(),
+                ),
+              ],
             ),
             BlocBuilder<ChatDetailsCubit, ChatDetailsState>(
               builder: (context, state) {
@@ -251,11 +268,20 @@ class _ReceiverProfileViewState extends State<ReceiverProfileView> {
                   "Video",
                   () {},
                 ),
-                _buildOptionItem(
-                  context,
-                  Icons.notifications_off_outlined,
-                  "Mute",
-                  () {},
+                ValueListenableBuilder<bool>(
+                  valueListenable: context.read<ChatDetailsCubit>().muteStatus,
+                  builder: (context, isMuted, _) {
+                    return _buildOptionItem(
+                      context,
+                      isMuted
+                          ? Icons.notifications_off
+                          : Icons.notifications_off_outlined,
+                      isMuted ? "Unmute" : "Mute",
+                      () => context.read<ChatDetailsCubit>().toggleMute(
+                        receiverId: widget.receiverUser.id,
+                      ),
+                    );
+                  },
                 ),
               ],
             ),
