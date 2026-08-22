@@ -4,9 +4,17 @@ import 'package:shimmer/shimmer.dart';
 
 class ChatBubbleShimmer extends StatelessWidget {
   final bool isMe;
-  final int index;
+  final bool showAvatar;
+  final double widthMultiplier;
+  final bool isDateSeparator;
 
-  const ChatBubbleShimmer({super.key, required this.isMe, required this.index});
+  const ChatBubbleShimmer({
+    super.key,
+    required this.isMe,
+    this.showAvatar = false,
+    this.widthMultiplier = 0.5,
+    this.isDateSeparator = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -14,21 +22,44 @@ class ChatBubbleShimmer extends StatelessWidget {
     final baseColor = isDark ? Colors.grey[850]! : Colors.grey[300]!;
     final highlightColor = isDark ? Colors.grey[700]! : Colors.grey[100]!;
 
-    double widthMultiplier = (index % 2 == 0) ? 0.4 : 0.6;
+    if (isDateSeparator) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        child: Center(
+          child: _shimmerElement(
+            24,
+            110,
+            BoxShape.rectangle,
+            baseColor,
+            highlightColor,
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      );
+    }
 
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
+      padding: EdgeInsets.only(bottom: showAvatar || isMe ? 12 : 2),
       child: Row(
         mainAxisAlignment:
             isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           if (!isMe) ...[
-            _shimmerElement(35, 35, BoxShape.circle, baseColor, highlightColor),
+            if (showAvatar)
+              _shimmerElement(
+                35,
+                35,
+                BoxShape.circle,
+                baseColor,
+                highlightColor,
+              )
+            else
+              const SizedBox(width: 35),
             const Gap(8),
           ],
           _shimmerElement(
-            50,
+            45,
             MediaQuery.of(context).size.width * widthMultiplier,
             BoxShape.rectangle,
             baseColor,
@@ -36,8 +67,8 @@ class ChatBubbleShimmer extends StatelessWidget {
             borderRadius: BorderRadius.only(
               topLeft: const Radius.circular(20),
               topRight: const Radius.circular(20),
-              bottomLeft: Radius.circular(isMe ? 20 : 0),
-              bottomRight: Radius.circular(isMe ? 0 : 20),
+              bottomLeft: Radius.circular(isMe ? 20 : (showAvatar ? 4 : 20)),
+              bottomRight: Radius.circular(isMe ? 4 : 20),
             ),
           ),
         ],

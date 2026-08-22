@@ -131,59 +131,57 @@ class ChatBubbleState extends State<ChatBubble>
       context: context,
       backgroundColor: AppColors.transparent,
       builder:
-          (ctx) => Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Theme.of(context).scaffoldBackgroundColor,
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(16),
-              ),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (!isCall)
-                  ListTile(
-                    leading: const Icon(Icons.reply_all_outlined),
-                    title: const Text('Replay'),
-                    onTap: () {
-                      Navigator.pop(ctx);
-                      widget.onReply?.call(widget.message);
-                    },
-                  ),
-                if (widget.isMe &&
-                    (widget.message.messageType == 'text' ||
-                        widget.message.caption != null))
-                  ListTile(
-                    leading: const Icon(Icons.edit_outlined),
-                    title: const Text('Edit message'),
-                    onTap: () {
-                      Navigator.pop(ctx);
-                      widget.onEdit?.call(widget.message);
-                    },
-                  ),
-                if (widget.isMe)
-                  ListTile(
-                    leading: const Icon(Icons.delete_outline),
-                    title: Text(
-                      'Delete message',
-                      style: Theme.of(
-                        context,
-                      ).textTheme.titleMedium!.copyWith(color: Colors.red),
+          (ctx) => Material(
+            color: Theme.of(context).scaffoldBackgroundColor,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (!isCall)
+                    ListTile(
+                      leading: const Icon(Icons.reply_all_outlined),
+                      title: const Text('Reply'),
+                      onTap: () {
+                        Navigator.pop(ctx);
+                        widget.onReply?.call(widget.message);
+                      },
                     ),
-                    onTap: () {
-                      Navigator.pop(ctx);
-                      final receiverId =
-                          widget.isMe
-                              ? widget.message.receiverId
-                              : widget.message.senderId;
-                      context.read<ChatDetailsCubit>().deleteMessage(
-                        messageId: widget.message.id,
-                        receiverId: receiverId,
-                      );
-                    },
-                  ),
-              ],
+                  if (widget.isMe &&
+                      (widget.message.messageType == 'text' ||
+                          widget.message.caption != null))
+                    ListTile(
+                      leading: const Icon(Icons.edit_outlined),
+                      title: const Text('Edit message'),
+                      onTap: () {
+                        Navigator.pop(ctx);
+                        widget.onEdit?.call(widget.message);
+                      },
+                    ),
+                  if (widget.isMe)
+                    ListTile(
+                      leading: const Icon(Icons.delete_outline),
+                      title: Text(
+                        'Delete message',
+                        style: Theme.of(
+                          context,
+                        ).textTheme.titleMedium!.copyWith(color: Colors.red),
+                      ),
+                      onTap: () {
+                        Navigator.pop(ctx);
+                        final receiverId =
+                            widget.isMe
+                                ? widget.message.receiverId
+                                : widget.message.senderId;
+                        context.read<ChatDetailsCubit>().deleteMessage(
+                          messageId: widget.message.id,
+                          receiverId: receiverId,
+                        );
+                      },
+                    ),
+                ],
+              ),
             ),
           ),
     );
