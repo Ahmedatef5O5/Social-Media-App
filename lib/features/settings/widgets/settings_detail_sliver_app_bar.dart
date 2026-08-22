@@ -23,7 +23,7 @@ class SettingsDetailSliverAppBar extends StatelessWidget {
     final double minHeight = statusBarHeight + 60.0;
 
     return SliverAppBar(
-      expandedHeight: 120,
+      expandedHeight: 135,
       collapsedHeight: 60,
       pinned: true,
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -41,7 +41,7 @@ class SettingsDetailSliverAppBar extends StatelessWidget {
 
           return FlexibleSpaceBar(
             collapseMode: CollapseMode.parallax,
-            titlePadding: const EdgeInsets.only(left: 52, bottom: 20),
+            titlePadding: const EdgeInsets.only(left: 52, bottom: 18),
             title: AnimatedOpacity(
               duration: const Duration(milliseconds: 200),
               opacity: titleOpacity,
@@ -80,13 +80,18 @@ class SettingsDetailSliverAppBar extends StatelessWidget {
                             fontSize: 26,
                             fontWeight: FontWeight.w800,
                             letterSpacing: -0.6,
+                            height: 1.2,
                             color: isDark ? Colors.white : Colors.black87,
                           ),
                         ),
+                        const Gap(4),
                         Text(
                           subtitle,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                             fontSize: 13,
+                            height: 1.4, //
                             color:
                                 isDark ? Colors.white38 : Colors.grey.shade500,
                           ),

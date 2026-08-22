@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/constants/app_images.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/widgets/cached_cloudinary_image.dart';
 import '../../group_chats/models/group_model.dart';
@@ -27,16 +28,7 @@ class GroupSearchResultTile extends StatelessWidget {
                     fit: BoxFit.cover,
                     isAvatar: true,
                   )
-                  : Center(
-                    child: Text(
-                      group.name.isNotEmpty ? group.name[0].toUpperCase() : 'G',
-                      style: TextStyle(
-                        color: primary,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 18,
-                      ),
-                    ),
-                  ),
+                  : Image.asset(AppImages.defaultGroupImg, fit: BoxFit.cover),
         ),
       ),
       title: Text(
