@@ -2,11 +2,15 @@ import 'dart:async';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../../core/errors/supabase_error_mapper.dart';
+import '../../../../core/toast/app_toast.dart';
 import '../../../../features/group_chats/cubit/group_list_cubit/group_list_cubit.dart';
 import '../../../../features/group_chats/models/group_model.dart';
 import '../../../../features/group_chats/services/group_chat_services.dart';
 import '../../../../features/single_chats/cubit/chats_cubit/chats_cubit.dart';
 import '../../../../features/single_chats/models/chat_user_model.dart';
+import '../../../supabase/supabase_provider.dart';
 import '../../models/conversation_flags.dart';
 import '../../models/conversation_item.dart';
 import '../../models/conversation_ref.dart';
@@ -22,9 +26,12 @@ class ConversationsCubit extends Cubit<ConversationsState> {
 
   StreamSubscription? _chatsSub;
   StreamSubscription? _groupsSub;
+  RealtimeChannel? _chatMutesChannel;
 
   List<ChatUserModel> _rawChats = [];
   List<GroupModel> _rawGroups = [];
+
+  final Map<String, bool> _liveSingleChatMutes = {};
 
   ConversationsCubit({
     required this.chatsCubit,
@@ -43,7 +50,62 @@ class ConversationsCubit extends Cubit<ConversationsState> {
       _recompute();
     });
 
+    _subscribeSingleChatMutes();
     _recompute();
+  }
+
+  void _subscribeSingleChatMutes() {
+    final currentUserId = SupabaseProvider.id;
+    final supabase = SupabaseProvider.client;
+
+    final channelName = 'conversations_chat_mutes_$currentUserId';
+    supabase.removeChannel(supabase.channel(channelName));
+    _chatMutesChannel =
+        supabase.channel(channelName)
+          ..onPostgresChanges(
+            event: PostgresChangeEvent.all,
+            schema: 'public',
+            table: 'chat_mutes',
+            callback: (payload) {
+              final row =
+                  payload.eventType == PostgresChangeEvent.delete
+                      ? payload.oldRecord
+                      : payload.newRecord;
+              final ownerId = row['owner_id'] as String?;
+              if (ownerId != currentUserId) return;
+
+              final peerId = row['peer_id'] as String?;
+              if (peerId == null) return;
+
+              if (payload.eventType == PostgresChangeEvent.delete) {
+                _liveSingleChatMutes.remove(peerId);
+              } else {
+                _liveSingleChatMutes[peerId] =
+                    row['is_muted'] as bool? ?? false;
+              }
+              _recompute();
+            },
+          )
+          ..subscribe();
+
+    _loadInitialSingleChatMutes();
+  }
+
+  Future<void> _loadInitialSingleChatMutes() async {
+    try {
+      final rows = await SupabaseProvider.client
+          .from('chat_mutes')
+          .select('peer_id, is_muted')
+          .eq('owner_id', SupabaseProvider.id);
+      for (final row in (rows as List)) {
+        final peerId = row['peer_id'] as String?;
+        if (peerId == null) continue;
+        _liveSingleChatMutes[peerId] = row['is_muted'] as bool? ?? false;
+      }
+      _recompute();
+    } catch (e) {
+      debugPrint('[ConversationsCubit] initial chat_mutes load failed: $e');
+    }
   }
 
   List<ChatUserModel> _extractChats(ChatsState s) =>
@@ -57,7 +119,14 @@ class ConversationsCubit extends Cubit<ConversationsState> {
 
     final chatItems = _rawChats.map((c) {
       final ref = ConversationRef(type: ConversationType.single, id: c.id);
-      return ConversationItem.fromChat(c, store.flagsFor(ref));
+      var flags = store.flagsFor(ref);
+
+      final liveMuted = _liveSingleChatMutes[c.id];
+      if (liveMuted != null) {
+        flags = flags.copyWith(muteOverride: liveMuted);
+      }
+
+      return ConversationItem.fromChat(c, flags);
     });
 
     final groupItems = _rawGroups.where((g) => g.isMember).map((g) {
@@ -225,19 +294,32 @@ class ConversationsCubit extends Cubit<ConversationsState> {
   Future<void> _applyMuted(ConversationRef ref, bool value) async {
     if (ref.type == ConversationType.group) {
       await _setGroupMuteOnBackend(ref.id, value);
-    } else {
-      await ConversationFlagsStore.instance.setMuteOverride(ref, value);
-      try {
-        await _chatMuteService.setMuted(peerId: ref.id, muted: value);
-      } catch (e) {
-        debugPrint('[ConversationsCubit] chat_mutes sync skipped: $e');
-      }
+      return;
+    }
+
+    final previousOverride =
+        ConversationFlagsStore.instance.flagsFor(ref).muteOverride;
+    await ConversationFlagsStore.instance.setMuteOverride(ref, value);
+    try {
+      await _chatMuteService.setMuted(peerId: ref.id, muted: value);
+    } catch (e) {
+      await ConversationFlagsStore.instance.setMuteOverride(
+        ref,
+        previousOverride,
+      );
+      debugPrint('[ConversationsCubit] chat_mutes sync failed: $e');
+      rethrow;
     }
   }
 
   Future<void> setMuted(ConversationRef ref, bool value) async {
-    await _applyMuted(ref, value);
-    _recompute();
+    try {
+      await _applyMuted(ref, value);
+    } catch (e) {
+      AppToast.error(SupabaseErrorMapper.toUserMessage(e));
+    } finally {
+      _recompute();
+    }
   }
 
   Future<void> bulkSetPinned(Set<ConversationRef> refs, bool value) async {
@@ -262,8 +344,22 @@ class ConversationsCubit extends Cubit<ConversationsState> {
   }
 
   Future<void> bulkSetMuted(Set<ConversationRef> refs, bool value) async {
+    var failures = 0;
     for (final ref in refs) {
-      await _applyMuted(ref, value);
+      try {
+        await _applyMuted(ref, value);
+      } catch (e) {
+        failures++;
+        debugPrint('[ConversationsCubit] bulkSetMuted failed for $ref: $e');
+      }
+    }
+    if (failures > 0) {
+      AppToast.error(
+        failures == refs.length
+            ? "Couldn't update mute status. Please try again."
+            : 'Updated ${refs.length - failures} of ${refs.length} chats — '
+                'some failed. Please try again.',
+      );
     }
     _recompute();
   }
@@ -296,6 +392,7 @@ class ConversationsCubit extends Cubit<ConversationsState> {
     } catch (e) {
       groupListCubit.toggleGroupMute(groupId, !muted);
       debugPrint('[ConversationsCubit] group mute sync failed: $e');
+      rethrow;
     }
   }
 
@@ -311,6 +408,11 @@ class ConversationsCubit extends Cubit<ConversationsState> {
       await _chatMuteService.setMuted(peerId: ref.id, muted: archiving);
     } catch (e) {
       debugPrint('[ConversationsCubit] chat_mutes sync skipped: $e');
+      AppToast.error(
+        archiving
+            ? "Chat archived, but couldn't mute its notifications automatically."
+            : "Chat unarchived, but couldn't restore its notifications automatically.",
+      );
     }
   }
 
@@ -333,6 +435,9 @@ class ConversationsCubit extends Cubit<ConversationsState> {
   Future<void> close() {
     _chatsSub?.cancel();
     _groupsSub?.cancel();
+    if (_chatMutesChannel != null) {
+      SupabaseProvider.client.removeChannel(_chatMutesChannel!);
+    }
     return super.close();
   }
 }

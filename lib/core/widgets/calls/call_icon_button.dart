@@ -17,6 +17,7 @@ class CallIconButton extends StatelessWidget {
   final double? size;
   final Color? color;
   final ButtonStyle? style;
+  final bool isBlocked;
 
   const CallIconButton({
     super.key,
@@ -28,6 +29,7 @@ class CallIconButton extends StatelessWidget {
     this.size,
     this.padding,
     this.style,
+    this.isBlocked = false,
   });
 
   @override
@@ -35,22 +37,26 @@ class CallIconButton extends StatelessWidget {
     return BlocBuilder<ActiveCallSessionCubit, ActiveCallSessionData?>(
       builder: (context, activeSession) {
         final isLocalUserBusy = activeSession != null;
+        final isDisabled = isLocalUserBusy || isBlocked;
         return IconButton(
           constraints: const BoxConstraints(),
           style: style,
           padding: padding ?? EdgeInsets.zero,
-          tooltip: type == CallType.video ? 'Video call' : 'Voice call',
+          tooltip:
+              isBlocked
+                  ? 'Unavailable'
+                  : (type == CallType.video ? 'Video call' : 'Voice call'),
           icon: Icon(
             size: size ?? 25,
             type == CallType.video
                 ? Icons.videocam_outlined
                 : Icons.call_outlined,
             color:
-                isLocalUserBusy
+                isDisabled
                     ? Colors.grey
                     : Theme.of(context).primaryColor.withValues(alpha: 0.85),
           ),
-          onPressed: isLocalUserBusy ? null : () => _startCall(context),
+          onPressed: isDisabled ? null : () => _startCall(context),
         );
       },
     );

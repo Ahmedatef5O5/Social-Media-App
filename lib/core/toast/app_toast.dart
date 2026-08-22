@@ -19,6 +19,11 @@ class AppToast {
     String? actionLabel,
     VoidCallback? onAction,
   }) {
+    if (message == 'no-internet' ||
+        message.toLowerCase().contains('socketexception')) {
+      return;
+    }
+
     _counter++;
     requestNotifier.value = AppToastRequest(
       id: 'toast_$_counter',

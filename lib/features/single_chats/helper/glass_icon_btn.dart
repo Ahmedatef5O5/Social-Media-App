@@ -14,7 +14,8 @@ class GlassIconButton extends StatelessWidget {
     this.onTap,
     this.size = 46,
     this.iconSize = 24,
-  }) : iconColor = Colors.white;
+    Color? iconColor,
+  }) : iconColor = iconColor ?? Colors.white;
 
   @override
   Widget build(BuildContext context) {
