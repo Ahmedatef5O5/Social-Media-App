@@ -56,7 +56,7 @@ mixin ChatSelectionMixin on Cubit<ChatDetailsState> {
       );
     } catch (e) {
       debugPrint('error deleting selected messages for me: $e');
-      emit(MessagesError(e.toString()));
+      emit(MessagesError(SupabaseErrorMapper.toUserMessage(e)));
     }
   }
 
@@ -82,7 +82,7 @@ mixin ChatSelectionMixin on Cubit<ChatDetailsState> {
       await _chatServices.deleteMessagesForEveryone(realIds);
     } catch (e) {
       debugPrint('error deleting selected messages for everyone: $e');
-      emit(MessagesError(e.toString()));
+      emit(MessagesError(SupabaseErrorMapper.toUserMessage(e)));
     }
   }
 

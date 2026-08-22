@@ -59,6 +59,7 @@ class ChatNotificationDispatcher {
       await _fcm.sendChatNotification(
         messageId: messageId,
         receiverFcmToken: receiverInfo.fcmToken,
+        receiverId: receiverId,
         senderId: senderId,
         senderName: senderName,
         senderImageUrl: senderImageUrl,

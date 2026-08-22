@@ -8,13 +8,17 @@ import '../../../../core/audio/voice_recorder/services/audio_compression_service
 import '../../../../core/cache/repository/media_cache_repository.dart';
 import '../../../../core/cache/services/messages_snapshot_cache.dart';
 import '../../../../core/chat_shared/controllers/chat_search_controller.dart';
+import '../../../../core/chat_shared/helpers/chat_mute_status_cache.dart';
+import '../../../../core/chat_shared/services/chat_mute_service.dart';
 import '../../../../core/connectivity/services/connectivity_banner_controller.dart';
+import '../../../../core/errors/supabase_error_mapper.dart';
 import '../../../../core/helpers/chat_helper.dart';
 import '../../../../core/helpers/selected_message_star_controller.dart';
 import '../../../../core/presence/model/chat_action_type.dart';
 import '../../../../core/services/fcm_services.dart';
 import '../../../../core/services/supabase_storage_services.dart';
 import '../../../../core/supabase/supabase_provider.dart';
+import '../../../../core/toast/app_toast.dart';
 import '../../../../core/utilities/supabase_constants.dart';
 import '../../../notifications/repository/notifications_repository.dart';
 import '../../../settings/repository/settings_repository.dart';
@@ -31,7 +35,11 @@ part 'chat_selection_mixin.dart';
 part 'chat_presence_action_mixin.dart';
 
 class ChatDetailsCubit extends Cubit<ChatDetailsState>
-    with ChatReactionsMixin, ChatSelectionMixin, ChatPresenceActionMixin {
+    with
+        ChatReactionsMixin,
+        ChatSelectionMixin,
+        ChatPresenceActionMixin,
+        WidgetsBindingObserver {
   @override
   final ChatServices _chatServices;
   @override
@@ -56,12 +64,19 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
   );
   StreamSubscription<ChatBlockStatus>? _blockStatusSubscription;
 
+  final ValueNotifier<bool> muteStatus = ValueNotifier(false);
+  StreamSubscription<bool>? _muteStatusSubscription;
+  final _chatMuteService = ChatMuteService();
+
   final ValueNotifier<MessageModel?> replyToMessage =
       ValueNotifier<MessageModel?>(null);
 
   StreamSubscription? _messageSubscription;
   bool _hasReceivedFirstStreamEvent = false;
+  Set<String> _unconfirmedDiskMessageIds = {};
   bool get hasConfirmedInitialLoad => _hasReceivedFirstStreamEvent;
+
+  String? _activeReceiverId;
 
   @override
   List<MessageModel> cachedMessages = [];
@@ -97,7 +112,16 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
            chatPermissionService ?? ChatPermissionService(),
        _audioCompressionService =
            audioCompressionService ?? AudioCompressionService(),
-       super(ChatDetailsInitial());
+       super(ChatDetailsInitial()) {
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && _activeReceiverId != null) {
+      getMessagesStream(receiverId: _activeReceiverId!);
+    }
+  }
 
   Future<void> resolveChatPermission(String receiverId) async {
     try {
@@ -151,6 +175,34 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
       );
     } catch (e) {
       debugPrint('toggleBlock error: $e');
+    }
+  }
+
+  void watchMuteStatus(String receiverId) {
+    final cached = ChatMuteStatusCache.instance.read(receiverId);
+    if (cached != null) {
+      muteStatus.value = cached;
+    }
+
+    _muteStatusSubscription?.cancel();
+    _muteStatusSubscription = _chatMuteService
+        .watchMuted(peerId: receiverId)
+        .listen((muted) {
+          muteStatus.value = muted;
+          unawaited(ChatMuteStatusCache.instance.write(receiverId, muted));
+        }, onError: (e) => debugPrint('watchMuteStatus error: $e'));
+  }
+
+  Future<void> toggleMute({required String receiverId}) async {
+    final newValue = !muteStatus.value;
+    muteStatus.value = newValue;
+    unawaited(ChatMuteStatusCache.instance.write(receiverId, newValue));
+    try {
+      await _chatMuteService.setMuted(peerId: receiverId, muted: newValue);
+    } catch (e) {
+      muteStatus.value = !newValue;
+      unawaited(ChatMuteStatusCache.instance.write(receiverId, !newValue));
+      AppToast.error(SupabaseErrorMapper.toUserMessage(e));
     }
   }
 
@@ -212,8 +264,10 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
   }
 
   void getMessagesStream({required String receiverId}) {
+    _activeReceiverId = receiverId;
     _messageSubscription?.cancel();
     _hasReceivedFirstStreamEvent = false;
+    _unconfirmedDiskMessageIds = {};
 
     final conversationId = ChatHelper.buildConversationId(
       currentUserId,
@@ -236,6 +290,9 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
           }).toList();
 
       cachedMessages = enrichedDiskMessages;
+
+      _unconfirmedDiskMessageIds =
+          enrichedDiskMessages.map((m) => m.id).toSet();
 
       _registerBubbleKeys(enrichedDiskMessages);
 
@@ -262,16 +319,18 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
                   return m.copyWith(reactions: reactions);
                 }).toList();
 
-            List<MessageModel> resolved;
-            if (!_hasReceivedFirstStreamEvent && cachedMessages.isNotEmpty) {
-              final cachedIds = cachedMessages.map((m) => m.id).toSet();
-              resolved = [
-                ...enriched.where((m) => !cachedIds.contains(m.id)),
-                ...cachedMessages,
-              ]..sort((a, b) => b.createdAt.compareTo(a.createdAt));
-            } else {
-              resolved = enriched;
-            }
+            final enrichedIds = enriched.map((m) => m.id).toSet();
+            _unconfirmedDiskMessageIds.removeWhere(enrichedIds.contains);
+
+            final protectedLeftovers = cachedMessages.where(
+              (m) =>
+                  _unconfirmedDiskMessageIds.contains(m.id) &&
+                  !enrichedIds.contains(m.id),
+            );
+
+            final resolved = [...enriched, ...protectedLeftovers]
+              ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
             _hasReceivedFirstStreamEvent = true;
 
             final existingIds = cachedMessages.map((m) => m.id).toSet();
@@ -354,7 +413,7 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
       );
     } catch (e) {
       debugPrint('error marking as read: $e');
-      emit(MessagesError(e.toString()));
+      emit(MessagesError(SupabaseErrorMapper.toUserMessage(e)));
     }
   }
 
@@ -780,15 +839,18 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
       await _chatServices.deleteMessage(messageId: messageId);
     } catch (e) {
       debugPrint('error deleting message: $e');
-      emit(MessagesError(e.toString()));
+      emit(MessagesError(SupabaseErrorMapper.toUserMessage(e)));
     }
   }
 
   @override
   Future<void> close() {
+    WidgetsBinding.instance.removeObserver(this);
     chatPermission.dispose();
     blockStatus.dispose();
     _blockStatusSubscription?.cancel();
+    muteStatus.dispose();
+    _muteStatusSubscription?.cancel();
     highlightedMessageId.dispose();
     searchController.dispose();
     for (final notifier in uploadProgressNotifiers.values) {

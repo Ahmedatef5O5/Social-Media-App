@@ -206,75 +206,82 @@ class _ChatsViewState extends State<ChatsView>
                           controller: widget.scrollController,
                           headerSliverBuilder: (context, innerBoxIsScrolled) {
                             return [
-                              SliverToBoxAdapter(
-                                child: Column(
-                                  children: [
-                                    const SizedBox(height: 40),
-                                    BlocBuilder<
-                                      ConversationSelectionCubit,
-                                      ConversationSelectionState
-                                    >(
-                                      builder: (context, selection) {
-                                        return AnimatedSwitcher(
-                                          duration: const Duration(
-                                            milliseconds: 260,
-                                          ),
-                                          switchInCurve: Curves.easeOutCubic,
-                                          switchOutCurve: Curves.easeInCubic,
-                                          transitionBuilder: (
-                                            child,
-                                            animation,
-                                          ) {
-                                            final slide = Tween<Offset>(
-                                              begin: const Offset(0, -0.2),
-                                              end: Offset.zero,
-                                            ).animate(animation);
-                                            return FadeTransition(
-                                              opacity: animation,
-                                              child: SlideTransition(
-                                                position: slide,
-                                                child: child,
-                                              ),
-                                            );
-                                          },
-                                          child:
-                                              selection.isSelecting
-                                                  ? ConversationsSelectionHeaderBar(
-                                                    key: const ValueKey(
-                                                      'selection_bar',
-                                                    ),
-                                                    selectedRefs:
-                                                        selection.selectedRefs,
-                                                    onCancel:
-                                                        () =>
-                                                            context
-                                                                .read<
-                                                                  ConversationSelectionCubit
-                                                                >()
-                                                                .clear(),
-                                                    onDelete:
-                                                        () =>
-                                                            confirmAndDeleteConversations(
-                                                              context,
-                                                              selection
-                                                                  .selectedRefs,
-                                                            ),
-                                                  )
-                                                  : MessagesHeaderSection(
-                                                    key: const ValueKey(
-                                                      'normal_header',
-                                                    ),
-                                                    tabController:
-                                                        _tabController,
-                                                    isDark: isDark,
-                                                    primary: primary,
+                              BlocBuilder<
+                                ConversationSelectionCubit,
+                                ConversationSelectionState
+                              >(
+                                builder: (context, selection) {
+                                  final headerColumn = Column(
+                                    children: [
+                                      const SizedBox(height: 40),
+                                      AnimatedSwitcher(
+                                        duration: const Duration(
+                                          milliseconds: 260,
+                                        ),
+                                        switchInCurve: Curves.easeOutCubic,
+                                        switchOutCurve: Curves.easeInCubic,
+                                        transitionBuilder: (child, animation) {
+                                          final slide = Tween<Offset>(
+                                            begin: const Offset(0, -0.2),
+                                            end: Offset.zero,
+                                          ).animate(animation);
+                                          return FadeTransition(
+                                            opacity: animation,
+                                            child: SlideTransition(
+                                              position: slide,
+                                              child: child,
+                                            ),
+                                          );
+                                        },
+                                        child:
+                                            selection.isSelecting
+                                                ? ConversationsSelectionHeaderBar(
+                                                  key: const ValueKey(
+                                                    'selection_bar',
                                                   ),
-                                        );
-                                      },
-                                    ),
-                                    const SizedBox(height: 10),
-                                  ],
-                                ),
+                                                  selectedRefs:
+                                                      selection.selectedRefs,
+                                                  onCancel:
+                                                      () =>
+                                                          context
+                                                              .read<
+                                                                ConversationSelectionCubit
+                                                              >()
+                                                              .clear(),
+                                                  onDelete:
+                                                      () =>
+                                                          confirmAndDeleteConversations(
+                                                            context,
+                                                            selection
+                                                                .selectedRefs,
+                                                          ),
+                                                )
+                                                : MessagesHeaderSection(
+                                                  key: const ValueKey(
+                                                    'normal_header',
+                                                  ),
+                                                  tabController: _tabController,
+                                                  isDark: isDark,
+                                                  primary: primary,
+                                                ),
+                                      ),
+                                      const SizedBox(height: 10),
+                                    ],
+                                  );
+
+                                  if (selection.isSelecting) {
+                                    return SliverPersistentHeader(
+                                      pinned: true,
+                                      delegate: _PinnedChatsHeaderDelegate(
+                                        height: 100,
+                                        child: headerColumn,
+                                      ),
+                                    );
+                                  }
+                                  return SliverToBoxAdapter(
+                                    child: headerColumn,
+                                  );
+                                },
                               ),
                             ];
                           },
@@ -307,5 +314,42 @@ class _ChatsViewState extends State<ChatsView>
         },
       ),
     );
+  }
+}
+
+class _PinnedChatsHeaderDelegate extends SliverPersistentHeaderDelegate {
+  final double height;
+  final Widget child;
+
+  const _PinnedChatsHeaderDelegate({required this.height, required this.child});
+
+  @override
+  double get minExtent => height;
+
+  @override
+  double get maxExtent => height;
+
+  @override
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
+    return Material(
+      color: Theme.of(context).scaffoldBackgroundColor,
+      child: ClipRect(
+        child: OverflowBox(
+          alignment: Alignment.topCenter,
+          minHeight: 0,
+          maxHeight: double.infinity,
+          child: child,
+        ),
+      ),
+    );
+  }
+
+  @override
+  bool shouldRebuild(covariant _PinnedChatsHeaderDelegate oldDelegate) {
+    return oldDelegate.height != height || oldDelegate.child != child;
   }
 }

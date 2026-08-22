@@ -7,7 +7,6 @@ class ChatsViewSkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-
     final baseColor = isDark ? Colors.grey.shade800 : Colors.grey.shade300;
     final highlightColor = isDark ? Colors.grey.shade700 : Colors.grey.shade100;
 
@@ -15,39 +14,63 @@ class ChatsViewSkeleton extends StatelessWidget {
       baseColor: baseColor,
       highlightColor: highlightColor,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20),
+        padding: const EdgeInsets.symmetric(horizontal: 16),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 50),
 
-            // ───── Header Skeleton ─────
+            // ───── Header Skeleton (Messages Text + 2 Icons) ─────
             Row(
               children: [
-                Container(width: 90, height: 22, decoration: _box()),
+                Container(width: 120, height: 27, decoration: _box()),
                 const Spacer(),
+                Container(width: 26, height: 26, decoration: _circle()),
+                const SizedBox(width: 16),
                 Container(width: 26, height: 26, decoration: _circle()),
               ],
             ),
 
             const SizedBox(height: 18),
 
-            // ───── Tabs Skeleton ─────
+            // ───── Tabs Skeleton (All, Chats, Groups, Favorites) ─────
             Row(
               children: [
-                Expanded(child: Container(height: 36, decoration: _box())),
-                const SizedBox(width: 12),
-                Expanded(child: Container(height: 36, decoration: _box())),
+                Expanded(
+                  flex: 85,
+                  child: Container(height: 36, decoration: _box(radius: 20)),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  flex: 92,
+                  child: Container(height: 36, decoration: _box(radius: 20)),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  flex: 92,
+                  child: Container(height: 36, decoration: _box(radius: 20)),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  flex: 85,
+                  child: Container(height: 36, decoration: _box(radius: 20)),
+                ),
               ],
             ),
 
-            const SizedBox(height: 20),
+            const SizedBox(height: 24),
 
             // ───── Chats List Skeleton ─────
             Expanded(
               child: ListView.separated(
+                padding: EdgeInsets.zero,
                 physics: const NeverScrollableScrollPhysics(),
                 itemCount: 8,
-                separatorBuilder: (_, __) => const SizedBox(height: 18),
+                separatorBuilder:
+                    (_, __) => const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 12),
+                      child: Divider(color: Colors.white, height: 1),
+                    ),
                 itemBuilder: (_, __) => _ChatTileSkeleton(),
               ),
             ),
@@ -57,9 +80,9 @@ class ChatsViewSkeleton extends StatelessWidget {
     );
   }
 
-  static BoxDecoration _box() => BoxDecoration(
+  static BoxDecoration _box({double radius = 8}) => BoxDecoration(
     color: Colors.white,
-    borderRadius: BorderRadius.circular(12),
+    borderRadius: BorderRadius.circular(radius),
   );
 
   static BoxDecoration _circle() =>
@@ -73,8 +96,8 @@ class _ChatTileSkeleton extends StatelessWidget {
       children: [
         // Avatar
         Container(
-          width: 52,
-          height: 52,
+          width: 54,
+          height: 54,
           decoration: const BoxDecoration(
             color: Colors.white,
             shape: BoxShape.circle,
@@ -88,23 +111,33 @@ class _ChatTileSkeleton extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                width: double.infinity,
+                width: MediaQuery.of(context).size.width * 0.35,
                 height: 14,
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(4),
                 ),
               ),
               const SizedBox(height: 8),
               Container(
-                width: MediaQuery.of(context).size.width * 0.45,
+                width: MediaQuery.of(context).size.width * 0.55,
                 height: 12,
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(4),
                 ),
               ),
             ],
+          ),
+        ),
+
+        // Time
+        Container(
+          width: 30,
+          height: 10,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(4),
           ),
         ),
       ],

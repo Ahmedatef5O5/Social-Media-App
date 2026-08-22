@@ -70,6 +70,7 @@ class _ChatDetailsViewState extends State<ChatDetailsView>
 
     _chatCubit = context.read<ChatDetailsCubit>();
     _chatCubit.resolveChatPermission(_receiverId);
+    _chatCubit.watchMuteStatus(_receiverId);
     _chatCubit.watchBlockStatus(_receiverId);
     _chatCubit.getMessagesStream(receiverId: _receiverId);
     _chatCubit.watchReceiverAction(_receiverId);
@@ -259,47 +260,46 @@ class _ChatDetailsViewState extends State<ChatDetailsView>
       context: context,
       backgroundColor: AppColors.transparent,
       builder:
-          (ctx) => Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Theme.of(context).scaffoldBackgroundColor,
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(16),
-              ),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  child: Text(
-                    'Delete $count message${count > 1 ? 's' : ''}?',
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                ),
-                ListTile(
-                  leading: const Icon(Icons.person_outline),
-                  title: const Text('Delete for me'),
-                  onTap: () {
-                    Navigator.pop(ctx);
-                    cubit.deleteSelectedForMe();
-                  },
-                ),
-                if (canDeleteForEveryone)
-                  ListTile(
-                    leading: const Icon(Icons.delete_outline),
-                    title: Text(
-                      'Delete for everyone',
-                      style: Theme.of(
-                        context,
-                      ).textTheme.titleMedium!.copyWith(color: Colors.red),
+          (ctx) => Material(
+            color: Theme.of(context).scaffoldBackgroundColor,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    child: Text(
+                      'Delete $count message${count > 1 ? 's' : ''}?',
+                      style: Theme.of(context).textTheme.titleMedium,
                     ),
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.person_outline),
+                    title: const Text('Delete for me'),
                     onTap: () {
                       Navigator.pop(ctx);
-                      cubit.deleteSelectedForEveryone();
+                      cubit.deleteSelectedForMe();
                     },
                   ),
-              ],
+                  if (canDeleteForEveryone)
+                    ListTile(
+                      leading: const Icon(Icons.delete_outline),
+                      title: Text(
+                        'Delete for everyone',
+                        style: Theme.of(
+                          context,
+                        ).textTheme.titleMedium!.copyWith(color: Colors.red),
+                      ),
+                      onTap: () {
+                        Navigator.pop(ctx);
+                        cubit.deleteSelectedForEveryone();
+                      },
+                    ),
+                ],
+              ),
             ),
           ),
     );
@@ -324,26 +324,34 @@ class _ChatDetailsViewState extends State<ChatDetailsView>
     final currentUserId = _chatCubit.currentUserId;
     _chatCubit.clearSelection();
 
-    final currentUserInfo = await ChatServices().getCurrentUserInfo(
-      currentUserId,
-    );
-
-    final forwardableMessages =
-        selectedMessages
-            .map(
-              (m) => ForwardableMessage.fromSingleChatMessage(
-                m,
-                currentUserId: currentUserId,
-                currentUserName: currentUserInfo['name'] ?? 'You',
-                currentUserAvatar: currentUserInfo['imageUrl'],
-                otherUserName: widget.receiverUser.name,
-                otherUserAvatar: widget.receiverUser.imageUrl,
-              ),
-            )
-            .toList();
-
+    // [FIX] "Forward to Syncra" never needs the current user's name/avatar
+    // (its draft-text/photo-preview paths don't attribute a sender) — this
+    // check now runs BEFORE getCurrentUserInfo below, so a network hiccup
+    // fetching it can never take Syncra forwarding down with it either.
     if (result.toAi) {
-      final draftText = forwardableMessages
+      // [NEW] Single image selected -> hand off to the same
+      // preview/caption flow a freshly-picked photo goes through,
+      // instead of the text-only draft path below (which can't
+      // represent an image at all).
+      if (selectedMessages.length == 1 &&
+          selectedMessages.first.messageType == 'image' &&
+          (selectedMessages.first.imageUrl?.isNotEmpty ?? false)) {
+        final imageMessage = selectedMessages.first;
+        if (context.mounted) {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder:
+                  (_) => AiChatView(
+                    initialDraftImageRemoteUrl: imageMessage.imageUrl,
+                    initialDraftImageCaption: imageMessage.caption,
+                  ),
+            ),
+          );
+        }
+        return;
+      }
+
+      final draftText = selectedMessages
           .map((m) => m.text.trim())
           .where((t) => t.isNotEmpty)
           .join('\n\n');
@@ -364,6 +372,39 @@ class _ChatDetailsViewState extends State<ChatDetailsView>
       }
       return;
     }
+
+    // [FIX] Was previously called unconditionally, unguarded, right after
+    // clearSelection() and BEFORE the toAi branch above — a throw here
+    // (network hiccup, missing cached user doc, ...) used to kill
+    // forwarding entirely for this tap, Syncra included, with no
+    // toast/error shown. Now it only ever runs for real people/group
+    // targets, and a failure falls back to a safe 'You' / no-avatar
+    // instead of taking the whole forward down with it.
+    String currentUserName = 'You';
+    String? currentUserAvatar;
+    try {
+      final currentUserInfo = await ChatServices().getCurrentUserInfo(
+        currentUserId,
+      );
+      currentUserName = currentUserInfo['name'] ?? 'You';
+      currentUserAvatar = currentUserInfo['imageUrl'];
+    } catch (_) {
+      // Falls back to 'You' / no avatar — see fix note above.
+    }
+
+    final forwardableMessages =
+        selectedMessages
+            .map(
+              (m) => ForwardableMessage.fromSingleChatMessage(
+                m,
+                currentUserId: currentUserId,
+                currentUserName: currentUserName,
+                currentUserAvatar: currentUserAvatar,
+                otherUserName: widget.receiverUser.name,
+                otherUserAvatar: widget.receiverUser.imageUrl,
+              ),
+            )
+            .toList();
 
     try {
       await ForwardService().forwardMessages(

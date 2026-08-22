@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'package:flutter/rendering.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:social_media_app/core/cache/constants/snapshot_keys.dart';
 import 'package:social_media_app/core/cache/services/local_snapshot_store.dart';
@@ -14,7 +14,7 @@ part 'chats_state.dart';
 
 const int kMaxCachedChatsSnapshot = 50;
 
-class ChatsCubit extends Cubit<ChatsState> {
+class ChatsCubit extends Cubit<ChatsState> with WidgetsBindingObserver {
   final ChatServices _chatServices;
   final _currentUserId = SupabaseProvider.id;
   StreamSubscription? _chatsSubscription;
@@ -28,7 +28,16 @@ class ChatsCubit extends Cubit<ChatsState> {
 
   bool get showSkeleton => _showSkeleton;
 
-  ChatsCubit(this._chatServices) : super(ChatsInitial());
+  ChatsCubit(this._chatServices) : super(ChatsInitial()) {
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      getChats(isRefresh: true);
+    }
+  }
 
   ChatActionType actionFor(String otherUserId) =>
       _actionsByUserId[otherUserId] ?? ChatActionType.none;
@@ -186,6 +195,7 @@ class ChatsCubit extends Cubit<ChatsState> {
 
   @override
   Future<void> close() {
+    WidgetsBinding.instance.removeObserver(this);
     _chatsSubscription?.cancel();
     _actionsSubscription?.cancel();
     _refreshDebounce?.cancel();

@@ -6,7 +6,7 @@ import 'package:gap/gap.dart';
 import '../../../core/chat_shared/cubits/conversation_selection_cubit/conversation_selection_cubit.dart';
 import '../../../core/chat_shared/models/conversation_ref.dart';
 import '../../../core/chat_shared/widgets/recording_indicator_widget.dart';
-import '../../../core/helpers/chat_helper.dart';
+import '../../../core/helpers/bidi_text_helper.dart';
 import '../../../core/helpers/formatted_date.dart';
 import '../../../core/presence/widgets/presence_avatar_widget.dart';
 import '../../../core/router/app_routes.dart';
@@ -48,17 +48,7 @@ class ChatItemTile extends StatelessWidget {
         return Material(
           color:
               isSelected ? primary.withValues(alpha: 0.08) : Colors.transparent,
-          child: ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: _buildUserAvatar(
-              context,
-              isSelecting,
-              isSelected,
-              primary,
-            ),
-            title: _buildUserName(context),
-            subtitle: _buildLastMessage(context),
-            trailing: _buildTrailingSection(context),
+          child: InkWell(
             onLongPress:
                 () => context.read<ConversationSelectionCubit>().toggle(ref),
             onTap: () {
@@ -71,100 +61,105 @@ class ChatItemTile extends StatelessWidget {
                 rootNavigator: true,
               ).pushNamed(AppRoutes.chatDetailsViewRoute, arguments: user);
             },
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 10),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  _buildUserAvatar(context, isSelecting, isSelected, primary),
+                  const Gap(12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(child: _buildUserName(context)),
+                            const Gap(8),
+                            if (user.lastMessageTime != null)
+                              _buildTimeText(context, primary),
+                          ],
+                        ),
+                        const Gap(4),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Expanded(child: _buildLastMessage(context)),
+                            const Gap(8),
+                            _buildIconsSection(context, primary),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
         );
       },
     );
   }
 
-  Column _buildTrailingSection(BuildContext context) {
-    final primary = Theme.of(context).primaryColor;
+  Widget _buildTimeText(BuildContext context, Color primary) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isUnread = user.unreadCount > 0;
+    return Text(
+      FormattedDate.getChatTime(user.lastMessageTime!, isChatList: true),
+      style: TextStyle(
+        color: isUnread ? primary : (isDark ? Colors.white38 : Colors.black38),
+        fontSize: 11,
+        fontWeight: isUnread ? FontWeight.w500 : FontWeight.w400,
+      ),
+    );
+  }
+
+  Widget _buildIconsSection(BuildContext context, Color primary) {
     final hasStatusRow =
         isFavorite || isPinned || isMuted || user.unreadCount > 0;
-    final isUnread = user.unreadCount > 0;
 
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.end,
-      crossAxisAlignment: CrossAxisAlignment.end,
+    if (!hasStatusRow) return const SizedBox.shrink();
+
+    return Row(
       mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        if (user.lastMessageTime != null) ...[
-          const Gap(2),
-
-          Text(
-            FormattedDate.getChatTime(user.lastMessageTime!, isChatList: true),
-            style: TextStyle(
-              color:
-                  isUnread
-                      ? primary
-                      : (isDark ? Colors.white38 : Colors.black38),
-              fontSize: 11,
-              fontWeight: isUnread ? FontWeight.w500 : FontWeight.w400,
+        if (isFavorite) ...[
+          Icon(Icons.star_rounded, size: 16, color: Colors.amber.shade600),
+          const Gap(4),
+        ],
+        if (isPinned) ...[
+          const Icon(Icons.push_pin_rounded, size: 15, color: Colors.grey),
+          const Gap(4),
+        ],
+        if (isMuted) ...[
+          const FaIcon(
+            FontAwesomeIcons.bellSlash,
+            size: 12,
+            color: Colors.grey,
+          ),
+          if (user.unreadCount > 0) const Gap(4),
+        ],
+        if (user.unreadCount > 0)
+          Container(
+            padding: const EdgeInsets.all(4),
+            constraints: const BoxConstraints(minWidth: 20, minHeight: 20),
+            alignment: Alignment.center,
+            decoration: BoxDecoration(color: primary, shape: BoxShape.circle),
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                user.unreadCount > 99 ? '99+' : '${user.unreadCount}',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
           ),
-        ],
-        if (hasStatusRow) ...[
-          const Gap(4),
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              if (isFavorite) ...[
-                Icon(
-                  Icons.star_rounded,
-                  size: 16,
-                  color: Colors.amber.shade600,
-                ),
-                const Gap(4),
-              ],
-              if (isPinned) ...[
-                const Icon(
-                  Icons.push_pin_rounded,
-                  size: 15,
-                  color: Colors.grey,
-                ),
-                const Gap(4),
-              ],
-              if (isMuted) ...[
-                const FaIcon(
-                  FontAwesomeIcons.bellSlash,
-                  size: 12,
-                  color: Colors.grey,
-                ),
-                if (user.unreadCount > 0) const Gap(4),
-              ],
-              if (user.unreadCount > 0)
-                Container(
-                  padding: const EdgeInsets.all(5),
-                  constraints: const BoxConstraints(
-                    minWidth: 20,
-                    minHeight: 20,
-                  ),
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).primaryColor,
-                    shape:
-                        user.unreadCount > 99
-                            ? BoxShape.rectangle
-                            : BoxShape.circle,
-                    borderRadius:
-                        user.unreadCount > 99
-                            ? BorderRadius.circular(11)
-                            : null,
-                  ),
-                  child: Text(
-                    user.unreadCount > 99 ? '99+' : '${user.unreadCount}',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-            ],
-          ),
-        ],
       ],
     );
   }
@@ -231,8 +226,7 @@ class ChatItemTile extends StatelessWidget {
 
       final Color iconColor =
           isMissed ? Colors.redAccent : Colors.grey.shade600;
-
-      String label =
+      final String label =
           isMissed
               ? (isAudio ? 'Missed voice call' : 'Missed video call')
               : (isAudio ? 'Voice call' : 'Video call');
@@ -242,7 +236,7 @@ class ChatItemTile extends StatelessWidget {
         children: [
           Icon(icon, size: 16, color: iconColor),
           const Gap(4),
-          Flexible(
+          Expanded(
             child: Text(
               label,
               maxLines: 1,
@@ -257,11 +251,15 @@ class ChatItemTile extends StatelessWidget {
     }
 
     final normalText = _getNormalMessageText();
+    final direction = BidiTextHelper.detectDirection(normalText);
+
     return Text(
       normalText,
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
-      textDirection: ChatHelper.getTextDirection(normalText),
+      textDirection: direction,
+      textAlign:
+          direction == TextDirection.rtl ? TextAlign.right : TextAlign.left,
       style: textStyle,
     );
   }
@@ -285,8 +283,8 @@ class ChatItemTile extends StatelessWidget {
       return Row(
         mainAxisAlignment: MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          const AnimatedActivityText(
+        children: const [
+          AnimatedActivityText(
             text: 'typing',
             style: TextStyle(color: Colors.green, fontSize: 14),
           ),
@@ -294,7 +292,6 @@ class ChatItemTile extends StatelessWidget {
       );
     } else {
       return Row(
-        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           if (user.lastMessageIsMe && !_isSystemEventPreview) ...[
@@ -305,12 +302,7 @@ class ChatItemTile extends StatelessWidget {
             ),
             const Gap(4),
           ],
-          Expanded(
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: _buildMessagePreview(context),
-            ),
-          ),
+          Expanded(child: _buildMessagePreview(context)),
         ],
       );
     }

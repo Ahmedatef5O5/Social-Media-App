@@ -13,6 +13,7 @@ import '../../../core/widgets/calls/call_icon_button.dart';
 import '../../single_calls/model/call_model.dart';
 import '../cubit/chat_details_cubit/chat_details_cubit.dart';
 import '../helper/safe_pop.dart';
+import '../models/chat_block_status.dart';
 import '../models/chat_user_model.dart';
 
 class ReceiverDetailsHeaderSection extends StatelessWidget {
@@ -150,29 +151,40 @@ class ReceiverDetailsHeaderSection extends StatelessWidget {
 
           Row(
             children: [
-              CallIconButton(
-                size: 21,
-                type: CallType.audio,
-                receiverId: receiverUser.id,
-                receiverName: receiverUser.name,
-                receiverAvatar: receiverUser.imageUrl ?? '',
-                padding: const EdgeInsets.symmetric(horizontal: 6),
-                style: IconButton.styleFrom(
-                  minimumSize: Size.zero,
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
-              ),
-              CallIconButton(
-                size: 21,
-                type: CallType.video,
-                receiverId: receiverUser.id,
-                receiverName: receiverUser.name,
-                receiverAvatar: receiverUser.imageUrl ?? '',
-                padding: const EdgeInsets.symmetric(horizontal: 6),
-                style: IconButton.styleFrom(
-                  minimumSize: Size.zero,
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
+              ValueListenableBuilder<ChatBlockStatus>(
+                valueListenable: context.read<ChatDetailsCubit>().blockStatus,
+                builder: (context, blockStatus, _) {
+                  return Row(
+                    children: [
+                      CallIconButton(
+                        size: 21,
+                        type: CallType.audio,
+                        receiverId: receiverUser.id,
+                        receiverName: receiverUser.name,
+                        receiverAvatar: receiverUser.imageUrl ?? '',
+                        isBlocked: blockStatus.isBlocked,
+                        padding: const EdgeInsets.symmetric(horizontal: 6),
+                        style: IconButton.styleFrom(
+                          minimumSize: Size.zero,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                      ),
+                      CallIconButton(
+                        size: 21,
+                        type: CallType.video,
+                        receiverId: receiverUser.id,
+                        receiverName: receiverUser.name,
+                        receiverAvatar: receiverUser.imageUrl ?? '',
+                        isBlocked: blockStatus.isBlocked,
+                        padding: const EdgeInsets.symmetric(horizontal: 6),
+                        style: IconButton.styleFrom(
+                          minimumSize: Size.zero,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                      ),
+                    ],
+                  );
+                },
               ),
               PopupMenuButton<String>(
                 padding: EdgeInsets.zero,
