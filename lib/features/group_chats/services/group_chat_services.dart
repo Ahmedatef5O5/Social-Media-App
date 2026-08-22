@@ -101,38 +101,25 @@ class GroupChatServices {
     int page = 0,
     int pageSize = _membersPageSize,
   }) async {
-    final from = page * pageSize;
-    final to = from + pageSize - 1;
+    final response = await _supabase.rpc(
+      'get_group_members_paginated',
+      params: {
+        'p_group_id': groupId,
+        'p_current_user_id': currentUserId,
+        'p_page': page,
+        'p_page_size': pageSize,
+      },
+    );
 
-    final response = await _supabase
-        .from(SupabaseConstants.groupMembers)
-        .select(
-          'id, ${GroupMemberColumns.groupId}, ${GroupMemberColumns.userId}, '
-          '${GroupMemberColumns.role}, ${GroupMemberColumns.joinedAt}, '
-          'users!${SupabaseConstants.groupMembers}'
-          '_${GroupMemberColumns.userId}_fkey'
-          '(${UserColumns.name}, ${UserColumns.imageUrl})',
-        )
-        .eq(GroupMemberColumns.groupId, groupId)
-        .eq(GroupMemberColumns.membershipStatus, 'active')
-        .order(GroupMemberColumns.role, ascending: true)
-        .order(GroupMemberColumns.joinedAt, ascending: false)
-        .range(from, to)
-        .count(CountOption.exact);
-
-    final dataList = response.data as List;
+    final dataList = (response as List).cast<Map<String, dynamic>>();
 
     final members =
-        dataList.map((e) {
-          final userInfo = e['users'] as Map<String, dynamic>? ?? {};
-          return GroupMemberModel.fromMap({
-            ...e,
-            'user_name': userInfo[UserColumns.name],
-            'user_avatar': userInfo[UserColumns.imageUrl],
-          });
-        }).toList();
+        dataList.map((row) => GroupMemberModel.fromMap(row)).toList();
 
-    final total = response.count;
+    final total =
+        dataList.isNotEmpty
+            ? (dataList.first['total_count'] as num).toInt()
+            : 0;
 
     return (members: members, totalCount: total);
   }
@@ -146,6 +133,20 @@ class GroupChatServices {
     return (response as List)
         .map((row) => row[GroupMemberColumns.userId] as String)
         .toList();
+  }
+
+  Future<void> promoteToAdmin(String groupId, String targetUserId) async {
+    await _supabase.rpc(
+      'promote_group_member_to_admin',
+      params: {'p_group_id': groupId, 'p_target_user_id': targetUserId},
+    );
+  }
+
+  Future<void> demoteAdmin(String groupId, String targetUserId) async {
+    await _supabase.rpc(
+      'demote_group_admin',
+      params: {'p_group_id': groupId, 'p_target_user_id': targetUserId},
+    );
   }
 
   Future<void> addMember(String groupId, String userId) async {
@@ -374,6 +375,17 @@ class GroupChatServices {
           if (avatarUrl != null) 'avatar_url': avatarUrl,
         })
         .eq('id', groupId);
+  }
+
+  /// Permanently deletes the group and everything attached to it
+  /// (messages, members, reactions, mentions, typing rows, calls, and the
+  /// `groups` row itself) for **every** member, not just the caller.
+  /// Owner-only — enforced server-side inside `delete_group_permanently`.
+  Future<void> deleteGroupPermanently(String groupId) async {
+    await _supabase.rpc(
+      'delete_group_permanently',
+      params: {'p_group_id': groupId},
+    );
   }
 
   Stream<List<GroupMessageModel>> getGroupMessagesStream(String groupId) {

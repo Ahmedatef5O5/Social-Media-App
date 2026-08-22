@@ -11,6 +11,7 @@ mixin GroupMessagesStreamMixin on Cubit<GroupDetailsState> {
   Map<String, Map<String, String>> get _reactionsCache;
   bool _isFirstLoad = true;
   bool _hasReceivedFirstStreamEvent = false;
+  Set<String> _unconfirmedDiskMessageIds = {};
   GroupPresenceSnapshot _presence = GroupPresenceSnapshot.empty;
   final ValueNotifier<GroupPresenceSnapshot> presenceNotifier = ValueNotifier(
     GroupPresenceSnapshot.empty,
@@ -87,6 +88,7 @@ mixin GroupMessagesStreamMixin on Cubit<GroupDetailsState> {
     if (!isMember) return;
 
     _hasReceivedFirstStreamEvent = false;
+    _unconfirmedDiskMessageIds = cachedMessages.map((m) => m.id).toSet();
     final clearedAt = GroupChatClearStore.instance.clearedAtFor(group.id);
 
     _messagesSubscription = _services.getGroupMessagesStream(group.id).listen((
@@ -110,18 +112,22 @@ mixin GroupMessagesStreamMixin on Cubit<GroupDetailsState> {
             return msg.copyWith(mentions: mentions, reactions: reactions);
           }).toList();
 
-      List<GroupMessageModel> resolved;
       final bool isFirstEventThisTime = !_hasReceivedFirstStreamEvent;
 
-      if (!_hasReceivedFirstStreamEvent && cachedMessages.isNotEmpty) {
-        final cachedIds = cachedMessages.map((m) => m.id).toSet();
-        resolved = [
-          ...enriched.where((m) => !cachedIds.contains(m.id)),
-          ...cachedMessages,
-        ]..sort((a, b) => b.createdAt.compareTo(a.createdAt));
-      } else {
-        resolved = enriched;
-      }
+      final enrichedIds = enriched.map((m) => m.id).toSet();
+      _unconfirmedDiskMessageIds.removeWhere(enrichedIds.contains);
+
+      final protectedLeftovers = cachedMessages.where(
+        (m) =>
+            _unconfirmedDiskMessageIds.contains(m.id) &&
+            !enrichedIds.contains(m.id),
+      );
+
+      final List<GroupMessageModel> resolved = [
+        ...enriched,
+        ...protectedLeftovers,
+      ]..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
       _hasReceivedFirstStreamEvent = true;
 
       if (!isFirstEventThisTime) {

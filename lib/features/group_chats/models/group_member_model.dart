@@ -1,6 +1,6 @@
 import '../../../core/utilities/supabase_constants.dart';
 
-enum GroupMemberRole { admin, member }
+enum GroupMemberRole { owner, admin, member }
 
 class GroupMemberModel {
   final String id;
@@ -31,10 +31,11 @@ class GroupMemberModel {
       userId: map[GroupMemberColumns.userId] as String,
       userName: (map['user_name'] ?? map['name'] ?? 'Unknown') as String,
       userAvatar: map['user_avatar'] as String? ?? map['image_url'] as String?,
-      role:
-          map['role'] == 'admin'
-              ? GroupMemberRole.admin
-              : GroupMemberRole.member,
+      role: switch (map['role'] as String?) {
+        'owner' => GroupMemberRole.owner,
+        'admin' => GroupMemberRole.admin,
+        _ => GroupMemberRole.member,
+      },
       joinedAt: DateTime.parse(
         map['joined_at'] as String? ?? DateTime.now().toIso8601String(),
       ),

@@ -56,13 +56,33 @@ class GroupChatAppBarSwitcher extends StatelessWidget
     final currentUserId = cubit.currentUserId;
     cubit.clearSelection();
 
-    final forwardableMessages =
-        selectedMessages
-            .map((m) => ForwardableMessage.fromGroupMessage(m))
-            .toList();
-
+    // "Forward to Syncra" — not a real forward target, route into the AI
+    // chat with the text prefilled as a new draft instead of calling
+    // ForwardService (which only knows how to write real chat/group rows).
     if (result.toAi) {
-      final draftText = forwardableMessages
+      // [NEW] Single image selected -> hand off to the same
+      // preview/caption flow a freshly-picked photo goes through,
+      // instead of the text-only draft path below (which can't
+      // represent an image at all).
+      if (selectedMessages.length == 1 &&
+          selectedMessages.first.messageType == 'image' &&
+          (selectedMessages.first.imageUrl?.isNotEmpty ?? false)) {
+        final imageMessage = selectedMessages.first;
+        if (context.mounted) {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder:
+                  (_) => AiChatView(
+                    initialDraftImageRemoteUrl: imageMessage.imageUrl,
+                    initialDraftImageCaption: imageMessage.caption,
+                  ),
+            ),
+          );
+        }
+        return;
+      }
+
+      final draftText = selectedMessages
           .map((m) => m.text.trim())
           .where((t) => t.isNotEmpty)
           .join('\n\n');
@@ -83,6 +103,11 @@ class GroupChatAppBarSwitcher extends StatelessWidget
       }
       return;
     }
+
+    final forwardableMessages =
+        selectedMessages
+            .map((m) => ForwardableMessage.fromGroupMessage(m))
+            .toList();
 
     try {
       await ForwardService().forwardMessages(

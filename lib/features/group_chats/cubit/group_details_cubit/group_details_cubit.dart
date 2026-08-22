@@ -9,6 +9,7 @@ import 'package:social_media_app/core/connectivity/services/connectivity_banner_
 import 'package:social_media_app/core/mentions/mentions.dart';
 import '../../../../core/cache/repository/media_cache_repository.dart';
 import '../../../../core/cache/services/messages_snapshot_cache.dart';
+import '../../../../core/errors/supabase_error_mapper.dart';
 import '../../../../core/presence/model/chat_action_type.dart';
 import '../../../../core/services/fcm_services.dart';
 import '../../../../core/services/supabase_storage_services.dart';
@@ -40,7 +41,8 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState>
         GroupReactionsMixin,
         GroupEditMixin,
         GroupMediaUploadMixin,
-        GroupSelectionMixin {
+        GroupSelectionMixin,
+        WidgetsBindingObserver {
   @override
   final GroupChatServices _services;
   @override
@@ -66,7 +68,19 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState>
     AudioCompressionService? audioCompressionService,
   }) : _audioCompressionService =
            audioCompressionService ?? AudioCompressionService(),
-       super(GroupDetailsLoading());
+       super(GroupDetailsLoading()) {
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && isMember) {
+      _listenMembership();
+      _listenMessages();
+      _listenReadReceipts();
+      _listenPresence();
+    }
+  }
 
   @override
   List<GroupMessageModel> cachedMessages = [];
@@ -232,6 +246,7 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState>
 
   @override
   Future<void> close() {
+    WidgetsBinding.instance.removeObserver(this);
     groupListCubit.resetGroupUnreadCount(group.id);
     if (isMember) {
       _services.markGroupMessagesRead(group.id);

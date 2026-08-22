@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/cache/constants/snapshot_keys.dart';
@@ -17,7 +17,7 @@ part 'group_list_state.dart';
 
 const int kMaxCachedGroupsSnapshot = 50;
 
-class GroupListCubit extends Cubit<GroupListState> {
+class GroupListCubit extends Cubit<GroupListState> with WidgetsBindingObserver {
   final GroupChatServices _services;
   RealtimeChannel? _channel;
   StreamSubscription? _messagesStreamSub;
@@ -26,13 +26,24 @@ class GroupListCubit extends Cubit<GroupListState> {
   final Map<String, List<GroupMemberModel>> _membersByGroupId = {};
   Timer? _activeGroupTimer;
   String? _activeGroupId;
+  int _loadGroupsRequestId = 0;
+  Timer? _reconcileDebounce;
 
   final Set<String> _locallyDeletedGroupIds = {};
   List<GroupModel> get cachedGroupsChats => _cached;
 
   String get _currentUserId => SupabaseProvider.id;
 
-  GroupListCubit(this._services) : super(GroupListInitial());
+  GroupListCubit(this._services) : super(GroupListInitial()) {
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      loadGroups(isRefresh: true);
+    }
+  }
 
   bool _isHiddenByLocalClear(GroupModel g) {
     final clearedAt = GroupChatClearStore.instance.clearedAtFor(g.id);
@@ -101,6 +112,9 @@ class GroupListCubit extends Cubit<GroupListState> {
           final Map<String, int> unreadPerGroup = {};
 
           for (final row in data) {
+            final deletedFor =
+                (row['deleted_for'] as List?)?.cast<String>() ?? [];
+            if (deletedFor.contains(_currentUserId)) continue;
             final gId = row[GroupMemberColumns.groupId] as String?;
             if (gId == null) continue;
 
@@ -284,7 +298,14 @@ class GroupListCubit extends Cubit<GroupListState> {
             );
           },
         )
-        .subscribe();
+        .subscribe((status, [error]) {
+          if (status == RealtimeSubscribeStatus.subscribed) {
+            loadGroups(isRefresh: true);
+          }
+          if (error != null) {
+            debugPrint('[GroupListCubit] realtime channel error: $error');
+          }
+        });
   }
 
   void _subscribeGroupsPresence() {
@@ -313,6 +334,12 @@ class GroupListCubit extends Cubit<GroupListState> {
   }
 
   // ─── State helpers ────────────────────────────────────────────────────────
+  void _scheduleReconcile() {
+    _reconcileDebounce?.cancel();
+    _reconcileDebounce = Timer(const Duration(milliseconds: 300), () {
+      loadGroups(isRefresh: true);
+    });
+  }
 
   void markGroupAsActive(String groupId) {
     if (state is! GroupListLoaded) {
@@ -325,25 +352,28 @@ class GroupListCubit extends Cubit<GroupListState> {
       loadGroups(isRefresh: true);
       return;
     }
-    if (currentState.groups[idx].isMember) return;
-    final newList = List<GroupModel>.from(currentState.groups);
-    newList[idx] = newList[idx].copyWith(isMember: true);
-    _cached = newList;
-    emit(GroupListLoaded(newList));
-    _persistGroupsSnapshot(newList);
+    if (!currentState.groups[idx].isMember) {
+      final newList = List<GroupModel>.from(currentState.groups);
+      newList[idx] = newList[idx].copyWith(isMember: true);
+      _cached = newList;
+      emit(GroupListLoaded(newList));
+      _persistGroupsSnapshot(newList);
+    }
+    _scheduleReconcile();
   }
 
   void markGroupAsLeft(String groupId) {
     if (state is! GroupListLoaded) return;
     final currentState = state as GroupListLoaded;
     final idx = currentState.groups.indexWhere((g) => g.id == groupId);
-    if (idx == -1) return;
-    if (!currentState.groups[idx].isMember) return;
-    final newList = List<GroupModel>.from(currentState.groups);
-    newList[idx] = newList[idx].copyWith(isMember: false);
-    _cached = newList;
-    emit(GroupListLoaded(newList));
-    _persistGroupsSnapshot(newList);
+    if (idx != -1 && currentState.groups[idx].isMember) {
+      final newList = List<GroupModel>.from(currentState.groups);
+      newList[idx] = newList[idx].copyWith(isMember: false);
+      _cached = newList;
+      emit(GroupListLoaded(newList));
+      _persistGroupsSnapshot(newList);
+    }
+    _scheduleReconcile();
   }
 
   void updateGroupMembership(String groupId, bool isMember) {
@@ -416,6 +446,18 @@ class GroupListCubit extends Cubit<GroupListState> {
     if (idx == -1) return;
     final newList = List<GroupModel>.from(currentState.groups);
     newList[idx] = newList[idx].copyWith(avatarUrl: null);
+    _cached = newList;
+    emit(GroupListLoaded(newList));
+    _persistGroupsSnapshot(newList);
+  }
+
+  void updateGroupName({required String groupId, required String newName}) {
+    if (state is! GroupListLoaded) return;
+    final currentState = state as GroupListLoaded;
+    final idx = currentState.groups.indexWhere((g) => g.id == groupId);
+    if (idx == -1) return;
+    final newList = List<GroupModel>.from(currentState.groups);
+    newList[idx] = newList[idx].copyWith(name: newName);
     _cached = newList;
     emit(GroupListLoaded(newList));
     _persistGroupsSnapshot(newList);
@@ -571,6 +613,17 @@ class GroupListCubit extends Cubit<GroupListState> {
   // ─── Public API ───────────────────────────────────────────────────────────
 
   Future<void> loadGroups({bool isRefresh = false}) async {
+    // Staleness guard: every call gets a ticket. If a *newer* loadGroups()
+    // call has started by the time this one's network round-trip
+    // completes, this result is discarded instead of applied. Without
+    // this, an older in-flight fetch (e.g. kicked off right before a
+    // member gets re-added) can resolve *after* a newer, fresher fetch (or
+    // a realtime-driven local patch like markGroupAsActive) and silently
+    // overwrite `_cached` with stale data — which is exactly what caused
+    // a rejoined group to flash back to "not a member" until a manual
+    // pull-to-refresh forced yet another (finally-fresh) fetch.
+    final requestId = ++_loadGroupsRequestId;
+
     if (!isRefresh) emit(GroupListLoading());
     try {
       final fetchedGroups =
@@ -586,6 +639,8 @@ class GroupListCubit extends Cubit<GroupListState> {
       } catch (e) {
         debugPrint('⚠️ Failed to load group members (non-fatal): $e');
       }
+
+      if (requestId != _loadGroupsRequestId) return;
 
       final leftGroupsStillTracked = _cached.where(
         (g) => !g.isMember && !fetchedIds.contains(g.id),
@@ -632,6 +687,8 @@ class GroupListCubit extends Cubit<GroupListState> {
       emit(GroupListLoaded(_cached));
       _persistGroupsSnapshot(_cached);
     } catch (e) {
+      if (requestId != _loadGroupsRequestId) return;
+
       debugPrint('Error loading groups: $e');
 
       if (_cached.isNotEmpty) {
@@ -756,9 +813,11 @@ class GroupListCubit extends Cubit<GroupListState> {
 
   @override
   Future<void> close() {
+    WidgetsBinding.instance.removeObserver(this);
     _channel?.unsubscribe();
     _messagesStreamSub?.cancel();
     _activeGroupTimer?.cancel();
+    _reconcileDebounce?.cancel();
     return super.close();
   }
 }

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/errors/supabase_error_mapper.dart';
 import '../../../../core/supabase/supabase_provider.dart';
 import '../../models/group_call_model.dart';
 import '../../services/group_call_signaling_service.dart';
@@ -79,7 +80,7 @@ class GroupCallCubit extends Cubit<GroupCallState> {
       emit(GroupCallRinging(call));
       _startRingTimeout(call);
     } catch (e) {
-      if (!isClosed) emit(GroupCallError(e.toString()));
+      if (!isClosed) emit(GroupCallError(SupabaseErrorMapper.toUserMessage(e)));
     }
   }
 
@@ -89,7 +90,7 @@ class GroupCallCubit extends Cubit<GroupCallState> {
       final accepted = await _service.acceptCall(call.callId);
       if (!isClosed) emit(GroupCallActive(accepted));
     } catch (e) {
-      if (!isClosed) emit(GroupCallError(e.toString()));
+      if (!isClosed) emit(GroupCallError(SupabaseErrorMapper.toUserMessage(e)));
     }
   }
 
@@ -104,7 +105,7 @@ class GroupCallCubit extends Cubit<GroupCallState> {
       final joined = await _service.acceptCall(call.callId);
       if (!isClosed) emit(GroupCallActive(joined));
     } catch (e) {
-      if (!isClosed) emit(GroupCallError(e.toString()));
+      if (!isClosed) emit(GroupCallError(SupabaseErrorMapper.toUserMessage(e)));
     }
   }
 

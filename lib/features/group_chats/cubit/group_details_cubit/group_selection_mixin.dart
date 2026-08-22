@@ -61,7 +61,7 @@ mixin GroupSelectionMixin on Cubit<GroupDetailsState> {
       );
     } catch (e) {
       debugPrint('error deleting selected group messages for me: $e');
-      emit(GroupDetailsError(e.toString()));
+      emit(GroupDetailsError(SupabaseErrorMapper.toUserMessage(e)));
     }
   }
 
@@ -87,7 +87,7 @@ mixin GroupSelectionMixin on Cubit<GroupDetailsState> {
       await _services.deleteGroupMessagesForEveryone(realIds);
     } catch (e) {
       debugPrint('error deleting selected group messages for everyone: $e');
-      emit(GroupDetailsError(e.toString()));
+      emit(GroupDetailsError(SupabaseErrorMapper.toUserMessage(e)));
     }
   }
 

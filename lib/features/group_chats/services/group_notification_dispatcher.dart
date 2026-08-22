@@ -42,6 +42,7 @@ class GroupNotificationDispatcher {
           (memberId, token) => _fcm.sendGroupNotification(
             messageId: messageId,
             receiverFcmToken: token,
+            receiverId: memberId,
             groupId: groupId,
             groupName: groupName,
             senderId: senderId,

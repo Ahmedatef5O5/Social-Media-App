@@ -291,7 +291,7 @@ mixin GroupMediaUploadMixin on Cubit<GroupDetailsState> {
         cachedMessages.removeWhere((m) => m.id == tempId);
 
         if (!isOffline) {
-          emit(GroupDetailsError(e.toString()));
+          emit(GroupDetailsError(SupabaseErrorMapper.toUserMessage(e)));
         }
 
         emit(GroupDetailsLoaded(messages: List.from(cachedMessages)));
