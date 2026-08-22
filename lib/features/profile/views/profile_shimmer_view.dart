@@ -12,6 +12,7 @@ class ProfileShimmerLoading extends StatelessWidget {
   Widget build(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final double bgHeight = size.width / 1.7;
 
     return Stack(
       children: [
@@ -27,7 +28,7 @@ class ProfileShimmerLoading extends StatelessWidget {
                   clipBehavior: Clip.none,
                   children: [
                     Container(
-                      height: (size.width / 1.7),
+                      height: bgHeight,
                       width: double.infinity,
                       color: Colors.white,
                     ),
@@ -45,28 +46,34 @@ class ProfileShimmerLoading extends StatelessWidget {
                     ),
                     Positioned(
                       right: 20,
-                      top: (size.width / 1.7) + 10,
-                      child: Column(
-                        children: [
-                          Container(
-                            width: 166,
-                            height: 42,
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(25),
-                            ),
-                          ),
-                          const Gap(8),
-                          Container(
-                            width: 166,
-                            height: 42,
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(25),
-                            ),
-                          ),
-                        ],
-                      ),
+                      top: bgHeight + 10,
+                      child:
+                          isCurrentUser
+                              ? Row(
+                                children: [
+                                  _shimmerCircle(44),
+                                  const Gap(12),
+                                  _shimmerCircle(44),
+                                ],
+                              )
+                              : SizedBox(
+                                width: 166,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    _shimmerPill(166, 42),
+                                    const Gap(8),
+                                    Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        _shimmerCircle(44),
+                                        const Gap(12),
+                                        _shimmerCircle(44),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
                     ),
                   ],
                 ),
@@ -85,13 +92,12 @@ class ProfileShimmerLoading extends StatelessWidget {
                 const Gap(25),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Container(
-                    width: double.infinity,
-                    height: 46,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
+                  child: Row(
+                    children: [
+                      Expanded(child: _shimmerPill(double.infinity, 46)),
+                      const Gap(10),
+                      _shimmerCircle(46),
+                    ],
                   ),
                 ),
                 const Gap(20),
@@ -264,6 +270,28 @@ class ProfileShimmerLoading extends StatelessWidget {
             ),
           ),
       ],
+    );
+  }
+
+  Widget _shimmerPill(double width, double height) {
+    return Container(
+      width: width,
+      height: height,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(height / 2 > 25 ? 25 : height / 2),
+      ),
+    );
+  }
+
+  Widget _shimmerCircle(double diameter) {
+    return Container(
+      width: diameter,
+      height: diameter,
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        shape: BoxShape.circle,
+      ),
     );
   }
 }

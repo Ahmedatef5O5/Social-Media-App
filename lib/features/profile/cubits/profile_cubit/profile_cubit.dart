@@ -56,6 +56,7 @@ class ProfileCubit extends Cubit<ProfileState> {
   }
 
   Future<void> getProfileData(String userId, {bool isRefresh = false}) async {
+    _currentUserId = userId;
     if (!isRefresh) emit(ProfileLoading());
     try {
       final results = await Future.wait([
@@ -88,12 +89,15 @@ class ProfileCubit extends Cubit<ProfileState> {
         ),
       );
     } catch (e) {
-      if (e.toString().contains('no-internet')) {
+      final errorMessage = AuthExceptionHandler.handle(e);
+
+      if (errorMessage == 'no-internet' ||
+          e.toString().contains('no-internet')) {
         emit(
           ProfileError("No internet connection. Please check your network."),
         );
       } else {
-        emit(ProfileError(AuthExceptionHandler.handle(e)));
+        emit(ProfileError(errorMessage));
       }
     }
   }

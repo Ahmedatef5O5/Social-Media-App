@@ -11,13 +11,13 @@ import '../cubits/profile_cubit/profile_cubit.dart';
 
 class ProfileBodyContent extends StatelessWidget {
   final PostsCubit postsCubit;
-
   final ProfileLoaded state;
   final ScrollController scrollController;
   final Size size;
   final ValueNotifier<double> refreshProgress;
   final ValueNotifier<bool> isRefreshing;
   final bool isCurrentUser;
+
   const ProfileBodyContent({
     super.key,
     required this.postsCubit,
@@ -26,7 +26,6 @@ class ProfileBodyContent extends StatelessWidget {
     required this.size,
     required this.refreshProgress,
     required this.isRefreshing,
-
     required this.isCurrentUser,
   });
 

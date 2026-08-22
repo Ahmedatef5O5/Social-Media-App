@@ -16,7 +16,7 @@ class UserService {
 
   Future<UserData> fetchCurrentUser(String userId) async {
     if (!(await _networkStatus.isConnected())) {
-      throw Exception('no-internet');
+      throw Exception("No internet connection. Please check your network.");
     }
     try {
       final data =

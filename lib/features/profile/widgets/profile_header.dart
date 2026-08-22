@@ -13,6 +13,7 @@ import '../../posts/cubit/posts_cubit/posts_cubit.dart';
 import '../../single_chats/models/chat_user_model.dart';
 import '../../social_graph/models/friendship_status.dart';
 import '../../social_graph/widgets/animated_action_button.dart';
+import '../../stories/cubit/stories_cubit/stories_cubit.dart';
 
 class ProfileHeader extends StatelessWidget {
   const ProfileHeader({super.key, required this.size, required this.state});
@@ -26,6 +27,9 @@ class ProfileHeader extends StatelessWidget {
     final isMe = user.id == currentUserId;
     final theme = Theme.of(context);
     final double bgHeight = MediaQuery.of(context).size.width / 1.7;
+
+    final friendshipTopWidget =
+        isMe ? null : _buildFriendshipActionWidget(context, theme);
 
     return Column(
       mainAxisAlignment: MainAxisAlignment.start,
@@ -48,64 +52,81 @@ class ProfileHeader extends StatelessWidget {
               showBorder: true,
             ),
 
-            if (!isMe)
-              Positioned(
-                right: 20,
-                top: bgHeight + 10,
-                child: SizedBox(
-                  width: 166,
-                  child: Column(
+            Positioned(
+              right: 20,
+              top: bgHeight + 10,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  if (!isMe && friendshipTopWidget != null) ...[
+                    SizedBox(width: 166, child: friendshipTopWidget),
+                    const Gap(8),
+                  ],
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      _buildFriendshipActionWidget(context, theme),
-
-                      const Gap(8),
-                      _buildSmallActionButton(
+                      _buildCircularIconButton(
                         context,
-                        label: 'Send message',
-                        txtColor: Theme.of(context).primaryColor,
-                        bgColor: Theme.of(
-                          context,
-                        ).scaffoldBackgroundColor.withValues(alpha: 0.99),
-                        side: BorderSide(
-                          color:
-                              Theme.of(context).brightness != Brightness.light
-                                  ? Theme.of(
-                                    context,
-                                  ).primaryColor.withValues(alpha: 0.65)
-                                  : Colors.transparent,
-                          width: 1,
-                        ),
-                        iconWidget: Padding(
-                          padding: const EdgeInsets.only(left: 4, bottom: 2),
-                          child: Icon(
-                            Icons.message_rounded,
-                            color: Theme.of(context).primaryColor,
-                            size: 19,
-                          ),
-                        ),
+                        theme: theme,
+                        icon:
+                            isMe
+                                ? Icons.bookmark_rounded
+                                : Icons.people_alt_rounded,
+                        tooltip: isMe ? 'Saved Posts' : 'Friends List',
                         onPressed: () {
-                          final chatUser = ChatUserModel(
-                            id: user.id,
-                            name: user.name,
-                            imageUrl: user.imageUrl,
-                            lastSeen: user.lastSeen,
-                          );
+                          if (isMe) {
+                            final postsCubit = context.read<PostsCubit>();
+                            Navigator.of(
+                              context,
+                              rootNavigator: true,
+                            ).pushNamed(
+                              AppRoutes.savedPostsViewRoute,
+                              arguments: {
+                                'postsCubit': postsCubit,
+                                'userId': user.id,
+                              },
+                            );
+                          } else {
+                            Navigator.of(
+                              context,
+                              rootNavigator: true,
+                            ).pushNamed(
+                              AppRoutes.friendsListViewRoute,
+                              arguments: user.id,
+                            );
+                          }
+                        },
+                      ),
+                      const Gap(12),
+                      _buildCircularIconButton(
+                        context,
+                        theme: theme,
+                        assetPath: AppImages.filledStoriesIcon,
+                        tooltip: 'Stories',
+                        onPressed: () {
+                          final storiesCubit = context.read<StoriesCubit>();
                           Navigator.of(context, rootNavigator: true).pushNamed(
-                            AppRoutes.chatDetailsViewRoute,
-                            arguments: chatUser,
+                            AppRoutes.userStoriesGridViewRoute,
+                            arguments: {
+                              'userId': user.id,
+                              'authorName': user.name,
+                              'storiesCubit': storiesCubit,
+                            },
                           );
                         },
                       ),
                     ],
                   ),
-                ),
+                ],
               ),
+            ),
+
             if (!isMe)
               Align(
                 alignment: Alignment.topLeft,
                 child: SafeArea(
                   child: Padding(
-                    padding: const EdgeInsets.only(top: 12.0),
+                    padding: const EdgeInsets.only(top: 16.0),
                     child: GestureDetector(
                       behavior: HitTestBehavior.opaque,
                       onTap: () => Navigator.maybePop(context),
@@ -117,85 +138,14 @@ class ProfileHeader extends StatelessWidget {
                             color: Colors.black.withValues(alpha: 0.3),
                             shape: BoxShape.circle,
                           ),
-                          child: Icon(
+                          child: const Icon(
                             Icons.arrow_back_ios_new,
                             color: Colors.white,
-                            size: 20,
+                            size: 18,
                           ),
                         ),
                       ),
                     ),
-                  ),
-                ),
-              ),
-
-            if (isMe)
-              Positioned(
-                right: 20,
-                top: bgHeight + 10,
-                child: SizedBox(
-                  width: 164,
-                  child: Column(
-                    children: [
-                      _buildSmallActionButton(
-                        context,
-                        label: 'Friends List',
-                        txtColor: theme.primaryColor,
-                        bgColor: theme.scaffoldBackgroundColor.withValues(
-                          alpha: 0.99,
-                        ),
-                        side: BorderSide(
-                          color:
-                              theme.brightness != Brightness.light
-                                  ? theme.primaryColor.withValues(alpha: 0.65)
-                                  : AppColors.grey3,
-                          width: 1,
-                        ),
-                        iconWidget: Icon(
-                          Icons.people_alt_rounded,
-                          color: theme.primaryColor,
-                          size: 19,
-                        ),
-                        onPressed: () {
-                          Navigator.of(context, rootNavigator: true).pushNamed(
-                            AppRoutes.friendsListViewRoute,
-                            arguments: user.id,
-                          );
-                          // AppToast.info('this feature is coming soon');
-                        },
-                      ),
-                      const Gap(8),
-                      _buildSmallActionButton(
-                        context,
-                        label: 'Saved Posts',
-                        txtColor: theme.primaryColor,
-                        bgColor: theme.scaffoldBackgroundColor.withValues(
-                          alpha: 0.99,
-                        ),
-                        side: BorderSide(
-                          color:
-                              theme.brightness != Brightness.light
-                                  ? theme.primaryColor.withValues(alpha: 0.65)
-                                  : AppColors.grey3,
-                          width: 1,
-                        ),
-                        iconWidget: Icon(
-                          Icons.bookmark_rounded,
-                          color: theme.primaryColor,
-                          size: 18,
-                        ),
-                        onPressed: () {
-                          final postsCubit = context.read<PostsCubit>();
-                          Navigator.of(context, rootNavigator: true).pushNamed(
-                            AppRoutes.savedPostsViewRoute,
-                            arguments: {
-                              'postsCubit': postsCubit,
-                              'userId': user.id,
-                            },
-                          );
-                        },
-                      ),
-                    ],
                   ),
                 ),
               ),
@@ -244,58 +194,104 @@ class ProfileHeader extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 20),
           child:
               isMe
-                  ? CustomElevatedButton(
-                    minimumSize: const Size(double.infinity, 46),
-                    maximumSize: const Size(double.infinity, 46),
-                    txtBtn: 'Edit Profile',
-                    txtBtnStyle: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 0.2,
-                      color: theme.primaryColor,
-                    ),
-                    prefixIcon: Icon(
-                      Icons.edit_rounded,
-                      size: 16,
-                      color: theme.primaryColor,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    side: BorderSide(color: AppColors.grey3, width: 1.3),
-                    elevation: 0,
-                    bgColor: theme.colorScheme.surface,
-                    onPressed: () async {
-                      final profileCubit = context.read<ProfileCubit>();
-                      await Navigator.of(
+                  ? Row(
+                    children: [
+                      Expanded(
+                        child: CustomElevatedButton(
+                          minimumSize: const Size(double.infinity, 46),
+                          maximumSize: const Size(double.infinity, 46),
+                          txtBtn: 'Edit Profile',
+                          txtBtnStyle: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 0.2,
+                            color: theme.primaryColor,
+                          ),
+                          prefixIcon: Icon(
+                            Icons.edit_rounded,
+                            size: 16,
+                            color: theme.primaryColor,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          side: BorderSide(color: AppColors.grey3, width: 1.3),
+                          elevation: 0,
+                          bgColor: theme.colorScheme.surface,
+                          onPressed: () async {
+                            final profileCubit = context.read<ProfileCubit>();
+                            await Navigator.of(
+                              context,
+                              rootNavigator: true,
+                            ).pushNamed(
+                              AppRoutes.editProfileViewRoute,
+                              arguments: user,
+                            );
+                            if (context.mounted) {
+                              profileCubit.getProfileData(user.id);
+                            }
+                          },
+                        ),
+                      ),
+                      const Gap(10),
+                      _buildCircularIconButton(
                         context,
-                        rootNavigator: true,
-                      ).pushNamed(
-                        AppRoutes.editProfileViewRoute,
-                        arguments: user,
-                      );
-                      if (context.mounted) {
-                        profileCubit.getProfileData(user.id);
-                      }
-                    },
+                        theme: theme,
+                        icon: Icons.people_alt_rounded,
+                        tooltip: 'Friends List',
+                        size: 46,
+                        onPressed: () {
+                          Navigator.of(context, rootNavigator: true).pushNamed(
+                            AppRoutes.friendsListViewRoute,
+                            arguments: user.id,
+                          );
+                        },
+                      ),
+                    ],
                   )
-                  : AnimatedActionButton(
-                    height: 46,
-                    isActive: state.isFollowing,
-                    idleLabel: 'Follow',
-                    activeLabel: 'Following',
-                    idleIcon: Icons.person_add_rounded,
-                    activeIcon: Icons.check_rounded,
-                    onPressed: () async {
-                      await context.read<ProfileCubit>().toggleFollow();
-                    },
+                  : Row(
+                    children: [
+                      Expanded(
+                        child: AnimatedActionButton(
+                          height: 46,
+                          isActive: state.isFollowing,
+                          idleLabel: 'Follow',
+                          activeLabel: 'Following',
+                          idleIcon: Icons.person_add_rounded,
+                          activeIcon: Icons.check_rounded,
+                          onPressed: () async {
+                            await context.read<ProfileCubit>().toggleFollow();
+                          },
+                        ),
+                      ),
+                      const Gap(10),
+                      _buildCircularIconButton(
+                        context,
+                        theme: theme,
+                        icon: Icons.message_rounded,
+                        tooltip: 'Send message',
+                        size: 46,
+                        onPressed: () {
+                          final chatUser = ChatUserModel(
+                            id: user.id,
+                            name: user.name,
+                            imageUrl: user.imageUrl,
+                            lastSeen: user.lastSeen,
+                          );
+                          Navigator.of(context, rootNavigator: true).pushNamed(
+                            AppRoutes.chatDetailsViewRoute,
+                            arguments: chatUser,
+                          );
+                        },
+                      ),
+                    ],
                   ),
         ),
       ],
     );
   }
 
-  Widget _buildFriendshipActionWidget(BuildContext context, ThemeData theme) {
+  Widget? _buildFriendshipActionWidget(BuildContext context, ThemeData theme) {
     final cubit = context.read<ProfileCubit>();
 
     switch (state.friendshipStatus) {
@@ -335,18 +331,7 @@ class ProfileHeader extends StatelessWidget {
           },
         );
       case FriendshipStatus.accepted:
-        return _buildSmallActionButton(
-          context,
-          label: 'Friends',
-          txtColor: theme.colorScheme.onSurfaceVariant,
-          bgColor: theme.colorScheme.surfaceContainerHighest,
-          iconWidget: Icon(
-            Icons.people_alt_rounded,
-            size: 18,
-            color: theme.colorScheme.onSurfaceVariant,
-          ),
-          onPressed: () {},
-        );
+        return null;
     }
   }
 
@@ -378,6 +363,99 @@ class ProfileHeader extends StatelessWidget {
       elevation: 1.1,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
       prefixIcon: iconWidget,
+    );
+  }
+
+  Widget _buildCircularIconButton(
+    BuildContext context, {
+    required ThemeData theme,
+    IconData? icon,
+    String? assetPath,
+    required VoidCallback onPressed,
+    String? tooltip,
+    double size = 44,
+  }) {
+    return _CircularIconButton(
+      theme: theme,
+      icon: icon,
+      assetPath: assetPath,
+      onPressed: onPressed,
+      tooltip: tooltip,
+      size: size,
+    );
+  }
+}
+
+class _CircularIconButton extends StatefulWidget {
+  final ThemeData theme;
+  final IconData? icon;
+  final String? assetPath;
+  final VoidCallback onPressed;
+  final String? tooltip;
+  final double size;
+
+  const _CircularIconButton({
+    required this.theme,
+    this.icon,
+    this.assetPath,
+    required this.onPressed,
+    required this.size,
+    this.tooltip,
+  });
+
+  @override
+  State<_CircularIconButton> createState() => _CircularIconButtonState();
+}
+
+class _CircularIconButtonState extends State<_CircularIconButton> {
+  bool _pressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = widget.theme;
+    return AnimatedScale(
+      scale: _pressed ? 0.9 : 1.0,
+      duration: const Duration(milliseconds: 110),
+      curve: Curves.easeOut,
+      child: Material(
+        color: theme.scaffoldBackgroundColor.withValues(alpha: 0.99),
+        shape: CircleBorder(
+          side: BorderSide(
+            color:
+                theme.brightness != Brightness.light
+                    ? theme.primaryColor.withValues(alpha: 0.65)
+                    : AppColors.grey3,
+            width: 1,
+          ),
+        ),
+        elevation: 1.1,
+        child: InkWell(
+          customBorder: const CircleBorder(),
+          onTapDown: (_) => setState(() => _pressed = true),
+          onTapUp: (_) => setState(() => _pressed = false),
+          onTapCancel: () => setState(() => _pressed = false),
+          onTap: widget.onPressed,
+          child: SizedBox(
+            width: widget.size,
+            height: widget.size,
+            child: Center(
+              child:
+                  widget.assetPath != null
+                      ? Image.asset(
+                        widget.assetPath!,
+                        width: widget.size * 0.43,
+                        height: widget.size * 0.43,
+                        color: theme.primaryColor,
+                      )
+                      : Icon(
+                        widget.icon,
+                        color: theme.primaryColor,
+                        size: widget.size * 0.43,
+                      ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
