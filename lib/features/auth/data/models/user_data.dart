@@ -10,6 +10,8 @@ class UserData {
   final String? bio;
   final String? imageUrl;
   final String? backgroundImageUrl;
+  final String? imagePublicId;
+  final String? backgroundImagePublicId;
   final DateTime? lastSeen;
   final PresencePrivacy presencePrivacy;
   final List<String> presenceVisibleTo;
@@ -24,6 +26,8 @@ class UserData {
     this.bio,
     this.imageUrl,
     this.backgroundImageUrl,
+    this.imagePublicId,
+    this.backgroundImagePublicId,
     this.lastSeen,
     this.presencePrivacy = PresencePrivacy.friends,
     this.presenceVisibleTo = const [],
@@ -40,6 +44,8 @@ class UserData {
       'bio': bio,
       'image_url': imageUrl,
       'background_image_url': backgroundImageUrl,
+      'image_public_id': imagePublicId,
+      'background_image_public_id': backgroundImagePublicId,
       UserColumns.lastSeen: lastSeen,
       UserColumns.presencePrivacy: presencePrivacy.value,
       UserColumns.presenceVisibleTo: presenceVisibleTo,
@@ -62,6 +68,8 @@ class UserData {
           map['background_image_url'] != null
               ? map['background_image_url'] as String? ?? ''
               : null,
+      imagePublicId: map['image_public_id'] as String?,
+      backgroundImagePublicId: map['background_image_public_id'] as String?,
       lastSeen:
           map[UserColumns.lastSeen] != null
               ? DateTime.parse(map[UserColumns.lastSeen].toString())
@@ -87,6 +95,8 @@ class UserData {
     'bio': bio,
     'image_url': imageUrl,
     'background_image_url': backgroundImageUrl,
+    'image_public_id': imagePublicId,
+    'background_image_public_id': backgroundImagePublicId,
     'last_seen': lastSeen?.toIso8601String(),
     'presence_privacy': presencePrivacy.value,
     'presence_visible_to': presenceVisibleTo,
@@ -103,6 +113,8 @@ class UserData {
       bio: map['bio'] as String?,
       imageUrl: map['image_url'] as String?,
       backgroundImageUrl: map['background_image_url'] as String?,
+      imagePublicId: map['image_public_id'] as String?,
+      backgroundImagePublicId: map['background_image_public_id'] as String?,
       lastSeen:
           map['last_seen'] != null
               ? DateTime.parse(map['last_seen'] as String)
@@ -128,6 +140,8 @@ class UserData {
     String? bio,
     String? imageUrl,
     String? backgroundImageUrl,
+    String? imagePublicId,
+    String? backgroundImagePublicId,
     final DateTime? lastSeen,
     PresencePrivacy? presencePrivacy,
     List<String>? presenceVisibleTo,
@@ -142,6 +156,9 @@ class UserData {
       bio: bio ?? this.bio,
       imageUrl: imageUrl ?? this.imageUrl,
       backgroundImageUrl: backgroundImageUrl ?? this.backgroundImageUrl,
+      imagePublicId: imagePublicId ?? this.imagePublicId,
+      backgroundImagePublicId:
+          backgroundImagePublicId ?? this.backgroundImagePublicId,
       lastSeen: lastSeen ?? this.lastSeen,
       presencePrivacy: presencePrivacy ?? this.presencePrivacy,
       presenceVisibleTo: presenceVisibleTo ?? this.presenceVisibleTo,

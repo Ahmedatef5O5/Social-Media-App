@@ -2,13 +2,13 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../core/link/model/link_preview_data.dart';
 import '../../../core/link/services/link_preview_service.dart';
 import '../../../core/toast/app_toast.dart';
 import '../models/social_platform_info.dart';
 
-/// A premium preview card for one social media link on the Details tab.
 class SocialMediaPreviewCard extends StatefulWidget {
   final SocialPlatformInfo platform;
   final String rawValue;
@@ -54,6 +54,12 @@ class _SocialMediaPreviewCardState extends State<SocialMediaPreviewCard> {
   Future<void> _copyLink() async {
     await Clipboard.setData(ClipboardData(text: _url));
     if (mounted) AppToast.success('Link copied');
+  }
+
+  Future<void> _shareLink() async {
+    await SharePlus.instance.share(
+      ShareParams(text: _url, subject: 'Check out this link!'),
+    );
   }
 
   @override
@@ -111,8 +117,20 @@ class _SocialMediaPreviewCardState extends State<SocialMediaPreviewCard> {
                   ),
                   Positioned(
                     right: 8,
+                    top: 8,
+                    child: _ActionButton(
+                      icon: Icons.share_rounded,
+                      onTap: _shareLink,
+                    ),
+                  ),
+
+                  Positioned(
+                    right: 8,
                     bottom: 8,
-                    child: _CopyButton(onTap: _copyLink),
+                    child: _ActionButton(
+                      icon: Icons.copy_rounded,
+                      onTap: _copyLink,
+                    ),
                   ),
                 ],
               ),
@@ -483,10 +501,11 @@ class _CompactBrandCard extends StatelessWidget {
   }
 }
 
-class _CopyButton extends StatelessWidget {
+class _ActionButton extends StatelessWidget {
   final VoidCallback onTap;
+  final IconData icon;
 
-  const _CopyButton({required this.onTap});
+  const _ActionButton({required this.onTap, required this.icon});
 
   @override
   Widget build(BuildContext context) {
@@ -498,11 +517,11 @@ class _CopyButton extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(7),
           decoration: BoxDecoration(
-            color: Colors.black.withValues(alpha: 0.28),
+            color: Colors.black.withValues(alpha: 0.2),
             shape: BoxShape.circle,
           ),
           child: Icon(
-            Icons.copy_rounded,
+            icon,
             size: 14,
             color: Colors.white.withValues(alpha: 0.75),
           ),
