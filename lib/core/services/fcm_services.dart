@@ -9,6 +9,7 @@ class FcmService {
   Future<void> sendChatNotification({
     required String messageId,
     required String receiverFcmToken,
+    required String receiverId,
     required String senderId,
     required String senderName,
     required String messageBody,
@@ -39,6 +40,7 @@ class FcmService {
       'type': 'chat',
       'messageId': messageId,
       'receiverFcmToken': receiverFcmToken,
+      'receiverId': receiverId,
       'senderId': senderId,
       'senderName': senderName,
       'messageBody': messageBody,
@@ -144,6 +146,7 @@ class FcmService {
   Future<void> sendGroupNotification({
     required String messageId,
     required String receiverFcmToken,
+    required String receiverId,
     required String groupId,
     required String groupName,
     required String senderId,
@@ -171,6 +174,7 @@ class FcmService {
       'type': 'group',
       'messageId': messageId,
       'receiverFcmToken': receiverFcmToken,
+      'receiverId': receiverId,
       'groupId': groupId,
       'groupName': groupName,
       'senderId': senderId,

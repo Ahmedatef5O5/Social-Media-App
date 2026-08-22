@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:social_media_app/features/search/utils/chat_tile_skeleton_list.dart';
+import '../../../core/constants/app_images.dart';
 import '../../../core/presence/widgets/presence_avatar_widget.dart';
 import '../../../core/widgets/app_avatar.dart';
 import '../../group_chats/models/group_model.dart';
@@ -195,19 +196,6 @@ class _ForwardTargetPickerViewState extends State<ForwardTargetPickerView> {
                 ),
               ),
 
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _sectionHeader('AI Assistant', theme),
-                  _aiTile(theme),
-                  const SizedBox(height: 4),
-                  const Divider(height: 17),
-                ],
-              ),
-            ),
-
             Expanded(
               child: _buildContent(displayedPeople, displayedGroups, theme),
             ),
@@ -302,63 +290,74 @@ class _ForwardTargetPickerViewState extends State<ForwardTargetPickerView> {
       );
     }
 
-    if (_people.isEmpty && _groups.isEmpty) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 40),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: theme.primaryColor.withValues(alpha: 0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  CupertinoIcons.paperplane,
-                  size: 50,
-                  color: theme.primaryColor,
-                ),
-              ),
-              const SizedBox(height: 24),
-              const Text(
-                'Nowhere to forward yet',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 12),
-              const Text(
-                'Add friends, follow people, or join a group first.',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.grey, height: 1.5),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    if (displayedPeople.isEmpty && displayedGroups.isEmpty) {
-      return const Center(
-        child: Text(
-          'No results found.',
-          style: TextStyle(color: Colors.grey, fontSize: 16),
-        ),
-      );
-    }
+    final showAi =
+        _searchQuery.isEmpty ||
+        'ai assistant'.contains(_searchQuery.toLowerCase()) ||
+        'syncra'.contains(_searchQuery.toLowerCase());
 
     return ListView(
       padding: const EdgeInsets.symmetric(horizontal: 8),
       children: [
+        if (showAi) ...[
+          _sectionHeader('AI Assistant', theme),
+          _aiTile(theme),
+          const SizedBox(height: 8),
+        ],
+
         if (displayedGroups.isNotEmpty) ...[
           _sectionHeader('Groups', theme),
           for (final group in displayedGroups) _groupTile(group, theme),
           const SizedBox(height: 8),
         ],
+
         if (displayedPeople.isNotEmpty) ...[
           _sectionHeader('People', theme),
           for (final user in displayedPeople) _personTile(user, theme),
         ],
+
+        if (!showAi && displayedGroups.isEmpty && displayedPeople.isEmpty)
+          const Padding(
+            padding: EdgeInsets.only(top: 40),
+            child: Center(
+              child: Text(
+                'No results found.',
+                style: TextStyle(color: Colors.grey, fontSize: 16),
+              ),
+            ),
+          ),
+
+        if (_people.isEmpty && _groups.isEmpty && _searchQuery.isEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 40),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: theme.primaryColor.withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    CupertinoIcons.paperplane,
+                    size: 50,
+                    color: theme.primaryColor,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                const Text(
+                  'Nowhere to forward yet',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 12),
+                const Text(
+                  'Add friends, follow people, or join a group first.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.grey, height: 1.5),
+                ),
+              ],
+            ),
+          ),
       ],
     );
   }
@@ -536,13 +535,13 @@ class _ForwardTargetPickerViewState extends State<ForwardTargetPickerView> {
                     hasAvatar ? NetworkImage(group.avatarUrl!) : null,
                 child:
                     !hasAvatar
-                        ? Text(
-                          group.name.isNotEmpty
-                              ? group.name[0].toUpperCase()
-                              : '#',
-                          style: TextStyle(
-                            color: theme.primaryColor,
-                            fontWeight: FontWeight.bold,
+                        ? Container(
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            image: DecorationImage(
+                              image: AssetImage(AppImages.defaultGroupImg),
+                              fit: BoxFit.cover,
+                            ),
                           ),
                         )
                         : null,
