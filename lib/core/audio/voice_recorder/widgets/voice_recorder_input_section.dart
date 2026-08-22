@@ -23,6 +23,9 @@ class VoiceRecorderInputSection extends StatefulWidget {
   final VoidCallback? onRecordingResume;
   final VoidCallback? onRecordingStop;
   final VoidCallback? onRecordingCancel;
+  final VoidCallback? onMicTap;
+  final bool isDictating;
+  final Future<void> Function()? onForceStopDictation;
 
   const VoiceRecorderInputSection({
     super.key,
@@ -36,6 +39,9 @@ class VoiceRecorderInputSection extends StatefulWidget {
     this.onRecordingResume,
     this.onRecordingStop,
     this.onRecordingCancel,
+    this.onMicTap,
+    this.isDictating = false,
+    this.onForceStopDictation,
   });
 
   @override
@@ -46,6 +52,7 @@ class VoiceRecorderInputSection extends StatefulWidget {
 class _VoiceRecorderInputSectionState extends State<VoiceRecorderInputSection> {
   static const double _lockThreshold = 80.0;
   static const double _cancelThreshold = 120.0;
+  static const Duration _minRecordingDuration = Duration(milliseconds: 1000);
   static const int _maxLiveBars = 40;
 
   final VoiceChunkRecorderService _recorderService =
@@ -115,6 +122,9 @@ class _VoiceRecorderInputSectionState extends State<VoiceRecorderInputSection> {
   }
 
   Future<void> _startRecording() async {
+    if (widget.isDictating) {
+      await widget.onForceStopDictation?.call();
+    }
     if (!await _recorderService.hasPermission) return;
 
     await _recorderService.start();
@@ -232,30 +242,38 @@ class _VoiceRecorderInputSectionState extends State<VoiceRecorderInputSection> {
     await _previewPlayer.play(DeviceFileSource(_previewFile!.path));
   }
 
+  bool _isCancelling = false;
+
   Future<void> _cancelRecording() async {
-    widget.onRecordingCancel?.call();
-    HapticFeedback.lightImpact();
-    _ticker?.cancel();
-    _ticker = null;
-    _amplitudeTimer?.cancel();
-    _amplitudeTimer = null;
-    if (_isPreviewPlaying) await _previewPlayer.stop();
+    if (_isCancelling) return;
+    _isCancelling = true;
+    try {
+      widget.onRecordingCancel?.call();
+      HapticFeedback.lightImpact();
+      _ticker?.cancel();
+      _ticker = null;
+      _amplitudeTimer?.cancel();
+      _amplitudeTimer = null;
+      if (_isPreviewPlaying) await _previewPlayer.stop();
 
-    await _recorderService.cancelAndCleanup();
+      await _recorderService.cancelAndCleanup();
 
-    if (mounted) {
-      setState(() {
-        _uiState = _RecordUiState.idle;
-        _seconds = 0;
-        _dragDx = 0;
-        _dragDy = 0;
-        _isPaused = false;
-        _recordingSessionId = null;
-        _previewFile = null;
-        _liveAmplitudes.clear();
-        _previewDuration = Duration.zero;
-        _previewPosition = Duration.zero;
-      });
+      if (mounted) {
+        setState(() {
+          _uiState = _RecordUiState.idle;
+          _seconds = 0;
+          _dragDx = 0;
+          _dragDy = 0;
+          _isPaused = false;
+          _recordingSessionId = null;
+          _previewFile = null;
+          _liveAmplitudes.clear();
+          _previewDuration = Duration.zero;
+          _previewPosition = Duration.zero;
+        });
+      }
+    } finally {
+      _isCancelling = false;
     }
   }
 
@@ -278,8 +296,10 @@ class _VoiceRecorderInputSectionState extends State<VoiceRecorderInputSection> {
     if (_isPreviewPlaying) await _previewPlayer.stop();
 
     final file = await _recorderService.finishAndBuild();
-    final seconds =
-        file != null ? await _extractPreciseDuration(file, _seconds) : _seconds;
+    final preciseDuration =
+        file != null
+            ? await _extractPreciseDuration(file, Duration(seconds: _seconds))
+            : Duration(seconds: _seconds);
 
     if (mounted) {
       setState(() {
@@ -298,30 +318,35 @@ class _VoiceRecorderInputSectionState extends State<VoiceRecorderInputSection> {
 
     if (file == null) return;
 
+    if (preciseDuration < _minRecordingDuration) {
+      await file.delete();
+      return;
+    }
+
     final size = await file.length();
     if (size < 1000) {
       await file.delete();
       return;
     }
 
-    widget.onSendVoice(file, seconds);
+    widget.onSendVoice(file, preciseDuration.inSeconds);
   }
 
-  Future<int> _extractPreciseDuration(File file, int fallbackSeconds) async {
+  Future<Duration> _extractPreciseDuration(File file, Duration fallback) async {
     AudioPlayer? probe;
     try {
       probe = AudioPlayer();
       await probe.setSourceDeviceFile(file.path);
       final duration = await probe.getDuration();
       if (duration != null && duration.inMilliseconds > 0) {
-        return (duration.inMilliseconds / 1000).round();
+        return duration;
       }
     } catch (_) {
       // Ignore — fall back to the tick counter below.
     } finally {
       await probe?.dispose();
     }
-    return fallbackSeconds;
+    return fallback;
   }
 
   @override
@@ -329,6 +354,7 @@ class _VoiceRecorderInputSectionState extends State<VoiceRecorderInputSection> {
     final primary = Theme.of(context).primaryColor;
     final isRecordingUnlocked = _uiState == _RecordUiState.recording;
     final isLocked = _uiState == _RecordUiState.locked;
+    final isActivelyListening = isRecordingUnlocked || widget.isDictating;
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -429,6 +455,7 @@ class _VoiceRecorderInputSectionState extends State<VoiceRecorderInputSection> {
                       : widget.hasText
                       ? widget.sendButton
                       : GestureDetector(
+                        onTap: widget.onMicTap,
                         onLongPressStart: (_) => _startRecording(),
                         onLongPressMoveUpdate: _onDragUpdate,
                         onLongPressEnd: _onLongPressEnd,
@@ -436,9 +463,9 @@ class _VoiceRecorderInputSectionState extends State<VoiceRecorderInputSection> {
                         child: AnimatedSwitcher(
                           duration: const Duration(milliseconds: 200),
                           child: Icon(
-                            isRecordingUnlocked ? Icons.mic : Icons.mic_none,
-                            key: ValueKey(isRecordingUnlocked),
-                            color: isRecordingUnlocked ? Colors.red : primary,
+                            isActivelyListening ? Icons.mic : Icons.mic_none,
+                            key: ValueKey(isActivelyListening),
+                            color: isActivelyListening ? Colors.red : primary,
                             size: 28,
                           ),
                         ),

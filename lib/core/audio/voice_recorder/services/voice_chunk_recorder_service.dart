@@ -98,22 +98,26 @@ class VoiceChunkRecorderService {
     return merged;
   }
 
-  /// Cancels the recording entirely, deleting every chunk produced so far.
   Future<void> cancelAndCleanup() => _discardEverything();
 
   Future<void> _discardEverything() async {
-    if (_activeChunkPath != null) {
+    final activePath = _activeChunkPath;
+    _activeChunkPath = null;
+    if (activePath != null) {
       try {
         await _recorder.stop();
       } catch (_) {}
-      await _deletePaths([_activeChunkPath!]);
-      _activeChunkPath = null;
+      await _deletePaths([activePath]);
     }
-    await _deletePaths(_chunkPaths);
+
+    final pendingChunks = List<String>.from(_chunkPaths);
     _chunkPaths.clear();
-    if (_lastMergedFile != null) {
-      await _deletePaths([_lastMergedFile!.path]);
-      _lastMergedFile = null;
+    await _deletePaths(pendingChunks);
+
+    final mergedFile = _lastMergedFile;
+    _lastMergedFile = null;
+    if (mergedFile != null) {
+      await _deletePaths([mergedFile.path]);
     }
   }
 
