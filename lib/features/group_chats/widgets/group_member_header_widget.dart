@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 class GroupMembersHeaderWidget extends StatelessWidget {
   final int count;
   final Color primary;
+  final bool isOwner;
   final bool isAdmin;
   final VoidCallback onAddTap;
 
@@ -10,6 +11,7 @@ class GroupMembersHeaderWidget extends StatelessWidget {
     super.key,
     required this.count,
     required this.primary,
+    required this.isOwner,
     required this.isAdmin,
     required this.onAddTap,
   });
@@ -23,7 +25,7 @@ class GroupMembersHeaderWidget extends StatelessWidget {
           children: [
             Text('$count Members'),
             const Spacer(),
-            if (isAdmin)
+            if (isAdmin || isOwner)
               TextButton.icon(
                 onPressed: onAddTap,
                 icon: Icon(

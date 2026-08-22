@@ -11,25 +11,33 @@ import '../models/group_member_model.dart';
 class GroupInfoMembersList extends StatelessWidget {
   final List<GroupMemberModel> members;
   final String currentUserId;
+  final bool isOwner;
   final bool isAdmin;
   final Color primary;
+  final Function(GroupMemberModel) onPromote;
+  final Function(GroupMemberModel) onDemote;
   final Function(GroupMemberModel) onRemove;
 
   const GroupInfoMembersList({
     super.key,
     required this.members,
     required this.currentUserId,
+    required this.isOwner,
     required this.isAdmin,
     required this.primary,
+    required this.onPromote,
+    required this.onDemote,
     required this.onRemove,
   });
 
   @override
   Widget build(BuildContext context) {
+    final sortedMembers = _sortedMembers();
     return SliverList(
       delegate: SliverChildBuilderDelegate((context, index) {
-        final member = members[index];
+        final member = sortedMembers[index];
         final isCurrentUser = member.userId == currentUserId;
+        final isMemberOwner = member.role == GroupMemberRole.owner;
         final isMemberAdmin = member.role == GroupMemberRole.admin;
 
         return ListTile(
@@ -108,7 +116,38 @@ class GroupInfoMembersList extends StatelessWidget {
                 isCurrentUser ? 'You' : member.userName,
                 style: const TextStyle(fontWeight: FontWeight.w600),
               ),
-              if (isMemberAdmin) ...[
+              if (isMemberOwner) ...[
+                const Gap(6),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 7,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.amber.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.workspace_premium_rounded,
+                        size: 11,
+                        color: Colors.amber,
+                      ),
+                      SizedBox(width: 3),
+                      Text(
+                        'Owner',
+                        style: TextStyle(
+                          color: Colors.amber,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ] else if (isMemberAdmin) ...[
                 const Gap(6),
                 Container(
                   padding: const EdgeInsets.symmetric(
@@ -131,19 +170,87 @@ class GroupInfoMembersList extends StatelessWidget {
               ],
             ],
           ),
-          trailing:
-              isAdmin && !isCurrentUser
-                  ? IconButton(
-                    icon: const Icon(
-                      Icons.remove_circle_outline_rounded,
-                      color: Colors.redAccent,
-                      size: 22,
-                    ),
-                    onPressed: () => onRemove(member),
-                  )
-                  : null,
+          trailing: _buildTrailing(
+            context,
+            member,
+            isCurrentUser,
+            isMemberOwner,
+            isMemberAdmin,
+          ),
         );
-      }, childCount: members.length),
+      }, childCount: sortedMembers.length),
     );
+  }
+
+  List<GroupMemberModel> _sortedMembers() {
+    final owners = <GroupMemberModel>[];
+    final admins = <GroupMemberModel>[];
+    GroupMemberModel? me;
+    final others = <GroupMemberModel>[];
+
+    for (final m in members) {
+      if (m.role == GroupMemberRole.owner) {
+        owners.add(m);
+      } else if (m.role == GroupMemberRole.admin) {
+        admins.add(m);
+      } else if (m.userId == currentUserId) {
+        me = m;
+      } else {
+        others.add(m);
+      }
+    }
+
+    return [...owners, ...admins, if (me != null) me, ...others];
+  }
+
+  Widget? _buildTrailing(
+    BuildContext context,
+    GroupMemberModel member,
+    bool isCurrentUser,
+    bool isMemberOwner,
+    bool isMemberAdmin,
+  ) {
+    if (isCurrentUser || isMemberOwner) return null;
+
+    if (isOwner) {
+      return PopupMenuButton<String>(
+        icon: const Icon(Icons.more_vert_rounded, color: Colors.grey),
+        onSelected: (value) {
+          if (value == 'promote') onPromote(member);
+          if (value == 'demote') onDemote(member);
+          if (value == 'remove') onRemove(member);
+        },
+        itemBuilder:
+            (context) => [
+              if (!isMemberAdmin)
+                const PopupMenuItem(value: 'promote', child: Text('Make Admin'))
+              else
+                const PopupMenuItem(
+                  value: 'demote',
+                  child: Text('Remove Admin'),
+                ),
+              const PopupMenuItem(
+                value: 'remove',
+                child: Text(
+                  'Remove from group',
+                  style: TextStyle(color: Colors.redAccent),
+                ),
+              ),
+            ],
+      );
+    }
+
+    if (isAdmin) {
+      return IconButton(
+        icon: const Icon(
+          Icons.remove_circle_outline_rounded,
+          color: Colors.redAccent,
+          size: 22,
+        ),
+        onPressed: () => onRemove(member),
+      );
+    }
+
+    return null;
   }
 }

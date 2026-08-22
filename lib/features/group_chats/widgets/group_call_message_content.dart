@@ -1,6 +1,8 @@
 import 'dart:convert';
+import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:social_media_app/features/group_chats/cubit/group_list_cubit/group_list_cubit.dart';
 import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/themes/app_colors.dart';
 import '../../../core/utilities/supabase_constants.dart';
@@ -155,7 +157,8 @@ class GroupCallMessageContent extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              _buildGroupAvatar(groupAvatarUrl, primary),
+              _buildGroupAvatar(groupId, groupAvatarUrl, primary),
+
               const SizedBox(width: 10),
 
               Flexible(
@@ -240,32 +243,54 @@ class GroupCallMessageContent extends StatelessWidget {
     );
   }
 
-  Widget _buildGroupAvatar(String? groupAvatarUrl, Color primary) {
+  Widget _buildGroupAvatar(
+    String? groupId,
+    String? fallbackAvatarUrl,
+    Color primary,
+  ) {
     const double size = 40;
-    final hasAvatar = groupAvatarUrl != null && groupAvatarUrl.isNotEmpty;
 
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: isMe ? Colors.white : primary.withValues(alpha: 0.15),
-        border: Border.all(color: primary.withValues(alpha: 0.35), width: 1.5),
-      ),
-      child: ClipOval(
-        child:
-            hasAvatar
-                ? CachedCloudinaryImage(
-                  secureUrl: groupAvatarUrl,
-                  width: size,
-                  height: size,
-                  fit: BoxFit.cover,
+    return BlocBuilder<GroupListCubit, GroupListState>(
+      builder: (context, state) {
+        String? liveAvatarUrl;
+        if (state is GroupListLoaded && groupId != null && groupId.isNotEmpty) {
+          final liveGroup = state.groups.firstWhereOrNull(
+            (g) => g.id == groupId,
+          );
+          liveAvatarUrl = liveGroup?.avatarUrl;
+        }
 
-                  isAvatar: true,
-                  errorWidget: (_, __) => _groupAvatarFallback(primary, size),
-                )
-                : _groupAvatarFallback(primary, size),
-      ),
+        final avatarUrl = liveAvatarUrl ?? fallbackAvatarUrl;
+        final hasAvatar = avatarUrl != null && avatarUrl.isNotEmpty;
+
+        return Container(
+          width: size,
+          height: size,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: isMe ? Colors.white : primary.withValues(alpha: 0.15),
+            border: Border.all(
+              color: primary.withValues(alpha: 0.35),
+              width: 1.5,
+            ),
+          ),
+          child: ClipOval(
+            child:
+                hasAvatar
+                    ? CachedCloudinaryImage(
+                      secureUrl: avatarUrl,
+                      width: size,
+                      height: size,
+                      fit: BoxFit.cover,
+
+                      isAvatar: true,
+                      errorWidget:
+                          (_, __) => _groupAvatarFallback(primary, size),
+                    )
+                    : _groupAvatarFallback(primary, size),
+          ),
+        );
+      },
     );
   }
 

@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:social_media_app/core/widgets/full_screen_image_viewer.dart';
+import '../../../core/constants/app_images.dart';
+import '../../../core/errors/supabase_error_mapper.dart';
 import '../../../core/themes/app_colors.dart';
 import '../../../core/toast/app_toast.dart';
 import '../cubit/group_details_cubit/group_details_cubit.dart';
@@ -21,6 +23,7 @@ class GroupSettingsView extends StatefulWidget {
   final GroupListCubit groupListCubit;
   final GroupDetailsCubit? detailsCubit;
   final bool isAdmin;
+  final bool isOwner;
   final String currentUserId;
 
   const GroupSettingsView({
@@ -30,6 +33,7 @@ class GroupSettingsView extends StatefulWidget {
     required this.groupListCubit,
     this.detailsCubit,
     required this.isAdmin,
+    required this.isOwner,
     required this.currentUserId,
   });
 
@@ -39,7 +43,11 @@ class GroupSettingsView extends StatefulWidget {
 
 class _GroupSettingsViewState extends State<GroupSettingsView> {
   late final GroupChatServices _services;
+
+  late final TextEditingController _nameController;
   late final TextEditingController _titleController;
+
+  bool _isSavingName = false;
   bool _isSavingTitle = false;
   String? _currentAvatarUrl;
 
@@ -50,6 +58,7 @@ class _GroupSettingsViewState extends State<GroupSettingsView> {
   void initState() {
     super.initState();
     _services = context.read<GroupChatServices>();
+    _nameController = TextEditingController(text: widget.group.name);
     _titleController = TextEditingController(text: widget.group.title ?? '');
     _currentAvatarUrl = widget.group.avatarUrl;
 
@@ -60,8 +69,29 @@ class _GroupSettingsViewState extends State<GroupSettingsView> {
 
   @override
   void dispose() {
+    _nameController.dispose();
     _titleController.dispose();
     super.dispose();
+  }
+
+  Future<void> _saveName() async {
+    final newName = _nameController.text.trim();
+    if (newName.isEmpty || newName == widget.group.name) return;
+
+    setState(() => _isSavingName = true);
+
+    try {
+      await _services.updateGroup(groupId: widget.group.id, name: newName);
+      widget.groupListCubit.updateGroupName(
+        groupId: widget.group.id,
+        newName: newName,
+      );
+      if (mounted) AppToast.success('Group name updated');
+    } catch (e) {
+      if (mounted) AppToast.error(SupabaseErrorMapper.toUserMessage(e));
+    } finally {
+      if (mounted) setState(() => _isSavingName = false);
+    }
   }
 
   Future<void> _saveTitle() async {
@@ -78,7 +108,7 @@ class _GroupSettingsViewState extends State<GroupSettingsView> {
       );
       if (mounted) AppToast.success('Group title updated');
     } catch (e) {
-      if (mounted) AppToast.error('Failed to update title: $e');
+      if (mounted) AppToast.error(SupabaseErrorMapper.toUserMessage(e));
     } finally {
       if (mounted) setState(() => _isSavingTitle = false);
     }
@@ -114,7 +144,7 @@ class _GroupSettingsViewState extends State<GroupSettingsView> {
       }
     } catch (e) {
       if (mounted) {
-        AppToast.error('Failed to update photo: $e');
+        AppToast.error(SupabaseErrorMapper.toUserMessage(e));
       }
     } finally {
       if (mounted) setState(() => _isUploadingPhoto = false);
@@ -141,7 +171,7 @@ class _GroupSettingsViewState extends State<GroupSettingsView> {
         AppToast.success('Group photo removed');
       }
     } catch (e) {
-      if (mounted) AppToast.error('Failed to remove photo: $e');
+      if (mounted) AppToast.error(SupabaseErrorMapper.toUserMessage(e));
     } finally {
       if (mounted) setState(() => _isRemovingPhoto = false);
     }
@@ -193,7 +223,7 @@ class _GroupSettingsViewState extends State<GroupSettingsView> {
       );
       if (context.mounted) Navigator.of(context).popUntil((r) => r.isFirst);
     } catch (e) {
-      if (context.mounted) AppToast.error('Failed to leave group: $e');
+      if (context.mounted) AppToast.error(SupabaseErrorMapper.toUserMessage(e));
     }
   }
 
@@ -219,21 +249,80 @@ class _GroupSettingsViewState extends State<GroupSettingsView> {
         Navigator.of(context, rootNavigator: true).popUntil((r) => r.isFirst);
       }
     } catch (e) {
-      if (context.mounted) AppToast.error('Failed to block group: $e');
+      if (context.mounted) AppToast.error(SupabaseErrorMapper.toUserMessage(e));
+    }
+  }
+
+  Future<void> _deleteGroup(BuildContext context, GroupModel liveGroup) async {
+    final confirm = await _confirm(
+      context,
+      title: 'Delete Group',
+      body:
+          'This will permanently delete "${liveGroup.name}" for you and '
+          'every member — all messages, media, and members will be '
+          'removed. This cannot be undone. Continue?',
+      confirmLabel: 'Delete',
+      confirmColor: Colors.red,
+    );
+    if (confirm != true) return;
+    try {
+      await widget.membersCubit.deleteGroup(
+        currentUserId: widget.currentUserId,
+        groupListCubit: widget.groupListCubit,
+      );
+      if (context.mounted) {
+        Navigator.of(context, rootNavigator: true).popUntil((r) => r.isFirst);
+      }
+    } catch (e) {
+      if (context.mounted) AppToast.error(SupabaseErrorMapper.toUserMessage(e));
+    }
+  }
+
+  Future<void> _handleAdminAction(
+    BuildContext context,
+    GroupMemberModel admin,
+    String action,
+  ) async {
+    try {
+      if (action == 'demote') {
+        await widget.membersCubit.demoteAdmin(
+          admin,
+          currentUserId: widget.currentUserId,
+        );
+        if (mounted) {
+          AppToast.success('${admin.userName} is no longer an admin');
+        }
+      } else if (action == 'remove') {
+        final confirm = await _confirm(
+          context,
+          title: 'Remove Member',
+          body: 'Remove ${admin.userName} from the group?',
+          confirmLabel: 'Remove',
+          confirmColor: Colors.red,
+        );
+        if (confirm != true) return;
+        await widget.membersCubit.removeMember(
+          admin,
+          currentUserId: widget.currentUserId,
+        );
+        if (mounted) {
+          AppToast.success('${admin.userName} removed from the group');
+        }
+      }
+    } catch (e) {
+      if (mounted) AppToast.error(SupabaseErrorMapper.toUserMessage(e));
     }
   }
 
   void _openFullScreenAvatar(BuildContext context) {
-    if (_currentAvatarUrl == null || _currentAvatarUrl!.isEmpty) return;
-
     Navigator.of(context, rootNavigator: true).push(
       MaterialPageRoute(
         builder: (_) => const FullScreenImageViewer(),
         settings: RouteSettings(
           arguments: {
-            'url': widget.group.avatarUrl!,
+            'url': widget.group.avatarUrl ?? AppImages.defaultGroupImg,
             'tag': 'group-avatar-${widget.group.id}',
-            'isAsset': false,
+            'isAsset': _currentAvatarUrl != null ? false : true,
           },
         ),
       ),
@@ -333,11 +422,23 @@ class _GroupSettingsViewState extends State<GroupSettingsView> {
                                               : null,
                                       child:
                                           _currentAvatarUrl == null
-                                              ? Icon(
-                                                Icons.group,
-                                                size: 72,
-                                                color: Colors.grey.shade400,
+                                              ? Container(
+                                                padding: EdgeInsets.zero,
+                                                decoration: BoxDecoration(
+                                                  shape: BoxShape.circle,
+                                                  image: DecorationImage(
+                                                    image: AssetImage(
+                                                      AppImages.defaultGroupImg,
+                                                    ),
+                                                    fit: BoxFit.cover,
+                                                  ),
+                                                ),
                                               )
+                                              // Icon(
+                                              //   Icons.group,
+                                              //   size: 72,
+                                              //   color: Colors.grey.shade400,
+                                              // )
                                               : null,
                                     ),
                                   ),
@@ -522,6 +623,90 @@ class _GroupSettingsViewState extends State<GroupSettingsView> {
 
                         const SizedBox(height: 32),
 
+                        // في build() — ضيف القسم ده فوق "Group Title Section" مباشرة (نفس الـ styling تمامًا)
+                        // --- Group Name Section ---
+                        Text(
+                          'Group Name',
+                          style: Theme.of(
+                            context,
+                          ).textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        AnimatedBuilder(
+                          animation: _nameController,
+                          builder: (context, _) {
+                            final currentText = _nameController.text.trim();
+                            final isChanged =
+                                currentText.isNotEmpty &&
+                                currentText != widget.group.name;
+
+                            return TextField(
+                              controller: _nameController,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w500,
+                              ),
+                              decoration: InputDecoration(
+                                hintText: 'Group name',
+                                filled: true,
+                                fillColor: Theme.of(context).cardColor,
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 14,
+                                ),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(
+                                    color: Colors.grey.shade300,
+                                  ),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(
+                                    color: Colors.grey.shade300,
+                                  ),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(
+                                    color: primary,
+                                    width: 1.5,
+                                  ),
+                                ),
+                                suffixIcon:
+                                    _isSavingName
+                                        ? const Padding(
+                                          padding: EdgeInsets.all(14),
+                                          child: SizedBox(
+                                            width: 16,
+                                            height: 16,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                            ),
+                                          ),
+                                        )
+                                        : IconButton(
+                                          icon: Icon(
+                                            Icons.check_circle,
+                                            color:
+                                                isChanged
+                                                    ? primary
+                                                    : Colors.grey.shade300,
+                                          ),
+                                          onPressed:
+                                              isChanged ? _saveName : null,
+                                          tooltip: 'Save Name',
+                                        ),
+                              ),
+                              onSubmitted:
+                                  isChanged ? (_) => _saveName() : null,
+                            );
+                          },
+                        ),
+                        const SizedBox(height: 20),
+
                         // --- Group Title Section ---
                         Text(
                           'Group Title',
@@ -608,6 +793,117 @@ class _GroupSettingsViewState extends State<GroupSettingsView> {
                         ),
                         const SizedBox(height: 32),
 
+                        // --- Group Owner Section ---
+                        BlocBuilder<GroupMembersCubit, GroupMembersState>(
+                          bloc: widget.membersCubit,
+                          builder: (context, memberState) {
+                            GroupMemberModel? owner;
+                            if (memberState is GroupMembersLoaded) {
+                              for (final m in memberState.members) {
+                                if (m.role == GroupMemberRole.owner) {
+                                  owner = m;
+                                  break;
+                                }
+                              }
+                            }
+                            if (owner == null) return const SizedBox.shrink();
+
+                            final isMe = owner.userId == widget.currentUserId;
+
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Group Owner',
+                                  style: Theme.of(
+                                    context,
+                                  ).textTheme.titleSmall?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.grey.shade600,
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                Container(
+                                  decoration: BoxDecoration(
+                                    color: Theme.of(context).cardColor,
+                                    borderRadius: BorderRadius.circular(16),
+                                    border: Border.all(
+                                      color: Colors.grey.shade200,
+                                    ),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withValues(
+                                          alpha: 0.02,
+                                        ),
+                                        blurRadius: 8,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ],
+                                  ),
+                                  child: ListTile(
+                                    leading: CircleAvatar(
+                                      radius: 22,
+                                      backgroundColor: Colors.grey.shade200,
+                                      backgroundImage:
+                                          owner.userAvatar != null
+                                              ? CachedNetworkImageProvider(
+                                                owner.userAvatar!,
+                                              )
+                                              : null,
+                                      child:
+                                          owner.userAvatar == null
+                                              ? Icon(
+                                                Icons.person,
+                                                color: Colors.grey.shade400,
+                                              )
+                                              : null,
+                                    ),
+                                    title: Text(
+                                      isMe ? 'You' : owner.userName,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 15,
+                                      ),
+                                    ),
+                                    trailing: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 10,
+                                        vertical: 4,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: Colors.amber.withValues(
+                                          alpha: 0.15,
+                                        ),
+                                        borderRadius: BorderRadius.circular(20),
+                                      ),
+                                      child: const Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(
+                                            Icons.workspace_premium_rounded,
+                                            size: 13,
+                                            color: Colors.amber,
+                                          ),
+                                          SizedBox(width: 4),
+                                          Text(
+                                            'Owner',
+                                            style: TextStyle(
+                                              color: Colors.amber,
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 24),
+                              ],
+                            );
+                          },
+                        ),
+
                         // --- Group Admins Section ---
                         BlocBuilder<GroupMembersCubit, GroupMembersState>(
                           bloc: widget.membersCubit,
@@ -655,7 +951,7 @@ class _GroupSettingsViewState extends State<GroupSettingsView> {
                                       ),
                                     ],
                                   ),
-                                  child: ListView.separated(
+                                  child: ListView.builder(
                                     shrinkWrap: true,
                                     physics:
                                         const NeverScrollableScrollPhysics(),
@@ -663,11 +959,11 @@ class _GroupSettingsViewState extends State<GroupSettingsView> {
                                       vertical: 8,
                                     ),
                                     itemCount: admins.length,
-                                    separatorBuilder:
-                                        (_, __) => const Divider(
-                                          height: 1,
-                                          indent: 64,
-                                        ),
+                                    // separatorBuilder:
+                                    //     (_, __) => const Divider(
+                                    //       height: 1,
+                                    //       indent: 64,
+                                    //     ),
                                     itemBuilder: (context, index) {
                                       final admin = admins[index];
                                       final isMe =
@@ -698,27 +994,71 @@ class _GroupSettingsViewState extends State<GroupSettingsView> {
                                             fontSize: 15,
                                           ),
                                         ),
-                                        trailing: Container(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 10,
-                                            vertical: 4,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: primary.withValues(
-                                              alpha: 0.1,
+                                        trailing: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.end,
+                                          children: [
+                                            Container(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 10,
+                                                    vertical: 4,
+                                                  ),
+                                              decoration: BoxDecoration(
+                                                color: primary.withValues(
+                                                  alpha: 0.1,
+                                                ),
+                                                borderRadius:
+                                                    BorderRadius.circular(20),
+                                              ),
+                                              child: Text(
+                                                'Admin',
+                                                style: TextStyle(
+                                                  color: primary,
+                                                  fontSize: 12,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
                                             ),
-                                            borderRadius: BorderRadius.circular(
-                                              20,
-                                            ),
-                                          ),
-                                          child: Text(
-                                            'Admin',
-                                            style: TextStyle(
-                                              color: primary,
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
+                                            if (widget.isOwner) ...[
+                                              const SizedBox(width: 2),
+                                              PopupMenuButton<String>(
+                                                icon: const Icon(
+                                                  Icons.more_vert_rounded,
+                                                  color: Colors.grey,
+                                                  size: 20,
+                                                ),
+                                                onSelected:
+                                                    (value) =>
+                                                        _handleAdminAction(
+                                                          context,
+                                                          admin,
+                                                          value,
+                                                        ),
+                                                itemBuilder:
+                                                    (context) => [
+                                                      const PopupMenuItem(
+                                                        value: 'demote',
+                                                        child: Text(
+                                                          'Remove Admin',
+                                                        ),
+                                                      ),
+                                                      const PopupMenuItem(
+                                                        value: 'remove',
+                                                        child: Text(
+                                                          'Remove from group',
+                                                          style: TextStyle(
+                                                            color:
+                                                                Colors
+                                                                    .redAccent,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ],
+                                              ),
+                                            ],
+                                          ],
                                         ),
                                       );
                                     },
@@ -749,6 +1089,15 @@ class _GroupSettingsViewState extends State<GroupSettingsView> {
                         color: Colors.red,
                         onTap: () => _blockGroup(context, liveGroup),
                       ),
+                      if (widget.isOwner) ...[
+                        const SizedBox(height: 12),
+                        GroupInfoActionButton(
+                          icon: Icons.delete_forever_rounded,
+                          label: 'Delete Group',
+                          color: Colors.red.shade900,
+                          onTap: () => _deleteGroup(context, liveGroup),
+                        ),
+                      ],
 
                       const SizedBox(height: 40),
                     ],

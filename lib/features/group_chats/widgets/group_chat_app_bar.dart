@@ -6,6 +6,7 @@ import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import 'package:social_media_app/features/group_calls/views/livekit_group_call_view.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/chat_shared/helpers/muted_badge_icon.dart';
+import '../../../core/constants/app_images.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/services/active_call/active_call_session_data.dart';
 import '../../../core/services/active_call/cubit/active_call_session_cubit.dart';
@@ -94,9 +95,17 @@ class GroupChatAppBar extends StatelessWidget implements PreferredSizeWidget {
                                   : null,
                           child:
                               !hasAvatar
-                                  ? Text(
-                                    updatedGroup.name[0].toUpperCase(),
-                                    style: TextStyle(color: primary),
+                                  ? Container(
+                                    padding: EdgeInsets.zero,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      image: DecorationImage(
+                                        image: AssetImage(
+                                          AppImages.defaultGroupImg,
+                                        ),
+                                        fit: BoxFit.cover,
+                                      ),
+                                    ),
                                   )
                                   : null,
                         ),

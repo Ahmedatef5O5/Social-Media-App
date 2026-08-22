@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import '../../../core/chat_shared/helpers/muted_badge_icon.dart';
+import '../../../core/constants/app_images.dart';
 import '../../../core/widgets/full_screen_image_viewer.dart';
 import '../models/group_model.dart';
 
@@ -250,23 +251,20 @@ class _GroupInfoHeaderDelegate extends SliverPersistentHeaderDelegate {
       clipBehavior: Clip.none,
       children: [
         GestureDetector(
-          onTap:
-              !hasAvatar
-                  ? null
-                  : () {
-                    Navigator.of(context, rootNavigator: true).push(
-                      MaterialPageRoute(
-                        builder: (_) => const FullScreenImageViewer(),
-                        settings: RouteSettings(
-                          arguments: {
-                            'url': group.avatarUrl!,
-                            'tag': 'group-avatar-${group.id}',
-                            'isAsset': false,
-                          },
-                        ),
-                      ),
-                    );
+          onTap: () {
+            Navigator.of(context, rootNavigator: true).push(
+              MaterialPageRoute(
+                builder: (_) => const FullScreenImageViewer(),
+                settings: RouteSettings(
+                  arguments: {
+                    'url': group.avatarUrl ?? AppImages.defaultGroupImg,
+                    'tag': 'group-avatar-${group.id}',
+                    'isAsset': hasAvatar ? false : true,
                   },
+                ),
+              ),
+            );
+          },
           child: Hero(
             tag: 'group-avatar-${group.id}',
             child: CircleAvatar(
@@ -281,14 +279,14 @@ class _GroupInfoHeaderDelegate extends SliverPersistentHeaderDelegate {
                         : null,
                 child:
                     !hasAvatar
-                        ? Text(
-                          group.name.isNotEmpty
-                              ? group.name[0].toUpperCase()
-                              : '?',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: size * 0.36,
-                            fontWeight: FontWeight.bold,
+                        ? Container(
+                          padding: EdgeInsets.zero,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            image: DecorationImage(
+                              image: AssetImage(AppImages.defaultGroupImg),
+                              fit: BoxFit.cover,
+                            ),
                           ),
                         )
                         : null,

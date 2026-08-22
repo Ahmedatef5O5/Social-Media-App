@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:gap/gap.dart';
+import '../../../core/errors/supabase_error_mapper.dart';
 import '../../../core/toast/app_toast.dart';
 import 'package:social_media_app/core/widgets/custom_loading_indicator.dart';
 import 'package:social_media_app/features/social_graph/services/connections_service.dart';
@@ -102,7 +103,7 @@ class _CreateGroupViewState extends State<CreateGroupView> {
 
       if (mounted) Navigator.pop(context, group);
     } catch (e) {
-      AppToast.error('Failed to create group: $e');
+      if (mounted) AppToast.error(SupabaseErrorMapper.toUserMessage(e));
     } finally {
       if (mounted) setState(() => _isCreating = false);
     }

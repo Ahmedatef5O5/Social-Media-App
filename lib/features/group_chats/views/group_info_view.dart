@@ -11,6 +11,7 @@ import '../../../core/chat_shared/cubits/shared_media_cubit/shared_media_cubit.d
 import '../../../core/chat_shared/widgets/shared_media_preview_section.dart';
 import '../../../core/chat_shared/services/shared_media_data_source.dart';
 import '../../../core/chat_shared/widgets/starred_messages_row.dart';
+import '../../../core/errors/supabase_error_mapper.dart';
 import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/toast/app_toast.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
@@ -48,6 +49,7 @@ class GroupInfoView extends StatefulWidget {
 
 class _GroupInfoViewState extends State<GroupInfoView> {
   bool _isEditingName = false;
+  bool _isSavingName = false;
   bool _isMuted = false;
   bool _isUploadingPhoto = false;
 
@@ -103,7 +105,7 @@ class _GroupInfoViewState extends State<GroupInfoView> {
           !newValue,
         );
 
-        AppToast.error('Failed to update mute status: $e');
+        AppToast.error(SupabaseErrorMapper.toUserMessage(e));
       }
     }
   }
@@ -148,7 +150,7 @@ class _GroupInfoViewState extends State<GroupInfoView> {
       }
     } catch (e) {
       if (mounted) {
-        AppToast.error('Failed to update photo: $e');
+        AppToast.error(SupabaseErrorMapper.toUserMessage(e));
       }
     } finally {
       if (mounted) {
@@ -163,13 +165,24 @@ class _GroupInfoViewState extends State<GroupInfoView> {
       setState(() => _isEditingName = false);
       return;
     }
-    await _services.updateGroup(groupId: widget.group.id, name: name);
-    if (mounted) {
-      context.read<GroupListCubit>().updateGroupTitle(
-        groupId: widget.group.id,
-        newTitle: name,
-      );
-      setState(() => _isEditingName = false);
+    setState(() => _isSavingName = true);
+    try {
+      await _services.updateGroup(groupId: widget.group.id, name: name);
+      if (mounted) {
+        context.read<GroupListCubit>().updateGroupName(
+          groupId: widget.group.id,
+          newName: name,
+        );
+        setState(() {
+          _isEditingName = false;
+          _isSavingName = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isSavingName = false);
+        AppToast.error(SupabaseErrorMapper.toUserMessage(e));
+      }
     }
   }
 
@@ -180,7 +193,7 @@ class _GroupInfoViewState extends State<GroupInfoView> {
     try {
       await _membersCubit.removeMember(member, currentUserId: _currentUserId);
     } catch (e) {
-      if (mounted) AppToast.error('Failed to remove member: $e');
+      if (mounted) AppToast.error(SupabaseErrorMapper.toUserMessage(e));
     }
   }
 
@@ -208,7 +221,11 @@ class _GroupInfoViewState extends State<GroupInfoView> {
     );
   }
 
-  void _openGroupSettings(bool isAdmin, GroupModel liveGroup) {
+  void _openGroupSettings(
+    bool hasAdminPrivileges,
+    bool isOwner,
+    GroupModel liveGroup,
+  ) {
     Navigator.of(context).push(
       MaterialPageRoute(
         builder:
@@ -217,7 +234,8 @@ class _GroupInfoViewState extends State<GroupInfoView> {
               membersCubit: _membersCubit,
               groupListCubit: context.read<GroupListCubit>(),
               detailsCubit: widget.detailsCubit,
-              isAdmin: isAdmin,
+              isAdmin: hasAdminPrivileges,
+              isOwner: isOwner,
               currentUserId: _currentUserId,
             ),
       ),
@@ -283,7 +301,6 @@ class _GroupInfoViewState extends State<GroupInfoView> {
   Widget build(BuildContext context) {
     final primary = Theme.of(context).primaryColor;
     final detailsCubit = widget.detailsCubit;
-
     if (detailsCubit != null) {
       return BlocBuilder<GroupDetailsCubit, GroupDetailsState>(
         bloc: detailsCubit,
@@ -340,25 +357,52 @@ class _GroupInfoViewState extends State<GroupInfoView> {
                       isLoadingMore = state.isLoadingMore;
                     }
 
+                    final isOwner = _membersCubit.isCurrentUserOwner(
+                      _currentUserId,
+                    );
+
+                    // Real-role admin only — used where "Owner" and "Admin"
+                    // must render as visually distinct badges/menus (the
+                    // members list already branches on isOwner separately).
                     final bool isAdmin = _membersCubit.isCurrentUserAdmin(
                       _currentUserId,
                     );
 
+                    // Admin OR Owner — used for "can this person manage the
+                    // group" gates (edit name/photo from the header, open
+                    // the full Group Settings management UI).
+                    final bool hasAdminPrivileges = _membersCubit
+                        .hasAdminPrivileges(_currentUserId);
+
                     return CustomScrollView(
                       controller: _scrollController,
                       slivers: [
-                        GroupInfoHeader(
+                        GroupInfoHeaderWidget(
                           group: liveGroup,
-                          isAdmin: isAdmin,
+
+                          isAdmin: hasAdminPrivileges,
                           isEditingName: _isEditingName,
+                          isSavingName: _isSavingName,
                           controller: _nameController,
                           isUploadingPhoto: _isUploadingPhoto,
-                          onEditTap:
-                              () => setState(() => _isEditingName = true),
+                          onEditTap: () {
+                            setState(() => _isEditingName = true);
+                            WidgetsBinding.instance.addPostFrameCallback((_) {
+                              _nameController.selection = TextSelection(
+                                baseOffset: 0,
+                                extentOffset: _nameController.text.length,
+                              );
+                            });
+                          },
                           onSubmit: _updateGroupName,
                           onChangePhoto: _changeGroupPhoto,
                           onSettingsTap:
-                              () => _openGroupSettings(isAdmin, liveGroup),
+                              () => _openGroupSettings(
+                                hasAdminPrivileges,
+                                isOwner,
+                                liveGroup,
+                              ),
+                          isMuted: _isMuted,
                         ),
                         SliverToBoxAdapter(
                           child: GroupInfoQuickActionsRow(
@@ -394,6 +438,7 @@ class _GroupInfoViewState extends State<GroupInfoView> {
                           GroupMembersHeaderWidget(
                             count: totalCount,
                             primary: primary,
+                            isOwner: isOwner,
                             isAdmin: isAdmin,
                             onAddTap: () => _openAddMembers(membersList),
                           ),
@@ -420,8 +465,40 @@ class _GroupInfoViewState extends State<GroupInfoView> {
                             GroupInfoMembersList(
                               members: membersList,
                               currentUserId: _currentUserId,
+                              isOwner: isOwner,
                               isAdmin: isAdmin,
+
                               primary: primary,
+                              onPromote: (member) async {
+                                try {
+                                  await _membersCubit.promoteToAdmin(
+                                    member,
+                                    currentUserId: _currentUserId,
+                                  );
+                                  AppToast.success(
+                                    '${member.userName} is now an admin',
+                                  );
+                                } catch (e) {
+                                  AppToast.error(
+                                    SupabaseErrorMapper.toUserMessage(e),
+                                  );
+                                }
+                              },
+                              onDemote: (member) async {
+                                try {
+                                  await _membersCubit.demoteAdmin(
+                                    member,
+                                    currentUserId: _currentUserId,
+                                  );
+                                  AppToast.success(
+                                    '${member.userName} is no longer an admin',
+                                  );
+                                } catch (e) {
+                                  AppToast.error(
+                                    SupabaseErrorMapper.toUserMessage(e),
+                                  );
+                                }
+                              },
                               onRemove: _removeMember,
                             ),
 
