@@ -92,7 +92,8 @@ class CommentsInlineSection extends StatelessWidget {
                               ),
                             ),
                           )
-                          : Container(
+                          : (commentsCount > 0)
+                          ? Container(
                             key: const ValueKey('badge_real'),
                             padding: const EdgeInsets.symmetric(
                               horizontal: 10,
@@ -113,7 +114,8 @@ class CommentsInlineSection extends StatelessWidget {
                                 fontSize: 13,
                               ),
                             ),
-                          ),
+                          )
+                          : SizedBox.shrink(),
                 ),
                 const SizedBox(width: 8),
                 Text(

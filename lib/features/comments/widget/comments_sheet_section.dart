@@ -175,15 +175,18 @@ class _CommentsSheetSectionState extends State<CommentsSheetSection> {
                     children: [
                       Expanded(
                         child: BlocBuilder<CommentsCubit, CommentsState>(
-                          buildWhen: (previous, current) =>
-                              current is CommentsListLoading ||
-                              current is CommentsListLoaded ||
-                              current is CommentOptimisticAdded ||
-                              current is CommentTempIdResolved ||
-                              current is CommentsUiChanged,
+                          buildWhen:
+                              (previous, current) =>
+                                  current is CommentsListLoading ||
+                                  current is CommentsListLoaded ||
+                                  current is CommentOptimisticAdded ||
+                                  current is CommentTempIdResolved ||
+                                  current is CommentsUiChanged,
                           builder: (context, state) {
                             final cubit = context.read<CommentsCubit>();
-                            final commentsCount = countAllComments(cubit.comments);
+                            final commentsCount = countAllComments(
+                              cubit.comments,
+                            );
 
                             return CustomScrollView(
                               controller: scrollController,
@@ -191,7 +194,8 @@ class _CommentsSheetSectionState extends State<CommentsSheetSection> {
                               slivers: [
                                 SliverToBoxAdapter(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       const SizedBox(height: 10),
 
@@ -199,60 +203,108 @@ class _CommentsSheetSectionState extends State<CommentsSheetSection> {
                                         child: Container(
                                           height: 4,
                                           width: 40,
-                                          margin: const EdgeInsets.only(bottom: 16),
+                                          margin: const EdgeInsets.only(
+                                            bottom: 16,
+                                          ),
                                           decoration: BoxDecoration(
-                                            color: isDark ? Colors.white24 : Colors.black12,
-                                            borderRadius: BorderRadius.circular(10),
+                                            color:
+                                                isDark
+                                                    ? Colors.white24
+                                                    : Colors.black12,
+                                            borderRadius: BorderRadius.circular(
+                                              10,
+                                            ),
                                           ),
                                         ),
                                       ),
 
                                       Padding(
-                                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 16,
+                                        ),
                                         child: Row(
-                                          crossAxisAlignment: CrossAxisAlignment.center,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.center,
                                           children: [
                                             AnimatedSwitcher(
-                                              duration: const Duration(milliseconds: 200),
-                                              child: cubit.isLoadingComments
-                                                  ? Shimmer.fromColors(
-                                                      key: const ValueKey('badge_shimmer'),
-                                                      baseColor: isDark ? Colors.grey[800]! : Colors.grey[200]!,
-                                                      highlightColor: isDark ? Colors.grey[700]! : Colors.white,
-                                                      child: Container(
-                                                        width: 28,
-                                                        height: 24,
+                                              duration: const Duration(
+                                                milliseconds: 200,
+                                              ),
+                                              child:
+                                                  cubit.isLoadingComments
+                                                      ? Shimmer.fromColors(
+                                                        key: const ValueKey(
+                                                          'badge_shimmer',
+                                                        ),
+                                                        baseColor:
+                                                            isDark
+                                                                ? Colors
+                                                                    .grey[800]!
+                                                                : Colors
+                                                                    .grey[200]!,
+                                                        highlightColor:
+                                                            isDark
+                                                                ? Colors
+                                                                    .grey[700]!
+                                                                : Colors.white,
+                                                        child: Container(
+                                                          width: 28,
+                                                          height: 24,
+                                                          decoration: BoxDecoration(
+                                                            color: Colors.white,
+                                                            borderRadius:
+                                                                BorderRadius.circular(
+                                                                  12,
+                                                                ),
+                                                          ),
+                                                        ),
+                                                      )
+                                                      : (commentsCount > 0)
+                                                      ? Container(
+                                                        key: const ValueKey(
+                                                          'badge_real',
+                                                        ),
+                                                        padding:
+                                                            const EdgeInsets.symmetric(
+                                                              horizontal: 10,
+                                                              vertical: 3,
+                                                            ),
                                                         decoration: BoxDecoration(
-                                                          color: Colors.white,
-                                                          borderRadius: BorderRadius.circular(12),
+                                                          color:
+                                                              isDark
+                                                                  ? colorScheme
+                                                                      .surfaceContainerHighest
+                                                                  : Colors
+                                                                      .grey[200],
+                                                          borderRadius:
+                                                              BorderRadius.circular(
+                                                                12,
+                                                              ),
                                                         ),
-                                                      ),
-                                                    )
-                                                  : Container(
-                                                      key: const ValueKey('badge_real'),
-                                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-                                                      decoration: BoxDecoration(
-                                                        color: isDark ? colorScheme.surfaceContainerHighest : Colors.grey[200],
-                                                        borderRadius: BorderRadius.circular(12),
-                                                      ),
-                                                      child: Text(
-                                                        '$commentsCount',
-                                                        style: TextStyle(
-                                                          color: colorScheme.onSurface,
-                                                          fontWeight: FontWeight.w700,
-                                                          fontSize: 13,
+                                                        child: Text(
+                                                          '$commentsCount',
+                                                          style: TextStyle(
+                                                            color:
+                                                                colorScheme
+                                                                    .onSurface,
+                                                            fontWeight:
+                                                                FontWeight.w700,
+                                                            fontSize: 13,
+                                                          ),
                                                         ),
-                                                      ),
-                                                    ),
+                                                      )
+                                                      : SizedBox.shrink(),
                                             ),
                                             const SizedBox(width: 8),
                                             Text(
                                               'Comments',
-                                              style: theme.textTheme.titleLarge?.copyWith(
-                                                fontWeight: FontWeight.w800,
-                                                color: colorScheme.onSurface,
-                                                letterSpacing: -0.4,
-                                              ),
+                                              style: theme.textTheme.titleLarge
+                                                  ?.copyWith(
+                                                    fontWeight: FontWeight.w800,
+                                                    color:
+                                                        colorScheme.onSurface,
+                                                    letterSpacing: -0.4,
+                                                  ),
                                             ),
                                             const SizedBox(width: 12),
                                             if (post.reactions.isNotEmpty)
@@ -261,17 +313,25 @@ class _CommentsSheetSectionState extends State<CommentsSheetSection> {
                                                   showModalBottomSheet(
                                                     context: context,
                                                     isScrollControlled: true,
-                                                    backgroundColor: Colors.transparent,
-                                                    builder: (context) => PostReactionsBottomSheet(
-                                                      postId: post.id,
-                                                    ),
+                                                    backgroundColor:
+                                                        Colors.transparent,
+                                                    builder:
+                                                        (context) =>
+                                                            PostReactionsBottomSheet(
+                                                              postId: post.id,
+                                                            ),
                                                   );
                                                 },
-                                                child: CommentsReactionAvatarStack(
-                                                  imageUrls: post.likersImages ?? [],
-                                                  totalReactions: post.likes?.length ?? 0,
-                                                  reactions: post.reactions,
-                                                ),
+                                                child:
+                                                    CommentsReactionAvatarStack(
+                                                      imageUrls:
+                                                          post.likersImages ??
+                                                          [],
+                                                      totalReactions:
+                                                          post.likes?.length ??
+                                                          0,
+                                                      reactions: post.reactions,
+                                                    ),
                                               ),
                                             const Spacer(),
                                             CommentSortMenu(
@@ -285,15 +345,18 @@ class _CommentsSheetSectionState extends State<CommentsSheetSection> {
                                       const SizedBox(height: 16),
 
                                       Padding(
-                                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 16,
+                                        ),
                                         child: AiCommentSuggestionsRow(
                                           postId: post.id,
                                           postText: post.text,
                                           onChipSelected: (text) {
                                             _commentController?.text = text;
-                                            _commentController?.selection = TextSelection.collapsed(
-                                              offset: text.length,
-                                            );
+                                            _commentController?.selection =
+                                                TextSelection.collapsed(
+                                                  offset: text.length,
+                                                );
                                           },
                                         ),
                                       ),
@@ -306,15 +369,21 @@ class _CommentsSheetSectionState extends State<CommentsSheetSection> {
                                 if (cubit.isLoadingComments)
                                   const SliverToBoxAdapter(
                                     child: Padding(
-                                      padding: EdgeInsets.symmetric(horizontal: 16),
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: 16,
+                                      ),
                                       child: CommentsShimmerSkeleton(),
                                     ),
                                   )
                                 else
                                   SliverPadding(
-                                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                    ),
                                     sliver: CommentsSection(
-                                      key: ValueKey('comments_${cubit.currentSort.name}'),
+                                      key: ValueKey(
+                                        'comments_${cubit.currentSort.name}',
+                                      ),
                                       postId: post.id,
                                       postAuthorId: post.authorId,
                                       comments: cubit.comments,
@@ -345,7 +414,9 @@ class _CommentsSheetSectionState extends State<CommentsSheetSection> {
                         ),
 
                       Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16).copyWith(bottom: 8),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                        ).copyWith(bottom: 8),
                         child: Row(
                           children: [
                             Expanded(
@@ -353,7 +424,9 @@ class _CommentsSheetSectionState extends State<CommentsSheetSection> {
                                 post: post,
                                 replyingToCommentId: _replyingToCommentId,
                                 replyingToAuthorName: _replyingToAuthorName,
-                                onControllerReady: (controller) => _commentController = controller,
+                                onControllerReady:
+                                    (controller) =>
+                                        _commentController = controller,
                                 onReplySent: () {
                                   setState(() {
                                     _replyingToCommentId = null;

@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 import '../../../core/cache/repository/media_cache_repository.dart';
 import '../../../core/connectivity/services/connectivity_banner_controller.dart';
+import '../../../core/errors/supabase_error_mapper.dart';
 import '../../../core/services/cloudinary_storage_services.dart';
 import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/utilities/supabase_constants.dart';
@@ -233,7 +234,12 @@ class CommentsCubit extends Cubit<CommentsState> {
       isLoadingComments = false;
       debugPrint('Error loading comments: $e');
       final isOffline = await ConnectivityBannerController.notifyIfOffline();
-      emit(CommentError(e.toString(), isConnectivityError: isOffline));
+      emit(
+        CommentError(
+          SupabaseErrorMapper.toUserMessage(e),
+          isConnectivityError: isOffline,
+        ),
+      );
     }
   }
 
@@ -611,7 +617,12 @@ class CommentsCubit extends Cubit<CommentsState> {
       _pendingCommentIds.remove(tempId);
       _pendingReactions.remove(tempId);
       final isOffline = await ConnectivityBannerController.notifyIfOffline();
-      emit(CommentError(e.toString(), isConnectivityError: isOffline));
+      emit(
+        CommentError(
+          SupabaseErrorMapper.toUserMessage(e),
+          isConnectivityError: isOffline,
+        ),
+      );
     }
   }
 
@@ -756,7 +767,12 @@ class CommentsCubit extends Cubit<CommentsState> {
     } catch (e) {
       debugPrint('Error toggling comment reaction: $e');
       final isOffline = await ConnectivityBannerController.notifyIfOffline();
-      emit(CommentError(e.toString(), isConnectivityError: isOffline));
+      emit(
+        CommentError(
+          SupabaseErrorMapper.toUserMessage(e),
+          isConnectivityError: isOffline,
+        ),
+      );
     }
   }
 
