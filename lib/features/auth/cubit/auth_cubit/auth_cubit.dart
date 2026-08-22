@@ -42,15 +42,21 @@ class AuthCubit extends Cubit<AuthState> {
 
   void _handleError(Object e) {
     final message = AuthExceptionHandler.handle(e);
-    if (message.isEmpty ||
-        message.contains('cancelled') ||
-        message.contains('aborted') ||
-        message.contains('cancel') ||
-        message.contains('user_cancelled')) {
+    final displayMessage =
+        message == 'no-internet'
+            ? 'No internet connection. Please check your network.'
+            : message;
+
+    if (displayMessage.isEmpty ||
+        displayMessage.contains('cancelled') ||
+        displayMessage.contains('aborted') ||
+        displayMessage.contains('cancel') ||
+        displayMessage.contains('user_cancelled')) {
       emit(AuthInitial());
       return;
     }
-    emit(AuthFailure(AuthExceptionHandler.handle(e)));
+
+    emit(AuthFailure(displayMessage));
   }
 
   Future<void> signInWithEmail(String email, String password) async {

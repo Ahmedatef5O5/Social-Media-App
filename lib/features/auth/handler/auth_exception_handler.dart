@@ -1,33 +1,26 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../core/errors/network_error_utils.dart';
 
-/// Handles and maps all Supabase authentication exceptions
 class AuthExceptionHandler {
-  /// Pass any caught exception from AuthCubit and get a clean message back.
   static String handle(Object e) {
+    if (NetworkErrorUtils.isNetworkError(e) ||
+        e.toString().toLowerCase().contains('authretryablefetchexception')) {
+      return 'no-internet';
+    }
+
     if (e is AuthException) {
       return _handleAuthException(e);
     }
 
     final msg = e.toString().toLowerCase();
-
-    // ─── Network ───────────────────────────────────────────────
-    if (msg.contains('socketexception') ||
-        msg.contains('network') ||
-        msg.contains('failed host lookup')) {
-      return 'No internet connection. Please check your network.';
+    if (msg.contains('realtimesubscribeexception')) {
+      return 'no-internet';
     }
 
-    if (msg.contains('realtimesubscribeexception') ||
-        msg.contains('timedout')) {
-      return 'No internet connection. Realtime sync failed.';
-    }
-
-    // ─── Timeout ───────────────────────────────────────────────
-    if (msg.contains('timeout')) {
+    if (NetworkErrorUtils.isTimeoutError(e)) {
       return 'Request timed out. Please try again.';
     }
 
-    // ─── Aborted (Google / Facebook OAuth) ─────────────────────
     if (msg.contains('aborted')) {
       return 'Sign-in was cancelled.';
     }
@@ -41,6 +34,12 @@ class AuthExceptionHandler {
   static String _handleAuthException(AuthException e) {
     final msg = e.message.toLowerCase();
     final code = e.code?.toLowerCase() ?? '';
+
+    if (msg.contains('socketexception') ||
+        msg.contains('clientexception') ||
+        msg.contains('failed host lookup')) {
+      return 'no-internet';
+    }
 
     // ── Email / format ─────────────────────────────────────────
     if (code == 'validation_failed' ||
