@@ -36,7 +36,15 @@ class FriendsListCubit extends Cubit<FriendsListState> {
         ),
       );
     } catch (e) {
-      emit(const FriendsListError('Failed to load friends list.'));
+      if (e.toString().contains('no-internet')) {
+        emit(
+          FriendsListError(
+            "No internet connection. Please check your network.",
+          ),
+        );
+      } else {
+        emit(const FriendsListError('Failed to load friends list.'));
+      }
     }
   }
 

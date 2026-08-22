@@ -299,7 +299,7 @@ mixin PostCreationMixin on Cubit<PostsState> {
       }
     } catch (e) {
       debugPrint('Error deleting post: $e');
-      emit(PostsError(e.toString()));
+      emit(PostsError(SupabaseErrorMapper.toUserMessage(e)));
     }
   }
 

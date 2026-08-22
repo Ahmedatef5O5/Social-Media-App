@@ -6,6 +6,8 @@ import 'package:social_media_app/core/widgets/custom_pull_to_refresh.dart';
 import 'package:social_media_app/core/widgets/custom_tab_wrapper.dart';
 import 'package:social_media_app/features/discover/cubit/discover_people_cubit.dart';
 import 'package:social_media_app/features/discover/views/discover_skeleton_view.dart';
+import '../../../core/connectivity/cubit/connectivity_cubit.dart';
+import '../../../core/connectivity/cubit/connectivity_state.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
 import '../widgets/discover_people_header_section.dart';
 import '../widgets/discover_person_card_widget.dart';
@@ -41,90 +43,107 @@ class _DiscoverViewState extends State<DiscoverView> {
   Widget build(BuildContext context) {
     return BackgroundThemeWidget(
       top: true,
-      child: BlocBuilder<DiscoverPeopleCubit, DiscoverPeopleState>(
-        builder: (context, state) {
-          bool hasReachedMax = false;
-          if (state is DiscoverPeopleSuccess) {
-            hasReachedMax = state.hasReachedMax;
+      child: BlocListener<ConnectivityCubit, ConnectivityState>(
+        listener: (context, connState) {
+          if (connState is ConnectivityRestored ||
+              connState is ConnectivityOnline) {
+            final currentDiscoverState =
+                context.read<DiscoverPeopleCubit>().state;
+
+            if (currentDiscoverState is DiscoverPeopleFailure ||
+                currentDiscoverState is DiscoverPeopleInitial) {
+              context.read<DiscoverPeopleCubit>().getDiscoverPeople(
+                isRefresh: true,
+              );
+            }
           }
+        },
+        child: BlocBuilder<DiscoverPeopleCubit, DiscoverPeopleState>(
+          builder: (context, state) {
+            bool hasReachedMax = false;
+            if (state is DiscoverPeopleSuccess) {
+              hasReachedMax = state.hasReachedMax;
+            }
 
-          return CustomTabWrapper(
-            isLoading:
-                state is DiscoverPeopleInitial ||
-                state is DiscoverPeopleLoading ||
-                state is DiscoverPeopleRefreshFeedback,
-            loadingSkeleton: const DiscoverPeopleSkeleton(),
-            errorMessage: state is DiscoverPeopleFailure ? state.message : null,
-            onRetry:
-                () => context.read<DiscoverPeopleCubit>().getDiscoverPeople(),
+            return CustomTabWrapper(
+              isLoading:
+                  state is DiscoverPeopleInitial ||
+                  state is DiscoverPeopleLoading ||
+                  state is DiscoverPeopleRefreshFeedback,
+              loadingSkeleton: const DiscoverPeopleSkeleton(),
+              errorMessage:
+                  state is DiscoverPeopleFailure ? state.message : null,
+              onRetry:
+                  () => context.read<DiscoverPeopleCubit>().getDiscoverPeople(),
 
-            child: CustomPullToRefresh(
-              onRefresh:
-                  () async => await context
-                      .read<DiscoverPeopleCubit>()
-                      .getDiscoverPeople(isRefresh: true),
+              child: CustomPullToRefresh(
+                onRefresh:
+                    () async => await context
+                        .read<DiscoverPeopleCubit>()
+                        .getDiscoverPeople(isRefresh: true),
 
-              child: CustomScrollView(
-                controller: widget.scrollController,
-                physics: const AlwaysScrollableScrollPhysics(
-                  parent: ClampingScrollPhysics(),
-                ),
-                slivers: [
-                  SliverToBoxAdapter(
-                    child: Column(
-                      children: [
-                        const Gap(20),
-                        DiscoverPeopleHeaderSection(),
-                        const Gap(8),
-                      ],
-                    ),
+                child: CustomScrollView(
+                  controller: widget.scrollController,
+                  physics: const AlwaysScrollableScrollPhysics(
+                    parent: ClampingScrollPhysics(),
                   ),
+                  slivers: [
+                    SliverToBoxAdapter(
+                      child: Column(
+                        children: [
+                          const Gap(20),
+                          DiscoverPeopleHeaderSection(),
+                          const Gap(8),
+                        ],
+                      ),
+                    ),
 
-                  Builder(
-                    builder: (context) {
-                      if (state is DiscoverPeopleSuccess) {
-                        return SliverPadding(
-                          padding: const EdgeInsets.only(
-                            top: 16,
-                            left: 12,
-                            right: 12,
-                            bottom: 100,
-                          ),
-                          sliver: SliverList.builder(
-                            itemCount:
-                                state.users.length + (hasReachedMax ? 0 : 1),
-                            itemBuilder: (BuildContext context, int index) {
-                              if (index >= state.users.length) {
-                                return const Padding(
-                                  padding: EdgeInsets.symmetric(vertical: 24),
-                                  child: Center(
-                                    child: CustomLoadingIndicator(radius: 12),
+                    Builder(
+                      builder: (context) {
+                        if (state is DiscoverPeopleSuccess) {
+                          return SliverPadding(
+                            padding: const EdgeInsets.only(
+                              top: 16,
+                              left: 12,
+                              right: 12,
+                              bottom: 100,
+                            ),
+                            sliver: SliverList.builder(
+                              itemCount:
+                                  state.users.length + (hasReachedMax ? 0 : 1),
+                              itemBuilder: (BuildContext context, int index) {
+                                if (index >= state.users.length) {
+                                  return const Padding(
+                                    padding: EdgeInsets.symmetric(vertical: 24),
+                                    child: Center(
+                                      child: CustomLoadingIndicator(radius: 12),
+                                    ),
+                                  );
+                                }
+
+                                return Padding(
+                                  padding: const EdgeInsets.only(bottom: 16),
+                                  child: DiscoverPersonCardWidget(
+                                    key: ValueKey(state.users[index].user.id),
+                                    personData: state.users[index],
                                   ),
                                 );
-                              }
-
-                              return Padding(
-                                padding: const EdgeInsets.only(bottom: 16),
-                                child: DiscoverPersonCardWidget(
-                                  key: ValueKey(state.users[index].user.id),
-                                  personData: state.users[index],
-                                ),
-                              );
-                            },
-                          ),
-                        );
-                      } else {
-                        return const SliverToBoxAdapter(
-                          child: SizedBox.shrink(),
-                        );
-                      }
-                    },
-                  ),
-                ],
+                              },
+                            ),
+                          );
+                        } else {
+                          return const SliverToBoxAdapter(
+                            child: SizedBox.shrink(),
+                          );
+                        }
+                      },
+                    ),
+                  ],
+                ),
               ),
-            ),
-          );
-        },
+            );
+          },
+        ),
       ),
     );
   }

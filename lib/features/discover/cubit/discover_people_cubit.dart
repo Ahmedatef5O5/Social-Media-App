@@ -148,15 +148,17 @@ class DiscoverPeopleCubit extends Cubit<DiscoverPeopleState> {
     } catch (e) {
       _isFetchingMore = false;
 
-      if (e.toString().contains('no-internet')) {
+      if (e.toString().contains('no-internet') ||
+          e.toString().toLowerCase().contains('socketexception') ||
+          e.toString().toLowerCase().contains('clientexception')) {
         emit(
-          DiscoverPeopleFailure(
+          const DiscoverPeopleFailure(
             "No internet connection. Please check your network.",
           ),
         );
       } else {
         emit(
-          DiscoverPeopleFailure(
+          const DiscoverPeopleFailure(
             "Something went wrong. Please try again later.",
           ),
         );
