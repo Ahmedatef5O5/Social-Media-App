@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../features/group_chats/cubit/group_list_cubit/group_list_cubit.dart';
 import '../../../features/single_chats/cubit/chats_cubit/chats_cubit.dart';
+import '../../constants/app_images.dart';
 import '../helpers/avatar_stack.dart';
 import '../../../features/home/cubits/home_cubit/home_cubit.dart';
 import '../../../features/search/utils/chat_tile_skeleton_list.dart';
@@ -23,10 +24,21 @@ class NewChatView extends StatefulWidget {
 
 class _NewChatViewState extends State<NewChatView> {
   final _searchController = TextEditingController();
+  final _focusNode = FocusNode();
+  String _searchQuery = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _focusNode.addListener(() {
+      setState(() {});
+    });
+  }
 
   @override
   void dispose() {
     _searchController.dispose();
+    _focusNode.dispose();
     super.dispose();
   }
 
@@ -54,14 +66,13 @@ class _NewChatViewState extends State<NewChatView> {
   }
 
   Widget _buildPremiumEmptyState(BuildContext context) {
-    final query = _searchController.text.trim();
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    if (query.isNotEmpty) {
+    if (_searchQuery.isNotEmpty) {
       return Center(
         child: Text(
-          'No results found for "$query"',
+          'No results found for "$_searchQuery"',
           style: theme.textTheme.bodyMedium?.copyWith(
             color: Colors.grey,
             fontSize: 15,
@@ -118,7 +129,6 @@ class _NewChatViewState extends State<NewChatView> {
               ),
             ),
             const SizedBox(height: 40),
-
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Material(
@@ -227,124 +237,157 @@ class _NewChatViewState extends State<NewChatView> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isSearching = _searchQuery.isNotEmpty || _focusNode.hasFocus;
 
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
       behavior: HitTestBehavior.opaque,
       child: Scaffold(
-        appBar: AppBar(
-          elevation: 0,
-          scrolledUnderElevation: 0,
-          shadowColor: Colors.transparent,
-          title: const Text('New Chat'),
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
-            onPressed: () => Navigator.pop(context),
-          ),
-        ),
-        body: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-              child: TextField(
-                controller: _searchController,
-                onChanged: (q) => context.read<NewChatCubit>().search(q),
-                decoration: InputDecoration(
-                  hintText: 'Search friends & groups...',
-                  hintStyle: const TextStyle(color: Colors.grey),
-                  prefixIcon: const Icon(
-                    CupertinoIcons.search,
-                    color: Colors.grey,
-                  ),
-                  filled: true,
-                  fillColor:
-                      theme.brightness == Brightness.dark
-                          ? Colors.grey.shade900
-                          : Colors.grey.shade100,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 0),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(20),
-                    borderSide: BorderSide.none,
-                  ),
-                  suffixIcon:
-                      _searchController.text.isNotEmpty
-                          ? IconButton(
-                            icon: const Icon(
-                              Icons.clear,
-                              size: 18,
-                              color: Colors.grey,
-                            ),
-                            onPressed: () {
-                              _searchController.clear();
-                              context.read<NewChatCubit>().search('');
-                              setState(() {});
-                            },
-                          )
-                          : null,
-                ),
-                onTapOutside: (_) => FocusScope.of(context).unfocus(),
-              ),
-            ),
-            Expanded(
-              child: BlocBuilder<NewChatCubit, NewChatState>(
-                builder: (context, state) {
-                  return switch (state) {
-                    NewChatInitial() || NewChatLoading() => const Center(
-                      child: ChatTileSkeletonList(),
+        body: BlocBuilder<NewChatCubit, NewChatState>(
+          builder: (context, state) {
+            return CustomScrollView(
+              physics: const ClampingScrollPhysics(),
+              slivers: [
+                SliverAppBar(
+                  floating: true,
+                  pinned: isSearching,
+                  elevation: 0,
+                  scrolledUnderElevation: 0,
+                  shadowColor: Colors.transparent,
+                  backgroundColor: theme.scaffoldBackgroundColor,
+                  titleSpacing: 0,
+                  title: const Text('New Chat'),
+                  leading: IconButton(
+                    icon: const Icon(
+                      Icons.arrow_back_ios_new_rounded,
+                      size: 20,
                     ),
-                    NewChatError(:final message) => Center(
-                      child: Text(message),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                  actions: [
+                    IconButton(
+                      padding: const EdgeInsets.only(bottom: 9),
+                      alignment: Alignment.center,
+                      icon: Image.asset(
+                        AppImages.chatBotIcon,
+                        width: 31,
+                        height: 31,
+                        fit: BoxFit.contain,
+                        color: Theme.of(context).primaryColor,
+                      ),
+                      tooltip: 'Syncra AI',
+                      onPressed: () {
+                        Navigator.of(
+                          context,
+                          rootNavigator: true,
+                        ).pushNamed(AppRoutes.aiChatViewRoute);
+                      },
                     ),
-                    NewChatLoaded(:final rows) =>
-                      rows.isEmpty
-                          ? _buildPremiumEmptyState(context)
-                          : ListView.builder(
-                            itemCount: rows.length,
-                            itemBuilder: (context, index) {
-                              final row = rows[index];
-
-                              if (row is NewChatSectionHeaderRow) {
-                                return Padding(
-                                  padding: const EdgeInsets.fromLTRB(
-                                    16,
-                                    16,
-                                    16,
-                                    6,
-                                  ),
-                                  child: Text(
-                                    row.title,
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w600,
-                                      color: Theme.of(context).hintColor,
-                                    ),
-                                  ),
-                                );
-                              }
-
-                              final itemRow = row as NewChatItemRow;
-                              final item = itemRow.item;
-
-                              return item.isGroup
-                                  ? NewChatGroupTile(
-                                    key: ValueKey('g_${item.id}'),
-                                    group: item.group!,
-                                    isBlocked: itemRow.isBlocked,
-                                    onTap: () => _openChat(context, item),
-                                  )
-                                  : NewChatContactTile(
-                                    key: ValueKey('p_${item.id}'),
-                                    user: item.person!,
-                                    isBlocked: itemRow.isBlocked,
-                                    onTap: () => _openChat(context, item),
-                                  );
-                            },
+                  ],
+                  bottom: PreferredSize(
+                    preferredSize: const Size.fromHeight(68),
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+                      child: TextField(
+                        controller: _searchController,
+                        focusNode: _focusNode,
+                        onChanged: (q) {
+                          setState(() => _searchQuery = q);
+                          context.read<NewChatCubit>().search(q);
+                        },
+                        decoration: InputDecoration(
+                          hintText: 'Search friends & groups...',
+                          hintStyle: const TextStyle(color: Colors.grey),
+                          prefixIcon: const Icon(
+                            CupertinoIcons.search,
+                            color: Colors.grey,
                           ),
-                  };
-                },
-              ),
-            ),
-          ],
+                          filled: true,
+                          fillColor:
+                              theme.brightness == Brightness.dark
+                                  ? Colors.grey.shade900
+                                  : Colors.grey.shade100,
+                          contentPadding: const EdgeInsets.symmetric(
+                            vertical: 0,
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(20),
+                            borderSide: BorderSide.none,
+                          ),
+                          suffixIcon:
+                              _searchQuery.isNotEmpty
+                                  ? IconButton(
+                                    icon: const Icon(
+                                      Icons.clear,
+                                      size: 18,
+                                      color: Colors.grey,
+                                    ),
+                                    onPressed: () {
+                                      _searchController.clear();
+                                      setState(() => _searchQuery = '');
+                                      context.read<NewChatCubit>().search('');
+                                    },
+                                  )
+                                  : null,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+
+                if (state is NewChatInitial || state is NewChatLoading)
+                  const SliverFillRemaining(
+                    child: Center(child: ChatTileSkeletonList()),
+                  )
+                else if (state is NewChatError)
+                  SliverFillRemaining(child: Center(child: Text(state.message)))
+                else if (state is NewChatLoaded)
+                  state.rows.isEmpty
+                      ? SliverFillRemaining(
+                        hasScrollBody: false,
+                        child: _buildPremiumEmptyState(context),
+                      )
+                      : SliverList(
+                        delegate: SliverChildBuilderDelegate((context, index) {
+                          final row = state.rows[index];
+
+                          if (row is NewChatSectionHeaderRow) {
+                            return Padding(
+                              padding: const EdgeInsets.fromLTRB(16, 16, 16, 6),
+                              child: Text(
+                                row.title,
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: Theme.of(context).hintColor,
+                                ),
+                              ),
+                            );
+                          }
+
+                          final itemRow = row as NewChatItemRow;
+                          final item = itemRow.item;
+
+                          return item.isGroup
+                              ? NewChatGroupTile(
+                                key: ValueKey('g_${item.id}'),
+                                group: item.group!,
+                                isBlocked: itemRow.isBlocked,
+                                searchQuery: _searchQuery,
+                                onTap: () => _openChat(context, item),
+                              )
+                              : NewChatContactTile(
+                                key: ValueKey('p_${item.id}'),
+                                user: item.person!,
+                                isBlocked: itemRow.isBlocked,
+                                searchQuery: _searchQuery,
+                                onTap: () => _openChat(context, item),
+                              );
+                        }, childCount: state.rows.length),
+                      ),
+              ],
+            );
+          },
         ),
       ),
     );
