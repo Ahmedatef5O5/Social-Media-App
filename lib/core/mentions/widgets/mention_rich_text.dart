@@ -13,12 +13,14 @@ class MentionRichText extends StatefulWidget {
   final Future<void> Function(String url)? onLinkTap;
   final TextStyle? style;
   final Color? mentionColor;
+  final Color? linkColor;
   final int? maxLines;
   final int collapsedMaxLines;
   final TextOverflow? overflow;
   final double? maxTextWidth;
   final String? highlightQuery;
   final TextStyle? highlightStyle;
+  final ValueChanged<bool>? onExpandChanged;
 
   const MentionRichText({
     super.key,
@@ -29,12 +31,14 @@ class MentionRichText extends StatefulWidget {
     this.onLinkTap,
     this.style,
     this.mentionColor,
+    this.linkColor,
     this.maxLines,
     this.collapsedMaxLines = 10,
     this.overflow,
     this.maxTextWidth,
     this.highlightQuery,
     this.highlightStyle,
+    this.onExpandChanged,
   });
 
   @override
@@ -90,10 +94,10 @@ class _MentionRichTextState extends State<MentionRichText> {
             TextSpan(
               text: element.text,
               style: defaultStyle.copyWith(
-                color: Colors.blue,
+                color: widget.linkColor ?? Colors.blue,
                 fontWeight: FontWeight.w600,
                 decoration: TextDecoration.underline,
-                decorationColor: Colors.blue,
+                decorationColor: widget.linkColor ?? Colors.blue,
               ),
               recognizer: _recognizerFor(() async {
                 if (widget.onLinkTap != null) {
@@ -215,6 +219,19 @@ class _MentionRichTextState extends State<MentionRichText> {
     final direction = ChatHelper.getTextDirection(widget.text);
     final span = TextSpan(children: spans);
 
+    final toggleAlignment = switch (widget.textAlign) {
+      TextAlign.center => CrossAxisAlignment.center,
+      TextAlign.right || TextAlign.end => CrossAxisAlignment.end,
+      _ =>
+        direction == TextDirection.rtl
+            ? CrossAxisAlignment.end
+            : CrossAxisAlignment.start,
+    };
+
+    final isArabicText = direction == TextDirection.rtl;
+    final readMoreLabel = isArabicText ? '...قراءة المزيد' : 'Read more...';
+    final readLessLabel = isArabicText ? 'عرض أقل' : 'Show less';
+
     if (widget.maxLines != null) {
       return Text.rich(
         span,
@@ -241,16 +258,19 @@ class _MentionRichTextState extends State<MentionRichText> {
 
     if (_expanded) {
       return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: toggleAlignment,
         mainAxisSize: MainAxisSize.min,
         children: [
           Text.rich(span, style: defaultStyle, textDirection: direction),
           GestureDetector(
-            onTap: () => setState(() => _expanded = false),
+            onTap: () {
+              setState(() => _expanded = false);
+              widget.onExpandChanged?.call(false);
+            },
             child: Padding(
               padding: const EdgeInsets.only(top: 2),
               child: Text(
-                'Show less',
+                readLessLabel,
                 style: defaultStyle.copyWith(
                   color: resolvedMentionColor,
                   fontWeight: FontWeight.w700,
@@ -263,7 +283,7 @@ class _MentionRichTextState extends State<MentionRichText> {
     }
 
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: toggleAlignment,
       mainAxisSize: MainAxisSize.min,
       children: [
         Text.rich(
@@ -275,11 +295,14 @@ class _MentionRichTextState extends State<MentionRichText> {
           textAlign: widget.textAlign,
         ),
         GestureDetector(
-          onTap: () => setState(() => _expanded = true),
+          onTap: () {
+            setState(() => _expanded = true);
+            widget.onExpandChanged?.call(true);
+          },
           child: Padding(
             padding: const EdgeInsets.only(top: 2),
             child: Text(
-              'Read more',
+              readMoreLabel,
               style: defaultStyle.copyWith(
                 color: resolvedMentionColor,
                 fontWeight: FontWeight.w700,

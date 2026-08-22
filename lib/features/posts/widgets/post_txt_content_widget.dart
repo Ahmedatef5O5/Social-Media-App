@@ -37,7 +37,7 @@ class _PostTxtContentWidgetState extends State<PostTxtContentWidget> {
     final TextDirection textDirection =
         isArabic ? TextDirection.rtl : TextDirection.ltr;
 
-    final String readMoreTxt = isArabic ? 'قراءة المزيد...' : 'Read more...';
+    final String readMoreTxt = isArabic ? '...قراءة المزيد' : 'Read more...';
     final String readLessTxt = isArabic ? 'عرض أقل' : 'Show less';
 
     final textStyle = Theme.of(

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_linkify/flutter_linkify.dart';
 import 'package:url_launcher/url_launcher.dart';
-
 import '../helpers/chat_helper.dart';
+import '../helpers/link_color_helper.dart';
 
 class CustomLinkifyText extends StatelessWidget {
   final String text;
@@ -11,6 +11,7 @@ class CustomLinkifyText extends StatelessWidget {
   final TextStyle? style;
   final TextStyle? linkStyle;
   final TextDirection? textDirection;
+  final Color? bubbleColor;
 
   const CustomLinkifyText({
     super.key,
@@ -20,6 +21,7 @@ class CustomLinkifyText extends StatelessWidget {
     this.style,
     this.linkStyle,
     this.textDirection,
+    this.bubbleColor,
   });
 
   Future<void> _onOpen(LinkableElement link) async {
@@ -32,6 +34,11 @@ class CustomLinkifyText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final linkColor =
+        bubbleColor == null
+            ? Colors.blue
+            : LinkColorHelper.forBubble(bubbleColor!);
+
     return Linkify(
       text: text,
       textDirection: textDirection ?? ChatHelper.getTextDirection(text),
@@ -44,11 +51,11 @@ class CustomLinkifyText extends StatelessWidget {
           Theme.of(context).textTheme.bodyMedium!.copyWith(fontSize: 15),
       linkStyle:
           linkStyle ??
-          const TextStyle(
-            color: Colors.blue,
+          TextStyle(
+            color: linkColor,
             fontWeight: FontWeight.w600,
             decoration: TextDecoration.underline,
-            decorationColor: Colors.blue,
+            decorationColor: linkColor,
             decorationThickness: 0.8,
           ),
     );
