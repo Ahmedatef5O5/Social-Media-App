@@ -4,10 +4,16 @@ import 'dart:ui' as ui;
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
-import 'package:social_media_app/core/widgets/custom_loading_indicator.dart';
+import 'package:shimmer/shimmer.dart';
 
 final StreamController<String> _globalGifPlayController =
     StreamController<String>.broadcast();
+
+class _GifFrameCache {
+  static final Map<String, ui.Image> _frames = {};
+  static ui.Image? get(String url) => _frames[url];
+  static void put(String url, ui.Image image) => _frames[url] = image;
+}
 
 class LoopLimitedGif extends StatefulWidget {
   final String url;
@@ -53,7 +59,13 @@ class _LoopLimitedGifState extends State<LoopLimitedGif> {
       }
     });
 
-    _loadThumbnail();
+    final cachedFrame = _GifFrameCache.get(widget.url);
+    if (cachedFrame != null) {
+      _thumbnailFrame = cachedFrame;
+      _isLoading = false;
+    } else {
+      _loadThumbnail();
+    }
   }
 
   Future<Uint8List> _readCachedBytes() async {
@@ -67,6 +79,7 @@ class _LoopLimitedGifState extends State<LoopLimitedGif> {
       final codec = await ui.instantiateImageCodec(bytes);
       final frameInfo = await codec.getNextFrame();
       if (_disposed) return;
+      _GifFrameCache.put(widget.url, frameInfo.image);
       setState(() {
         _thumbnailFrame = frameInfo.image;
         _isLoading = false;
@@ -142,12 +155,29 @@ class _LoopLimitedGifState extends State<LoopLimitedGif> {
     );
   }
 
+  Widget _loadingSkeleton() {
+    return Shimmer.fromColors(
+      baseColor: Colors.grey[300]!,
+      highlightColor: Colors.grey[100]!,
+      child: Container(
+        width: widget.width ?? double.infinity,
+        height: widget.height ?? double.infinity,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return _placeholder(
-        const SizedBox(width: 30, height: 30, child: CustomLoadingIndicator()),
-      );
+      // A shimmer skeleton in place of the bubble's actual footprint reads
+      // as "content is arriving" rather than a hard block on top of it —
+      // and thanks to _GifFrameCache, this only ever shows once per URL
+      // for the whole app session, not every time this widget remounts.
+      return _loadingSkeleton();
     }
     if (_hasError || _thumbnailFrame == null) {
       return _placeholder(

@@ -4,13 +4,18 @@ import 'gif_item.dart';
 
 class GifGrid extends StatelessWidget {
   final List<GifResult> _results;
+  final ScrollController? scrollController;
 
-  const GifGrid({super.key, required List<GifResult> results})
-    : _results = results;
+  const GifGrid({
+    super.key,
+    required List<GifResult> results,
+    this.scrollController,
+  }) : _results = results;
 
   @override
   Widget build(BuildContext context) {
     return GridView.builder(
+      controller: scrollController,
       itemCount: _results.length,
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 3,

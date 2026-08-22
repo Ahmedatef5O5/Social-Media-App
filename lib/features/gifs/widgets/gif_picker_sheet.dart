@@ -2,9 +2,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import '../../../core/themes/app_colors.dart';
-import '../../../core/widgets/custom_loading_indicator.dart';
 import '../model/gif_result_model.dart';
 import '../service/giphy_services.dart';
+import '../utils/gif_grid_skeleton.dart';
 import 'gif_grid.dart';
 import 'gif_search_bar.dart';
 
@@ -64,42 +64,56 @@ class _GifPickerSheetState extends State<GifPickerSheet> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return SafeArea(
-      child: Container(
-        height: MediaQuery.of(context).size.height * 0.65,
-        margin: const EdgeInsets.all(10),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: theme.scaffoldBackgroundColor,
-          borderRadius: BorderRadius.circular(24),
-        ),
-        child: Column(
-          children: [
-            Container(
-              width: 44,
-              height: 4,
-              decoration: BoxDecoration(
-                color: AppColors.grey5,
-                borderRadius: BorderRadius.circular(4),
-              ),
+
+    return DraggableScrollableSheet(
+      initialChildSize: 0.80,
+      maxChildSize: 0.98,
+      minChildSize: 0.30,
+      snap: true,
+      builder: (context, scrollController) {
+        return SafeArea(
+          child: Container(
+            margin: const EdgeInsets.all(10),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: theme.scaffoldBackgroundColor,
+              borderRadius: BorderRadius.circular(24),
             ),
-            const Gap(14),
-            GifSearchBar(
-              controller: _searchController,
-              onChanged: _onSearchChanged,
+            child: Column(
+              children: [
+                Container(
+                  width: 44,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppColors.grey5,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+                const Gap(14),
+                GifSearchBar(
+                  controller: _searchController,
+                  onChanged: _onSearchChanged,
+                ),
+                const Gap(12),
+                Expanded(child: _buildBody(scrollController)),
+              ],
             ),
-            const Gap(12),
-            Expanded(child: _buildBody()),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 
-  Widget _buildBody() {
-    if (_isLoading) return const Center(child: CustomLoadingIndicator());
-    if (_error != null) return Center(child: Text(_error!));
-    if (_results.isEmpty) return const Center(child: Text('No GIFs found'));
-    return GifGrid(results: _results);
+  Widget _buildBody(ScrollController scrollController) {
+    if (_isLoading) {
+      return GifGridSkeleton(scrollController: scrollController);
+    }
+    if (_error != null) {
+      return Center(child: Text(_error!));
+    }
+    if (_results.isEmpty) {
+      return const Center(child: Text('No GIFs found'));
+    }
+    return GifGrid(results: _results, scrollController: scrollController);
   }
 }
