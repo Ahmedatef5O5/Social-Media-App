@@ -180,7 +180,8 @@ class MyApp extends StatelessWidget {
             child: MaterialApp(
               locale: DevicePreview.locale(context),
               builder: (ctx, child) {
-                final devicePreviewChild = DevicePreview.appBuilder(ctx, child);
+                Widget activeChild = DevicePreview.appBuilder(ctx, child);
+
                 return AppLockGate(
                   child: GlobalGroupCallListener(
                     child: MultiBlocListener(
@@ -292,17 +293,20 @@ class MyApp extends StatelessWidget {
                           },
                         ),
                       ],
-                      child: Stack(
-                        children: [
-                          devicePreviewChild,
-                          const Directionality(
-                            textDirection: TextDirection.ltr,
-                            child: ConnectivityBanner(),
-                          ),
-                          const AppToastOverlay(),
-                          const CallPipOverlay(), // 1:1 + group calls (LiveKit)
-                          const ActiveCallHeaderWidget(),
-                        ],
+                      child: Directionality(
+                        textDirection: TextDirection.ltr,
+                        child: Stack(
+                          children: [
+                            activeChild,
+                            const Directionality(
+                              textDirection: TextDirection.ltr,
+                              child: ConnectivityBanner(),
+                            ),
+                            const AppToastOverlay(),
+                            const CallPipOverlay(), // 1:1 + group calls (LiveKit)
+                            const ActiveCallHeaderWidget(),
+                          ],
+                        ),
                       ),
                     ),
                   ),

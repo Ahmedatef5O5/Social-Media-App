@@ -57,7 +57,12 @@ void _notifyUserOfUncaughtError(Object error) {
       errorString.contains('ExoPlaybackException') ||
       errorString.contains('RealtimeSubscribeException') ||
       errorString.contains('HttpException: Invalid statusCode: 404') ||
-      errorString.contains('RealtimeSubscribeStatus.timedOut')) {
+      errorString.contains('RealtimeSubscribeStatus.timedOut')
+  // || errorString.contains('AssertionError') ||
+  // errorString.contains('RenderFlex') ||
+  // errorString.contains('LateInitializationError') ||
+  // errorString.contains('StateError')
+  ) {
     debugPrint('Uncaught error suppressed from UI: $error');
     return;
   }
