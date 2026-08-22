@@ -17,6 +17,7 @@ import 'package:social_media_app/core/services/file_picker_services.dart';
 import 'package:social_media_app/core/services/fcm_services.dart';
 import 'package:social_media_app/features/auth/data/models/user_data.dart';
 import '../../../../core/connectivity/services/connectivity_banner_controller.dart';
+import '../../../../core/errors/supabase_error_mapper.dart';
 import '../../../../core/toast/app_toast.dart';
 import '../../../social_graph/models/content_privacy.dart';
 import 'package:social_media_app/core/mentions/mentions.dart';
@@ -143,7 +144,12 @@ class StoriesCubit extends Cubit<StoriesState> {
     } catch (e) {
       debugPrint('Error adding text story: $e');
       final isOffline = await ConnectivityBannerController.notifyIfOffline();
-      emit(AddStoryError(e.toString(), isConnectivityError: isOffline));
+      emit(
+        AddStoryError(
+          SupabaseErrorMapper.toUserMessage(e),
+          isConnectivityError: isOffline,
+        ),
+      );
     }
   }
 
@@ -420,7 +426,7 @@ class StoriesCubit extends Cubit<StoriesState> {
       emit(StoryVideoPicked(file: stableFile, videoDuration: duration));
     } catch (e) {
       debugPrint('Error picking video story: $e');
-      emit(StoryVideoPickError(e.toString()));
+      emit(StoryVideoPickError(SupabaseErrorMapper.toUserMessage(e)));
     }
   }
 
@@ -452,7 +458,7 @@ class StoriesCubit extends Cubit<StoriesState> {
       emit(StoriesLoaded(stories, DateTime.now()));
     } catch (e) {
       debugPrint('Error fetching author stories: $e');
-      emit(StoriesError(e.toString()));
+      emit(StoriesError(SupabaseErrorMapper.toUserMessage(e)));
     }
   }
 
@@ -479,7 +485,7 @@ class StoriesCubit extends Cubit<StoriesState> {
         emit(StoriesLoaded(diskStories, DateTime.now()));
         return;
       }
-      emit(StoriesError(e.toString()));
+      emit(StoriesError(SupabaseErrorMapper.toUserMessage(e)));
     }
   }
 

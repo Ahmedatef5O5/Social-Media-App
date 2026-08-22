@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../core/constants/app_images.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/themes/app_colors.dart';
@@ -53,6 +54,47 @@ class UserStoriesGridView extends StatelessWidget {
                   fontSize: 18,
                 ),
               ),
+              actions: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: Builder(
+                    builder: (context) {
+                      final int storyCount =
+                          _isMe
+                              ? storiesCubit.cachedStories
+                                  .where((s) => s.authorId == userId)
+                                  .length
+                              : 0;
+
+                      return Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (storyCount > 0) ...[
+                            Text(
+                              '$storyCount',
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                          ],
+
+                          ClipOval(
+                            child: Image.asset(
+                              AppImages.storyIcon,
+                              width: 26,
+                              height: 26,
+                              fit: BoxFit.contain,
+                              color: Theme.of(context).primaryColor,
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                ),
+              ],
             ),
           ];
         },

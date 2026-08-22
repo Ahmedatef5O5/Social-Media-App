@@ -59,7 +59,7 @@ class StoryGridTile extends StatelessWidget {
                 ),
               ),
 
-            if (showAnalytics)
+            if (showAnalytics && (stat?.reactionCount ?? 0) > 0)
               Positioned(
                 left: 6,
                 bottom: 6,
@@ -172,8 +172,6 @@ class _AnalyticsChip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 12, color: Colors.white),
-          const SizedBox(width: 3),
           Text(
             _formatCount(value),
             style: const TextStyle(
@@ -182,6 +180,8 @@ class _AnalyticsChip extends StatelessWidget {
               fontWeight: FontWeight.w600,
             ),
           ),
+          const SizedBox(width: 3),
+          Icon(icon, size: 12, color: Colors.white),
         ],
       ),
     );
