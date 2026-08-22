@@ -13,6 +13,7 @@ class AiChatMessageList extends StatelessWidget {
   final ValueChanged<AiChatMessage>? onRetry;
   final ValueChanged<AiChatMessage>? onForward;
   final bool Function(AiChatMessage message)? shouldAnimateText;
+  final ScrollController? scrollController;
 
   const AiChatMessageList({
     super.key,
@@ -23,6 +24,7 @@ class AiChatMessageList extends StatelessWidget {
     this.onRetry,
     this.onForward,
     this.shouldAnimateText,
+    this.scrollController,
   });
 
   @override
@@ -34,6 +36,7 @@ class AiChatMessageList extends StatelessWidget {
       children: [
         Expanded(
           child: ListView.custom(
+            controller: scrollController,
             reverse: true,
             physics: const ClampingScrollPhysics(),
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),

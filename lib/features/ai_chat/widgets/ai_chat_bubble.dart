@@ -1,17 +1,28 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:share_plus/share_plus.dart';
 import '../../../core/attachment/models/media_transfer_state.dart';
 import '../../../core/attachment/widgets/file_message_bubble.dart';
 import '../../../core/attachment/widgets/media_state_overlay.dart';
 import '../../../core/helpers/chat_helper.dart';
 import '../../../core/helpers/formatted_date.dart';
+import '../../../core/toast/app_toast.dart';
+import '../../../core/widgets/custom_linkify_text.dart';
 import '../../single_chats/widgets/image_message_widget.dart';
 import '../../single_chats/widgets/video_message_widget.dart';
 import '../../single_chats/widgets/voice_message_bubble_widget.dart';
+import '../helpers/ai_chat_colors.dart';
 import '../helpers/ai_model_display.dart';
 import '../models/ai_chat_message.dart';
+import 'ai_message_action_row.dart';
 import 'ai_typewriter_text.dart';
 
-class AiChatBubble extends StatelessWidget {
+const _kEntranceDuration = Duration(milliseconds: 380);
+const _kActionsVisibleDuration = Duration(milliseconds: 4500);
+const _kActionsFadeDuration = Duration(milliseconds: 220);
+
+class AiChatBubble extends StatefulWidget {
   final AiChatMessage message;
   final VoidCallback? onCancelUpload;
   final VoidCallback? onRetry;
@@ -27,19 +38,102 @@ class AiChatBubble extends StatelessWidget {
     this.animate = false,
   });
 
+  @override
+  State<AiChatBubble> createState() => _AiChatBubbleState();
+}
+
+class _AiChatBubbleState extends State<AiChatBubble> {
+  bool _actionsVisible = false;
+  Timer? _hideTimer;
+  bool _liked = false;
+
   bool get _isUploading =>
-      message.status == AiChatDeliveryStatus.sending &&
-      message.mediaType != AiChatMediaType.none;
+      widget.message.status == AiChatDeliveryStatus.sending &&
+      widget.message.mediaType != AiChatMediaType.none;
+
+  double? get _fixedMediaWidth =>
+      (widget.message.mediaType == AiChatMediaType.image ||
+              widget.message.mediaType == AiChatMediaType.video)
+          ? 240
+          : null;
+
+  bool get _isRtl =>
+      ChatHelper.getTextDirection(widget.message.text) == TextDirection.rtl;
+
+  Alignment get _contentAlignmentGeometry =>
+      _isRtl ? Alignment.centerRight : Alignment.centerLeft;
+
+  Alignment get _statusRowAlignmentGeometry =>
+      _isRtl ? Alignment.centerLeft : Alignment.centerRight;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.message.isMe) return;
+
+    final hasText = widget.message.text.trim().isNotEmpty;
+    if (widget.animate && hasText) {
+      return;
+    }
+
+    Future.delayed(_kEntranceDuration, _revealActions);
+  }
+
+  @override
+  void dispose() {
+    _hideTimer?.cancel();
+    super.dispose();
+  }
+
+  void _revealActions() {
+    if (!mounted || widget.message.isMe) return;
+    _hideTimer?.cancel();
+    if (!_actionsVisible) {
+      setState(() => _actionsVisible = true);
+    }
+    _hideTimer = Timer(_kActionsVisibleDuration, () {
+      if (mounted) setState(() => _actionsVisible = false);
+    });
+  }
+
+  void _handleLongPress() {
+    _revealActions();
+    widget.onForward?.call();
+  }
+
+  void _handleTap() {
+    _revealActions();
+    if (widget.message.status == AiChatDeliveryStatus.failed) {
+      widget.onRetry?.call();
+    }
+  }
+
+  Future<void> _handleCopy() async {
+    await Clipboard.setData(ClipboardData(text: widget.message.text));
+    if (mounted) AppToast.success('Copied to clipboard');
+    _revealActions();
+  }
+
+  Future<void> _handleShare() async {
+    _revealActions();
+    await SharePlus.instance.share(ShareParams(text: widget.message.text));
+  }
+
+  void _handleToggleLike() {
+    setState(() => _liked = !_liked);
+    _revealActions();
+  }
 
   BorderRadius _radius(bool isMe) => BorderRadius.only(
-    topLeft: const Radius.circular(20),
-    topRight: const Radius.circular(20),
-    bottomLeft: Radius.circular(isMe ? 20 : 4),
-    bottomRight: Radius.circular(isMe ? 4 : 20),
+    topLeft: const Radius.circular(16),
+    topRight: const Radius.circular(16),
+    bottomLeft: Radius.circular(isMe ? 16 : 4),
+    bottomRight: Radius.circular(isMe ? 4 : 16),
   );
 
   @override
   Widget build(BuildContext context) {
+    final message = widget.message;
     final isMe = message.isMe;
     final hasMedia = message.mediaType != AiChatMediaType.none;
     final hasText = message.text.trim().isNotEmpty;
@@ -51,13 +145,10 @@ class AiChatBubble extends StatelessWidget {
       fontWeight: FontWeight.w500,
     );
 
-    final textDirection = ChatHelper.getTextDirection(message.text);
-    final textAlign =
-        textDirection == TextDirection.rtl ? TextAlign.right : TextAlign.left;
-
     final bubble = GestureDetector(
-      onTap: message.status == AiChatDeliveryStatus.failed ? onRetry : null,
-      onLongPress: !isMe ? onForward : null,
+      onTap: _handleTap,
+      onLongPress: !isMe ? _handleLongPress : null,
+      onDoubleTap: !isMe ? _revealActions : null,
       child: Container(
         constraints: BoxConstraints(
           maxWidth: MediaQuery.of(context).size.width * 0.74,
@@ -67,57 +158,97 @@ class AiChatBubble extends StatelessWidget {
                 ? const EdgeInsets.all(4)
                 : const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
-          color:
+          gradient:
               isMe
-                  ? Theme.of(context).primaryColor
-                  : Colors.white.withValues(alpha: 0.08),
+                  ? LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: AiChatColors.outgoingBubbleGradient(
+                      Theme.of(context).primaryColor,
+                    ),
+                  )
+                  : null,
+          color: isMe ? null : Colors.white.withValues(alpha: 0.08),
           borderRadius: _radius(isMe),
-          border:
+          border: Border.all(
+            color: Colors.white.withValues(alpha: isMe ? 0.14 : 0.12),
+          ),
+          boxShadow:
               isMe
-                  ? null
-                  : Border.all(color: Colors.white.withValues(alpha: 0.12)),
+                  ? [
+                    BoxShadow(
+                      color: Theme.of(
+                        context,
+                      ).primaryColor.withValues(alpha: 0.28),
+                      blurRadius: 14,
+                      offset: const Offset(0, 5),
+                    ),
+                  ]
+                  : null,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+
           mainAxisSize: MainAxisSize.min,
           children: [
             if (hasMedia) _buildMedia(context, isMe),
-            if (hasText)
-              Padding(
-                padding: EdgeInsets.only(
-                  top: hasMedia ? 8 : 0,
-                  left: hasMedia ? 6 : 0,
-                  right: hasMedia ? 6 : 0,
-                ),
-                child:
-                    isMe
-                        ? Text(
-                          message.text,
-                          style: textStyle,
-                          textDirection: textDirection,
-                          textAlign: textAlign,
-                        )
-                        : AiTypewriterText(
-                          text: message.text,
-                          style: textStyle,
-                          animate: animate,
-                          textDirection: textDirection,
-                          textAlign: textAlign,
+            IntrinsicWidth(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (hasText)
+                    SizedBox(
+                      width: _fixedMediaWidth,
+                      child: Padding(
+                        padding: EdgeInsets.only(
+                          top: hasMedia ? 8 : 0,
+                          left: hasMedia ? 6 : 0,
+                          right: hasMedia ? 6 : 0,
                         ),
+                        child: Align(
+                          alignment: _contentAlignmentGeometry,
+
+                          child:
+                              isMe
+                                  ? CustomLinkifyText(
+                                    text: message.text,
+                                    overflow: TextOverflow.visible,
+
+                                    style: textStyle,
+                                    textDirection: ChatHelper.getTextDirection(
+                                      message.text,
+                                    ),
+                                    bubbleColor: Theme.of(context).primaryColor,
+                                  )
+                                  : AiTypewriterText(
+                                    text: message.text,
+                                    style: textStyle,
+                                    animate: widget.animate,
+                                  ),
+                        ),
+                      ),
+                    ),
+                  Padding(
+                    padding: EdgeInsets.only(
+                      top: 4,
+                      left: hasMedia && !hasText ? 6 : 0,
+                    ),
+                    child: Align(
+                      alignment: _statusRowAlignmentGeometry,
+
+                      child: _buildStatusRow(),
+                    ),
+                  ),
+                ],
               ),
-            Padding(
-              padding: EdgeInsets.only(
-                top: 4,
-                left: hasMedia && !hasText ? 6 : 0,
-              ),
-              child: _buildStatusRow(),
             ),
           ],
         ),
       ),
     );
 
-    final row = Padding(
+    final messageRow = Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         mainAxisAlignment:
@@ -133,9 +264,9 @@ class AiChatBubble extends StatelessWidget {
       ),
     );
 
-    return TweenAnimationBuilder<double>(
+    final animatedMessageRow = TweenAnimationBuilder<double>(
       tween: Tween(begin: 0, end: 1),
-      duration: const Duration(milliseconds: 380),
+      duration: _kEntranceDuration,
       curve: Curves.easeOutCubic,
       builder:
           (context, value, child) => Opacity(
@@ -145,7 +276,34 @@ class AiChatBubble extends StatelessWidget {
               child: child,
             ),
           ),
-      child: row,
+      child: messageRow,
+    );
+
+    if (isMe) return animatedMessageRow;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        animatedMessageRow,
+        Padding(
+          padding: const EdgeInsets.only(left: 34, top: 2),
+          child: AnimatedOpacity(
+            duration: _kActionsFadeDuration,
+            opacity: _actionsVisible ? 1 : 0,
+            child: IgnorePointer(
+              ignoring: !_actionsVisible,
+              child: AiMessageActionRow(
+                liked: _liked,
+                onToggleLike: _handleToggleLike,
+                onCopy: _handleCopy,
+                onShare: _handleShare,
+                showRetry: message.status == AiChatDeliveryStatus.failed,
+                onRetry: widget.onRetry,
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -156,37 +314,23 @@ class AiChatBubble extends StatelessWidget {
 
   Widget _buildStatusRow() {
     final modelLabel =
-        (!message.isMe && message.model != null)
-            ? _truncate(message.model!.fullLabel, 30)
+        (!widget.message.isMe && widget.message.model != null)
+            ? _truncate(widget.message.model!.fullLabel, 30)
             : null;
 
-    return Row(
+    final timeStyle = TextStyle(
+      color: Colors.white.withValues(alpha: 0.55),
+      fontSize: 8.5,
+    );
+
+    final timeGroup = Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(
-          FormattedDate.getMessageTime(message.createdAt),
-          style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.55),
-            fontSize: 10.5,
-          ),
+          FormattedDate.getMessageTime(widget.message.createdAt),
+          style: timeStyle,
         ),
-        if (modelLabel != null) ...[
-          Text(
-            ' · ',
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.4),
-              fontSize: 10.5,
-            ),
-          ),
-          Text(
-            modelLabel,
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.55),
-              fontSize: 10.5,
-            ),
-          ),
-        ],
-        if (message.status == AiChatDeliveryStatus.sending) ...[
+        if (widget.message.status == AiChatDeliveryStatus.sending) ...[
           const SizedBox(width: 5),
           SizedBox(
             width: 9,
@@ -197,7 +341,7 @@ class AiChatBubble extends StatelessWidget {
             ),
           ),
         ],
-        if (message.status == AiChatDeliveryStatus.failed) ...[
+        if (widget.message.status == AiChatDeliveryStatus.failed) ...[
           const SizedBox(width: 5),
           const Icon(
             Icons.error_outline_rounded,
@@ -207,9 +351,19 @@ class AiChatBubble extends StatelessWidget {
         ],
       ],
     );
+
+    if (modelLabel == null) return timeGroup;
+
+    return Row(
+      mainAxisSize: MainAxisSize.max,
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      textDirection: _isRtl ? TextDirection.ltr : TextDirection.rtl,
+      children: [timeGroup, Text(modelLabel, style: timeStyle)],
+    );
   }
 
   Widget _buildMedia(BuildContext context, bool isMe) {
+    final message = widget.message;
     final transferState =
         _isUploading
             ? MediaTransferState.uploading(message.uploadProgress ?? 0)
@@ -225,7 +379,9 @@ class AiChatBubble extends StatelessWidget {
           child: MediaStateOverlay(
             state: transferState,
             borderRadius: _radius(isMe),
-            onCancelTap: onCancelUpload,
+            onCancelTap: widget.onCancelUpload,
+            fileSizeBytes: message.fileSizeBytes,
+
             child:
                 message.mediaUrl == null
                     ? const SizedBox.shrink()
@@ -233,6 +389,10 @@ class AiChatBubble extends StatelessWidget {
                       imageUrl: message.mediaUrl!,
                       isMe: isMe,
                       fileSizeBytes: message.fileSizeBytes,
+                      caption:
+                          message.text.trim().isEmpty
+                              ? null
+                              : message.text.trim(),
                     ),
           ),
         );
@@ -246,7 +406,8 @@ class AiChatBubble extends StatelessWidget {
             borderRadius: _radius(isMe),
             isVideo: true,
             durationSeconds: message.durationSeconds,
-            onCancelTap: onCancelUpload,
+            onCancelTap: widget.onCancelUpload,
+            fileSizeBytes: message.fileSizeBytes,
             child:
                 message.mediaUrl == null
                     ? const SizedBox.shrink()
@@ -278,7 +439,7 @@ class AiChatBubble extends StatelessWidget {
           isMe: isMe,
           isUploading: _isUploading,
           uploadProgress: message.uploadProgress,
-          onCancelTap: onCancelUpload,
+          onCancelTap: widget.onCancelUpload,
         );
 
       case AiChatMediaType.none:

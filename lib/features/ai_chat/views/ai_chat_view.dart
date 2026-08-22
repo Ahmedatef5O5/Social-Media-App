@@ -9,6 +9,7 @@ import 'package:image/image.dart' as img;
 import '../../../core/attachment/attachment_sheet/attachment_kind.dart';
 import '../../../core/attachment/attachment_sheet/attachment_picker_sheet.dart';
 import '../../../core/attachment/attachment_sheet/picked_attachment.dart';
+import '../../../core/cache/repository/media_cache_repository.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/services/cloudinary_storage_services.dart';
 import '../../../core/supabase/supabase_provider.dart';
@@ -32,20 +33,11 @@ import '../widgets/ai_chat_input_bar.dart';
 import '../widgets/ai_chat_message_list.dart';
 import '../widgets/ai_chat_sessions_drawer.dart';
 import '../widgets/ai_chat_shimmer.dart';
+import '../widgets/ai_model_selector.dart';
 import '../widgets/ai_suggestion_grid.dart';
+import '../widgets/syncra_backdrop.dart';
+import 'ai_photo_preview_screen.dart';
 
-/// Runs off the UI isolate via [compute] — resizes to a 1024px-max edge
-/// and re-encodes as JPEG before base64. This is what actually gets sent
-/// to the gateway for vision, completely separate from the full-quality
-/// file [CloudinaryStorageServices] uploads for persistence/display —
-/// Gemini/OpenRouter vision doesn't need (and shouldn't be paying
-/// latency/payload-size for) full camera resolution.
-///
-/// Caveat: the pure-Dart `image` package can't decode every format (some
-/// HEIC variants in particular). If decoding fails, this falls back to
-/// sending the original bytes as-is — the vision call may reject those;
-/// there's no silent corruption, just a possible "couldn't read that
-/// image" from the model itself.
 String _downscaleAndEncodeImage(Uint8List bytes) {
   final decoded = img.decodeImage(bytes);
   if (decoded == null) return base64Encode(bytes);
@@ -66,8 +58,16 @@ String _downscaleAndEncodeImage(Uint8List bytes) {
 class AiChatView extends StatefulWidget {
   final String? initialSessionId;
   final String? initialDraftText;
+  final String? initialDraftImageRemoteUrl;
+  final String? initialDraftImageCaption;
 
-  const AiChatView({super.key, this.initialSessionId, this.initialDraftText});
+  const AiChatView({
+    super.key,
+    this.initialSessionId,
+    this.initialDraftText,
+    this.initialDraftImageRemoteUrl,
+    this.initialDraftImageCaption,
+  });
 
   @override
   State<AiChatView> createState() => _AiChatViewState();
@@ -83,7 +83,7 @@ class _AiChatViewState extends State<AiChatView> with TickerProviderStateMixin {
   late final Animation<Offset> _gridSlide;
   late final AnimationController _morphController;
   late bool _showWelcome;
-
+  late final ScrollController _scrollController;
   late final TextEditingController _textController;
   late final FocusNode _textFocusNode;
   AiModelOption _selectedModel = AiModelCatalog.defaultModel;
@@ -94,11 +94,7 @@ class _AiChatViewState extends State<AiChatView> with TickerProviderStateMixin {
   AiChatCubit? _chatCubit;
   String? _activeSessionId;
   bool _isUploadingImage = false;
-
-  /// Ids that already existed the moment this session's history finished
-  /// loading. Anything NOT in this set the first time it's rendered is a
-  /// message that arrived live during this screen visit, so the
-  /// assistant's text gets the typewriter treatment; history never does.
+  bool _isSendingVoice = false;
   final Set<String> _historicalMessageIds = {};
 
   // Thinking / Analyzing / Generating cycle — driven by AiChatCubit's
@@ -115,6 +111,7 @@ class _AiChatViewState extends State<AiChatView> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
+    _scrollController = ScrollController();
     _textController = TextEditingController();
     _textFocusNode = FocusNode();
     _showWelcome = widget.initialSessionId == null;
@@ -167,6 +164,12 @@ class _AiChatViewState extends State<AiChatView> with TickerProviderStateMixin {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) _prefillAndFocus(widget.initialDraftText!.trim());
       });
+    } else if (widget.initialDraftImageRemoteUrl != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _openForwardedPhotoPreview(widget.initialDraftImageRemoteUrl!);
+        }
+      });
     }
 
     _bootstrap();
@@ -176,6 +179,7 @@ class _AiChatViewState extends State<AiChatView> with TickerProviderStateMixin {
   void dispose() {
     _entranceController.dispose();
     _morphController.dispose();
+    _scrollController.dispose();
     _textController.dispose();
     _textFocusNode.dispose();
     _phaseTimer?.cancel();
@@ -282,20 +286,20 @@ class _AiChatViewState extends State<AiChatView> with TickerProviderStateMixin {
   /// theme's `primaryColor`, so every one of the 12 app themes (Ocean,
   /// Sunset, Midnight, Carbon...) gets its own tinted, premium "Syncra"
   /// backdrop instead of a single hardcoded color.
-  List<Color> _gradientColors(Color primary) {
-    final hsl = HSLColor.fromColor(primary);
-    final top =
-        hsl
-            .withLightness(0.22)
-            .withSaturation((hsl.saturation * 0.85).clamp(0.0, 1.0))
-            .toColor();
-    final bottom =
-        hsl
-            .withLightness(0.05)
-            .withSaturation((hsl.saturation * 0.55).clamp(0.0, 1.0))
-            .toColor();
-    return [top, bottom];
-  }
+  // List<Color> _gradientColors(Color primary) {
+  //   final hsl = HSLColor.fromColor(primary);
+  //   final top =
+  //       hsl
+  //           .withLightness(0.22)
+  //           .withSaturation((hsl.saturation * 0.85).clamp(0.0, 1.0))
+  //           .toColor();
+  //   final bottom =
+  //       hsl
+  //           .withLightness(0.05)
+  //           .withSaturation((hsl.saturation * 0.55).clamp(0.0, 1.0))
+  //           .toColor();
+  //   return [top, bottom];
+  // }
 
   // ---------------------------------------------------------------------
   // Morph trigger — one AnimationController drives both halves at once:
@@ -311,63 +315,11 @@ class _AiChatViewState extends State<AiChatView> with TickerProviderStateMixin {
     }
   }
 
-  // ---------------------------------------------------------------------
-  // Header menu — New chat / Delete chat
-  // ---------------------------------------------------------------------
-
-  void _showHeaderMenu(BuildContext context) {
-    final canDelete = _chatCubit != null;
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Theme.of(context).cardColor,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder:
-          (ctx) => SafeArea(
-            child: Wrap(
-              children: [
-                ListTile(
-                  leading: const Icon(Icons.add_comment_outlined),
-                  title: const Text('New chat'),
-                  onTap: () {
-                    Navigator.pop(ctx);
-                    _startNewChatInPlace();
-                  },
-                ),
-                if (canDelete)
-                  ListTile(
-                    leading: const Icon(
-                      Icons.delete_outline_rounded,
-                      color: Colors.red,
-                    ),
-                    title: Text(
-                      'Delete chat',
-                      style: Theme.of(
-                        context,
-                      ).textTheme.titleMedium?.copyWith(color: Colors.red),
-                    ),
-                    onTap: () {
-                      Navigator.pop(ctx);
-                      _confirmDeleteChat(context);
-                    },
-                  ),
-              ],
-            ),
-          ),
-    );
-  }
-
-  /// Resets this same screen back to the welcome state — the previous
-  /// session is left exactly as-is in Supabase/Hive, this just detaches
-  /// from it. The next message sent lazily creates a brand-new session,
-  /// identical to what a fresh `AiChatView()` would do.
   void _startNewChatInPlace() {
     _textController.clear();
-    _deps?.lastActiveSessionId = null; // "New Chat" must not resume this
+    _deps?.lastActiveSessionId = null;
 
     if (_chatCubit == null) {
-      // Already on a fresh, empty welcome screen — nothing to reset.
       _textFocusNode.requestFocus();
       return;
     }
@@ -390,46 +342,6 @@ class _AiChatViewState extends State<AiChatView> with TickerProviderStateMixin {
       // so nothing can rebuild against a closed cubit mid-transition.
       oldCubit?.close();
     });
-  }
-
-  Future<void> _confirmDeleteChat(BuildContext context) async {
-    final deps = _deps;
-    final sessionId = _activeSessionId;
-    if (deps == null || sessionId == null) return;
-
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder:
-          (ctx) => AlertDialog(
-            title: const Text('Delete this chat?'),
-            content: const Text(
-              "This permanently deletes the conversation from Syncra. This can't be undone.",
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx, false),
-                child: const Text('Cancel'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(ctx, true),
-                child: const Text(
-                  'Delete',
-                  style: TextStyle(color: Colors.red),
-                ),
-              ),
-            ],
-          ),
-    );
-    if (confirmed != true || !mounted) return;
-
-    try {
-      await deps.repository.deleteSession(sessionId);
-      if (mounted) Navigator.of(context).maybePop();
-    } catch (_) {
-      if (mounted) {
-        AppToast.error('Failed to delete this chat. Please try again.');
-      }
-    }
   }
 
   // ---------------------------------------------------------------------
@@ -462,21 +374,32 @@ class _AiChatViewState extends State<AiChatView> with TickerProviderStateMixin {
       context: context,
       builder:
           (ctx) => AlertDialog(
-            title: const Text('Delete this chat?'),
+            backgroundColor: const Color(0xFF1C1D24),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            title: const Text(
+              'Delete this chat?',
+              style: TextStyle(color: Colors.white),
+            ),
             content: Text(
               'Delete "${session.title}"? This permanently removes it '
               "from Syncra and can't be undone.",
+              style: const TextStyle(color: Colors.white70),
             ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(ctx, false),
-                child: const Text('Cancel'),
+                child: const Text(
+                  'Cancel',
+                  style: TextStyle(color: Colors.white70),
+                ),
               ),
               TextButton(
                 onPressed: () => Navigator.pop(ctx, true),
                 child: const Text(
                   'Delete',
-                  style: TextStyle(color: Colors.red),
+                  style: TextStyle(color: Colors.redAccent),
                 ),
               ),
             ],
@@ -605,6 +528,7 @@ class _AiChatViewState extends State<AiChatView> with TickerProviderStateMixin {
       AppToast.info('Still getting Syncra ready — try again in a second.');
       return;
     }
+    _scrollToBottom();
     _startConversationIfNeeded();
     try {
       if (_chatCubit == null) {
@@ -626,72 +550,232 @@ class _AiChatViewState extends State<AiChatView> with TickerProviderStateMixin {
     }
   }
 
-  void _handleSendVoice(File file, int durationSeconds) {
-    AppToast.info('Voice messages in Syncra are coming soon.');
-  }
-
-  /// Images are the one attachment kind actually wired end-to-end — see
-  /// `_sendImage`. Everything else stays a friendly stub for now.
-  void _handleAttachmentPicked(PickedAttachment attachment) {
-    if (attachment.kind == AttachmentKind.image &&
-        attachment.localFile != null) {
-      _sendImage(attachment.localFile!);
+  Future<void> _handleSendVoice(File file, int durationSeconds) async {
+    if (_isSendingVoice) return;
+    if (!await file.exists()) {
+      AppToast.error('Voice message not found. Please try recording again.');
       return;
     }
-    AppToast.info('Sharing this with Syncra is coming soon.');
-  }
 
-  Future<void> _sendImage(File file) async {
-    if (_isUploadingImage) return;
+    _scrollToBottom();
     final deps = _deps;
     if (deps == null) {
       AppToast.info('Still getting Syncra ready — try again in a second.');
       return;
     }
 
+    setState(() => _isSendingVoice = true);
+
+    _startConversationIfNeeded();
+    if (_chatCubit == null) {
+      try {
+        final session = await deps.repository.createSession(
+          firstMessage: '🎤 Voice message',
+        );
+        if (!mounted) return;
+        setState(() => _attachCubit(session.id, isExisting: false));
+      } catch (_) {
+        if (mounted) {
+          AppToast.error('Failed to send the voice message. Please try again.');
+          setState(() => _isSendingVoice = false);
+        }
+        return;
+      }
+    }
+
+    final fileSizeBytes = await file.length();
+    final tempId = _chatCubit!.beginOptimisticMediaMessage(
+      mediaType: AiChatMediaType.voice,
+      localFilePath: file.path,
+      fileSizeBytes: fileSizeBytes,
+      durationSeconds: durationSeconds,
+    );
+
+    try {
+      final uploadResult = await CloudinaryStorageServices.instance.uploadFile(
+        file,
+        'ai_chat',
+        'voice',
+        onProgress: (progress) {
+          _chatCubit?.updateOptimisticProgress(tempId, progress);
+        },
+      );
+
+      if (!mounted) return;
+      await _chatCubit!.sendMessage(
+        text: '',
+        mediaType: 'voice',
+        mediaUrl: uploadResult.secureUrl,
+        fileSizeBytes: fileSizeBytes,
+        durationSeconds: durationSeconds,
+        targetMediaType: 'voice_record',
+        replacingMessageId: tempId,
+      );
+    } catch (_) {
+      _chatCubit?.removeOptimisticMessage(tempId);
+      if (mounted) {
+        AppToast.error('Failed to send the voice message. Please try again.');
+      }
+    } finally {
+      if (mounted) setState(() => _isSendingVoice = false);
+    }
+  }
+
+  void _handleAttachmentPicked(PickedAttachment attachment) {
+    if (attachment.kind == AttachmentKind.image &&
+        attachment.localFile != null) {
+      if (_isUploadingImage) {
+        AppToast.info('Still sending your last photo — one sec.');
+        return;
+      }
+      _openPhotoPreview(attachment.localFile!);
+      return;
+    }
+    AppToast.info('Sharing this with Syncra is coming soon.');
+  }
+
+  void _openPhotoPreview(
+    File file, {
+    String? remoteImageUrl,
+    String? initialCaptionOverride,
+  }) {
+    final composerText = _textController.text.trim();
+    final initialCaption =
+        initialCaptionOverride ?? (composerText.isEmpty ? null : composerText);
+    _textController.clear();
+
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder:
+            (_) => AiPhotoPreviewScreen(
+              file: file,
+              initialCaption: initialCaption,
+              onSend: (caption) {
+                _sendImage(
+                  file,
+                  caption: caption,
+                  remoteImageUrl: remoteImageUrl,
+                );
+              },
+            ),
+      ),
+    );
+  }
+
+  Future<void> _openForwardedPhotoPreview(String remoteUrl) async {
+    final localPath = await context
+        .read<MediaCacheRepository>()
+        .resolveLocalPath(remoteUrl);
+    if (!mounted) return;
+    if (localPath == null) {
+      AppToast.error("Couldn't load that photo. Please try again.");
+      return;
+    }
+    _openPhotoPreview(
+      File(localPath),
+      remoteImageUrl: remoteUrl,
+      initialCaptionOverride: widget.initialDraftImageCaption,
+    );
+  }
+
+  Future<void> _sendImage(
+    File file, {
+    String? caption,
+    String? remoteImageUrl,
+  }) async {
+    if (_isUploadingImage) return;
+    _scrollToBottom();
+    final deps = _deps;
+    if (deps == null) {
+      AppToast.info('Still getting Syncra ready — try again in a second.');
+      return;
+    }
+    if (!await file.exists()) {
+      AppToast.error('Image file not found. Please try picking it again.');
+      return;
+    }
+
     setState(() => _isUploadingImage = true);
+
+    final resolvedCaption = caption ?? '';
+
+    _startConversationIfNeeded();
+    if (_chatCubit == null) {
+      try {
+        final session = await deps.repository.createSession(
+          firstMessage: resolvedCaption.isEmpty ? '📷 Photo' : resolvedCaption,
+        );
+        if (!mounted) return;
+        setState(() => _attachCubit(session.id, isExisting: false));
+      } catch (_) {
+        if (mounted) {
+          AppToast.error('Failed to send the photo. Please try again.');
+          setState(() => _isUploadingImage = false);
+        }
+        return;
+      }
+    }
+
+    final fileSizeBytes = await file.length();
+    final tempId = _chatCubit!.beginOptimisticMediaMessage(
+      mediaType: AiChatMediaType.image,
+      caption: resolvedCaption,
+      localFilePath: file.path,
+      fileSizeBytes: fileSizeBytes,
+    );
+
     try {
       final bytes = await file.readAsBytes();
       final imageBase64 = await compute(_downscaleAndEncodeImage, bytes);
 
-      final uploadResult = await CloudinaryStorageServices.instance.uploadFile(
-        file,
-        'ai_chat',
-        'images',
-      );
-      if (!mounted) return;
+      final String finalUrl;
+      if (remoteImageUrl != null) {
+        finalUrl = remoteImageUrl;
+      } else {
+        final uploadResult = await CloudinaryStorageServices.instance
+            .uploadFile(
+              file,
+              'ai_chat',
+              'images',
+              onProgress: (progress) {
+                _chatCubit?.updateOptimisticProgress(tempId, progress);
+              },
+            );
+        finalUrl = uploadResult.secureUrl;
 
-      final caption = _textController.text.trim();
-      _textController.clear();
-
-      _startConversationIfNeeded();
-      if (_chatCubit == null) {
-        final session = await deps.repository.createSession(
-          firstMessage: caption.isEmpty ? '📷 Photo' : caption,
-        );
         if (!mounted) return;
-        setState(
-          () => _attachCubit(
-            session.id,
-            isExisting: false,
-            newlyCreatedSession: session,
-          ),
+        await context.read<MediaCacheRepository>().adoptUploadedFile(
+          finalUrl,
+          file,
         );
       }
 
+      if (!mounted) return;
       await _chatCubit!.sendMessage(
-        text: caption,
+        text: resolvedCaption,
         mediaType: 'image',
-        mediaUrl: uploadResult.secureUrl,
+        mediaUrl: finalUrl,
         fileSizeBytes: bytes.length,
         imageBase64: imageBase64,
+        replacingMessageId: tempId,
       );
     } catch (_) {
+      _chatCubit?.removeOptimisticMessage(tempId);
       if (mounted) {
         AppToast.error('Failed to send the photo. Please try again.');
       }
     } finally {
       if (mounted) setState(() => _isUploadingImage = false);
+    }
+  }
+
+  void _scrollToBottom() {
+    if (_scrollController.hasClients) {
+      _scrollController.animateTo(
+        0.0,
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.easeOutCubic,
+      );
     }
   }
 
@@ -763,7 +847,7 @@ class _AiChatViewState extends State<AiChatView> with TickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final gradient = _gradientColors(theme.primaryColor);
+    final gradient = SyncraBackdrop.gradientColors(theme.primaryColor);
     final currentUser = context.read<HomeCubit>().currentUserData;
     final firstName =
         (currentUser?.name ?? '').trim().isEmpty
@@ -778,35 +862,13 @@ class _AiChatViewState extends State<AiChatView> with TickerProviderStateMixin {
         drawer: AiChatSessionsDrawer(
           deps: _deps,
           activeSessionId: _activeSessionId,
-          selectedModel: _selectedModel,
-          onModelChanged: _onModelChanged,
           onStartNewChat: _startNewChatFromDrawer,
           onOpenSession: _openSessionFromDrawer,
           onDeleteSession: _deleteSessionFromDrawer,
         ),
         body: Stack(
           children: [
-            Positioned.fill(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: gradient,
-                  ),
-                ),
-              ),
-            ),
-            Positioned(
-              top: -90,
-              right: -60,
-              child: _GlowBlob(color: theme.primaryColor, size: 240),
-            ),
-            Positioned(
-              bottom: -110,
-              left: -80,
-              child: _GlowBlob(color: theme.primaryColor, size: 280),
-            ),
+            Positioned.fill(child: SyncraBackdrop(primary: theme.primaryColor)),
             SafeArea(
               child: Column(
                 children: [
@@ -861,6 +923,7 @@ class _AiChatViewState extends State<AiChatView> with TickerProviderStateMixin {
                                   }
                                   final loaded = state as AiChatMessagesLoaded;
                                   return AiChatMessageList(
+                                    scrollController: _scrollController,
                                     messages: loaded.messages,
                                     activePhase: _replyPhase,
                                     activeModel: _selectedModel,
@@ -894,12 +957,6 @@ class _AiChatViewState extends State<AiChatView> with TickerProviderStateMixin {
                       ],
                     ),
                   ),
-                  if (_isUploadingImage)
-                    LinearProgressIndicator(
-                      minHeight: 2,
-                      backgroundColor: Colors.white.withValues(alpha: 0.08),
-                      color: theme.primaryColor,
-                    ),
                   SafeArea(
                     top: false,
                     child: AiChatInputBar(
@@ -968,6 +1025,7 @@ class _AiChatViewState extends State<AiChatView> with TickerProviderStateMixin {
             size: 42,
             onTap: () => _scaffoldKey.currentState?.openDrawer(),
           ),
+
           const Expanded(
             child: Center(
               child: Text(
@@ -983,10 +1041,16 @@ class _AiChatViewState extends State<AiChatView> with TickerProviderStateMixin {
           ),
 
           GlassIconButton(
-            icon: Icons.more_vert_rounded,
+            icon: _selectedModel.icon,
+            iconColor: _selectedModel.accentColor,
             iconSize: 20,
             size: 42,
-            onTap: () => _showHeaderMenu(context),
+            onTap:
+                () => AiModelSelector.openPicker(
+                  context,
+                  selected: _selectedModel,
+                  onChanged: _onModelChanged,
+                ),
           ),
           const SizedBox(width: 8),
           GlassIconButton(
@@ -996,32 +1060,6 @@ class _AiChatViewState extends State<AiChatView> with TickerProviderStateMixin {
             onTap: () => Navigator.of(context).popUntil((r) => r.isFirst),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _GlowBlob extends StatelessWidget {
-  final Color color;
-  final double size;
-  const _GlowBlob({required this.color, required this.size});
-
-  @override
-  Widget build(BuildContext context) {
-    return IgnorePointer(
-      child: Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          gradient: RadialGradient(
-            colors: [
-              color.withValues(alpha: 0.35),
-              color.withValues(alpha: 0.0),
-            ],
-            stops: const [0.0, 1.0],
-          ),
-        ),
       ),
     );
   }

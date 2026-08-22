@@ -1,123 +1,153 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:shimmer/shimmer.dart';
+import '../helpers/ai_chat_colors.dart';
 
-class ShimmerBox extends StatefulWidget {
+class ShimmerBox extends StatelessWidget {
   const ShimmerBox({
     super.key,
     required this.width,
     required this.height,
+    required this.baseColor,
+    required this.highlightColor,
     this.borderRadius = 12,
+    this.shape = BoxShape.rectangle,
   });
 
   final double width;
   final double height;
+  final Color baseColor;
+  final Color highlightColor;
   final double borderRadius;
-
-  @override
-  State<ShimmerBox> createState() => _ShimmerBoxState();
-}
-
-class _ShimmerBoxState extends State<ShimmerBox>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 1200),
-  )..repeat();
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
+  final BoxShape shape;
 
   @override
   Widget build(BuildContext context) {
-    final baseColor = Theme.of(context).colorScheme.surfaceContainerHighest;
-    final highlightColor = Theme.of(context).colorScheme.surface;
-
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (context, child) {
-        return ShaderMask(
-          blendMode: BlendMode.srcATop,
-          shaderCallback: (bounds) {
-            return LinearGradient(
-              colors: [baseColor, highlightColor, baseColor],
-              stops: const [0.35, 0.5, 0.65],
-              begin: Alignment(-1 - _controller.value * 2, 0),
-              end: Alignment(1 - _controller.value * 2, 0),
-            ).createShader(bounds);
-          },
-          child: Container(
-            width: widget.width,
-            height: widget.height,
-            decoration: BoxDecoration(
-              color: baseColor,
-              borderRadius: BorderRadius.circular(widget.borderRadius),
-            ),
-          ),
-        );
-      },
-    );
-  }
-}
-
-class AiMessageBubbleShimmer extends StatelessWidget {
-  final bool isUser;
-  final List<double> lineWidthFractions;
-
-  const AiMessageBubbleShimmer({
-    super.key,
-    required this.isUser,
-    this.lineWidthFractions = const [0.7, 0.45],
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final maxBubbleWidth = MediaQuery.of(context).size.width * 0.65;
-
-    return Align(
-      alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
+    return Shimmer.fromColors(
+      baseColor: baseColor,
+      highlightColor: highlightColor,
       child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 12),
-        padding: const EdgeInsets.all(12),
-        constraints: BoxConstraints(maxWidth: maxBubbleWidth),
+        width: width,
+        height: height,
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surfaceContainerHigh,
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            for (var i = 0; i < lineWidthFractions.length; i++) ...[
-              if (i > 0) const SizedBox(height: 6),
-              ShimmerBox(
-                width: maxBubbleWidth * lineWidthFractions[i],
-                height: 12,
-              ),
-            ],
-          ],
+          color: Colors.white,
+          shape: shape,
+          borderRadius:
+              shape == BoxShape.rectangle
+                  ? BorderRadius.circular(borderRadius)
+                  : null,
         ),
       ),
     );
   }
 }
 
-class AiChatMessagesShimmerList extends StatelessWidget {
-  const AiChatMessagesShimmerList({super.key, this.itemCount = 6});
+class AiMessageBubbleShimmer extends StatelessWidget {
+  const AiMessageBubbleShimmer({
+    super.key,
+    required this.isUser,
+    required this.lineWidthFractions,
+  });
 
-  final int itemCount;
+  final bool isUser;
+
+  final List<double> lineWidthFractions;
+
+  BorderRadius get _radius => BorderRadius.only(
+    topLeft: const Radius.circular(20),
+    topRight: const Radius.circular(20),
+    bottomLeft: Radius.circular(isUser ? 20 : 4),
+    bottomRight: Radius.circular(isUser ? 4 : 20),
+  );
 
   @override
   Widget build(BuildContext context) {
-    return ListView.builder(
-      reverse: true,
-      itemCount: itemCount,
-      itemBuilder: (context, index) {
-        final isUser = index.isEven;
-        return AiMessageBubbleShimmer(
-          isUser: isUser,
-          lineWidthFractions: isUser ? const [0.5] : const [0.7, 0.4],
+    final maxBubbleWidth = MediaQuery.of(context).size.width * 0.74;
+    final (base, highlight) = AiChatColors.shimmerTones(
+      Theme.of(context).primaryColor,
+    );
+
+    final bubble = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      constraints: BoxConstraints(maxWidth: maxBubbleWidth),
+      decoration: BoxDecoration(
+        borderRadius: _radius,
+        border: Border.all(color: highlight.withValues(alpha: 0.25)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          for (var i = 0; i < lineWidthFractions.length; i++) ...[
+            if (i > 0) const SizedBox(height: 7),
+            ShimmerBox(
+              width: maxBubbleWidth * lineWidthFractions[i],
+              height: 12,
+              baseColor: base,
+              highlightColor: highlight,
+            ),
+          ],
+        ],
+      ),
+    );
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment:
+            isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          if (!isUser) ...[
+            ShimmerBox(
+              width: 26,
+              height: 26,
+              baseColor: base,
+              highlightColor: highlight,
+              shape: BoxShape.circle,
+            ),
+            const SizedBox(width: 8),
+          ],
+          Flexible(child: bubble),
+        ],
+      ),
+    );
+  }
+}
+
+class AiChatMessagesShimmerList extends StatelessWidget {
+  const AiChatMessagesShimmerList({super.key});
+  List<double> _shapeFor(int index) {
+    final random = Random(index);
+    final lineCount = switch (random.nextDouble()) {
+      < 0.5 => 1,
+      < 0.85 => 2,
+      _ => 3,
+    };
+    return List.generate(lineCount, (_) => 0.35 + random.nextDouble() * 0.5);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        const approxRowHeight = 62.0;
+        final itemCount = (constraints.maxHeight / approxRowHeight)
+            .ceil()
+            .clamp(6, 24);
+
+        return ListView.builder(
+          reverse: true,
+          physics: const NeverScrollableScrollPhysics(),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          itemCount: itemCount,
+          itemBuilder: (context, index) {
+            final isUser = index.isEven;
+            return AiMessageBubbleShimmer(
+              isUser: isUser,
+              lineWidthFractions: _shapeFor(index),
+            );
+          },
         );
       },
     );
