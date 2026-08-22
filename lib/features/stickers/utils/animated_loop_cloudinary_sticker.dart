@@ -6,6 +6,12 @@ import 'package:shimmer/shimmer.dart';
 import '../../../core/cache/repository/media_cache_repository.dart';
 import 'animated_loop_sticker.dart';
 
+class _StickerPathCache {
+  static final Map<String, String> _paths = {};
+  static String? get(String url) => _paths[url];
+  static void put(String url, String path) => _paths[url] = path;
+}
+
 class AnimatedLoopCloudinarySticker extends StatefulWidget {
   final String secureUrl;
   final double? width;
@@ -47,18 +53,29 @@ class _AnimatedLoopCloudinaryStickerState
   }
 
   void _resolve() {
+    final memCached = _StickerPathCache.get(widget.secureUrl);
+    if (memCached != null) {
+      _syncLocalPath = memCached;
+      _localPathFuture = Future.value(memCached);
+      return;
+    }
+
     final repo = context.read<MediaCacheRepository>();
 
     // Fast path: already on disk, no need to await anything.
     final syncPath = repo.resolveLocalPathSync(widget.secureUrl);
     if (syncPath != null) {
+      _StickerPathCache.put(widget.secureUrl, syncPath);
       _syncLocalPath = syncPath;
       _localPathFuture = Future.value(syncPath);
       return;
     }
 
     _syncLocalPath = null;
-    _localPathFuture = repo.resolveLocalPath(widget.secureUrl);
+    _localPathFuture = repo.resolveLocalPath(widget.secureUrl).then((path) {
+      if (path != null) _StickerPathCache.put(widget.secureUrl, path);
+      return path;
+    });
   }
 
   Widget _placeholder(BuildContext context) {

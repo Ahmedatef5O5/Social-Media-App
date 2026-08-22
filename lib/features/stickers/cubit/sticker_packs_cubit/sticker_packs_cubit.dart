@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:social_media_app/core/cache/repository/media_cache_repository.dart';
+import '../../../../core/errors/supabase_error_mapper.dart';
 import '../../repository/stickers_repository.dart';
 import 'sticker_packs_state.dart';
 
@@ -26,7 +27,7 @@ class StickerPacksCubit extends Cubit<StickerPacksState> {
       final downloaded = await _repository.getDownloadedPackIds();
       emit(StickerPacksLoaded(packs: packs, downloadedPackIds: downloaded));
     } catch (e) {
-      emit(StickerPacksError(e.toString()));
+      emit(StickerPacksError(SupabaseErrorMapper.toUserMessage(e)));
     }
   }
 

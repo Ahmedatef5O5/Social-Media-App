@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:social_media_app/core/widgets/custom_loading_indicator.dart';
 import '../../../core/cache/repository/media_cache_repository.dart';
 import '../../../core/toast/app_toast.dart';
 import '../cubit/create_sticker_pack_cubit/create_sticker_pack_cubit.dart';
 import '../cubit/create_sticker_pack_cubit/create_sticker_pack_state.dart';
+import '../utils/create_sticker_pack_form_skeleton.dart';
 import '../widgets/create_sticker_pack_form_section.dart';
 import 'create_sticker_pack_quota_view.dart';
 import 'create_sticker_pack_uploading_view.dart';
@@ -33,9 +33,13 @@ class _CreateStickerPackBody extends StatelessWidget {
       onTap: () => FocusScope.of(context).unfocus(),
       child: Scaffold(
         appBar: AppBar(
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
+            onPressed: () => Navigator.pop(context),
+          ),
           title: const Text(
             'Create Sticker Pack',
-            style: TextStyle(fontWeight: FontWeight.bold),
+            style: TextStyle(fontWeight: FontWeight.w500),
           ),
           centerTitle: true,
           elevation: 0,
@@ -55,7 +59,7 @@ class _CreateStickerPackBody extends StatelessWidget {
               switch (state) {
                 case CreateStickerPackLoading():
                 case CreateStickerPackSuccess():
-                  return const Center(child: CustomLoadingIndicator());
+                  return const CreateStickerPackFormSkeleton();
 
                 case CreateStickerPackError():
                   return Center(child: Text(state.message));
@@ -69,7 +73,7 @@ class _CreateStickerPackBody extends StatelessWidget {
                 case CreateStickerPackForm():
                   return CreateStickerPackFormSection(state: state);
                 default:
-                  return CustomLoadingIndicator();
+                  return const CreateStickerPackFormSkeleton();
               }
             },
           ),

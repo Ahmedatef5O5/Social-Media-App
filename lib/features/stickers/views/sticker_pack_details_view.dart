@@ -38,6 +38,10 @@ class _StickerPackDetailSheetBody extends StatelessWidget {
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
+          onPressed: () => Navigator.pop(context),
+        ),
         backgroundColor: theme.scaffoldBackgroundColor,
         elevation: 0,
         scrolledUnderElevation: 0,
@@ -46,7 +50,7 @@ class _StickerPackDetailSheetBody extends StatelessWidget {
           children: [
             Text(
               pack.title,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+              style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 18),
             ),
             const SizedBox(height: 2),
             Text(

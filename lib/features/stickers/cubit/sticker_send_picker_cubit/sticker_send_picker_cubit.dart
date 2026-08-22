@@ -1,4 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/errors/supabase_error_mapper.dart';
 import '../../repository/stickers_repository.dart';
 import 'sticker_send_picker_state.dart';
 
@@ -39,7 +40,7 @@ class StickerSendPickerCubit extends Cubit<StickerSendPickerState> {
       );
       await _loadStickersForSelectedPack();
     } catch (e) {
-      emit(StickerSendPickerError(e.toString()));
+      emit(StickerSendPickerError(SupabaseErrorMapper.toUserMessage(e)));
     }
   }
 

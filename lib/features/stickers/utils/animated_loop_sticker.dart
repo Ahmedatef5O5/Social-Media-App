@@ -5,6 +5,12 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 
+class _StickerFrameCache {
+  static final Map<String, ui.Image> _frames = {};
+  static ui.Image? get(String path) => _frames[path];
+  static void put(String path, ui.Image image) => _frames[path] = image;
+}
+
 class AnimatedLoopSticker extends StatefulWidget {
   final String? filePath;
 
@@ -54,6 +60,12 @@ class _AnimatedLoopStickerState extends State<AnimatedLoopSticker>
   @override
   void initState() {
     super.initState();
+    final path = widget.filePath;
+    final cachedImage = path != null ? _StickerFrameCache.get(path) : null;
+    if (cachedImage != null) {
+      _lastDecodedImage = cachedImage;
+      _isLoading = false;
+    }
     _load();
   }
 
@@ -62,15 +74,25 @@ class _AnimatedLoopStickerState extends State<AnimatedLoopSticker>
     super.didUpdateWidget(oldWidget);
     if (oldWidget.filePath != widget.filePath) {
       _disposeCodec();
+      final path = widget.filePath;
+      final cachedImage = path != null ? _StickerFrameCache.get(path) : null;
+      setState(() {
+        _lastDecodedImage = cachedImage;
+        _currentFrame = null;
+        _isLoading = cachedImage == null;
+      });
       _load();
     }
   }
 
   Future<void> _load() async {
-    setState(() {
-      _isLoading = true;
-      _error = null;
-    });
+    final alreadyHasFrame = _lastDecodedImage != null;
+    if (!alreadyHasFrame) {
+      setState(() {
+        _isLoading = true;
+        _error = null;
+      });
+    }
 
     try {
       final Uint8List bytes;
@@ -90,6 +112,11 @@ class _AnimatedLoopStickerState extends State<AnimatedLoopSticker>
       if (codec.frameCount <= 1) {
         final frame = await codec.getNextFrame();
         if (!mounted) return;
+
+        final path = widget.filePath;
+        if (path != null) {
+          _StickerFrameCache.put(path, frame.image);
+        }
         setState(() {
           _currentFrame = frame;
           _lastDecodedImage = frame.image;
@@ -103,6 +130,9 @@ class _AnimatedLoopStickerState extends State<AnimatedLoopSticker>
       _startPlaying();
     } catch (e) {
       if (!mounted) return;
+      if (alreadyHasFrame) {
+        return;
+      }
       setState(() {
         _error = e;
         _isLoading = false;

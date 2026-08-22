@@ -8,6 +8,7 @@ import 'package:social_media_app/core/supabase/supabase_provider.dart';
 import 'package:social_media_app/core/toast/app_toast.dart';
 import 'package:social_media_app/features/social_graph/services/friendship_services.dart';
 import '../../../../core/cache/repository/media_cache_repository.dart';
+import '../../../../core/errors/supabase_error_mapper.dart';
 import '../../../../core/services/cloudinary_storage_services.dart';
 import '../../../../core/services/media_cleanup_service.dart';
 import '../../model/sticker_pack_privacy.dart';
@@ -50,7 +51,7 @@ class CreateStickerPackCubit extends Cubit<CreateStickerPackState> {
         emit(CreateStickerPackForm());
       }
     } catch (e) {
-      emit(CreateStickerPackError(e.toString()));
+      emit(CreateStickerPackError(SupabaseErrorMapper.toUserMessage(e)));
     }
   }
 

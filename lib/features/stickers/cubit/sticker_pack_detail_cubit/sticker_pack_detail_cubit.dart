@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/cache/repository/media_cache_repository.dart';
+import '../../../../core/errors/supabase_error_mapper.dart';
 import '../../repository/stickers_repository.dart';
 import 'sticker_pack_detail_state.dart';
 
@@ -33,7 +34,7 @@ class StickerPackDetailCubit extends Cubit<StickerPackDetailState> {
         ),
       );
     } catch (e) {
-      emit(StickerPackDetailError(e.toString()));
+      emit(StickerPackDetailError(SupabaseErrorMapper.toUserMessage(e)));
     }
   }
 
