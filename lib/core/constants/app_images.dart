@@ -22,6 +22,7 @@ class AppImages {
       'assets/lotties/empty-findings-lotties.json';
   static const String blueError404Lot = 'assets/lotties/blueNotFoundError.json';
   static const String error404Lot = 'assets/lotties/Error404.json';
+  static const String alertAnimationLot = 'assets/lotties/Alert.json';
   static const String exitAnimationLot = 'assets/lotties/exitAnimation.json';
   static const String deleteFilesAnimationLot =
       'assets/lotties/DeleteFiles.json';
@@ -32,6 +33,10 @@ class AppImages {
   static const String defaultUserImg = 'assets/images/no_profile_picture.png';
   static const String defaultBackgroundImg =
       'assets/images/default_background_user_image.png';
+
+  //
+  static const String defaultGroupImg = 'assets/images/no_group_picture.png';
+
   // home view
   static const String headerLogo = 'assets/images/header_logo.png';
   static const String searchIcon = 'assets/icons/MagnifyingGlass.png';
@@ -69,11 +74,15 @@ class AppImages {
 
   // create post themes images
   static const String storyIcon = 'assets/icons/story_icon.png';
+  static const String filledStoriesIcon =
+      'assets/icons/filled-stories_icon.png';
   static const String textStoryIcon = 'assets/icons/textstory.png';
   static const String musicIcon = 'assets/icons/music.png';
 
   //icons
+  static const String chatBotIcon = 'assets/icons/chat-bot.png';
   static const String addUserIcon = 'assets/icons/add_user.png';
+  static const String addStickerPackIcon = 'assets/icons/add_sticker_pack.png';
 
   // themes
   static const String postTheme1 = 'assets/images/PostThemeImgs/unsplash_1.png';

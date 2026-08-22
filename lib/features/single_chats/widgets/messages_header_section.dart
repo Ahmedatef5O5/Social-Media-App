@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
+import 'package:social_media_app/core/constants/app_images.dart';
 import 'package:social_media_app/core/router/app_routes.dart';
 import '../../../core/chat_shared/cubits/conversations_cubit/conversations_cubit.dart';
 import '../../../core/widgets/custom_badge.dart';
@@ -48,16 +49,19 @@ class MessagesHeaderSection extends StatelessWidget {
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Text(
                 'Messages',
                 style: Theme.of(context).textTheme.titleLarge!.copyWith(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
+                  height: 1.2,
                 ),
               ),
               Row(
                 mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   AnimatedSwitcher(
                     duration: const Duration(milliseconds: 220),
@@ -90,12 +94,15 @@ class MessagesHeaderSection extends StatelessWidget {
                             : const SizedBox.shrink(),
                   ),
                   IconButton(
-                    icon: Icon(
-                      Icons.smart_toy_rounded,
+                    padding: const EdgeInsets.only(bottom: 9),
+                    alignment: Alignment.center,
+                    icon: Image.asset(
+                      AppImages.chatBotIcon,
+                      width: 31,
+                      height: 31,
+                      fit: BoxFit.contain,
                       color: Theme.of(context).primaryColor,
-                      size: 24,
                     ),
-
                     tooltip: 'Syncra AI',
                     onPressed: () {
                       Navigator.of(
@@ -186,6 +193,7 @@ class MessagesHeaderSection extends StatelessWidget {
               ),
             ],
           ),
+
           const SizedBox(height: 12),
 
           TabBar(
