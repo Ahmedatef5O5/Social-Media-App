@@ -4,10 +4,12 @@ import 'package:social_media_app/core/constants/app_images.dart';
 import 'package:social_media_app/core/widgets/custom_loading_indicator.dart';
 import 'package:social_media_app/features/single_chats/models/chat_user_model.dart';
 import '../../../core/router/app_routes.dart';
+import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/widgets/calls/call_icon_button.dart';
 import '../../single_calls/model/call_model.dart';
+import '../../single_chats/services/chat_block_service.dart';
 
-class UserPreviewDialog extends StatelessWidget {
+class UserPreviewDialog extends StatefulWidget {
   final ChatUserModel user;
   final bool showContactOptions;
   const UserPreviewDialog({
@@ -17,14 +19,45 @@ class UserPreviewDialog extends StatelessWidget {
   });
 
   @override
+  State<UserPreviewDialog> createState() => _UserPreviewDialogState();
+}
+
+class _UserPreviewDialogState extends State<UserPreviewDialog> {
+  bool? _isBlocked;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.showContactOptions) {
+      _loadBlockStatus();
+    }
+  }
+
+  Future<void> _loadBlockStatus() async {
+    final status = await ChatBlockService().getBlockStatus(
+      currentUserId: SupabaseProvider.id,
+      otherUserId: widget.user.id,
+    );
+    if (!mounted) return;
+    setState(() => _isBlocked = status.isBlocked);
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final user = widget.user;
     final iconColor = Theme.of(context).primaryColor;
+    final screenSize = MediaQuery.sizeOf(context);
+
+    final horizontalInset = (screenSize.width * 0.14).clamp(45.0, 80.0);
+    final dialogWidth = screenSize.width - (horizontalInset * 2);
+
+    final imageHeight = (dialogWidth).clamp(220.0, 340.0);
 
     return Dialog(
+      alignment: const Alignment(0, -0.55),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(0)),
       backgroundColor: Colors.transparent,
-
-      insetPadding: const EdgeInsets.symmetric(horizontal: 50),
+      insetPadding: EdgeInsets.symmetric(horizontal: horizontalInset),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -56,13 +89,12 @@ class UserPreviewDialog extends StatelessWidget {
                               ? CachedCloudinaryImage(
                                 secureUrl: user.imageUrl!,
                                 fit: BoxFit.cover,
-                                height: 300,
+                                height: imageHeight,
                                 width: double.infinity,
-
                                 isAvatar: true,
                                 placeholder:
                                     (context) => SizedBox(
-                                      height: 300,
+                                      height: imageHeight,
                                       child: const Center(
                                         child: CustomLoadingIndicator(),
                                       ),
@@ -70,12 +102,14 @@ class UserPreviewDialog extends StatelessWidget {
                                 errorWidget:
                                     (context, error) => Image.asset(
                                       AppImages.defaultUserImg,
-                                      fit: BoxFit.cover,
+                                      fit: BoxFit.fitWidth,
                                     ),
                               )
                               : Image.asset(
                                 AppImages.defaultUserImg,
-                                fit: BoxFit.cover,
+                                fit: BoxFit.fitWidth,
+                                height: imageHeight,
+                                width: double.infinity,
                               ),
                     ),
                     Positioned(
@@ -115,7 +149,6 @@ class UserPreviewDialog extends StatelessWidget {
           Container(
             decoration: BoxDecoration(
               color: Theme.of(context).cardColor,
-
               borderRadius: const BorderRadius.vertical(
                 bottom: Radius.circular(20),
               ),
@@ -134,18 +167,20 @@ class UserPreviewDialog extends StatelessWidget {
                     );
                   },
                 ),
-                if (showContactOptions) ...[
+                if (widget.showContactOptions) ...[
                   CallIconButton(
                     type: CallType.audio,
                     receiverId: user.id,
                     receiverName: user.name,
                     receiverAvatar: user.imageUrl ?? '',
+                    isBlocked: _isBlocked ?? true,
                   ),
                   CallIconButton(
                     type: CallType.video,
                     receiverId: user.id,
                     receiverName: user.name,
                     receiverAvatar: user.imageUrl ?? '',
+                    isBlocked: _isBlocked ?? true,
                   ),
                 ],
                 IconButton(
