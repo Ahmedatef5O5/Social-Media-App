@@ -73,6 +73,8 @@ import '../chat_shared/cubits/new_chat_cubit/new_chat_cubit.dart';
 import '../chat_shared/views/archived_chats_view.dart';
 import '../chat_shared/views/new_chat_view.dart';
 import '../connectivity/cubit/connectivity_cubit.dart';
+import '../share_intent/models/incoming_share_payload.dart';
+import '../share_intent/views/incoming_share_target_view.dart';
 import '../supabase/supabase_provider.dart';
 
 enum TypeOfRoute { material, cupertino, fade }
@@ -198,6 +200,7 @@ class AppRouter {
       case AppRoutes.archivedChatsViewRoute:
       case AppRoutes.newChatViewRoute:
       case AppRoutes.aiChatViewRoute:
+      case AppRoutes.incomingShareTargetViewRoute:
         return _chatRoutes(settings);
 
       case AppRoutes.createGroupRoute:
@@ -266,12 +269,19 @@ class AppRouter {
           settings: settings,
         );
       case AppRoutes.createPostViewRoute:
-        final cubit = _args<PostsCubit>(settings);
+        final raw = settings.arguments;
+        final PostsCubit? cubit =
+            raw is Map ? raw['cubit'] as PostsCubit? : raw as PostsCubit?;
+        final initialText = raw is Map ? raw['initialText'] as String? : null;
+
         if (cubit == null) {
           return _errorRoute(settings, 'Missing PostsCubit parameter');
         }
         return _buildRoute(
-          BlocProvider.value(value: cubit, child: const CreatePostView()),
+          BlocProvider.value(
+            value: cubit,
+            child: CreatePostView(initialText: initialText),
+          ),
           settings: settings,
         );
       case AppRoutes.postThemesViewRoute:
@@ -435,7 +445,11 @@ class AppRouter {
       case AppRoutes.chatsViewRoute:
         return _buildRoute(const ChatsView(), settings: settings);
       case AppRoutes.chatDetailsViewRoute:
-        final user = _args<ChatUserModel>(settings);
+        final raw = settings.arguments;
+        final ChatUserModel? user =
+            raw is Map ? raw['user'] as ChatUserModel? : raw as ChatUserModel?;
+        final incomingShare =
+            raw is Map ? raw['incomingShare'] as IncomingSharePayload? : null;
         if (user == null) {
           return _errorRoute(settings, 'Missing ChatUserModel data');
         }
@@ -448,7 +462,10 @@ class AppRouter {
                   context.read<MediaCacheRepository>(),
                   presenceService: context.read<ChatPresenceService>(),
                 )..loadCurrentUserInfo(),
-            child: ChatDetailsView(receiverUser: user),
+            child: ChatDetailsView(
+              receiverUser: user,
+              incomingShare: incomingShare,
+            ),
           ),
           settings: settings,
         );
@@ -516,8 +533,27 @@ class AppRouter {
           settings: settings,
         );
       case AppRoutes.aiChatViewRoute:
+        final rawArgs = settings.arguments;
         return _buildRoute(
-          AiChatView(initialSessionId: _args<String>(settings)),
+          AiChatView(initialSessionId: rawArgs is String ? rawArgs : null),
+          settings: settings,
+          typeOfRoute: TypeOfRoute.fade,
+        );
+      case AppRoutes.incomingShareTargetViewRoute:
+        final payload = _args<IncomingSharePayload>(settings);
+        if (payload == null) {
+          return _errorRoute(settings, 'Missing IncomingSharePayload');
+        }
+        return _buildRoute(
+          BlocProvider(
+            create:
+                ((context) => ConversationsCubit(
+                  chatsCubit: context.read<ChatsCubit>(),
+                  groupListCubit: context.read<GroupListCubit>(),
+                  groupChatServices: context.read<GroupChatServices>(),
+                )),
+            child: IncomingShareTargetView(payload: payload),
+          ),
           settings: settings,
           typeOfRoute: TypeOfRoute.fade,
         );
@@ -531,7 +567,11 @@ class AppRouter {
       case AppRoutes.createGroupRoute:
         return _buildRoute(const CreateGroupView(), settings: settings);
       case AppRoutes.groupChatRoute:
-        final group = _args<GroupModel>(settings);
+        final raw = settings.arguments;
+        final GroupModel? group =
+            raw is Map ? raw['group'] as GroupModel? : raw as GroupModel?;
+        final incomingShare =
+            raw is Map ? raw['incomingShare'] as IncomingSharePayload? : null;
         if (group == null) {
           return _errorRoute(settings, 'Missing GroupModel data');
         }
@@ -544,7 +584,10 @@ class AppRouter {
                   context.read<GroupListCubit>(),
                   context.read<MediaCacheRepository>(),
                 )..init(),
-            child: GroupChatDetailsView(group: group),
+            child: GroupChatDetailsView(
+              group: group,
+              incomingShare: incomingShare,
+            ),
           ),
           settings: settings,
         );

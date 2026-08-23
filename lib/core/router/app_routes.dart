@@ -11,7 +11,8 @@ class AppRoutes {
   static const String chatDetailsViewRoute = '/chat-details-view';
   static const String aiChatViewRoute = '/ai-chat-view';
   static const String receiverProfileViewRoute = '/receiver-profile-view';
-
+  static const String incomingShareTargetViewRoute =
+      '/incoming-share-target-view';
   // Friends list
   static const String friendsListViewRoute = '/friends-list';
 
