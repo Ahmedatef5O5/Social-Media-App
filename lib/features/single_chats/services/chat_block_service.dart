@@ -30,11 +30,15 @@ class ChatBlockService {
       if (blockerId == currentUserId) blockedByMe = true;
       if (blockerId == otherUserId) blockedByThem = true;
     }
-    return ChatBlockStatus(
+    final status = ChatBlockStatus(
       blockedByMe: blockedByMe,
       blockedByThem: blockedByThem,
       isLoaded: true,
     );
+
+    unawaited(ChatBlockStatusCache.instance.write(otherUserId, status));
+
+    return status;
   }
 
   Stream<ChatBlockStatus> watchBlockStatus({

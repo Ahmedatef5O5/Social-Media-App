@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:social_media_app/core/widgets/cached_cloudinary_image.dart';
 import 'package:flutter/material.dart';
 import 'package:social_media_app/core/constants/app_images.dart';
@@ -7,6 +8,7 @@ import '../../../core/router/app_routes.dart';
 import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/widgets/calls/call_icon_button.dart';
 import '../../single_calls/model/call_model.dart';
+import '../../single_chats/models/chat_block_status.dart';
 import '../../single_chats/services/chat_block_service.dart';
 
 class UserPreviewDialog extends StatefulWidget {
@@ -23,17 +25,21 @@ class UserPreviewDialog extends StatefulWidget {
 }
 
 class _UserPreviewDialogState extends State<UserPreviewDialog> {
-  bool? _isBlocked;
+  late bool _isBlocked;
 
   @override
   void initState() {
     super.initState();
-    if (widget.showContactOptions) {
-      _loadBlockStatus();
+    if (!widget.showContactOptions) {
+      _isBlocked = false;
+      return;
     }
+    final cached = ChatBlockStatusCache.instance.read(widget.user.id);
+    _isBlocked = cached?.isBlocked ?? true;
+    _refreshBlockStatus();
   }
 
-  Future<void> _loadBlockStatus() async {
+  Future<void> _refreshBlockStatus() async {
     final status = await ChatBlockService().getBlockStatus(
       currentUserId: SupabaseProvider.id,
       otherUserId: widget.user.id,
@@ -173,14 +179,14 @@ class _UserPreviewDialogState extends State<UserPreviewDialog> {
                     receiverId: user.id,
                     receiverName: user.name,
                     receiverAvatar: user.imageUrl ?? '',
-                    isBlocked: _isBlocked ?? true,
+                    isBlocked: _isBlocked,
                   ),
                   CallIconButton(
                     type: CallType.video,
                     receiverId: user.id,
                     receiverName: user.name,
                     receiverAvatar: user.imageUrl ?? '',
-                    isBlocked: _isBlocked ?? true,
+                    isBlocked: _isBlocked,
                   ),
                 ],
                 IconButton(

@@ -145,7 +145,6 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
         .watchBlockStatus(currentUserId: currentUserId, otherUserId: receiverId)
         .listen((status) {
           blockStatus.value = status;
-          unawaited(ChatBlockStatusCache.instance.write(receiverId, status));
         }, onError: (e) => debugPrint('watchBlockStatus error: $e'));
   }
 
