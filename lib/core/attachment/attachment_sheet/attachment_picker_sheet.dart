@@ -15,6 +15,9 @@ class AttachmentPickerSheet extends StatelessWidget {
   final bool showVoiceOption;
   final bool showFileOption;
   final bool showCameraOption;
+  final bool showVideoOption;
+  final bool showGifOption;
+  final bool showStickerOption;
   final Future<PickedAttachment?> Function(BuildContext context)? onRecordVoice;
 
   const AttachmentPickerSheet({
@@ -22,6 +25,9 @@ class AttachmentPickerSheet extends StatelessWidget {
     this.showVoiceOption = true,
     this.showFileOption = true,
     this.showCameraOption = false,
+    this.showVideoOption = true,
+    this.showGifOption = true,
+    this.showStickerOption = true,
     this.onRecordVoice,
   });
 
@@ -30,6 +36,9 @@ class AttachmentPickerSheet extends StatelessWidget {
     bool showVoiceOption = true,
     bool showFileOption = true,
     bool showCameraOption = false,
+    bool showVideoOption = true,
+    bool showGifOption = true,
+    bool showStickerOption = true,
     Future<PickedAttachment?> Function(BuildContext context)? onRecordVoice,
   }) {
     return showModalBottomSheet<PickedAttachment?>(
@@ -41,6 +50,9 @@ class AttachmentPickerSheet extends StatelessWidget {
             showVoiceOption: showVoiceOption,
             showFileOption: showFileOption,
             showCameraOption: showCameraOption,
+            showVideoOption: showVideoOption,
+            showGifOption: showGifOption,
+            showStickerOption: showStickerOption,
             onRecordVoice: onRecordVoice,
           ),
     );
@@ -56,12 +68,13 @@ class AttachmentPickerSheet extends StatelessWidget {
         color: Colors.purple,
         onTap: () => _pickImage(context),
       ),
-      _AttachmentOption(
-        icon: Icons.videocam_rounded,
-        label: 'Video',
-        color: Colors.redAccent,
-        onTap: () => _pickVideo(context),
-      ),
+      if (showVideoOption)
+        _AttachmentOption(
+          icon: Icons.videocam_rounded,
+          label: 'Video',
+          color: Colors.redAccent,
+          onTap: () => _pickVideo(context),
+        ),
       if (showFileOption)
         _AttachmentOption(
           icon: Icons.insert_drive_file_rounded,
@@ -76,18 +89,20 @@ class AttachmentPickerSheet extends StatelessWidget {
           color: Colors.orange,
           onTap: () => _recordVoice(context),
         ),
-      _AttachmentOption(
-        icon: Icons.gif_box_rounded,
-        label: 'GIF',
-        color: Colors.teal,
-        onTap: () => _pickGif(context),
-      ),
-      _AttachmentOption(
-        icon: Icons.emoji_emotions_rounded,
-        label: 'Sticker',
-        color: Colors.pinkAccent,
-        onTap: () => _pickSticker(context),
-      ),
+      if (showGifOption)
+        _AttachmentOption(
+          icon: Icons.gif_box_rounded,
+          label: 'GIF',
+          color: Colors.teal,
+          onTap: () => _pickGif(context),
+        ),
+      if (showStickerOption)
+        _AttachmentOption(
+          icon: Icons.emoji_emotions_rounded,
+          label: 'Sticker',
+          color: Colors.pinkAccent,
+          onTap: () => _pickSticker(context),
+        ),
       if (showCameraOption)
         _AttachmentOption(
           icon: Icons.camera_alt_rounded,
