@@ -5,42 +5,64 @@ import 'package:image_picker/image_picker.dart';
 class ImagePickerBottomSheet extends StatelessWidget {
   final String title;
   final Function(ImageSource source) onImageSelected;
+  final bool showRemoveOption;
+  final VoidCallback? onRemoveImage;
 
   const ImagePickerBottomSheet({
     super.key,
     required this.title,
     required this.onImageSelected,
+    this.showRemoveOption = false,
+    this.onRemoveImage,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            title,
-            style: Theme.of(context).textTheme.titleMedium!.copyWith(
-              fontWeight: FontWeight.w500,
-              fontSize: 18,
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              title,
+              style: Theme.of(context).textTheme.titleMedium!.copyWith(
+                fontWeight: FontWeight.w500,
+                fontSize: 18,
+              ),
             ),
-          ),
-          Gap(20),
-          ListTile(
-            leading: Icon(
-              Icons.photo_library,
-              color: Theme.of(context).primaryColor,
+            Gap(20),
+            ListTile(
+              leading: Icon(
+                Icons.photo_library_outlined,
+                color: Theme.of(context).primaryColor,
+              ),
+              title: const Text('Choose from Gallery'),
+              onTap: () => onImageSelected(ImageSource.gallery),
             ),
-            title: const Text('Choose from Gallery'),
-            onTap: () => onImageSelected(ImageSource.gallery),
-          ),
-          ListTile(
-            leading: const Icon(Icons.camera_alt, color: Colors.green),
-            title: const Text('Take a Photo'),
-            onTap: () => onImageSelected(ImageSource.camera),
-          ),
-        ],
+            ListTile(
+              leading: const Icon(
+                Icons.camera_alt_outlined,
+                color: Colors.green,
+              ),
+              title: const Text('Take a Photo'),
+              onTap: () => onImageSelected(ImageSource.camera),
+            ),
+            if (showRemoveOption) ...[
+              ListTile(
+                leading: const Icon(
+                  Icons.delete_outline_rounded,
+                  color: Colors.redAccent,
+                ),
+                title: const Text(
+                  'Remove Photo',
+                  style: TextStyle(color: Colors.redAccent),
+                ),
+                onTap: onRemoveImage,
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }
