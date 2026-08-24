@@ -5,6 +5,7 @@ import 'package:social_media_app/core/constants/app_images.dart';
 import 'package:social_media_app/core/router/app_routes.dart';
 import 'package:social_media_app/core/themes/background_theme_widget.dart';
 import 'package:social_media_app/core/themes/dynamic_splash_app.dart';
+import '../../../core/share_intent/services/share_intent_service.dart';
 import '../../../core/supabase/supabase_provider.dart';
 
 class SplashView extends StatefulWidget {
@@ -33,7 +34,12 @@ class _SplashViewState extends State<SplashView>
       } else if (hasSeenOnboarding) {
         route = AppRoutes.authRoute;
       }
-      Navigator.pushNamedAndRemoveUntil(context, route, (route) => false);
+      await Navigator.pushNamedAndRemoveUntil(context, route, (route) => false);
+      if (route == AppRoutes.homeRoute) {
+        ShareIntentService.instance.flushPendingColdStartShareIfAny();
+      } else {
+        ShareIntentService.instance.discardPendingColdStartShare();
+      }
     }
   }
 

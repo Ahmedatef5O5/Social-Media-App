@@ -20,6 +20,7 @@ import '../../features/home/cubits/home_cubit/home_cubit.dart';
 import '../../features/posts/cubit/posts_cubit/posts_cubit.dart';
 import '../../features/stories/cubit/stories_cubit/stories_cubit.dart';
 import '../errors/supabase_error_mapper.dart';
+import '../share_intent/services/share_intent_service.dart';
 import '../supabase/supabase_provider.dart';
 import '../toast/app_toast.dart';
 
@@ -31,6 +32,7 @@ Future<void> initializeApp() async {
   await _initSupabase();
   await _safely('Firebase', _initFirebase);
   await _safely('Notifications', _initNotifications);
+  await _safely('ShareIntent', ShareIntentService.instance.init);
   _initForegroundTask();
   await _safely('Presence', PresenceService.instance.init);
 

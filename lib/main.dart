@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:social_media_app/core/share_intent/services/share_intent_service.dart';
 import 'app.dart';
 import 'core/bootstrap/app_bootstrap.dart';
 import 'core/errors/network_error_utils.dart';
@@ -38,7 +39,12 @@ void main() {
       final savedTheme = prefs.getString('user_theme_key') ?? 'ocean';
 
       runApp(buildApp(savedTheme));
+
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ShareIntentService.instance.consumeInitialShareIfAny();
+      });
     },
+
     (error, stack) {
       debugPrint('Uncaught zone error: $error\n$stack');
       _notifyUserOfUncaughtError(error);
