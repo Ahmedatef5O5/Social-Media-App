@@ -8,6 +8,8 @@ class MessageSelectionHeaderBar extends StatelessWidget
   final bool showStar;
   final bool isStarred;
   final VoidCallback onStarToggle;
+  final bool showCopy;
+  final VoidCallback onCopyTap;
   final VoidCallback onInfoTap;
   final VoidCallback onForwardTap;
   final VoidCallback onDeleteTap;
@@ -19,6 +21,8 @@ class MessageSelectionHeaderBar extends StatelessWidget
     required this.showStar,
     required this.isStarred,
     required this.onStarToggle,
+    required this.showCopy,
+    required this.onCopyTap,
     required this.onInfoTap,
     required this.onForwardTap,
     required this.onDeleteTap,
@@ -55,6 +59,15 @@ class MessageSelectionHeaderBar extends StatelessWidget
             ),
             const Spacer(),
 
+            PremiumSelectionActionIcon(
+              state: PremiumActionVisualState.off,
+              onIcon: Icons.shortcut_rounded,
+              offIcon: Icons.shortcut_rounded,
+              onLabel: 'Forward',
+              offLabel: 'Forward',
+              onTap: onForwardTap,
+            ),
+
             if (showStar)
               PremiumSelectionActionIcon(
                 state:
@@ -68,6 +81,16 @@ class MessageSelectionHeaderBar extends StatelessWidget
                 onTap: onStarToggle,
               ),
 
+            if (showCopy)
+              PremiumSelectionActionIcon(
+                state: PremiumActionVisualState.off,
+                onIcon: Icons.copy_rounded,
+                offIcon: Icons.copy_rounded,
+                onLabel: 'Copy',
+                offLabel: 'Copy',
+                onTap: onCopyTap,
+              ),
+
             PremiumSelectionActionIcon(
               state: PremiumActionVisualState.off,
               onIcon: Icons.info_outline,
@@ -75,15 +98,6 @@ class MessageSelectionHeaderBar extends StatelessWidget
               onLabel: 'Info',
               offLabel: 'Info',
               onTap: onInfoTap,
-            ),
-
-            PremiumSelectionActionIcon(
-              state: PremiumActionVisualState.off,
-              onIcon: Icons.shortcut_rounded,
-              offIcon: Icons.shortcut_rounded,
-              onLabel: 'Forward',
-              offLabel: 'Forward',
-              onTap: onForwardTap,
             ),
 
             PremiumSelectionActionIcon(

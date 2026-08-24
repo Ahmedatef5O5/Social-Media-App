@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import 'package:social_media_app/core/chat_shared/widgets/chat_search_app_bar.dart';
@@ -13,6 +14,7 @@ import '../../single_chats/cubit/chats_cubit/chats_cubit.dart';
 import '../cubit/group_details_cubit/group_details_cubit.dart';
 import '../cubit/group_list_cubit/group_list_cubit.dart';
 import '../models/group_model.dart';
+import '../models/groupe_message_model.dart';
 import '../widgets/group_chat_app_bar.dart';
 
 class GroupChatAppBarSwitcher extends StatelessWidget
@@ -179,6 +181,8 @@ class GroupChatAppBarSwitcher extends StatelessWidget
                         context,
                         messageCount: selectedIds.length,
                       ),
+                  showCopy: _canCopySelectedMessage(cubit.selectedMessages),
+                  onCopyTap: () => _copySelectedMessage(context, cubit),
                   onDeleteTap: () => _showBulkDeleteMenu(context, cubit),
                 );
               },
@@ -187,6 +191,20 @@ class GroupChatAppBarSwitcher extends StatelessWidget
         );
       },
     );
+  }
+
+  bool _canCopySelectedMessage(List<GroupMessageModel> selected) =>
+      selected.length == 1 && selected.first.messageType == 'text';
+
+  Future<void> _copySelectedMessage(
+    BuildContext context,
+    GroupDetailsCubit cubit,
+  ) async {
+    final selected = cubit.selectedMessages;
+    if (selected.length != 1) return;
+    await Clipboard.setData(ClipboardData(text: selected.first.text));
+    if (context.mounted) AppToast.success('Copied to clipboard');
+    cubit.clearSelection();
   }
 
   void _showBulkDeleteMenu(BuildContext context, GroupDetailsCubit cubit) {
