@@ -169,6 +169,27 @@ class DiscoverPersonCardWidget extends StatelessWidget {
                     ],
                   ),
                 ),
+                const Gap(8),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _DiscoverFriendCounts(
+                      totalFriendsCount: personData.totalFriendsCount,
+                      mutualFriendsCount: personData.mutualFriendsCount,
+                      onTap: () {
+                        Navigator.of(context, rootNavigator: true).pushNamed(
+                          AppRoutes.friendsListViewRoute,
+                          arguments: userData.id,
+                        );
+                      },
+                    ),
+                    if (personData.mutualGroupsCount > 0) ...[
+                      const Gap(4),
+                      _MutualGroupsLabel(count: personData.mutualGroupsCount),
+                    ],
+                  ],
+                ),
               ],
             ),
           ),
@@ -306,6 +327,78 @@ class _StaticChip extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _DiscoverFriendCounts extends StatelessWidget {
+  final int totalFriendsCount;
+  final int mutualFriendsCount;
+  final VoidCallback onTap;
+
+  const _DiscoverFriendCounts({
+    required this.totalFriendsCount,
+    required this.mutualFriendsCount,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final showMutual = mutualFriendsCount > 0;
+    return InkWell(
+      borderRadius: BorderRadius.circular(8),
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              '$totalFriendsCount ${totalFriendsCount == 1 ? 'Friend' : 'Friends'}',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 12.5,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            if (showMutual) ...[
+              const SizedBox(height: 2),
+              Text(
+                '$mutualFriendsCount Mutual',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(fontSize: 11, color: AppColors.grey4),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _MutualGroupsLabel extends StatelessWidget {
+  final int count;
+  const _MutualGroupsLabel({required this.count});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(Icons.groups_rounded, size: 12, color: AppColors.grey4),
+        const SizedBox(width: 3),
+        Text(
+          '$count mutual ${count == 1 ? 'group' : 'groups'}',
+          style: TextStyle(
+            fontSize: 11,
+            color: AppColors.grey4,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
     );
   }
 }

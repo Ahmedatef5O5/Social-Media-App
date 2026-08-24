@@ -82,6 +82,7 @@ class ProfileCubit extends Cubit<ProfileState> {
           stats: stats,
           user: user,
           friendsCount: overview.friendsCount,
+          mutualFriendsCount: overview.mutualFriendsCount,
           friendshipStatus: overview.friendshipStatus,
           friendshipId: overview.friendshipId,
           isFollowing: overview.isFollowing,

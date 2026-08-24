@@ -5,6 +5,7 @@ class ProfileOverviewModel {
   final int followersCount;
   final int followingCount;
   final int friendsCount;
+  final int mutualFriendsCount;
   final FriendshipStatus friendshipStatus;
   final String? friendshipId;
   final bool isFollowing;
@@ -15,6 +16,7 @@ class ProfileOverviewModel {
     required this.followersCount,
     required this.followingCount,
     required this.friendsCount,
+    required this.mutualFriendsCount,
     required this.friendshipStatus,
     this.friendshipId,
     required this.isFollowing,
@@ -27,6 +29,7 @@ class ProfileOverviewModel {
       followersCount: (map['followers_count'] as num?)?.toInt() ?? 0,
       followingCount: (map['following_count'] as num?)?.toInt() ?? 0,
       friendsCount: (map['friends_count'] as num?)?.toInt() ?? 0,
+      mutualFriendsCount: (map['mutual_friends_count'] as num?)?.toInt() ?? 0,
       friendshipStatus: friendshipStatusFromString(
         map['friendship_status'] as String?,
       ),

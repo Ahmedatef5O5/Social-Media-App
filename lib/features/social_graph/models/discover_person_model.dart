@@ -7,6 +7,9 @@ class DiscoverPersonModel {
   final String? friendshipId;
   final bool isFollowing;
   final bool followsMe;
+  final int totalFriendsCount;
+  final int mutualFriendsCount;
+  final int mutualGroupsCount;
 
   const DiscoverPersonModel({
     required this.user,
@@ -14,6 +17,9 @@ class DiscoverPersonModel {
     this.friendshipId,
     required this.isFollowing,
     required this.followsMe,
+    required this.totalFriendsCount,
+    required this.mutualFriendsCount,
+    required this.mutualGroupsCount,
   });
 
   factory DiscoverPersonModel.fromMap(Map<String, dynamic> map) {
@@ -25,6 +31,9 @@ class DiscoverPersonModel {
       friendshipId: map['friendship_id'] as String?,
       isFollowing: map['is_following'] as bool? ?? false,
       followsMe: map['follows_me'] as bool? ?? false,
+      totalFriendsCount: (map['total_friends_count'] as num?)?.toInt() ?? 0,
+      mutualFriendsCount: (map['mutual_friends_count'] as num?)?.toInt() ?? 0,
+      mutualGroupsCount: (map['mutual_groups_count'] as num?)?.toInt() ?? 0,
     );
   }
 
@@ -39,6 +48,9 @@ class DiscoverPersonModel {
       friendshipId: friendshipId,
       isFollowing: isFollowing ?? this.isFollowing,
       followsMe: followsMe ?? this.followsMe,
+      totalFriendsCount: totalFriendsCount,
+      mutualFriendsCount: mutualFriendsCount,
+      mutualGroupsCount: mutualGroupsCount,
     );
   }
 
@@ -49,6 +61,9 @@ class DiscoverPersonModel {
       friendshipId: id,
       isFollowing: isFollowing,
       followsMe: followsMe,
+      totalFriendsCount: totalFriendsCount,
+      mutualFriendsCount: mutualFriendsCount,
+      mutualGroupsCount: mutualGroupsCount,
     );
   }
 }
