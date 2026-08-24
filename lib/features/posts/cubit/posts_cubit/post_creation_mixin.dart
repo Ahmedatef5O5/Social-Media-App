@@ -373,6 +373,20 @@ mixin PostCreationMixin on Cubit<PostsState> {
     }
   }
 
+  void attachExternalMedia({XFile? image, XFile? video, XFile? document}) {
+    if (image != null) {
+      selectedImage = image;
+      selectedImageSizeBytes = File(image.path).lengthSync();
+    } else if (video != null) {
+      selectedVideo = video;
+      selectedVideoSizeBytes = File(video.path).lengthSync();
+    } else if (document != null) {
+      selectedDocument = document;
+      selectedDocumentSizeBytes = File(document.path).lengthSync();
+    }
+    emit(MediaPicked(image ?? video ?? document ?? XFile('')));
+  }
+
   void _resetMedia() {
     selectedImage = null;
     selectedVideo = null;

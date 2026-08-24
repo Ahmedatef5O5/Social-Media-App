@@ -25,7 +25,8 @@ import '../widgets/create_post_user_info.dart';
 import '../widgets/create_post_video_preview.dart';
 
 class CreatePostView extends StatefulWidget {
-  const CreatePostView({super.key});
+  final String? initialText;
+  const CreatePostView({super.key, this.initialText});
 
   @override
   State<CreatePostView> createState() => _CreatePostViewState();
@@ -88,6 +89,10 @@ class _CreatePostViewState extends State<CreatePostView> {
   @override
   void initState() {
     super.initState();
+    if (widget.initialText != null && widget.initialText!.trim().isNotEmpty) {
+      _textEditingController.text = widget.initialText!;
+      _hasText = true;
+    }
     _focusNode.addListener(() {
       if (_focusNode.hasFocus) {
         _minimizeSheet();

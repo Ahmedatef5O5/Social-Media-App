@@ -1,8 +1,12 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import 'package:social_media_app/core/mentions/widgets/mention_text_editing_controller.dart';
 import '../../../core/services/active_screen_tracker.dart';
+import '../../../core/share_intent/models/incoming_share_payload.dart';
+import '../../../core/toast/app_toast.dart';
 import '../../group_calls/cubit/group_call_cubit/group_call_cubit.dart';
 import '../../group_calls/cubit/group_call_cubit/group_call_state.dart';
 import '../cubit/group_details_cubit/group_details_cubit.dart';
@@ -12,11 +16,17 @@ import '../models/group_model.dart';
 import '../../group_calls/services/group_call_signaling_service.dart';
 import '../widgets/group_chat_input_bar_section.dart';
 import '../widgets/group_chat_locked_banner.dart';
+import '../widgets/group_media_preview_screen.dart';
 import '../widgets/group_messages_list.dart';
 
 class GroupChatDetailsView extends StatelessWidget {
   final GroupModel group;
-  const GroupChatDetailsView({super.key, required this.group});
+  final IncomingSharePayload? incomingShare;
+  const GroupChatDetailsView({
+    super.key,
+    required this.group,
+    this.incomingShare,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -25,14 +35,15 @@ class GroupChatDetailsView extends StatelessWidget {
           (_) =>
               GroupCallCubit(context.read<GroupCallSignalingService>())
                 ..watchActiveCall(group.id),
-      child: _GroupChatDetailsBody(group: group),
+      child: _GroupChatDetailsBody(group: group, incomingShare: incomingShare),
     );
   }
 }
 
 class _GroupChatDetailsBody extends StatefulWidget {
   final GroupModel group;
-  const _GroupChatDetailsBody({required this.group});
+  final IncomingSharePayload? incomingShare;
+  const _GroupChatDetailsBody({required this.group, this.incomingShare});
 
   @override
   State<_GroupChatDetailsBody> createState() => _GroupChatDetailsBodyState();
@@ -75,6 +86,67 @@ class _GroupChatDetailsBodyState extends State<_GroupChatDetailsBody> {
       _onSearchActiveChanged,
     );
     _groupDetailsCubit.replyToMessage.addListener(_onReplyChanged);
+
+    if (widget.incomingShare != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _applyIncomingShare(widget.incomingShare!);
+      });
+    }
+  }
+
+  void _applyIncomingShare(IncomingSharePayload payload) {
+    switch (payload.kind) {
+      case IncomingShareKind.text:
+        _controller.text = payload.text ?? '';
+        break;
+
+      case IncomingShareKind.image:
+      case IncomingShareKind.video:
+        final file = File(payload.files.first.path);
+
+        final type =
+            payload.kind == IncomingShareKind.image ? 'image' : 'video';
+
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder:
+                (_) => BlocProvider.value(
+                  value: _groupDetailsCubit,
+                  child: GroupMediaPreviewScreen(
+                    file: file,
+                    type: type,
+                    onSend:
+                        (caption) => _groupDetailsCubit.sendMessage(
+                          text: '',
+                          messageType: type,
+                          imageFile: type == 'image' ? file : null,
+                          videoFile: type == 'video' ? file : null,
+                          fileSizeBytes: file.lengthSync(),
+                          caption: caption,
+                        ),
+                  ),
+                ),
+          ),
+        );
+        break;
+
+      case IncomingShareKind.document:
+        final file = File(payload.files.first.path);
+
+        _groupDetailsCubit.sendMessage(
+          text: '',
+          messageType: 'file',
+          documentFile: file,
+          fileName: file.path.split('/').last,
+          fileSizeBytes: file.lengthSync(),
+        );
+
+        AppToast.success('File sent');
+        break;
+
+      case IncomingShareKind.unsupported:
+        break;
+    }
   }
 
   void _onSearchMatchChanged() {

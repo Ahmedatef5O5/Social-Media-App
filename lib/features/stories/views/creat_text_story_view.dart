@@ -15,8 +15,13 @@ import '../widgets/story_text_editor.dart';
 
 class CreateTextStoryView extends StatefulWidget {
   final UserData currentUser;
+  final String? initialText;
 
-  const CreateTextStoryView({super.key, required this.currentUser});
+  const CreateTextStoryView({
+    super.key,
+    required this.currentUser,
+    this.initialText,
+  });
 
   @override
   State<CreateTextStoryView> createState() => _CreateTextStoryViewState();
@@ -42,6 +47,11 @@ class _CreateTextStoryViewState extends State<CreateTextStoryView> {
         _hasText = _controller.text.trim().isNotEmpty;
       });
     });
+
+    if (widget.initialText != null && widget.initialText!.trim().isNotEmpty) {
+      _controller.text = widget.initialText!;
+      _hasText = true;
+    }
 
     _colors = [
       Colors.grey,

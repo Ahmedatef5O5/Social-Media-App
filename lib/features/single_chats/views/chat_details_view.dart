@@ -1,4 +1,7 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import 'package:social_media_app/core/chat_shared/widgets/chat_search_app_bar.dart';
@@ -18,6 +21,7 @@ import '../../../core/chat_shared/widgets/message_selection_header_bar.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/services/active_screen_tracker.dart';
 import '../../../core/services/notification_services.dart';
+import '../../../core/share_intent/models/incoming_share_payload.dart';
 import '../../../core/themes/app_colors.dart';
 import '../../../core/toast/app_toast.dart';
 import '../../ai_chat/views/ai_chat_view.dart';
@@ -26,11 +30,17 @@ import '../cubit/chats_cubit/chats_cubit.dart';
 import '../helper/blocked_single_chat_bar_widget.dart';
 import '../services/chat_permission_service.dart';
 import '../widgets/text_input_area_section.dart';
+import 'media_preview_screen.dart';
 
 class ChatDetailsView extends StatefulWidget {
   final ChatUserModel receiverUser;
+  final IncomingSharePayload? incomingShare;
 
-  const ChatDetailsView({super.key, required this.receiverUser});
+  const ChatDetailsView({
+    super.key,
+    required this.receiverUser,
+    this.incomingShare,
+  });
 
   @override
   State<ChatDetailsView> createState() => _ChatDetailsViewState();
@@ -76,6 +86,67 @@ class _ChatDetailsViewState extends State<ChatDetailsView>
     _chatCubit.watchReceiverAction(_receiverId);
     _chatCubit.searchController.currentIndex.addListener(_onSearchMatchChanged);
     _chatCubit.searchController.isActive.addListener(_onSearchActiveChanged);
+    if (widget.incomingShare != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _applyIncomingShare(widget.incomingShare!);
+      });
+    }
+  }
+
+  void _applyIncomingShare(IncomingSharePayload payload) {
+    switch (payload.kind) {
+      case IncomingShareKind.text:
+        _messageController.text = payload.text ?? '';
+        break;
+
+      case IncomingShareKind.image:
+      case IncomingShareKind.video:
+        final file = File(payload.files.first.path);
+        final type =
+            payload.kind == IncomingShareKind.image ? 'image' : 'video';
+
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder:
+                (_) => BlocProvider.value(
+                  value: _chatCubit,
+                  child: MediaPreviewScreen(
+                    file: file,
+                    type: type,
+                    onSend:
+                        (caption) => _chatCubit.sendMessage(
+                          receiverId: _receiverId,
+                          messageText: '',
+                          messageType: type,
+                          imageFile: type == 'image' ? file : null,
+                          videoFile: type == 'video' ? file : null,
+                          fileSizeBytes: file.lengthSync(),
+                          caption: caption,
+                        ),
+                  ),
+                ),
+          ),
+        );
+        break;
+
+      case IncomingShareKind.document:
+        final file = File(payload.files.first.path);
+
+        _chatCubit.sendMessage(
+          receiverId: _receiverId,
+          messageText: '',
+          messageType: 'file',
+          documentFile: file,
+          fileName: file.path.split('/').last,
+          fileSizeBytes: file.lengthSync(),
+        );
+
+        AppToast.success('File sent');
+        break;
+
+      case IncomingShareKind.unsupported:
+        break;
+    }
   }
 
   void _onSearchMatchChanged() {
@@ -250,6 +321,16 @@ class _ChatDetailsViewState extends State<ChatDetailsView>
     _searchFocusNode.dispose();
 
     super.dispose();
+  }
+
+  bool _canCopySelectedMessage(List<MessageModel> selected) =>
+      selected.length == 1 && selected.first.messageType == 'text';
+
+  Future<void> _copySelectedMessage(List<MessageModel> selected) async {
+    if (selected.length != 1) return;
+    await Clipboard.setData(ClipboardData(text: selected.first.text));
+    if (mounted) AppToast.success('Copied to clipboard');
+    _chatCubit.clearSelection();
   }
 
   void _showBulkDeleteMenu(BuildContext context, ChatDetailsCubit cubit) {
@@ -484,6 +565,13 @@ class _ChatDetailsViewState extends State<ChatDetailsView>
                                 () => _openForwardPicker(
                                   context,
                                   messageCount: selectedIds.length,
+                                ),
+                            showCopy: _canCopySelectedMessage(
+                              _chatCubit.selectedMessages,
+                            ),
+                            onCopyTap:
+                                () => _copySelectedMessage(
+                                  _chatCubit.selectedMessages,
                                 ),
                             onDeleteTap:
                                 () => _showBulkDeleteMenu(context, _chatCubit),
