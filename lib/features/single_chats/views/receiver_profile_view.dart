@@ -16,13 +16,20 @@ import '../../../core/presence/cubit/presence_cubit/presence_cubit.dart';
 import '../../../core/presence/model/chat_action_type.dart';
 import '../../../core/presence/model/presence_info.dart';
 import '../../../core/chat_shared/services/shared_media_data_source.dart';
+import '../../../core/services/active_call/active_call_session_data.dart';
+import '../../../core/services/active_call/cubit/active_call_session_cubit.dart';
+import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/widgets/animated_activity_text.dart';
 import '../../../core/widgets/calls/call_icon_button.dart';
 import '../../../core/widgets/custom_user_profile_image_section.dart';
 import '../../single_calls/model/call_model.dart';
 import '../cubit/chat_details_cubit/chat_details_cubit.dart';
+import '../cubit/shared_groups_cubit/shared_groups_cubit.dart';
+import '../cubit/shared_groups_cubit/shared_groups_state.dart';
 import '../helper/safe_pop.dart';
 import '../services/chat_services.dart';
+import '../services/shared_groups_service.dart';
+import '../widgets/shared_groups_section.dart';
 
 class ReceiverProfileView extends StatefulWidget {
   final ChatUserModel receiverUser;
@@ -41,6 +48,7 @@ class ReceiverProfileView extends StatefulWidget {
 
 class _ReceiverProfileViewState extends State<ReceiverProfileView> {
   late final SharedMediaCubit _mediaCubit;
+  late final SharedGroupsCubit _groupsCubit;
 
   @override
   void initState() {
@@ -55,11 +63,17 @@ class _ReceiverProfileViewState extends State<ReceiverProfileView> {
         receiverUser: widget.receiverUser,
       ),
     );
+    _groupsCubit = SharedGroupsCubit(
+      service: SharedGroupsService(),
+      currentUserId: SupabaseProvider.id,
+      otherUserId: widget.receiverUser.id,
+    );
   }
 
   @override
   void dispose() {
     _mediaCubit.close();
+    _groupsCubit.close();
     super.dispose();
   }
 
@@ -126,7 +140,7 @@ class _ReceiverProfileViewState extends State<ReceiverProfileView> {
                 Align(
                   alignment: Alignment.topLeft,
                   child: Padding(
-                    padding: const EdgeInsets.only(top: 12.0),
+                    padding: const EdgeInsets.only(top: 16.0),
                     child: GestureDetector(
                       behavior: HitTestBehavior.opaque,
                       onTap: () => safePop(context),
@@ -141,7 +155,7 @@ class _ReceiverProfileViewState extends State<ReceiverProfileView> {
                           child: Icon(
                             Icons.arrow_back_ios_new,
                             color: Colors.white,
-                            size: 20,
+                            size: 18,
                           ),
                         ),
                       ),
@@ -252,38 +266,51 @@ class _ReceiverProfileViewState extends State<ReceiverProfileView> {
 
             const Gap(25),
 
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                _buildOptionItem(
-                  context,
-                  Icons.message_outlined,
-                  "Message",
-                  () => safePop(context),
-                ),
-                _buildOptionItem(context, Icons.call_outlined, "Call", () {}),
-                _buildOptionItem(
-                  context,
-                  Icons.videocam_outlined,
-                  "Video",
-                  () {},
-                ),
-                ValueListenableBuilder<bool>(
-                  valueListenable: context.read<ChatDetailsCubit>().muteStatus,
-                  builder: (context, isMuted, _) {
-                    return _buildOptionItem(
+            ValueListenableBuilder<ChatBlockStatus>(
+              valueListenable: context.read<ChatDetailsCubit>().blockStatus,
+              builder: (context, blockStatus, _) {
+                return Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _buildOptionItem(
                       context,
-                      isMuted
-                          ? Icons.notifications_off
-                          : Icons.notifications_off_outlined,
-                      isMuted ? "Unmute" : "Mute",
-                      () => context.read<ChatDetailsCubit>().toggleMute(
-                        receiverId: widget.receiverUser.id,
-                      ),
-                    );
-                  },
-                ),
-              ],
+                      Icons.message_outlined,
+                      "Message",
+                      () => safePop(context),
+                    ),
+                    _buildOptionItem(
+                      context,
+                      Icons.call_outlined,
+                      "Call",
+                      () {},
+                      isBlocked: blockStatus.isBlocked,
+                    ),
+                    _buildOptionItem(
+                      context,
+                      Icons.videocam_outlined,
+                      "Video",
+                      () {},
+                      isBlocked: blockStatus.isBlocked,
+                    ),
+                    ValueListenableBuilder<bool>(
+                      valueListenable:
+                          context.read<ChatDetailsCubit>().muteStatus,
+                      builder: (context, isMuted, _) {
+                        return _buildOptionItem(
+                          context,
+                          isMuted
+                              ? Icons.notifications_off
+                              : Icons.notifications_off_outlined,
+                          isMuted ? "Unmute" : "Mute",
+                          () => context.read<ChatDetailsCubit>().toggleMute(
+                            receiverId: widget.receiverUser.id,
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+                );
+              },
             ),
 
             const Gap(16),
@@ -292,54 +319,93 @@ class _ReceiverProfileViewState extends State<ReceiverProfileView> {
               onTap: () => _openStarredMessages(context),
             ),
 
-            const Divider(height: 40, thickness: 8, color: Color(0x00fff5f5)),
+            BlocBuilder<SharedMediaCubit, SharedMediaState>(
+              bloc: _mediaCubit,
+              builder: (context, mediaState) {
+                final hasMedia =
+                    mediaState.previewLoading || mediaState.preview.isNotEmpty;
 
-            Builder(
-              builder: (context) {
-                final chatCubit = context.read<ChatDetailsCubit>();
-                return SharedMediaPreviewSection(
-                  mediaCubit: _mediaCubit,
-                  onShowInChat: (sheetContext, messageId) {
-                    Navigator.of(sheetContext).pop();
-                    Navigator.of(sheetContext).pop();
-                    final controller = widget.itemScrollController;
-                    if (controller != null) {
-                      chatCubit.scrollToMessage(
-                        messageId: messageId,
-                        itemScrollController: controller,
-                      );
-                    }
+                return BlocBuilder<SharedGroupsCubit, SharedGroupsState>(
+                  bloc: _groupsCubit,
+                  builder: (context, groupsState) {
+                    final hasGroups =
+                        groupsState is SharedGroupsLoading ||
+                        groupsState is SharedGroupsInitial ||
+                        (groupsState is SharedGroupsLoaded &&
+                            groupsState.groups.isNotEmpty);
+                    final hasAnyContent = hasMedia || hasGroups;
+
+                    return Column(
+                      children: [
+                        SizedBox(height: hasAnyContent ? 40 : 12),
+                        Builder(
+                          builder: (context) {
+                            final chatCubit = context.read<ChatDetailsCubit>();
+                            return SharedMediaPreviewSection(
+                              mediaCubit: _mediaCubit,
+                              onShowInChat: (sheetContext, messageId) {
+                                Navigator.of(sheetContext).pop();
+                                Navigator.of(sheetContext).pop();
+                                final controller = widget.itemScrollController;
+                                if (controller != null) {
+                                  chatCubit.scrollToMessage(
+                                    messageId: messageId,
+                                    itemScrollController: controller,
+                                  );
+                                }
+                              },
+                            );
+                          },
+                        ),
+                        if (hasMedia && hasGroups) const SizedBox(height: 24),
+                        SharedGroupsSection(groupsCubit: _groupsCubit),
+                        if (hasAnyContent) const SizedBox(height: 24),
+                      ],
+                    );
                   },
                 );
               },
             ),
-            const Divider(height: 24, thickness: 8, color: Color(0x00fff5f5)),
 
             ValueListenableBuilder<ChatBlockStatus>(
               valueListenable: context.read<ChatDetailsCubit>().blockStatus,
               builder: (context, status, _) {
                 final isBlockedByMe = status.blockedByMe;
-                return ListTile(
-                  leading: Icon(
-                    isBlockedByMe
-                        ? Icons.person_add_alt_1
-                        : Icons.block_rounded,
-                    color: isBlockedByMe ? null : Colors.red,
-                  ),
-                  title: Text(
-                    isBlockedByMe
-                        ? 'Unblock ${widget.receiverUser.name}'
-                        : 'Block ${widget.receiverUser.name}',
-                    style: TextStyle(
-                      color: isBlockedByMe ? null : Colors.red,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
+                final color = isBlockedByMe ? null : Colors.red;
+                return InkWell(
                   onTap:
                       () => context.read<ChatDetailsCubit>().toggleBlock(
                         receiverId: widget.receiverUser.id,
                         otherUserName: widget.receiverUser.name,
                       ),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 12,
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          isBlockedByMe
+                              ? Icons.person_add_alt_1
+                              : Icons.block_rounded,
+                          color: color,
+                        ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Text(
+                            isBlockedByMe
+                                ? 'Unblock ${widget.receiverUser.name}'
+                                : 'Block ${widget.receiverUser.name}',
+                            style: TextStyle(
+                              color: color,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 );
               },
             ),
@@ -353,24 +419,40 @@ class _ReceiverProfileViewState extends State<ReceiverProfileView> {
     BuildContext context,
     IconData icon,
     String label,
-    VoidCallback onTap,
-  ) {
+    VoidCallback onTap, {
+    bool isBlocked = false,
+  }) {
     final buttonStyle = IconButton.styleFrom(
       backgroundColor: Theme.of(context).primaryColor.withValues(alpha: 0.1),
       padding: const EdgeInsets.all(12),
     );
 
     final lowerLabel = label.toLowerCase();
+    final isCallOrVideo = lowerLabel == 'call' || lowerLabel == 'video';
 
     Widget iconWidget;
+    Widget labelWidget;
 
-    if (lowerLabel == 'call' || lowerLabel == 'video') {
+    if (isCallOrVideo) {
       iconWidget = CallIconButton(
         type: lowerLabel == 'call' ? CallType.audio : CallType.video,
         receiverId: widget.receiverUser.id,
         receiverName: widget.receiverUser.name,
         receiverAvatar: widget.receiverUser.imageUrl ?? '',
+        isBlocked: isBlocked,
         style: buttonStyle,
+      );
+      labelWidget = BlocBuilder<ActiveCallSessionCubit, ActiveCallSessionData?>(
+        builder: (context, activeSession) {
+          final isDisabled = isBlocked || activeSession != null;
+          return Text(
+            label,
+            style: TextStyle(
+              color: isDisabled ? Colors.grey : Theme.of(context).primaryColor,
+              fontSize: 12,
+            ),
+          );
+        },
       );
     } else {
       iconWidget = IconButton(
@@ -378,17 +460,12 @@ class _ReceiverProfileViewState extends State<ReceiverProfileView> {
         icon: Icon(icon, color: Theme.of(context).primaryColor),
         style: buttonStyle,
       );
+      labelWidget = Text(
+        label,
+        style: TextStyle(color: Theme.of(context).primaryColor, fontSize: 12),
+      );
     }
 
-    return Column(
-      children: [
-        iconWidget,
-        const Gap(4),
-        Text(
-          label,
-          style: TextStyle(color: Theme.of(context).primaryColor, fontSize: 12),
-        ),
-      ],
-    );
+    return Column(children: [iconWidget, const Gap(4), labelWidget]);
   }
 }

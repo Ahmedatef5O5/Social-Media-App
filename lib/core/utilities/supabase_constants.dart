@@ -58,6 +58,7 @@ abstract class SupabaseConstants {
   // comments_upgrade_migration.sql
   static const String addCommentWithMentionsRpc = 'add_comment_with_mentions';
   static const String getProfileOverviewRpc = 'get_profile_overview';
+  static const String getMutualGroupsRpc = 'get_mutual_groups';
 
   // ── Reels Feature ──
   static const String reelChannels = 'reel_channels';
