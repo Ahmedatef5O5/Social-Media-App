@@ -17,6 +17,9 @@ class SharedMediaCubit extends Cubit<SharedMediaState> {
 
     try {
       final items = await _dataSource.loadPreview();
+
+      if (isClosed) return;
+
       emit(
         state.copyWith(
           preview: items,
@@ -26,6 +29,7 @@ class SharedMediaCubit extends Cubit<SharedMediaState> {
       );
     } catch (e) {
       debugPrint('[SharedMediaCubit] loadPreview error: $e');
+      if (isClosed) return;
       emit(state.copyWith(previewLoading: false));
     }
   }
@@ -49,6 +53,8 @@ class SharedMediaCubit extends Cubit<SharedMediaState> {
         );
       }
 
+      if (isClosed) return;
+
       emit(
         state.copyWith(
           items: {...state.items, tab: items},
@@ -58,6 +64,7 @@ class SharedMediaCubit extends Cubit<SharedMediaState> {
       );
     } catch (e) {
       debugPrint('[SharedMediaCubit] loadTab($tab) error: $e');
+      if (isClosed) return;
       emit(
         state.copyWith(
           loadingTabs: {...state.loadingTabs}..remove(tab),

@@ -96,7 +96,7 @@ class GroupTileItem extends StatelessWidget {
                         ),
                         const Gap(4),
                         Row(
-                          crossAxisAlignment: CrossAxisAlignment.end,
+                          crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
                             Expanded(
                               child: _buildSubtitleSection(

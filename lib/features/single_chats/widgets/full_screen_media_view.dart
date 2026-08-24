@@ -54,11 +54,7 @@ class _FullScreenMediaViewState extends State<FullScreenMediaView>
   final ValueNotifier<double> _volumeNotifier = ValueNotifier<double>(100);
   int _lastAppliedVolumePercent = -1;
   Timer? _volumeFadeTimer;
-  late final AnimationController _volumeIndicatorController =
-      AnimationController(
-        vsync: this,
-        duration: const Duration(milliseconds: 250),
-      );
+  late final AnimationController _volumeIndicatorController;
 
   bool get _hasReadyVideo =>
       widget.videoUrl != null &&
@@ -168,6 +164,12 @@ class _FullScreenMediaViewState extends State<FullScreenMediaView>
   @override
   void initState() {
     super.initState();
+
+    _volumeIndicatorController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 250),
+    );
+
     if (widget.controller != null) {
       _videoController = widget.controller;
       _isExternalController = true;

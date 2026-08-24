@@ -84,7 +84,7 @@ class ChatItemTile extends StatelessWidget {
                         ),
                         const Gap(4),
                         Row(
-                          crossAxisAlignment: CrossAxisAlignment.end,
+                          crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
                             Expanded(child: _buildLastMessage(context)),
                             const Gap(8),
