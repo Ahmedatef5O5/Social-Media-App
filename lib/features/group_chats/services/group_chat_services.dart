@@ -1145,11 +1145,16 @@ class GroupChatServices {
   }
 
   Future<void> toggleMute(String groupId, bool muted) async {
-    await _supabase
+    final response = await _supabase
         .from(SupabaseConstants.groupMembers)
         .update({GroupMemberColumns.isMuted: muted})
         .eq(GroupMemberColumns.groupId, groupId)
-        .eq(GroupMemberColumns.userId, currentUserId);
+        .eq(GroupMemberColumns.userId, currentUserId)
+        .select();
+
+    if (response.isEmpty) {
+      throw Exception('Update blocked by RLS or row not found');
+    }
   }
 
   Stream<void> getGroupsListStream() {

@@ -34,6 +34,7 @@ abstract class SupabaseConstants {
   static const String groupMessageReactions = 'group_message_reactions';
   static const String groupMessageMentions = 'group_message_mentions';
   static const String groupTypingStatus = 'group_typing_status';
+  static const String groupGroupFcmTokens = 'get_group_fcm_tokens';
 
   //  Presence Feature
   static const String userPresence = 'user_presence';

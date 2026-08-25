@@ -130,26 +130,19 @@ class GroupNotificationDispatcher {
     bool respectMute = true,
   }) async {
     try {
-      final rows = await SupabaseProvider.client
-          .from(SupabaseConstants.groupMembers)
-          .select(
-            '${GroupMemberColumns.userId},'
-            '${GroupMemberColumns.isMuted},'
-            'users!${SupabaseConstants.groupMembers}'
-            '_${GroupMemberColumns.userId}_fkey'
-            '(${UserColumns.fcmToken})',
-          )
-          .eq(GroupMemberColumns.groupId, groupId)
-          .eq(GroupMemberColumns.membershipStatus, 'active')
-          .neq(GroupMemberColumns.userId, excludeUserId);
+      final response = await SupabaseProvider.client.rpc(
+        SupabaseConstants.groupGroupFcmTokens,
+        params: {
+          'p_group_id': groupId,
+          'p_exclude_user_id': excludeUserId,
+          'p_respect_mute': respectMute,
+        },
+      );
 
       final futures = <Future<void>>[];
-      for (final row in rows as List) {
-        final isMuted = row[GroupMemberColumns.isMuted] as bool? ?? false;
-        if (respectMute && isMuted) continue;
-        final userInfo = row['users'] as Map<String, dynamic>?;
-        final token = userInfo?[UserColumns.fcmToken] as String?;
-        final memberId = row[GroupMemberColumns.userId] as String?;
+      for (final row in response as List) {
+        final memberId = row['user_id'] as String?;
+        final token = row['fcm_token'] as String?;
         if (token == null || token.isEmpty || memberId == null) continue;
         futures.add(payloadBuilder(memberId, token));
       }
