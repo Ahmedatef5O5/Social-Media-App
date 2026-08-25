@@ -20,7 +20,7 @@ class CloudinaryStorageServices {
     File file,
     String topFolder,
     String subFolder, {
-    String filePrefix = '',
+    String filePrefix = 'file_',
     void Function(double progress)? onProgress,
     void Function(int sentBytes, int totalBytes)? onProgressBytes,
     dio_pkg.CancelToken? cancelToken,
@@ -38,6 +38,43 @@ class CloudinaryStorageServices {
     final publicIdPrefix = '$filePrefix$timestamp';
     final folderPath = '$topFolder/$subFolder';
 
+    const restrictedRawExts = {
+      'html',
+      'htm',
+      'js',
+      'ts',
+      'php',
+      'sh',
+      'bat',
+      'exe',
+      'css',
+      'java',
+      'c',
+      'cpp',
+      'cc',
+      'cxx',
+      'h',
+      'hpp',
+      'cs',
+      'py',
+      'pyw',
+      'kt',
+      'kts',
+      'dart',
+      'swift',
+      'go',
+      'rb',
+      'rs',
+      'sql',
+      'xml',
+      'yaml',
+      'yml',
+      'json',
+      'md',
+      'env',
+    };
+    final uploadExt = restrictedRawExts.contains(ext) ? '$ext.txt' : ext;
+
     onProgress?.call(0.0);
 
     try {
@@ -47,7 +84,7 @@ class CloudinaryStorageServices {
         'public_id': publicIdPrefix,
         'file': await dio_pkg.MultipartFile.fromFile(
           file.path,
-          filename: '$publicIdPrefix.$ext',
+          filename: '$publicIdPrefix.$uploadExt',
         ),
       });
 
