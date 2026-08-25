@@ -6,44 +6,15 @@ import '../../ai_assistant/entities/ai_action_type.dart';
 import '../../ai_assistant/entities/ai_request_context.dart';
 import '../../ai_assistant/widgets/ai_action_icon.dart';
 
-class AiPhotoPreviewScreen extends StatefulWidget {
+class AiPhotoPreviewScreen extends StatelessWidget {
   final File file;
-  final String? initialCaption;
-  final void Function(String? caption) onSend;
+  final TextEditingController captionController;
 
   const AiPhotoPreviewScreen({
     super.key,
     required this.file,
-    this.initialCaption,
-    required this.onSend,
+    required this.captionController,
   });
-
-  @override
-  State<AiPhotoPreviewScreen> createState() => _AiPhotoPreviewScreenState();
-}
-
-class _AiPhotoPreviewScreenState extends State<AiPhotoPreviewScreen> {
-  late final TextEditingController _captionController;
-
-  @override
-  void initState() {
-    super.initState();
-    _captionController = TextEditingController(
-      text: widget.initialCaption ?? '',
-    );
-  }
-
-  @override
-  void dispose() {
-    _captionController.dispose();
-    super.dispose();
-  }
-
-  void _handleSend() {
-    final caption = _captionController.text.trim();
-    Navigator.of(context).pop();
-    widget.onSend(caption.isEmpty ? null : caption);
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -68,8 +39,8 @@ class _AiPhotoPreviewScreenState extends State<AiPhotoPreviewScreen> {
               Expanded(
                 child: Center(
                   child: Hero(
-                    tag: widget.file.path,
-                    child: Image.file(widget.file, fit: BoxFit.contain),
+                    tag: file.path,
+                    child: Image.file(file, fit: BoxFit.contain),
                   ),
                 ),
               ),
@@ -81,12 +52,12 @@ class _AiPhotoPreviewScreenState extends State<AiPhotoPreviewScreen> {
                   children: [
                     Expanded(
                       child: DirectionalTextField(
-                        controller: _captionController,
+                        controller: captionController,
                         style: const TextStyle(color: AppColors.white),
                         minLines: 1,
                         maxLines: 4,
-                        textInputAction: TextInputAction.send,
-                        onSubmitted: (_) => _handleSend(),
+                        textInputAction: TextInputAction.done,
+                        onSubmitted: (_) => Navigator.of(context).pop(),
                         decoration: InputDecoration(
                           hintText: 'Add a caption...',
                           hintStyle: const TextStyle(color: Colors.white60),
@@ -101,13 +72,13 @@ class _AiPhotoPreviewScreenState extends State<AiPhotoPreviewScreen> {
                             borderSide: BorderSide.none,
                           ),
                           suffixIcon: AiActionIcon(
-                            controller: _captionController,
+                            controller: captionController,
                             surface: AiSurfaceType.chatMessage,
                             actionContext: AiActionContext.mediaCaption,
                             generationAction: AiActionType.autocompleteCaption,
                             hasMediaAttached: true,
                             targetMediaType: AiTargetMediaType.image,
-                            imageBytesProvider: () => widget.file.readAsBytes(),
+                            imageBytesProvider: () => file.readAsBytes(),
                           ),
                         ),
                       ),
@@ -119,8 +90,11 @@ class _AiPhotoPreviewScreenState extends State<AiPhotoPreviewScreen> {
                         radius: 22,
                         backgroundColor: Theme.of(context).primaryColor,
                         child: IconButton(
-                          icon: const Icon(Icons.send, color: AppColors.white),
-                          onPressed: _handleSend,
+                          icon: const Icon(
+                            Icons.check_rounded,
+                            color: AppColors.white,
+                          ),
+                          onPressed: () => Navigator.of(context).pop(),
                         ),
                       ),
                     ),
