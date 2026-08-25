@@ -54,6 +54,7 @@ class _ReceiverProfileViewState extends State<ReceiverProfileView> {
   void initState() {
     super.initState();
     final cubit = context.read<ChatDetailsCubit>();
+    cubit.watchMuteStatus(widget.receiverUser.id);
     _mediaCubit = SharedMediaCubit(
       SingleChatMediaDataSource(
         services: context.read<ChatServices>(),
@@ -140,14 +141,14 @@ class _ReceiverProfileViewState extends State<ReceiverProfileView> {
                 Align(
                   alignment: Alignment.topLeft,
                   child: Padding(
-                    padding: const EdgeInsets.only(top: 16.0),
+                    padding: const EdgeInsets.only(top: 18.0),
                     child: GestureDetector(
                       behavior: HitTestBehavior.opaque,
                       onTap: () => safePop(context),
                       child: Padding(
                         padding: const EdgeInsets.all(12.0),
                         child: Container(
-                          padding: const EdgeInsets.all(10),
+                          padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
                             color: Colors.black.withValues(alpha: 0.3),
                             shape: BoxShape.circle,
@@ -230,6 +231,7 @@ class _ReceiverProfileViewState extends State<ReceiverProfileView> {
                             style: TextStyle(
                               color: Colors.green,
                               fontWeight: FontWeight.w500,
+                              fontSize: 12,
                             ),
                           );
                         }
@@ -246,13 +248,17 @@ class _ReceiverProfileViewState extends State<ReceiverProfileView> {
                               style: TextStyle(
                                 color: Colors.green,
                                 fontWeight: FontWeight.w500,
+                                fontSize: 12,
                               ),
                             );
                           }
 
                           return Text(
                             "Last seen $lastSeenStr",
-                            style: const TextStyle(color: Colors.grey),
+                            style: const TextStyle(
+                              color: Colors.grey,
+                              fontSize: 12,
+                            ),
                           );
                         }
 
@@ -337,7 +343,6 @@ class _ReceiverProfileViewState extends State<ReceiverProfileView> {
 
                     return Column(
                       children: [
-                        SizedBox(height: hasAnyContent ? 40 : 12),
                         Builder(
                           builder: (context) {
                             final chatCubit = context.read<ChatDetailsCubit>();
@@ -357,7 +362,7 @@ class _ReceiverProfileViewState extends State<ReceiverProfileView> {
                             );
                           },
                         ),
-                        if (hasMedia && hasGroups) const SizedBox(height: 24),
+                        if (hasMedia && hasGroups) const SizedBox(height: 14),
                         SharedGroupsSection(groupsCubit: _groupsCubit),
                         if (hasAnyContent) const SizedBox(height: 24),
                       ],

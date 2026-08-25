@@ -11,6 +11,7 @@ import '../../../../features/group_chats/services/group_chat_services.dart';
 import '../../../../features/single_chats/cubit/chats_cubit/chats_cubit.dart';
 import '../../../../features/single_chats/models/chat_user_model.dart';
 import '../../../supabase/supabase_provider.dart';
+import '../../helpers/chat_mute_status_cache.dart';
 import '../../models/conversation_flags.dart';
 import '../../models/conversation_item.dart';
 import '../../models/conversation_ref.dart';
@@ -79,9 +80,11 @@ class ConversationsCubit extends Cubit<ConversationsState> {
 
               if (payload.eventType == PostgresChangeEvent.delete) {
                 _liveSingleChatMutes.remove(peerId);
+                unawaited(ChatMuteStatusCache.instance.write(peerId, false));
               } else {
-                _liveSingleChatMutes[peerId] =
-                    row['is_muted'] as bool? ?? false;
+                final muted = row['is_muted'] as bool? ?? false;
+                _liveSingleChatMutes[peerId] = muted;
+                unawaited(ChatMuteStatusCache.instance.write(peerId, muted));
               }
               _recompute();
             },
@@ -100,7 +103,9 @@ class ConversationsCubit extends Cubit<ConversationsState> {
       for (final row in (rows as List)) {
         final peerId = row['peer_id'] as String?;
         if (peerId == null) continue;
-        _liveSingleChatMutes[peerId] = row['is_muted'] as bool? ?? false;
+        final muted = row['is_muted'] as bool? ?? false;
+        _liveSingleChatMutes[peerId] = muted;
+        unawaited(ChatMuteStatusCache.instance.write(peerId, muted));
       }
       _recompute();
     } catch (e) {
@@ -124,6 +129,11 @@ class ConversationsCubit extends Cubit<ConversationsState> {
       final liveMuted = _liveSingleChatMutes[c.id];
       if (liveMuted != null) {
         flags = flags.copyWith(muteOverride: liveMuted);
+      } else {
+        final cached = ChatMuteStatusCache.instance.read(c.id);
+        if (cached != null) {
+          flags = flags.copyWith(muteOverride: cached);
+        }
       }
 
       return ConversationItem.fromChat(c, flags);
@@ -300,12 +310,16 @@ class ConversationsCubit extends Cubit<ConversationsState> {
     final previousOverride =
         ConversationFlagsStore.instance.flagsFor(ref).muteOverride;
     await ConversationFlagsStore.instance.setMuteOverride(ref, value);
+    unawaited(ChatMuteStatusCache.instance.write(ref.id, value));
     try {
       await _chatMuteService.setMuted(peerId: ref.id, muted: value);
     } catch (e) {
       await ConversationFlagsStore.instance.setMuteOverride(
         ref,
         previousOverride,
+      );
+      unawaited(
+        ChatMuteStatusCache.instance.write(ref.id, previousOverride ?? false),
       );
       debugPrint('[ConversationsCubit] chat_mutes sync failed: $e');
       rethrow;

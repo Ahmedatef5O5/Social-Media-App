@@ -45,7 +45,18 @@ class ChatMuteService {
           event: PostgresChangeEvent.all,
           schema: 'public',
           table: 'chat_mutes',
-          callback: (_) => refresh(),
+          callback: (payload) {
+            final row =
+                payload.eventType == PostgresChangeEvent.delete
+                    ? payload.oldRecord
+                    : payload.newRecord;
+
+            final ownerId = row['owner_id'] as String?;
+            final rowPeerId = row['peer_id'] as String?;
+            if (ownerId != SupabaseProvider.id || rowPeerId != peerId) return;
+            final isMuted = row['is_muted'] as bool? ?? false;
+            if (!controller.isClosed) controller.add(isMuted);
+          },
         )
         .subscribe();
 

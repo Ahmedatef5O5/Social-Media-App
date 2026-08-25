@@ -7,6 +7,7 @@ import '../../../core/chat_shared/cubits/conversations_cubit/conversations_cubit
 import '../../../core/chat_shared/helpers/conversation_delete_confirmation.dart';
 import '../../../core/chat_shared/widgets/conversations_selection_header_bar.dart';
 import '../../../core/chat_shared/widgets/conversations_tab_body.dart';
+import '../../../core/constants/app_images.dart';
 import '../../../core/widgets/custom_pull_to_refresh.dart';
 import '../../../core/widgets/custom_tab_wrapper.dart';
 import '../../../core/widgets/global_refresh_indicator.dart';
@@ -56,6 +57,8 @@ class _ChatsViewState extends State<ChatsView>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    precacheImage(const AssetImage(AppImages.chatBotIcon), context);
+
     if (!_conversationsCubitReady) {
       _conversationsCubitReady = true;
       _conversationsCubit = ConversationsCubit(
