@@ -53,7 +53,8 @@ class _AiChatBubbleState extends State<AiChatBubble> {
 
   double? get _fixedMediaWidth =>
       (widget.message.mediaType == AiChatMediaType.image ||
-              widget.message.mediaType == AiChatMediaType.video)
+              widget.message.mediaType == AiChatMediaType.video ||
+              widget.message.mediaType == AiChatMediaType.file)
           ? 240
           : null;
 
@@ -432,14 +433,17 @@ class _AiChatBubbleState extends State<AiChatBubble> {
             );
 
       case AiChatMediaType.file:
-        return FileMessageBubble(
-          fileUrl: message.mediaUrl ?? '',
-          fileName: message.fileName,
-          fileSizeBytes: message.fileSizeBytes,
-          isMe: isMe,
-          isUploading: _isUploading,
-          uploadProgress: message.uploadProgress,
-          onCancelTap: widget.onCancelUpload,
+        return SizedBox(
+          width: 240,
+          child: FileMessageBubble(
+            fileUrl: message.mediaUrl ?? '',
+            fileName: message.fileName,
+            fileSizeBytes: message.fileSizeBytes,
+            isMe: isMe,
+            isUploading: _isUploading,
+            uploadProgress: message.uploadProgress,
+            onCancelTap: widget.onCancelUpload,
+          ),
         );
 
       case AiChatMediaType.none:

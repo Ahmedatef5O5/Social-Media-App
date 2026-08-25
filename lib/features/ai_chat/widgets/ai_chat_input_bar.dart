@@ -9,6 +9,7 @@ import '../../../core/toast/app_toast.dart';
 import '../../../core/widgets/directional_text_field.dart';
 import '../helpers/ai_chat_dictation_controller.dart';
 import '../models/ai_model_option.dart';
+import 'ai_chat_staged_file_preview.dart';
 
 class AiChatInputBar extends StatefulWidget {
   final TextEditingController controller;
@@ -18,6 +19,11 @@ class AiChatInputBar extends StatefulWidget {
   final ValueChanged<String> onSendText;
   final void Function(File file, int durationSeconds) onSendVoice;
   final ValueChanged<PickedAttachment> onAttachmentPicked;
+  final String? stagedFileName;
+  final int? stagedFileSizeBytes;
+  final File? stagedImageFile;
+  final VoidCallback? onRemoveStagedFile;
+  final VoidCallback? onTapStagedFile;
 
   const AiChatInputBar({
     super.key,
@@ -28,6 +34,11 @@ class AiChatInputBar extends StatefulWidget {
     required this.onSendText,
     required this.onSendVoice,
     required this.onAttachmentPicked,
+    this.stagedFileName,
+    this.stagedFileSizeBytes,
+    this.onRemoveStagedFile,
+    this.stagedImageFile,
+    this.onTapStagedFile,
   });
 
   @override
@@ -62,7 +73,7 @@ class _AiChatInputBarState extends State<AiChatInputBar> {
 
   void _handleSend() {
     final text = widget.controller.text.trim();
-    if (text.isEmpty) return;
+    if (text.isEmpty && widget.stagedFileName == null) return;
     if (_isDictating) _toggleDictation();
     widget.onSendText(text);
     widget.controller.clear();
@@ -74,6 +85,9 @@ class _AiChatInputBarState extends State<AiChatInputBar> {
       showVoiceOption: false,
       showFileOption: true,
       showCameraOption: true,
+      showVideoOption: false,
+      showGifOption: false,
+      showStickerOption: false,
     );
     if (picked == null || !mounted) return;
     if (picked.kind == AttachmentKind.voice) return;
@@ -141,79 +155,96 @@ class _AiChatInputBarState extends State<AiChatInputBar> {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
-      child: Stack(
-        clipBehavior: Clip.none,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Positioned.fill(
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(28),
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(28),
-                    border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.14),
+          if (widget.stagedFileName != null)
+            AiChatStagedFilePreview(
+              fileName: widget.stagedFileName!,
+              fileSizeBytes: widget.stagedFileSizeBytes ?? 0,
+              imageFile: widget.stagedImageFile,
+              onTapLeading: widget.onTapStagedFile,
+              onRemove: widget.onRemoveStagedFile ?? () {},
+            ),
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Positioned.fill(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(28),
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(28),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.14),
+                        ),
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
-            child: VoiceRecorderInputSection(
-              hasText: _hasText && !_isDictating,
-              onShowAttachments: _openAttachmentSheet,
-              onSendVoice: widget.onSendVoice,
-              onMicTap: _toggleDictation,
-              isDictating: _isDictating,
-              onForceStopDictation: _stopDictation,
-              textField: DirectionalTextField(
-                controller: widget.controller,
-                focusNode: widget.focusNode,
-                minLines: 1,
-                maxLines: 5,
-                style: const TextStyle(color: Colors.white, fontSize: 15),
-                cursorColor: Colors.white70,
-                textInputAction: TextInputAction.newline,
-                decoration: InputDecoration(
-                  border: InputBorder.none,
-                  isCollapsed: true,
-                  contentPadding: const EdgeInsets.symmetric(
-                    vertical: 10,
-                    horizontal: 6,
-                  ),
-                  hintText: 'Message Syncra...',
-                  hintStyle: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.45),
-                    fontSize: 15,
-                  ),
-                ),
-              ),
-              sendButton: InkWell(
-                onTap: _handleSend,
-                child: Container(
-                  width: 38,
-                  height: 38,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: LinearGradient(
-                      colors: [
-                        widget.selectedModel.accentColor,
-                        widget.selectedModel.accentColor.withValues(alpha: 0.7),
-                      ],
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+                child: VoiceRecorderInputSection(
+                  hasText:
+                      (_hasText || widget.stagedFileName != null) &&
+                      !_isDictating,
+                  onShowAttachments: _openAttachmentSheet,
+                  onSendVoice: widget.onSendVoice,
+                  onMicTap: _toggleDictation,
+                  isDictating: _isDictating,
+                  onForceStopDictation: _stopDictation,
+                  textField: DirectionalTextField(
+                    controller: widget.controller,
+                    focusNode: widget.focusNode,
+                    minLines: 1,
+                    maxLines: 5,
+                    style: const TextStyle(color: Colors.white, fontSize: 15),
+                    cursorColor: Colors.white70,
+                    textInputAction: TextInputAction.newline,
+                    decoration: InputDecoration(
+                      border: InputBorder.none,
+                      isCollapsed: true,
+                      contentPadding: const EdgeInsets.symmetric(
+                        vertical: 10,
+                        horizontal: 6,
+                      ),
+                      hintText: 'Message Syncra...',
+                      hintStyle: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.45),
+                        fontSize: 15,
+                      ),
                     ),
                   ),
-                  child: const Icon(
-                    Icons.arrow_upward_rounded,
-                    color: Colors.white,
-                    size: 20,
+                  sendButton: InkWell(
+                    onTap: _handleSend,
+                    child: Container(
+                      width: 38,
+                      height: 38,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: LinearGradient(
+                          colors: [
+                            widget.selectedModel.accentColor,
+                            widget.selectedModel.accentColor.withValues(
+                              alpha: 0.7,
+                            ),
+                          ],
+                        ),
+                      ),
+                      child: const Icon(
+                        Icons.arrow_upward_rounded,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                    ),
                   ),
                 ),
               ),
-            ),
+            ],
           ),
         ],
       ),
