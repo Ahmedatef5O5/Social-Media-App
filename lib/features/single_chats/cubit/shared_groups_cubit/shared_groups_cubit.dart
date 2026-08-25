@@ -22,9 +22,9 @@ class SharedGroupsCubit extends Cubit<SharedGroupsState> {
         currentUserId: currentUserId,
         otherUserId: otherUserId,
       );
-      emit(SharedGroupsLoaded(groups));
+      if (!isClosed) emit(SharedGroupsLoaded(groups));
     } catch (e) {
-      emit(SharedGroupsError(e.toString()));
+      if (!isClosed) emit(SharedGroupsError(e.toString()));
     }
   }
 }

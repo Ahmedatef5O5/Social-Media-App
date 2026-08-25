@@ -65,11 +65,12 @@ class SharedMediaPreviewSection extends StatelessWidget {
                   ),
                 ],
               ),
-              const Gap(4),
+              const Gap(6),
               if (state.previewLoading)
                 const SharedMediaPreviewSkeleton()
               else
                 GridView.builder(
+                  padding: EdgeInsets.zero,
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
                   itemCount: state.preview.length,
