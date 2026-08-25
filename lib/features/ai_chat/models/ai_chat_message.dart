@@ -41,6 +41,7 @@ class AiChatMessage {
   bool get isMe => role == AiChatRole.user;
 
   AiChatMessage copyWith({
+    required String id,
     AiChatDeliveryStatus? status,
     double? uploadProgress,
     bool clearUploadProgress = false,

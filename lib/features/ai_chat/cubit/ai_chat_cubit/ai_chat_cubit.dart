@@ -59,13 +59,13 @@ class AiChatCubit extends Cubit<AiChatMessagesState> {
     required AiChatMediaType mediaType,
     String caption = '',
     required String localFilePath,
+    String? fileName,
     int? fileSizeBytes,
     int? durationSeconds,
   }) {
     final current = state;
-    final existingDomain = current is AiChatMessagesLoaded
-        ? current.messages
-        : <AiChatMessage>[];
+    final existingDomain =
+        current is AiChatMessagesLoaded ? current.messages : <AiChatMessage>[];
 
     final tempId = 'pending-${DateTime.now().microsecondsSinceEpoch}';
     final placeholder = AiChatMessage(
@@ -76,6 +76,7 @@ class AiChatCubit extends Cubit<AiChatMessagesState> {
       createdAt: DateTime.now(),
       mediaType: mediaType,
       mediaUrl: localFilePath,
+      fileName: fileName,
       fileSizeBytes: fileSizeBytes,
       durationSeconds: durationSeconds,
       uploadProgress: 0,
@@ -95,7 +96,10 @@ class AiChatCubit extends Cubit<AiChatMessagesState> {
     if (current is! AiChatMessagesLoaded) return;
     final updated = current.messages
         .map(
-          (m) => m.id == messageId ? m.copyWith(uploadProgress: progress) : m,
+          (m) =>
+              m.id == messageId
+                  ? m.copyWith(uploadProgress: progress, id: messageId)
+                  : m,
         )
         .toList(growable: false);
     emit(AiChatMessagesLoaded(messages: updated, isSending: current.isSending));
@@ -120,17 +124,20 @@ class AiChatCubit extends Cubit<AiChatMessagesState> {
     String? imageBase64,
     String imageMimeType = 'image/jpeg',
     String? targetMediaType,
+    String? textContent,
+    String? documentBase64,
+    String documentMimeType = 'application/pdf',
     String? replacingMessageId,
   }) async {
     final current = state;
-    final existingDomain = current is AiChatMessagesLoaded
-        ? current.messages
-        : <AiChatMessage>[];
-    final baseDomain = replacingMessageId == null
-        ? existingDomain
-        : existingDomain
-              .where((m) => m.id != replacingMessageId)
-              .toList(growable: false);
+    final existingDomain =
+        current is AiChatMessagesLoaded ? current.messages : <AiChatMessage>[];
+    final baseDomain =
+        replacingMessageId == null
+            ? existingDomain
+            : existingDomain
+                .where((m) => m.id != replacingMessageId)
+                .toList(growable: false);
 
     final userRecord = await _repository.appendMessage(
       sessionId: _sessionId,
@@ -143,7 +150,13 @@ class AiChatCubit extends Cubit<AiChatMessagesState> {
       durationSeconds: durationSeconds,
     );
 
-    final afterUserMessage = [...baseDomain, userRecord.toDomain()];
+    final userDomain = userRecord.toDomain();
+    final userMessage =
+        replacingMessageId != null
+            ? userDomain.copyWith(id: replacingMessageId)
+            : userDomain;
+
+    final afterUserMessage = [...baseDomain, userMessage];
     emit(AiChatMessagesLoaded(messages: afterUserMessage, isSending: true));
 
     final styleHint = AiChatStyleHeuristic.infer([
@@ -160,8 +173,13 @@ class AiChatCubit extends Cubit<AiChatMessagesState> {
         'user_tone': styleHint.tone.wireValue,
         if (targetMediaType != null) 'target_media_type': targetMediaType,
         if (mediaType == 'voice' && mediaUrl != null) 'voice_url': mediaUrl,
+        if (mediaType == 'image' && mediaUrl != null) 'image_url': mediaUrl,
         if (imageBase64 != null) 'image_base64': imageBase64,
         if (imageBase64 != null) 'image_mime_type': imageMimeType,
+        if (textContent != null) 'text_content': textContent,
+        if (documentBase64 != null) 'document_base64': documentBase64,
+        if (documentBase64 != null) 'document_mime_type': documentMimeType,
+        if (mediaType == 'file' && mediaUrl != null) 'file_url': mediaUrl,
       },
     );
 

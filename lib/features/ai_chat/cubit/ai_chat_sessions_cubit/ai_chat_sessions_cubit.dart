@@ -18,6 +18,15 @@ class AiChatSessionsCubit extends Cubit<AiChatSessionsState> {
   final AiChatRepository _repository;
   late final StreamSubscription<List<AiChatSession>> _subscription;
 
+  Future<void> refresh() async {
+    try {
+      final sessions = await _repository.syncSessions();
+      emit(AiChatSessionsLoaded(sessions));
+    } catch (e) {
+      emit(AiChatSessionsError(SupabaseErrorMapper.toUserMessage(e)));
+    }
+  }
+
   Future<AiChatSession> startNewSession({String? firstMessage}) {
     return _repository.createSession(firstMessage: firstMessage);
   }

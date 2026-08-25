@@ -22,6 +22,24 @@ class AiChatRepository {
   // Sessions
   // --------------------------------------------------------------------
 
+  Future<List<AiChatSession>> syncSessions() async {
+    try {
+      final rows = await _supabase
+          .from('ai_chat_sessions')
+          .select()
+          .order('last_message_at', ascending: false, nullsFirst: false);
+      final fresh =
+          (rows as List)
+              .map((r) => AiChatSession.fromJson(r as Map<String, dynamic>))
+              .toList();
+      await _sessionsBox.clear();
+      for (final s in fresh) {
+        await _sessionsBox.put(s.id, s);
+      }
+    } catch (_) {}
+    return _sortedLocalSessions();
+  }
+
   Stream<List<AiChatSession>> watchSessions() async* {
     yield _sortedLocalSessions();
 
