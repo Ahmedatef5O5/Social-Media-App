@@ -14,6 +14,9 @@ import '../../single_chats/models/chat_user_model.dart';
 import '../../social_graph/models/friendship_status.dart';
 import '../../social_graph/widgets/animated_action_button.dart';
 import '../../stories/cubit/stories_cubit/stories_cubit.dart';
+import '../utils/circular_icon_button.dart';
+import '../utils/profile_header_back_btn_container.dart';
+import 'profile_header_user_info_section.dart';
 
 class ProfileHeader extends StatelessWidget {
   const ProfileHeader({super.key, required this.size, required this.state});
@@ -121,87 +124,10 @@ class ProfileHeader extends StatelessWidget {
               ),
             ),
 
-            if (!isMe)
-              Align(
-                alignment: Alignment.topLeft,
-                child: SafeArea(
-                  child: Padding(
-                    padding: const EdgeInsets.only(top: 16.0),
-                    child: GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      onTap: () => Navigator.maybePop(context),
-                      child: Padding(
-                        padding: const EdgeInsets.all(12.0),
-                        child: Container(
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            color: Colors.black.withValues(alpha: 0.3),
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Icons.arrow_back_ios_new,
-                            color: Colors.white,
-                            size: 18,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
+            if (!isMe) ProfileHeaderBackBtnContainer(),
           ],
         ),
-        Transform.translate(
-          offset: const Offset(0, -30),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20.0),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        user.name,
-                        style: const TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        softWrap: false,
-                      ),
-                      if (user.userName != null &&
-                          user.userName!.isNotEmpty) ...[
-                        Text(
-                          "@${user.userName?.toLowerCase().replaceAll(' ', '_')}",
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(color: AppColors.grey, fontSize: 13),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-                SizedBox(
-                  width: 174,
-                  child: _FriendsCountBadge(
-                    isMe: isMe,
-                    friendsCount: state.friendsCount,
-                    mutualFriendsCount: state.mutualFriendsCount,
-                    onTap: () {
-                      Navigator.of(context, rootNavigator: true).pushNamed(
-                        AppRoutes.friendsListViewRoute,
-                        arguments: user.id,
-                      );
-                    },
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
+        ProfileHeaderUserInfoSection(user: user, isMe: isMe, state: state),
         Gap(size.height * 0.003),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -388,135 +314,13 @@ class ProfileHeader extends StatelessWidget {
     String? tooltip,
     double size = 44,
   }) {
-    return _CircularIconButton(
+    return CircularIconButton(
       theme: theme,
       icon: icon,
       assetPath: assetPath,
       onPressed: onPressed,
       tooltip: tooltip,
       size: size,
-    );
-  }
-}
-
-class _CircularIconButton extends StatefulWidget {
-  final ThemeData theme;
-  final IconData? icon;
-  final String? assetPath;
-  final VoidCallback onPressed;
-  final String? tooltip;
-  final double size;
-
-  const _CircularIconButton({
-    required this.theme,
-    this.icon,
-    this.assetPath,
-    required this.onPressed,
-    required this.size,
-    this.tooltip,
-  });
-
-  @override
-  State<_CircularIconButton> createState() => _CircularIconButtonState();
-}
-
-class _CircularIconButtonState extends State<_CircularIconButton> {
-  bool _pressed = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = widget.theme;
-    return AnimatedScale(
-      scale: _pressed ? 0.9 : 1.0,
-      duration: const Duration(milliseconds: 110),
-      curve: Curves.easeOut,
-      child: Material(
-        color: theme.scaffoldBackgroundColor.withValues(alpha: 0.99),
-        shape: CircleBorder(
-          side: BorderSide(
-            color:
-                theme.brightness != Brightness.light
-                    ? theme.primaryColor.withValues(alpha: 0.65)
-                    : AppColors.grey3,
-            width: 1,
-          ),
-        ),
-        elevation: 1.1,
-        child: InkWell(
-          customBorder: const CircleBorder(),
-          onTapDown: (_) => setState(() => _pressed = true),
-          onTapUp: (_) => setState(() => _pressed = false),
-          onTapCancel: () => setState(() => _pressed = false),
-          onTap: widget.onPressed,
-          child: SizedBox(
-            width: widget.size,
-            height: widget.size,
-            child: Center(
-              child:
-                  widget.assetPath != null
-                      ? Image.asset(
-                        widget.assetPath!,
-                        width: widget.size * 0.43,
-                        height: widget.size * 0.43,
-                        color: theme.primaryColor,
-                      )
-                      : Icon(
-                        widget.icon,
-                        color: theme.primaryColor,
-                        size: widget.size * 0.43,
-                      ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _FriendsCountBadge extends StatelessWidget {
-  final bool isMe;
-  final int friendsCount;
-  final int mutualFriendsCount;
-  final VoidCallback onTap;
-
-  const _FriendsCountBadge({
-    required this.isMe,
-    required this.friendsCount,
-    required this.mutualFriendsCount,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final showMutual = !isMe && mutualFriendsCount > 0;
-
-    return InkWell(
-      borderRadius: BorderRadius.circular(8),
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              '$friendsCount ${friendsCount == 1 ? 'Friend' : 'Friends'}',
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-            ),
-            if (showMutual) ...[
-              const SizedBox(height: 2),
-              Text(
-                '$mutualFriendsCount Mutual',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(fontSize: 12.5, color: AppColors.grey),
-              ),
-            ],
-          ],
-        ),
-      ),
     );
   }
 }
