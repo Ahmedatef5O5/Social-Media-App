@@ -186,6 +186,7 @@ class _IncomingGroupCallScreenState extends State<IncomingGroupCallScreen>
                         fallbackLabel: widget.call.groupName,
                         diameter: metrics.avatarDiameter,
                         borderColor: Colors.greenAccent,
+                        isGroup: true,
                       ),
                     ),
 

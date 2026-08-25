@@ -678,7 +678,7 @@ class NotificationService {
 
   Future<void> _handleIncomingCallData(Map<String, dynamic> data) async {
     final callId = data['callId'] as String? ?? '';
-    final callerId = data['callerId'] as String? ?? '';
+    final callerId = (data['callerId'] ?? data['initiatorId'] ?? data['initiator_id'] ?? data['senderId']) as String? ?? '';
     final callerName = data['callerName'] as String? ?? 'Unknown';
     final callerAvatar = data['callerAvatar'] as String? ?? '';
     final callType = data['callType'] as String? ?? 'audio';
@@ -759,9 +759,9 @@ class NotificationService {
   }
 
   Future<void> _handleIncomingGroupCallData(Map<String, dynamic> data) async {
-    final callerId = data['callerId'] as String? ?? '';
+    final callerId = (data['callerId'] ?? data['initiatorId'] ?? data['initiator_id'] ?? data['senderId']) as String? ?? '';
     if (callerId == SupabaseProvider.idOrNull) return;
-    final callId = data['callId'] as String? ?? '';
+    final callId = (data['callId'] ?? data['call_id']) as String? ?? '';
     final groupId = data['groupId'] as String? ?? '';
     final groupName = data['groupName'] as String? ?? 'Group';
     final groupAvatarUrl = data['groupAvatarUrl'] as String?;

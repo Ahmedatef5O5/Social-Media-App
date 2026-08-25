@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import '../../../core/constants/app_images.dart';
 import '../../../core/presence/widgets/presence_avatar_widget.dart';
 import '../../profile/widgets/user_preview_dialog.dart';
 import '../../single_chats/models/chat_user_model.dart';
@@ -46,14 +47,11 @@ class GroupMessageAvatar extends StatelessWidget {
                   : null,
           child:
               !hasAvatar
-                  ? Text(
-                    message.senderName.isNotEmpty
-                        ? message.senderName[0].toUpperCase()
-                        : '?',
-                    style: TextStyle(
-                      color: primary,
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
+                  ? ClipOval(
+                    child: Image.asset(
+                      AppImages.defaultUserImg,
+                      fit: BoxFit.cover,
+                      width: double.infinity,
                     ),
                   )
                   : null,

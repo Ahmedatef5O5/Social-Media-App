@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../constants/app_images.dart';
 import '../cached_cloudinary_image.dart';
 
 class CallAvatarImage extends StatelessWidget {
@@ -8,6 +9,7 @@ class CallAvatarImage extends StatelessWidget {
   final Color borderColor;
   final double borderWidth;
   final List<BoxShadow>? shadows;
+  final bool isGroup;
 
   const CallAvatarImage({
     super.key,
@@ -17,6 +19,7 @@ class CallAvatarImage extends StatelessWidget {
     this.borderColor = Colors.white,
     this.borderWidth = 3,
     this.shadows,
+    this.isGroup = false,
   });
 
   @override
@@ -55,17 +58,11 @@ class CallAvatarImage extends StatelessWidget {
   }
 
   Widget _fallback() {
-    return Container(
-      color: Colors.white.withValues(alpha: 0.18),
-      child: Center(
-        child: Text(
-          fallbackLabel.isNotEmpty ? fallbackLabel[0].toUpperCase() : '?',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: diameter * 0.4,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+    return Center(
+      child: Image.asset(
+        isGroup ? AppImages.defaultGroupImg : AppImages.defaultUserImg,
+        fit: BoxFit.cover,
+        width: double.infinity,
       ),
     );
   }

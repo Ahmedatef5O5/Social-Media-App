@@ -183,6 +183,7 @@ class _OutgoingGroupCallScreenState extends State<OutgoingGroupCallScreen>
                           imageUrl: widget.groupAvatarUrl,
                           fallbackLabel: widget.groupName,
                           diameter: metrics.avatarDiameter,
+                          isGroup: true,
                         ),
                       ),
 
