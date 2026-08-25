@@ -22,31 +22,46 @@ class StoryTextEditor extends StatelessWidget {
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 14),
-        child: SingleChildScrollView(
-          child: MentionAwareTextField(
-            controller: controller,
-            focusNode: focusNode,
-            enabled: true,
-            hintText: 'Write your thought with others',
-            textAlign: TextAlign.center,
-            minLines: 1,
-            maxLines: null,
-            maxLength: 180,
-            style: const TextStyle(color: AppColors.white, fontSize: 32),
-            hintStyle: const TextStyle(color: AppColors.white70, fontSize: 32),
-            filled: false,
-            border: InputBorder.none,
-            focusedBorder: InputBorder.none,
-            contentPadding: EdgeInsets.zero,
-            counterText: hasText ? null : '',
-            trailingIcon: AiActionIcon(
-              controller: controller,
-              surface: AiSurfaceType.story,
-              generationAction: AiActionType.autocompleteCaption,
-              actionContext: AiActionContext.storyCreation,
-              hasMediaAttached: false,
-              targetMediaType: AiTargetMediaType.text,
-            ),
+        child: SizedBox(
+          width: double.infinity,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              SingleChildScrollView(
+                child: MentionAwareTextField(
+                  controller: controller,
+                  focusNode: focusNode,
+                  enabled: true,
+                  hintText: 'Write your thought with others',
+                  textAlign: TextAlign.center,
+                  minLines: 1,
+                  maxLines: null,
+                  maxLength: 280,
+                  style: const TextStyle(color: AppColors.white, fontSize: 32),
+                  hintStyle: const TextStyle(
+                    color: AppColors.white70,
+                    fontSize: 32,
+                  ),
+                  filled: false,
+                  border: InputBorder.none,
+                  focusedBorder: InputBorder.none,
+                  contentPadding: EdgeInsets.zero,
+                  counterText: hasText ? null : '',
+                ),
+              ),
+              Positioned(
+                right: 0,
+                bottom: 0,
+                child: AiActionIcon(
+                  controller: controller,
+                  surface: AiSurfaceType.story,
+                  generationAction: AiActionType.autocompleteCaption,
+                  actionContext: AiActionContext.storyCreation,
+                  hasMediaAttached: false,
+                  targetMediaType: AiTargetMediaType.text,
+                ),
+              ),
+            ],
           ),
         ),
       ),

@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import '../../../core/cache/utils/cloudinary_url_extensions.dart';
+import '../../../core/helpers/chat_helper.dart';
 import '../../../core/mentions/widgets/mention_rich_text.dart';
 import '../../../core/themes/app_colors.dart';
 import '../../../core/widgets/cached_cloudinary_image.dart';
@@ -137,7 +138,6 @@ class StoryGridTile extends StatelessWidget {
             child: MentionRichText(
               text: story.contentText ?? '',
               mentions: story.mentions,
-              textAlign: TextAlign.center,
               maxLines: 6,
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(
@@ -145,6 +145,10 @@ class StoryGridTile extends StatelessWidget {
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
                 height: 1.25,
+              ),
+              textAlign: TextAlign.center,
+              textDirection: ChatHelper.getTextDirection(
+                story.contentText ?? '',
               ),
               onMentionTap: (userId, name) {},
               onLinkTap: null,

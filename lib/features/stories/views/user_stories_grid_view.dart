@@ -47,10 +47,11 @@ class UserStoriesGridView extends StatelessWidget {
                 icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
                 onPressed: () => Navigator.pop(context),
               ),
+              titleSpacing: 0,
               title: Text(
                 _isMe ? 'My Stories' : "$authorName's Stories",
                 style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
+                  fontWeight: FontWeight.w500,
                   fontSize: 18,
                 ),
               ),
@@ -83,8 +84,8 @@ class UserStoriesGridView extends StatelessWidget {
                           ClipOval(
                             child: Image.asset(
                               AppImages.storyIcon,
-                              width: 26,
-                              height: 26,
+                              width: 23,
+                              height: 23,
                               fit: BoxFit.contain,
                               color: Theme.of(context).primaryColor,
                             ),

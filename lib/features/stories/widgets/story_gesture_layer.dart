@@ -8,6 +8,7 @@ class StoryGestureLayer extends StatefulWidget {
   final VoidCallback onLongPressEnd;
   final VoidCallback onNextGroup;
   final VoidCallback onPrevGroup;
+  final Widget child;
 
   const StoryGestureLayer({
     super.key,
@@ -18,6 +19,7 @@ class StoryGestureLayer extends StatefulWidget {
     required this.onLongPressEnd,
     required this.onNextGroup,
     required this.onPrevGroup,
+    required this.child,
   });
 
   @override
@@ -25,10 +27,6 @@ class StoryGestureLayer extends StatefulWidget {
 }
 
 class _StoryGestureLayerState extends State<StoryGestureLayer> {
-  double x = 0, y = 0, t = 0;
-  double _screenWidth = 0;
-  bool _keyboardWasOpen = false;
-
   void _hideKeyboard() {
     if (FocusManager.instance.primaryFocus?.hasFocus ?? false) {
       FocusManager.instance.primaryFocus?.unfocus();
@@ -37,72 +35,44 @@ class _StoryGestureLayerState extends State<StoryGestureLayer> {
 
   @override
   Widget build(BuildContext context) {
-    _screenWidth = MediaQuery.sizeOf(context).width;
-
-    return Listener(
-      behavior: HitTestBehavior.translucent,
-      onPointerDown: (e) {
-        x = e.position.dx;
-        y = e.position.dy;
-        t = e.timeStamp.inMilliseconds.toDouble();
-
-        _keyboardWasOpen = MediaQuery.of(context).viewInsets.bottom > 0;
-        if (_keyboardWasOpen) {
-          _hideKeyboard();
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTapUp: (details) {
+        _hideKeyboard();
+        final halfWidth = MediaQuery.sizeOf(context).width / 2;
+        if (details.globalPosition.dx < halfWidth) {
+          widget.onPrev();
+        } else {
+          widget.onNext();
         }
       },
-      onPointerUp: (e) {
-        if (!mounted) return;
-
-        final dx = e.position.dx - x;
-        final dy = e.position.dy - y;
-        final dt = e.timeStamp.inMilliseconds - t;
-
-        if (_keyboardWasOpen && dx.abs() < 10 && dy.abs() < 10) {
-          _keyboardWasOpen = false;
-          return;
-        }
-
-        _keyboardWasOpen = false;
-
-        if (dt > 300 && dx.abs() < 10 && dy.abs() < 10) {
-          widget.onLongPressEnd();
-          return;
-        }
-
-        if (dy.abs() > dx.abs() && dy.abs() > 50) {
+      onLongPressStart: (_) {
+        _hideKeyboard();
+        widget.onLongPressStart();
+      },
+      onLongPressEnd: (_) {
+        widget.onLongPressEnd();
+      },
+      onLongPressCancel: () {
+        widget.onLongPressEnd();
+      },
+      onVerticalDragEnd: (details) {
+        if ((details.primaryVelocity ?? 0) > 300) {
           _hideKeyboard();
           widget.onClose();
-          return;
         }
-
-        if (dx.abs() > 50) {
+      },
+      onHorizontalDragEnd: (details) {
+        final velocity = details.primaryVelocity ?? 0;
+        if (velocity < -300) {
           _hideKeyboard();
-          dx < 0 ? widget.onNextGroup() : widget.onPrevGroup();
-          return;
-        }
-
-        final half = _screenWidth / 2;
-        e.position.dx < half ? widget.onPrev() : widget.onNext();
-      },
-      onPointerCancel: (e) {
-        _keyboardWasOpen = false;
-      },
-      onPointerMove: (e) {
-        if (!mounted) return;
-
-        if (MediaQuery.of(context).viewInsets.bottom > 0) {
+          widget.onNextGroup();
+        } else if (velocity > 300) {
           _hideKeyboard();
-        }
-
-        final dx = e.position.dx - x;
-        final dy = e.position.dy - y;
-        final dt = e.timeStamp.inMilliseconds - t;
-
-        if (dt > 300 && dx.abs() < 10 && dy.abs() < 10) {
-          widget.onLongPressStart();
+          widget.onPrevGroup();
         }
       },
+      child: widget.child,
     );
   }
 }

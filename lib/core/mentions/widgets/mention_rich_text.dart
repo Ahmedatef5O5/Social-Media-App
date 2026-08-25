@@ -8,6 +8,7 @@ import '../models/mention_ref.dart';
 class MentionRichText extends StatefulWidget {
   final String text;
   final TextAlign? textAlign;
+  final TextDirection? textDirection;
   final List<MentionRef> mentions;
   final void Function(String userId, String name) onMentionTap;
   final Future<void> Function(String url)? onLinkTap;
@@ -26,6 +27,7 @@ class MentionRichText extends StatefulWidget {
     super.key,
     required this.text,
     this.textAlign,
+    this.textDirection,
     required this.mentions,
     required this.onMentionTap,
     this.onLinkTap,
@@ -239,6 +241,7 @@ class _MentionRichTextState extends State<MentionRichText> {
         maxLines: widget.maxLines,
         overflow: widget.overflow ?? TextOverflow.ellipsis,
         textDirection: direction,
+        textAlign: widget.textAlign ?? TextAlign.start,
       );
     }
     final effectiveMaxWidth =
@@ -253,7 +256,12 @@ class _MentionRichTextState extends State<MentionRichText> {
     final isOverflowing = painter.didExceedMaxLines;
 
     if (!isOverflowing) {
-      return Text.rich(span, style: defaultStyle, textDirection: direction);
+      return Text.rich(
+        span,
+        style: defaultStyle,
+        textDirection: direction,
+        textAlign: widget.textAlign ?? TextAlign.start,
+      );
     }
 
     if (_expanded) {
@@ -261,7 +269,12 @@ class _MentionRichTextState extends State<MentionRichText> {
         crossAxisAlignment: toggleAlignment,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text.rich(span, style: defaultStyle, textDirection: direction),
+          Text.rich(
+            span,
+            style: defaultStyle,
+            textDirection: direction,
+            textAlign: widget.textAlign ?? TextAlign.start,
+          ),
           GestureDetector(
             onTap: () {
               setState(() => _expanded = false);
@@ -275,6 +288,7 @@ class _MentionRichTextState extends State<MentionRichText> {
                   color: resolvedMentionColor,
                   fontWeight: FontWeight.w700,
                 ),
+                textDirection: widget.textDirection,
               ),
             ),
           ),
@@ -307,6 +321,7 @@ class _MentionRichTextState extends State<MentionRichText> {
                 color: resolvedMentionColor,
                 fontWeight: FontWeight.w700,
               ),
+              textDirection: widget.textDirection,
             ),
           ),
         ),

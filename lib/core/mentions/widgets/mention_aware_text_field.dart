@@ -51,7 +51,7 @@ class MentionAwareTextField extends StatefulWidget {
     this.focusedBorder,
     this.style,
     this.hintStyle,
-    this.textAlign = TextAlign.start,
+    this.textAlign = TextAlign.center,
     this.minLines = 1,
     this.maxLines = 4,
     this.maxLength,

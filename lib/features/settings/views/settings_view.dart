@@ -77,7 +77,7 @@ class _SettingsViewState extends State<SettingsView>
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       body: CustomScrollView(
-        physics: const BouncingScrollPhysics(),
+        physics: const ClampingScrollPhysics(),
         slivers: [
           const SettingsSliverAppBar(),
           SliverToBoxAdapter(

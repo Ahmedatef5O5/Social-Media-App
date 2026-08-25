@@ -150,196 +150,197 @@ class _SingleUserStoryViewState extends State<SingleUserStoryView>
       ],
       child: Builder(
         builder: (context) {
-          return Stack(
-            children: [
-              Positioned.fill(
-                child: StoryMediaView(
-                  story: widget.story,
-                  onMediaReady: (duration) {
-                    widget.onMediaReady(duration);
-                    if (!isMyStory) {
-                      context.read<StoryReactionCubit>().markViewed();
-                    }
-                  },
-                  onVideoFinished: widget.onNext,
-                  onVideoControllerReady: (c) => _videoController = c,
-                ),
-              ),
-              Positioned.fill(
-                child: StoryGestureLayer(
-                  onNext: widget.onNext,
-                  onPrev: widget.onPrev,
-                  onClose: widget.onClose,
-                  onLongPressStart: _pauseStory,
-                  onLongPressEnd: _resumeStory,
-                  onNextGroup: widget.onNextGroup,
-                  onPrevGroup: widget.onPrevGroup,
-                ),
-              ),
+          return StoryGestureLayer(
+            onNext: widget.onNext,
+            onPrev: widget.onPrev,
+            onClose: widget.onClose,
+            onLongPressStart: _pauseStory,
+            onLongPressEnd: _resumeStory,
+            onNextGroup: widget.onNextGroup,
+            onPrevGroup: widget.onPrevGroup,
 
-              if (widget.story.storyType == StoryType.text)
+            child: Stack(
+              children: [
                 Positioned.fill(
-                  child: Container(
-                    width: double.infinity,
-                    height: double.infinity,
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    alignment: Alignment.center,
-                    child: Builder(
-                      builder: (context) {
-                        final text = widget.story.contentText?.trim() ?? '';
+                  child: StoryMediaView(
+                    story: widget.story,
+                    onMediaReady: (duration) {
+                      widget.onMediaReady(duration);
+                      if (!isMyStory && mounted) {
+                        context.read<StoryReactionCubit>().markViewed();
+                      }
+                    },
+                    onVideoFinished: widget.onNext,
+                    onVideoControllerReady: (c) => _videoController = c,
+                  ),
+                ),
 
-                        final bool isOnlyLink =
-                            !text.contains(' ') &&
-                            RegExp(
-                              r'^(https?:\/\/)?([\w\d\-]+\.)+\w{2,}(\/.*)?$',
-                            ).hasMatch(text);
+                if (widget.story.storyType == StoryType.text)
+                  Positioned.fill(
+                    child: Container(
+                      width: double.infinity,
+                      height: double.infinity,
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      alignment: Alignment.center,
+                      child: Builder(
+                        builder: (context) {
+                          final text = widget.story.contentText?.trim() ?? '';
 
-                        final mentionTextWidget = MentionRichText(
-                          text: text,
-                          textAlign: TextAlign.center,
-                          mentions: widget.story.mentions,
-                          style: const TextStyle(
-                            fontSize: 28,
-                            color: Colors.white,
-                            fontWeight: FontWeight.w500,
-                          ),
-                          collapsedMaxLines: 9,
-                          onExpandChanged: (expanded) {
-                            if (expanded) {
-                              _pauseStory();
-                            } else {
-                              _resumeStory();
-                            }
-                          },
-                          onMentionTap:
-                              (userId, name) => _openProfile(context, userId),
-                          onLinkTap: _showLinkPreviewSheet,
-                        );
-                        if (isOnlyLink) {
-                          return MessageLinkPreview(
+                          final bool isOnlyLink =
+                              !text.contains(' ') &&
+                              RegExp(
+                                r'^(https?:\/\/)?([\w\d\-]+\.)+\w{2,}(\/.*)?$',
+                              ).hasMatch(text);
+
+                          final mentionTextWidget = MentionRichText(
                             text: text,
-                            isMe: false,
-                            textWidget: mentionTextWidget,
+                            textAlign: TextAlign.center,
+                            mentions: widget.story.mentions,
+                            style: const TextStyle(
+                              fontSize: 28,
+                              color: Colors.white,
+                              fontWeight: FontWeight.w500,
+                            ),
+                            collapsedMaxLines: 9,
+                            onExpandChanged: (expanded) {
+                              if (expanded) {
+                                _pauseStory();
+                              } else {
+                                _resumeStory();
+                              }
+                            },
+                            onMentionTap:
+                                (userId, name) => _openProfile(context, userId),
+                            onLinkTap: _showLinkPreviewSheet,
                           );
-                        }
+                          if (isOnlyLink) {
+                            return MessageLinkPreview(
+                              text: text,
+                              isMe: false,
+                              textWidget: mentionTextWidget,
+                            );
+                          }
 
-                        return mentionTextWidget;
+                          return mentionTextWidget;
+                        },
+                      ),
+                    ),
+                  ),
+
+                Positioned(
+                  top: 55,
+                  left: 20,
+                  right: 20,
+                  child: StoryHeader(
+                    story: widget.story,
+                    storiesCubit: widget.storiesCubit,
+                    onClose: widget.onClose,
+                    onPause: _pauseStory,
+                    onResume: _resumeStory,
+                    videoController: _videoController,
+                  ),
+                ),
+
+                if (isMyStory)
+                  Positioned.fill(
+                    child: BlocBuilder<StoryViewsCubit, StoryViewsState>(
+                      builder: (context, state) {
+                        if (state is! StoryViewsLoaded) {
+                          return const SizedBox.shrink();
+                        }
+                        final reactedViewers =
+                            state.viewers.where((v) => v.hasReacted).toList()
+                              ..sort(
+                                (a, b) => a.viewedAt.compareTo(b.viewedAt),
+                              );
+
+                        final reactionEmojis =
+                            reactedViewers.map((v) => v.reaction!).toList();
+
+                        return ReactionFountainWidget(
+                          reactionEmojis: reactionEmojis,
+                        );
                       },
                     ),
                   ),
-                ),
 
-              Positioned(
-                top: 55,
-                left: 20,
-                right: 20,
-                child: StoryHeader(
-                  story: widget.story,
-                  storiesCubit: widget.storiesCubit,
-                  onClose: widget.onClose,
-                  onPause: _pauseStory,
-                  onResume: _resumeStory,
-                  videoController: _videoController,
-                ),
-              ),
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      if (widget.story.caption?.isNotEmpty == true)
+                        Padding(
+                          padding: EdgeInsets.fromLTRB(
+                            16,
+                            0,
+                            16,
+                            isMyStory ? 32 : 16,
+                          ),
+                          child: Align(
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 8,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.black45,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: MentionRichText(
+                                text: widget.story.caption!,
+                                mentions: widget.story.mentions,
+                                textAlign: TextAlign.center,
 
-              if (isMyStory)
-                Positioned.fill(
-                  child: BlocBuilder<StoryViewsCubit, StoryViewsState>(
-                    builder: (context, state) {
-                      if (state is! StoryViewsLoaded) {
-                        return const SizedBox.shrink();
-                      }
-                      final reactedViewers =
-                          state.viewers.where((v) => v.hasReacted).toList()
-                            ..sort((a, b) => a.viewedAt.compareTo(b.viewedAt));
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                ),
+                                collapsedMaxLines: 9,
+                                onExpandChanged: (expanded) {
+                                  if (expanded) {
+                                    _pauseStory();
+                                  } else {
+                                    _resumeStory();
+                                  }
+                                },
+                                onMentionTap:
+                                    (userId, name) =>
+                                        _openProfile(context, userId),
+                                onLinkTap: _showLinkPreviewSheet,
+                              ),
+                            ),
+                          ),
+                        ),
+                      if (isMyStory)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 24),
+                          child: Align(
+                            alignment: Alignment.center,
+                            child: StoryViewsIndicator(
+                              onOpen: _pauseStory,
+                              onClose: _resumeStory,
+                            ),
+                          ),
+                        ),
 
-                      final reactionEmojis =
-                          reactedViewers.map((v) => v.reaction!).toList();
-
-                      return ReactionFountainWidget(
-                        reactionEmojis: reactionEmojis,
-                      );
-                    },
+                      if (!isMyStory)
+                        StoryReplyInputBar(
+                          story: widget.story,
+                          onComposingStart: _pauseStory,
+                          onComposingEnd: _resumeStory,
+                          onSent: () {
+                            AppToast.success('Reply sent ✓');
+                          },
+                        ),
+                    ],
                   ),
                 ),
-
-              Positioned(
-                left: 0,
-                right: 0,
-                bottom: 0,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    if (widget.story.caption?.isNotEmpty == true)
-                      Padding(
-                        padding: EdgeInsets.fromLTRB(
-                          16,
-                          0,
-                          16,
-                          isMyStory ? 32 : 16,
-                        ),
-                        child: Align(
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 8,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.black45,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: MentionRichText(
-                              text: widget.story.caption!,
-                              mentions: widget.story.mentions,
-                              textAlign: TextAlign.center,
-
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 16,
-                              ),
-                              collapsedMaxLines: 9,
-                              onExpandChanged: (expanded) {
-                                if (expanded) {
-                                  _pauseStory();
-                                } else {
-                                  _resumeStory();
-                                }
-                              },
-                              onMentionTap:
-                                  (userId, name) =>
-                                      _openProfile(context, userId),
-                              onLinkTap: _showLinkPreviewSheet,
-                            ),
-                          ),
-                        ),
-                      ),
-                    if (isMyStory)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 24),
-                        child: Align(
-                          alignment: Alignment.center,
-                          child: StoryViewsIndicator(
-                            onOpen: _pauseStory,
-                            onClose: _resumeStory,
-                          ),
-                        ),
-                      ),
-
-                    if (!isMyStory)
-                      StoryReplyInputBar(
-                        story: widget.story,
-                        onComposingStart: _pauseStory,
-                        onComposingEnd: _resumeStory,
-                        onSent: () {
-                          AppToast.success('Reply sent ✓');
-                        },
-                      ),
-                  ],
-                ),
-              ),
-            ],
+              ],
+            ),
           );
         },
       ),

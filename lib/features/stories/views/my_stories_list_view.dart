@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:social_media_app/features/settings/repository/settings_repository.dart';
 import 'package:social_media_app/features/social_graph/models/content_privacy.dart';
 import 'package:social_media_app/features/social_graph/widgets/privacy_selector_sheet.dart';
+import '../../../core/constants/app_images.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/toast/app_toast.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
@@ -36,6 +37,7 @@ class _MyStoriesListViewState extends State<MyStoriesListView> {
     final result = await showPrivacySelectorSheet(
       context,
       currentPrivacy: currentPrivacy,
+      isStory: true,
     );
     if (result == null) return;
     await SettingsRepository.instance.setDefaultStoryPrivacy(result);
@@ -81,158 +83,6 @@ class _MyStoriesListViewState extends State<MyStoriesListView> {
         },
         child: Scaffold(
           backgroundColor: theme.scaffoldBackgroundColor,
-          appBar: AppBar(
-            elevation: 0,
-            scrolledUnderElevation: 0,
-            backgroundColor: theme.scaffoldBackgroundColor,
-            leading: BlocBuilder<MyStoriesCubit, MyStoriesState>(
-              buildWhen:
-                  (prev, curr) =>
-                      prev is MyStoriesLoaded &&
-                      curr is MyStoriesLoaded &&
-                      prev.isSelectionMode != curr.isSelectionMode,
-              builder: (context, state) {
-                final loaded = state as MyStoriesLoaded;
-                return AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 220),
-                  transitionBuilder:
-                      (child, anim) => ScaleTransition(
-                        scale: anim,
-                        child: FadeTransition(opacity: anim, child: child),
-                      ),
-                  child:
-                      loaded.isSelectionMode
-                          ? InkWell(
-                            key: const ValueKey('selection-close'),
-                            onTap:
-                                () =>
-                                    context
-                                        .read<MyStoriesCubit>()
-                                        .clearSelection(),
-                            borderRadius: BorderRadius.circular(50),
-                            child: Icon(
-                              Icons.close_rounded,
-                              color: theme.primaryColor,
-                              size: 24,
-                            ),
-                          )
-                          : InkWell(
-                            key: const ValueKey('back-arrow'),
-                            onTap: () => Navigator.of(context).pop(),
-                            borderRadius: BorderRadius.circular(50),
-                            child: Icon(
-                              Icons.arrow_back_ios_new_rounded,
-                              color: theme.primaryColor,
-                              size: 22,
-                            ),
-                          ),
-                );
-              },
-            ),
-            title: BlocBuilder<MyStoriesCubit, MyStoriesState>(
-              buildWhen:
-                  (prev, curr) =>
-                      prev is MyStoriesLoaded &&
-                      curr is MyStoriesLoaded &&
-                      (prev.isSelectionMode != curr.isSelectionMode ||
-                          prev.selectedStoryIds.length !=
-                              curr.selectedStoryIds.length),
-              builder: (context, state) {
-                final loaded = state as MyStoriesLoaded;
-                return AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 220),
-                  child: Text(
-                    loaded.isSelectionMode
-                        ? '${loaded.selectedStoryIds.length} selected'
-                        : 'My Stories',
-                    key: ValueKey(loaded.isSelectionMode),
-                    style: theme.textTheme.titleMedium!.copyWith(
-                      color: theme.primaryColor,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 0.5,
-                      fontSize: 20,
-                    ),
-                  ),
-                );
-              },
-            ),
-            actions: [
-              BlocBuilder<MyStoriesCubit, MyStoriesState>(
-                buildWhen:
-                    (prev, curr) =>
-                        prev is MyStoriesLoaded &&
-                        curr is MyStoriesLoaded &&
-                        prev.isSelectionMode != curr.isSelectionMode,
-                builder: (context, state) {
-                  final loaded = state as MyStoriesLoaded;
-                  return AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 220),
-                    transitionBuilder:
-                        (child, anim) => ScaleTransition(
-                          scale: anim,
-                          child: FadeTransition(opacity: anim, child: child),
-                        ),
-                    child:
-                        loaded.isSelectionMode
-                            ? IconButton(
-                              key: const ValueKey('bulk-delete-action'),
-                              icon: Container(
-                                padding: const EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  color: Colors.red.withValues(alpha: 0.1),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: const Icon(
-                                  Icons.delete_outline_rounded,
-                                  color: Colors.redAccent,
-                                ),
-                              ),
-                              onPressed: () async {
-                                final cubit = context.read<MyStoriesCubit>();
-                                final currentState =
-                                    cubit.state as MyStoriesLoaded;
-                                final confirm = await showDeleteStoryDialog(
-                                  context,
-                                  count: currentState.selectedStoryIds.length,
-                                );
-                                if (confirm == true) {
-                                  cubit.deleteSelectedStories();
-                                }
-                              },
-                            )
-                            : PopupMenuButton<void>(
-                              key: const ValueKey('overflow-menu'),
-                              icon: Icon(
-                                Icons.more_vert_rounded,
-                                color: theme.primaryColor,
-                              ),
-                              onSelected:
-                                  (_) =>
-                                      _openDefaultStoryPrivacySettings(context),
-                              itemBuilder:
-                                  (context) => [
-                                    PopupMenuItem(
-                                      // ignore: void_checks
-                                      value: 'story_privacy',
-                                      child: Row(
-                                        children: [
-                                          Icon(
-                                            Icons.privacy_tip_outlined,
-                                            color: theme.primaryColor,
-                                            size: 20,
-                                          ),
-                                          const SizedBox(width: 10),
-                                          const Text('Story Privacy'),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                            ),
-                  );
-                },
-              ),
-            ],
-          ),
           body: LayoutBuilder(
             builder: (context, constraints) {
               if (!_isFabPositionInitialized) {
@@ -247,76 +97,237 @@ class _MyStoriesListViewState extends State<MyStoriesListView> {
                   BlocConsumer<MyStoriesCubit, MyStoriesState>(
                     listener: (context, state) {
                       if (ModalRoute.of(context)?.isCurrent != true) return;
-
                       final loaded = state as MyStoriesLoaded;
                       if (loaded.stories.isEmpty) Navigator.pop(context);
                     },
                     builder: (context, state) {
                       final loaded = state as MyStoriesLoaded;
 
-                      if (loaded.stories.isEmpty) {
-                        return const Center(child: CustomLoadingIndicator());
-                      }
+                      return CustomScrollView(
+                        slivers: [
+                          SliverAppBar(
+                            floating: true,
+                            snap: true,
+                            elevation: 0,
+                            scrolledUnderElevation: 0,
+                            backgroundColor: theme.scaffoldBackgroundColor,
+                            leading: AnimatedSwitcher(
+                              duration: const Duration(milliseconds: 220),
+                              transitionBuilder:
+                                  (child, anim) => ScaleTransition(
+                                    scale: anim,
+                                    child: FadeTransition(
+                                      opacity: anim,
+                                      child: child,
+                                    ),
+                                  ),
+                              child:
+                                  loaded.isSelectionMode
+                                      ? InkWell(
+                                        key: const ValueKey('selection-close'),
+                                        onTap:
+                                            () =>
+                                                context
+                                                    .read<MyStoriesCubit>()
+                                                    .clearSelection(),
+                                        borderRadius: BorderRadius.circular(50),
+                                        child: Icon(
+                                          Icons.close_rounded,
+                                          color: theme.primaryColor,
+                                          size: 24,
+                                        ),
+                                      )
+                                      : InkWell(
+                                        key: const ValueKey('back-arrow'),
+                                        onTap:
+                                            () => Navigator.of(context).pop(),
+                                        borderRadius: BorderRadius.circular(50),
+                                        child: Icon(
+                                          Icons.arrow_back_ios_new_rounded,
+                                          color: theme.primaryColor,
+                                          size: 20,
+                                        ),
+                                      ),
+                            ),
+                            titleSpacing: 0,
+                            title: AnimatedSwitcher(
+                              duration: const Duration(milliseconds: 220),
+                              child: Text(
+                                loaded.isSelectionMode
+                                    ? '${loaded.selectedStoryIds.length} selected'
+                                    : 'My Stories',
+                                key: ValueKey(loaded.isSelectionMode),
+                                style: theme.textTheme.titleMedium!.copyWith(
+                                  color: theme.primaryColor,
+                                  fontWeight: FontWeight.w500,
+                                  letterSpacing: 0.5,
+                                  fontSize: 18,
+                                ),
+                              ),
+                            ),
+                            actions: [
+                              if (!loaded.isSelectionMode &&
+                                  loaded.stories.isNotEmpty)
+                                Center(
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 3.0,
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Text(
+                                          '${loaded.stories.length}',
+                                          style: TextStyle(
+                                            color: theme.primaryColor,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 11,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 6),
 
-                      return ListView.builder(
-                        padding: const EdgeInsets.only(top: 12, bottom: 100),
-                        itemCount: loaded.stories.length,
-                        itemBuilder: (context, index) {
-                          final story = loaded.stories[index];
-                          final isDeleted = loaded.deletingStoryIds.contains(
-                            story.id,
-                          );
-                          final isSelected = loaded.selectedStoryIds.contains(
-                            story.id,
-                          );
+                                        Image.asset(
+                                          AppImages.storyIcon,
+                                          width: 20,
+                                          height: 20,
+                                          fit: BoxFit.contain,
+                                          color: Theme.of(context).primaryColor,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
 
-                          return MyStoryTile(
-                            key: ValueKey(story.id),
-                            story: story,
-                            stat: loaded.statsByStoryId[story.id],
-                            isDeleting: isDeleted,
-                            isSelectionMode: loaded.isSelectionMode,
-                            isSelected: isSelected,
-                            storiesCubit: widget.storiesCubit,
-                            onTap: () {
-                              if (loaded.isSelectionMode) {
-                                context.read<MyStoriesCubit>().toggleSelection(
-                                  story.id,
-                                );
-                                return;
-                              }
-                              Navigator.of(
-                                context,
-                                rootNavigator: true,
-                              ).pushNamed(
-                                AppRoutes.storyDisplayViewRoute,
-                                arguments: {
-                                  'storiesCubit': widget.storiesCubit,
-                                  'allUserGroups': [loaded.stories],
-                                  'initialGroupIndex': 0,
-                                  'initialStoryIndex': index,
+                              AnimatedSwitcher(
+                                duration: const Duration(milliseconds: 220),
+                                transitionBuilder:
+                                    (child, anim) => ScaleTransition(
+                                      scale: anim,
+                                      child: FadeTransition(
+                                        opacity: anim,
+                                        child: child,
+                                      ),
+                                    ),
+                                child:
+                                    loaded.isSelectionMode
+                                        ? IconButton(
+                                          key: const ValueKey(
+                                            'bulk-delete-action',
+                                          ),
+                                          icon: Container(
+                                            padding: const EdgeInsets.all(8),
+                                            decoration: BoxDecoration(
+                                              color: Colors.red.withValues(
+                                                alpha: 0.1,
+                                              ),
+                                              shape: BoxShape.circle,
+                                            ),
+                                            child: const Icon(
+                                              Icons.delete_outline_rounded,
+                                              color: Colors.redAccent,
+                                            ),
+                                          ),
+                                          onPressed: () async {
+                                            final cubit =
+                                                context.read<MyStoriesCubit>();
+                                            final currentState =
+                                                cubit.state as MyStoriesLoaded;
+                                            final confirm =
+                                                await showDeleteStoryDialog(
+                                                  context,
+                                                  count:
+                                                      currentState
+                                                          .selectedStoryIds
+                                                          .length,
+                                                );
+                                            if (confirm == true) {
+                                              cubit.deleteSelectedStories();
+                                            }
+                                          },
+                                        )
+                                        : IconButton(
+                                          onPressed:
+                                              () =>
+                                                  _openDefaultStoryPrivacySettings(
+                                                    context,
+                                                  ),
+                                          color: theme.primaryColor,
+                                          icon: Icon(
+                                            Icons.privacy_tip_outlined,
+                                            size: 20,
+                                          ),
+                                        ),
+                              ),
+                            ],
+                          ),
+
+                          if (loaded.stories.isEmpty)
+                            const SliverFillRemaining(
+                              child: Center(child: CustomLoadingIndicator()),
+                            )
+                          else
+                            SliverPadding(
+                              padding: const EdgeInsets.only(
+                                top: 12,
+                                bottom: 100,
+                              ),
+                              sliver: SliverList.builder(
+                                itemCount: loaded.stories.length,
+                                itemBuilder: (context, index) {
+                                  final story = loaded.stories[index];
+                                  final isDeleted = loaded.deletingStoryIds
+                                      .contains(story.id);
+                                  final isSelected = loaded.selectedStoryIds
+                                      .contains(story.id);
+
+                                  return MyStoryTile(
+                                    key: ValueKey(story.id),
+                                    story: story,
+                                    stat: loaded.statsByStoryId[story.id],
+                                    isDeleting: isDeleted,
+                                    isSelectionMode: loaded.isSelectionMode,
+                                    isSelected: isSelected,
+                                    storiesCubit: widget.storiesCubit,
+                                    onTap: () {
+                                      if (loaded.isSelectionMode) {
+                                        context
+                                            .read<MyStoriesCubit>()
+                                            .toggleSelection(story.id);
+                                        return;
+                                      }
+                                      Navigator.of(
+                                        context,
+                                        rootNavigator: true,
+                                      ).pushNamed(
+                                        AppRoutes.storyDisplayViewRoute,
+                                        arguments: {
+                                          'storiesCubit': widget.storiesCubit,
+                                          'allUserGroups': [loaded.stories],
+                                          'initialGroupIndex': 0,
+                                          'initialStoryIndex': index,
+                                        },
+                                      );
+                                    },
+                                    onLongPress: () {
+                                      if (!loaded.isSelectionMode) {
+                                        context
+                                            .read<MyStoriesCubit>()
+                                            .enterSelectionMode(story.id);
+                                      }
+                                    },
+                                    onDelete: () async {
+                                      final confirm =
+                                          await showDeleteStoryDialog(context);
+                                      if (confirm == true && context.mounted) {
+                                        context
+                                            .read<MyStoriesCubit>()
+                                            .deleteStory(story.id);
+                                      }
+                                    },
+                                  );
                                 },
-                              );
-                            },
-                            onLongPress: () {
-                              if (!loaded.isSelectionMode) {
-                                context
-                                    .read<MyStoriesCubit>()
-                                    .enterSelectionMode(story.id);
-                              }
-                            },
-                            onDelete: () async {
-                              final confirm = await showDeleteStoryDialog(
-                                context,
-                              );
-                              if (confirm == true && context.mounted) {
-                                context.read<MyStoriesCubit>().deleteStory(
-                                  story.id,
-                                );
-                              }
-                            },
-                          );
-                        },
+                              ),
+                            ),
+                        ],
                       );
                     },
                   ),

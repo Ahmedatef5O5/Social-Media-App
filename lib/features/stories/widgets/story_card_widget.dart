@@ -3,6 +3,7 @@ import 'package:social_media_app/core/presence/widgets/presence_avatar_widget.da
 import 'package:social_media_app/core/themes/app_colors.dart';
 import 'package:social_media_app/core/widgets/cached_cloudinary_image.dart';
 import '../../../core/cache/utils/cloudinary_url_extensions.dart';
+import '../../../core/helpers/chat_helper.dart';
 import '../../../core/widgets/app_avatar.dart';
 import '../model/story_model.dart';
 
@@ -13,7 +14,6 @@ class StoryCardWidget extends StatelessWidget {
   final StoryModel story;
   final String label;
   final VoidCallback onTap;
-
   final VoidCallback? onAddTap;
 
   const StoryCardWidget({
@@ -55,8 +55,6 @@ class StoryCardWidget extends StatelessWidget {
                 ),
               ),
 
-          
-
               Positioned(
                 top: 8,
                 left: 8,
@@ -97,26 +95,28 @@ class StoryCardWidget extends StatelessWidget {
                     ),
                     if (onAddTap != null)
                       Positioned(
-                        right: -3,
-                        bottom: -3,
+                        right: -0.9,
+                        bottom: -0.9,
                         child: GestureDetector(
                           behavior: HitTestBehavior.opaque,
                           onTap: onAddTap,
                           child: Container(
-                            width: 14,
-                            height: 14,
+                            width: 11,
+                            height: 11,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               color: theme.primaryColor,
                               border: Border.all(
                                 color: AppColors.white,
-                                width: 1.1,
+                                width: .8,
                               ),
                             ),
-                            child: const Icon(
-                              Icons.add,
-                              color: AppColors.white,
-                              size: 9.5,
+                            child: Center(
+                              child: const Icon(
+                                Icons.add,
+                                color: AppColors.white,
+                                size: 9,
+                              ),
                             ),
                           ),
                         ),
@@ -188,6 +188,7 @@ class StoryCardWidget extends StatelessWidget {
         maxLines: 4,
         overflow: TextOverflow.ellipsis,
         textAlign: TextAlign.center,
+        textDirection: ChatHelper.getTextDirection(story.contentText ?? 'EN'),
         style: const TextStyle(
           color: AppColors.white,
           fontSize: 13,

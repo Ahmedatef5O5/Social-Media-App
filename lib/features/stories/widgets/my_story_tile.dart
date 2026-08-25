@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:social_media_app/features/stories/cubit/stories_cubit/stories_cubit.dart';
 import '../../../core/cache/utils/cloudinary_url_extensions.dart';
+import '../../../core/helpers/chat_helper.dart';
 import '../../../core/helpers/formatted_date.dart';
 import '../../../core/mentions/widgets/mention_rich_text.dart';
 import '../../../core/themes/app_colors.dart';
@@ -88,6 +89,12 @@ class MyStoryTile extends StatelessWidget {
                           _titleFor(story),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
+                          textDirection:
+                              story.storyType == StoryType.text
+                                  ? ChatHelper.getTextDirection(
+                                    story.contentText ?? 'EN',
+                                  )
+                                  : TextDirection.ltr,
                           style: theme.textTheme.titleSmall?.copyWith(
                             fontWeight: FontWeight.w700,
                             fontSize: 15,
@@ -134,7 +141,9 @@ class MyStoryTile extends StatelessWidget {
 
                             if (reactions.isNotEmpty) ...[
                               const Gap(12),
-                              Expanded(child: _buildReactionsChip(reactions)),
+                              Expanded(
+                                child: _buildReactionsChip(context, reactions),
+                              ),
                             ],
                           ],
                         ),
@@ -244,8 +253,8 @@ class MyStoryTile extends StatelessWidget {
           ),
           if (story.storyType == StoryType.video)
             Positioned(
-              right: 3,
-              bottom: 3,
+              right: 2.4,
+              bottom: 1.2,
               child: _DurationBadge(seconds: story.videoDurationSeconds),
             ),
         ],
@@ -321,19 +330,41 @@ class MyStoryTile extends StatelessWidget {
     }
   }
 
-  Widget _buildReactionsChip(List<StoryReactorModel> reactions) {
+  Widget _buildReactionsChip(
+    BuildContext context,
+    List<StoryReactorModel> reactions,
+  ) {
     final counts = <String, int>{};
+
     for (final r in reactions) {
       counts[r.reaction] = (counts[r.reaction] ?? 0) + 1;
     }
+
     final entries =
         counts.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
 
-    return Text(
-      entries.take(4).map((e) => '${e.value} ${e.key}').join('  '),
+    return Text.rich(
+      TextSpan(
+        children: [
+          for (final entry in entries.take(4)) ...[
+            TextSpan(
+              text: '${entry.value} ',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: Theme.of(context).primaryColor,
+              ),
+            ),
+            TextSpan(
+              text: entry.key,
+              style: const TextStyle(fontSize: 12, color: Colors.black),
+            ),
+            const TextSpan(text: '  '),
+          ],
+        ],
+      ),
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
-      style: const TextStyle(fontSize: 12, color: Colors.black),
     );
   }
 }
@@ -348,7 +379,7 @@ class _DurationBadge extends StatelessWidget {
     final m = (seconds! ~/ 60).toString().padLeft(2, '0');
     final s = (seconds! % 60).toString().padLeft(2, '0');
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+      padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 1),
       decoration: BoxDecoration(
         color: Colors.black.withValues(alpha: 0.7),
         borderRadius: BorderRadius.circular(6),
@@ -357,7 +388,7 @@ class _DurationBadge extends StatelessWidget {
         '$m:$s',
         style: const TextStyle(
           color: Colors.white,
-          fontSize: 9,
+          fontSize: 6,
           fontWeight: FontWeight.w600,
         ),
       ),

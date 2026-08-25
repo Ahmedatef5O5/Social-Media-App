@@ -266,6 +266,7 @@ class _CreateTextStoryViewState extends State<CreateTextStoryView> {
               ),
               backgroundColor: Colors.transparent,
               elevation: 0,
+              scrolledUnderElevation: 0,
               actions: [
                 Padding(
                   padding: const EdgeInsets.only(right: 12),
@@ -278,6 +279,7 @@ class _CreateTextStoryViewState extends State<CreateTextStoryView> {
             ),
             body: SafeArea(
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Expanded(
                     child: StoryTextEditor(
