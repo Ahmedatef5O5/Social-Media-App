@@ -2,10 +2,13 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
+import 'package:archive/archive.dart';
+import 'package:dio/dio.dart' as dio_pkg;
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show compute;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image/image.dart' as img;
+import 'package:open_filex/open_filex.dart';
 import '../../../core/attachment/attachment_sheet/attachment_kind.dart';
 import '../../../core/attachment/attachment_sheet/attachment_picker_sheet.dart';
 import '../../../core/attachment/attachment_sheet/picked_attachment.dart';
@@ -60,6 +63,9 @@ class AiChatView extends StatefulWidget {
   final String? initialDraftText;
   final String? initialDraftImageRemoteUrl;
   final String? initialDraftImageCaption;
+  final String? initialDraftImageLocalPath;
+  final String? initialDraftFileLocalPath;
+  final String? initialDraftFileName;
 
   const AiChatView({
     super.key,
@@ -67,6 +73,9 @@ class AiChatView extends StatefulWidget {
     this.initialDraftText,
     this.initialDraftImageRemoteUrl,
     this.initialDraftImageCaption,
+    this.initialDraftImageLocalPath,
+    this.initialDraftFileLocalPath,
+    this.initialDraftFileName,
   });
 
   @override
@@ -88,6 +97,7 @@ class _AiChatViewState extends State<AiChatView> with TickerProviderStateMixin {
   late final FocusNode _textFocusNode;
   AiModelOption _selectedModel = AiModelCatalog.defaultModel;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  final Map<String, dio_pkg.CancelToken> _uploadCancelTokens = {};
 
   // --- Live backend wiring ------------------------------------------
   AiChatDependencies? _deps;
@@ -95,6 +105,14 @@ class _AiChatViewState extends State<AiChatView> with TickerProviderStateMixin {
   String? _activeSessionId;
   bool _isUploadingImage = false;
   bool _isSendingVoice = false;
+  bool _isSendingFile = false;
+  File? _stagedMediaFile;
+  AiChatMediaType? _stagedMediaType;
+  String? _stagedFileName;
+  int? _stagedFileSizeBytes;
+  String? _stagedRemoteImageUrl;
+  static const int _maxFileSizeBytes =
+      20 * 1024 * 1024; // matches Gemini's own inline-PDF cap
   final Set<String> _historicalMessageIds = {};
 
   // Thinking / Analyzing / Generating cycle — driven by AiChatCubit's
@@ -170,8 +188,21 @@ class _AiChatViewState extends State<AiChatView> with TickerProviderStateMixin {
           _openForwardedPhotoPreview(widget.initialDraftImageRemoteUrl!);
         }
       });
+    } else if (widget.initialDraftImageLocalPath != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _stageImage(File(widget.initialDraftImageLocalPath!));
+        }
+      });
+    } else if (widget.initialDraftFileLocalPath != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          final path = widget.initialDraftFileLocalPath!;
+          final name = widget.initialDraftFileName ?? path.split('/').last;
+          _stageFile(File(path), name);
+        }
+      });
     }
-
     _bootstrap();
   }
 
@@ -201,9 +232,6 @@ class _AiChatViewState extends State<AiChatView> with TickerProviderStateMixin {
       if (widget.initialSessionId != null) {
         _attachCubit(widget.initialSessionId!, isExisting: true);
       } else if (widget.initialDraftText?.trim().isEmpty ?? true) {
-        // No explicit target and no forwarded draft — resume whatever
-        // session was open earlier THIS process run, if any. Purely
-        // in-memory: a fresh cold start always falls through to welcome.
         final resumeId = deps.lastActiveSessionId;
         if (resumeId != null) {
           _showWelcome = false;
@@ -249,8 +277,6 @@ class _AiChatViewState extends State<AiChatView> with TickerProviderStateMixin {
         }
       });
     }
-    // A brand-new session starts with zero history, so there's nothing
-    // to mark as "historical" and nothing to fetch.
   }
 
   // ---------------------------------------------------------------------
@@ -282,31 +308,6 @@ class _AiChatViewState extends State<AiChatView> with TickerProviderStateMixin {
     _deps?.modelSelectorCubit.setPreferredProvider(_providerStringFor(model));
   }
 
-  /// Builds a signature deep, two-tone gradient derived from the active
-  /// theme's `primaryColor`, so every one of the 12 app themes (Ocean,
-  /// Sunset, Midnight, Carbon...) gets its own tinted, premium "Syncra"
-  /// backdrop instead of a single hardcoded color.
-  // List<Color> _gradientColors(Color primary) {
-  //   final hsl = HSLColor.fromColor(primary);
-  //   final top =
-  //       hsl
-  //           .withLightness(0.22)
-  //           .withSaturation((hsl.saturation * 0.85).clamp(0.0, 1.0))
-  //           .toColor();
-  //   final bottom =
-  //       hsl
-  //           .withLightness(0.05)
-  //           .withSaturation((hsl.saturation * 0.55).clamp(0.0, 1.0))
-  //           .toColor();
-  //   return [top, bottom];
-  // }
-
-  // ---------------------------------------------------------------------
-  // Morph trigger — one AnimationController drives both halves at once:
-  // welcome fades/scales OUT as the value rises from 0 -> 1, the message
-  // list fades/slides IN using that exact same value (and back on
-  // "New chat" — see _startNewChatInPlace).
-  // ---------------------------------------------------------------------
   void _startConversationIfNeeded() {
     if (_chatCubit == null && _morphController.isDismissed) {
       _morphController.forward().whenCompleteOrCancel(() {
@@ -344,12 +345,7 @@ class _AiChatViewState extends State<AiChatView> with TickerProviderStateMixin {
     });
   }
 
-  // ---------------------------------------------------------------------
   // Sessions Drawer — Open / New chat / Delete intents bubbled up from
-  // AiChatSessionsDrawer. Kept here, not inside the drawer widget, so
-  // the "is this the currently open session" check stays next to its
-  // single source of truth: _activeSessionId.
-  // ---------------------------------------------------------------------
 
   void _startNewChatFromDrawer() {
     Navigator.of(context).pop(); // close the drawer
@@ -523,6 +519,26 @@ class _AiChatViewState extends State<AiChatView> with TickerProviderStateMixin {
   // ---------------------------------------------------------------------
 
   Future<void> _onSendText(String text) async {
+    if (_stagedMediaFile != null) {
+      final file = _stagedMediaFile!;
+      final type = _stagedMediaType!;
+      final fileName = _stagedFileName;
+      final fileSizeBytes = _stagedFileSizeBytes;
+      final remoteImageUrl = _stagedRemoteImageUrl;
+      _removeStagedMedia();
+
+      if (type == AiChatMediaType.image) {
+        await _sendImage(file, caption: text, remoteImageUrl: remoteImageUrl);
+      } else {
+        await _sendFile(
+          file,
+          fileName: fileName ?? 'file',
+          fileSizeBytes: fileSizeBytes ?? await file.length(),
+          caption: text,
+        );
+      }
+      return;
+    }
     final deps = _deps;
     if (deps == null) {
       AppToast.info('Still getting Syncra ready — try again in a second.');
@@ -573,7 +589,13 @@ class _AiChatViewState extends State<AiChatView> with TickerProviderStateMixin {
           firstMessage: '🎤 Voice message',
         );
         if (!mounted) return;
-        setState(() => _attachCubit(session.id, isExisting: false));
+        setState(
+          () => _attachCubit(
+            session.id,
+            isExisting: false,
+            newlyCreatedSession: session,
+          ),
+        );
       } catch (_) {
         if (mounted) {
           AppToast.error('Failed to send the voice message. Please try again.');
@@ -590,16 +612,25 @@ class _AiChatViewState extends State<AiChatView> with TickerProviderStateMixin {
       fileSizeBytes: fileSizeBytes,
       durationSeconds: durationSeconds,
     );
+    final cancelToken = dio_pkg.CancelToken();
+    _uploadCancelTokens[tempId] = cancelToken;
 
     try {
-      final uploadResult = await CloudinaryStorageServices.instance.uploadFile(
-        file,
-        'ai_chat',
-        'voice',
-        onProgress: (progress) {
-          _chatCubit?.updateOptimisticProgress(tempId, progress);
-        },
-      );
+      final uploadResult = await CloudinaryStorageServices.instance
+          .uploadFile(
+            file,
+            'ai_chat',
+            'voice',
+            cancelToken: cancelToken,
+            onProgress: (progress) {
+              _chatCubit?.updateOptimisticProgress(tempId, progress);
+            },
+          )
+          .timeout(
+            const Duration(seconds: 90),
+            onTimeout: () => throw Exception('Upload timed out'),
+          );
+      _uploadCancelTokens.remove(tempId);
 
       if (!mounted) return;
       await _chatCubit!.sendMessage(
@@ -611,8 +642,16 @@ class _AiChatViewState extends State<AiChatView> with TickerProviderStateMixin {
         targetMediaType: 'voice_record',
         replacingMessageId: tempId,
       );
-    } catch (_) {
+    } catch (e) {
+      _uploadCancelTokens.remove(tempId);
       _chatCubit?.removeOptimisticMessage(tempId);
+      if (e is dio_pkg.DioException &&
+          dio_pkg.DioExceptionType.cancel == e.type) {
+        return;
+      }
+      if (e.toString().contains('UploadCanceledException')) {
+        return;
+      }
       if (mounted) {
         AppToast.error('Failed to send the voice message. Please try again.');
       }
@@ -621,45 +660,311 @@ class _AiChatViewState extends State<AiChatView> with TickerProviderStateMixin {
     }
   }
 
+  static const Set<String> _imageExtensions = {
+    'jpg',
+    'jpeg',
+    'png',
+    'webp',
+    'heic',
+    'heif',
+    'gif',
+    'bmp',
+  };
+
+  bool _looksLikeImage(String nameOrPath) {
+    final dot = nameOrPath.lastIndexOf('.');
+    if (dot == -1 || dot == nameOrPath.length - 1) return false;
+    return _imageExtensions.contains(
+      nameOrPath.substring(dot + 1).toLowerCase(),
+    );
+  }
+
   void _handleAttachmentPicked(PickedAttachment attachment) {
     if (attachment.kind == AttachmentKind.image &&
         attachment.localFile != null) {
-      if (_isUploadingImage) {
-        AppToast.info('Still sending your last photo — one sec.');
+      _stageImage(attachment.localFile!, fileName: attachment.fileName);
+      return;
+    }
+    if (attachment.kind == AttachmentKind.file &&
+        attachment.localFile != null) {
+      final looksLikeImage = _looksLikeImage(
+        attachment.fileName ?? attachment.localFile!.path,
+      );
+      if (looksLikeImage) {
+        _stageImage(attachment.localFile!, fileName: attachment.fileName);
         return;
       }
-      _openPhotoPreview(attachment.localFile!);
+      _stageFile(attachment.localFile!, attachment.fileName ?? 'file');
       return;
     }
     AppToast.info('Sharing this with Syncra is coming soon.');
   }
 
-  void _openPhotoPreview(
+  Future<void> _stageImage(
     File file, {
     String? remoteImageUrl,
-    String? initialCaptionOverride,
-  }) {
-    final composerText = _textController.text.trim();
-    final initialCaption =
-        initialCaptionOverride ?? (composerText.isEmpty ? null : composerText);
-    _textController.clear();
+    String? fileName,
+  }) async {
+    if (!await file.exists()) {
+      AppToast.error('Image file not found. Please try picking it again.');
+      return;
+    }
+    final sizeBytes = await file.length();
+    if (!mounted) return;
+    setState(() {
+      _stagedMediaFile = file;
+      _stagedMediaType = AiChatMediaType.image;
+      _stagedFileName = fileName ?? 'Photo';
+      _stagedFileSizeBytes = sizeBytes;
+      _stagedRemoteImageUrl = remoteImageUrl;
+    });
+    _textFocusNode.requestFocus();
+  }
 
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder:
-            (_) => AiPhotoPreviewScreen(
-              file: file,
-              initialCaption: initialCaption,
-              onSend: (caption) {
-                _sendImage(
-                  file,
-                  caption: caption,
-                  remoteImageUrl: remoteImageUrl,
-                );
-              },
-            ),
-      ),
+  Future<void> _stageFile(File file, String fileName) async {
+    if (!await file.exists()) {
+      AppToast.error('File not found. Please try picking it again.');
+      return;
+    }
+    final sizeBytes = await file.length();
+    if (sizeBytes > _maxFileSizeBytes) {
+      AppToast.error("Files larger than 20MB aren't supported yet.");
+      return;
+    }
+    if (!mounted) return;
+    setState(() {
+      _stagedMediaFile = file;
+      _stagedMediaType = AiChatMediaType.file;
+      _stagedFileName = fileName;
+      _stagedFileSizeBytes = sizeBytes;
+      _stagedRemoteImageUrl = null;
+    });
+    _textFocusNode.requestFocus();
+  }
+
+  void _removeStagedMedia() {
+    setState(() {
+      _stagedMediaFile = null;
+      _stagedMediaType = null;
+      _stagedFileName = null;
+      _stagedFileSizeBytes = null;
+      _stagedRemoteImageUrl = null;
+    });
+  }
+
+  Future<void> _openStagedMediaPreview() async {
+    final file = _stagedMediaFile;
+    if (file == null) return;
+
+    if (_stagedMediaType == AiChatMediaType.image) {
+      await Navigator.of(context).push(
+        MaterialPageRoute(
+          builder:
+              (_) => AiPhotoPreviewScreen(
+                file: file,
+                captionController: _textController,
+              ),
+        ),
+      );
+      return;
+    }
+
+    try {
+      final result = await OpenFilex.open(file.path);
+      if (result.type != ResultType.done && mounted) {
+        AppToast.error("Couldn't open that file.");
+      }
+    } catch (_) {
+      if (mounted) AppToast.error("Couldn't open that file.");
+    }
+  }
+
+  Future<void> _sendFile(
+    File file, {
+    required String fileName,
+    required int fileSizeBytes,
+    required String caption,
+  }) async {
+    if (_isSendingFile) return;
+    _scrollToBottom();
+    final deps = _deps;
+    if (deps == null) {
+      AppToast.info('Still getting Syncra ready — try again in a second.');
+      return;
+    }
+
+    setState(() => _isSendingFile = true);
+
+    _startConversationIfNeeded();
+    if (_chatCubit == null) {
+      try {
+        final session = await deps.repository.createSession(
+          firstMessage: caption.isEmpty ? fileName : caption,
+        );
+        if (!mounted) return;
+        setState(
+          () => _attachCubit(
+            session.id,
+            isExisting: false,
+            newlyCreatedSession: session,
+          ),
+        );
+      } catch (_) {
+        if (mounted) {
+          AppToast.error('Failed to send the file. Please try again.');
+          setState(() => _isSendingFile = false);
+        }
+        return;
+      }
+    }
+
+    final tempId = _chatCubit!.beginOptimisticMediaMessage(
+      mediaType: AiChatMediaType.file,
+      caption: caption,
+      localFilePath: file.path,
+      fileName: fileName,
+      fileSizeBytes: fileSizeBytes,
     );
+
+    try {
+      final extension =
+          fileName.contains('.')
+              ? fileName.substring(fileName.lastIndexOf('.') + 1).toLowerCase()
+              : '';
+
+      String? textContent;
+      String? documentBase64;
+      String? targetMediaType;
+      final cancelToken = dio_pkg.CancelToken();
+      _uploadCancelTokens[tempId] = cancelToken;
+
+      const textExtensions = {
+        'txt',
+        'md',
+        'json',
+        'csv',
+        'tsv',
+        'html',
+        'htm',
+        'xml',
+        'yaml',
+        'yml',
+        'dart',
+        'js',
+        'ts',
+        'py',
+        'java',
+        'c',
+        'cpp',
+        'cs',
+        'sql',
+        'sh',
+        'log',
+        'ini',
+        'env',
+        'rtf',
+      };
+
+      if (textExtensions.contains(extension)) {
+        try {
+          final bytes = await file.readAsBytes();
+          // استخدام compute لقراءة النصوص لعدم تجميد الواجهة مع الملفات الكبيرة
+          final raw = await compute(_extractPlainText, bytes);
+          if (raw != null && raw.isNotEmpty) {
+            textContent =
+                raw.length > 25000
+                    ? '${raw.substring(0, 25000)}\n\n[...تم اختصار باقي النص لكبر حجمه...]'
+                    : raw;
+          } else {
+            targetMediaType = 'document';
+          }
+        } catch (_) {
+          targetMediaType = 'document';
+        }
+      } else if (extension == 'docx' || extension == 'doc') {
+        try {
+          final bytes = await file.readAsBytes();
+          final extracted = await compute(_extractDocxText, bytes);
+          if (extracted != null && extracted.isNotEmpty) {
+            textContent =
+                extracted.length > 25000
+                    ? '${extracted.substring(0, 25000)}\n\n[...تم اختصار باقي النص...]'
+                    : extracted;
+          } else {
+            targetMediaType = 'document';
+          }
+        } catch (_) {
+          targetMediaType = 'document';
+        }
+      } else if (extension == 'xlsx' || extension == 'xls') {
+        try {
+          final bytes = await file.readAsBytes();
+          final extracted = await compute(_extractXlsxText, bytes);
+          if (extracted != null && extracted.isNotEmpty) {
+            textContent =
+                extracted.length > 25000
+                    ? '${extracted.substring(0, 25000)}\n\n[...تم اختصار باقي البيانات...]'
+                    : extracted;
+          } else {
+            targetMediaType = 'document';
+          }
+        } catch (_) {
+          targetMediaType = 'document';
+        }
+      } else if (extension == 'pdf') {
+        final bytes = await file.readAsBytes();
+        documentBase64 = await compute(base64Encode, bytes);
+      } else {
+        targetMediaType = 'document';
+      }
+      final uploadResult = await CloudinaryStorageServices.instance
+          .uploadFile(
+            file,
+            'ai_chat',
+            'files',
+            cancelToken: cancelToken,
+            onProgress: (progress) {
+              _chatCubit?.updateOptimisticProgress(tempId, progress);
+            },
+          )
+          .timeout(
+            const Duration(seconds: 180),
+            onTimeout: () => throw Exception('Upload timed out'),
+          );
+      _uploadCancelTokens.remove(tempId);
+
+      if (!mounted) return;
+      await context.read<MediaCacheRepository>().adoptUploadedFile(
+        uploadResult.secureUrl,
+        file,
+      );
+
+      if (!mounted) return;
+      await _chatCubit!.sendMessage(
+        text: caption,
+        mediaType: 'file',
+        mediaUrl: uploadResult.secureUrl,
+        fileName: fileName,
+        fileSizeBytes: fileSizeBytes,
+        textContent: textContent,
+        documentBase64: documentBase64,
+        targetMediaType: targetMediaType,
+        replacingMessageId: tempId,
+      );
+    } catch (e) {
+      _uploadCancelTokens.remove(tempId);
+      _chatCubit?.removeOptimisticMessage(tempId);
+      if (e is dio_pkg.DioException &&
+          dio_pkg.DioExceptionType.cancel == e.type) {
+        return;
+      }
+      if (e.toString().contains('UploadCanceledException')) {
+        return;
+      }
+      if (mounted) AppToast.error('Failed to upload. Please try again.');
+    } finally {
+      if (mounted) setState(() => _isSendingFile = false);
+    }
   }
 
   Future<void> _openForwardedPhotoPreview(String remoteUrl) async {
@@ -671,11 +976,10 @@ class _AiChatViewState extends State<AiChatView> with TickerProviderStateMixin {
       AppToast.error("Couldn't load that photo. Please try again.");
       return;
     }
-    _openPhotoPreview(
-      File(localPath),
-      remoteImageUrl: remoteUrl,
-      initialCaptionOverride: widget.initialDraftImageCaption,
-    );
+    if (widget.initialDraftImageCaption != null) {
+      _textController.text = widget.initialDraftImageCaption!;
+    }
+    await _stageImage(File(localPath), remoteImageUrl: remoteUrl);
   }
 
   Future<void> _sendImage(
@@ -706,7 +1010,13 @@ class _AiChatViewState extends State<AiChatView> with TickerProviderStateMixin {
           firstMessage: resolvedCaption.isEmpty ? '📷 Photo' : resolvedCaption,
         );
         if (!mounted) return;
-        setState(() => _attachCubit(session.id, isExisting: false));
+        setState(
+          () => _attachCubit(
+            session.id,
+            isExisting: false,
+            newlyCreatedSession: session,
+          ),
+        );
       } catch (_) {
         if (mounted) {
           AppToast.error('Failed to send the photo. Please try again.');
@@ -727,7 +1037,6 @@ class _AiChatViewState extends State<AiChatView> with TickerProviderStateMixin {
     try {
       final bytes = await file.readAsBytes();
       final imageBase64 = await compute(_downscaleAndEncodeImage, bytes);
-
       final String finalUrl;
       if (remoteImageUrl != null) {
         finalUrl = remoteImageUrl;
@@ -740,6 +1049,10 @@ class _AiChatViewState extends State<AiChatView> with TickerProviderStateMixin {
               onProgress: (progress) {
                 _chatCubit?.updateOptimisticProgress(tempId, progress);
               },
+            )
+            .timeout(
+              const Duration(seconds: 90),
+              onTimeout: () => throw Exception('Upload timed out'),
             );
         finalUrl = uploadResult.secureUrl;
 
@@ -759,14 +1072,29 @@ class _AiChatViewState extends State<AiChatView> with TickerProviderStateMixin {
         imageBase64: imageBase64,
         replacingMessageId: tempId,
       );
-    } catch (_) {
+    } catch (e) {
+      _uploadCancelTokens.remove(tempId);
       _chatCubit?.removeOptimisticMessage(tempId);
+      if (e is dio_pkg.DioException &&
+          dio_pkg.DioExceptionType.cancel == e.type) {
+        return;
+      }
+      if (e.toString().contains('UploadCanceledException')) {
+        return;
+      }
       if (mounted) {
         AppToast.error('Failed to send the photo. Please try again.');
       }
     } finally {
       if (mounted) setState(() => _isUploadingImage = false);
     }
+  }
+
+  void _handleCancelUpload(AiChatMessage message) {
+    _uploadCancelTokens[message.id]?.cancel('user_cancelled');
+    _uploadCancelTokens.remove(message.id);
+
+    _chatCubit?.removeOptimisticMessage(message.id);
   }
 
   void _scrollToBottom() {
@@ -859,6 +1187,11 @@ class _AiChatViewState extends State<AiChatView> with TickerProviderStateMixin {
       child: Scaffold(
         key: _scaffoldKey,
         backgroundColor: gradient.last,
+        onDrawerChanged: ((isOpened) {
+          if (isOpened) {
+            _deps?.sessionsCubit.refresh();
+          }
+        }),
         drawer: AiChatSessionsDrawer(
           deps: _deps,
           activeSessionId: _activeSessionId,
@@ -933,9 +1266,10 @@ class _AiChatViewState extends State<AiChatView> with TickerProviderStateMixin {
                                             !_historicalMessageIds.contains(
                                               m.id,
                                             ),
-                                    onCancelUpload: null,
+
                                     onRetry: _handleRetry,
                                     onForward: _handleForward,
+                                    onCancelUpload: _handleCancelUpload,
                                   );
                                 },
                               ),
@@ -957,6 +1291,7 @@ class _AiChatViewState extends State<AiChatView> with TickerProviderStateMixin {
                       ],
                     ),
                   ),
+
                   SafeArea(
                     top: false,
                     child: AiChatInputBar(
@@ -967,6 +1302,14 @@ class _AiChatViewState extends State<AiChatView> with TickerProviderStateMixin {
                       onSendText: _onSendText,
                       onSendVoice: _handleSendVoice,
                       onAttachmentPicked: _handleAttachmentPicked,
+                      stagedFileName: _stagedFileName,
+                      stagedFileSizeBytes: _stagedFileSizeBytes,
+                      stagedImageFile:
+                          _stagedMediaType == AiChatMediaType.image
+                              ? _stagedMediaFile
+                              : null,
+                      onRemoveStagedFile: _removeStagedMedia,
+                      onTapStagedFile: _openStagedMediaPreview,
                     ),
                   ),
                 ],
@@ -1062,5 +1405,74 @@ class _AiChatViewState extends State<AiChatView> with TickerProviderStateMixin {
         ],
       ),
     );
+  }
+}
+
+// ============================================================================
+// Top-Level Data Extraction Functions (Run in Isolates via compute)
+// ============================================================================
+
+String? _extractPlainText(Uint8List bytes) {
+  try {
+    return utf8.decode(bytes, allowMalformed: true);
+  } catch (e) {
+    return null;
+  }
+}
+
+String? _extractDocxText(Uint8List bytes) {
+  try {
+    final archive = ZipDecoder().decodeBytes(bytes);
+    final documentFile = archive.findFile('word/document.xml');
+    if (documentFile == null) return null;
+
+    final xmlContent = utf8.decode(
+      documentFile.content as List<int>,
+      allowMalformed: true,
+    );
+    final regex = RegExp(r'<w:t(?:\s+[^>]*)?>([^<]*)</w:t>');
+    final matches = regex.allMatches(xmlContent);
+    final text = matches.map((m) => m.group(1) ?? '').join(' ');
+    return text.replaceAll(RegExp(r'\s+'), ' ').trim();
+  } catch (e) {
+    debugPrint('Docx extraction error: $e');
+    return null;
+  }
+}
+
+String? _extractXlsxText(Uint8List bytes) {
+  try {
+    final archive = ZipDecoder().decodeBytes(bytes);
+    final buffer = StringBuffer();
+
+    final sharedStringsFile = archive.findFile('xl/sharedStrings.xml');
+    if (sharedStringsFile != null) {
+      final xmlContent = utf8.decode(
+        sharedStringsFile.content as List<int>,
+        allowMalformed: true,
+      );
+      final regex = RegExp(r'<t(?:\s+[^>]*)?>([^<]*)</t>');
+      for (final match in regex.allMatches(xmlContent)) {
+        buffer.write('${match.group(1)} | ');
+      }
+    }
+
+    final sheetFile = archive.findFile('xl/worksheets/sheet1.xml');
+    if (sheetFile != null) {
+      final xmlContent = utf8.decode(
+        sheetFile.content as List<int>,
+        allowMalformed: true,
+      );
+      final regex = RegExp(r'<v>([^<]*)</v>');
+      for (final match in regex.allMatches(xmlContent)) {
+        final val = match.group(1) ?? '';
+        if (double.tryParse(val) != null) buffer.write('$val | ');
+      }
+    }
+
+    return buffer.toString().replaceAll(RegExp(r'\s+'), ' ').trim();
+  } catch (e) {
+    debugPrint('Xlsx extraction error: $e');
+    return null;
   }
 }
