@@ -8,6 +8,7 @@ environment:
   sdk: ^3.7.2
 
 dependencies:
+  app_links: ^7.2.1
   archive: ^4.2.0
   audio_decoder: ^0.8.0
   audio_session: 0.1.25
