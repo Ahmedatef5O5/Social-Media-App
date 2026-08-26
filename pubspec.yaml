@@ -90,8 +90,8 @@ flutter_launcher_icons:
   image_path: "assets/images/launcher.png"
 
 flutter:
-
   uses-material-design: true
+  
   assets:
     - assets/images/
     - assets/images/PostThemeImgs/
@@ -99,15 +99,26 @@ flutter:
     - assets/icons/inputAreaIcons/
     - assets/lotties/
     - assets/sounds/
-  #   - images/a_dot_ham.jpeg
-  # fonts:
-  #   - family: Schyler
-  #     fonts:
-  #       - asset: fonts/Schyler-Regular.ttf
-  #       - asset: fonts/Schyler-Italic.ttf
-  #         style: italic
-  #   - family: Trajan Pro
-  #     fonts:
-  #       - asset: fonts/TrajanPro.ttf
-  #       - asset: fonts/TrajanPro_Bold.ttf
-  #         weight: 700
+ 
+  fonts:
+    - family: Inter
+      fonts:
+        - asset: assets/fonts/Inter/Inter_24pt-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/Inter/Inter_24pt-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Inter/Inter_24pt-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Inter/Inter_24pt-Bold.ttf
+          weight: 700
+
+    - family: IBM Plex Sans Arabic
+      fonts:
+        - asset: assets/fonts/IBMPlexSansArabic/IBMPlexSansArabic-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/IBMPlexSansArabic/IBMPlexSansArabic-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/IBMPlexSansArabic/IBMPlexSansArabic-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/IBMPlexSansArabic/IBMPlexSansArabic-Bold.ttf
+          weight: 700
