@@ -123,3 +123,7 @@ flutter:
           weight: 600
         - asset: assets/fonts/IBMPlexSansArabic/IBMPlexSansArabic-Bold.ttf
           weight: 700
+
+    - family: NotoColorEmojiBundled
+      fonts:
+        - asset: assets/fonts/NotoColorEmoji/NotoColorEmoji-COLRv1.ttf
