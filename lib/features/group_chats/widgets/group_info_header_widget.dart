@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'dart:ui';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:social_media_app/core/widgets/directional_text_field.dart';
 import '../../../core/chat_shared/helpers/muted_badge_icon.dart';
 import '../../../core/constants/app_images.dart';
 import '../../../core/widgets/full_screen_image_viewer.dart';
@@ -356,16 +357,16 @@ class _GroupInfoHeaderDelegate extends SliverPersistentHeaderDelegate {
 
           children: [
             Expanded(
-              child: TextField(
+              child: DirectionalTextField(
                 controller: controller,
-                autofocus: true,
-                textAlign: TextAlign.center,
                 onSubmitted: (_) => onSubmit(),
                 style: const TextStyle(
                   color: Colors.white,
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w500,
                 ),
+
+                maxLines: 1,
                 decoration: const InputDecoration(
                   border: UnderlineInputBorder(
                     borderSide: BorderSide(color: Colors.white54),

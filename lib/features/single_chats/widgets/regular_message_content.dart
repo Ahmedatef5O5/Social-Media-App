@@ -31,6 +31,7 @@ class RegularMessageContent extends StatelessWidget {
   final ItemScrollController itemScrollController;
   final bool isUploading;
   final double? uploadProgress;
+
   const RegularMessageContent({
     super.key,
     required this.message,
@@ -139,18 +140,35 @@ class RegularMessageContent extends StatelessWidget {
               (message.fileUrl != null || isUploading))
             Padding(
               padding: const EdgeInsets.only(top: 2),
-              child: FileMessageBubble(
-                fileUrl: message.fileUrl ?? '',
-                fileName: message.fileName,
-                fileSizeBytes: message.fileSizeBytes,
-                isMe: isMe,
-                isUploading: isUploading,
-                uploadProgress: uploadProgress,
-                onCancelTap:
-                    () => context.read<ChatDetailsCubit>().cancelUpload(
-                      message.id,
-                    ),
-              ),
+              child:
+                  isUploading
+                      ? ValueListenableBuilder<double>(
+                        valueListenable: context
+                            .read<ChatDetailsCubit>()
+                            .progressNotifierFor(message.id),
+                        builder: (context, progress, child) {
+                          return FileMessageBubble(
+                            fileUrl: message.fileUrl ?? '',
+                            fileName: message.fileName,
+                            fileSizeBytes: message.fileSizeBytes,
+                            isMe: isMe,
+                            isUploading: true,
+                            uploadProgress: progress,
+                            onCancelTap:
+                                () => context
+                                    .read<ChatDetailsCubit>()
+                                    .cancelUpload(message.id),
+                          );
+                        },
+                      )
+                      : FileMessageBubble(
+                        fileUrl: message.fileUrl ?? '',
+                        fileName: message.fileName,
+                        fileSizeBytes: message.fileSizeBytes,
+                        isMe: isMe,
+                        isUploading: false,
+                        uploadProgress: null,
+                      ),
             ),
 
           if ((isImage || isVideo || message.messageType == 'file') &&
@@ -266,7 +284,7 @@ class RegularMessageContent extends StatelessWidget {
               : Theme.of(context).colorScheme.onSurface,
       fontSize: 15,
       height: 1.3,
-      fontWeight: FontWeight.w500,
+      fontWeight: FontWeight.w400,
     );
 
     final double estimatedMaxWidth =

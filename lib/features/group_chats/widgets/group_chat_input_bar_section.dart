@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:record/record.dart';
@@ -7,6 +8,7 @@ import 'package:social_media_app/features/group_chats/widgets/group_input_bar.da
 import 'package:social_media_app/features/group_chats/widgets/group_media_preview_screen.dart';
 import '../../../core/attachment/attachment_sheet/attachment_kind.dart';
 import '../../../core/attachment/attachment_sheet/attachment_picker_sheet.dart';
+import '../../../core/chat_shared/widgets/chat_staged_file_preview.dart';
 import '../../ai_assistant/entities/ai_request_context.dart';
 import '../../ai_assistant/widgets/ai_chat_command_trigger.dart';
 import '../cubit/group_details_cubit/group_details_cubit.dart';
@@ -42,6 +44,9 @@ class _GroupChatInputBarSectionState extends State<GroupChatInputBarSection> {
   bool _hasText = false;
 
   List<String>? _membersIds;
+  File? _stagedDocument;
+  String? _stagedFileName;
+  int? _stagedFileSizeBytes;
 
   @override
   void initState() {
@@ -53,7 +58,8 @@ class _GroupChatInputBarSectionState extends State<GroupChatInputBarSection> {
   }
 
   void _onTextChanged() {
-    final notEmpty = widget.controller.text.trim().isNotEmpty;
+    final notEmpty =
+        widget.controller.text.trim().isNotEmpty || _stagedDocument != null;
     if (notEmpty != _hasText) setState(() => _hasText = notEmpty);
     if (notEmpty) {
       widget.onTyping();
@@ -89,7 +95,26 @@ class _GroupChatInputBarSectionState extends State<GroupChatInputBarSection> {
       );
       _cubit.editingMessage.value = null;
     } else {
-      widget.onSend(text, mentions);
+      if (_stagedDocument != null) {
+        _cubit.sendMessage(
+          text: '',
+          messageType: 'file',
+          documentFile: _stagedDocument,
+          fileName: _stagedFileName,
+          fileSizeBytes: _stagedFileSizeBytes,
+          caption: text.isNotEmpty ? text : null,
+          mentions: mentions,
+        );
+        setState(() {
+          _stagedDocument = null;
+          _stagedFileName = null;
+          _stagedFileSizeBytes = null;
+          _hasText = false;
+        });
+        widget.controller.clear();
+      } else {
+        widget.onSend(text, mentions);
+      }
     }
   }
 
@@ -170,13 +195,12 @@ class _GroupChatInputBarSectionState extends State<GroupChatInputBarSection> {
 
       case AttachmentKind.file:
         if (picked.localFile == null) return;
-        cubit.sendMessage(
-          text: '',
-          messageType: 'file',
-          documentFile: picked.localFile,
-          fileName: picked.fileName,
-          fileSizeBytes: picked.fileSizeBytes,
-        );
+        setState(() {
+          _stagedDocument = picked.localFile;
+          _stagedFileName = picked.fileName;
+          _stagedFileSizeBytes = picked.fileSizeBytes;
+          _hasText = true;
+        });
         break;
 
       case AttachmentKind.gif:
@@ -216,6 +240,20 @@ class _GroupChatInputBarSectionState extends State<GroupChatInputBarSection> {
       children: [
         GroupEditPreviewSection(cubit: _cubit, controller: widget.controller),
         GroupReplyPreviewSection(cubit: _cubit),
+
+        if (_stagedDocument != null)
+          ChatStagedFilePreview(
+            fileName: _stagedFileName ?? 'File',
+            fileSizeBytes: _stagedFileSizeBytes ?? 0,
+            onRemove: () {
+              setState(() {
+                _stagedDocument = null;
+                _stagedFileName = null;
+                _stagedFileSizeBytes = null;
+                _hasText = widget.controller.text.trim().isNotEmpty;
+              });
+            },
+          ),
 
         ValueListenableBuilder<GroupMessageModel?>(
           valueListenable: _cubit.replyToMessage,

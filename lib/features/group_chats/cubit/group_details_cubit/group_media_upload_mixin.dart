@@ -170,13 +170,27 @@ mixin GroupMediaUploadMixin on Cubit<GroupDetailsState> {
           await _audioCompressionService.cleanup(compression);
         }
       }
+
       if (documentFile != null) {
-        uploadProgressMap[tempId] = 0;
+        uploadProgressMap[tempId] = 0.0;
+        _emitLoaded();
+
+        final originalName =
+            fileName ?? documentFile.path.split('/').last.split('\\').last;
+        final nameWithoutExt =
+            originalName.contains('.')
+                ? originalName.substring(0, originalName.lastIndexOf('.'))
+                : originalName;
+        final safeName = nameWithoutExt.replaceAll(
+          RegExp(r'[^a-zA-Z0-9\-_]'),
+          '_',
+        );
+
         final result = await _services.storage.uploadFile(
           documentFile,
           'group_chats',
           currentUserId,
-          filePrefix: 'group_',
+          filePrefix: '${safeName}_',
           cancelToken: cancelToken,
           onProgress: (p) {
             uploadProgressMap[tempId] = p;
@@ -186,13 +200,14 @@ mixin GroupMediaUploadMixin on Cubit<GroupDetailsState> {
         uploadedFileUrl = result.secureUrl;
         filePublicId = result.publicId;
         await _mediaCacheRepository.adoptUploadedFile(
-          uploadedFileUrl,
+          result.secureUrl,
           documentFile,
         );
+        uploadProgressMap.remove(tempId);
         (this as GroupDetailsCubit).disposeProgressNotifier(tempId);
       }
 
-      await _services.sendGroupMessage(
+      final newMsg = await _services.sendGroupMessage(
         groupId: group.id,
         groupName: group.name,
         groupImageUrl: group.avatarUrl,
@@ -217,6 +232,13 @@ mixin GroupMediaUploadMixin on Cubit<GroupDetailsState> {
         forwardedFromUserName: forwardedFromUserName,
         forwardedFromUserAvatar: forwardedFromUserAvatar,
       );
+
+      final index = cachedMessages.indexWhere((m) => m.id == tempId);
+      if (index != -1) {
+        cachedMessages[index] = cachedMessages[index].copyWith(id: newMsg.id);
+      }
+      _emitLoaded();
+
       final memberIds =
           group.members
               .map((m) => m.userId)
@@ -259,6 +281,7 @@ mixin GroupMediaUploadMixin on Cubit<GroupDetailsState> {
         lastMessageSenderId: currentUserId,
         lastMessageSenderName: senderName,
       );
+
       Future.delayed(const Duration(seconds: 2), () {
         if (!(this as Cubit).isClosed) {
           cachedMessages.removeWhere((m) => m.id == tempId);

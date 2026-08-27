@@ -7,7 +7,9 @@ import 'package:social_media_app/features/group_chats/helpers/group_preview_dial
 import '../../../core/chat_shared/cubits/conversation_selection_cubit/conversation_selection_cubit.dart';
 import '../../../core/chat_shared/models/conversation_ref.dart';
 import '../../../core/constants/app_images.dart';
+import '../../../core/design/tokens/typography.dart';
 import '../../../core/helpers/bidi_text_helper.dart';
+import '../../../core/helpers/emoji_helper.dart';
 import '../../../core/helpers/formatted_date.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/supabase/supabase_provider.dart';
@@ -218,6 +220,8 @@ class GroupTileItem extends StatelessWidget {
                     content = fullText.substring(colonIndex + 2);
                   }
 
+                  final normalText = EmojiHelper.normalize(content);
+
                   final direction = BidiTextHelper.detectDirection(
                     content.trimLeft(),
                   );
@@ -232,18 +236,18 @@ class GroupTileItem extends StatelessWidget {
                         highlightUnreadMessage
                             ? FontWeight.w500
                             : FontWeight.w400,
+                    fontFamily: null,
+                    fontFamilyFallback: AppTypography.fontFallback,
                   );
 
                   if (prefix.isEmpty) {
                     return Text(
-                      content,
+                      normalText,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       textDirection: direction,
-                      textAlign:
-                          direction == TextDirection.rtl
-                              ? TextAlign.right
-                              : TextAlign.left,
+                      textAlign: TextAlign.left,
+
                       style: textStyle,
                     );
                   }

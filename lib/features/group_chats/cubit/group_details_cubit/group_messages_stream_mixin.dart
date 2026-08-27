@@ -119,7 +119,8 @@ mixin GroupMessagesStreamMixin on Cubit<GroupDetailsState> {
 
       final protectedLeftovers = cachedMessages.where(
         (m) =>
-            _unconfirmedDiskMessageIds.contains(m.id) &&
+            (_unconfirmedDiskMessageIds.contains(m.id) ||
+                m.id.startsWith('temp_')) &&
             !enrichedIds.contains(m.id),
       );
 
