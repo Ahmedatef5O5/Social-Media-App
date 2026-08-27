@@ -6,7 +6,9 @@ import 'package:gap/gap.dart';
 import '../../../core/chat_shared/cubits/conversation_selection_cubit/conversation_selection_cubit.dart';
 import '../../../core/chat_shared/models/conversation_ref.dart';
 import '../../../core/chat_shared/widgets/recording_indicator_widget.dart';
+import '../../../core/design/tokens/typography.dart';
 import '../../../core/helpers/bidi_text_helper.dart';
+import '../../../core/helpers/emoji_helper.dart';
 import '../../../core/helpers/formatted_date.dart';
 import '../../../core/presence/widgets/presence_avatar_widget.dart';
 import '../../../core/router/app_routes.dart';
@@ -196,14 +198,17 @@ class ChatItemTile extends StatelessWidget {
 
   Widget _buildMessagePreview(BuildContext context) {
     final bool isUnread = user.unreadCount > 0;
-    final textStyle = Theme.of(context).textTheme.labelSmall!.copyWith(
-      fontWeight: isUnread ? FontWeight.w500 : FontWeight.w400,
-      fontSize: 13,
-      color:
-          isUnread
-              ? Theme.of(context).colorScheme.onSurface
-              : Colors.grey.shade600,
-    );
+    final textStyle =
+        (Theme.of(context).textTheme.labelSmall ?? const TextStyle()).copyWith(
+          fontWeight: isUnread ? FontWeight.w500 : FontWeight.w400,
+          fontSize: 13,
+          fontFamily: null,
+          fontFamilyFallback: AppTypography.fontFallback,
+          color:
+              isUnread
+                  ? Theme.of(context).colorScheme.onSurface
+                  : Colors.grey.shade600,
+        );
 
     if (user.lastMessageType == 'call') {
       Map<String, dynamic> callData = {};
@@ -250,7 +255,7 @@ class ChatItemTile extends StatelessWidget {
       );
     }
 
-    final normalText = _getNormalMessageText();
+    final normalText = EmojiHelper.normalize(_getNormalMessageText());
     final direction = BidiTextHelper.detectDirection(normalText);
 
     return Text(
@@ -258,9 +263,11 @@ class ChatItemTile extends StatelessWidget {
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
       textDirection: direction,
-      textAlign:
-          direction == TextDirection.rtl ? TextAlign.right : TextAlign.left,
-      style: textStyle,
+      textAlign: TextAlign.left,
+      style: textStyle.copyWith(
+        fontFamily: null,
+        fontFamilyFallback: AppTypography.fontFallback,
+      ),
     );
   }
 

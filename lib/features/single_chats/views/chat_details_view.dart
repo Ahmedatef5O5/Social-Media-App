@@ -405,37 +405,47 @@ class _ChatDetailsViewState extends State<ChatDetailsView>
     final currentUserId = _chatCubit.currentUserId;
     _chatCubit.clearSelection();
 
-    // [FIX] "Forward to Syncra" never needs the current user's name/avatar
-    // (its draft-text/photo-preview paths don't attribute a sender) — this
-    // check now runs BEFORE getCurrentUserInfo below, so a network hiccup
-    // fetching it can never take Syncra forwarding down with it either.
     if (result.toAi) {
-      // [NEW] Single image selected -> hand off to the same
-      // preview/caption flow a freshly-picked photo goes through,
-      // instead of the text-only draft path below (which can't
-      // represent an image at all).
-      if (selectedMessages.length == 1 &&
-          selectedMessages.first.messageType == 'image' &&
-          (selectedMessages.first.imageUrl?.isNotEmpty ?? false)) {
-        final imageMessage = selectedMessages.first;
-        if (context.mounted) {
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder:
-                  (_) => AiChatView(
-                    initialDraftImageRemoteUrl: imageMessage.imageUrl,
-                    initialDraftImageCaption: imageMessage.caption,
-                  ),
-            ),
-          );
+      if (selectedMessages.length == 1) {
+        final msg = selectedMessages.first;
+
+        if (msg.messageType == 'image' && (msg.imageUrl?.isNotEmpty ?? false)) {
+          if (context.mounted) {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder:
+                    (_) => AiChatView(
+                      initialDraftImageRemoteUrl: msg.imageUrl,
+                      initialDraftImageCaption: msg.caption,
+                    ),
+              ),
+            );
+          }
+          return;
         }
-        return;
+
+        if (msg.messageType == 'file' && (msg.fileUrl?.isNotEmpty ?? false)) {
+          if (context.mounted) {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder:
+                    (_) => AiChatView(
+                      initialDraftFileRemoteUrl: msg.fileUrl,
+                      initialDraftFileName: msg.fileName,
+                      initialDraftFileCaption: msg.caption,
+                    ),
+              ),
+            );
+          }
+          return;
+        }
       }
 
       final draftText = selectedMessages
           .map((m) => m.text.trim())
           .where((t) => t.isNotEmpty)
           .join('\n\n');
+
       if (draftText.isEmpty) {
         if (context.mounted) {
           AppToast.info(
@@ -454,13 +464,6 @@ class _ChatDetailsViewState extends State<ChatDetailsView>
       return;
     }
 
-    // [FIX] Was previously called unconditionally, unguarded, right after
-    // clearSelection() and BEFORE the toAi branch above — a throw here
-    // (network hiccup, missing cached user doc, ...) used to kill
-    // forwarding entirely for this tap, Syncra included, with no
-    // toast/error shown. Now it only ever runs for real people/group
-    // targets, and a failure falls back to a safe 'You' / no-avatar
-    // instead of taking the whole forward down with it.
     String currentUserName = 'You';
     String? currentUserAvatar;
     try {

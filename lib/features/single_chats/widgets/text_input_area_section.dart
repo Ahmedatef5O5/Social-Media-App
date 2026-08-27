@@ -1,9 +1,11 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/attachment/attachment_sheet/attachment_kind.dart';
 import '../../../core/attachment/attachment_sheet/attachment_picker_sheet.dart';
 import '../../../core/audio/voice_recorder/widgets/voice_recorder_input_section.dart';
+import '../../../core/chat_shared/widgets/chat_staged_file_preview.dart';
 import '../../../core/constants/app_images.dart';
 import '../../../core/themes/app_colors.dart';
 import '../../../core/widgets/directional_text_field.dart';
@@ -45,6 +47,9 @@ class TextInputAreaSection extends StatefulWidget {
 class _TextInputAreaSectionState extends State<TextInputAreaSection> {
   final FocusNode _focusNode = FocusNode();
   bool _isTextNotEmpty = false;
+  File? _stagedDocument;
+  String? _stagedFileName;
+  int? _stagedFileSizeBytes;
 
   @override
   void initState() {
@@ -89,8 +94,9 @@ class _TextInputAreaSectionState extends State<TextInputAreaSection> {
       return;
     }
 
-    final notEmpty = text.trim().isNotEmpty;
+    final notEmpty = text.trim().isNotEmpty || _stagedDocument != null;
     if (notEmpty != _isTextNotEmpty) setState(() => _isTextNotEmpty = notEmpty);
+
     final cubit = context.read<ChatDetailsCubit>();
     if (notEmpty) {
       cubit.onUserTyping(widget.receiverUser.id);
@@ -137,6 +143,21 @@ class _TextInputAreaSectionState extends State<TextInputAreaSection> {
             onCancel: widget.onCancelReply ?? () {},
           ),
 
+        if (_stagedDocument != null)
+          ChatStagedFilePreview(
+            fileName: _stagedFileName ?? 'File',
+            fileSizeBytes: _stagedFileSizeBytes ?? 0,
+            onRemove: () {
+              setState(() {
+                _stagedDocument = null;
+                _stagedFileName = null;
+                _stagedFileSizeBytes = null;
+                _isTextNotEmpty =
+                    widget.messageController.text.trim().isNotEmpty;
+              });
+            },
+          ),
+
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
           decoration: const BoxDecoration(color: AppColors.transparent),
@@ -156,7 +177,11 @@ class _TextInputAreaSectionState extends State<TextInputAreaSection> {
                   decoration: InputDecoration(
                     hoverColor: AppColors.white,
                     hintText: 'Type a message...',
+                    filled: false,
+                    fillColor: Colors.transparent,
                     border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
                     contentPadding: const EdgeInsets.symmetric(
                       vertical: 10,
                       horizontal: 8,
@@ -207,7 +232,33 @@ class _TextInputAreaSectionState extends State<TextInputAreaSection> {
                       widget.onEditCancelled?.call();
                       return;
                     }
+
                     final text = widget.messageController.text.trim();
+
+                    if (_stagedDocument != null) {
+                      context.read<ChatDetailsCubit>().sendMessage(
+                        receiverId: widget.receiverUser.id,
+                        messageText: '',
+                        messageType: 'file',
+                        documentFile: _stagedDocument,
+                        fileName: _stagedFileName,
+                        fileSizeBytes: _stagedFileSizeBytes,
+                        caption: text.isNotEmpty ? text : null,
+                        replyTo: widget.replyTo,
+                      );
+                      setState(() {
+                        _stagedDocument = null;
+                        _stagedFileName = null;
+                        _stagedFileSizeBytes = null;
+                        _isTextNotEmpty = false;
+                      });
+                      widget.messageController.clear();
+                      context.read<ChatDetailsCubit>().stopTyping(
+                        widget.receiverUser.id,
+                      );
+                      widget.onCancelReply?.call();
+                      return;
+                    }
                     if (text.isNotEmpty) {
                       context.read<ChatDetailsCubit>().sendMessage(
                         receiverId: widget.receiverUser.id,
@@ -345,15 +396,12 @@ class _TextInputAreaSectionState extends State<TextInputAreaSection> {
 
       case AttachmentKind.file:
         if (picked.localFile == null) return;
-        chatCubit.sendMessage(
-          receiverId: widget.receiverUser.id,
-          messageText: '',
-          messageType: 'file',
-          documentFile: picked.localFile,
-          fileName: picked.fileName,
-          fileSizeBytes: picked.fileSizeBytes,
-          replyTo: widget.replyTo,
-        );
+        setState(() {
+          _stagedDocument = picked.localFile;
+          _stagedFileName = picked.fileName;
+          _stagedFileSizeBytes = picked.fileSizeBytes;
+          _isTextNotEmpty = true;
+        });
         widget.onCancelReply?.call();
         break;
 

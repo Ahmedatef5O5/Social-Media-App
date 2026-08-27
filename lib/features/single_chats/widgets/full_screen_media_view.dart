@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'dart:io';
+import 'package:social_media_app/core/design/tokens/typography.dart';
+import 'package:social_media_app/core/helpers/emoji_helper.dart';
 import 'package:social_media_app/core/helpers/media_duration_badge.dart';
 import 'package:social_media_app/core/widgets/cached_cloudinary_image.dart';
 import 'package:flutter/material.dart';
@@ -699,7 +701,7 @@ class _FullScreenMediaViewState extends State<FullScreenMediaView>
           border: Border.all(color: Colors.white24, width: 1),
         ),
         child: Text(
-          widget.caption!,
+          EmojiHelper.normalize(widget.caption!),
           textAlign: TextAlign.center,
           maxLines: 3,
           overflow: TextOverflow.ellipsis,
@@ -707,6 +709,8 @@ class _FullScreenMediaViewState extends State<FullScreenMediaView>
             color: Colors.white,
             fontSize: 15,
             fontWeight: FontWeight.w500,
+            fontFamily: null,
+            fontFamilyFallback: AppTypography.fontFallback,
           ),
         ),
       ),

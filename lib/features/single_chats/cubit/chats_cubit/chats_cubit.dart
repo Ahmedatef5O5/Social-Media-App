@@ -73,7 +73,7 @@ class ChatsCubit extends Cubit<ChatsState> with WidgetsBindingObserver {
   }
 
   void _emitWithPresence() {
-    if (_cachedChats.isEmpty) return;
+    if (isClosed || _cachedChats.isEmpty) return;
 
     final updatedChats =
         _cachedChats.map((chat) {
@@ -115,6 +115,8 @@ class ChatsCubit extends Cubit<ChatsState> with WidgetsBindingObserver {
       );
     }
 
+    if (isClosed) return;
+
     final newList =
         _cachedChats.where((c) => !otherUserIds.contains(c.id)).toList();
     _cachedChats = newList;
@@ -123,6 +125,7 @@ class ChatsCubit extends Cubit<ChatsState> with WidgetsBindingObserver {
   }
 
   Future<void> getChats({bool isRefresh = false}) async {
+    if (isClosed) return;
     if (!isRefresh) {
       _showSkeleton = true;
       emit(ChatsLoading());
@@ -131,6 +134,9 @@ class ChatsCubit extends Cubit<ChatsState> with WidgetsBindingObserver {
       final start = DateTime.now();
 
       final fetchedChats = await _chatServices.getChatsList(_currentUserId);
+
+      if (isClosed) return;
+
       final chats =
           fetchedChats.where((c) => !_isHiddenByLocalClear(c)).toList();
       _cachedChats = chats;
@@ -142,10 +148,13 @@ class ChatsCubit extends Cubit<ChatsState> with WidgetsBindingObserver {
         if (elapsed < const Duration(milliseconds: 500)) {
           await Future.delayed(const Duration(milliseconds: 500) - elapsed);
         }
+        if (isClosed) return;
       }
       _emitWithPresence();
       _persistChatsSnapshot(chats);
     } catch (e) {
+      if (isClosed) return;
+
       _showSkeleton = false;
       if (e.toString().contains('no-internet')) {
         if (_cachedChats.isNotEmpty) {
@@ -158,12 +167,16 @@ class ChatsCubit extends Cubit<ChatsState> with WidgetsBindingObserver {
             'Silent error: No internet, showing chats snapshot from disk.',
           );
           _cachedChats = diskChats;
-          emit(ChatsSuccessloaded(chats: diskChats));
+          if (!isClosed) emit(ChatsSuccessloaded(chats: diskChats));
           return;
         }
-        emit(ChatsError("No internet connection. Please check your network."));
+        if (!isClosed) {
+          emit(
+            ChatsError("No internet connection. Please check your network."),
+          );
+        }
       } else {
-        emit(ChatsError(AuthExceptionHandler.handle(e)));
+        if (!isClosed) emit(ChatsError(AuthExceptionHandler.handle(e)));
       }
       debugPrint('Error in getChats Cubit: $e');
     }

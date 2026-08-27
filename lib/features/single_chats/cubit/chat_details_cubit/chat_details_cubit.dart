@@ -323,7 +323,8 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
 
             final protectedLeftovers = cachedMessages.where(
               (m) =>
-                  _unconfirmedDiskMessageIds.contains(m.id) &&
+                  (_unconfirmedDiskMessageIds.contains(m.id) ||
+                      m.id.startsWith('temp_')) &&
                   !enrichedIds.contains(m.id),
             );
 
@@ -606,10 +607,20 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
 
       if (documentFile != null) {
         if (await documentFile.exists()) {
+          uploadProgressMap[tempId] = 0.0;
+          emit(MessagesSending(messages: updatedMessages));
+
+          final originalName = fileName ?? documentFile.path.split('/').last.split('\\').last;
+          final nameWithoutExt = originalName.contains('.')
+              ? originalName.substring(0, originalName.lastIndexOf('.'))
+              : originalName;
+          final safeName = nameWithoutExt.replaceAll(RegExp(r'[^a-zA-Z0-9\-_]'), '_');
+
           final result = await _chatServices.storage.uploadFile(
             documentFile,
             'chats',
             'file',
+            filePrefix: '${safeName}_',
             cancelToken: cancelToken,
             onProgress: (progress) {
               uploadProgressMap[tempId] = progress;
@@ -618,7 +629,7 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
           );
           fileUrl = result.secureUrl;
           filePublicId = result.publicId;
-          await _mediaCacheRepository.adoptUploadedFile(fileUrl, documentFile);
+          await _mediaCacheRepository.adoptUploadedFile(result.secureUrl, documentFile);
           uploadProgressMap[tempId] = 1.0;
           emit(MessagesSending(messages: updatedMessages));
           await Future.delayed(const Duration(milliseconds: 200));

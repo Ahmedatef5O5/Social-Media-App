@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../../core/design/tokens/typography.dart';
 import '../../../core/helpers/formatted_date.dart';
 import '../../../core/presence/widgets/presence_avatar_widget.dart';
 import '../../../core/widgets/app_avatar.dart';
@@ -341,7 +342,7 @@ class _MessageReactionsSheetBodyState
                                         bottom: -4,
                                         right: -4,
                                         child: Container(
-                                          padding: const EdgeInsets.all(1.2),
+                                          padding: const EdgeInsets.all(2),
                                           decoration: BoxDecoration(
                                             color:
                                                 theme.scaffoldBackgroundColor,
@@ -349,8 +350,13 @@ class _MessageReactionsSheetBodyState
                                           ),
                                           child: Text(
                                             r.emoji,
-                                            style: const TextStyle(
-                                              fontSize: 14,
+                                            style: TextStyle(
+                                              inherit: false,
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.normal,
+                                              fontFamilyFallback:
+                                                  AppTypography
+                                                      .emojiFontFallback,
                                             ),
                                           ),
                                         ),
