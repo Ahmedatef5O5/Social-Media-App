@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../../core/design/tokens/typography.dart';
 
 const List<String> kStoryReactions = ['❤️', '😂', '😮', '😢', '👏', '🔥'];
 
@@ -175,9 +176,10 @@ class StoryReactionBubbleState extends State<_StoryReactionBubble>
                       transformAlignment: Alignment.center,
                       child: Text(
                         emoji,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 22,
                           decoration: TextDecoration.none,
+                          fontFamilyFallback: AppTypography.emojiFontFallback,
                         ),
                       ),
                     ),

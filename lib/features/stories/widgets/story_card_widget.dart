@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:social_media_app/core/design/tokens/typography.dart';
+import 'package:social_media_app/core/helpers/emoji_helper.dart';
 import 'package:social_media_app/core/presence/widgets/presence_avatar_widget.dart';
 import 'package:social_media_app/core/themes/app_colors.dart';
 import 'package:social_media_app/core/widgets/cached_cloudinary_image.dart';
@@ -130,7 +132,7 @@ class StoryCardWidget extends StatelessWidget {
                 right: 8,
                 bottom: 8,
                 child: Text(
-                  label,
+                  EmojiHelper.normalize(label),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
@@ -138,6 +140,8 @@ class StoryCardWidget extends StatelessWidget {
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                     height: 1.15,
+                    fontFamily: null,
+                    fontFamilyFallback: AppTypography.fontFallback,
                     shadows: [Shadow(blurRadius: 4, color: Colors.black54)],
                   ),
                 ),
@@ -184,7 +188,7 @@ class StoryCardWidget extends StatelessWidget {
       alignment: Alignment.center,
       padding: const EdgeInsets.symmetric(horizontal: 10),
       child: Text(
-        story.contentText ?? '',
+        EmojiHelper.normalize(story.contentText ?? ''),
         maxLines: 4,
         overflow: TextOverflow.ellipsis,
         textAlign: TextAlign.center,
@@ -193,6 +197,8 @@ class StoryCardWidget extends StatelessWidget {
           color: AppColors.white,
           fontSize: 13,
           fontWeight: FontWeight.w600,
+          fontFamily: null,
+          fontFamilyFallback: AppTypography.fontFallback,
         ),
       ),
     );

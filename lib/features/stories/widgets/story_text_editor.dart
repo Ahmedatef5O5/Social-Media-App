@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:social_media_app/core/mentions/mentions.dart';
+import '../../../core/design/tokens/typography.dart';
 import '../../../core/themes/app_colors.dart';
 import '../../ai_assistant/entities/ai_action_type.dart';
 import '../../ai_assistant/entities/ai_request_context.dart';
@@ -37,7 +38,11 @@ class StoryTextEditor extends StatelessWidget {
                   minLines: 1,
                   maxLines: null,
                   maxLength: 280,
-                  style: const TextStyle(color: AppColors.white, fontSize: 32),
+                  style: const TextStyle(
+                    color: AppColors.white,
+                    fontSize: 32,
+                    fontFamilyFallback: AppTypography.emojiFontFallback,
+                  ),
                   hintStyle: const TextStyle(
                     color: AppColors.white70,
                     fontSize: 32,

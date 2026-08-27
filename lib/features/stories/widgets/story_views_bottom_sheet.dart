@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
+import '../../../core/design/tokens/typography.dart';
 import '../../../core/helpers/formatted_date.dart';
 import '../../../core/presence/widgets/presence_avatar_widget.dart';
 import '../../../core/router/app_routes.dart';
@@ -114,7 +115,7 @@ class StoryViewsBottomSheet extends StatelessWidget {
                                           bottom: -4,
                                           right: -4,
                                           child: Container(
-                                            padding: const EdgeInsets.all(3),
+                                            padding: const EdgeInsets.all(2),
                                             decoration: BoxDecoration(
                                               color: colorScheme.surface,
                                               shape: BoxShape.circle,
@@ -128,8 +129,13 @@ class StoryViewsBottomSheet extends StatelessWidget {
                                             ),
                                             child: Text(
                                               viewer.reaction!,
-                                              style: const TextStyle(
-                                                fontSize: 14,
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                inherit: false,
+                                                fontWeight: FontWeight.normal,
+                                                fontFamilyFallback:
+                                                    AppTypography
+                                                        .emojiFontFallback,
                                               ),
                                             ),
                                           ),

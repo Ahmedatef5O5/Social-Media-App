@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../core/design/tokens/typography.dart';
 import '../cubit/story_reaction_cubit/story_reaction_cubit.dart';
 import '../widgets/story_reaction_picker.dart';
 
@@ -114,10 +115,11 @@ class _StoryReactionButtonState extends State<StoryReactionButton> {
                   active != null
                       ? Text(
                         active,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 20,
+                          inherit: false,
+                          fontFamilyFallback: AppTypography.emojiFontFallback,
                           decoration: TextDecoration.none,
-                          color: Colors.black,
                         ),
                       )
                       : Icon(

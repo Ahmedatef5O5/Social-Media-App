@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:social_media_app/core/design/tokens/typography.dart';
 import 'package:social_media_app/core/link/widgets/message_link_preview.dart';
 import 'package:social_media_app/core/toast/app_toast.dart';
 import 'package:video_player/video_player.dart';
@@ -200,6 +201,8 @@ class _SingleUserStoryViewState extends State<SingleUserStoryView>
                               fontSize: 28,
                               color: Colors.white,
                               fontWeight: FontWeight.w500,
+                              fontFamily: null,
+                              fontFamilyFallback: AppTypography.fontFallback,
                             ),
                             collapsedMaxLines: 9,
                             onExpandChanged: (expanded) {
@@ -298,6 +301,8 @@ class _SingleUserStoryViewState extends State<SingleUserStoryView>
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 16,
+                                  fontFamily: null,
+                                  fontFamilyFallback: AppTypography.fontFallback,
                                 ),
                                 collapsedMaxLines: 9,
                                 onExpandChanged: (expanded) {

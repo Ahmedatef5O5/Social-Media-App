@@ -1,13 +1,11 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import '../../../core/design/tokens/typography.dart';
 
 class ReactionFountainWidget extends StatefulWidget {
   final List<String> reactionEmojis;
-
   final int multiplier;
-
   final int maxParticles;
-
   final double rightMargin;
   final double bottomMargin;
 
@@ -25,6 +23,17 @@ class ReactionFountainWidget extends StatefulWidget {
 }
 
 class _FountainParticle {
+  final String emoji;
+  final double startFraction;
+  final double durationFraction;
+  final double spawnXJitter;
+  final double wobbleAmplitude;
+  final double wobbleFrequency;
+  final double wobbleDirection;
+  final double travelFraction;
+  final double sizeScale;
+  final double rotationAmplitude;
+
   _FountainParticle({
     required this.emoji,
     required this.startFraction,
@@ -37,17 +46,6 @@ class _FountainParticle {
     required this.sizeScale,
     required this.rotationAmplitude,
   });
-
-  final String emoji;
-  final double startFraction;
-  final double durationFraction;
-  final double spawnXJitter;
-  final double wobbleAmplitude;
-  final double wobbleFrequency;
-  final double wobbleDirection;
-  final double travelFraction;
-  final double sizeScale;
-  final double rotationAmplitude;
 }
 
 class _ReactionFountainWidgetState extends State<ReactionFountainWidget>
@@ -197,9 +195,12 @@ class _ReactionFountainWidgetState extends State<ReactionFountainWidget>
             scale: finalScale,
             child: Text(
               p.emoji,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 26,
                 decoration: TextDecoration.none,
+                inherit: false,
+                fontWeight: FontWeight.normal,
+                fontFamilyFallback: AppTypography.emojiFontFallback,
               ),
             ),
           ),

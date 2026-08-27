@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:social_media_app/features/stories/cubit/stories_cubit/stories_cubit.dart';
 import '../../../core/cache/utils/cloudinary_url_extensions.dart';
+import '../../../core/design/tokens/typography.dart';
 import '../../../core/helpers/chat_helper.dart';
+import '../../../core/helpers/emoji_helper.dart';
 import '../../../core/helpers/formatted_date.dart';
 import '../../../core/mentions/widgets/mention_rich_text.dart';
 import '../../../core/themes/app_colors.dart';
@@ -86,7 +88,7 @@ class MyStoryTile extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          _titleFor(story),
+                          EmojiHelper.normalize(_titleFor(story)),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           textDirection:
@@ -95,9 +97,11 @@ class MyStoryTile extends StatelessWidget {
                                     story.contentText ?? 'EN',
                                   )
                                   : TextDirection.ltr,
-                          style: theme.textTheme.titleSmall?.copyWith(
+                          style: (theme.textTheme.titleSmall ?? const TextStyle()).copyWith(
                             fontWeight: FontWeight.w700,
                             fontSize: 15,
+                            fontFamily: null,
+                            fontFamilyFallback: AppTypography.fontFallback,
                           ),
                         ),
                         const Gap(6),
@@ -356,8 +360,12 @@ class MyStoryTile extends StatelessWidget {
               ),
             ),
             TextSpan(
-              text: entry.key,
-              style: const TextStyle(fontSize: 12, color: Colors.black),
+              text: EmojiHelper.normalize(entry.key),
+              style: const TextStyle(
+                fontFamily: null,
+                fontFamilyFallback: AppTypography.fontFallback,
+                fontSize: 12,
+              ),
             ),
             const TextSpan(text: '  '),
           ],
