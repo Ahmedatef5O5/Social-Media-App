@@ -5,6 +5,7 @@ import 'package:dio/dio.dart' as dio_pkg;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:social_media_app/core/cache/repository/media_cache_repository.dart';
 import 'package:social_media_app/features/social_graph/models/content_privacy.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:social_media_app/core/cache/constants/snapshot_keys.dart';
@@ -55,12 +56,16 @@ class PostsCubit extends Cubit<PostsState>
   @override
   final CloudinaryStorageServices _storage;
   final NetworkStatusService _networkStatus;
+  @override
+  final MediaCacheRepository _mediaCacheRepository;
 
   PostsCubit({
     required PostsServices postsServices,
     required CloudinaryStorageServices storage,
     NetworkStatusService? networkStatus,
-  }) : _postsServices = postsServices,
+    required MediaCacheRepository mediaCacheRepository,
+  }) : _mediaCacheRepository = mediaCacheRepository,
+       _postsServices = postsServices,
        _storage = storage,
        _networkStatus = networkStatus ?? NetworkStatusService.instance,
        super(PostsInitial()) {

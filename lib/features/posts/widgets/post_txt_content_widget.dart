@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
+import '../../../core/design/tokens/typography.dart';
 import '../../../core/helpers/chat_helper.dart';
+import '../../../core/helpers/emoji_helper.dart';
 import '../../../core/link/widgets/message_link_preview.dart';
 import '../../../core/mentions/widgets/mention_rich_text.dart';
 import '../../../core/router/app_routes.dart';
@@ -21,7 +23,7 @@ class _PostTxtContentWidgetState extends State<PostTxtContentWidget> {
 
   @override
   Widget build(BuildContext context) {
-    final String postText = widget.post.text.trim();
+    final String postText = EmojiHelper.normalize(widget.post.text.trim());
 
     if (postText.isEmpty) {
       return const SizedBox.shrink();
@@ -40,9 +42,14 @@ class _PostTxtContentWidgetState extends State<PostTxtContentWidget> {
     final String readMoreTxt = isArabic ? '...قراءة المزيد' : 'Read more...';
     final String readLessTxt = isArabic ? 'عرض أقل' : 'Show less';
 
-    final textStyle = Theme.of(
-      context,
-    ).textTheme.titleSmall!.copyWith(fontWeight: FontWeight.w400, fontSize: 15);
+    final textStyle = (Theme.of(context).textTheme.titleSmall ??
+            const TextStyle())
+        .copyWith(
+      fontWeight: FontWeight.w400,
+      fontSize: 15,
+      fontFamily: null,
+      fontFamilyFallback: AppTypography.fontFallback,
+    );
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 10),
@@ -102,6 +109,8 @@ class _PostTxtContentWidgetState extends State<PostTxtContentWidget> {
                               color: Theme.of(context).colorScheme.outline,
                               fontWeight: FontWeight.w600,
                               fontSize: 14,
+                              fontFamily: null,
+                              fontFamilyFallback: AppTypography.fontFallback,
                             ),
                           ),
                         ),

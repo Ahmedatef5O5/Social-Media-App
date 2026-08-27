@@ -3,9 +3,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:social_media_app/features/posts/helper/full_screen_video_actions.dart';
 import 'package:video_player/video_player.dart';
-
 import '../../../core/cache/repository/media_cache_repository.dart';
 import '../../../core/constants/app_images.dart';
+import '../../../core/design/tokens/typography.dart';
 import '../../../core/helpers/comment_helper.dart';
 import '../../../core/themes/app_colors.dart';
 import '../../../core/toast/app_toast.dart';
@@ -176,9 +176,10 @@ class _RightInteractionsPostVideoColumnState
                     isLiked && myReaction != 'like'
                         ? Text(
                           myReaction,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 28,
-                            color: Colors.black,
+                            inherit: false,
+                            fontFamilyFallback: AppTypography.emojiFontFallback,
                           ),
                         )
                         : Icon(

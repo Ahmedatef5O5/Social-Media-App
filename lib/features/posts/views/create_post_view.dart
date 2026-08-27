@@ -110,6 +110,10 @@ class _CreatePostViewState extends State<CreatePostView> {
 
   @override
   void dispose() {
+    try {
+      context.read<PostsCubit>().clearMediaSelection();
+    } catch (_) {}
+
     _textEditingController.dispose();
     _sheetController.dispose();
     _focusNode.dispose();
@@ -270,10 +274,7 @@ class _CreatePostViewState extends State<CreatePostView> {
                                 );
                               } else if (postsCubit.selectedDocument != null) {
                                 return CreatePostFilePreview(
-                                  fileName:
-                                      postsCubit.selectedDocument!.path
-                                          .split('/')
-                                          .last,
+                                  fileName: postsCubit.selectedDocument!.name,
                                   fileSizeBytes:
                                       postsCubit.selectedDocumentSizeBytes,
                                   onRemove: () {

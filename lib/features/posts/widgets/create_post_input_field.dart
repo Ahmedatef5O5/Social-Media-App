@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:social_media_app/core/design/tokens/typography.dart';
 import 'package:social_media_app/core/mentions/mentions.dart';
 import '../../ai_assistant/entities/ai_action_type.dart';
 import '../../ai_assistant/entities/ai_request_context.dart';
@@ -27,17 +28,21 @@ class CreatePostInputField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final atLimit = _textEditingController.text.length >= 140;
+    final theme = Theme.of(context);
 
     return MentionAwareTextField(
       controller: _textEditingController,
       focusNode: focusNode,
       enabled: true,
       hintText: "What's on your head?",
-      style: const TextStyle(fontSize: 18),
-      hintStyle: Theme.of(context).textTheme.titleSmall!.copyWith(
-        color: Theme.of(
-          context,
-        ).textTheme.titleSmall!.color?.withValues(alpha: 0.35),
+      style: (theme.textTheme.bodyLarge ?? const TextStyle()).copyWith(
+        fontSize: 18,
+        textBaseline: TextBaseline.alphabetic,
+        fontFamily: null,
+        fontFamilyFallback: AppTypography.fontFallback,
+      ),
+      hintStyle: theme.textTheme.titleSmall!.copyWith(
+        color: theme.textTheme.titleSmall!.color?.withValues(alpha: 0.35),
         fontSize: 19,
         fontWeight: FontWeight.w400,
       ),

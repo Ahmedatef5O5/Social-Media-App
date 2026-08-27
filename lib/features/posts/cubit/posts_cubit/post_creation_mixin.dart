@@ -13,6 +13,7 @@ mixin PostCreationMixin on Cubit<PostsState> {
   int? selectedImageSizeBytes;
   int? selectedVideoSizeBytes;
   int? selectedDocumentSizeBytes;
+  MediaCacheRepository get _mediaCacheRepository;
   dio_pkg.CancelToken? _cancelToken;
 
   Future<void> createPost({
@@ -21,6 +22,7 @@ mixin PostCreationMixin on Cubit<PostsState> {
     List<String> allowedViewerIds = const [],
     List<MentionRef> mentions = const [],
   }) async {
+    if (state is PostCreating) return;
     final user = SupabaseProvider.user;
     if (user == null) return;
     final userId = user.id;
@@ -30,7 +32,6 @@ mixin PostCreationMixin on Cubit<PostsState> {
     _cancelToken = dio_pkg.CancelToken();
 
     String? imageUrl, videoUrl, fileUrl;
-    // ignore: unused_local_variable
     String? imagePublicId, videoPublicId, filePublicId;
     int? mediaWidth, mediaHeight;
 
@@ -41,7 +42,7 @@ mixin PostCreationMixin on Cubit<PostsState> {
             totalBytes > 0 ? (sentBytes / totalBytes).clamp(0.0, 1.0) : 0.0;
         emit(
           PostCreating(
-            ratio.clamp(0.05, 0.95),
+            ratio,
             sentBytes: sentBytes,
             totalBytes: totalBytes,
           ),
@@ -62,6 +63,8 @@ mixin PostCreationMixin on Cubit<PostsState> {
           imagePublicId = result.publicId;
           mediaWidth = result.width;
           mediaHeight = result.height;
+          final length = await imageFile.length();
+          updateProgress(length, length);
         } else {
           throw Exception('image_not_found');
         }
@@ -81,6 +84,8 @@ mixin PostCreationMixin on Cubit<PostsState> {
           videoPublicId = result.publicId;
           mediaWidth = result.width ?? mediaWidth;
           mediaHeight = result.height ?? mediaHeight;
+          final length = await videoFile.length();
+          updateProgress(length, length);
         } else {
           throw Exception('video_not_found');
         }
@@ -89,20 +94,30 @@ mixin PostCreationMixin on Cubit<PostsState> {
       if (selectedDocument != null) {
         final docFile = File(selectedDocument!.path);
         if (await docFile.exists()) {
+          final originalName = docFile.path.split('/').last.split('\\').last;
+          final nameWithoutExt = originalName.contains('.')
+              ? originalName.substring(0, originalName.lastIndexOf('.'))
+              : originalName;
+          final safeName = nameWithoutExt.replaceAll(RegExp(r'[^a-zA-Z0-9\-_]'), '_');
+
           final result = await _storage.uploadFile(
             docFile,
             'posts',
             'documents',
+            filePrefix: '${safeName}_',
             cancelToken: _cancelToken,
             onProgressBytes: updateProgress,
           );
-
           fileUrl = result.secureUrl;
           filePublicId = result.publicId;
+          await _mediaCacheRepository.adoptUploadedFile(result.secureUrl, docFile);
+          final length = await docFile.length();
+          updateProgress(length, length);
         } else {
           throw Exception("file_not_found");
         }
       }
+
       final postId = const Uuid().v4();
       final postRequest = PostRequestBody(
         id: postId,
@@ -118,6 +133,7 @@ mixin PostCreationMixin on Cubit<PostsState> {
         mediaHeight: mediaHeight,
         privacyType: privacy,
       );
+
       await _postsServices.addPost(postRequest);
       if (privacy == ContentPrivacy.private && allowedViewerIds.isNotEmpty) {
         await _postsServices.setPostAllowedViewers(postId, allowedViewerIds);
@@ -142,15 +158,14 @@ mixin PostCreationMixin on Cubit<PostsState> {
         }
       }
 
-      emit(PostCreating(1.0));
-      await Future.delayed(const Duration(milliseconds: 2000));
+      emit(const PostCreating(1.0));
+      await Future.delayed(const Duration(milliseconds: 600));
       _resetMedia();
       emit(PostCreated());
 
       await fetchPosts(isRefresh: true);
     } catch (e) {
       final isOffline = await ConnectivityBannerController.notifyIfOffline();
-
       final errorMessage = _mapExceptionToMessage(e);
       if (errorMessage == "upload_canceled") {
         emit(const PostUploadCanceled());
@@ -394,6 +409,10 @@ mixin PostCreationMixin on Cubit<PostsState> {
     selectedImageSizeBytes = null;
     selectedVideoSizeBytes = null;
     selectedDocumentSizeBytes = null;
+  }
+
+  void clearMediaSelection() {
+    _resetMedia();
   }
 
   void _emitPreviousState() {
