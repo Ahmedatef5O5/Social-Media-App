@@ -4,6 +4,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../cache/repository/media_cache_repository.dart';
+import '../../helpers/bidi_text_helper.dart';
+import '../../helpers/modern_progress_painter.dart';
 
 class FileMessageBubble extends StatefulWidget {
   final String fileUrl;
@@ -128,32 +130,37 @@ class _FileMessageBubbleState extends State<FileMessageBubble> {
       case 'pptx':
         return (FontAwesomeIcons.solidFilePowerpoint, const Color(0xFFD24726));
       case 'txt':
-      case 'md':
       case 'rtf':
-        return (FontAwesomeIcons.solidFileLines, const Color(0xFF555555));
+        return (FontAwesomeIcons.solidFileLines, const Color(0xFF2E7D52));
+      case 'md':
+        return (FontAwesomeIcons.solidFileLines, const Color(0xFF3B82F6));
       case 'json':
       case 'dart':
       case 'py':
       case 'js':
+      case 'ts':
       case 'html':
-      case 'xml':
+      case 'css':
         return (FontAwesomeIcons.solidFileCode, const Color(0xFF00B4D8));
       case 'zip':
       case 'rar':
       case '7z':
-        return (FontAwesomeIcons.solidFileZipper, Colors.amber.shade700);
+      case 'tar':
+        return (FontAwesomeIcons.solidFileZipper, const Color(0xFFF59E0B));
       case 'mp3':
       case 'wav':
       case 'm4a':
-        return (FontAwesomeIcons.solidFileAudio, Colors.purpleAccent);
+      case 'ogg':
+        return (FontAwesomeIcons.solidFileAudio, const Color(0xFF9333EA));
       case 'mp4':
       case 'avi':
       case 'mkv':
-        return (FontAwesomeIcons.solidFileVideo, Colors.redAccent);
+        return (FontAwesomeIcons.solidFileVideo, const Color(0xFFE11D48));
       case 'png':
       case 'jpg':
       case 'jpeg':
-        return (FontAwesomeIcons.solidFileImage, const Color(0xFF2E8B57));
+      case 'webp':
+        return (FontAwesomeIcons.solidFileImage, const Color(0xFF059669));
       default:
         return (FontAwesomeIcons.solidFile, defaultColor);
     }
@@ -213,67 +220,115 @@ class _FileMessageBubbleState extends State<FileMessageBubble> {
 
   @override
   Widget build(BuildContext context) {
-    final primary = Theme.of(context).primaryColor;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final primary = theme.primaryColor;
     final ext = _getFileExtension();
     final (fileIcon, iconAccent) = _getFileIconAndColor(ext, primary);
 
-    final fg = widget.isMe ? Colors.white : primary;
-    final bg =
+    final Color fg =
         widget.isMe
-            ? Colors.white.withValues(alpha: 0.16)
-            : primary.withValues(alpha: 0.08);
+            ? Colors.white
+            : (isDark
+                ? Colors.white
+                : (iconAccent.computeLuminance() < 0.45
+                    ? iconAccent
+                    : theme.colorScheme.onSurface));
+
+    final Color bg =
+        widget.isMe
+            ? Colors.white.withValues(alpha: 0.18)
+            : (isDark
+                ? iconAccent.withValues(alpha: 0.16)
+                : iconAccent.withValues(alpha: 0.08));
+
+    final Border border = Border.all(
+      color:
+          widget.isMe
+              ? Colors.white.withValues(alpha: 0.28)
+              : iconAccent.withValues(alpha: isDark ? 0.35 : 0.22),
+      width: 1,
+    );
 
     final bool isTransferring = widget.isUploading || _isDownloading;
     final double currentProgress =
         widget.isUploading ? (widget.uploadProgress ?? 0.0) : _downloadProgress;
 
-    final bool needsDownload =
-        !widget.isUploading && _localPath == null && !_isDownloading;
-
     final sizeStr = _formatSize(widget.fileSizeBytes);
+    final bool isDownloaded = _localPath != null || widget.isMe;
+    final displayName =
+        widget.fileName?.trim().isNotEmpty == true ? widget.fileName! : 'File';
+    final textDirection = BidiTextHelper.detectDirection(displayName);
 
     return InkWell(
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: BorderRadius.circular(16),
       onTap: _handleTap,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
         decoration: BoxDecoration(
           color: bg,
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(16),
+          border: border,
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color:
-                    isTransferring
-                        ? Colors.transparent
-                        : (widget.isMe
-                            ? Colors.white
-                            : iconAccent.withValues(alpha: 0.12)),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              alignment: Alignment.center,
-              child:
+            // Smooth Animated Container for the Icon / Download State
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 300),
+              switchInCurve: Curves.easeInOutCubic,
+              switchOutCurve: Curves.easeInOutCubic,
+              transitionBuilder:
+                  (child, animation) =>
+                      ScaleTransition(scale: animation, child: child),
+              child: Container(
+                key: ValueKey<String>(
                   isTransferring
-                      ? _TransferProgressIcon(
-                        progress: currentProgress,
-                        color: widget.isMe ? Colors.white : iconAccent,
-                        totalBytes: widget.fileSizeBytes,
-                        formatTransfer: _formatTransfer,
-                        onCancel:
-                            widget.isUploading
-                                ? widget.onCancelTap
-                                : _cancelDownload,
-                      )
-                      : FaIcon(
-                        needsDownload ? FontAwesomeIcons.download : fileIcon,
-                        color: iconAccent,
-                        size: 26,
-                      ),
+                      ? 'transferring'
+                      : (isDownloaded ? 'downloaded' : 'needs_download'),
+                ),
+                width: 46,
+                height: 46,
+                decoration: BoxDecoration(
+                  color:
+                      isTransferring
+                          ? Colors.transparent
+                          : (isDownloaded
+                              ? (widget.isMe ? Colors.white : Colors.white)
+                              : iconAccent.withValues(alpha: 0.15)),
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow:
+                      isTransferring || !isDownloaded
+                          ? null
+                          : [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.08),
+                              blurRadius: 6,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                ),
+                alignment: Alignment.center,
+                child:
+                    isTransferring
+                        ? _TransferProgressIcon(
+                          progress: currentProgress,
+                          color: widget.isMe ? Colors.white : iconAccent,
+                          totalBytes: widget.fileSizeBytes,
+                          formatTransfer: _formatTransfer,
+                          onCancel:
+                              widget.isUploading
+                                  ? widget.onCancelTap
+                                  : _cancelDownload,
+                        )
+                        : (isDownloaded
+                            ? FaIcon(fileIcon, color: iconAccent, size: 24)
+                            : Icon(
+                              Icons.arrow_downward_rounded,
+                              color: widget.isMe ? Colors.white : iconAccent,
+                              size: 22,
+                            )),
+              ),
             ),
             const SizedBox(width: 10),
 
@@ -283,15 +338,14 @@ class _FileMessageBubbleState extends State<FileMessageBubble> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    widget.fileName?.trim().isNotEmpty == true
-                        ? widget.fileName!
-                        : 'File',
+                    displayName,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    textDirection: textDirection,
+                    style: theme.textTheme.bodySmall?.copyWith(
                       color: fg,
                       fontWeight: FontWeight.w700,
-                      fontSize: 13,
+                      fontSize: 13.5,
                     ),
                   ),
                   const SizedBox(height: 5),
@@ -302,19 +356,21 @@ class _FileMessageBubbleState extends State<FileMessageBubble> {
                     children: [
                       Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 2,
+                          horizontal: 7,
+                          vertical: 2.5,
                         ),
                         decoration: BoxDecoration(
-                          color: (widget.isMe ? Colors.white : iconAccent)
-                              .withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(4),
+                          color:
+                              widget.isMe
+                                  ? Colors.white.withValues(alpha: 0.25)
+                                  : iconAccent.withValues(alpha: 0.16),
+                          borderRadius: BorderRadius.circular(5),
                         ),
                         child: Text(
                           ext,
                           style: TextStyle(
                             color: widget.isMe ? Colors.white : iconAccent,
-                            fontSize: 9,
+                            fontSize: 9.5,
                             fontWeight: FontWeight.w800,
                             letterSpacing: 0.5,
                           ),
@@ -324,11 +380,9 @@ class _FileMessageBubbleState extends State<FileMessageBubble> {
                       if (sizeStr.isNotEmpty)
                         Text(
                           sizeStr,
-                          style: Theme.of(
-                            context,
-                          ).textTheme.bodySmall?.copyWith(
-                            color: fg.withValues(alpha: 0.8),
-                            fontSize: 10.5,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: fg.withValues(alpha: 0.82),
+                            fontSize: 11,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -370,16 +424,25 @@ class _TransferProgressIcon extends StatelessWidget {
           onTap: onCancel,
           behavior: HitTestBehavior.opaque,
           child: SizedBox(
-            width: 22,
-            height: 22,
+            width: 26,
+            height: 26,
             child: Stack(
               alignment: Alignment.center,
               children: [
-                CircularProgressIndicator(
-                  value: clamped > 0 ? clamped : null,
-                  strokeWidth: 2.5,
-                  color: color,
-                  backgroundColor: color.withValues(alpha: 0.2),
+                TweenAnimationBuilder<double>(
+                  tween: Tween(begin: 0, end: clamped),
+                  duration: const Duration(milliseconds: 200),
+                  curve: Curves.easeOut,
+                  builder: (context, value, _) {
+                    return CustomPaint(
+                      size: const Size(26, 26),
+                      painter: ModernProgressPainter(
+                        progress: value,
+                        backgroundColor: color.withValues(alpha: 0.25),
+                        progressColor: color,
+                      ),
+                    );
+                  },
                 ),
                 Icon(Icons.close_rounded, size: 12, color: color),
               ],
