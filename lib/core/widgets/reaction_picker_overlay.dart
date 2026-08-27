@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../design/tokens/typography.dart';
 
 const List<Map<String, String>> kChatReactions = [
   {'emoji': '👍', 'label': 'Like'},
@@ -206,6 +207,8 @@ class _ReactionPickerBubbleState extends State<_ReactionPickerBubble>
                           r['emoji']!,
                           style: TextStyle(
                             fontSize: 26,
+                            inherit: false,
+                            fontFamilyFallback: AppTypography.emojiFontFallback,
                             shadows:
                                 isSelected
                                     ? [

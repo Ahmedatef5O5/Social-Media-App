@@ -1,4 +1,6 @@
 import 'dart:io';
+import 'package:social_media_app/core/design/tokens/typography.dart';
+import 'package:social_media_app/core/helpers/emoji_helper.dart';
 import 'package:social_media_app/core/widgets/cached_cloudinary_image.dart';
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
@@ -225,7 +227,7 @@ class _FullScreenImageViewerState extends State<FullScreenImageViewer> {
                     border: Border.all(color: Colors.white24, width: 1),
                   ),
                   child: Text(
-                    caption,
+                    EmojiHelper.normalize(caption),
                     textAlign: TextAlign.center,
                     maxLines: 3,
                     overflow: TextOverflow.ellipsis,
@@ -233,6 +235,8 @@ class _FullScreenImageViewerState extends State<FullScreenImageViewer> {
                       color: Colors.white,
                       fontSize: 15,
                       fontWeight: FontWeight.w500,
+                      fontFamily: null,
+                      fontFamilyFallback: AppTypography.fontFallback,
                     ),
                   ),
                 ),

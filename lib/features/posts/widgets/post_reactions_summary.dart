@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../model/post_reaction_model.dart';
+import '../../../core/design/tokens/typography.dart';
 
 class PostReactionsSummary extends StatelessWidget {
   final List<PostReactionModel> reactions;
@@ -52,10 +53,8 @@ class PostReactionsSummary extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 9,
                           height: 1,
-                          color:
-                              Theme.of(context).textTheme.bodyLarge?.color
-                                  ?.withValues(alpha: 1.0) ??
-                              Colors.black,
+                          inherit: false,
+                          fontFamilyFallback: AppTypography.emojiFontFallback,
                         ),
                       ),
                     ),

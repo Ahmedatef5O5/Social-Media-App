@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
+import '../../../core/design/tokens/typography.dart';
 import '../../../core/helpers/formatted_date.dart';
 import '../../../core/helpers/safe_navigator.dart';
 import '../../../core/presence/widgets/presence_avatar_widget.dart';
@@ -268,7 +269,7 @@ class _ReactionsBottomSheetState extends State<ReactionsBottomSheet> {
                                         bottom: -4,
                                         right: -4,
                                         child: Container(
-                                          padding: const EdgeInsets.all(1.2),
+                                          padding: const EdgeInsets.all(2),
                                           decoration: BoxDecoration(
                                             color:
                                                 theme.scaffoldBackgroundColor,
@@ -276,8 +277,13 @@ class _ReactionsBottomSheetState extends State<ReactionsBottomSheet> {
                                           ),
                                           child: Text(
                                             r.emoji,
-                                            style: const TextStyle(
-                                              fontSize: 14,
+                                            style: TextStyle(
+                                              inherit: false,
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.normal,
+                                              fontFamilyFallback:
+                                                  AppTypography
+                                                      .emojiFontFallback,
                                             ),
                                           ),
                                         ),

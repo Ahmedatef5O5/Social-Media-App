@@ -7,6 +7,7 @@ import 'package:social_media_app/features/comments/services/comments_service.dar
 import 'package:social_media_app/features/posts/widgets/post_reactions_bottom_sheet.dart';
 import '../../../core/cache/repository/media_cache_repository.dart';
 import '../../../core/constants/app_images.dart';
+import '../../../core/design/tokens/typography.dart';
 import '../../../core/helpers/comment_helper.dart';
 import '../../../core/themes/app_colors.dart';
 import '../../../core/toast/app_toast.dart';
@@ -270,11 +271,9 @@ class _LikeButtonWidgetState extends State<_LikeButtonWidget>
                       : Text(
                         myReaction,
                         style: TextStyle(
+                          inherit: false,
                           fontSize: 22,
-                          color:
-                              Theme.of(context).textTheme.bodyLarge?.color
-                                  ?.withValues(alpha: 1.0) ??
-                              Colors.black,
+                          fontFamilyFallback: AppTypography.emojiFontFallback,
                         ),
                       ),
             ),

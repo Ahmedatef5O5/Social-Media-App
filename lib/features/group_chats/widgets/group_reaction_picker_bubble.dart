@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../../core/design/tokens/typography.dart';
 import '../models/groupe_message_model.dart';
 
 class GroupReactionPickerBubble extends StatefulWidget {
@@ -134,6 +135,8 @@ class _GroupReactionPickerBubbleState extends State<GroupReactionPickerBubble>
                                 emoji,
                                 style: TextStyle(
                                   fontSize: 26,
+                                  fontFamilyFallback:
+                                      AppTypography.emojiFontFallback,
                                   shadows:
                                       isSelected
                                           ? [

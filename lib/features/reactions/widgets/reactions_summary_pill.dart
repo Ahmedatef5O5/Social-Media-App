@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/design/tokens/typography.dart';
 
 class ReactionsSummaryPill extends StatelessWidget {
   final Map<String, String> reactions;
@@ -83,12 +84,11 @@ class ReactionsSummaryPill extends StatelessWidget {
                     child: Text(
                       emoji,
                       style: TextStyle(
+                        inherit: false,
                         fontSize: 12,
                         height: 1.2,
-                        color:
-                            Theme.of(context).textTheme.bodyLarge?.color
-                                ?.withValues(alpha: 1.0) ??
-                            Colors.black,
+                        fontWeight: FontWeight.normal,
+                        fontFamilyFallback: AppTypography.emojiFontFallback,
                       ),
                     ),
                   ),

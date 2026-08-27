@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../model/comment_model.dart';
 import '../../../core/themes/app_colors.dart';
+import '../../../core/design/tokens/typography.dart';
 
 class CommentReactionsSummary extends StatelessWidget {
   final List<CommentReaction> reactions;
@@ -37,10 +38,10 @@ class CommentReactionsSummary extends StatelessWidget {
               .map(
                 (r) => Text(
                   r.emoji,
-                  style: Theme.of(context).textTheme.bodySmall!.copyWith(
-                    color: Theme.of(context).primaryColor,
+                  style: TextStyle(
                     fontSize: 12,
-                    fontWeight: FontWeight.bold,
+                    inherit: false,
+                    fontFamilyFallback: AppTypography.emojiFontFallback,
                   ),
                 ),
               ),
