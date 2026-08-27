@@ -30,7 +30,11 @@ class SettingsDetailSliverAppBar extends StatelessWidget {
       elevation: 0,
       scrolledUnderElevation: 0,
       leading: IconButton(
-        icon: Icon(Icons.arrow_back_ios_new_rounded, size: 20, color: primary),
+        icon: Icon(
+          Icons.arrow_back_ios_new_rounded,
+          size: 20,
+          color: isDark ? Colors.white : primary,
+        ),
         onPressed: () => Navigator.pop(context),
       ),
       flexibleSpace: LayoutBuilder(
@@ -63,10 +67,16 @@ class SettingsDetailSliverAppBar extends StatelessWidget {
                     width: 44,
                     height: 44,
                     decoration: BoxDecoration(
-                      color: primary.withValues(alpha: 0.12),
+                      color: isDark
+                          ? primary.withValues(alpha: 0.22)
+                          : primary.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(14),
                     ),
-                    child: Icon(icon, color: primary, size: 22),
+                    child: Icon(
+                      icon,
+                      color: isDark ? Colors.white : primary,
+                      size: 22,
+                    ),
                   ),
                   const Gap(14),
                   Expanded(
@@ -91,9 +101,8 @@ class SettingsDetailSliverAppBar extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                             fontSize: 13,
-                            height: 1.4, //
-                            color:
-                                isDark ? Colors.white38 : Colors.grey.shade500,
+                            height: 1.4,
+                            color: isDark ? Colors.white70 : Colors.grey.shade600,
                           ),
                         ),
                       ],

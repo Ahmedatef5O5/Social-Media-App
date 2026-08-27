@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import '../../design/theme/theme_extensions.dart';
 
 enum CallControlVariant { neutral, warning, dangerSolid }
 
@@ -109,7 +110,7 @@ class _CallControlButtonState extends State<CallControlButton>
       case CallControlVariant.neutral:
         return _buildGlassCircle(
           tint: Colors.white,
-          glow: Theme.of(context).colorScheme.primary,
+          glow: context.palette.primary,
         );
       case CallControlVariant.warning:
         return _buildGlassCircle(

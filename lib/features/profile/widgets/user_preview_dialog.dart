@@ -68,7 +68,7 @@ class _UserPreviewDialogState extends State<UserPreviewDialog> {
         mainAxisSize: MainAxisSize.min,
         children: [
           Hero(
-            tag: user.id,
+            tag: 'preview_dialog_${user.id}',
             child: GestureDetector(
               onTap: () {
                 Navigator.of(context, rootNavigator: true).pushNamed(
@@ -78,7 +78,7 @@ class _UserPreviewDialogState extends State<UserPreviewDialog> {
                         (user.imageUrl != null && user.imageUrl!.isNotEmpty)
                             ? user.imageUrl!
                             : AppImages.defaultUserImg,
-                    'tag': user.id,
+                    'tag': 'preview_dialog_${user.id}',
                     'isAsset': user.imageUrl == null || user.imageUrl!.isEmpty,
                   },
                 );

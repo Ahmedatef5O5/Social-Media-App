@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../core/themes/models/app_theme_model.dart';
+import '../../../core/design/tokens/typography.dart';
 
 class ThemeSelectionTile extends StatelessWidget {
   final AppThemeModel item;
@@ -19,7 +20,22 @@ class ThemeSelectionTile extends StatelessWidget {
     final isAppDark = theme.brightness == Brightness.dark;
     final bool isCardDark = item.bgBase.computeLuminance() < 0.5;
     final Color unselectedTextColor =
-        isCardDark ? Colors.white : Colors.black87;
+        isAppDark
+            ? Colors.white.withValues(alpha: 0.9)
+            : (isCardDark ? Colors.white : Colors.black87);
+
+    final Color tileBg =
+        isSelected
+            ? (isAppDark
+                ? (isCardDark
+                    ? item.bgCircle
+                    : item.bgCircle.withValues(alpha: 0.4))
+                : item.bgCircle)
+            : (isAppDark
+                ? (isCardDark
+                    ? item.bgCircle.withValues(alpha: 0.25)
+                    : item.bgCircle.withValues(alpha: 0.15))
+                : item.bgCircle.withValues(alpha: 0.45));
 
     return GestureDetector(
       onTap: onTap,
@@ -31,17 +47,14 @@ class ThemeSelectionTile extends StatelessWidget {
           duration: const Duration(milliseconds: 300),
           curve: Curves.easeOutCubic,
           decoration: BoxDecoration(
-            color:
-                isSelected
-                    ? item.bgCircle
-                    : item.bgCircle.withValues(alpha: 0.45),
+            color: tileBg,
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
               color:
                   isSelected
                       ? item.primaryColor
                       : (isAppDark
-                          ? Colors.white12
+                          ? Colors.white.withValues(alpha: 0.12)
                           : Colors.black.withValues(alpha: 0.05)),
               width: isSelected ? 2 : 1,
             ),
@@ -49,7 +62,9 @@ class ThemeSelectionTile extends StatelessWidget {
                 isSelected
                     ? [
                       BoxShadow(
-                        color: item.primaryColor.withValues(alpha: 0.15),
+                        color: item.primaryColor.withValues(
+                          alpha: isAppDark ? 0.25 : 0.15,
+                        ),
                         blurRadius: 16,
                         spreadRadius: -2,
                         offset: const Offset(0, 6),
@@ -93,18 +108,23 @@ class ThemeSelectionTile extends StatelessWidget {
                       decoration: BoxDecoration(
                         color:
                             isSelected
-                                ? item.bgBase
+                                ? (isAppDark ? item.bgCircle : item.bgBase)
                                 : item.bgCircle.withValues(
-                                  alpha: isCardDark ? 0.15 : 0.75,
+                                  alpha:
+                                      isCardDark
+                                          ? 0.25
+                                          : (isAppDark ? 0.3 : 0.75),
                                 ),
                         shape: BoxShape.circle,
                       ),
                       alignment: Alignment.center,
                       child: Text(
                         item.emoji,
-                        style: const TextStyle(
+                        style: TextStyle(
+                          inherit: false,
                           fontSize: 22,
-                          color: Colors.black,
+                          fontWeight: FontWeight.normal,
+                          fontFamilyFallback: AppTypography.emojiFontFallback,
                         ),
                       ),
                     ),
@@ -119,7 +139,7 @@ class ThemeSelectionTile extends StatelessWidget {
                         letterSpacing: -0.2,
                         color:
                             isSelected
-                                ? item.primaryColor
+                                ? (isAppDark ? Colors.white : item.primaryColor)
                                 : unselectedTextColor,
                       ),
                     ),

@@ -29,6 +29,7 @@ class ProfileHeader extends StatelessWidget {
     final currentUserId = SupabaseProvider.id;
     final isMe = user.id == currentUserId;
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final double bgHeight = MediaQuery.of(context).size.width / 1.7;
 
     final friendshipTopWidget =
@@ -144,17 +145,23 @@ class ProfileHeader extends StatelessWidget {
                             fontSize: 15,
                             fontWeight: FontWeight.w600,
                             letterSpacing: 0.2,
-                            color: theme.primaryColor,
+                            color: isDark ? Colors.white : theme.primaryColor,
                           ),
                           prefixIcon: Icon(
                             Icons.edit_rounded,
                             size: 16,
-                            color: theme.primaryColor,
+                            color: isDark ? Colors.white : theme.primaryColor,
                           ),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(10),
                           ),
-                          side: BorderSide(color: AppColors.grey3, width: 1.3),
+                          side: BorderSide(
+                            color:
+                                isDark
+                                    ? Colors.white.withValues(alpha: 0.18)
+                                    : AppColors.grey3,
+                            width: 1.3,
+                          ),
                           elevation: 0,
                           bgColor: theme.colorScheme.surface,
                           onPressed: () async {

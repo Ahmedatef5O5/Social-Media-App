@@ -45,18 +45,19 @@ class SuggestedAccountsSection extends StatelessWidget {
                     for (var i = 0; i < users.length; i++) ...[
                       if (i > 0) const Gap(10),
                       SizedBox(
-                        width: 260,
+                        width: 275,
                         child: DiscoverPersonCardWidget(
                           key: ValueKey(users[i].user.id),
                           personData: users[i],
+                          isCompact: true,
                           boxShadow: [
                             BoxShadow(
                               color:
                                   theme.brightness == Brightness.dark
-                                      ? Colors.black.withValues(alpha: 0.35)
-                                      : Colors.black.withValues(alpha: 0.05),
-                              blurRadius: 2,
-                              offset: const Offset(0, 0),
+                                      ? Colors.black.withValues(alpha: 0.25)
+                                      : Colors.black.withValues(alpha: 0.04),
+                              blurRadius: 6,
+                              offset: const Offset(0, 2),
                             ),
                           ],
                         ),

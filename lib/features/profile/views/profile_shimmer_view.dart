@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:gap/gap.dart';
 import 'package:social_media_app/core/themes/app_colors.dart';
+import '../utils/profile_header_back_btn_container.dart';
 
 class ProfileShimmerLoading extends StatelessWidget {
   final bool isCurrentUser;
@@ -244,29 +245,10 @@ class ProfileShimmerLoading extends StatelessWidget {
         ),
 
         if (!isCurrentUser)
-          Align(
-            alignment: Alignment.topLeft,
-            child: Padding(
-              padding: const EdgeInsets.only(top: 12.0),
-              child: GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: () => Navigator.of(context).pop(),
-                child: Padding(
-                  padding: const EdgeInsets.all(12.0),
-                  child: Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.3),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      Icons.arrow_back_ios_new,
-                      color: Colors.white,
-                      size: 20,
-                    ),
-                  ),
-                ),
-              ),
+          Positioned(
+            top: MediaQuery.of(context).padding.top - 40,
+            child: const ProfileHeaderBackBtnContainer(
+              padding: EdgeInsets.zero,
             ),
           ),
       ],

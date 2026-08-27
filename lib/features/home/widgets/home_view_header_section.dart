@@ -42,6 +42,11 @@ class _HomeViewHeaderSectionState extends State<HomeViewHeaderSection> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final primary = theme.primaryColor;
+    final Color iconColor = isDark ? Colors.white : primary;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12),
       child: Row(
@@ -79,7 +84,7 @@ class _HomeViewHeaderSectionState extends State<HomeViewHeaderSection> {
             child: Image.asset(
               AppImages.searchIcon,
               width: 24,
-              color: Theme.of(context).primaryColor,
+              color: iconColor,
             ),
           ),
           Gap(16),
@@ -117,9 +122,9 @@ class _HomeViewHeaderSectionState extends State<HomeViewHeaderSection> {
                   AppImages.notificationIcon,
                   width: 24,
                   color:
-                      _unreadCount > 1
-                          ? Theme.of(context).primaryColor
-                          : Theme.of(context).primaryColor.withAlpha(150),
+                      _unreadCount > 0
+                          ? iconColor
+                          : iconColor.withValues(alpha: isDark ? 0.6 : 0.5),
                 ),
                 if (_unreadCount > 0)
                   Positioned(
@@ -129,7 +134,7 @@ class _HomeViewHeaderSectionState extends State<HomeViewHeaderSection> {
                       width: 9,
                       height: 9,
                       decoration: BoxDecoration(
-                        color: Theme.of(context).primaryColor,
+                        color: primary,
                         shape: BoxShape.circle,
                       ),
                     ),
@@ -173,7 +178,7 @@ class _HomeViewHeaderSectionState extends State<HomeViewHeaderSection> {
                       child: Image.asset(
                         AppImages.paperPlaneIcon,
                         width: 24,
-                        color: Theme.of(context).primaryColor,
+                        color: iconColor,
                       ),
                     );
                   },

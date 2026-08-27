@@ -29,18 +29,24 @@ class _CircularIconButtonState extends State<CircularIconButton> {
   @override
   Widget build(BuildContext context) {
     final theme = widget.theme;
+    final isDark = theme.brightness == Brightness.dark;
+    final Color iconColor = isDark ? Colors.white : theme.primaryColor;
+    final Color bgColor = isDark
+        ? theme.colorScheme.surface
+        : theme.scaffoldBackgroundColor.withValues(alpha: 0.99);
+    final Color borderColor = isDark
+        ? Colors.white.withValues(alpha: 0.18)
+        : AppColors.grey3;
+
     return AnimatedScale(
       scale: _pressed ? 0.9 : 1.0,
       duration: const Duration(milliseconds: 110),
       curve: Curves.easeOut,
       child: Material(
-        color: theme.scaffoldBackgroundColor.withValues(alpha: 0.99),
+        color: bgColor,
         shape: CircleBorder(
           side: BorderSide(
-            color:
-                theme.brightness != Brightness.light
-                    ? theme.primaryColor.withValues(alpha: 0.65)
-                    : AppColors.grey3,
+            color: borderColor,
             width: 1,
           ),
         ),
@@ -61,11 +67,11 @@ class _CircularIconButtonState extends State<CircularIconButton> {
                         widget.assetPath!,
                         width: widget.size * 0.43,
                         height: widget.size * 0.43,
-                        color: theme.primaryColor,
+                        color: iconColor,
                       )
                       : Icon(
                         widget.icon,
-                        color: theme.primaryColor,
+                        color: iconColor,
                         size: widget.size * 0.43,
                       ),
             ),

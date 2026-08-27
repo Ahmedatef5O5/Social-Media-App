@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 
 class ProfileHeaderBackBtnContainer extends StatelessWidget {
-  const ProfileHeaderBackBtnContainer({super.key});
+  final EdgeInsetsGeometry? padding;
+  const ProfileHeaderBackBtnContainer({super.key, this.padding});
 
   @override
   Widget build(BuildContext context) {
@@ -9,7 +10,7 @@ class ProfileHeaderBackBtnContainer extends StatelessWidget {
       alignment: Alignment.topLeft,
       child: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.only(top: 18.0),
+          padding: padding ?? const EdgeInsets.only(top: 22.0),
           child: GestureDetector(
             behavior: HitTestBehavior.opaque,
             onTap: () => Navigator.maybePop(context),
