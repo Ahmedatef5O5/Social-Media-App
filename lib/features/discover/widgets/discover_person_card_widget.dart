@@ -16,10 +16,13 @@ import '../cubit/discover_people_cubit.dart';
 class DiscoverPersonCardWidget extends StatelessWidget {
   final DiscoverPersonModel personData;
   final List<BoxShadow>? boxShadow;
+  final bool isCompact;
+
   const DiscoverPersonCardWidget({
     super.key,
     required this.personData,
     this.boxShadow,
+    this.isCompact = false,
   });
 
   Future<void> _handleFriendAction(BuildContext context) async {
@@ -66,25 +69,27 @@ class DiscoverPersonCardWidget extends StatelessWidget {
     final userData = personData.user;
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
 
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: EdgeInsets.all(isCompact ? 12 : 14),
       decoration: BoxDecoration(
         color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: colorScheme.outlineVariant.withValues(alpha: 0.12),
+          color: colorScheme.outlineVariant.withValues(alpha: isDark ? 0.3 : 0.6),
+          width: 1,
         ),
         boxShadow:
             boxShadow ??
             [
               BoxShadow(
                 color:
-                    theme.brightness == Brightness.dark
-                        ? Colors.black.withValues(alpha: 0.35)
-                        : Colors.black.withValues(alpha: 0.05),
-                blurRadius: 14,
-                offset: const Offset(0, 5),
+                    isDark
+                        ? Colors.black.withValues(alpha: 0.3)
+                        : Colors.black.withValues(alpha: 0.04),
+                blurRadius: 10,
+                offset: const Offset(0, 3),
               ),
             ],
       ),
@@ -100,24 +105,26 @@ class DiscoverPersonCardWidget extends StatelessWidget {
                   rootNavigator: true,
                 ).pushNamed(AppRoutes.profileViewRoute, arguments: userData.id),
             child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
+                // Avatar with Presence
                 Container(
-                  padding: const EdgeInsets.all(2),
+                  padding: const EdgeInsets.all(1.5),
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: theme.primaryColor.withValues(alpha: 0.15),
-                      width: 2,
+                      color: theme.primaryColor.withValues(alpha: 0.2),
+                      width: 1.5,
                     ),
                   ),
                   child: PresenceAvatarWidget(
                     userId: userData.id,
-                    avatarSize: 52,
+                    avatarSize: isCompact ? 44 : 50,
                     showDot: true,
                     showBorder: false,
                     child: AppAvatar(
                       imageUrl: userData.imageUrl,
-                      size: 52,
+                      size: isCompact ? 44 : 50,
                       onTap:
                           () => showDialog(
                             context: context,
@@ -129,77 +136,100 @@ class DiscoverPersonCardWidget extends StatelessWidget {
                     ),
                   ),
                 ),
-                const Gap(12),
+                const Gap(10),
+
+                // Name & Metadata Column
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(
-                        userData.name,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.textTheme.labelLarge!.copyWith(
-                          fontWeight: FontWeight.w700,
-                          fontSize: 16.5,
-                        ),
+                      Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              userData.name,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.textTheme.labelLarge!.copyWith(
+                                fontWeight: FontWeight.w700,
+                                fontSize: isCompact ? 14.5 : 16.0,
+                              ),
+                            ),
+                          ),
+                          if (!isCompact && personData.followsMe) ...[
+                            const Gap(6),
+                            _FollowsYouBadge(theme: theme),
+                          ],
+                        ],
                       ),
-                      const Gap(4),
+                      const Gap(2),
                       Row(
                         children: [
                           if ((userData.userName ?? '').isNotEmpty)
                             Flexible(
                               child: Text(
-                                userData.userName!,
+                                '@${userData.userName!.replaceAll('@', '')}',
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: theme.textTheme.labelMedium!.copyWith(
                                   fontWeight: FontWeight.w400,
-                                  fontSize: 13,
+                                  fontSize: isCompact ? 12 : 13,
                                   color: AppColors.grey4,
                                 ),
                               ),
                             ),
-                          if ((userData.userName ?? '').isNotEmpty &&
-                              personData.followsMe)
+                          if (isCompact && personData.followsMe) ...[
                             const Gap(6),
-                          if (personData.followsMe)
-                            _FollowsYouBadge(theme: theme),
+                            _FollowsYouBadge(theme: theme, isMini: true),
+                          ],
                         ],
                       ),
+                      if (isCompact) ...[
+                        const Gap(3),
+                        _buildCompactSocialProof(theme),
+                      ],
                     ],
                   ),
                 ),
-                const Gap(8),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _DiscoverFriendCounts(
-                      totalFriendsCount: personData.totalFriendsCount,
-                      mutualFriendsCount: personData.mutualFriendsCount,
-                      onTap: () {
-                        Navigator.of(context, rootNavigator: true).pushNamed(
-                          AppRoutes.friendsListViewRoute,
-                          arguments: userData.id,
-                        );
-                      },
-                    ),
-                    if (personData.mutualGroupsCount > 0) ...[
-                      const Gap(4),
-                      _MutualGroupsLabel(count: personData.mutualGroupsCount),
+
+                // Right Column (Only in Full-Width Mode)
+                if (!isCompact) ...[
+                  const Gap(8),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _DiscoverFriendCounts(
+                        totalFriendsCount: personData.totalFriendsCount,
+                        mutualFriendsCount: personData.mutualFriendsCount,
+                        onTap: () {
+                          Navigator.of(context, rootNavigator: true).pushNamed(
+                            AppRoutes.friendsListViewRoute,
+                            arguments: userData.id,
+                          );
+                        },
+                      ),
+                      if (personData.mutualGroupsCount > 0) ...[
+                        const Gap(4),
+                        _MutualGroupsLabel(count: personData.mutualGroupsCount),
+                      ],
                     ],
-                  ],
-                ),
+                  ),
+                ],
               ],
             ),
           ),
-          const Gap(14),
+          Gap(isCompact ? 10 : 13),
+
+          // Action Buttons Row
           Row(
             children: [
               Expanded(child: _buildFriendAction(context, theme)),
-              const Gap(10),
+              const Gap(8),
               Expanded(
                 child: AnimatedActionButton(
+                  height: isCompact ? 34 : 38,
                   isActive: personData.isFollowing,
                   idleLabel: 'Follow',
                   activeLabel: 'Following',
@@ -215,10 +245,50 @@ class DiscoverPersonCardWidget extends StatelessWidget {
     );
   }
 
+  Widget _buildCompactSocialProof(ThemeData theme) {
+    if (personData.mutualFriendsCount > 0) {
+      return Text(
+        '${personData.mutualFriendsCount} mutual friends',
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w500,
+          color: theme.primaryColor,
+        ),
+      );
+    } else if (personData.totalFriendsCount > 0) {
+      return Text(
+        '${personData.totalFriendsCount} friends',
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w400,
+          color: AppColors.grey4,
+        ),
+      );
+    } else if (personData.mutualGroupsCount > 0) {
+      return Text(
+        '${personData.mutualGroupsCount} mutual groups',
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w400,
+          color: AppColors.grey4,
+        ),
+      );
+    }
+    return const SizedBox.shrink();
+  }
+
   Widget _buildFriendAction(BuildContext context, ThemeData theme) {
+    final double buttonHeight = isCompact ? 34 : 38;
     switch (personData.friendshipStatus) {
       case FriendshipStatus.none:
         return AnimatedActionButton(
+          height: buttonHeight,
           isActive: false,
           idleLabel: 'Add Friend',
           activeLabel: 'Requested',
@@ -228,6 +298,7 @@ class DiscoverPersonCardWidget extends StatelessWidget {
         );
       case FriendshipStatus.pendingSent:
         return AnimatedActionButton(
+          height: buttonHeight,
           isActive: true,
           idleLabel: 'Add Friend',
           activeLabel: 'Requested',
@@ -237,6 +308,7 @@ class DiscoverPersonCardWidget extends StatelessWidget {
         );
       case FriendshipStatus.pendingReceived:
         return _StaticChip(
+          height: buttonHeight,
           theme: theme,
           label: 'Accept',
           icon: Icons.person_add_alt_1_rounded,
@@ -244,6 +316,7 @@ class DiscoverPersonCardWidget extends StatelessWidget {
         );
       case FriendshipStatus.accepted:
         return _StaticChip(
+          height: buttonHeight,
           theme: theme,
           label: 'Friends',
           icon: Icons.people_alt_rounded,
@@ -255,25 +328,30 @@ class DiscoverPersonCardWidget extends StatelessWidget {
 
 class _FollowsYouBadge extends StatelessWidget {
   final ThemeData theme;
-  const _FollowsYouBadge({required this.theme});
+  final bool isMini;
+  const _FollowsYouBadge({required this.theme, this.isMini = false});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      padding: EdgeInsets.symmetric(horizontal: isMini ? 6 : 7, vertical: 2),
       decoration: BoxDecoration(
-        color: theme.primaryColor.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(20),
+        color: theme.primaryColor.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.check_circle_rounded, size: 11, color: theme.primaryColor),
-          const SizedBox(width: 4),
+          Icon(
+            Icons.check_circle_rounded,
+            size: isMini ? 10 : 11,
+            color: theme.primaryColor,
+          ),
+          const SizedBox(width: 3),
           Text(
             'Follows you',
             style: TextStyle(
-              fontSize: 11,
+              fontSize: isMini ? 10 : 11,
               fontWeight: FontWeight.w600,
               color: theme.primaryColor,
             ),
@@ -289,29 +367,31 @@ class _StaticChip extends StatelessWidget {
   final String label;
   final IconData icon;
   final VoidCallback? onTap;
+  final double height;
 
   const _StaticChip({
     required this.theme,
     required this.label,
     required this.icon,
     required this.onTap,
+    this.height = 38,
   });
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 38,
+      height: height,
       child: Material(
         color: theme.colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(19),
+        borderRadius: BorderRadius.circular(height / 2),
         child: InkWell(
-          borderRadius: BorderRadius.circular(19),
+          borderRadius: BorderRadius.circular(height / 2),
           onTap: onTap,
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, size: 15, color: theme.colorScheme.onSurfaceVariant),
-              const SizedBox(width: 6),
+              Icon(icon, size: 14, color: theme.colorScheme.onSurfaceVariant),
+              const SizedBox(width: 5),
               Flexible(
                 child: Text(
                   label,
@@ -319,7 +399,7 @@ class _StaticChip extends StatelessWidget {
                   style: TextStyle(
                     color: theme.colorScheme.onSurfaceVariant,
                     fontWeight: FontWeight.w600,
-                    fontSize: 13.5,
+                    fontSize: 13.0,
                   ),
                 ),
               ),
@@ -369,7 +449,11 @@ class _DiscoverFriendCounts extends StatelessWidget {
                 '$mutualFriendsCount Mutual',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(fontSize: 11, color: AppColors.grey4),
+                style: TextStyle(
+                  fontSize: 11,
+                  color: AppColors.grey4,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ],
           ],

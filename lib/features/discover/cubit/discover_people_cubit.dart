@@ -40,7 +40,11 @@ class DiscoverPeopleCubit extends Cubit<DiscoverPeopleState> {
   bool get _activeHasReachedMax =>
       _isSearchMode ? _searchHasReachedMax : _hasReachedMax;
 
-  void _emitActive() => emit(
+  void safeEmit(DiscoverPeopleState state) {
+    if (!isClosed) emit(state);
+  }
+
+  void _emitActive() => safeEmit(
     DiscoverPeopleSuccess(
       users: List.of(_activeList),
       hasReachedMax: _activeHasReachedMax,
@@ -60,7 +64,7 @@ class DiscoverPeopleCubit extends Cubit<DiscoverPeopleState> {
     _isSearchMode = true;
     _searchResults.clear();
     _searchHasReachedMax = false;
-    emit(DiscoverPeopleLoading());
+    safeEmit(DiscoverPeopleLoading());
     try {
       final results = await _discoverPeopleServices.searchPeople(
         query: trimmed,
@@ -73,7 +77,7 @@ class DiscoverPeopleCubit extends Cubit<DiscoverPeopleState> {
       _emitActive();
     } catch (e) {
       if (_searchQuery != trimmed) return;
-      emit(
+      safeEmit(
         const DiscoverPeopleFailure(
           'Something went wrong. Please try again later.',
         ),
@@ -105,9 +109,9 @@ class DiscoverPeopleCubit extends Cubit<DiscoverPeopleState> {
       _currentPage = 0;
       _hasReachedMax = false;
       _users.clear();
-      emit(DiscoverPeopleLoading());
+      safeEmit(DiscoverPeopleLoading());
     } else if (_currentPage == 0) {
-      emit(DiscoverPeopleLoading());
+      safeEmit(DiscoverPeopleLoading());
     }
 
     if (_hasReachedMax || _isFetchingMore) return _users;
@@ -130,7 +134,7 @@ class DiscoverPeopleCubit extends Cubit<DiscoverPeopleState> {
       _isFetchingMore = false;
 
       if (isRefresh) {
-        emit(DiscoverPeopleRefreshFeedback());
+        safeEmit(DiscoverPeopleRefreshFeedback());
 
         final elapsed = DateTime.now().difference(start);
         if (elapsed < const Duration(milliseconds: 600)) {
@@ -138,7 +142,7 @@ class DiscoverPeopleCubit extends Cubit<DiscoverPeopleState> {
         }
       }
 
-      emit(
+      safeEmit(
         DiscoverPeopleSuccess(
           users: List.from(_users),
           hasReachedMax: _hasReachedMax,
@@ -151,13 +155,13 @@ class DiscoverPeopleCubit extends Cubit<DiscoverPeopleState> {
       if (e.toString().contains('no-internet') ||
           e.toString().toLowerCase().contains('socketexception') ||
           e.toString().toLowerCase().contains('clientexception')) {
-        emit(
+        safeEmit(
           const DiscoverPeopleFailure(
             "No internet connection. Please check your network.",
           ),
         );
       } else {
-        emit(
+        safeEmit(
           const DiscoverPeopleFailure(
             "Something went wrong. Please try again later.",
           ),
