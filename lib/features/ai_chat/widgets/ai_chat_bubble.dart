@@ -5,6 +5,7 @@ import 'package:share_plus/share_plus.dart';
 import '../../../core/attachment/models/media_transfer_state.dart';
 import '../../../core/attachment/widgets/file_message_bubble.dart';
 import '../../../core/attachment/widgets/media_state_overlay.dart';
+import '../../../core/design/tokens/typography.dart';
 import '../../../core/helpers/chat_helper.dart';
 import '../../../core/helpers/formatted_date.dart';
 import '../../../core/toast/app_toast.dart';
@@ -144,6 +145,8 @@ class _AiChatBubbleState extends State<AiChatBubble> {
       fontSize: 15,
       height: 1.35,
       fontWeight: FontWeight.w500,
+      fontFamily: null,
+      fontFamilyFallback: AppTypography.fontFallback,
     );
 
     final bubble = GestureDetector(

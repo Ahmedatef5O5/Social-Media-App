@@ -64,8 +64,10 @@ class AiChatView extends StatefulWidget {
   final String? initialDraftImageRemoteUrl;
   final String? initialDraftImageCaption;
   final String? initialDraftImageLocalPath;
+  final String? initialDraftFileRemoteUrl;
   final String? initialDraftFileLocalPath;
   final String? initialDraftFileName;
+  final String? initialDraftFileCaption;
 
   const AiChatView({
     super.key,
@@ -74,8 +76,10 @@ class AiChatView extends StatefulWidget {
     this.initialDraftImageRemoteUrl,
     this.initialDraftImageCaption,
     this.initialDraftImageLocalPath,
+    this.initialDraftFileRemoteUrl,
     this.initialDraftFileLocalPath,
     this.initialDraftFileName,
+    this.initialDraftFileCaption,
   });
 
   @override
@@ -186,6 +190,15 @@ class _AiChatViewState extends State<AiChatView> with TickerProviderStateMixin {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
           _openForwardedPhotoPreview(widget.initialDraftImageRemoteUrl!);
+        }
+      });
+    } else if (widget.initialDraftFileRemoteUrl != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _openForwardedFilePreview(
+            widget.initialDraftFileRemoteUrl!,
+            widget.initialDraftFileName ?? 'Forwarded File',
+          );
         }
       });
     } else if (widget.initialDraftImageLocalPath != null) {
@@ -980,6 +993,28 @@ class _AiChatViewState extends State<AiChatView> with TickerProviderStateMixin {
       _textController.text = widget.initialDraftImageCaption!;
     }
     await _stageImage(File(localPath), remoteImageUrl: remoteUrl);
+  }
+
+  Future<void> _openForwardedFilePreview(
+    String remoteUrl,
+    String fileName,
+  ) async {
+    final localPath = await context
+        .read<MediaCacheRepository>()
+        .resolveLocalPath(remoteUrl);
+
+    if (!mounted) return;
+
+    if (localPath == null) {
+      AppToast.error("Couldn't load that file. Please try again.");
+      return;
+    }
+
+    if (widget.initialDraftFileCaption != null) {
+      _textController.text = widget.initialDraftFileCaption!;
+    }
+
+    await _stageFile(File(localPath), fileName);
   }
 
   Future<void> _sendImage(

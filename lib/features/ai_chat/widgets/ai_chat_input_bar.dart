@@ -206,7 +206,11 @@ class _AiChatInputBarState extends State<AiChatInputBar> {
                     cursorColor: Colors.white70,
                     textInputAction: TextInputAction.newline,
                     decoration: InputDecoration(
+                      filled: false,
+                      fillColor: Colors.transparent,
                       border: InputBorder.none,
+                      enabledBorder: InputBorder.none,
+                      focusedBorder: InputBorder.none,
                       isCollapsed: true,
                       contentPadding: const EdgeInsets.symmetric(
                         vertical: 10,
