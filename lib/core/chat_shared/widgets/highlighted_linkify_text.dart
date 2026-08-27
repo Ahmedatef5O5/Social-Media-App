@@ -2,7 +2,9 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:linkify/linkify.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../design/tokens/typography.dart';
 import '../../helpers/chat_helper.dart';
+import '../../helpers/emoji_helper.dart';
 
 class HighlightedLinkifyText extends StatefulWidget {
   final String text;
@@ -54,9 +56,13 @@ class _HighlightedLinkifyTextState extends State<HighlightedLinkifyText> {
     }
     _recognizers.clear();
 
-    final baseStyle =
-        widget.style ??
-        Theme.of(context).textTheme.bodyMedium!.copyWith(fontSize: 15);
+    final baseStyle = (widget.style ??
+            Theme.of(context).textTheme.bodyMedium ??
+            const TextStyle())
+        .copyWith(
+          fontSize: widget.style?.fontSize ?? 15,
+          fontFamilyFallback: AppTypography.fontFallback,
+        );
     final linkStyle =
         widget.linkStyle ??
         const TextStyle(
@@ -65,6 +71,7 @@ class _HighlightedLinkifyTextState extends State<HighlightedLinkifyText> {
           decoration: TextDecoration.underline,
           decorationColor: Colors.blue,
           decorationThickness: 0.8,
+          fontFamilyFallback: AppTypography.fontFallback,
         );
     final highlightStyle =
         widget.highlightStyle ??
@@ -72,10 +79,12 @@ class _HighlightedLinkifyTextState extends State<HighlightedLinkifyText> {
           backgroundColor: Colors.yellow.withValues(alpha: 0.55),
           color: baseStyle.color,
           fontWeight: FontWeight.w700,
+          fontFamilyFallback: AppTypography.fontFallback,
         );
 
+    final normalizedText = EmojiHelper.normalize(widget.text);
     final query = widget.highlightQuery?.trim() ?? '';
-    final elements = linkify(widget.text);
+    final elements = linkify(normalizedText);
     final spans = <InlineSpan>[];
 
     for (final element in elements) {
@@ -101,11 +110,12 @@ class _HighlightedLinkifyTextState extends State<HighlightedLinkifyText> {
   }
 
   List<InlineSpan> _highlightPlainText(
-    String text,
+    String rawText,
     String query,
     TextStyle baseStyle,
     TextStyle highlightStyle,
   ) {
+    final text = EmojiHelper.normalize(rawText);
     if (query.isEmpty) {
       return [TextSpan(text: text, style: baseStyle)];
     }
@@ -145,12 +155,16 @@ class _HighlightedLinkifyTextState extends State<HighlightedLinkifyText> {
 
   @override
   Widget build(BuildContext context) {
-    return Text.rich(
-      TextSpan(children: _buildSpans(context)),
-      textDirection:
-          widget.textDirection ?? ChatHelper.getTextDirection(widget.text),
+    final normalizedText = EmojiHelper.normalize(widget.text);
+    final direction =
+        widget.textDirection ?? ChatHelper.getTextDirection(normalizedText);
+    return RichText(
+      textDirection: direction,
+      textAlign:
+          direction == TextDirection.rtl ? TextAlign.right : TextAlign.left,
       maxLines: widget.maxLines,
       overflow: widget.overflow ?? TextOverflow.ellipsis,
+      text: TextSpan(children: _buildSpans(context)),
     );
   }
 }

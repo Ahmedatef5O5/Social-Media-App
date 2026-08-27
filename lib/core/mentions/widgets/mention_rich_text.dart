@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:linkify/linkify.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../helpers/chat_helper.dart';
+import '../../helpers/emoji_helper.dart';
 import '../models/mention_ref.dart';
 
 class MentionRichText extends StatefulWidget {
@@ -88,7 +89,8 @@ class _MentionRichTextState extends State<MentionRichText> {
     final spans = <InlineSpan>[];
     int cursor = 0;
 
-    void addLinkifiedSegment(String segment) {
+    void addLinkifiedSegment(String rawSegment) {
+      final segment = EmojiHelper.normalize(rawSegment);
       if (segment.isEmpty) return;
       for (final element in linkify(segment)) {
         if (element is LinkableElement) {
@@ -128,7 +130,7 @@ class _MentionRichTextState extends State<MentionRichText> {
       final mentionSlice = text.substring(mention.startIndex, mention.endIndex);
       spans.add(
         TextSpan(
-          text: mentionSlice,
+          text: EmojiHelper.normalize(mentionSlice),
           style: mentionStyle,
           recognizer: _recognizerFor(
             () => widget.onMentionTap(
@@ -146,7 +148,8 @@ class _MentionRichTextState extends State<MentionRichText> {
     return spans;
   }
 
-  List<InlineSpan> _highlightedTextSpans(String text, TextStyle baseStyle) {
+  List<InlineSpan> _highlightedTextSpans(String rawText, TextStyle baseStyle) {
+    final text = EmojiHelper.normalize(rawText);
     final query = widget.highlightQuery?.trim() ?? '';
     if (query.isEmpty) {
       return [TextSpan(text: text, style: baseStyle)];
@@ -154,9 +157,8 @@ class _MentionRichTextState extends State<MentionRichText> {
 
     final highlightStyle =
         widget.highlightStyle ??
-        TextStyle(
+        baseStyle.copyWith(
           backgroundColor: Colors.yellow.withValues(alpha: 0.55),
-          color: baseStyle.color,
           fontWeight: FontWeight.w700,
         );
 
@@ -197,11 +199,13 @@ class _MentionRichTextState extends State<MentionRichText> {
   Widget build(BuildContext context) {
     _disposeRecognizers();
 
-    final defaultStyle =
-        widget.style ??
-        Theme.of(
-          context,
-        ).textTheme.bodyMedium!.copyWith(fontSize: 14, height: 1.4);
+    final defaultStyle = (widget.style ??
+            Theme.of(context).textTheme.bodyMedium ??
+            const TextStyle())
+        .copyWith(
+          fontSize: widget.style?.fontSize ?? 14,
+          height: widget.style?.height ?? 1.4,
+        );
 
     final resolvedMentionColor =
         widget.mentionColor ?? Theme.of(context).primaryColor;
@@ -218,7 +222,8 @@ class _MentionRichTextState extends State<MentionRichText> {
       defaultStyle: defaultStyle,
       mentionStyle: mentionStyle,
     );
-    final direction = ChatHelper.getTextDirection(widget.text);
+    final normalizedFullText = EmojiHelper.normalize(widget.text);
+    final direction = ChatHelper.getTextDirection(normalizedFullText);
     final span = TextSpan(children: spans);
 
     final toggleAlignment = switch (widget.textAlign) {

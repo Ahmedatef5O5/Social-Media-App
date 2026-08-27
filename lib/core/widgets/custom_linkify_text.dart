@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_linkify/flutter_linkify.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../design/tokens/typography.dart';
 import '../helpers/chat_helper.dart';
+import '../helpers/emoji_helper.dart';
 import '../helpers/link_color_helper.dart';
 
 class CustomLinkifyText extends StatelessWidget {
@@ -39,24 +41,31 @@ class CustomLinkifyText extends StatelessWidget {
             ? Colors.blue
             : LinkColorHelper.forBubble(bubbleColor!);
 
+    final normalizedText = EmojiHelper.normalize(text);
+
     return Linkify(
-      text: text,
+      text: normalizedText,
       textDirection: textDirection ?? ChatHelper.getTextDirection(text),
-      // textDirection,
       onOpen: _onOpen,
       maxLines: maxLines,
       overflow: overflow ?? TextOverflow.ellipsis,
-      style:
-          style ??
-          Theme.of(context).textTheme.bodyMedium!.copyWith(fontSize: 15),
-      linkStyle:
-          linkStyle ??
+      style: (style ??
+              Theme.of(context).textTheme.bodyMedium ??
+              const TextStyle())
+          .copyWith(
+        fontSize: style?.fontSize ?? 15,
+        fontFamily: null,
+        fontFamilyFallback: AppTypography.fontFallback,
+      ),
+      linkStyle: linkStyle ??
           TextStyle(
             color: linkColor,
             fontWeight: FontWeight.w600,
             decoration: TextDecoration.underline,
             decorationColor: linkColor,
             decorationThickness: 0.8,
+            fontFamily: null,
+            fontFamilyFallback: AppTypography.fontFallback,
           ),
     );
   }

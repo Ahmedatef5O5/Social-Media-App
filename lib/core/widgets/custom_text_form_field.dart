@@ -101,7 +101,6 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
                   _effectiveFocusNode.hasFocus
                       ? Theme.of(context).primaryColor
                       : null,
-              // : AppColors.black87,
               fontSize: 15,
               fontWeight: FontWeight.w400,
             ),
@@ -110,6 +109,9 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
             hintStyle: Theme.of(context).textTheme.titleSmall!.copyWith(
               fontSize: 15,
               fontWeight: FontWeight.w300,
+              color: Theme.of(
+                context,
+              ).colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
             ),
             prefixIcon:
                 widget.isPassword && widget.prefixIcon != null

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '../../design/tokens/typography.dart';
 import '../../helpers/bidi_text_helper.dart';
 import '../../themes/app_colors.dart';
 import '../../widgets/app_avatar.dart';
@@ -7,6 +8,8 @@ import '../../widgets/custom_loading_indicator.dart';
 import '../models/mention_suggestion.dart';
 import '../services/mention_search_service.dart';
 import 'mention_text_editing_controller.dart';
+import 'package:flutter/services.dart';
+import '../../helpers/emoji_text_input_formatter.dart';
 
 class MentionAwareTextField extends StatefulWidget {
   final MentionTextEditingController controller;
@@ -17,7 +20,7 @@ class MentionAwareTextField extends StatefulWidget {
   final ValueChanged<String>? onChanged;
   final List<String>? restrictSuggestionsToUserIds;
   final EdgeInsetsGeometry? contentPadding;
-  final InputBorder? border, focusedBorder;
+  final InputBorder? border, focusedBorder, enabledBorder;
   final InputDecoration? decoration;
   final TextStyle? style;
   final TextStyle? hintStyle;
@@ -31,9 +34,7 @@ class MentionAwareTextField extends StatefulWidget {
   final Color? fillColor;
   final TextCapitalization textCapitalization;
   final bool autofocus;
-
   final Widget? trailingIcon;
-
   final VoidCallback? onSlashAiTrigger;
 
   const MentionAwareTextField({
@@ -47,11 +48,12 @@ class MentionAwareTextField extends StatefulWidget {
     this.restrictSuggestionsToUserIds,
     this.contentPadding,
     this.border,
-    this.decoration,
     this.focusedBorder,
+    this.enabledBorder,
+    this.decoration,
     this.style,
     this.hintStyle,
-    this.textAlign = TextAlign.center,
+    this.textAlign = TextAlign.start,
     this.minLines = 1,
     this.maxLines = 4,
     this.maxLength,
@@ -261,10 +263,24 @@ class _MentionAwareTextFieldState extends State<MentionAwareTextField> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+
+    final effectiveDirection =
+        widget.controller.text.trim().isEmpty
+            ? BidiTextHelper.detectDirection(widget.hintText)
+            : _direction;
+
     final effectiveTextAlign =
         widget.textAlign == TextAlign.start
             ? BidiTextHelper.alignFor(_direction)
             : widget.textAlign;
+
+    final effectiveStyle = (widget.style ??
+            theme.textTheme.bodyLarge ??
+            const TextStyle())
+        .copyWith(
+          fontFamily: null,
+          fontFamilyFallback: AppTypography.fontFallback,
+        );
 
     return TapRegion(
       groupId: _fieldKey,
@@ -283,10 +299,11 @@ class _MentionAwareTextFieldState extends State<MentionAwareTextField> {
           minLines: widget.minLines,
           maxLines: widget.maxLines,
           maxLength: widget.maxLength,
-          textDirection: _direction,
+          inputFormatters: [EmojiTextInputFormatter()],
+          textDirection: effectiveDirection,
           textAlign: effectiveTextAlign,
           textCapitalization: widget.textCapitalization,
-          style: widget.style,
+          style: effectiveStyle,
           onSubmitted: widget.onSubmitted,
           onChanged: widget.onChanged,
           decoration:
@@ -320,6 +337,15 @@ class _MentionAwareTextFieldState extends State<MentionAwareTextField> {
                       borderRadius: BorderRadius.circular(25),
                       borderSide: BorderSide.none,
                     ),
+
+                enabledBorder:
+                    widget.enabledBorder ??
+                    widget.border ??
+                    OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(25),
+                      borderSide: BorderSide.none,
+                    ),
+
                 focusedBorder:
                     widget.focusedBorder ??
                     OutlineInputBorder(
