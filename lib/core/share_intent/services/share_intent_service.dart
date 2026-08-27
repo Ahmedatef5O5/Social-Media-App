@@ -9,6 +9,8 @@ class ShareIntentService {
   ShareIntentService._();
   static final ShareIntentService instance = ShareIntentService._();
 
+  static const String _appHost = 'social-media-app-98f58.web.app';
+
   StreamSubscription<List<SharedMediaFile>>? _mediaSub;
   final _payloadController = StreamController<IncomingSharePayload>.broadcast();
   Stream<IncomingSharePayload> get payloadStream => _payloadController.stream;
@@ -27,13 +29,25 @@ class ShareIntentService {
     );
   }
 
+  bool _isAppDeepLink(IncomingSharePayload payload) {
+    if (payload.isText || payload.kind == IncomingShareKind.text) {
+      final text = payload.text?.trim() ?? '';
+      if (text.startsWith('https://$_appHost') ||
+          text.startsWith('http://$_appHost')) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   Future<void> consumeInitialShareIfAny() async {
     try {
       final initial = await ReceiveSharingIntent.instance.getInitialMedia();
       if (initial.isNotEmpty) {
-        _pendingColdStartPayload = IncomingSharePayload.fromSharedFiles(
-          initial,
-        );
+        final payload = IncomingSharePayload.fromSharedFiles(initial);
+        if (payload != null && !_isAppDeepLink(payload)) {
+          _pendingColdStartPayload = payload;
+        }
       }
     } catch (e) {
       debugPrint('⚠️ ShareIntentService initial media error: $e');
@@ -54,7 +68,7 @@ class ShareIntentService {
 
   void _handleIncoming(List<SharedMediaFile> raw) {
     final payload = IncomingSharePayload.fromSharedFiles(raw);
-    if (payload == null) return;
+    if (payload == null || _isAppDeepLink(payload)) return;
     _payloadController.add(payload);
     _routeSafely(payload);
   }

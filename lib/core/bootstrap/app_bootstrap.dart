@@ -19,6 +19,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../features/home/cubits/home_cubit/home_cubit.dart';
 import '../../features/posts/cubit/posts_cubit/posts_cubit.dart';
 import '../../features/stories/cubit/stories_cubit/stories_cubit.dart';
+import '../deep_link/services/deep_link_service.dart';
 import '../errors/supabase_error_mapper.dart';
 import '../share_intent/services/share_intent_service.dart';
 import '../supabase/supabase_provider.dart';
@@ -33,6 +34,15 @@ Future<void> initializeApp() async {
   await _safely('Firebase', _initFirebase);
   await _safely('Notifications', _initNotifications);
   await _safely('ShareIntent', ShareIntentService.instance.init);
+  await _safely('DeepLink', DeepLinkService.instance.init);
+  await _safely(
+    'ConsumeDeepLink',
+    DeepLinkService.instance.consumeInitialDeepLinkIfAny,
+  );
+  await _safely(
+    'ConsumeShare',
+    ShareIntentService.instance.consumeInitialShareIfAny,
+  );
   _initForegroundTask();
   await _safely('Presence', PresenceService.instance.init);
 

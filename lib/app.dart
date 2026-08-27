@@ -106,6 +106,7 @@ Widget buildApp(String savedTheme) {
               (context) => PostsCubit(
                 postsServices: context.read<PostsServices>(),
                 storage: context.read<CloudinaryStorageServices>(),
+                mediaCacheRepository: context.read<MediaCacheRepository>(),
               )..fetchPosts(),
         ),
         BlocProvider(
@@ -316,6 +317,12 @@ class MyApp extends StatelessWidget {
               title: 'Social Media App',
               theme: state.theme.themeData,
               initialRoute: AppRoutes.splashViewRoute,
+              onGenerateInitialRoutes:
+                  (initialRoute) => [
+                    AppRouter.generateRoute(
+                      const RouteSettings(name: AppRoutes.splashViewRoute),
+                    ),
+                  ],
               onGenerateRoute: AppRouter.generateRoute,
               onUnknownRoute: AppRouter.generateRoute,
               navigatorKey: navigatorKey,
