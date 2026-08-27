@@ -106,7 +106,7 @@ class _CachedCloudinaryImageState extends State<CachedCloudinaryImage> {
     final targetUrl = _optimizedUrl;
 
     if (targetUrl.isEmpty || targetUrl == 'asset:default') {
-      return _buildDefaultPlaceholder();
+      return _buildDefaultPlaceholder(context);
     }
 
     if (targetUrl.startsWith('assets/')) {
@@ -121,7 +121,7 @@ class _CachedCloudinaryImageState extends State<CachedCloudinaryImage> {
     }
 
     if (!targetUrl.startsWith('http')) {
-      return _buildDefaultPlaceholder();
+      return _buildDefaultPlaceholder(context);
     }
 
     if (_syncLocalPath != null) {
@@ -140,7 +140,7 @@ class _CachedCloudinaryImageState extends State<CachedCloudinaryImage> {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return widget.placeholder != null
               ? widget.placeholder!(context)
-              : _buildDefaultPlaceholder();
+              : _buildDefaultPlaceholder(context);
         }
 
         if (!snapshot.hasData || snapshot.data == null) {
@@ -149,7 +149,7 @@ class _CachedCloudinaryImageState extends State<CachedCloudinaryImage> {
 
         if (snapshot.connectionState != ConnectionState.done) {
           return widget.placeholder?.call(context) ??
-              SizedBox(width: widget.width, height: widget.height);
+              _buildDefaultPlaceholder(context);
         }
         return Image.file(
           File(snapshot.data!),
@@ -184,52 +184,39 @@ class _CachedCloudinaryImageState extends State<CachedCloudinaryImage> {
   }
 
   Widget _buildNetworkFallback(BuildContext context) {
-    if (widget.onReady != null) {
-      return CachedNetworkImage(
-        imageUrl: _optimizedUrl,
-        width: widget.width,
-        height: widget.height,
-        fit: widget.fit,
-        placeholder:
-            widget.placeholder != null
-                ? (_, __) => widget.placeholder!(context)
-                : (_, __) => _buildDefaultPlaceholder(),
-        errorWidget: (_, __, error) => _buildError(context, error),
-        imageBuilder:
-            widget.onReady != null
-                ? (_, imageProvider) {
-                  WidgetsBinding.instance.addPostFrameCallback(
-                    (_) => widget.onReady?.call(),
-                  );
-                  return Image(
-                    image: imageProvider,
-                    width: widget.width,
-                    height: widget.height,
-                    fit: widget.fit,
-                  );
-                }
-                : null,
-      );
-    }
-
     return CachedNetworkImage(
-      imageUrl: widget.secureUrl,
+      imageUrl: _optimizedUrl,
       width: widget.width,
       height: widget.height,
       fit: widget.fit,
       placeholder:
           widget.placeholder != null
               ? (_, __) => widget.placeholder!(context)
-              : null,
+              : (_, __) => _buildDefaultPlaceholder(context),
       errorWidget: (_, __, error) => _buildError(context, error),
+      imageBuilder:
+          widget.onReady != null
+              ? (_, imageProvider) {
+                WidgetsBinding.instance.addPostFrameCallback(
+                  (_) => widget.onReady?.call(),
+                );
+                return Image(
+                  image: imageProvider,
+                  width: widget.width,
+                  height: widget.height,
+                  fit: widget.fit,
+                );
+              }
+              : null,
     );
   }
 
-  Widget _buildDefaultPlaceholder() {
+  Widget _buildDefaultPlaceholder(BuildContext context) {
     if (widget.isAvatar) {
+      final isDark = Theme.of(context).brightness == Brightness.dark;
       return Shimmer.fromColors(
-        baseColor: Colors.grey[300]!,
-        highlightColor: Colors.grey[100]!,
+        baseColor: isDark ? Colors.grey[800]! : Colors.grey[300]!,
+        highlightColor: isDark ? Colors.grey[700]! : Colors.grey[100]!,
         child: Container(
           width: widget.width ?? double.infinity,
           height: widget.height ?? double.infinity,
@@ -259,7 +246,10 @@ class _CachedCloudinaryImageState extends State<CachedCloudinaryImage> {
       width: widget.width,
       height: widget.height,
       decoration: BoxDecoration(
-        color: Colors.grey[200],
+        color:
+            Theme.of(context).brightness == Brightness.dark
+                ? Colors.grey[800]
+                : Colors.grey[200],
         shape: widget.isAvatar ? BoxShape.circle : BoxShape.rectangle,
       ),
       child: Icon(

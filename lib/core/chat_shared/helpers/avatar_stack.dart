@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:social_media_app/core/widgets/cached_cloudinary_image.dart';
 import '../../constants/app_images.dart';
 import '../../themes/app_colors.dart';
-import '../../widgets/custom_loading_indicator.dart';
 
 class AvatarStack extends StatelessWidget {
   final List<String> imageUrls;
@@ -60,8 +59,6 @@ class AvatarStack extends StatelessWidget {
                                 AppImages.defaultUserImg,
                                 fit: BoxFit.cover,
                               ),
-                          placeholder:
-                              (context) => const CustomLoadingIndicator(),
                         )
                         : Image.asset(
                           AppImages.defaultUserImg,

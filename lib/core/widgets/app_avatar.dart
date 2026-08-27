@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:social_media_app/core/constants/app_images.dart';
 import 'package:social_media_app/core/widgets/cached_cloudinary_image.dart';
-import 'package:social_media_app/core/widgets/custom_loading_indicator.dart';
 
 class AppAvatar extends StatelessWidget {
   final String? imageUrl;
@@ -11,6 +10,7 @@ class AppAvatar extends StatelessWidget {
   final String? heroTag;
   final VoidCallback? onTap;
   final String? cacheKey;
+  final WidgetBuilder? placeholder;
 
   const AppAvatar({
     super.key,
@@ -21,6 +21,7 @@ class AppAvatar extends StatelessWidget {
     this.heroTag,
     this.onTap,
     this.cacheKey,
+    this.placeholder,
   });
 
   @override
@@ -76,7 +77,7 @@ class AppAvatar extends StatelessWidget {
       height: size,
       fit: BoxFit.cover,
       isAvatar: true,
-      placeholder: (_) => CustomLoadingIndicator(radius: size / 7),
+      placeholder: placeholder,
       errorWidget:
           (_, __) => Image.asset(
             AppImages.defaultUserImg,
