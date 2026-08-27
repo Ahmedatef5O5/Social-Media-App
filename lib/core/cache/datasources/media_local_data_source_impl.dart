@@ -150,16 +150,33 @@ class MediaLocalDataSourceImpl implements MediaLocalDataSource {
     return entry.toEntity();
   }
 
+  String _sanitizeUrlForDownload(String url) {
+    if (url.contains('/raw/upload/')) {
+      return url
+          .replaceAllMapped(RegExp(r'/raw/upload/([^/]+)/(v\d+/)'), (match) {
+            final transform = match.group(1)!;
+            final version = match.group(2)!;
+            if (transform.startsWith('c_')) {
+              return '/raw/upload/$version';
+            }
+            return match.group(0)!;
+          })
+          .replaceAll(RegExp(r'/raw/upload/c_[^/]+/'), '/raw/upload/');
+    }
+    return url;
+  }
+
   Future<CachedMediaModel> _downloadAndCache(
     String secureUrl, {
     CancelToken? cancelToken,
   }) async {
+    final cleanUrl = _sanitizeUrlForDownload(secureUrl);
     final directory = await _resolveDirectoryFor(secureUrl);
     final filePath = '${directory.path}/${_localFileName(secureUrl)}';
 
     try {
       final response = await _dio.download(
-        secureUrl,
+        cleanUrl,
         filePath,
         cancelToken: cancelToken,
         onReceiveProgress: (received, total) {

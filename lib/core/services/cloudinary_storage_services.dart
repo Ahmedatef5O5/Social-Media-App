@@ -111,10 +111,13 @@ class CloudinaryStorageServices {
       }
 
       return CloudinaryUploadResult(
-        secureUrl: buildOptimizedUrl(
-          secureUrl,
-          isVideo: resourceType == 'video',
-        ),
+        secureUrl:
+            resourceType == 'raw'
+                ? secureUrl
+                : buildOptimizedUrl(
+                  secureUrl,
+                  isVideo: resourceType == 'video',
+                ),
         publicId: publicId,
         resourceType: resourceType,
         width: data['width'] as int?,
