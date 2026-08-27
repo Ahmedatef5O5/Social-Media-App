@@ -3,6 +3,7 @@ import 'package:social_media_app/core/widgets/cached_cloudinary_image.dart';
 import 'package:social_media_app/core/widgets/custom_loading_indicator.dart';
 import 'package:social_media_app/features/posts/model/post_reaction_model.dart';
 import '../../../core/constants/app_images.dart';
+import '../../../core/design/tokens/typography.dart';
 
 class CommentsReactionAvatarStack extends StatelessWidget {
   final List<String> imageUrls;
@@ -145,11 +146,12 @@ class CommentsReactionAvatarStack extends StatelessWidget {
       ),
       child: Text(
         displayEmoji,
-        style: const TextStyle(
-          color: Colors.black,
+        style: TextStyle(
+          inherit: false,
+          fontFamilyFallback: AppTypography.emojiFontFallback,
           fontSize: 8,
           height: 1.1,
-          fontWeight: FontWeight.w700,
+          fontWeight: FontWeight.normal,
         ),
       ),
     );

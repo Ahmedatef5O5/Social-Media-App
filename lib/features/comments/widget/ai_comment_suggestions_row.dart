@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../core/helpers/chat_helper.dart';
 import '../../ai_assistant/cubits/ai_preferences_cubit/ai_preferences_cubit.dart';
 import '../../ai_assistant/data/repositories/ai_repository_impl.dart';
 import '../../ai_assistant/repository/ai_repository.dart';
@@ -90,7 +91,11 @@ class _AiCommentSuggestionsRowState extends State<AiCommentSuggestionsRow> {
               final text = _chips[index];
               return ActionChip(
                 avatar: const Icon(Icons.auto_awesome_rounded, size: 14),
-                label: Text(text, overflow: TextOverflow.ellipsis),
+                label: Text(
+                  text,
+                  overflow: TextOverflow.ellipsis,
+                  textDirection: ChatHelper.getTextDirection(text),
+                ),
                 onPressed: () => widget.onChipSelected(text),
               );
             },

@@ -49,7 +49,6 @@ class _CommentVoicePlayerState extends State<CommentVoicePlayer> {
     });
     _player.onPlayerComplete.listen((_) {
       if (!mounted) return;
-      _player.seek(Duration.zero);
       setState(() {
         _isPlaying = false;
         _position = Duration.zero;
@@ -68,7 +67,9 @@ class _CommentVoicePlayerState extends State<CommentVoicePlayer> {
       return;
     }
 
-    if (!_hasSetSource) {
+    if (!_hasSetSource ||
+        _player.state == PlayerState.completed ||
+        _player.state == PlayerState.stopped) {
       final audioSource =
           widget.isLocalFile
               ? DeviceFileSource(widget.source)
@@ -81,7 +82,17 @@ class _CommentVoicePlayerState extends State<CommentVoicePlayer> {
     }
   }
 
-  Future<void> _seek(Duration target) => _player.seek(target);
+  Future<void> _seek(Duration target) async {
+    try {
+      if (_player.state == PlayerState.completed ||
+          _player.state == PlayerState.stopped) {
+        return;
+      }
+      await _player.seek(target);
+    } catch (e) {
+      debugPrint('Voice comment seek error: $e');
+    }
+  }
 
   @override
   void dispose() {

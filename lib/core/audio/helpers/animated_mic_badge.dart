@@ -18,12 +18,8 @@ class _AnimatedMicBadgeState extends State<AnimatedMicBadge>
     with SingleTickerProviderStateMixin {
   final math.Random _random = math.Random();
 
-  late final AnimationController _levelController = AnimationController(
-    vsync: this,
-    duration: _randomBeatDuration(),
-  )..addStatusListener(_onBeatStatusChanged);
-
-  late Animation<double> _levelAnim = AlwaysStoppedAnimation(_level);
+  late final AnimationController _levelController;
+  late Animation<double> _levelAnim;
   double _level = 0.15;
 
   Duration _randomBeatDuration() =>
@@ -50,6 +46,12 @@ class _AnimatedMicBadgeState extends State<AnimatedMicBadge>
   @override
   void initState() {
     super.initState();
+    _levelController = AnimationController(
+      vsync: this,
+      duration: _randomBeatDuration(),
+    )..addStatusListener(_onBeatStatusChanged);
+    _levelAnim = AlwaysStoppedAnimation(_level);
+
     if (widget.isPlaying) _queueNextBeat();
   }
 

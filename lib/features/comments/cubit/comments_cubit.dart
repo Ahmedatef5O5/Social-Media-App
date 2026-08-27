@@ -386,11 +386,21 @@ class CommentsCubit extends Cubit<CommentsState> {
           _uploadCancelToken = dio_pkg.CancelToken();
           if (!isMediaAttachment) emit(ComposerUploadProgress(0));
 
+          String prefix = '${attachment.type.value}_';
+          if (attachment.type == CommentType.file && attachment.fileName != null) {
+            final originalName = attachment.fileName!;
+            final nameWithoutExt = originalName.contains('.')
+                ? originalName.substring(0, originalName.lastIndexOf('.'))
+                : originalName;
+            final safeName = nameWithoutExt.replaceAll(RegExp(r'[^a-zA-Z0-9\-_]'), '_');
+            prefix = '${safeName}_';
+          }
+
           final result = await CloudinaryStorageServices.instance.uploadFile(
             attachment.localFile!,
             'comments',
             post.id,
-            filePrefix: '${attachment.type.value}_',
+            filePrefix: prefix,
             cancelToken: _uploadCancelToken,
             onProgress: (progress) {
               uploadProgress = progress;
@@ -407,7 +417,7 @@ class CommentsCubit extends Cubit<CommentsState> {
               imageUrl = result.secureUrl;
               imagePublicId = result.publicId;
               await _mediaCacheRepository.adoptUploadedFile(
-                imageUrl,
+                result.secureUrl,
                 attachment.localFile!,
               );
               break;
@@ -415,7 +425,7 @@ class CommentsCubit extends Cubit<CommentsState> {
               videoUrl = result.secureUrl;
               videoPublicId = result.publicId;
               await _mediaCacheRepository.adoptUploadedFile(
-                videoUrl,
+                result.secureUrl,
                 attachment.localFile!,
               );
               break;
@@ -427,7 +437,7 @@ class CommentsCubit extends Cubit<CommentsState> {
               fileUrl = result.secureUrl;
               filePublicId = result.publicId;
               await _mediaCacheRepository.adoptUploadedFile(
-                fileUrl,
+                result.secureUrl,
                 attachment.localFile!,
               );
               break;
