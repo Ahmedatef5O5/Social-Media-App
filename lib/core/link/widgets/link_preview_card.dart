@@ -2,7 +2,10 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:social_media_app/core/link/model/link_preview_data.dart';
+import '../../../features/group_chats/widgets/group_invite_bottom_sheet.dart';
+import '../../deep_link/services/deep_link_service.dart';
 import '../../helpers/chat_helper.dart';
+import '../../helpers/content_deep_link_navigator.dart';
 
 class LinkPreviewCard extends StatelessWidget {
   final LinkPreviewData data;
@@ -21,6 +24,74 @@ class LinkPreviewCard extends StatelessWidget {
         (host.contains('facebook.com') &&
             (data.url.contains('/reel') || data.url.contains('/videos'))) ||
         host.contains('tiktok.com');
+  }
+
+  void _handleTap(BuildContext context) {
+    final uri = Uri.tryParse(data.url);
+    if (uri != null && uri.host == DeepLinkService.host) {
+      final segments = uri.pathSegments.where((s) => s.isNotEmpty).toList();
+      if (segments.length >= 2) {
+        final type = segments[0];
+        final id = segments[1];
+        if (type == 'join') {
+          GroupInviteBottomSheet.show(context, id);
+          return;
+        } else if (type == 'post') {
+          ContentDeepLinkNavigator.openPost(id);
+          return;
+        } else if (type == 'story') {
+          ContentDeepLinkNavigator.openStoryById(id);
+          return;
+        }
+      }
+    }
+
+    launchUrl(Uri.parse(data.url), mode: LaunchMode.externalApplication);
+  }
+
+  Widget _buildPreviewImage(ThemeData theme, bool useLightContent) {
+    final imageUrl = data.imageUrl!;
+    final isAsset = !imageUrl.startsWith('http');
+
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        AspectRatio(
+          aspectRatio: 1.91 / 1,
+          child:
+              isAsset
+                  ? Image.asset(imageUrl, fit: BoxFit.cover)
+                  : CachedNetworkImage(
+                    imageUrl: imageUrl,
+                    fit: BoxFit.cover,
+                    httpHeaders: const {
+                      'User-Agent':
+                          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+                      'Accept':
+                          'image/avif,image/webp,image/apng,image/*,*/*;q=0.8',
+                    },
+                    errorWidget:
+                        (context, url, error) =>
+                            _buildElegantFallback(theme, useLightContent),
+                  ),
+        ),
+        if (_looksLikeVideo)
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.black.withValues(alpha: 0.5),
+              border: Border.all(color: Colors.white30, width: 1),
+            ),
+            child: const Icon(
+              Icons.play_arrow_rounded,
+              color: Colors.white,
+              size: 28,
+            ),
+          ),
+      ],
+    );
   }
 
   @override
@@ -48,11 +119,7 @@ class LinkPreviewCard extends StatelessWidget {
 
     return InkWell(
       borderRadius: BorderRadius.circular(16),
-      onTap:
-          () => launchUrl(
-            Uri.parse(data.url),
-            mode: LaunchMode.externalApplication,
-          ),
+      onTap: () => _handleTap(context),
       child: Container(
         margin: const EdgeInsets.only(top: 6),
         clipBehavior: Clip.antiAlias,
@@ -65,43 +132,7 @@ class LinkPreviewCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (data.hasImage)
-              Stack(
-                alignment: Alignment.center,
-                children: [
-                  AspectRatio(
-                    aspectRatio: 1.91 / 1,
-                    child: CachedNetworkImage(
-                      imageUrl: data.imageUrl!,
-                      fit: BoxFit.cover,
-                      httpHeaders: const {
-                        'User-Agent':
-                            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-                        'Accept':
-                            'image/avif,image/webp,image/apng,image/*,*/*;q=0.8',
-                      },
-                      errorWidget:
-                          (context, url, error) =>
-                              _buildElegantFallback(theme, useLightContent),
-                    ),
-                  ),
-                  if (_looksLikeVideo)
-                    Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.black.withValues(alpha: 0.5),
-                        border: Border.all(color: Colors.white30, width: 1),
-                      ),
-                      child: const Icon(
-                        Icons.play_arrow_rounded,
-                        color: Colors.white,
-                        size: 28,
-                      ),
-                    ),
-                ],
-              ),
+            if (data.hasImage) _buildPreviewImage(theme, useLightContent),
             Padding(
               padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
               child: Column(

@@ -6,6 +6,9 @@ import 'package:html/dom.dart' as html_dom;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:social_media_app/core/cache/services/local_snapshot_store.dart';
 import 'package:social_media_app/core/link/model/link_preview_data.dart';
+import '../../../features/group_chats/services/group_chat_services.dart';
+import '../../constants/app_images.dart';
+import '../../deep_link/services/deep_link_service.dart';
 
 class LinkPreviewService {
   LinkPreviewService._();
@@ -107,6 +110,38 @@ class LinkPreviewService {
   }
 
   Future<LinkPreviewData?> _fetchAndCache(String url) async {
+    final uri = Uri.tryParse(url);
+    if (uri != null && uri.host == DeepLinkService.host) {
+      final segments = uri.pathSegments.where((s) => s.isNotEmpty).toList();
+      if (segments.length >= 2 && segments[0] == 'join') {
+        final hash = segments[1];
+        try {
+          final preview = await GroupChatServices().getGroupInvitePreview(hash);
+          if (preview.isValid) {
+            final data = LinkPreviewData(
+              url: url,
+              title:
+                  preview.groupName != null
+                      ? 'Join "${preview.groupName}"'
+                      : 'Group Invitation',
+              description:
+                  (preview.groupTitle != null && preview.groupTitle!.isNotEmpty)
+                      ? preview.groupTitle
+                      : '${preview.memberCount} member${preview.memberCount == 1 ? '' : 's'} • Tap to join group',
+              imageUrl: preview.groupAvatarUrl ?? AppImages.defaultGroupImg,
+              siteName: 'Social Media App',
+              domain: uri.host,
+            );
+            _memoryCache[url] = data;
+            unawaited(_persistSuccess(url, data));
+            return data;
+          }
+        } catch (e) {
+          debugPrint('⚠️ Failed to resolve internal group invite preview: $e');
+        }
+      }
+    }
+
     final direct = await _fetchDirect(url);
     if (direct != null) {
       _memoryCache[url] = direct;
