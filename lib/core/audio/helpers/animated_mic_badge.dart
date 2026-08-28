@@ -8,7 +8,7 @@ class AnimatedMicBadge extends StatefulWidget {
   final bool isPlaying;
   final double size;
 
-  const AnimatedMicBadge({super.key, required this.isPlaying, this.size = 34});
+  const AnimatedMicBadge({super.key, required this.isPlaying, this.size = 30});
 
   @override
   State<AnimatedMicBadge> createState() => _AnimatedMicBadgeState();
@@ -83,7 +83,7 @@ class _AnimatedMicBadgeState extends State<AnimatedMicBadge>
     return Container(
       width: widget.size,
       height: widget.size,
-      padding: EdgeInsets.all(widget.size * 0.2),
+      padding: EdgeInsets.all(widget.size * 0.185),
       decoration: const BoxDecoration(
         shape: BoxShape.circle,
         color: Colors.white,

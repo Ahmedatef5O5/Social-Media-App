@@ -6,11 +6,13 @@ import 'voice_full_screen_view.dart';
 class FullScreenMediaPager extends StatefulWidget {
   final List<SharedMediaItem> items;
   final int initialIndex;
+  final String? currentUserAvatar;
 
   const FullScreenMediaPager({
     super.key,
     required this.items,
     required this.initialIndex,
+    this.currentUserAvatar,
   });
 
   @override
@@ -49,6 +51,7 @@ class _FullScreenMediaPagerState extends State<FullScreenMediaPager> {
             key: ValueKey(item.id),
             item: item,
             isActive: isActive,
+            currentUserAvatar: widget.currentUserAvatar,
           );
         }
 

@@ -20,11 +20,13 @@ import '../models/shared_media_item.dart';
 class VoiceFullScreenView extends StatefulWidget {
   final SharedMediaItem item;
   final bool isActive;
+  final String? currentUserAvatar;
 
   const VoiceFullScreenView({
     super.key,
     required this.item,
     this.isActive = true,
+    this.currentUserAvatar,
   });
 
   @override
@@ -35,12 +37,15 @@ class _VoiceFullScreenViewState extends State<VoiceFullScreenView> {
   final VoicePlaybackController _voice = VoicePlaybackController.instance;
 
   String get _voiceUrl => widget.item.voiceUrl ?? '';
-
   VideoPlayerController? get _controller => _voice.controllerFor(_voiceUrl);
 
   bool _isPlaying = false;
   bool _isInitialized = false;
   bool _isLoading = false;
+
+  static const List<double> _speeds = [1.0, 1.25, 1.5, 1.75, 2.0];
+  int _speedIndex = 0;
+  double get _currentSpeed => _speeds[_speedIndex];
 
   @override
   void initState() {
@@ -99,6 +104,13 @@ class _VoiceFullScreenViewState extends State<VoiceFullScreenView> {
     }
   }
 
+  Future<void> _cycleSpeed() async {
+    setState(() => _speedIndex = (_speedIndex + 1) % _speeds.length);
+    if (_isInitialized && _controller != null) {
+      await _controller!.setPlaybackSpeed(_currentSpeed);
+    }
+  }
+
   Future<void> _togglePlayback() async {
     if (_isInitialized && _controller != null) {
       if (_isPlaying) {
@@ -107,6 +119,7 @@ class _VoiceFullScreenViewState extends State<VoiceFullScreenView> {
         setState(() => _isPlaying = false);
       } else {
         _voice.setActive(_voiceUrl);
+        await _controller!.setPlaybackSpeed(_currentSpeed);
         _controller!.play();
         setState(() => _isPlaying = true);
       }
@@ -124,7 +137,14 @@ class _VoiceFullScreenViewState extends State<VoiceFullScreenView> {
             ? VideoPlayerController.file(File(localPath))
             : VideoPlayerController.networkUrl(Uri.parse(_voiceUrl));
 
-    await controller.initialize();
+    try {
+      await controller.initialize();
+    } catch (e) {
+      debugPrint('Voice init error: $e');
+      if (mounted) setState(() => _isLoading = false);
+      return;
+    }
+
     if (!mounted) {
       await controller.dispose();
       return;
@@ -133,6 +153,7 @@ class _VoiceFullScreenViewState extends State<VoiceFullScreenView> {
     controller.addListener(_onControllerUpdate);
     _voice.register(_voiceUrl, controller);
     _voice.setActive(_voiceUrl);
+    await controller.setPlaybackSpeed(_currentSpeed);
     await controller.play();
 
     if (mounted) {
@@ -171,11 +192,13 @@ class _VoiceFullScreenViewState extends State<VoiceFullScreenView> {
 
   @override
   void dispose() {
+    _voice.activeVoiceUrl.removeListener(_onActiveVoiceChanged);
+    _controller?.removeListener(_onControllerUpdate);
+
     if (_voice.activeVoiceUrl.value == _voiceUrl) {
       _voice.pauseActive();
     }
-    _voice.activeVoiceUrl.removeListener(_onActiveVoiceChanged);
-    _controller?.removeListener(_onControllerUpdate);
+
     super.dispose();
   }
 
@@ -185,7 +208,12 @@ class _VoiceFullScreenViewState extends State<VoiceFullScreenView> {
     final isMe = item.senderId == SupabaseProvider.id;
     final position = _controller?.value.position ?? Duration.zero;
     final duration = _effectiveDuration ?? Duration.zero;
-    final hasAvatar = (item.senderAvatar ?? '').isNotEmpty;
+
+    final avatarUrl =
+        isMe
+            ? (widget.currentUserAvatar ?? item.senderAvatar)
+            : item.senderAvatar;
+    final hasAvatar = (avatarUrl ?? '').isNotEmpty;
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -193,7 +221,13 @@ class _VoiceFullScreenViewState extends State<VoiceFullScreenView> {
       appBar: AppBar(
         elevation: 0,
         backgroundColor: Colors.transparent,
-        leading: const BackButton(color: Colors.white),
+        leading: IconButton(
+          icon: const Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: Colors.white,
+          ),
+          onPressed: () => Navigator.pop(context),
+        ),
       ),
       body: Stack(
         fit: StackFit.expand,
@@ -203,7 +237,7 @@ class _VoiceFullScreenViewState extends State<VoiceFullScreenView> {
             child:
                 hasAvatar
                     ? CachedCloudinaryImage(
-                      secureUrl: item.senderAvatar!,
+                      secureUrl: avatarUrl!,
                       fit: BoxFit.cover,
                       width: double.infinity,
                       height: double.infinity,
@@ -211,7 +245,6 @@ class _VoiceFullScreenViewState extends State<VoiceFullScreenView> {
                     )
                     : const _AvatarFallbackBackground(),
           ),
-
           Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
@@ -225,7 +258,6 @@ class _VoiceFullScreenViewState extends State<VoiceFullScreenView> {
               ),
             ),
           ),
-
           SafeArea(
             child: Column(
               children: [
@@ -244,14 +276,14 @@ class _VoiceFullScreenViewState extends State<VoiceFullScreenView> {
                       child:
                           hasAvatar
                               ? CachedCloudinaryImage(
-                                secureUrl: item.senderAvatar!,
+                                secureUrl: avatarUrl!,
                                 fit: BoxFit.cover,
                               )
                               : _AvatarFallbackCircle(name: item.senderName),
                     ),
                     Positioned(
-                      bottom: -6,
-                      right: -6,
+                      bottom: 3,
+                      right: 3,
                       child: AnimatedMicBadge(isPlaying: _isPlaying),
                     ),
                   ],
@@ -272,68 +304,100 @@ class _VoiceFullScreenViewState extends State<VoiceFullScreenView> {
                 ),
                 const Spacer(flex: 3),
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 28),
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Center(
-                        child:
-                            _isLoading
-                                ? const SizedBox(
-                                  width: 58,
-                                  height: 58,
-                                  child: CustomLoadingIndicator(
-                                    color: Colors.white,
-                                  ),
-                                )
-                                : GlassIconButton(
-                                  icon:
-                                      _isPlaying
-                                          ? Icons.pause_rounded
-                                          : Icons.play_arrow_rounded,
-                                  size: 58,
-                                  iconSize: 30,
-                                  onTap: _togglePlayback,
-                                ),
-                      ),
-                      const Gap(24),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 40,
-                        child: WaveformProgressBar(
-                          seed: _voiceUrl,
-                          position: position,
-                          duration: duration,
-                          activeColor: Colors.white,
-                          inactiveColor: Colors.white.withValues(alpha: 0.28),
-                          height: 40,
-                          barWidth: 3.6,
-                          gap: 2.6,
-                          onSeek:
-                              _isInitialized && _controller != null
-                                  ? (target) => _controller!.seekTo(target)
-                                  : null,
-                        ),
-                      ),
-                      const Gap(8),
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          Text(
-                            _fmt(position),
-                            style: const TextStyle(
-                              color: Colors.white70,
-                              fontSize: 12,
+                          _isLoading
+                              ? const SizedBox(
+                                width: 42,
+                                height: 42,
+                                child: CustomLoadingIndicator(
+                                  color: Colors.white,
+                                ),
+                              )
+                              : GlassIconButton(
+                                icon:
+                                    _isPlaying
+                                        ? Icons.pause_rounded
+                                        : Icons.play_arrow_rounded,
+                                size: 42,
+                                iconSize: 24,
+                                onTap: _togglePlayback,
+                              ),
+                          const Gap(12),
+                          Expanded(
+                            child: SizedBox(
+                              height: 40,
+                              child: WaveformProgressBar(
+                                seed: _voiceUrl,
+                                position: position,
+                                duration: duration,
+                                activeColor: Colors.white,
+                                inactiveColor: Colors.white.withValues(
+                                  alpha: 0.28,
+                                ),
+                                height: 40,
+                                barWidth: 3.6,
+                                gap: 2.6,
+                                onSeek:
+                                    _isInitialized && _controller != null
+                                        ? (target) =>
+                                            _controller!.seekTo(target)
+                                        : null,
+                              ),
                             ),
                           ),
-                          Text(
-                            duration > Duration.zero ? _fmt(duration) : '--:--',
-                            style: const TextStyle(
-                              color: Colors.white70,
-                              fontSize: 12,
+                          const Gap(12),
+                          GestureDetector(
+                            onTap: _cycleSpeed,
+                            child: Container(
+                              width: 38,
+                              height: 38,
+                              alignment: Alignment.center,
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                '${_currentSpeed == _currentSpeed.truncateToDouble() ? _currentSpeed.toInt() : _currentSpeed}x',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
                             ),
                           ),
                         ],
+                      ),
+                      const Gap(10),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 54),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              _fmt(position),
+                              style: const TextStyle(
+                                color: Colors.white70,
+                                fontSize: 12,
+                              ),
+                            ),
+                            Text(
+                              duration > Duration.zero
+                                  ? _fmt(duration)
+                                  : '--:--',
+                              style: const TextStyle(
+                                color: Colors.white70,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),
@@ -350,7 +414,6 @@ class _VoiceFullScreenViewState extends State<VoiceFullScreenView> {
 
 class _AvatarFallbackBackground extends StatelessWidget {
   const _AvatarFallbackBackground();
-
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -368,7 +431,6 @@ class _AvatarFallbackBackground extends StatelessWidget {
 class _AvatarFallbackCircle extends StatelessWidget {
   final String name;
   const _AvatarFallbackCircle({required this.name});
-
   @override
   Widget build(BuildContext context) {
     return Container(
