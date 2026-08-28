@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:social_media_app/core/themes/app_colors.dart';
+import '../../design/theme/app_theme.dart';
 
 enum AppThemeType {
   ocean,
@@ -144,61 +144,8 @@ class AppThemeModel {
   static AppThemeModel fromType(AppThemeType type) =>
       themes.firstWhere((t) => t.type == type);
 
-  ThemeData get themeData {
-    final bool isDark = bgBase.computeLuminance() < 0.5;
-    final Color textColor = isDark ? AppColors.white : AppColors.black87;
-    final Color secondaryTextColor =
-        isDark ? AppColors.white70 : AppColors.black54;
-    return ThemeData(
-      useMaterial3: true,
-      primaryColor: primaryColor,
-      scaffoldBackgroundColor: bgBase,
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: primaryColor,
-        surface: bgBase,
-        brightness: isDark ? Brightness.dark : Brightness.light,
-        onSurface: textColor,
-      ),
-
-      navigationBarTheme: NavigationBarThemeData(
-        backgroundColor: bgBase,
-        indicatorColor: primaryColor.withValues(alpha: 0.2),
-      ),
-
-      appBarTheme: AppBarTheme(
-        backgroundColor: bgBase,
-        elevation: 0,
-        iconTheme: IconThemeData(color: primaryColor),
-        titleTextStyle: TextStyle(
-          color: primaryColor,
-          fontSize: 20,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-
-      tabBarTheme: TabBarThemeData(
-        labelColor: primaryColor,
-        unselectedLabelColor: Colors.grey,
-        indicatorSize: TabBarIndicatorSize.tab,
-        indicator: BoxDecoration(
-          color: primaryColor,
-          borderRadius: BorderRadius.circular(60),
-        ),
-      ),
-
-      textTheme: TextTheme(
-        displayLarge: TextStyle(color: textColor, fontWeight: FontWeight.bold),
-        headlineMedium: TextStyle(
-          color: textColor,
-          fontWeight: FontWeight.w600,
-        ),
-        titleLarge: TextStyle(color: primaryColor, fontWeight: FontWeight.bold),
-        bodyLarge: TextStyle(color: textColor),
-        bodyMedium: TextStyle(color: secondaryTextColor),
-        labelLarge: TextStyle(color: primaryColor),
-      ),
-    );
-  }
+  ThemeData get themeData =>
+      AppTheme.buildThemeFromName(type.name, isDark: isDark);
 
   String toStorageString() => type.name;
 

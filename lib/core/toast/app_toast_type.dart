@@ -13,7 +13,7 @@ extension AppToastTypeStyle on AppToastType {
       case AppToastType.warning:
         return const Color(0xFFED6C02);
       case AppToastType.info:
-        return const Color(0xFF007AFF);
+        return const Color(0xFF2563EB);
       case AppToastType.save:
         return AppColors.goldenYellow;
     }
