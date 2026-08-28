@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:social_media_app/features/home/cubits/home_cubit/home_cubit.dart';
 import '../../toast/app_toast.dart';
 import '../cubits/shared_media_cubit/shared_media_cubit.dart';
 import '../models/shared_media_item.dart';
@@ -27,6 +28,8 @@ class MediaActionHelper {
             .toList();
 
     final initialIndex = playable.indexWhere((i) => i.id == tappedItem.id);
+    final currentUserAvatar =
+        context.read<HomeCubit>().currentUserData?.imageUrl;
 
     Navigator.of(context).push(
       PageRouteBuilder(
@@ -35,6 +38,7 @@ class MediaActionHelper {
             (_, __, ___) => FullScreenMediaPager(
               items: playable,
               initialIndex: initialIndex < 0 ? 0 : initialIndex,
+              currentUserAvatar: currentUserAvatar,
             ),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           return FadeTransition(opacity: animation, child: child);

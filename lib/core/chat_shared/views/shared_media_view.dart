@@ -41,12 +41,18 @@ class _SharedMediaViewState extends State<SharedMediaView> {
       initialIndex: widget.initialIndex,
       child: Scaffold(
         appBar: AppBar(
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 22),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
           title: const Text(
             'Shared Media',
-            style: TextStyle(fontWeight: FontWeight.bold),
+            style: TextStyle(fontWeight: FontWeight.w500),
           ),
-          centerTitle: true,
+          titleSpacing: 0,
+          centerTitle: false,
           elevation: 0,
+          scrolledUnderElevation: 0,
           bottom: TabBar(
             padding: EdgeInsets.zero,
             labelPadding: EdgeInsets.zero,

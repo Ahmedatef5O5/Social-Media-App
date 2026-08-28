@@ -6,15 +6,18 @@ import '../models/shared_media_item.dart';
 
 class VoiceGridTile extends StatelessWidget {
   final SharedMediaItem item;
+  final String? currentUserAvatar;
 
-  const VoiceGridTile({super.key, required this.item});
+  const VoiceGridTile({super.key, required this.item, this.currentUserAvatar});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final primary = theme.primaryColor;
     final isMe = item.senderId == SupabaseProvider.id;
-    final hasAvatar = (item.senderAvatar ?? '').isNotEmpty;
+    final avatarUrl =
+        isMe ? (currentUserAvatar ?? item.senderAvatar) : item.senderAvatar;
+    final hasAvatar = (avatarUrl ?? '').isNotEmpty;
 
     return Container(
       color: primary.withValues(alpha: 0.08),
@@ -31,9 +34,7 @@ class VoiceGridTile extends StatelessWidget {
                 radius: 20,
                 backgroundColor: primary.withValues(alpha: 0.15),
                 backgroundImage:
-                    hasAvatar
-                        ? CachedNetworkImageProvider(item.senderAvatar!)
-                        : null,
+                    hasAvatar ? CachedNetworkImageProvider(avatarUrl!) : null,
                 child:
                     !hasAvatar
                         ? Text(

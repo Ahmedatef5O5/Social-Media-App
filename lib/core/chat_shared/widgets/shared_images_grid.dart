@@ -52,6 +52,15 @@ class SharedImagesGrid extends StatelessWidget {
           child: CachedNetworkImage(
             imageUrl: item.imageUrl ?? '',
             fit: BoxFit.cover,
+            errorWidget:
+                (context, url, error) => Container(
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                  child: Icon(
+                    Icons.broken_image_rounded,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    size: 28,
+                  ),
+                ),
           ),
         );
       },

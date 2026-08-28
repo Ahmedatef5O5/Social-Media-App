@@ -12,7 +12,14 @@ import 'shared_media_action_menu.dart';
 class VoiceMessageGrid extends StatelessWidget {
   final List<SharedMediaItem> items;
   final ShowInChatCallback? onShowInChat;
-  const VoiceMessageGrid({super.key, required this.items, this.onShowInChat});
+  final String? currentUserAvatar;
+
+  const VoiceMessageGrid({
+    super.key,
+    required this.items,
+    this.onShowInChat,
+    this.currentUserAvatar,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -20,7 +27,9 @@ class VoiceMessageGrid extends StatelessWidget {
       items: items,
       tileBuilder: (context, item) {
         final isMe = item.senderId == SupabaseProvider.id;
-
+        final avatarUrl =
+            isMe ? (currentUserAvatar ?? item.senderAvatar) : item.senderAvatar;
+        final hasAvatar = (avatarUrl ?? '').isNotEmpty;
         return GestureDetector(
           onTap:
               () => MediaActionHelper.openFullScreenMedia(context, items, item),
@@ -67,13 +76,11 @@ class VoiceMessageGrid extends StatelessWidget {
                       context,
                     ).primaryColor.withValues(alpha: 0.12),
                     backgroundImage:
-                        (item.senderAvatar != null &&
-                                item.senderAvatar!.isNotEmpty)
-                            ? CachedNetworkImageProvider(item.senderAvatar!)
+                        hasAvatar
+                            ? CachedNetworkImageProvider(avatarUrl!)
                             : null,
                     child:
-                        (item.senderAvatar == null ||
-                                item.senderAvatar!.isEmpty)
+                        !hasAvatar
                             ? Text(
                               item.senderName.isNotEmpty
                                   ? item.senderName[0].toUpperCase()
@@ -99,7 +106,7 @@ class VoiceMessageGrid extends StatelessWidget {
                               item,
                             ),
                         child: Text(
-                          item.senderName,
+                          isMe ? 'You' : item.senderName,
                           style: Theme.of(context).textTheme.titleSmall,
                         ),
                       ),

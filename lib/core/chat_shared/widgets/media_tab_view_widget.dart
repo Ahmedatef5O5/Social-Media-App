@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../features/home/cubits/home_cubit/home_cubit.dart';
 import '../../cache/utils/cloudinary_url_extensions.dart';
 import '../../supabase/supabase_provider.dart';
 import '../cubits/shared_media_cubit/shared_media_cubit.dart';
@@ -44,6 +45,8 @@ class _MediaTabViewState extends State<MediaTabView>
       builder: (context, state) {
         final isLoading = state.isLoading(widget.tab);
         final items = state.itemsFor(widget.tab);
+        final currentUserAvatar =
+            context.read<HomeCubit>().currentUserData?.imageUrl;
 
         if (isLoading && items.isEmpty) {
           return switch (widget.tab) {
@@ -62,6 +65,7 @@ class _MediaTabViewState extends State<MediaTabView>
           SharedMediaTab.all => _AllMediaGrid(
             items: items,
             onShowInChat: widget.onShowInChat,
+            currentUserAvatar: currentUserAvatar,
           ),
           SharedMediaTab.images => SharedImagesGrid(
             items: items,
@@ -74,6 +78,7 @@ class _MediaTabViewState extends State<MediaTabView>
           SharedMediaTab.voice => VoiceMessageGrid(
             items: items,
             onShowInChat: widget.onShowInChat,
+            currentUserAvatar: currentUserAvatar,
           ),
           SharedMediaTab.links => MediaLinksList(
             items: items,
@@ -96,7 +101,12 @@ class _MediaTabViewState extends State<MediaTabView>
 class _AllMediaGrid extends StatelessWidget {
   final List<SharedMediaItem> items;
   final ShowInChatCallback? onShowInChat;
-  const _AllMediaGrid({required this.items, this.onShowInChat});
+  final String? currentUserAvatar;
+  const _AllMediaGrid({
+    required this.items,
+    this.onShowInChat,
+    this.currentUserAvatar,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -162,6 +172,16 @@ class _AllMediaGrid extends StatelessWidget {
             'image' => CachedNetworkImage(
               imageUrl: item.imageUrl ?? '',
               fit: BoxFit.cover,
+              errorWidget:
+                  (context, url, error) => Container(
+                    color:
+                        Theme.of(context).colorScheme.surfaceContainerHighest,
+                    child: Icon(
+                      Icons.broken_image_rounded,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      size: 28,
+                    ),
+                  ),
             ),
             'video' => Stack(
               fit: StackFit.expand,
@@ -173,7 +193,18 @@ class _AllMediaGrid extends StatelessWidget {
                       '',
                   fit: BoxFit.cover,
                   placeholder: (_, __) => Container(color: Colors.black12),
-                  errorWidget: (_, __, ___) => Container(color: Colors.black12),
+                  errorWidget:
+                      (context, url, error) => Container(
+                        color:
+                            Theme.of(
+                              context,
+                            ).colorScheme.surfaceContainerHighest,
+                        child: Icon(
+                          Icons.video_file_rounded,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          size: 28,
+                        ),
+                      ),
                 ),
                 const Center(
                   child: Icon(
@@ -184,7 +215,10 @@ class _AllMediaGrid extends StatelessWidget {
                 ),
               ],
             ),
-            _ => VoiceGridTile(item: item),
+            _ => VoiceGridTile(
+              item: item,
+              currentUserAvatar: currentUserAvatar,
+            ),
           },
         );
       },

@@ -35,6 +35,10 @@ class SectionedMediaGrid extends StatelessWidget {
             ),
           ),
         ],
+        const SliverSafeArea(
+          bottom: true,
+          sliver: SliverToBoxAdapter(child: SizedBox(height: 12)),
+        ),
       ],
     );
   }
