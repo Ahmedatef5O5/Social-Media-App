@@ -73,6 +73,8 @@ class _StoryReplyInputBarState extends State<StoryReplyInputBar> {
             ? await _filePicker.pickVideoFromGallery()
             : await _filePicker.pickImageFromGallery();
     if (picked == null) return;
+    if (!mounted) return;
+
     setState(() {
       _pickedFile = File(picked.path);
       _pickedType = isVideo ? 'video' : 'image';

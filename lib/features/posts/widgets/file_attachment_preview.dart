@@ -70,7 +70,9 @@ class _FileAttachmentPreviewState extends State<FileAttachmentPreview>
           _resolvedSizeBytes = int.tryParse(lengthStr);
         });
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('[FileAttachmentPreview] failed to resolve file size: $e');
+    }
   }
 
   @override

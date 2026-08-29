@@ -79,6 +79,7 @@ class _CreateTextStoryViewState extends State<CreateTextStoryView> {
       currentViewerIds: _selectedViewerIds,
     );
     if (result == null) return;
+    if (!mounted) return;
     setState(() {
       _selectedPrivacy = result.privacy;
       _selectedViewerIds = result.allowedViewerIds;
@@ -97,6 +98,7 @@ class _CreateTextStoryViewState extends State<CreateTextStoryView> {
         MaterialPageRoute(builder: (_) => const AudiencePickerView()),
       );
       if (selected == null || selected.isEmpty) return;
+      if (!context.mounted) return;
       setState(() => _selectedViewerIds = selected);
     }
     if (!context.mounted) return;

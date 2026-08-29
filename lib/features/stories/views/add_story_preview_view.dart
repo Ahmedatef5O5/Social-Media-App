@@ -98,6 +98,7 @@ class _AddStoryPreviewViewState extends State<AddStoryPreviewView> {
       currentViewerIds: _selectedViewerIds,
     );
     if (result == null) return;
+    if (!mounted) return;
     setState(() {
       _selectedPrivacy = result.privacy;
       _selectedViewerIds = result.allowedViewerIds;

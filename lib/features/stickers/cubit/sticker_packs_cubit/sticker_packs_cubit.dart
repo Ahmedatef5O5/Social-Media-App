@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:social_media_app/core/cache/repository/media_cache_repository.dart';
 import '../../../../core/errors/supabase_error_mapper.dart';
@@ -124,7 +125,11 @@ class StickerPacksCubit extends Cubit<StickerPacksState> {
       for (final s in stickers) {
         unawaited(_mediaCache.invalidate(s.imageUrl));
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint(
+        '[StickerPacksCubit] failed to fetch stickers for cache invalidation: $e',
+      );
+    }
 
     final updated = await _repository.getDownloadedPackIds();
     final latest = state;

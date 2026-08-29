@@ -178,7 +178,11 @@ class _PostDetailsViewState extends State<PostDetailsView> {
                     currentPost = state.posts.firstWhere(
                       (p) => p.id == widget.post.id,
                     );
-                  } catch (_) {}
+                  } catch (e) {
+                    debugPrint(
+                      '[PostDetailsView] post lookup failed, falling back to widget.post: $e',
+                    );
+                  }
                 }
 
                 final bool isSharedPost = currentPost.isSharedPost;

@@ -49,7 +49,9 @@ class _VideoMessageWidgetState extends State<VideoMessageWidget> {
           _localThumbnail = meta.thumbnailFile;
         });
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('[VideoMessageWidget] video thumbnail generation failed: $e');
+    }
   }
 
   @override

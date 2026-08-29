@@ -115,7 +115,9 @@ class _PostReactionsInlineListState extends State<PostReactionsInlineList> {
       if (current is PostsLoaded) {
         currPost = current.posts.findById(widget.postId);
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('[PostReactionsInlineList] post lookup failed: $e');
+    }
 
     if (currPost == null) {
       _refetch();

@@ -112,7 +112,11 @@ class _CreatePostViewState extends State<CreatePostView> {
   void dispose() {
     try {
       context.read<PostsCubit>().clearMediaSelection();
-    } catch (_) {}
+    } catch (e) {
+      debugPrint(
+        '[CreatePostView] failed to clear media selection on dispose: $e',
+      );
+    }
 
     _textEditingController.dispose();
     _sheetController.dispose();

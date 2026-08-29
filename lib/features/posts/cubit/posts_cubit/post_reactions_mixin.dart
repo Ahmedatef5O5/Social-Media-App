@@ -4,11 +4,17 @@ mixin PostReactionsMixin on Cubit<PostsState> {
   PostsServices get _postsServices;
   UserData? get currentUserData;
 
+  final Set<String> _pendingReactionPostIds = {};
+
   Future<bool> toggleReaction(PostModel post, {String emoji = 'like'}) async {
     if (state is! PostsLoaded) return false;
+    if (_pendingReactionPostIds.contains(post.id)) return false;
+
     final user = SupabaseProvider.user;
     final userId = user?.id;
     if (userId == null) return false;
+
+    _pendingReactionPostIds.add(post.id);
 
     final oldState = state as PostsLoaded;
     final String? currentEmoji = post.myReactionEmoji;
@@ -31,8 +37,11 @@ mixin PostReactionsMixin on Cubit<PostsState> {
           updatedLikes.insert(0, userId);
           updatedImages.insert(0, imagePlaceholder);
         } else if (isRemoving) {
-          updatedLikes.remove(userId);
-          updatedImages.remove(imagePlaceholder);
+          final idx = updatedLikes.indexOf(userId);
+          if (idx != -1) {
+            updatedLikes.removeAt(idx);
+            if (idx < updatedImages.length) updatedImages.removeAt(idx);
+          }
         }
         if (currentEmoji != null) {
           final oldIdx = updatedReactions.indexWhere(
@@ -72,7 +81,10 @@ mixin PostReactionsMixin on Cubit<PostsState> {
 
     try {
       final isOffline = await ConnectivityBannerController.notifyIfOffline();
-      if (isOffline) return false;
+      if (isOffline) {
+        _revertPost(post);
+        return false;
+      }
 
       await _postsServices.toggleReaction(
         postId: post.id,
@@ -105,7 +117,7 @@ mixin PostReactionsMixin on Cubit<PostsState> {
       }
       return true;
     } catch (e) {
-      emit(PostsLoaded(oldState.posts, DateTime.now()));
+      _revertPost(post);
       debugPrint('Error toggling reaction: $e');
 
       if (e.toString().contains('23503') ||
@@ -113,7 +125,19 @@ mixin PostReactionsMixin on Cubit<PostsState> {
         AppToast.info('This post is no longer available.');
       }
       return false;
+    } finally {
+      _pendingReactionPostIds.remove(post.id);
     }
+  }
+
+  void _revertPost(PostModel originalPost) {
+    if (state is! PostsLoaded) return;
+    final currentState = state as PostsLoaded;
+    final revertedPosts = currentState.posts.updatePostById(
+      originalPost.id,
+      (_) => originalPost,
+    );
+    emit(PostsLoaded(revertedPosts, DateTime.now()));
   }
 
   Future<bool> toggleSavePost(PostModel post) async {

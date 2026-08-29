@@ -100,6 +100,7 @@ class StoryReplyCubit extends Cubit<StoryReplyState> {
     required String text,
     required String messageType,
     String? mediaUrl,
+    String? fileName,
   }) async {
     try {
       final me = await _chatServices.getCurrentUserInfo(currentUserId);
@@ -118,6 +119,7 @@ class StoryReplyCubit extends Cubit<StoryReplyState> {
         messageBody: body,
         messageType: messageType,
         chatReferenceId: currentUserId,
+        fileName: fileName,
       );
 
       final pushInfo = await _chatServices.getReceiverPushInfo(story.authorId);
