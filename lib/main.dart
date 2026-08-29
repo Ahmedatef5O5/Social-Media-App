@@ -1,9 +1,8 @@
 import 'dart:async';
-import 'dart:ui';
+import 'app.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:social_media_app/core/share_intent/services/share_intent_service.dart';
-import 'app.dart';
 import 'core/bootstrap/app_bootstrap.dart';
 import 'core/errors/network_error_utils.dart';
 import 'core/toast/app_toast.dart';
@@ -39,10 +38,6 @@ void main() {
       final savedTheme = prefs.getString('user_theme_key') ?? 'ocean';
 
       runApp(buildApp(savedTheme));
-
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        ShareIntentService.instance.consumeInitialShareIfAny();
-      });
     },
 
     (error, stack) {
@@ -55,20 +50,25 @@ void main() {
 DateTime? _lastGlobalErrorToastAt;
 
 void _notifyUserOfUncaughtError(Object error) {
+  if (!kDebugMode) {
+    return;
+  }
+
   final errorString = error.toString();
 
   if (NetworkErrorUtils.isNetworkError(error) ||
       NetworkErrorUtils.isTimeoutError(error) ||
+      errorString.contains('PGRST303') ||
+      errorString.contains('JWT issued at future') ||
       errorString.contains('VideoError') ||
       errorString.contains('ExoPlaybackException') ||
       errorString.contains('RealtimeSubscribeException') ||
       errorString.contains('HttpException: Invalid statusCode: 404') ||
-      errorString.contains('RealtimeSubscribeStatus.timedOut')
-  // || errorString.contains('AssertionError') ||
-  // errorString.contains('RenderFlex') ||
-  // errorString.contains('LateInitializationError') ||
-  // errorString.contains('StateError')
-  ) {
+      errorString.contains('RealtimeSubscribeStatus.timedOut')) {
+    errorString.contains('AssertionError') ||
+        errorString.contains('RenderFlex') ||
+        errorString.contains('LateInitializationError') ||
+        errorString.contains('StateError');
     debugPrint('Uncaught error suppressed from UI: $error');
     return;
   }
@@ -82,6 +82,6 @@ void _notifyUserOfUncaughtError(Object error) {
   _lastGlobalErrorToastAt = now;
 
   WidgetsBinding.instance.addPostFrameCallback((_) {
-    AppToast.error('Something went wrong. Please try again.');
+    AppToast.error('Debug Error: ${error.toString().split('\n').first}');
   });
 }

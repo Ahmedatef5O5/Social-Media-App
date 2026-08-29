@@ -19,7 +19,6 @@ class AudioCompressionResult {
   });
 }
 
-
 class AudioCompressionService {
   Future<AudioCompressionResult> compress(File wavFile) async {
     final outputPath = _buildM4aPath(wavFile.path);
@@ -71,6 +70,8 @@ class AudioCompressionService {
   Future<void> _safeDelete(File file) async {
     try {
       if (await file.exists()) await file.delete();
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('[AudioCompression] failed to delete temp file: $e');
+    }
   }
 }

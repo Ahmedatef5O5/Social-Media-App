@@ -203,7 +203,9 @@ class _VideoBubbleState extends State<_VideoBubble> {
       if (mounted && meta.thumbnailFile != null) {
         setState(() => _localThumbnail = meta.thumbnailFile);
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('[CommentMediaBubble] video thumbnail generation failed: $e');
+    }
   }
 
   @override

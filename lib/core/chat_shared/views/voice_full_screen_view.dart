@@ -120,6 +120,7 @@ class _VoiceFullScreenViewState extends State<VoiceFullScreenView> {
       } else {
         _voice.setActive(_voiceUrl);
         await _controller!.setPlaybackSpeed(_currentSpeed);
+        if (!mounted) return;
         _controller!.play();
         setState(() => _isPlaying = true);
       }

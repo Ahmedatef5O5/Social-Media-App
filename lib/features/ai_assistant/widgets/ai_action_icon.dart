@@ -109,7 +109,9 @@ class _AiActionIconState extends State<AiActionIcon> {
       try {
         final bytes = await widget.imageBytesProvider!();
         if (bytes != null) imageBase64 = AiImageEncoder.encodeForCaption(bytes);
-      } catch (_) {}
+      } catch (e) {
+        debugPrint('[AiActionIcon] failed to read local image bytes: $e');
+      }
     }
 
     // remote image
@@ -119,7 +121,9 @@ class _AiActionIconState extends State<AiActionIcon> {
       try {
         final bytes = await widget.targetImageBytesProvider!();
         if (bytes != null) imageBase64 = AiImageEncoder.encodeForCaption(bytes);
-      } catch (_) {}
+      } catch (e) {
+        debugPrint('[AiActionIcon] failed to read target image bytes: $e');
+      }
     }
 
     final aiPrefs = context.read<AiPreferencesCubit>().state;

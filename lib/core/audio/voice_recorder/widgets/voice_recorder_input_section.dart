@@ -164,7 +164,9 @@ class _VoiceRecorderInputSectionState extends State<VoiceRecorderInputSection> {
             _liveAmplitudes.removeAt(0);
           }
         });
-      } catch (_) {}
+      } catch (e) {
+        debugPrint('[VoiceRecorderInput] amplitude stream error: $e');
+      }
     });
   }
 

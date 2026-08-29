@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:video_player/video_player.dart';
 import 'package:video_thumbnail/video_thumbnail.dart' as vt;
@@ -6,7 +7,10 @@ import 'package:video_thumbnail/video_thumbnail.dart' as vt;
 class VideoAttachmentMeta {
   final int durationSeconds;
   final File? thumbnailFile;
-  const VideoAttachmentMeta({required this.durationSeconds, this.thumbnailFile});
+  const VideoAttachmentMeta({
+    required this.durationSeconds,
+    this.thumbnailFile,
+  });
 }
 
 Future<VideoAttachmentMeta> extractVideoAttachmentMeta(File videoFile) async {
@@ -16,7 +20,8 @@ Future<VideoAttachmentMeta> extractVideoAttachmentMeta(File videoFile) async {
     await controller.initialize();
     duration = controller.value.duration.inSeconds;
     await controller.dispose();
-  } catch (_) {
+  } catch (e) {
+    debugPrint('[VideoAttachmentMeta] failed to read video duration: $e');
   }
 
   File? thumbnailFile;
@@ -30,7 +35,12 @@ Future<VideoAttachmentMeta> extractVideoAttachmentMeta(File videoFile) async {
       quality: 60,
     );
     if (thumbPath != null) thumbnailFile = File(thumbPath);
-  } catch (_) {}
+  } catch (e) {
+    debugPrint('[VideoAttachmentMeta] thumbnail generation failed: $e');
+  }
 
-  return VideoAttachmentMeta(durationSeconds: duration, thumbnailFile: thumbnailFile);
+  return VideoAttachmentMeta(
+    durationSeconds: duration,
+    thumbnailFile: thumbnailFile,
+  );
 }

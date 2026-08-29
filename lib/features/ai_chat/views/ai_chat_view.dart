@@ -585,6 +585,7 @@ class _AiChatViewState extends State<AiChatView> with TickerProviderStateMixin {
       AppToast.error('Voice message not found. Please try recording again.');
       return;
     }
+    if (!mounted) return;
 
     _scrollToBottom();
     final deps = _deps;
@@ -1033,6 +1034,8 @@ class _AiChatViewState extends State<AiChatView> with TickerProviderStateMixin {
       AppToast.error('Image file not found. Please try picking it again.');
       return;
     }
+
+    if (!mounted) return;
 
     setState(() => _isUploadingImage = true);
 

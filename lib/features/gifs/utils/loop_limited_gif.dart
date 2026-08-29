@@ -112,6 +112,8 @@ class _LoopLimitedGifState extends State<LoopLimitedGif> {
             break;
           }
           final frameInfo = await codec.getNextFrame();
+          if (_disposed) break;
+
           setState(() {
             _playingFrame = frameInfo.image;
           });

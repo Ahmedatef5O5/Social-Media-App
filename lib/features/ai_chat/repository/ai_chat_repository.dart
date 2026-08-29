@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:hive/hive.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/ai_chat_message_record.dart';
@@ -36,7 +37,11 @@ class AiChatRepository {
       for (final s in fresh) {
         await _sessionsBox.put(s.id, s);
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint(
+        '[AiChatRepository] failed to refresh local sessions cache: $e',
+      );
+    }
     return _sortedLocalSessions();
   }
 

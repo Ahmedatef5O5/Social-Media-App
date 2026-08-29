@@ -34,6 +34,8 @@ class _CommentVoiceRecorderSheetState extends State<CommentVoiceRecorderSheet> {
     try {
       final hasPermission = await _recorder.hasPermission();
       if (!hasPermission) {
+        if (!mounted) return;
+
         setState(() {
           _isInitializing = false;
           _errorMessage = 'Microphone permission denied';

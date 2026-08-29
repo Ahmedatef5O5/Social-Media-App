@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
 
@@ -46,7 +47,10 @@ class VoiceChunkRecorderService {
     String? stoppedPath;
     try {
       stoppedPath = await _recorder.stop();
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('[VoiceChunkRecorder] stop() failed while rotating chunk: $e');
+    }
+
     _activeChunkPath = null;
 
     final finalizedPath = stoppedPath ?? expectedPath;
@@ -75,7 +79,9 @@ class VoiceChunkRecorderService {
       String? stoppedPath;
       try {
         stoppedPath = await _recorder.stop();
-      } catch (_) {}
+      } catch (e) {
+        debugPrint('[VoiceChunkRecorder] stop() failed while finalizing: $e');
+      }
       _activeChunkPath = null;
 
       final finalizedPath = stoppedPath ?? expectedPath;
@@ -106,7 +112,9 @@ class VoiceChunkRecorderService {
     if (activePath != null) {
       try {
         await _recorder.stop();
-      } catch (_) {}
+      } catch (e) {
+        debugPrint('[VoiceChunkRecorder] stop() failed during cancel: $e');
+      }
       await _deletePaths([activePath]);
     }
 
@@ -264,7 +272,9 @@ class VoiceChunkRecorderService {
       try {
         final file = File(path);
         if (await file.exists()) await file.delete();
-      } catch (_) {}
+      } catch (e) {
+        debugPrint('[VoiceChunkRecorder] failed to delete chunk file: $e');
+      }
     }
   }
 

@@ -71,7 +71,9 @@ class _ForwardedHeaderState extends State<ForwardedHeader> {
           Navigator.of(context).popUntil((route) => route.isFirst);
           return;
         }
-      } catch (_) {}
+      } catch (e) {
+        debugPrint('[ForwardedHeader] failed to navigate to original chat: $e');
+      }
     }
 
     Navigator.of(

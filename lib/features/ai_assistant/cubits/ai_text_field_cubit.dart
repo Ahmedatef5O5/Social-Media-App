@@ -22,8 +22,10 @@ class AiTextFieldCubit extends Cubit<AiTextFieldState> {
   bool _autoCompleteEnabled;
   bool _autoDetectEnabled;
   Timer? _debounce;
+  Timer? _cooldownTimer;
   bool _inCooldown = false;
   bool _isTargetUsable;
+  int _requestGeneration = 0;
 
   AiTextFieldCubit({
     required AiRepository repository,
@@ -105,6 +107,7 @@ class AiTextFieldCubit extends Cubit<AiTextFieldState> {
   }
 
   Future<void> _runSpellCheck(String text) async {
+    final myGeneration = ++_requestGeneration;
     emit(const AiFieldChecking());
 
     final result = await _repository.checkSpelling(
@@ -114,6 +117,9 @@ class AiTextFieldCubit extends Cubit<AiTextFieldState> {
         userDraft: text,
       ),
     );
+
+    if (isClosed) return;
+    if (myGeneration != _requestGeneration) return;
 
     if (result.quota != null) {
       onQuotaUpdated?.call(result.quota!, result.provider, result.model);
@@ -144,7 +150,8 @@ class AiTextFieldCubit extends Cubit<AiTextFieldState> {
   void _settleWithCooldown(AiTextFieldState nextState) {
     emit(nextState);
     _inCooldown = true;
-    Timer(_cooldownDuration, () => _inCooldown = false);
+    _cooldownTimer?.cancel();
+    _cooldownTimer = Timer(_cooldownDuration, () => _inCooldown = false);
   }
 
   Future<void> onIconTapped(AiRequestContext context) async {
@@ -152,6 +159,7 @@ class AiTextFieldCubit extends Cubit<AiTextFieldState> {
     final current = state;
 
     if (current is AiFieldQuotaExceeded) return;
+    if (current is AiFieldLoading) return;
 
     if (current is AiFieldSpellingError) {
       emit(AiFieldResultReady(current.correctedText));
@@ -171,6 +179,8 @@ class AiTextFieldCubit extends Cubit<AiTextFieldState> {
         effectiveAction == AiActionType.replySuggestion
             ? await _repository.suggestReply(context)
             : await _repository.generateCaption(context);
+
+    if (isClosed) return;
 
     if (result.quota != null) {
       onQuotaUpdated?.call(result.quota!, result.provider, result.model);
@@ -198,6 +208,7 @@ class AiTextFieldCubit extends Cubit<AiTextFieldState> {
   @override
   Future<void> close() {
     _debounce?.cancel();
+    _cooldownTimer?.cancel();
     return super.close();
   }
 }
