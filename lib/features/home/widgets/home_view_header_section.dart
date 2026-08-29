@@ -37,7 +37,9 @@ class _HomeViewHeaderSectionState extends State<HomeViewHeaderSection> {
           .eq('receiver_id', userId)
           .eq('is_read', false);
       if (mounted) setState(() => _unreadCount = (data as List).length);
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('[HomeHeader] failed to fetch unread notifications count: $e');
+    }
   }
 
   @override

@@ -50,6 +50,7 @@ class _TextInputAreaSectionState extends State<TextInputAreaSection> {
   File? _stagedDocument;
   String? _stagedFileName;
   int? _stagedFileSizeBytes;
+  bool _isSending = false;
 
   @override
   void initState() {
@@ -114,7 +115,9 @@ class _TextInputAreaSectionState extends State<TextInputAreaSection> {
     _focusNode.dispose();
     try {
       context.read<ChatDetailsCubit>().stopTyping(widget.receiverUser.id);
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('[TextInputArea] failed to send stopTyping on dispose: $e');
+    }
     super.dispose();
   }
 
@@ -221,31 +224,26 @@ class _TextInputAreaSectionState extends State<TextInputAreaSection> {
                 sendButton: InkWell(
                   splashColor: AppColors.transparent,
                   onTap: () {
+                    if (_isSending) return;
                     if (widget.editingMessage != null) {
                       final text = widget.messageController.text.trim();
                       if (text.isEmpty) return;
+                      _isSending = true;
                       context.read<ChatDetailsCubit>().editMessage(
                         messageId: widget.editingMessage!.id,
                         newText: text,
                       );
                       widget.messageController.clear();
                       widget.onEditCancelled?.call();
+                      _isSending = false;
                       return;
                     }
-
                     final text = widget.messageController.text.trim();
-
                     if (_stagedDocument != null) {
-                      context.read<ChatDetailsCubit>().sendMessage(
-                        receiverId: widget.receiverUser.id,
-                        messageText: '',
-                        messageType: 'file',
-                        documentFile: _stagedDocument,
-                        fileName: _stagedFileName,
-                        fileSizeBytes: _stagedFileSizeBytes,
-                        caption: text.isNotEmpty ? text : null,
-                        replyTo: widget.replyTo,
-                      );
+                      _isSending = true;
+                      final docToSend = _stagedDocument!;
+                      final nameToSend = _stagedFileName;
+                      final sizeToSend = _stagedFileSizeBytes;
                       setState(() {
                         _stagedDocument = null;
                         _stagedFileName = null;
@@ -257,9 +255,23 @@ class _TextInputAreaSectionState extends State<TextInputAreaSection> {
                         widget.receiverUser.id,
                       );
                       widget.onCancelReply?.call();
+                      context.read<ChatDetailsCubit>().sendMessage(
+                        receiverId: widget.receiverUser.id,
+                        messageText: '',
+                        messageType: 'file',
+                        documentFile: docToSend,
+                        fileName: nameToSend,
+                        fileSizeBytes: sizeToSend,
+                        caption: text.isNotEmpty ? text : null,
+                        replyTo: widget.replyTo,
+                      );
+                      Future.delayed(const Duration(milliseconds: 400), () {
+                        if (mounted) _isSending = false;
+                      });
                       return;
                     }
                     if (text.isNotEmpty) {
+                      _isSending = true;
                       context.read<ChatDetailsCubit>().sendMessage(
                         receiverId: widget.receiverUser.id,
                         messageText: text,
@@ -270,6 +282,9 @@ class _TextInputAreaSectionState extends State<TextInputAreaSection> {
                         widget.receiverUser.id,
                       );
                       widget.onCancelReply?.call();
+                      Future.delayed(const Duration(milliseconds: 400), () {
+                        if (mounted) _isSending = false;
+                      });
                     }
                   },
                   child: Image.asset(
@@ -281,6 +296,7 @@ class _TextInputAreaSectionState extends State<TextInputAreaSection> {
                     height: 28,
                   ),
                 ),
+
                 onSendVoice: (file, seconds) {
                   context.read<ChatDetailsCubit>().sendMessage(
                     receiverId: widget.receiverUser.id,

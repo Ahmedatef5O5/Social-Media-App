@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:social_media_app/core/constants/app_images.dart';
 import 'package:social_media_app/core/router/app_routes.dart';
+import '../../../core/helpers/bidi_text_helper.dart';
 import '../models/app_notification_model.dart';
 
 class NotificationListItem extends StatelessWidget {
@@ -194,8 +195,12 @@ class NotificationListItem extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 3),
+
                     Text(
-                      notif.body,
+                      notif.displaySubtitle,
+                      textDirection: BidiTextHelper.detectDirection(
+                        notif.displaySubtitle,
+                      ),
                       style: TextStyle(
                         fontSize: 13,
                         color:

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/helpers/chat_helper.dart';
 import '../../../core/supabase/supabase_provider.dart';
@@ -54,8 +55,9 @@ class ChatBlockService {
           otherUserId: otherUserId,
         );
         if (!controller.isClosed) controller.add(status);
-      } catch (_) {}
-    }
+    } catch (e) {
+  debugPrint('[ChatBlockService] failed to fetch block status: $e');
+}}
 
     final channelName =
         'blocked_users_${ChatHelper.buildConversationId(currentUserId, otherUserId)}';

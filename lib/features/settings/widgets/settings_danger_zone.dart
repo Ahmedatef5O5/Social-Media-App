@@ -214,17 +214,13 @@ class SettingsDangerZone extends StatelessWidget {
               borderRadius: BorderRadius.circular(20),
             ),
             title: const Text(
-              'Delete Account',
+              'Feature Under Construction',
               style: TextStyle(fontWeight: FontWeight.w700),
             ),
             content: const Text(
-              'This will permanently delete your account and all your data. This action cannot be undone.',
+              "Account deletion isn't available yet. Please contact support if you need your account removed.",
             ),
             actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx),
-                child: const Text('Cancel'),
-              ),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.red,
@@ -232,14 +228,8 @@ class SettingsDangerZone extends StatelessWidget {
                     borderRadius: BorderRadius.circular(10),
                   ),
                 ),
-                onPressed: () {
-                  Navigator.pop(ctx);
-                  // TODO: implement delete account
-                },
-                child: const Text(
-                  'Delete',
-                  style: TextStyle(color: Colors.white),
-                ),
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('OK', style: TextStyle(color: Colors.white)),
               ),
             ],
           ),

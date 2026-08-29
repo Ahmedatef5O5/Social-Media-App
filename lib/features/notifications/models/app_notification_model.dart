@@ -10,6 +10,34 @@ enum NotificationType {
   general,
 }
 
+extension AppNotificationDisplayX on AppNotification {
+  String get displaySubtitle {
+    final trimmed = body.trim();
+    if (trimmed.isNotEmpty) return trimmed;
+
+    switch (type) {
+      case NotificationType.chat:
+        return '📄 Sent an attachment';
+      case NotificationType.groupMessage:
+        return '👥 Sent a new message';
+      case NotificationType.call:
+        return '📞 Missed call';
+      case NotificationType.like:
+        return '❤️ Liked your post';
+      case NotificationType.comment:
+        return '💬 Commented on your post';
+      case NotificationType.follow:
+        return '👤 Started following you';
+      case NotificationType.friendRequest:
+        return '👤 Sent you a friend request';
+      case NotificationType.friendAccept:
+        return '🤝 Accepted your friend request';
+      case NotificationType.general:
+        return '🔔 New notification';
+    }
+  }
+}
+
 class AppNotification {
   final String id;
   final NotificationType type;

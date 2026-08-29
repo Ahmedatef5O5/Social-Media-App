@@ -179,7 +179,13 @@ class ChatItemTile extends StatelessWidget {
       case 'sticker':
         return '😊 Sticker';
       case 'file':
-        return '📄 ${user.lastMessageType ?? 'File'}';
+        final fileName =
+            (user.lastMessage != null &&
+                    user.lastMessage!.trim().isNotEmpty &&
+                    user.lastMessage!.toLowerCase() != 'file')
+                ? user.lastMessage!.trim()
+                : 'File';
+        return '📄 $fileName';
       case 'block_event':
         return user.lastMessageIsMe
             ? 'You blocked ${user.name}'
@@ -191,7 +197,6 @@ class ChatItemTile extends StatelessWidget {
       default:
         return (user.lastMessage == null || user.lastMessage!.isEmpty)
             ? 'No messages yet'
-            // ? 'Tap to start chatting'
             : user.lastMessage!;
     }
   }
@@ -216,7 +221,9 @@ class ChatItemTile extends StatelessWidget {
         if (user.lastMessage != null) {
           callData = jsonDecode(user.lastMessage!) as Map<String, dynamic>;
         }
-      } catch (_) {}
+} catch (e) {
+  debugPrint('[ChatItemTile] failed to decode last message payload: $e');
+} 
 
       final status = callData['status'] as String? ?? 'ended';
       final callType = callData['call_type'] as String? ?? 'audio';

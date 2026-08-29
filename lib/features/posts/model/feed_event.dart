@@ -31,13 +31,6 @@ final class ShareChangedEvent extends FeedEvent {
   const ShareChangedEvent(this.postId, this.changeType);
 }
 
-// TODO:
-// final class SavedChangedEvent extends FeedEvent {
-//   final String postId;
-//   final PostgresChangeEvent changeType;
-//   const SavedChangedEvent(this.postId, this.changeType);
-// }
-
 final class PresenceChangedEvent extends FeedEvent {
   final String userId;
   final bool isOnline;

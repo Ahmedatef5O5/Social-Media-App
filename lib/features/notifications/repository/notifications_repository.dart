@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import '../../../core/supabase/supabase_provider.dart';
 import '../models/app_notification_model.dart';
 
@@ -23,8 +24,9 @@ class NotificationRepository {
     required String messageBody,
     required String messageType,
     required String chatReferenceId,
+    String? fileName,
   }) async {
-    final String body = _chatBody(messageBody, messageType);
+    final String body = _chatBody(messageBody, messageType, fileName: fileName);
     await _insert({
       'receiver_id': receiverId,
       'sender_id': senderId,
@@ -46,8 +48,9 @@ class NotificationRepository {
     required String groupName,
     required String messageBody,
     required String messageType,
+    String? fileName,
   }) async {
-    final String body = _chatBody(messageBody, messageType);
+    final String body = _chatBody(messageBody, messageType, fileName: fileName);
     await _insert({
       'receiver_id': receiverId,
       'sender_id': senderId,
@@ -244,18 +247,37 @@ class NotificationRepository {
     }
   }
 
-  String _chatBody(String text, String type) {
+  String _chatBody(String text, String type, {String? fileName}) {
+    final cleanText = text.trim();
+    final cleanFileName = fileName?.trim();
+    final hasFileName = cleanFileName != null && cleanFileName.isNotEmpty;
+    final hasText = cleanText.isNotEmpty;
+
     switch (type) {
       case 'image':
-        return text.isNotEmpty ? '📷 $text' : '📷 Photo';
+        return hasText ? '📷 $cleanText' : '📷 Photo';
       case 'video':
-        return text.isNotEmpty ? '🎥 $text' : '🎥 Video';
+        return hasText ? '🎥 $cleanText' : '🎥 Video';
       case 'voice':
         return '🎤 Voice message';
+      case 'gif':
+        return '🖼️ GIF';
+      case 'sticker':
+        return '🏷️ Sticker';
+      case 'file':
+      case 'document':
+        if (hasFileName && hasText) {
+          return '📄 $cleanFileName • $cleanText';
+        } else if (hasFileName) {
+          return '📄 $cleanFileName';
+        } else if (hasText) {
+          return '📄 $cleanText';
+        }
+        return '📄 File';
       case 'call':
         return '📞 Missed call';
       default:
-        return text;
+        return hasText ? cleanText : '📎 Attachment';
     }
   }
 
@@ -277,13 +299,19 @@ class NotificationRepository {
   Future<void> markAsRead(String id) async {
     try {
       await _db.from('notifications').update({'is_read': true}).eq('id', id);
-    } catch (_) {}
+    } catch (e) {
+      debugPrint(
+        '[NotificationsRepository] failed to mark notification as read: $e',
+      );
+    }
   }
 
   Future<void> deleteNotification(String id) async {
     try {
       await _db.from('notifications').delete().eq('id', id);
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('[NotificationsRepository] failed to delete notification: $e');
+    }
   }
 
   Future<void> markAllAsRead() async {
@@ -294,6 +322,10 @@ class NotificationRepository {
           .update({'is_read': true})
           .eq('receiver_id', userId)
           .eq('is_read', false);
-    } catch (_) {}
+    } catch (e) {
+      debugPrint(
+        '[NotificationsRepository] failed to mark all notifications as read: $e',
+      );
+    }
   }
 }
