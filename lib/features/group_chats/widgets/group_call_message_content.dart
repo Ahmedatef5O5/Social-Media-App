@@ -34,7 +34,11 @@ class GroupCallMessageContent extends StatelessWidget {
       if (txt.startsWith('{')) {
         initialData = jsonDecode(txt) as Map<String, dynamic>;
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint(
+        '[GroupCallMessageContent] failed to parse call message data: $e',
+      );
+    }
 
     final isTemp = message.id.startsWith('temp_');
     if (isTemp) {
@@ -65,7 +69,11 @@ class GroupCallMessageContent extends StatelessWidget {
             if (msgText.trim().startsWith('{')) {
               return jsonDecode(msgText) as Map<String, dynamic>;
             }
-          } catch (_) {}
+          } catch (e) {
+            debugPrint(
+              '[GroupCallMessageContent] failed to parse latest call message: $e',
+            );
+          }
           return null;
         });
   }

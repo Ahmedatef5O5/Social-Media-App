@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'package:collection/collection.dart';
 import 'package:dio/dio.dart' as dio_pkg;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -610,11 +611,16 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
           uploadProgressMap[tempId] = 0.0;
           emit(MessagesSending(messages: updatedMessages));
 
-          final originalName = fileName ?? documentFile.path.split('/').last.split('\\').last;
-          final nameWithoutExt = originalName.contains('.')
-              ? originalName.substring(0, originalName.lastIndexOf('.'))
-              : originalName;
-          final safeName = nameWithoutExt.replaceAll(RegExp(r'[^a-zA-Z0-9\-_]'), '_');
+          final originalName =
+              fileName ?? documentFile.path.split('/').last.split('\\').last;
+          final nameWithoutExt =
+              originalName.contains('.')
+                  ? originalName.substring(0, originalName.lastIndexOf('.'))
+                  : originalName;
+          final safeName = nameWithoutExt.replaceAll(
+            RegExp(r'[^a-zA-Z0-9\-_]'),
+            '_',
+          );
 
           final result = await _chatServices.storage.uploadFile(
             documentFile,
@@ -629,7 +635,10 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
           );
           fileUrl = result.secureUrl;
           filePublicId = result.publicId;
-          await _mediaCacheRepository.adoptUploadedFile(result.secureUrl, documentFile);
+          await _mediaCacheRepository.adoptUploadedFile(
+            result.secureUrl,
+            documentFile,
+          );
           uploadProgressMap[tempId] = 1.0;
           emit(MessagesSending(messages: updatedMessages));
           await Future.delayed(const Duration(milliseconds: 200));
@@ -675,9 +684,10 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
 
       final index = cachedMessages.indexWhere((m) => m.id == tempId);
       if (index != -1) {
-        cachedMessages[index] = cachedMessages[index].copyWith(
-          id: newMessageId,
-        );
+        final updatedList = List<MessageModel>.from(cachedMessages);
+        updatedList[index] = updatedList[index].copyWith(id: newMessageId);
+        cachedMessages = updatedList;
+        emit(MessagesSuccessLoaded(messages: cachedMessages));
       }
 
       if (messageType != 'call') {
@@ -695,50 +705,37 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
           messageBody: caption ?? messageText,
           messageType: messageType,
           chatReferenceId: currentUserId,
+          fileName: fileName,
         );
       }
       _cancelTokens.remove(tempId);
-
-      Future.delayed(const Duration(seconds: 2), () {
-        if (!isClosed) {
-          cachedMessages.removeWhere((m) => m.id == tempId);
-          emit(MessagesSuccessLoaded(messages: List.from(cachedMessages)));
-        }
-      });
     } on UploadCanceledException {
       return;
     } catch (e) {
       _cancelTokens.remove(tempId);
+      uploadProgressMap.remove(tempId);
 
       if (e is dio_pkg.DioException &&
           e.type == dio_pkg.DioExceptionType.cancel) {
         debugPrint("User canceled the upload");
         return;
       }
+
+      cachedMessages = cachedMessages.where((m) => m.id != tempId).toList();
+      debugPrint('error sending message: $e');
+
       if (e.toString().contains('session_expired')) {
         emit(MessagesError('Your session has expired; please log in again'));
+        emit(MessagesSuccessLoaded(messages: cachedMessages));
         return;
-      } else {
-        debugPrint('Error uploading file: $e');
-
-        _cancelTokens.remove(tempId);
-        uploadProgressMap.remove(tempId);
-
-        cachedMessages.removeWhere((m) => m.id == tempId);
-
-        emit(MessagesSuccessLoaded(messages: List.from(cachedMessages)));
       }
 
       unawaited(ConnectivityBannerController.notifyIfOffline());
 
-      debugPrint('error sending message: $e');
       emit(
         MessagesError("Failed to send message. Please check your connection."),
       );
-
-      emit(MessagesSuccessLoaded(messages: currentMessages));
-
-      uploadProgressMap.remove(tempId);
+      emit(MessagesSuccessLoaded(messages: cachedMessages));
     }
   }
 
@@ -749,10 +746,9 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
     final trimmed = newText.trim();
     if (trimmed.isEmpty) return;
 
-    final target = cachedMessages.firstWhere(
-      (m) => m.id == messageId,
-      orElse: () => cachedMessages.first,
-    );
+    final target = cachedMessages.firstWhereOrNull((m) => m.id == messageId);
+    if (target == null) return;
+
     final isCaptionEdit =
         target.messageType == 'image' || target.messageType == 'video';
 
@@ -787,7 +783,9 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
       final info = await _chatServices.getCurrentUserInfo(currentUserId);
       _resolvedCurrentUserName = info['name'] ?? currentUserName;
       _resolvedSenderImageUrl = info['imageUrl'] ?? senderImageUrl ?? '';
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('[ChatDetailsCubit] failed to load current user info: $e');
+    }
   }
 
   final Map<String, dio_pkg.CancelToken> _cancelTokens = {};

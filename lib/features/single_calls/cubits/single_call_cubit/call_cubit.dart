@@ -157,7 +157,9 @@ class CallCubit extends Cubit<CallState> {
         callId: call.callId,
         callType: call.type == CallType.video ? 'video' : 'audio',
       );
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('[CallCubit] failed to show incoming call notification: $e');
+    }
   }
 
   Future<void> ringOfflineMember(GroupCallModel call, String memberId) async {

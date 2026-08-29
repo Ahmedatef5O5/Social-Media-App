@@ -65,8 +65,15 @@ String buildGroupLastMessagePreview({
       return '$senderName: 🎤 Voice message';
     case 'call':
       return '$senderName: 📞 Group Call';
+
     case 'file':
-      return '$senderName : 📄 File';
+      final fileName =
+          (group.lastMessage != null &&
+                  group.lastMessage!.trim().isNotEmpty &&
+                  group.lastMessage!.toLowerCase() != 'file')
+              ? group.lastMessage!.trim()
+              : 'File';
+      return '$senderName: 📄 $fileName';
     case 'text':
     default:
       return '$senderName: ${group.lastMessage}';

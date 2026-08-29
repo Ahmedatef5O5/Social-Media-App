@@ -85,7 +85,9 @@ class _IncomingGroupCallScreenState extends State<IncomingGroupCallScreen>
     try {
       await _audioPlayer.setReleaseMode(ReleaseMode.loop);
       await _audioPlayer.play(AssetSource('sounds/incoming_ring.mp3'));
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('[IncomingGroupCall] failed to play ringtone: $e');
+    }
   }
 
   void _cleanup() => _audioPlayer.stop();

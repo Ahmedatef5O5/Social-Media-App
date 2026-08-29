@@ -69,6 +69,7 @@ class _CreateGroupViewState extends State<CreateGroupView> {
 
   Future<void> _pickImage() async {
     final picked = await ImagePicker().pickImage(source: ImageSource.gallery);
+    if (!mounted) return;
     if (picked != null) {
       setState(() => _groupImage = File(picked.path));
     }

@@ -207,8 +207,11 @@ class GroupCallSignalingService {
           callData =
               jsonDecode(existing['message_text'] as String)
                   as Map<String, dynamic>;
-        } catch (_) {}
-
+        } catch (e) {
+          debugPrint(
+            '[GroupCallSignaling] failed to decode existing call payload: $e',
+          );
+        }
         callData['status'] = 'ended';
         callData['duration'] = duration?.isNotEmpty == true ? duration : '';
 
@@ -247,7 +250,11 @@ class GroupCallSignalingService {
           callData =
               jsonDecode(existing['message_text'] as String)
                   as Map<String, dynamic>;
-        } catch (_) {}
+        } catch (e) {
+          debugPrint(
+            '[GroupCallSignaling] failed to decode call payload for update: $e',
+          );
+        }
 
         callData['status'] = 'missed';
         callData['duration'] = null;

@@ -67,7 +67,9 @@ class _IncomingCallViewState extends State<IncomingCallView>
     try {
       await _audioPlayer.setReleaseMode(ReleaseMode.loop);
       await _audioPlayer.play(AssetSource('sounds/incoming_ring.mp3'));
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('[IncomingCallView] failed to play ringtone: $e');
+    }
   }
 
   @override

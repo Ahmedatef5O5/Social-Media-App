@@ -39,7 +39,9 @@ class _DialingViewState extends State<DialingView>
     try {
       await _audioPlayer.setReleaseMode(ReleaseMode.loop);
       await _audioPlayer.play(AssetSource('sounds/outgoing_ring.mp3'));
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('[DialingView] failed to play ringtone: $e');
+    }
   }
 
   @override

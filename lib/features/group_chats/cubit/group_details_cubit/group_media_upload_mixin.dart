@@ -255,6 +255,7 @@ mixin GroupMediaUploadMixin on Cubit<GroupDetailsState> {
           groupName: group.name,
           messageBody: text.isNotEmpty ? text : (caption ?? ''),
           messageType: messageType,
+          fileName: fileName,
         ),
       );
       unawaited(

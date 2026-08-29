@@ -77,7 +77,9 @@ class ChatBubbleState extends State<ChatBubble>
       );
       Overlay.of(context).insert(_overlayEntry!);
       setState(() {});
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('[ChatBubble] failed to show reaction picker overlay: $e');
+    }
   }
 
   void _dismissPicker({bool isDisposing = false}) {

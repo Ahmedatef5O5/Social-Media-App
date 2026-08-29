@@ -204,7 +204,9 @@ class GroupListCubit extends Cubit<GroupListState> with WidgetsBindingObserver {
         if (decoded is List) {
           return decoded.any((e) => e.toString() == _currentUserId);
         }
-      } catch (_) {}
+      } catch (e) {
+        debugPrint('[GroupListCubit] failed to parse readBy payload: $e');
+      }
       return readByRaw.contains(_currentUserId);
     }
     return false;
@@ -606,7 +608,9 @@ class GroupListCubit extends Cubit<GroupListState> with WidgetsBindingObserver {
           _ => '$icon $typeLabel',
         };
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('[GroupListCubit] failed to format group call label: $e');
+    }
     return '📞 Group call';
   }
 

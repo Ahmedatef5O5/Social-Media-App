@@ -224,7 +224,7 @@ class _GroupSettingsViewState extends State<GroupSettingsView> {
   Future<void> _generateInviteLink() async {
     final choice = await _pickInviteExpiryDuration();
     if (choice == null) return; // user dismissed the picker
-
+    if (!mounted) return;
     setState(() => _isUpdatingInvite = true);
     try {
       final state = await _services.generateGroupInviteLink(
@@ -256,6 +256,7 @@ class _GroupSettingsViewState extends State<GroupSettingsView> {
       confirmColor: Colors.red,
     );
     if (confirm != true) return;
+    if (!mounted) return;
 
     setState(() => _isUpdatingInvite = true);
     try {
@@ -470,6 +471,7 @@ class _GroupSettingsViewState extends State<GroupSettingsView> {
       confirmColor: Colors.red,
     );
     if (confirm != true) return;
+    if (!mounted) return;
 
     setState(() => _isRemovingPhoto = true);
 

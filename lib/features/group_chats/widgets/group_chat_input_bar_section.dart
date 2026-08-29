@@ -42,7 +42,7 @@ class _GroupChatInputBarSectionState extends State<GroupChatInputBarSection> {
   late final GroupDetailsCubit _cubit;
 
   bool _hasText = false;
-
+  bool _isSending = false;
   List<String>? _membersIds;
   File? _stagedDocument;
   String? _stagedFileName;
@@ -86,25 +86,25 @@ class _GroupChatInputBarSectionState extends State<GroupChatInputBarSection> {
   }
 
   void _handleSend(String text, List<MentionRef> mentions) {
+    if (_isSending) return;
     final editing = _cubit.editingMessage.value;
     if (editing != null) {
+      final trimmed = text.trim();
+      if (trimmed.isEmpty) return;
+      _isSending = true;
       _cubit.editMessage(
         messageId: editing.id,
-        newText: text,
+        newText: trimmed,
         mentions: mentions,
       );
       _cubit.editingMessage.value = null;
+      _isSending = false;
     } else {
       if (_stagedDocument != null) {
-        _cubit.sendMessage(
-          text: '',
-          messageType: 'file',
-          documentFile: _stagedDocument,
-          fileName: _stagedFileName,
-          fileSizeBytes: _stagedFileSizeBytes,
-          caption: text.isNotEmpty ? text : null,
-          mentions: mentions,
-        );
+        _isSending = true;
+        final docToSend = _stagedDocument!;
+        final nameToSend = _stagedFileName;
+        final sizeToSend = _stagedFileSizeBytes;
         setState(() {
           _stagedDocument = null;
           _stagedFileName = null;
@@ -112,8 +112,25 @@ class _GroupChatInputBarSectionState extends State<GroupChatInputBarSection> {
           _hasText = false;
         });
         widget.controller.clear();
-      } else {
-        widget.onSend(text, mentions);
+        widget.controller.clearMentions();
+        _cubit.sendMessage(
+          text: '',
+          messageType: 'file',
+          documentFile: docToSend,
+          fileName: nameToSend,
+          fileSizeBytes: sizeToSend,
+          caption: text.trim().isNotEmpty ? text.trim() : null,
+          mentions: mentions,
+        );
+        Future.delayed(const Duration(milliseconds: 400), () {
+          if (mounted) _isSending = false;
+        });
+      } else if (text.trim().isNotEmpty) {
+        _isSending = true;
+        widget.onSend(text.trim(), mentions);
+        Future.delayed(const Duration(milliseconds: 400), () {
+          if (mounted) _isSending = false;
+        });
       }
     }
   }
@@ -127,7 +144,9 @@ class _GroupChatInputBarSectionState extends State<GroupChatInputBarSection> {
           _membersIds = ids;
         });
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('[GroupChatInputBar] failed to load group members: $e');
+    }
   }
 
   Future<void> _openAttachmentSheet() async {

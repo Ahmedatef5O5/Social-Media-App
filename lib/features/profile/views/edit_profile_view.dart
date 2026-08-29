@@ -46,6 +46,8 @@ class _EditProfileViewState extends State<EditProfileView> {
     final File? image = await context.read<EditProfileCubit>().pickImage(
       source,
     );
+    if (!mounted) return;
+
     if (image != null) {
       setState(() {
         if (isProfile) {

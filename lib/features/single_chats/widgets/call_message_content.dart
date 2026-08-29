@@ -28,8 +28,9 @@ class CallMessageContent extends StatelessWidget {
     Map<String, dynamic> callData = {};
     try {
       callData = jsonDecode(message.text) as Map<String, dynamic>;
-    } catch (_) {}
-
+    } catch (e) {
+      debugPrint('[CallMessageContent] failed to decode call message data: $e');
+    }
     final callId = callData['call_id'] as String?;
     final status = callData['status'] as String? ?? 'ended';
     final callType = callData['call_type'] as String? ?? 'audio';

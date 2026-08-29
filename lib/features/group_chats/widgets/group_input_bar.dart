@@ -58,7 +58,6 @@ class GroupInputBar extends StatelessWidget {
 
   void _send() {
     final text = controller.text.trim();
-    if (text.isEmpty) return;
     onSend(text, controller.validMentions);
     controller.clear();
     controller.clearMentions();
