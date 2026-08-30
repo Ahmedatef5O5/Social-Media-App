@@ -178,17 +178,16 @@ class _FileMessageBubbleState extends State<FileMessageBubble> {
       final percent = (progress.clamp(0.0, 1.0) * 100).round();
       return '$percent%';
     }
-    final currentBytes = (progress * totalBytes).round();
 
-    if (totalBytes < 1024 * 1024) {
-      final curKB = (currentBytes / 1024).toStringAsFixed(1);
-      final totKB = (totalBytes / 1024).toStringAsFixed(1);
-      return '$curKB / $totKB KB';
-    } else {
-      final curMB = (currentBytes / (1024 * 1024)).toStringAsFixed(1);
-      final totMB = (totalBytes / (1024 * 1024)).toStringAsFixed(1);
-      return '$curMB / $totMB MB';
+    final currentBytes = progress * totalBytes;
+
+    String formatBytes(double bytes) {
+      if (bytes < 1024) return '${bytes.toStringAsFixed(0)} B';
+      if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
+      return '${(bytes / (1024 * 1024)).toStringAsFixed(2)} MB';
     }
+
+    return '${formatBytes(currentBytes)} / ${formatBytes(totalBytes.toDouble())}';
   }
 
   void _handleTap() {
