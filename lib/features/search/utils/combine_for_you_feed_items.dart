@@ -1,6 +1,6 @@
-import '../../posts/model/post_model.dart';
-import '../../reels/model/reel_model.dart';
-import '../model/injection_plan_entry.dart';
+import '../../posts/models/post_model.dart';
+import '../../reels/models/reel_model.dart';
+import '../models/injection_plan_entry.dart';
 import '../widgets/for_you_feed_item.dart';
 
 List<ForYouFeedItem> combineForYouFeedItems({

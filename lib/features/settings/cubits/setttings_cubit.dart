@@ -1,5 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:social_media_app/features/settings/cubit/settings_state.dart';
+import 'package:social_media_app/features/settings/cubits/settings_state.dart';
 import '../../../core/presence/services/presence_service.dart';
 import '../../auth/data/models/user_data.dart';
 import '../../home/cubits/home_cubit/home_cubit.dart';

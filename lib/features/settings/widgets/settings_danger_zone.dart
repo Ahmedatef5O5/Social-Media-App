@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
-import 'package:social_media_app/features/auth/cubit/auth_cubit/auth_cubit.dart';
+import 'package:social_media_app/features/auth/cubits/auth_cubit/auth_cubit.dart';
 import '../../../core/toast/app_toast.dart';
 
 class SettingsDangerZone extends StatelessWidget {

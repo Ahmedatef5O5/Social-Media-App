@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
-import '../../discover/cubit/discover_people_cubit.dart';
+import '../../discover/cubits/discover_people_cubit.dart';
 import '../../discover/widgets/discover_person_card_widget.dart';
 import '../utils/search_view_metrics.dart';
 

@@ -1,6 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import '../../reels/model/reel_model.dart';
+import '../../reels/models/reel_model.dart';
 
 class ReelGridTile extends StatelessWidget {
   final ReelModel reel;

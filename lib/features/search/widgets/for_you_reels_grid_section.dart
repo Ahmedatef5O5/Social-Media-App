@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
-import '../../reels/model/reel_model.dart';
+import '../../reels/models/reel_model.dart';
 import '../../reels/views/reels_full_screen_view.dart';
 import 'reel_grid_tile.dart';
 

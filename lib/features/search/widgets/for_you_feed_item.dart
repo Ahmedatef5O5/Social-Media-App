@@ -1,5 +1,5 @@
-import '../../posts/model/post_model.dart';
-import '../../reels/model/reel_model.dart';
+import '../../posts/models/post_model.dart';
+import '../../reels/models/reel_model.dart';
 
 enum ForYouItemType { suggestedAccounts, post, reelsGrid }
 

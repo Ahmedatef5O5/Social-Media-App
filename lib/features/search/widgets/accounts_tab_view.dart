@@ -5,7 +5,7 @@ import 'package:gap/gap.dart';
 import '../../../../core/constants/app_images.dart';
 import '../../../../core/widgets/custom_pull_to_refresh.dart';
 import '../../../../core/widgets/empty_findings_animation_widget.dart';
-import '../../discover/cubit/discover_people_cubit.dart';
+import '../../discover/cubits/discover_people_cubit.dart';
 import '../../discover/widgets/discover_person_card_widget.dart';
 import '../../social_graph/models/discover_person_model.dart';
 import '../utils/accounts_skeleton_list.dart';

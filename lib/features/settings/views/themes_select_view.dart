@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../core/themes/cubit/theme_cubit.dart';
+import '../../../core/themes/cubits/theme_cubit.dart';
 import '../../../core/themes/models/app_theme_model.dart';
 import '../widgets/settings_detail_sliver_app_bar.dart';
 import '../widgets/theme_selection_tile.dart';

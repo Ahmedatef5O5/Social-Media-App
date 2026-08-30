@@ -5,11 +5,11 @@ import 'package:gap/gap.dart';
 import '../../../core/constants/app_images.dart';
 import '../../../core/widgets/custom_pull_to_refresh.dart';
 import '../../../core/widgets/empty_findings_animation_widget.dart';
-import '../../social_graph/cubit/friend_lists_cubit/friends_list_cubit.dart';
+import '../../social_graph/cubits/friend_lists_cubit/friends_list_cubit.dart';
 import '../../social_graph/models/friend_list_item_model.dart';
 import '../../social_graph/widgets/friend_tile_widget.dart';
 import '../../social_graph/widgets/friends_list_skeleton.dart';
-import '../cubit/search_friends_cubit/search_friends_cubit.dart';
+import '../cubits/search_friends_cubit/search_friends_cubit.dart';
 import '../utils/search_view_metrics.dart';
 
 class FriendsTabView extends StatefulWidget {

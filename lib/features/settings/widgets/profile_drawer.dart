@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 import 'package:persistent_bottom_nav_bar_v2/persistent_bottom_nav_bar_v2.dart';
-import 'package:social_media_app/features/auth/cubit/auth_cubit/auth_cubit.dart';
+import 'package:social_media_app/features/auth/cubits/auth_cubit/auth_cubit.dart';
 import 'package:social_media_app/features/profile/cubits/profile_cubit/profile_cubit.dart';
 import 'package:social_media_app/features/settings/widgets/drawer_item_widget.dart';
 import '../../../core/router/app_routes.dart';
