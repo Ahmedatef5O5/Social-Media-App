@@ -2,7 +2,7 @@ import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
-import '../cubit/group_details_cubit/group_details_cubit.dart';
+import '../cubits/group_details_cubit/group_details_cubit.dart';
 import '../models/groupe_message_model.dart';
 
 class GroupChatHelpers {

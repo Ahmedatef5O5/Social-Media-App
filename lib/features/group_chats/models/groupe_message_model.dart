@@ -3,6 +3,20 @@ import '../../../core/utilities/supabase_constants.dart';
 
 class GroupMessageModel {
   final String id;
+
+  /// Client-generated correlation id (UUID v4), set once when the message
+  /// is first created on this device and never regenerated afterwards —
+  /// including on retry. Used by [MessageReconciler] to correlate the
+  /// optimistic (temp) representation of a message with its
+  /// server-confirmed representation regardless of which arrives first
+  /// (API response vs Realtime), and as the DB idempotency key so a retry
+  /// can never create a second row for the same logical message.
+  ///
+  /// `null` for legacy rows written before this field existed; those are
+  /// correlated by [id] (server id) only — see `correlationKeyFor` in
+  /// `message_reconciler.dart`.
+  final String? clientMessageId;
+
   final String groupId;
   final String senderId;
   final String senderName;
@@ -44,6 +58,7 @@ class GroupMessageModel {
 
   const GroupMessageModel({
     required this.id,
+    this.clientMessageId,
     required this.groupId,
     required this.senderId,
     required this.senderName,
@@ -95,6 +110,7 @@ class GroupMessageModel {
 
   GroupMessageModel copyWith({
     String? id,
+    String? clientMessageId,
     String? groupId,
     String? senderId,
     String? senderName,
@@ -131,6 +147,7 @@ class GroupMessageModel {
   }) {
     return GroupMessageModel(
       id: id ?? this.id,
+      clientMessageId: clientMessageId ?? this.clientMessageId,
       groupId: groupId ?? this.groupId,
       senderId: senderId ?? this.senderId,
       senderName: senderName ?? this.senderName,
@@ -203,6 +220,7 @@ class GroupMessageModel {
 
     return GroupMessageModel(
       id: map['id'] as String,
+      clientMessageId: _nullIfEmpty(map[GroupMessageColumns.clientMessageId]),
       groupId: map[GroupMemberColumns.groupId] as String,
       senderId: map['sender_id'] as String,
       senderName: (map['sender_name'] ?? 'Unknown') as String,
@@ -268,6 +286,11 @@ class GroupMessageModel {
     return {
       GroupMemberColumns.groupId: groupId,
       'sender_id': senderId,
+      // Omitted entirely (not sent as null) when absent, so this map is
+      // byte-for-byte identical to before until a caller actually sets
+      // clientMessageId AND the client_message_id column exists in the DB.
+      if (clientMessageId != null)
+        GroupMessageColumns.clientMessageId: clientMessageId,
       'message_text': text,
       'message_type': messageType,
       if (imageUrl != null) 'image_url': imageUrl,
@@ -327,6 +350,7 @@ class GroupMessageModel {
 
     return GroupMessageModel(
       id: json['id'] as String,
+      clientMessageId: _nullIfEmpty(json[GroupMessageColumns.clientMessageId]),
       groupId: json[GroupMemberColumns.groupId] as String,
       senderId: json['sender_id'] as String,
       senderName: (json['sender_name'] ?? 'Unknown') as String,
@@ -390,6 +414,7 @@ class GroupMessageModel {
   Map<String, dynamic> toCacheJson() {
     return {
       'id': id,
+      GroupMessageColumns.clientMessageId: clientMessageId,
       GroupMemberColumns.groupId: groupId,
       'sender_id': senderId,
       'sender_name': senderName,

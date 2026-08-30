@@ -13,9 +13,9 @@ import '../../../core/deep_link/services/deep_link_service.dart';
 import '../../../core/errors/supabase_error_mapper.dart';
 import '../../../core/themes/app_colors.dart';
 import '../../../core/toast/app_toast.dart';
-import '../cubit/group_details_cubit/group_details_cubit.dart';
-import '../cubit/group_list_cubit/group_list_cubit.dart';
-import '../cubit/group_members_cubit/group_members_cubit.dart';
+import '../cubits/group_details_cubit/group_details_cubit.dart';
+import '../cubits/group_list_cubit/group_list_cubit.dart';
+import '../cubits/group_members_cubit/group_members_cubit.dart';
 import '../helpers/group_info_action_btn_widget.dart';
 import '../helpers/invite_link_section_skeleton.dart';
 import '../models/group_invite_state.dart';
@@ -137,8 +137,7 @@ class _GroupSettingsViewState extends State<GroupSettingsView> {
     }
   }
 
-  String _inviteUrlFor(String hash) =>
-      'https://${DeepLinkService.host}/join/$hash';
+  String _inviteUrlFor(String hash) => DeepLinkService.urlForGroupInvite(hash);
 
   Future<void> _refreshInviteStateSilently() async {
     try {

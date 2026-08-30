@@ -3,7 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import 'package:social_media_app/features/group_chats/helpers/swipe_to_reply_wrapper.dart';
 import 'package:social_media_app/features/group_chats/widgets/group_message_content.dart';
-import '../cubit/group_details_cubit/group_details_cubit.dart';
+import '../cubits/group_details_cubit/group_details_cubit.dart';
 import '../models/groupe_message_model.dart';
 
 class GroupMessageBubble extends StatelessWidget {

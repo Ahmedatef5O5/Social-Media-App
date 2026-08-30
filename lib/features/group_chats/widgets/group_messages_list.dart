@@ -8,7 +8,7 @@ import '../../../core/constants/app_images.dart';
 import '../../../core/supabase/supabase_provider.dart';
 import '../../single_chats/widgets/chat_loading_skeleton.dart';
 import '../../single_chats/widgets/empty_placeholder_state.dart';
-import '../cubit/group_details_cubit/group_details_cubit.dart';
+import '../cubits/group_details_cubit/group_details_cubit.dart';
 import 'group_message_item_builder.dart';
 import 'group_presence_bubble_row.dart';
 

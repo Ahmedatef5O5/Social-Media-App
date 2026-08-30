@@ -7,7 +7,7 @@ import '../../../../core/cache/constants/snapshot_keys.dart';
 import '../../../../core/cache/services/local_snapshot_store.dart';
 import '../../../../core/supabase/supabase_provider.dart';
 import '../../../../core/utilities/supabase_constants.dart';
-import '../../../auth/handler/auth_exception_handler.dart';
+import '../../../auth/handlers/auth_exception_handler.dart';
 import '../../helpers/group_chat_clear_store.dart';
 import '../../models/group_member_model.dart';
 import '../../models/group_model.dart';

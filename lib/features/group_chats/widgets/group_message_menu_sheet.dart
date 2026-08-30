@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/design/tokens/typography.dart';
-import '../cubit/group_details_cubit/group_details_cubit.dart';
+import '../cubits/group_details_cubit/group_details_cubit.dart';
 import '../models/groupe_message_model.dart';
 
 class GroupMessageMenuSheet {

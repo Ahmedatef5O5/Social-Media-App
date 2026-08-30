@@ -7,10 +7,10 @@ import 'package:social_media_app/core/mentions/widgets/mention_text_editing_cont
 import '../../../core/services/active_screen_tracker.dart';
 import '../../../core/share_intent/models/incoming_share_payload.dart';
 import '../../../core/toast/app_toast.dart';
-import '../../group_calls/cubit/group_call_cubit/group_call_cubit.dart';
-import '../../group_calls/cubit/group_call_cubit/group_call_state.dart';
-import '../cubit/group_details_cubit/group_details_cubit.dart';
-import '../cubit/group_list_cubit/group_list_cubit.dart';
+import '../../group_calls/cubits/group_call_cubit/group_call_cubit.dart';
+import '../../group_calls/cubits/group_call_cubit/group_call_state.dart';
+import '../cubits/group_details_cubit/group_details_cubit.dart';
+import '../cubits/group_list_cubit/group_list_cubit.dart';
 import '../helpers/group_chat_app_bar_switcher.dart';
 import '../models/group_model.dart';
 import '../../group_calls/services/group_call_signaling_service.dart';

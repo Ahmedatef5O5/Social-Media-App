@@ -11,7 +11,7 @@ import '../../../core/attachment/attachment_sheet/attachment_picker_sheet.dart';
 import '../../../core/chat_shared/widgets/chat_staged_file_preview.dart';
 import '../../ai_assistant/entities/ai_request_context.dart';
 import '../../ai_assistant/widgets/ai_chat_command_trigger.dart';
-import '../cubit/group_details_cubit/group_details_cubit.dart';
+import '../cubits/group_details_cubit/group_details_cubit.dart';
 import '../models/groupe_message_model.dart';
 import '../helpers/group_chat_transcript_builder.dart';
 import 'group_edit_preview_section.dart';
@@ -262,6 +262,7 @@ class _GroupChatInputBarSectionState extends State<GroupChatInputBarSection> {
 
         if (_stagedDocument != null)
           ChatStagedFilePreview(
+            file: _stagedDocument,
             fileName: _stagedFileName ?? 'File',
             fileSizeBytes: _stagedFileSizeBytes ?? 0,
             onRemove: () {

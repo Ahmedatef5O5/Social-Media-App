@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:social_media_app/features/group_chats/cubit/group_list_cubit/group_list_cubit.dart';
+import 'package:social_media_app/features/group_chats/cubits/group_list_cubit/group_list_cubit.dart';
 import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/themes/app_colors.dart';
 import '../../../core/utilities/supabase_constants.dart';

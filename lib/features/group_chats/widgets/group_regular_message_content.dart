@@ -13,7 +13,7 @@ import '../../home/cubits/home_cubit/home_cubit.dart';
 import '../../single_chats/widgets/image_message_widget.dart';
 import '../../single_chats/widgets/video_message_widget.dart';
 import '../../stickers/widgets/sticker_message_bubble.dart';
-import '../cubit/group_details_cubit/group_details_cubit.dart';
+import '../cubits/group_details_cubit/group_details_cubit.dart';
 import '../models/groupe_message_model.dart';
 import 'group_message_reply_preview.dart';
 import 'group_time_row.dart';

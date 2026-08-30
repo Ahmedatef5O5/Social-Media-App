@@ -10,9 +10,9 @@ import 'package:social_media_app/features/chat_forwarding/services/forward_servi
 import 'package:social_media_app/features/chat_forwarding/views/forward_target_picker_view.dart';
 import '../../../core/chat_shared/widgets/message_selection_header_bar.dart';
 import '../../ai_chat/views/ai_chat_view.dart';
-import '../../single_chats/cubit/chats_cubit/chats_cubit.dart';
-import '../cubit/group_details_cubit/group_details_cubit.dart';
-import '../cubit/group_list_cubit/group_list_cubit.dart';
+import '../../single_chats/cubits/chats_cubit/chats_cubit.dart';
+import '../cubits/group_details_cubit/group_details_cubit.dart';
+import '../cubits/group_list_cubit/group_list_cubit.dart';
 import '../models/group_model.dart';
 import '../models/groupe_message_model.dart';
 import '../widgets/group_chat_app_bar.dart';

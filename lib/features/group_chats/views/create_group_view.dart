@@ -8,7 +8,7 @@ import '../../../core/toast/app_toast.dart';
 import 'package:social_media_app/core/widgets/custom_loading_indicator.dart';
 import 'package:social_media_app/features/social_graph/services/connections_service.dart';
 import '../../../core/chat_shared/helpers/avatar_stack.dart';
-import '../cubit/group_list_cubit/group_list_cubit.dart';
+import '../cubits/group_list_cubit/group_list_cubit.dart';
 import '../helpers/group_user_list_tile.dart';
 import '../services/group_chat_services.dart';
 import '../widgets/group_header_section_widget.dart';

@@ -17,7 +17,7 @@ import '../../../core/widgets/calls/call_avatar_backdrop.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
 import '../models/group_call_model.dart';
 import '../services/group_call_signaling_service.dart';
-import '../widget/group_call_members_sheet.dart';
+import '../widgets/group_call_members_sheet.dart';
 
 class LiveKitGroupCallView extends StatefulWidget {
   final GroupCallModel call;
