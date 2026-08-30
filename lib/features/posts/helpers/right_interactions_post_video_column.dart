@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:social_media_app/features/posts/helper/full_screen_video_actions.dart';
+import 'package:social_media_app/features/posts/helpers/full_screen_video_actions.dart';
 import 'package:video_player/video_player.dart';
 import '../../../core/cache/repository/media_cache_repository.dart';
 import '../../../core/constants/app_images.dart';
@@ -9,12 +9,12 @@ import '../../../core/design/tokens/typography.dart';
 import '../../../core/helpers/comment_helper.dart';
 import '../../../core/themes/app_colors.dart';
 import '../../../core/toast/app_toast.dart';
-import '../../comments/cubit/comments_cubit.dart';
+import '../../comments/cubits/comments_cubit.dart';
 import '../../comments/services/comments_service.dart';
-import '../../comments/widget/comments_sheet_section.dart';
+import '../../comments/widgets/comments_sheet_section.dart';
 import '../../home/cubits/home_cubit/home_cubit.dart';
-import '../cubit/posts_cubit/posts_cubit.dart';
-import '../model/post_model.dart';
+import '../cubits/posts_cubit/posts_cubit.dart';
+import '../models/post_model.dart';
 import '../widgets/post_reaction_overlay.dart';
 
 class RightInteractionsPostVideoColumn extends StatefulWidget {
