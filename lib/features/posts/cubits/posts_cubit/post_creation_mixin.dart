@@ -40,13 +40,7 @@ mixin PostCreationMixin on Cubit<PostsState> {
         if (state is! PostCreating) return;
         final ratio =
             totalBytes > 0 ? (sentBytes / totalBytes).clamp(0.0, 1.0) : 0.0;
-        emit(
-          PostCreating(
-            ratio,
-            sentBytes: sentBytes,
-            totalBytes: totalBytes,
-          ),
-        );
+        emit(PostCreating(ratio, sentBytes: sentBytes, totalBytes: totalBytes));
       }
 
       if (selectedImage != null) {
@@ -95,10 +89,14 @@ mixin PostCreationMixin on Cubit<PostsState> {
         final docFile = File(selectedDocument!.path);
         if (await docFile.exists()) {
           final originalName = docFile.path.split('/').last.split('\\').last;
-          final nameWithoutExt = originalName.contains('.')
-              ? originalName.substring(0, originalName.lastIndexOf('.'))
-              : originalName;
-          final safeName = nameWithoutExt.replaceAll(RegExp(r'[^a-zA-Z0-9\-_]'), '_');
+          final nameWithoutExt =
+              originalName.contains('.')
+                  ? originalName.substring(0, originalName.lastIndexOf('.'))
+                  : originalName;
+          final safeName = nameWithoutExt.replaceAll(
+            RegExp(r'[^a-zA-Z0-9\-_]'),
+            '_',
+          );
 
           final result = await _storage.uploadFile(
             docFile,
@@ -110,7 +108,10 @@ mixin PostCreationMixin on Cubit<PostsState> {
           );
           fileUrl = result.secureUrl;
           filePublicId = result.publicId;
-          await _mediaCacheRepository.adoptUploadedFile(result.secureUrl, docFile);
+          await _mediaCacheRepository.adoptUploadedFile(
+            result.secureUrl,
+            docFile,
+          );
           final length = await docFile.length();
           updateProgress(length, length);
         } else {
@@ -292,6 +293,36 @@ mixin PostCreationMixin on Cubit<PostsState> {
       }
       return false;
     }
+  }
+
+  void incrementLinkShareCount(String postId) {
+    if (state is! PostsLoaded) return;
+    final oldState = state as PostsLoaded;
+
+    final updatedPosts =
+        oldState.posts.map((p) {
+          if (p.id == postId) {
+            return p.copyWith(linkShareCount: p.linkShareCount + 1);
+          }
+          if (p.originalPost?.id == postId) {
+            return p.copyWith(
+              originalPost: p.originalPost!.copyWith(
+                linkShareCount: p.originalPost!.linkShareCount + 1,
+              ),
+            );
+          }
+          return p;
+        }).toList();
+
+    cachedPosts = updatedPosts;
+    emit(PostsLoaded(updatedPosts, DateTime.now()));
+
+    unawaited(
+      _postsServices.incrementPostLinkShareCount(postId).catchError((e) {
+        debugPrint('⚠️ Failed to persist link share count for $postId: $e');
+        return 0;
+      }),
+    );
   }
 
   void cancelUpload() {
