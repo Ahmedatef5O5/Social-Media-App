@@ -2,8 +2,12 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:linkify/linkify.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../../features/group_chats/widgets/group_invite_bottom_sheet.dart';
+import '../../deep_link/services/deep_link_service.dart';
 import '../../helpers/chat_helper.dart';
+import '../../helpers/content_deep_link_navigator.dart';
 import '../../helpers/emoji_helper.dart';
+import '../../notifications/notification_navigator_key.dart';
 import '../models/mention_ref.dart';
 
 class MentionRichText extends StatefulWidget {
@@ -72,8 +76,25 @@ class _MentionRichTextState extends State<MentionRichText> {
   }
 
   Future<void> _openLink(String url) async {
-    final uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) {
+    final uri = Uri.tryParse(url);
+
+    final parsed = DeepLinkService.parseInternalLink(uri);
+    if (parsed != null) {
+      final (type, id) = parsed;
+      if (type == 'post') {
+        ContentDeepLinkNavigator.openPost(id);
+        return;
+      } else if (type == 'story') {
+        ContentDeepLinkNavigator.openStoryById(id);
+        return;
+      } else if (type == 'join') {
+        final context = navigatorKey.currentContext;
+        if (context != null) GroupInviteBottomSheet.show(context, id);
+        return;
+      }
+    }
+
+    if (uri != null && await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     }
   }

@@ -27,22 +27,18 @@ class LinkPreviewCard extends StatelessWidget {
   }
 
   void _handleTap(BuildContext context) {
-    final uri = Uri.tryParse(data.url);
-    if (uri != null && uri.host == DeepLinkService.host) {
-      final segments = uri.pathSegments.where((s) => s.isNotEmpty).toList();
-      if (segments.length >= 2) {
-        final type = segments[0];
-        final id = segments[1];
-        if (type == 'join') {
-          GroupInviteBottomSheet.show(context, id);
-          return;
-        } else if (type == 'post') {
-          ContentDeepLinkNavigator.openPost(id);
-          return;
-        } else if (type == 'story') {
-          ContentDeepLinkNavigator.openStoryById(id);
-          return;
-        }
+    final parsed = DeepLinkService.parseInternalLink(Uri.tryParse(data.url));
+    if (parsed != null) {
+      final (type, id) = parsed;
+      if (type == 'join') {
+        GroupInviteBottomSheet.show(context, id);
+        return;
+      } else if (type == 'post') {
+        ContentDeepLinkNavigator.openPost(id);
+        return;
+      } else if (type == 'story') {
+        ContentDeepLinkNavigator.openStoryById(id);
+        return;
       }
     }
 

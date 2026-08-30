@@ -7,6 +7,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:social_media_app/core/cache/services/local_snapshot_store.dart';
 import 'package:social_media_app/core/link/model/link_preview_data.dart';
 import '../../../features/group_chats/services/group_chat_services.dart';
+import '../../../features/posts/services/posts_services.dart';
+import '../../../features/stories/services/stories_services.dart';
+import '../../cache/utils/cloudinary_url_extensions.dart';
 import '../../constants/app_images.dart';
 import '../../deep_link/services/deep_link_service.dart';
 
@@ -24,7 +27,8 @@ class LinkPreviewService {
       receiveTimeout: const Duration(seconds: 6),
       followRedirects: true,
       maxRedirects: 5,
-      validateStatus: (status) => status != null && status < 400,
+      validateStatus:
+          (status) => status != null && (status < 400 || status == 999),
       headers: {
         'User-Agent':
             'facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)',
@@ -47,16 +51,29 @@ class LinkPreviewService {
     'welcome back',
     'join linkedin',
     'authwall',
+    'checking your browser',
+    'recaptcha',
+    'security check',
   ];
 
-  bool _looksLikeGenericGatePage(String domain, String? title) {
+  bool _looksLikeGenericGatePage(
+    String domain,
+    String? title,
+    String? description,
+  ) {
     final isAuthWalled = _authWalledDomains.any((d) => domain.contains(d));
     if (!isAuthWalled) return false;
 
     final normalizedTitle = (title ?? '').trim().toLowerCase();
-    if (normalizedTitle.isEmpty) return true;
+    final normalizedDesc = (description ?? '').trim().toLowerCase();
+
+    if (normalizedTitle.isEmpty && normalizedDesc.isEmpty) return true;
     if (normalizedTitle == 'linkedin') return true;
-    return _genericGateTitleMarkers.any(normalizedTitle.contains);
+
+    return _genericGateTitleMarkers.any(
+      (marker) =>
+          normalizedTitle.contains(marker) || normalizedDesc.contains(marker),
+    );
   }
 
   LinkPreviewData? peek(String url) {
@@ -110,34 +127,28 @@ class LinkPreviewService {
   }
 
   Future<LinkPreviewData?> _fetchAndCache(String url) async {
-    final uri = Uri.tryParse(url);
-    if (uri != null && uri.host == DeepLinkService.host) {
-      final segments = uri.pathSegments.where((s) => s.isNotEmpty).toList();
-      if (segments.length >= 2 && segments[0] == 'join') {
-        final hash = segments[1];
+    final parsed = DeepLinkService.parseInternalLink(Uri.tryParse(url));
+    if (parsed != null) {
+      final (type, id) = parsed;
+      {
+        LinkPreviewData? internalData;
+
         try {
-          final preview = await GroupChatServices().getGroupInvitePreview(hash);
-          if (preview.isValid) {
-            final data = LinkPreviewData(
-              url: url,
-              title:
-                  preview.groupName != null
-                      ? 'Join "${preview.groupName}"'
-                      : 'Group Invitation',
-              description:
-                  (preview.groupTitle != null && preview.groupTitle!.isNotEmpty)
-                      ? preview.groupTitle
-                      : '${preview.memberCount} member${preview.memberCount == 1 ? '' : 's'} • Tap to join group',
-              imageUrl: preview.groupAvatarUrl ?? AppImages.defaultGroupImg,
-              siteName: 'Social Media App',
-              domain: uri.host,
-            );
-            _memoryCache[url] = data;
-            unawaited(_persistSuccess(url, data));
-            return data;
+          if (type == 'join') {
+            internalData = await _buildGroupInvitePreviewData(url, id);
+          } else if (type == 'post') {
+            internalData = await _buildPostPreviewData(url, id);
+          } else if (type == 'story') {
+            internalData = await _buildStoryPreviewData(url, id);
           }
         } catch (e) {
-          debugPrint('⚠️ Failed to resolve internal group invite preview: $e');
+          debugPrint('⚠️ Failed to resolve internal $type preview: $e');
+        }
+
+        if (internalData != null) {
+          _memoryCache[url] = internalData;
+          unawaited(_persistSuccess(url, internalData));
+          return internalData;
         }
       }
     }
@@ -160,16 +171,93 @@ class LinkPreviewService {
     return null;
   }
 
+  Future<LinkPreviewData?> _buildGroupInvitePreviewData(
+    String url,
+    String inviteHash,
+  ) async {
+    final preview = await GroupChatServices().getGroupInvitePreview(inviteHash);
+    if (!preview.isValid) return null;
+
+    return LinkPreviewData(
+      url: url,
+      title:
+          preview.groupName != null
+              ? 'Join "${preview.groupName}"'
+              : 'Group Invitation',
+      description:
+          (preview.groupTitle != null && preview.groupTitle!.isNotEmpty)
+              ? preview.groupTitle
+              : '${preview.memberCount} member${preview.memberCount == 1 ? '' : 's'} • Tap to join group',
+      imageUrl: preview.groupAvatarUrl ?? AppImages.defaultGroupImg,
+      siteName: 'Social Media App',
+      domain: Uri.parse(url).host,
+    );
+  }
+
+  Future<LinkPreviewData?> _buildPostPreviewData(
+    String url,
+    String postId,
+  ) async {
+    final post = await PostsServices().fetchPostById(postId);
+    if (post == null) return null;
+
+    final caption = post.text.trim();
+    final authorName = post.authorName;
+
+    return LinkPreviewData(
+      url: url,
+      title:
+          (authorName != null && authorName.isNotEmpty)
+              ? '$authorName on Social Media App'
+              : 'Post on Social Media App',
+      description: caption.isNotEmpty ? caption : null,
+      imageUrl: post.imageUrl ?? post.videoUrl?.cloudinaryVideoThumbnailUrl,
+      siteName: 'Social Media App',
+      domain: Uri.parse(url).host,
+    );
+  }
+
+  Future<LinkPreviewData?> _buildStoryPreviewData(
+    String url,
+    String storyId,
+  ) async {
+    final story = await StoriesServices().fetchStoryById(storyId);
+    if (story == null) return null;
+
+    final caption =
+        (story.caption != null && story.caption!.trim().isNotEmpty)
+            ? story.caption!.trim()
+            : (story.contentText?.trim() ?? '');
+
+    return LinkPreviewData(
+      url: url,
+      title: "${story.authorName}'s Story",
+      description: caption.isNotEmpty ? caption : null,
+      imageUrl: story.imageUrl ?? story.videoUrl?.cloudinaryVideoThumbnailUrl,
+      siteName: 'Social Media App',
+      domain: Uri.parse(url).host,
+    );
+  }
+
   Future<LinkPreviewData?> _fetchDirect(String url) async {
     try {
       final response = await _dio.get<String>(
         url,
         options: dio_pkg.Options(responseType: dio_pkg.ResponseType.plain),
       );
+
+      if (response.statusCode == 999) return null;
+
       final html = response.data ?? '';
       final data = _parseHtml(url, html);
 
-      if (_looksLikeGenericGatePage(data.domain, data.title)) return null;
+      if (_looksLikeGenericGatePage(
+        data.domain,
+        data.title,
+        data.description,
+      )) {
+        return null;
+      }
       return data.hasContent ? data : null;
     } catch (e) {
       debugPrint('[LinkPreviewService] direct fetch failed for $url: $e');
@@ -188,7 +276,9 @@ class LinkPreviewService {
 
       final d = payload['data'] as Map;
       final title = d['title'] as String?;
+      final description = d['description'] as String?;
       final imageUrl = d['image_url'] as String?;
+
       if ((title == null || title.isEmpty) &&
           (imageUrl == null || imageUrl.isEmpty)) {
         return null;
@@ -196,12 +286,15 @@ class LinkPreviewService {
 
       final domain =
           (d['domain'] as String?) ?? (Uri.tryParse(url)?.host ?? url);
-      if (_looksLikeGenericGatePage(domain, title)) return null;
+
+      if (_looksLikeGenericGatePage(domain, title, description)) {
+        return null;
+      }
 
       return LinkPreviewData(
         url: url,
         title: title,
-        description: d['description'] as String?,
+        description: description,
         imageUrl: imageUrl,
         siteName: d['site_name'] as String?,
         domain: domain,

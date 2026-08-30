@@ -11,16 +11,16 @@ import 'package:social_media_app/core/firebase/firebase_background_handlers.dart
 import 'package:social_media_app/core/router/app_routes.dart';
 import 'package:social_media_app/core/secrets/app_secrets.dart';
 import 'package:social_media_app/core/services/network_status_service.dart';
-import 'package:social_media_app/core/services/notification_services.dart';
 import 'package:social_media_app/core/presence/services/presence_service.dart';
 import 'package:social_media_app/features/settings/repository/settings_repository.dart';
 import 'package:social_media_app/firebase_options.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../features/home/cubits/home_cubit/home_cubit.dart';
-import '../../features/posts/cubit/posts_cubit/posts_cubit.dart';
-import '../../features/stories/cubit/stories_cubit/stories_cubit.dart';
+import '../../features/posts/cubits/posts_cubit/posts_cubit.dart';
+import '../../features/stories/cubits/stories_cubit/stories_cubit.dart';
 import '../deep_link/services/deep_link_service.dart';
 import '../errors/supabase_error_mapper.dart';
+import '../notifications/notification_service.dart';
 import '../share_intent/services/share_intent_service.dart';
 import '../supabase/supabase_provider.dart';
 import '../toast/app_toast.dart';
@@ -35,10 +35,6 @@ Future<void> initializeApp() async {
   await _safely('Notifications', _initNotifications);
   await _safely('ShareIntent', ShareIntentService.instance.init);
   await _safely('DeepLink', DeepLinkService.instance.init);
-  await _safely(
-    'ConsumeDeepLink',
-    DeepLinkService.instance.consumeInitialDeepLinkIfAny,
-  );
   await _safely(
     'ConsumeShare',
     ShareIntentService.instance.consumeInitialShareIfAny,
