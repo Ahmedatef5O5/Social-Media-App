@@ -7,7 +7,7 @@ import 'package:social_media_app/core/widgets/cached_cloudinary_image.dart';
 import '../../../core/cache/utils/cloudinary_url_extensions.dart';
 import '../../../core/helpers/chat_helper.dart';
 import '../../../core/widgets/app_avatar.dart';
-import '../model/story_model.dart';
+import '../models/story_model.dart';
 
 class StoryCardWidget extends StatelessWidget {
   static const double cardWidth = 110;

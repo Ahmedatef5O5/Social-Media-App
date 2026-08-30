@@ -1,14 +1,17 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:video_player/video_player.dart';
 import '../../../core/constants/app_images.dart';
+import '../../../core/deep_link/services/deep_link_service.dart';
 import '../../../core/helpers/formatted_date.dart';
 import '../../../core/presence/widgets/presence_avatar_widget.dart';
 import '../../../core/router/app_routes.dart';
+import '../../../core/share_intent/widgets/share_content_bottom_sheet.dart';
 import '../../../core/supabase/supabase_provider.dart';
-import '../cubit/stories_cubit/stories_cubit.dart';
-import '../model/story_model.dart';
+import '../cubits/stories_cubit/stories_cubit.dart';
+import '../models/story_model.dart';
 import 'story_delete_dialog.dart';
 
 class StoryHeader extends StatelessWidget {
@@ -92,12 +95,36 @@ class StoryHeader extends StatelessWidget {
         ),
 
         const Spacer(),
+        if (!isMyStory)
+          InkWell(
+            onTap: () {
+              onPause();
+              final url = DeepLinkService.urlForStory(story.id);
+              ShareContentBottomSheet.show(
+                context,
+                url: url,
+                shareText:
+                    "Check out ${story.authorName}'s story on Social Media App: $url",
+              ).whenComplete(onResume);
+            },
+            child: const Icon(CupertinoIcons.paperplane, color: Colors.white),
+          ),
         if (isMyStory)
           PopupMenuButton(
             icon: Icon(Icons.more_vert, color: Colors.white),
             onOpened: onPause,
             onCanceled: onResume,
-            onSelected: (_) async {
+            onSelected: (value) async {
+              if (value == 'share') {
+                final url = DeepLinkService.urlForStory(story.id);
+                ShareContentBottomSheet.show(
+                  context,
+                  url: url,
+                  shareText: 'Check out my story on Social Media App: $url',
+                ).whenComplete(onResume);
+                return;
+              }
+
               final confirm = await showDeleteStoryDialog(context);
               if (confirm == true) {
                 storiesCubit.deleteStory(story.id);
@@ -108,6 +135,7 @@ class StoryHeader extends StatelessWidget {
             },
             itemBuilder:
                 (_) => const [
+                  PopupMenuItem(value: 'share', child: Text('Share Story')),
                   PopupMenuItem(
                     value: 'delete',
                     child: Text(

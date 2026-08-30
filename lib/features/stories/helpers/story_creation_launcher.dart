@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:social_media_app/core/router/app_routes.dart';
 import 'package:social_media_app/features/home/cubits/home_cubit/home_cubit.dart';
-import '../cubit/stories_cubit/stories_cubit.dart';
+import '../cubits/stories_cubit/stories_cubit.dart';
 import '../widgets/story_image_picker_sheet.dart';
 
 class StoryCreationLauncher {

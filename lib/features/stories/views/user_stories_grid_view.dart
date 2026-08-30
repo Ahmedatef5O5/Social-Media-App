@@ -4,11 +4,11 @@ import '../../../core/constants/app_images.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/themes/app_colors.dart';
-import '../cubit/my_stories_cubit/my_stories_cubit.dart';
-import '../cubit/stories_cubit/stories_cubit.dart';
+import '../cubits/my_stories_cubit/my_stories_cubit.dart';
+import '../cubits/stories_cubit/stories_cubit.dart';
 import '../helpers/stories_grid_skeleton.dart';
-import '../model/story_model.dart';
-import '../model/story_stat_model.dart';
+import '../models/story_model.dart';
+import '../models/story_stat_model.dart';
 import '../services/stories_services.dart';
 import '../widgets/story_grid_tile.dart';
 

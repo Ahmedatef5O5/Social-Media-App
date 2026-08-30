@@ -7,10 +7,10 @@ import '../../../core/constants/app_images.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/toast/app_toast.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
-import '../cubit/my_stories_cubit/my_stories_cubit.dart';
-import '../cubit/stories_cubit/stories_cubit.dart';
+import '../cubits/my_stories_cubit/my_stories_cubit.dart';
+import '../cubits/stories_cubit/stories_cubit.dart';
 import '../helpers/story_creation_launcher.dart';
-import '../model/story_model.dart';
+import '../models/story_model.dart';
 import '../widgets/my_story_tile.dart';
 import '../widgets/story_delete_dialog.dart';
 

@@ -7,8 +7,8 @@ import '../../../core/presence/widgets/presence_avatar_widget.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/widgets/app_avatar.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
-import '../cubit/story_views_cubit/story_views_cubit.dart';
-import '../model/story_viewer_model.dart';
+import '../cubits/story_views_cubit/story_views_cubit.dart';
+import '../models/story_viewer_model.dart';
 
 class StoryViewsBottomSheet extends StatelessWidget {
   const StoryViewsBottomSheet({super.key});

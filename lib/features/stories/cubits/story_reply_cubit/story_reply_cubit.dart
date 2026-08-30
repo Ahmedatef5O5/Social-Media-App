@@ -2,12 +2,13 @@ import 'dart:async';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:uuid/uuid.dart';
 import '../../../../core/services/cloudinary_storage_services.dart';
 import '../../../../core/services/fcm_services.dart';
 import '../../../../core/supabase/supabase_provider.dart';
 import '../../../notifications/repository/notifications_repository.dart';
 import '../../../single_chats/services/chat_services.dart';
-import '../../model/story_model.dart';
+import '../../models/story_model.dart';
 
 part 'story_reply_state.dart';
 
@@ -61,6 +62,7 @@ class StoryReplyCubit extends Cubit<StoryReplyState> {
         senderId: currentUserId,
         receiverId: story.authorId,
         text: text,
+        clientMessageId: const Uuid().v4(),
         messageType: resolvedMessageType,
         imageUrl: imageUrl,
         videoUrl: videoUrl,

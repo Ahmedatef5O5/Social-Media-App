@@ -10,8 +10,8 @@ import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/utilities/supabase_constants.dart';
 import '../../social_graph/services/connections_service.dart';
 import '../../../core/mentions/models/mention_ref.dart';
-import '../model/story_model.dart';
-import '../model/story_viewer_model.dart';
+import '../models/story_model.dart';
+import '../models/story_viewer_model.dart';
 
 class StoriesServices {
   final _supabase = SupabaseProvider.client;
@@ -150,6 +150,43 @@ class StoriesServices {
       );
     } catch (e) {
       rethrow;
+    }
+  }
+
+  Future<StoryModel?> fetchStoryById(String storyId) async {
+    try {
+      final currentUserId = SupabaseProvider.id;
+      final connectionIds = await ConnectionsService().getMyConnectionIds();
+      final allowedPrivateIds = await _getPrivateAllowedStoryIds(currentUserId);
+
+      final orParts = <String>[
+        'privacy_type.eq.public',
+        'author_id.eq.$currentUserId',
+      ];
+      if (connectionIds.isNotEmpty) {
+        orParts.add(
+          'and(privacy_type.eq.friends,author_id.in.(${connectionIds.join(',')}))',
+        );
+      }
+      if (allowedPrivateIds.isNotEmpty) {
+        orParts.add('id.in.(${allowedPrivateIds.join(',')})');
+      }
+
+      final rows = await supabaseServices.fetchRows(
+        table: SupabaseConstants.stories,
+        columns:
+            '*,'
+            '${SupabaseConstants.users}!stories_author_id_fkey'
+            '(${UserColumns.name}, ${UserColumns.imageUrl})',
+        filter:
+            (query) => query.eq(StoryColumns.id, storyId).or(orParts.join(',')),
+        builder: (data, id) => StoryModel.fromMap(data),
+        primaryKey: StoryColumns.id,
+      );
+
+      return rows.isNotEmpty ? rows.first : null;
+    } catch (e) {
+      return null;
     }
   }
 

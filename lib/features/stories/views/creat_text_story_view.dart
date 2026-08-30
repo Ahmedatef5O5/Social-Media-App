@@ -10,7 +10,7 @@ import '../../../core/toast/app_toast.dart';
 import '../../settings/repository/settings_repository.dart';
 import '../../social_graph/helpers/privacy_picker_helper.dart';
 import '../../social_graph/models/content_privacy.dart';
-import '../cubit/stories_cubit/stories_cubit.dart';
+import '../cubits/stories_cubit/stories_cubit.dart';
 import '../widgets/story_text_editor.dart';
 
 class CreateTextStoryView extends StatefulWidget {

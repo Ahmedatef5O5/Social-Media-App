@@ -2,8 +2,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/toast/app_toast.dart';
-import '../cubit/stories_cubit/stories_cubit.dart';
-import '../model/story_model.dart';
+import '../cubits/stories_cubit/stories_cubit.dart';
+import '../models/story_model.dart';
 import '../widgets/story_shimmer_widget.dart';
 import 'story_display_view.dart';
 

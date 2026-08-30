@@ -6,8 +6,8 @@ import '../../../core/mentions/widgets/mention_rich_text.dart';
 import '../../../core/themes/app_colors.dart';
 import '../../../core/widgets/cached_cloudinary_image.dart';
 import '../helpers/local_video_thumbnail.dart';
-import '../model/story_model.dart';
-import '../model/story_stat_model.dart';
+import '../models/story_model.dart';
+import '../models/story_stat_model.dart';
 
 class StoryGridTile extends StatelessWidget {
   final StoryModel story;

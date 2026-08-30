@@ -8,7 +8,7 @@ import 'package:video_thumbnail/video_thumbnail.dart';
 import 'package:social_media_app/core/widgets/cached_cloudinary_image.dart';
 import '../../../core/cache/repository/media_cache_repository.dart';
 import '../../../core/widgets/blurred_media_placeholders.dart';
-import '../model/story_model.dart';
+import '../models/story_model.dart';
 
 class StoryMediaView extends StatefulWidget {
   final StoryModel story;

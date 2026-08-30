@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
-import 'package:social_media_app/features/stories/cubit/stories_cubit/stories_cubit.dart';
+import 'package:social_media_app/features/stories/cubits/stories_cubit/stories_cubit.dart';
 import '../../../core/cache/utils/cloudinary_url_extensions.dart';
 import '../../../core/design/tokens/typography.dart';
 import '../../../core/helpers/chat_helper.dart';
@@ -13,8 +13,8 @@ import '../../../core/widgets/cached_cloudinary_image.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
 import '../helpers/local_video_thumbnail.dart';
 import '../helpers/uploading_indicator_story.dart';
-import '../model/story_model.dart';
-import '../model/story_stat_model.dart';
+import '../models/story_model.dart';
+import '../models/story_stat_model.dart';
 
 class MyStoryTile extends StatelessWidget {
   final StoryModel story;
@@ -97,12 +97,14 @@ class MyStoryTile extends StatelessWidget {
                                     story.contentText ?? 'EN',
                                   )
                                   : TextDirection.ltr,
-                          style: (theme.textTheme.titleSmall ?? const TextStyle()).copyWith(
-                            fontWeight: FontWeight.w700,
-                            fontSize: 15,
-                            fontFamily: null,
-                            fontFamilyFallback: AppTypography.fontFallback,
-                          ),
+                          style: (theme.textTheme.titleSmall ??
+                                  const TextStyle())
+                              .copyWith(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 15,
+                                fontFamily: null,
+                                fontFamilyFallback: AppTypography.fontFallback,
+                              ),
                         ),
                         const Gap(6),
                         Row(

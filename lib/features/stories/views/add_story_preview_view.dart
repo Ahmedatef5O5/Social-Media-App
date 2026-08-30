@@ -15,7 +15,7 @@ import '../../ai_assistant/entities/ai_request_context.dart';
 import '../../ai_assistant/widgets/ai_action_icon.dart';
 import '../../settings/repository/settings_repository.dart';
 import '../../social_graph/models/content_privacy.dart';
-import '../cubit/stories_cubit/stories_cubit.dart';
+import '../cubits/stories_cubit/stories_cubit.dart';
 
 class AddStoryPreviewView extends StatefulWidget {
   final File file;

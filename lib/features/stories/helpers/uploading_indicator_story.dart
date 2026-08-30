@@ -3,7 +3,7 @@ import 'package:gap/gap.dart';
 import '../../../core/attachment/widgets/transfer_ring.dart';
 import '../../../core/themes/app_colors.dart';
 import '../../../core/utilities/file_size_formatter.dart';
-import '../cubit/stories_cubit/stories_cubit.dart';
+import '../cubits/stories_cubit/stories_cubit.dart';
 
 class UploadingIndicatorStory extends StatelessWidget {
   final String storyId;

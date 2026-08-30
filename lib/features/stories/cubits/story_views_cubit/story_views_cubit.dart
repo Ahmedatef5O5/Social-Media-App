@@ -1,10 +1,9 @@
 import 'dart:async';
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:social_media_app/core/cache/constants/snapshot_keys.dart';
 import 'package:social_media_app/core/cache/services/local_snapshot_store.dart';
-import '../../model/story_viewer_model.dart';
+import '../../models/story_viewer_model.dart';
 import '../../services/stories_services.dart';
 part 'story_views_state.dart';
 

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/design/tokens/typography.dart';
-import '../cubit/story_reaction_cubit/story_reaction_cubit.dart';
+import '../cubits/story_reaction_cubit/story_reaction_cubit.dart';
 import '../widgets/story_reaction_picker.dart';
 
 class StoryReactionButton extends StatefulWidget {

@@ -21,7 +21,7 @@ import '../../../../core/errors/supabase_error_mapper.dart';
 import '../../../../core/toast/app_toast.dart';
 import '../../../social_graph/models/content_privacy.dart';
 import 'package:social_media_app/core/mentions/mentions.dart';
-import '../../model/story_model.dart';
+import '../../models/story_model.dart';
 import '../../services/stories_services.dart';
 part 'stories_state.dart';
 

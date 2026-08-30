@@ -11,9 +11,9 @@ import '../../ai_assistant/entities/ai_request_context.dart';
 import '../../ai_assistant/helpers/remote_media_fetcher.dart';
 import '../../ai_assistant/widgets/ai_action_icon.dart';
 import '../../single_chats/widgets/full_screen_media_view.dart';
-import '../cubit/story_reply_cubit/story_reply_cubit.dart';
+import '../cubits/story_reply_cubit/story_reply_cubit.dart';
 import '../helpers/story_reaction_btn.dart';
-import '../model/story_model.dart';
+import '../models/story_model.dart';
 
 class StoryReplyInputBar extends StatefulWidget {
   final StoryModel story;
