@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../core/themes/app_colors.dart';
 import '../../../core/widgets/custom_elevated_button.dart';
-import '../model/reel_category.dart';
+import '../models/reel_category.dart';
 import '../services/reels_preferences_store.dart';
 import '../widgets/category_tile.dart';
 

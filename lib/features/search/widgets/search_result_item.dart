@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../posts/cubit/posts_cubit/posts_cubit.dart';
+import '../../posts/cubits/posts_cubit/posts_cubit.dart';
 import '../../posts/widgets/post_item_widget.dart';
 import 'for_you_feed_item.dart';
 import 'for_you_reels_grid_section.dart';

@@ -4,8 +4,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/toast/app_toast.dart';
-import '../../posts/cubit/posts_cubit/posts_cubit.dart';
-import '../model/reel_model.dart';
+import '../../posts/cubits/posts_cubit/posts_cubit.dart';
+import '../models/reel_model.dart';
 import '../utils/action_button.dart';
 
 class ReelActionsColumn extends StatefulWidget {

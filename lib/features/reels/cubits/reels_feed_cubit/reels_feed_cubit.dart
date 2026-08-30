@@ -2,7 +2,7 @@ import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/errors/supabase_error_mapper.dart';
-import '../../model/reel_model.dart';
+import '../../models/reel_model.dart';
 import '../../services/reels_services.dart';
 part 'reels_feed_state.dart';
 

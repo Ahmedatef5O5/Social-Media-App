@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../core/themes/app_colors.dart';
-import '../model/reel_category.dart';
+import '../models/reel_category.dart';
 
 class CategoryTile extends StatefulWidget {
   final ReelCategoryOption category;

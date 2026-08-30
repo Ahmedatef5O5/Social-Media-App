@@ -1,6 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import '../model/reel_model.dart';
+import '../models/reel_model.dart';
 import '../views/reels_full_screen_view.dart';
 
 class SharedReelPreviewCard extends StatelessWidget {

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:youtube_player_iframe/youtube_player_iframe.dart';
-import '../model/reel_model.dart';
+import '../models/reel_model.dart';
 import 'reel_actions_column.dart';
 import 'reel_info_overlay.dart';
 import 'reel_video_placeholder.dart';

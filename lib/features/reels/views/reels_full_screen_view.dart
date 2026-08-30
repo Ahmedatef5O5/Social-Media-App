@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../cubit/reels_feed_cubit/reels_feed_cubit.dart';
-import '../model/reel_model.dart';
+import '../cubits/reels_feed_cubit/reels_feed_cubit.dart';
+import '../models/reel_model.dart';
 import '../services/reel_player_controller_pool.dart';
 import '../widgets/reel_page.dart';
 

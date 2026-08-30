@@ -1,7 +1,7 @@
 import '../../../core/services/supabase_database_services.dart';
 import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/utilities/supabase_constants.dart';
-import '../model/reel_model.dart';
+import '../models/reel_model.dart';
 import '../utils/reels_interleaver.dart';
 
 class ReelsServices {

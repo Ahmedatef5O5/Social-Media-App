@@ -1,6 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../reels/services/reels_services.dart';
-import '../../../reels/model/reel_model.dart';
+import '../../../reels/models/reel_model.dart';
 part 'search_reels_state.dart';
 
 class SearchReelsCubit extends Cubit<SearchReelsState> {

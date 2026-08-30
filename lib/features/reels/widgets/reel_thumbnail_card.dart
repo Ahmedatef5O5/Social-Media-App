@@ -1,7 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import '../../../core/helpers/chat_helper.dart';
-import '../model/reel_model.dart';
+import '../models/reel_model.dart';
 
 class ReelThumbnailCard extends StatelessWidget {
   final ReelModel reel;

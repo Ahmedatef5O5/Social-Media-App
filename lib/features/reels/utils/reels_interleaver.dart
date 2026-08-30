@@ -1,5 +1,5 @@
 import 'dart:math';
-import '../model/reel_model.dart';
+import '../models/reel_model.dart';
 
 class ReelsInterleaver {
   const ReelsInterleaver._();

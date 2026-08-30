@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
-import '../../posts/cubit/posts_cubit/posts_cubit.dart';
-import '../../posts/model/post_model.dart';
+import '../../posts/cubits/posts_cubit/posts_cubit.dart';
+import '../../posts/models/post_model.dart';
 import '../../posts/widgets/post_item_widget.dart';
-import '../cubit/reels_feed_cubit/reels_feed_cubit.dart';
-import '../model/reel_model.dart';
+import '../cubits/reels_feed_cubit/reels_feed_cubit.dart';
+import '../models/reel_model.dart';
 import '../services/reels_preferences_store.dart';
 import 'reels_horizontal_section.dart';
 

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../model/reel_model.dart';
+import '../models/reel_model.dart';
 import 'channel_avatar.dart';
 
 class ReelInfoOverlay extends StatelessWidget {

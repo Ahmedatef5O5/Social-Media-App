@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:youtube_player_iframe/youtube_player_iframe.dart';
-import '../model/reel_model.dart';
+import '../models/reel_model.dart';
 
 class ReelPlayerControllerPool {
   final Map<int, YoutubePlayerController> _controllers = {};

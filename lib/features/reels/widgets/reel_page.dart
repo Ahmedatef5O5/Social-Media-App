@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:social_media_app/features/reels/widgets/reel_unavailable_fallback.dart';
 import 'package:youtube_player_iframe/youtube_player_iframe.dart';
-import '../model/reel_model.dart';
+import '../models/reel_model.dart';
 import 'reel_controls_overlay.dart';
 
 class ReelPage extends StatefulWidget {

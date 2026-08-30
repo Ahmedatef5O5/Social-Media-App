@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/constants/app_images.dart';
-import '../cubit/reels_feed_cubit/reels_feed_cubit.dart';
-import '../model/reel_model.dart';
+import '../cubits/reels_feed_cubit/reels_feed_cubit.dart';
+import '../models/reel_model.dart';
 import '../services/reels_preferences_store.dart';
 import '../views/reels_full_screen_view.dart';
 import '../views/reels_onboarding_view.dart';

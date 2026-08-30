@@ -2,7 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../model/reel_model.dart';
+import '../models/reel_model.dart';
 
 class ReelUnavailableFallback extends StatelessWidget {
   final ReelModel reel;
