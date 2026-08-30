@@ -7,7 +7,7 @@ import '../../../core/link/widgets/message_link_preview.dart';
 import '../../../core/mentions/widgets/mention_rich_text.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/supabase/supabase_provider.dart';
-import '../model/post_model.dart';
+import '../models/post_model.dart';
 
 class PostTxtContentWidget extends StatefulWidget {
   const PostTxtContentWidget({super.key, required this.post});
@@ -42,14 +42,13 @@ class _PostTxtContentWidgetState extends State<PostTxtContentWidget> {
     final String readMoreTxt = isArabic ? '...قراءة المزيد' : 'Read more...';
     final String readLessTxt = isArabic ? 'عرض أقل' : 'Show less';
 
-    final textStyle = (Theme.of(context).textTheme.titleSmall ??
-            const TextStyle())
-        .copyWith(
-      fontWeight: FontWeight.w400,
-      fontSize: 15,
-      fontFamily: null,
-      fontFamilyFallback: AppTypography.fontFallback,
-    );
+    final textStyle =
+        (Theme.of(context).textTheme.titleSmall ?? const TextStyle()).copyWith(
+          fontWeight: FontWeight.w400,
+          fontSize: 15,
+          fontFamily: null,
+          fontFamilyFallback: AppTypography.fontFallback,
+        );
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 10),
@@ -66,56 +65,70 @@ class _PostTxtContentWidgetState extends State<PostTxtContentWidget> {
 
               final bool isOverflowing = textPainter.didExceedMaxLines;
 
-              return MessageLinkPreview(
-                text: postText,
-                isMe: false,
-                textWidget: Column(
-                  crossAxisAlignment:
-                      isArabic
-                          ? CrossAxisAlignment.end
-                          : CrossAxisAlignment.start,
-                  children: [
-                    MentionRichText(
-                      text: postText,
-                      mentions: widget.post.mentions,
-                      maxLines: _isExpanded ? null : maxLines,
-                      overflow:
-                          _isExpanded
-                              ? TextOverflow.visible
-                              : TextOverflow.ellipsis,
-                      style: textStyle,
-                      onMentionTap: (userId, name) {
-                        final currentUserId = SupabaseProvider.idOrNull;
-                        if (userId == currentUserId) return;
-                        Navigator.of(context, rootNavigator: true).pushNamed(
-                          AppRoutes.profileViewRoute,
-                          arguments: userId,
-                        );
-                      },
-                    ),
-
-                    if (isOverflowing)
-                      GestureDetector(
-                        onTap: () {
+              return GestureDetector(
+                behavior: HitTestBehavior.deferToChild,
+                onTap:
+                    (_isExpanded || !isOverflowing)
+                        ? null // Let the tap bubble up to the post item if already expanded
+                        : () {
                           setState(() {
-                            _isExpanded = !_isExpanded;
+                            _isExpanded = true;
                           });
                         },
-                        child: Padding(
-                          padding: const EdgeInsets.only(top: 4.0, bottom: 2.0),
-                          child: Text(
-                            _isExpanded ? readLessTxt : readMoreTxt,
-                            style: textStyle.copyWith(
-                              color: Theme.of(context).colorScheme.outline,
-                              fontWeight: FontWeight.w600,
-                              fontSize: 14,
-                              fontFamily: null,
-                              fontFamilyFallback: AppTypography.fontFallback,
+                child: MessageLinkPreview(
+                  text: postText,
+                  isMe: false,
+                  textWidget: Column(
+                    crossAxisAlignment:
+                        isArabic
+                            ? CrossAxisAlignment.end
+                            : CrossAxisAlignment.start,
+                    children: [
+                      MentionRichText(
+                        text: postText,
+                        mentions: widget.post.mentions,
+                        maxLines: _isExpanded ? null : maxLines,
+                        overflow:
+                            _isExpanded
+                                ? TextOverflow.visible
+                                : TextOverflow.ellipsis,
+                        style: textStyle,
+                        onMentionTap: (userId, name) {
+                          final currentUserId = SupabaseProvider.idOrNull;
+                          if (userId == currentUserId) return;
+                          Navigator.of(context, rootNavigator: true).pushNamed(
+                            AppRoutes.profileViewRoute,
+                            arguments: userId,
+                          );
+                        },
+                      ),
+
+                      if (isOverflowing)
+                        GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              _isExpanded = !_isExpanded;
+                            });
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.only(
+                              top: 4.0,
+                              bottom: 2.0,
+                            ),
+                            child: Text(
+                              _isExpanded ? readLessTxt : readMoreTxt,
+                              style: textStyle.copyWith(
+                                color: Theme.of(context).colorScheme.outline,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14,
+                                fontFamily: null,
+                                fontFamilyFallback: AppTypography.fontFallback,
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                  ],
+                    ],
+                  ),
                 ),
               );
             },

@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:social_media_app/features/posts/model/feed_event.dart';
+import 'package:social_media_app/features/posts/models/feed_event.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/services/media_cleanup_service.dart';
 import '../../../core/services/network_status_service.dart';
@@ -8,13 +8,13 @@ import '../../../core/presence/services/presence_service.dart';
 import '../../../core/services/supabase_database_services.dart';
 import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/utilities/supabase_constants.dart';
-import '../../comments/helper/comment_tree_builder.dart';
-import '../../comments/model/comment_model.dart';
+import '../../comments/helpers/comment_tree_builder.dart';
+import '../../comments/models/comment_model.dart';
 import '../../social_graph/models/content_privacy.dart';
 import '../../social_graph/services/connections_service.dart';
 import '../../../core/mentions/models/mention_ref.dart';
-import '../model/post_model.dart';
-import '../model/post_request_body.dart';
+import '../models/post_model.dart';
+import '../models/post_request_body.dart';
 
 class PostsServices {
   final supabaseServices = SupabaseDatabaseServices.instance;
@@ -540,6 +540,19 @@ class PostsServices {
       return rows.first as Map<String, dynamic>;
     } catch (e) {
       debugPrint('Error toggling share in DB: $e');
+      rethrow;
+    }
+  }
+
+  Future<int> incrementPostLinkShareCount(String postId) async {
+    try {
+      final response = await _supabase.rpc(
+        'increment_post_link_share_count',
+        params: {'p_post_id': postId},
+      );
+      return (response as int?) ?? 0;
+    } catch (e) {
+      debugPrint('Error incrementing link share count: $e');
       rethrow;
     }
   }

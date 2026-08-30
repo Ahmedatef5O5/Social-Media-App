@@ -7,7 +7,7 @@ import 'package:social_media_app/features/single_chats/models/chat_user_model.da
 import '../../../core/router/app_routes.dart';
 import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/widgets/calls/call_icon_button.dart';
-import '../../single_calls/model/call_model.dart';
+import '../../single_calls/models/call_model.dart';
 import '../../single_chats/models/chat_block_status.dart';
 import '../../single_chats/services/chat_block_service.dart';
 

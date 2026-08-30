@@ -7,7 +7,7 @@ import '../../../core/utilities/file_size_formatter.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
 import '../../../core/widgets/vertical_volume_indicator.dart';
 import '../../../core/widgets/video_progress_slider.dart';
-import '../../single_chats/helper/glass_icon_btn.dart';
+import '../../single_chats/helpers/glass_icon_btn.dart';
 import '../../single_chats/widgets/full_screen_media_view.dart';
 
 class CreatePostVideoPreview extends StatefulWidget {

@@ -2,17 +2,17 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 import '../../../core/themes/app_colors.dart';
-import '../cubit/posts_cubit/posts_cubit.dart';
-import '../helper/dismissible_video_overlay.dart';
-import '../helper/draggable_progress_bar.dart';
-import '../helper/fade_dismiss_widget.dart';
-import '../helper/post_video_header_widget.dart';
-import '../helper/right_interactions_post_video_column.dart';
-import '../helper/shared_video_controller_handle.dart';
-import '../helper/top_and_bottom_overlays.dart';
-import '../helper/video_duration_display.dart';
-import '../helper/video_post_author_and_caption.dart';
-import '../model/post_model.dart';
+import '../cubits/posts_cubit/posts_cubit.dart';
+import '../helpers/dismissible_video_overlay.dart';
+import '../helpers/draggable_progress_bar.dart';
+import '../helpers/fade_dismiss_widget.dart';
+import '../helpers/post_video_header_widget.dart';
+import '../helpers/right_interactions_post_video_column.dart';
+import '../helpers/shared_video_controller_handle.dart';
+import '../helpers/top_and_bottom_overlays.dart';
+import '../helpers/video_duration_display.dart';
+import '../helpers/video_post_author_and_caption.dart';
+import '../models/post_model.dart';
 
 class FullScreenVideoPostView extends StatefulWidget {
   final PostModel post;

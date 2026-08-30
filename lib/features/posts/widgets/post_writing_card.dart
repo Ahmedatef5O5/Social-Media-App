@@ -6,7 +6,7 @@ import 'package:social_media_app/core/presence/widgets/presence_avatar_widget.da
 import 'package:social_media_app/core/router/app_routes.dart';
 import 'package:social_media_app/core/widgets/main_user_avatar.dart';
 import 'package:social_media_app/features/home/cubits/home_cubit/home_cubit.dart';
-import '../cubit/posts_cubit/posts_cubit.dart';
+import '../cubits/posts_cubit/posts_cubit.dart';
 
 class PostWritingCard extends StatelessWidget {
   const PostWritingCard({super.key});

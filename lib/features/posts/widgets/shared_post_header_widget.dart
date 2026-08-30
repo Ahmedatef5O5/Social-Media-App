@@ -7,9 +7,9 @@ import '../../../core/router/app_routes.dart';
 import '../../../core/toast/app_toast.dart';
 import '../../../core/widgets/app_avatar.dart';
 import '../../home/cubits/home_cubit/home_cubit.dart';
-import '../cubit/posts_cubit/posts_cubit.dart';
-import '../helper/header_trailing_action.dart';
-import '../model/post_model.dart';
+import '../cubits/posts_cubit/posts_cubit.dart';
+import '../helpers/header_trailing_action.dart';
+import '../models/post_model.dart';
 import 'post_actions_menu.dart';
 
 class SharedPostHeaderWidget extends StatelessWidget {
@@ -174,7 +174,6 @@ class SharedPostHeaderWidget extends StatelessWidget {
         Expanded(
           child: GestureDetector(
             onTap: shouldDisableTap ? null : openSharerProfile,
-            behavior: HitTestBehavior.opaque,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.center,

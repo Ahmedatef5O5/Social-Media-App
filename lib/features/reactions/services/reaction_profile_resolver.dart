@@ -1,5 +1,5 @@
 import '../../single_chats/models/chat_user_model.dart';
-import '../../reactions/model/reaction_entry.dart';
+import '../models/reaction_entry.dart';
 import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/utilities/supabase_constants.dart';
 

@@ -4,8 +4,8 @@ import '../../../core/design/tokens/typography.dart';
 import '../../../core/helpers/formatted_date.dart';
 import '../../../core/presence/widgets/presence_avatar_widget.dart';
 import '../../../core/widgets/app_avatar.dart';
-import '../model/live_reaction.dart';
-import '../model/reaction_entry.dart';
+import '../models/live_reaction.dart';
+import '../models/reaction_entry.dart';
 import '../services/reaction_profile_resolver.dart';
 import 'reactions_bottom_sheet_skeleton.dart';
 

@@ -10,10 +10,10 @@ import '../../../core/router/app_router.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/services/network_status_service.dart';
 import '../../../core/widgets/blurred_media_placeholders.dart';
-import '../cubit/posts_cubit/posts_cubit.dart';
-import '../helper/global_video_pause_gate.dart';
-import '../helper/shared_video_controller_handle.dart';
-import '../model/post_model.dart';
+import '../cubits/posts_cubit/posts_cubit.dart';
+import '../helpers/global_video_pause_gate.dart';
+import '../helpers/shared_video_controller_handle.dart';
+import '../models/post_model.dart';
 import 'full_screen_video_post_view.dart';
 
 enum _VideoLoadStatus { loading, ready, unavailableOffline, processing, error }

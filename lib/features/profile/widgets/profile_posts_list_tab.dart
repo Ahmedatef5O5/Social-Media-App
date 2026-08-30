@@ -2,7 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
-import '../../posts/cubit/posts_cubit/posts_cubit.dart';
+import '../../posts/cubits/posts_cubit/posts_cubit.dart';
 import '../../posts/widgets/post_item_widget.dart';
 
 class ProfilePostsListTab extends StatefulWidget {

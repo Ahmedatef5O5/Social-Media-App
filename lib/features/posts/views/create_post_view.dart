@@ -15,7 +15,7 @@ import '../../../core/toast/app_toast.dart';
 import '../../../core/utilities/file_size_formatter.dart';
 import '../../ai_assistant/entities/ai_request_context.dart';
 import '../../social_graph/models/content_privacy.dart';
-import '../cubit/posts_cubit/posts_cubit.dart';
+import '../cubits/posts_cubit/posts_cubit.dart';
 import '../widgets/add_post_options_bottom_sheet.dart';
 import '../widgets/create_post_file_preview.dart';
 import '../widgets/create_post_header_section.dart';

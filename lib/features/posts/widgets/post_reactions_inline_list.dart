@@ -10,11 +10,11 @@ import '../../../core/widgets/app_avatar.dart';
 import '../../../core/chat_shared/helpers/avatar_stack.dart';
 import '../../home/cubits/home_cubit/home_cubit.dart';
 import '../../profile/widgets/user_preview_dialog.dart';
-import '../../reactions/model/reaction_entry.dart';
+import '../../reactions/models/reaction_entry.dart';
 import '../../single_chats/models/chat_user_model.dart';
-import '../cubit/posts_cubit/posts_cubit.dart';
-import '../model/post_model.dart';
-import '../model/post_reaction_model.dart';
+import '../cubits/posts_cubit/posts_cubit.dart';
+import '../models/post_model.dart';
+import '../models/post_reaction_model.dart';
 
 class PostReactionsInlineList extends StatefulWidget {
   final String postId;

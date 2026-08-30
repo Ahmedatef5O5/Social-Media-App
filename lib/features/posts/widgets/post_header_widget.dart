@@ -8,9 +8,11 @@ import '../../../core/toast/app_toast.dart';
 import '../../profile/widgets/user_preview_dialog.dart';
 import '../../home/cubits/home_cubit/home_cubit.dart';
 import '../../social_graph/models/content_privacy.dart';
-import '../cubit/posts_cubit/posts_cubit.dart';
-import '../helper/header_trailing_action.dart';
-import '../model/post_model.dart';
+import '../cubits/posts_cubit/posts_cubit.dart';
+import '../helpers/header_trailing_action.dart';
+import '../models/post_details_route_args.dart';
+import '../models/post_model.dart';
+import '../views/post_details_view.dart';
 import 'author_image_widget.dart';
 
 class PostHeaderWidget extends StatelessWidget {
@@ -57,9 +59,20 @@ class PostHeaderWidget extends StatelessWidget {
     final currentArgs = currentRoute?.settings.arguments;
 
     bool isPostByMe = post.authorId == currentUserId;
+
     bool isAlreadyOnSameProfile =
         currentRoute?.settings.name == AppRoutes.profileViewRoute &&
         (currentArgs == post.authorId || (currentArgs == null && isPostByMe));
+
+    bool isAlreadyOnSamePost = false;
+    if (currentRoute?.settings.name == AppRoutes.postDetailsViewRoute) {
+      if (currentArgs is PostModel && currentArgs.id == post.id) {
+        isAlreadyOnSamePost = true;
+      } else if (currentArgs is PostDetailsRouteArgs &&
+          currentArgs.post.id == post.id) {
+        isAlreadyOnSamePost = true;
+      }
+    }
 
     bool shouldDisableTap = isAlreadyOnSameProfile;
 
@@ -130,26 +143,46 @@ class PostHeaderWidget extends StatelessWidget {
                   }
                 },
       ),
+
       onTap:
-          shouldDisableTap
+          isAlreadyOnSamePost
               ? null
               : () {
-                if (isPostByMe) {
-                  if (navController != null) {
-                    navController.jumpToTab(3);
-                  }
-                } else {
-                  Navigator.of(context, rootNavigator: true).pushNamed(
-                    AppRoutes.profileViewRoute,
-                    arguments: post.authorId,
-                  );
+                if (postsCubit.isPostGhost(post.id)) {
+                  AppToast.info('This post is no longer available.');
+                  return;
                 }
+                Navigator.of(context, rootNavigator: true).pushNamed(
+                  AppRoutes.postDetailsViewRoute,
+                  arguments: PostDetailsRouteArgs(
+                    post: post,
+                    initialActiveMode: PostDetailsActiveMode.comments,
+                  ),
+                );
               },
-      title: Text(
-        post.authorName ?? 'Unknown',
-        style: Theme.of(context).textTheme.titleSmall!.copyWith(
-          fontWeight: FontWeight.w500,
-          fontSize: 16,
+
+      title: GestureDetector(
+        onTap:
+            shouldDisableTap
+                ? null
+                : () {
+                  if (isPostByMe) {
+                    if (navController != null) {
+                      navController.jumpToTab(3);
+                    }
+                  } else {
+                    Navigator.of(context, rootNavigator: true).pushNamed(
+                      AppRoutes.profileViewRoute,
+                      arguments: post.authorId,
+                    );
+                  }
+                },
+        child: Text(
+          post.authorName ?? 'Unknown',
+          style: Theme.of(context).textTheme.titleSmall!.copyWith(
+            fontWeight: FontWeight.w500,
+            fontSize: 16,
+          ),
         ),
       ),
       subtitle: Row(

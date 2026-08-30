@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/themes/app_colors.dart';
 import '../../auth/data/models/user_data.dart';
+import '../../social_graph/models/friendship_status.dart';
 import '../cubits/profile_cubit/profile_cubit.dart';
 import 'friends_count_badge.dart';
 
@@ -51,20 +52,22 @@ class ProfileHeaderUserInfoSection extends StatelessWidget {
                 ],
               ),
             ),
-            SizedBox(
-              width: 174,
-              child: FriendsCountBadge(
-                isMe: isMe,
-                friendsCount: state.friendsCount,
-                mutualFriendsCount: state.mutualFriendsCount,
-                onTap: () {
-                  Navigator.of(context, rootNavigator: true).pushNamed(
-                    AppRoutes.friendsListViewRoute,
-                    arguments: user.id,
-                  );
-                },
+            if (state.friendsCount > 0 &&
+                (isMe || state.friendshipStatus == FriendshipStatus.accepted))
+              SizedBox(
+                width: 174,
+                child: FriendsCountBadge(
+                  isMe: isMe,
+                  friendsCount: state.friendsCount,
+                  mutualFriendsCount: state.mutualFriendsCount,
+                  onTap: () {
+                    Navigator.of(context, rootNavigator: true).pushNamed(
+                      AppRoutes.friendsListViewRoute,
+                      arguments: user.id,
+                    );
+                  },
+                ),
               ),
-            ),
           ],
         ),
       ),

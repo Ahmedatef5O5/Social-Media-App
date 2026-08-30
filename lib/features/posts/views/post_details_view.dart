@@ -1,26 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
-import 'package:social_media_app/features/comments/cubit/comments_cubit.dart';
-import 'package:social_media_app/features/comments/model/comment_model.dart';
+import 'package:social_media_app/features/comments/cubits/comments_cubit.dart';
+import 'package:social_media_app/features/comments/models/comment_model.dart';
 import 'package:social_media_app/features/comments/services/comments_service.dart';
-import 'package:social_media_app/features/comments/widget/send_comment_section.dart';
+import 'package:social_media_app/features/comments/widgets/send_comment_section.dart';
 import '../../../core/cache/repository/media_cache_repository.dart';
 import '../../../core/supabase/supabase_provider.dart';
-import '../../comments/helper/editing_comment_banner.dart';
-import '../../comments/helper/replying_to_banner.dart';
-import '../../comments/model/comment_sort_option.dart';
+import '../../comments/helpers/editing_comment_banner.dart';
+import '../../comments/helpers/replying_to_banner.dart';
+import '../../comments/models/comment_sort_option.dart';
 import '../../home/cubits/home_cubit/home_cubit.dart';
 import '../../reels/widgets/shared_reel_preview_card.dart';
-import '../cubit/posts_cubit/posts_cubit.dart';
-import '../helper/header_trailing_action.dart';
-import '../model/post_model.dart';
+import '../cubits/posts_cubit/posts_cubit.dart';
+import '../helpers/header_trailing_action.dart';
+import '../models/post_model.dart';
 import '../widgets/post_header_widget.dart';
 import '../widgets/post_reactions_inline_list.dart';
 import '../widgets/post_txt_content_widget.dart';
 import '../widgets/post_media_widget.dart';
 import '../widgets/post_interactions_row.dart';
-import '../../comments/widget/comments_inline_section.dart';
+import '../../comments/widgets/comments_inline_section.dart';
 import '../widgets/shared_post_header_widget.dart';
 
 enum PostDetailsActiveMode { none, comments, reactions }

@@ -11,7 +11,7 @@ import '../../../core/widgets/app_avatar.dart';
 import '../../home/cubits/home_cubit/home_cubit.dart';
 import '../../profile/widgets/user_preview_dialog.dart';
 import '../../single_chats/models/chat_user_model.dart';
-import '../model/reaction_entry.dart';
+import '../models/reaction_entry.dart';
 import 'reactions_bottom_sheet_skeleton.dart';
 
 class ReactionsBottomSheet extends StatefulWidget {

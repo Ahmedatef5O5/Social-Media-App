@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../model/post_reaction_model.dart';
+import '../models/post_reaction_model.dart';
 import '../../../core/design/tokens/typography.dart';
 
 class PostReactionsSummary extends StatelessWidget {

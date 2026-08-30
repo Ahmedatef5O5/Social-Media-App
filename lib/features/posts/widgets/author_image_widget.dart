@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../core/presence/widgets/presence_avatar_widget.dart';
-import '../model/post_model.dart';
+import '../models/post_model.dart';
 import '../../../core/widgets/app_avatar.dart';
 
 class AuthorImageWidget extends StatelessWidget {

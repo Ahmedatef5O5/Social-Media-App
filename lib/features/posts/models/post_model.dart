@@ -1,9 +1,9 @@
 import 'package:social_media_app/core/utilities/supabase_constants.dart';
 import 'package:social_media_app/features/single_chats/models/chat_user_model.dart';
-import 'package:social_media_app/features/posts/model/post_reaction_model.dart';
+import 'package:social_media_app/features/posts/models/post_reaction_model.dart';
 import '../../../core/mentions/models/mention_ref.dart';
-import '../../comments/model/comment_model.dart';
-import '../../reels/model/reel_model.dart';
+import '../../comments/models/comment_model.dart';
+import '../../reels/models/reel_model.dart';
 import '../../social_graph/models/content_privacy.dart';
 
 class PostModel {
@@ -51,6 +51,7 @@ class PostModel {
   final PostModel? originalPost;
   final int sharesCount;
   final bool isSharedByMe;
+  final int linkShareCount;
 
   // ── Shared Reel feature ──────────────────────────────────────────────
   final String? sharedReelId;
@@ -89,6 +90,7 @@ class PostModel {
     this.originalPost,
     this.sharesCount = 0,
     this.isSharedByMe = false,
+    this.linkShareCount = 0,
     this.mediaWidth,
     this.mediaHeight,
     this.sharedReelId,
@@ -194,6 +196,7 @@ class PostModel {
       originalPost:
           originalPostData != null ? PostModel.fromMap(originalPostData) : null,
       sharesCount: map['shares_count'] as int? ?? 0,
+      linkShareCount: map['link_share_count'] as int? ?? 0,
       isSharedByMe: map['is_post_shared'] as bool? ?? false,
       sharedReelId: map[PostColumns.sharedReelId] as String?,
       sharedReel:
@@ -226,6 +229,7 @@ class PostModel {
     String? sharedPostId,
     PostModel? originalPost,
     int? sharesCount,
+    int? linkShareCount,
     bool? isSharedByMe,
     int? mediaWidth,
     int? mediaHeight,
@@ -257,6 +261,7 @@ class PostModel {
       sharedPostId: sharedPostId ?? this.sharedPostId,
       originalPost: originalPost ?? this.originalPost,
       sharesCount: sharesCount ?? this.sharesCount,
+      linkShareCount: linkShareCount ?? this.linkShareCount,
       isSharedByMe: isSharedByMe ?? this.isSharedByMe,
       sharedReelId: sharedReelId ?? this.sharedReelId,
       sharedReel: sharedReel ?? this.sharedReel,
@@ -286,6 +291,7 @@ class PostModel {
     'shared_post_id': sharedPostId,
     'original_post': originalPost?.toCacheJson(),
     'shares_count': sharesCount,
+    'link_share_count': linkShareCount,
     'is_post_shared': isSharedByMe,
     'shared_reel_id': sharedReelId,
     'shared_reel': sharedReel?.toJson(),
@@ -340,6 +346,7 @@ class PostModel {
               )
               : null,
       sharesCount: map['shares_count'] as int? ?? 0,
+      linkShareCount: map['link_share_count'] as int? ?? 0,
       isSharedByMe: map['is_post_shared'] as bool? ?? false,
       sharedReelId: map['shared_reel_id'] as String?,
       sharedReel:

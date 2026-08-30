@@ -6,7 +6,7 @@ import 'package:social_media_app/features/profile/widgets/profile_posts_list_tab
 import 'package:social_media_app/features/profile/widgets/proflie_states_widget.dart';
 import 'package:social_media_app/features/profile/widgets/sliver_tab_bar_delegate.dart';
 import '../../../core/themes/app_colors.dart';
-import '../../posts/cubit/posts_cubit/posts_cubit.dart';
+import '../../posts/cubits/posts_cubit/posts_cubit.dart';
 import '../cubits/profile_cubit/profile_cubit.dart';
 
 class ProfileBodyContent extends StatelessWidget {

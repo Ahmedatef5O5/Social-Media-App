@@ -4,7 +4,7 @@ import 'package:gap/gap.dart';
 import 'package:social_media_app/core/router/app_routes.dart';
 import 'package:social_media_app/features/posts/widgets/build_option_item.dart';
 import '../../../core/toast/app_toast.dart';
-import '../cubit/posts_cubit/posts_cubit.dart';
+import '../cubits/posts_cubit/posts_cubit.dart';
 
 class AddPostOptionsBottomSheet extends StatelessWidget {
   final DraggableScrollableController controller;

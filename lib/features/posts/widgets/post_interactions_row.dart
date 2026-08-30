@@ -1,20 +1,23 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
-import 'package:social_media_app/features/comments/cubit/comments_cubit.dart';
+import 'package:social_media_app/features/comments/cubits/comments_cubit.dart';
 import 'package:social_media_app/features/comments/services/comments_service.dart';
 import 'package:social_media_app/features/posts/widgets/post_reactions_bottom_sheet.dart';
 import '../../../core/cache/repository/media_cache_repository.dart';
 import '../../../core/constants/app_images.dart';
+import '../../../core/deep_link/services/deep_link_service.dart';
 import '../../../core/design/tokens/typography.dart';
 import '../../../core/helpers/comment_helper.dart';
+import '../../../core/share_intent/widgets/share_content_bottom_sheet.dart';
 import '../../../core/themes/app_colors.dart';
 import '../../../core/toast/app_toast.dart';
 import '../../home/cubits/home_cubit/home_cubit.dart';
-import '../cubit/posts_cubit/posts_cubit.dart';
-import '../model/post_model.dart';
-import '../../comments/widget/comments_sheet_section.dart';
+import '../cubits/posts_cubit/posts_cubit.dart';
+import '../models/post_model.dart';
+import '../../comments/widgets/comments_sheet_section.dart';
 import 'post_reaction_overlay.dart';
 import 'post_reactions_summary.dart';
 
@@ -96,16 +99,16 @@ class _InteractionsContent extends StatelessWidget {
       children: [
         const Gap(12),
         Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            const Gap(18),
+            const Gap(16),
+
             _LikeButtonWidget(
               post: post,
               currUserId: currUserId,
               onReactionsTap: onReactionsTap,
             ),
 
-            const Gap(20),
+            const Gap(22), // مسافة ثابتة ومتقاربة
 
             _CommentButtonWidget(
               post: post,
@@ -113,15 +116,19 @@ class _InteractionsContent extends StatelessWidget {
               onTap: onCommentsTap,
             ),
 
-            const Gap(20),
+            const Gap(22), // مسافة ثابتة ومتقاربة
 
-            _ShareButtonWidget(post: post),
+            _ReshareButtonWidget(post: post),
 
-            const Spacer(),
+            const Gap(22), // مسافة ثابتة ومتقاربة
+
+            _ShareLinkButtonWidget(post: post),
+
+            const Spacer(), // Spacer وحيد لملء الفراغ ودفع زر الحفظ لليمين
 
             _SaveButtonWidget(post: post),
 
-            const Gap(12),
+            const Gap(16),
           ],
         ),
         const Gap(8),
@@ -374,16 +381,16 @@ class _CommentButtonWidget extends StatelessWidget {
   }
 }
 
-class _ShareButtonWidget extends StatefulWidget {
-  const _ShareButtonWidget({required this.post});
+class _ReshareButtonWidget extends StatefulWidget {
+  const _ReshareButtonWidget({required this.post});
 
   final PostModel post;
 
   @override
-  State<_ShareButtonWidget> createState() => _ShareButtonWidgetState();
+  State<_ReshareButtonWidget> createState() => _ReshareButtonWidgetState();
 }
 
-class _ShareButtonWidgetState extends State<_ShareButtonWidget>
+class _ReshareButtonWidgetState extends State<_ReshareButtonWidget>
     with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _scaleAnimation;
@@ -431,7 +438,7 @@ class _ShareButtonWidgetState extends State<_ShareButtonWidget>
 
     if (success) {
       AppToast.save(
-        wasShared ? 'Share removed' : 'Shared successfully',
+        wasShared ? 'Reshare removed' : 'Reshared successfully',
         icon: Icons.repeat_rounded,
         iconColor: wasShared ? AppColors.grey5 : primaryColor,
       );
@@ -462,7 +469,7 @@ class _ShareButtonWidgetState extends State<_ShareButtonWidget>
                   (child, animation) =>
                       ScaleTransition(scale: animation, child: child),
               child: Icon(
-                Icons.repeat_rounded,
+                CupertinoIcons.arrow_2_squarepath,
                 key: ValueKey(isShared),
                 color:
                     isShared ? Theme.of(context).primaryColor : AppColors.grey6,
@@ -478,6 +485,49 @@ class _ShareButtonWidgetState extends State<_ShareButtonWidget>
                 color: isShared ? Theme.of(context).primaryColor : null,
                 fontWeight: isShared ? FontWeight.w600 : FontWeight.normal,
               ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _ShareLinkButtonWidget extends StatelessWidget {
+  const _ShareLinkButtonWidget({required this.post});
+
+  final PostModel post;
+
+  @override
+  Widget build(BuildContext context) {
+    final state = context.watch<PostsCubit>().state;
+    final currentPost =
+        (state is PostsLoaded) ? state.posts.findById(post.id) ?? post : post;
+
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () {
+        HapticFeedback.lightImpact();
+        final url = DeepLinkService.urlForPost(currentPost.id);
+        ShareContentBottomSheet.show(
+          context,
+          url: url,
+          shareText: 'Check out this post on Social Media App: $url',
+          onShared:
+              () => context.read<PostsCubit>().incrementLinkShareCount(
+                currentPost.id,
+              ),
+        );
+      },
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(CupertinoIcons.paperplane, color: AppColors.grey6, size: 22),
+          if (currentPost.linkShareCount > 0) ...[
+            const Gap(4),
+            Text(
+              '${currentPost.linkShareCount}',
+              style: Theme.of(context).textTheme.bodyLarge,
             ),
           ],
         ],

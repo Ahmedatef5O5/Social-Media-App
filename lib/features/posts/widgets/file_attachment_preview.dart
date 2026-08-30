@@ -227,17 +227,16 @@ class _FileAttachmentPreviewState extends State<FileAttachmentPreview>
       final percent = (progress.clamp(0.0, 1.0) * 100).round();
       return '$percent%';
     }
-    final currentBytes = (progress * totalBytes).round();
 
-    if (totalBytes < 1024 * 1024) {
-      final curKB = (currentBytes / 1024).toStringAsFixed(1);
-      final totKB = (totalBytes / 1024).toStringAsFixed(1);
-      return '$curKB / $totKB KB';
-    } else {
-      final curMB = (currentBytes / (1024 * 1024)).toStringAsFixed(1);
-      final totMB = (totalBytes / (1024 * 1024)).toStringAsFixed(1);
-      return '$curMB / $totMB MB';
+    final currentBytes = progress * totalBytes;
+
+    String formatBytes(double bytes) {
+      if (bytes < 1024) return '${bytes.toStringAsFixed(0)} B';
+      if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
+      return '${(bytes / (1024 * 1024)).toStringAsFixed(2)} MB';
     }
+
+    return '${formatBytes(currentBytes)} / ${formatBytes(totalBytes.toDouble())}';
   }
 
   @override
@@ -363,15 +362,19 @@ class _FileAttachmentPreviewState extends State<FileAttachmentPreview>
       ),
     );
   }
+  // lib/features/posts/widgets/file_attachment_preview.dart
 
   Widget _buildModernAction(Color fileColor, bool isDownloaded) {
     if (widget.isAuthor) {
       return const SizedBox.shrink(); // Author doesn't need icon
     }
 
+    Widget actionWidget;
+
     if (_isDownloading) {
       final clamped = _downloadProgress.clamp(0.0, 1.0);
-      return Column(
+      actionWidget = Column(
+        key: const ValueKey('downloading'),
         mainAxisSize: MainAxisSize.min,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -420,37 +423,46 @@ class _FileAttachmentPreviewState extends State<FileAttachmentPreview>
           ),
         ],
       );
-    }
-
-    if (isDownloaded || _showCheckmark) {
-      return AnimatedOpacity(
-        opacity: 1.0,
-        duration: const Duration(milliseconds: 300),
-        child: Container(
-          width: 32,
-          height: 32,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: Colors.green.withValues(alpha: 0.15),
-          ),
-          child: const Center(
-            child: Icon(Icons.check_rounded, size: 18, color: Colors.green),
+    } else if (isDownloaded || _showCheckmark) {
+      actionWidget = Container(
+        key: const ValueKey('downloaded'),
+        width: 32,
+        height: 32,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: Colors.green.withValues(alpha: 0.15),
+        ),
+        child: const Center(
+          child: Icon(Icons.check_rounded, size: 18, color: Colors.green),
+        ),
+      );
+    } else {
+      actionWidget = Container(
+        key: const ValueKey('idle'),
+        width: 36,
+        height: 36,
+        decoration: BoxDecoration(shape: BoxShape.circle, color: fileColor),
+        child: const Center(
+          child: Icon(
+            Icons.arrow_downward_rounded,
+            size: 18,
+            color: Colors.white,
           ),
         ),
       );
     }
 
-    return Container(
-      width: 36,
-      height: 36,
-      decoration: BoxDecoration(shape: BoxShape.circle, color: fileColor),
-      child: const Center(
-        child: Icon(
-          Icons.arrow_downward_rounded,
-          size: 18,
-          color: Colors.white,
-        ),
-      ),
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 500),
+      switchInCurve: Curves.easeOutBack,
+      switchOutCurve: Curves.easeIn,
+      transitionBuilder: (child, animation) {
+        return ScaleTransition(
+          scale: animation,
+          child: FadeTransition(opacity: animation, child: child),
+        );
+      },
+      child: actionWidget,
     );
   }
 }

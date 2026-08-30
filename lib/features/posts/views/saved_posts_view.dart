@@ -5,10 +5,10 @@ import '../../../core/constants/app_images.dart';
 import '../../../core/toast/app_toast.dart';
 import '../../../core/widgets/custom_tab_wrapper.dart';
 import '../../../core/widgets/empty_findings_animation_widget.dart';
-import '../cubit/posts_cubit/posts_cubit.dart';
-import '../cubit/saved_posts_cubit/saved_posts_cubit.dart';
-import '../helper/saved_posts_skeleton_items.dart';
-import '../model/post_model.dart';
+import '../cubits/posts_cubit/posts_cubit.dart';
+import '../cubits/saved_posts_cubit/saved_posts_cubit.dart';
+import '../helpers/saved_posts_skeleton_items.dart';
+import '../models/post_model.dart';
 import '../widgets/post_item_widget.dart';
 
 class SavedPostsView extends StatefulWidget {

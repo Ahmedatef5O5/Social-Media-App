@@ -18,6 +18,8 @@ class FriendsCountBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (friendsCount == 0) return const SizedBox.shrink();
+
     final showMutual = !isMe && mutualFriendsCount > 0;
 
     return InkWell(

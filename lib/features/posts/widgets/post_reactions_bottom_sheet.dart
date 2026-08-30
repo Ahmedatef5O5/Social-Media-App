@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/utilities/supabase_constants.dart';
-import '../../reactions/model/reaction_entry.dart';
+import '../../reactions/models/reaction_entry.dart';
 import '../../reactions/widgets/reactions_bottom_sheet.dart';
-import '../model/post_reaction_model.dart';
+import '../models/post_reaction_model.dart';
 
 class PostReactionsBottomSheet extends StatelessWidget {
   final String postId;
