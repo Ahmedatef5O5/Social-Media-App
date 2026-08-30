@@ -28,7 +28,7 @@ class ForYouTabView extends StatefulWidget {
 
 class _ForYouTabViewState extends State<ForYouTabView>
     with AutomaticKeepAliveClientMixin {
-  DateTime? _cachedPostsTimestamp;
+  List<String>? _cachedPostIds;
   List<PostModel>? _rankedPosts;
   List<InjectionPlanEntry>? _injectionPlan;
 
@@ -94,7 +94,8 @@ class _ForYouTabViewState extends State<ForYouTabView>
         final entry = plan[planCursor];
         final remaining = reelsPool.length - reelOffset;
         if (remaining >= 2) {
-          final take = entry.reelsCount.clamp(1, remaining);
+          final requested = entry.reelsCount.clamp(1, remaining);
+          final take = requested.isEven ? requested : requested - 1;
           items.add(ForYouFeedItem.reelsGrid(reelsPool, reelOffset, take));
           reelOffset += take;
         }
@@ -255,10 +256,14 @@ class _ForYouTabViewState extends State<ForYouTabView>
 
     final postsCubit = context.read<PostsCubit>();
 
-    if (_cachedPostsTimestamp != postsState.timeStamp) {
-      _cachedPostsTimestamp = postsState.timeStamp;
+    final postIds = posts.map((p) => p.id).toList();
+    if (!listEquals(_cachedPostIds, postIds)) {
+      _cachedPostIds = postIds;
       _rankedPosts = _rankPosts(posts);
       _injectionPlan = buildInjectionPlan(_rankedPosts!.length);
+    } else if (_rankedPosts != null) {
+      final byId = {for (final p in posts) p.id: p};
+      _rankedPosts = _rankedPosts!.map((p) => byId[p.id] ?? p).toList();
     }
 
     final reelsPool =
@@ -316,6 +321,7 @@ class _ForYouTabViewState extends State<ForYouTabView>
         );
       case ForYouItemType.reelsGrid:
         return Padding(
+          key: ValueKey('reels_grid_${item.reelsStartIndex}'),
           padding: const EdgeInsets.symmetric(
             horizontal: SearchViewMetrics.horizontalPadding,
           ),

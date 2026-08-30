@@ -16,7 +16,7 @@ List<InjectionPlanEntry> buildInjectionPlan(int postsCount) {
   while (cursor < postsCount) {
     cursor += 3 + random.nextInt(2);
     if (cursor >= postsCount) break;
-    final size = 4 + random.nextInt(2);
+    final size = 4 + random.nextInt(2) * 2;
     plan.add(InjectionPlanEntry(afterPostIndex: cursor, reelsCount: size));
   }
   return plan;
