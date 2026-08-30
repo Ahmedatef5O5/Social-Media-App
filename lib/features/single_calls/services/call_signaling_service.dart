@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 import '../../../core/supabase/supabase_provider.dart';
-import '../model/call_model.dart';
+import '../models/call_model.dart';
 
 class CallSignalingService {
   final _supabase = SupabaseProvider.client;

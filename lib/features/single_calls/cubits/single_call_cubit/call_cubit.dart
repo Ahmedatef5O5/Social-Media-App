@@ -6,9 +6,9 @@ import '../../../../core/services/fcm_services.dart';
 import '../../../../core/supabase/supabase_provider.dart';
 import '../../../group_calls/models/group_call_model.dart';
 import '../../../notifications/repository/notifications_repository.dart';
-import '../../model/call_model.dart';
+import '../../models/call_model.dart';
 import '../../services/call_signaling_service.dart';
-import 'call_state.dart';
+part 'call_state.dart';
 
 class CallCubit extends Cubit<CallState> {
   final CallSignalingService signalingService;
@@ -74,7 +74,7 @@ class CallCubit extends Cubit<CallState> {
 
     _statusSubscription?.cancel();
     _statusSubscription = signalingService.callStatusStream(call.callId).listen(
-      (data) {
+      (data) async {
         if (isClosed) return;
         if (data.isEmpty) return;
         final updatedCall = CallModel.fromMap(data.first);
@@ -91,7 +91,9 @@ class CallCubit extends Cubit<CallState> {
               callType: call.type == CallType.video ? 'video' : 'audio',
             ),
           );
-          emit(CallConnectedState(updatedCall));
+          final currentUserName = await _fetchCurrentUserName();
+          if (isClosed) return;
+          emit(CallConnectedState(updatedCall, currentUserName));
         } else if (updatedCall.status == CallStatus.rejected) {
           _statusSubscription?.cancel();
           unawaited(
@@ -119,7 +121,8 @@ class CallCubit extends Cubit<CallState> {
     _callAcceptedAt = DateTime.now();
     _activeCall = call;
     await signalingService.updateCallStatus(call.callId, CallStatus.accepted);
-    if (!isClosed) emit(CallConnectedState(call));
+    final currentUserName = await _fetchCurrentUserName();
+    if (!isClosed) emit(CallConnectedState(call, currentUserName));
   }
 
   Future<void> rejectCall(CallModel call) async {
@@ -134,6 +137,22 @@ class CallCubit extends Cubit<CallState> {
     if (!isClosed) {
       emit(CallEndedState());
       emit(CallInitial());
+    }
+  }
+
+  Future<String> _fetchCurrentUserName() async {
+    final currentUser = SupabaseProvider.user;
+    if (currentUser == null) return 'Unknown';
+    try {
+      final userData =
+          await SupabaseProvider.client
+              .from('users')
+              .select('name')
+              .eq('id', currentUser.id)
+              .maybeSingle();
+      return (userData?['name'] as String?) ?? 'Unknown';
+    } catch (_) {
+      return 'Unknown';
     }
   }
 

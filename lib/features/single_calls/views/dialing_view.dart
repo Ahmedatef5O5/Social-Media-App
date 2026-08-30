@@ -5,7 +5,7 @@ import '../../../core/widgets/calls/call_avatar_backdrop.dart';
 import '../../../core/widgets/calls/call_layout_metrics.dart';
 import '../../../core/widgets/calls/calls.dart';
 import '../cubits/single_call_cubit/call_cubit.dart';
-import '../model/call_model.dart';
+import '../models/call_model.dart';
 
 class DialingView extends StatefulWidget {
   final CallModel call;

@@ -8,8 +8,8 @@ import 'package:social_media_app/features/single_chats/services/chat_services.da
 import '../../../../core/helpers/chat_helper.dart';
 import '../../../../core/presence/model/chat_action_type.dart';
 import '../../../../core/supabase/supabase_provider.dart';
-import '../../../auth/handler/auth_exception_handler.dart';
-import '../../helper/chat_clear_store.dart';
+import '../../../auth/handlers/auth_exception_handler.dart';
+import '../../helpers/chat_clear_store.dart';
 part 'chats_state.dart';
 
 const int kMaxCachedChatsSnapshot = 50;

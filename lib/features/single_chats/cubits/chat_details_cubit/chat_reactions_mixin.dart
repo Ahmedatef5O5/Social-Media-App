@@ -10,6 +10,7 @@ mixin ChatReactionsMixin on Cubit<ChatDetailsState> {
   void clearSelection();
   StreamSubscription? _reactionsSubscription;
   Map<String, Map<String, String>> _reactionsCache = {};
+  // ignore: prefer_final_fields
   Map<String, Map<String, String>> _reactionsCreatedAtCache = {};
 
   void _listenReactions(String conversationId) {
@@ -34,14 +35,13 @@ mixin ChatReactionsMixin on Cubit<ChatDetailsState> {
             }
           }
 
-          cachedMessages =
-              cachedMessages.map((m) {
-                final reactions = _reactionsCache[m.id] ?? {};
-                return m.copyWith(
-                  reactions: reactions,
-                  reactionsCreatedAt: _reactionsCreatedAtCache[m.id],
-                );
-              }).toList();
+          cachedMessages = ChatDetailsCubit._reconciler.applyFieldUpdate(
+            cachedMessages,
+            (m) => m.copyWith(
+              reactions: _reactionsCache[m.id] ?? {},
+              reactionsCreatedAt: _reactionsCreatedAtCache[m.id],
+            ),
+          );
 
           if (!isClosed) emit(MessagesSuccessLoaded(messages: cachedMessages));
 
@@ -111,14 +111,13 @@ mixin ChatReactionsMixin on Cubit<ChatDetailsState> {
   }
 
   void _applyReactionsCacheToMessages() {
-    cachedMessages =
-        cachedMessages.map((m) {
-          final reactions = _reactionsCache[m.id] ?? {};
-          return m.copyWith(
-            reactions: reactions,
-            reactionsCreatedAt: _reactionsCreatedAtCache[m.id],
-          );
-        }).toList();
+    cachedMessages = ChatDetailsCubit._reconciler.applyFieldUpdate(
+      cachedMessages,
+      (m) => m.copyWith(
+        reactions: _reactionsCache[m.id] ?? {},
+        reactionsCreatedAt: _reactionsCreatedAtCache[m.id],
+      ),
+    );
     if (!isClosed) emit(MessagesSuccessLoaded(messages: cachedMessages));
   }
 

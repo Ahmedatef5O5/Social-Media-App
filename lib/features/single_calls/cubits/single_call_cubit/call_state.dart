@@ -1,4 +1,4 @@
-import '../../model/call_model.dart';
+part of 'call_cubit.dart';
 
 abstract class CallState {}
 
@@ -16,7 +16,9 @@ class CallIncomingState extends CallState {
 
 class CallConnectedState extends CallState {
   final CallModel call;
-  CallConnectedState(this.call);
+  final String currentUserName;
+
+  CallConnectedState(this.call, this.currentUserName);
 }
 
 class CallEndedState extends CallState {}

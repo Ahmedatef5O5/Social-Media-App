@@ -5,11 +5,13 @@ import 'package:dio/dio.dart' as dio_pkg;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
+import 'package:uuid/uuid.dart';
 import '../../../../core/audio/voice_recorder/services/audio_compression_service.dart';
 import '../../../../core/cache/repository/media_cache_repository.dart';
 import '../../../../core/cache/services/messages_snapshot_cache.dart';
 import '../../../../core/chat_shared/controllers/chat_search_controller.dart';
 import '../../../../core/chat_shared/helpers/chat_mute_status_cache.dart';
+import '../../../../core/messaging/message_reconciler.dart';
 import '../../../../core/chat_shared/services/chat_mute_service.dart';
 import '../../../../core/connectivity/services/connectivity_banner_controller.dart';
 import '../../../../core/errors/supabase_error_mapper.dart';
@@ -23,7 +25,7 @@ import '../../../../core/toast/app_toast.dart';
 import '../../../../core/utilities/supabase_constants.dart';
 import '../../../notifications/repository/notifications_repository.dart';
 import '../../../settings/repository/settings_repository.dart';
-import '../../helper/chat_clear_store.dart';
+import '../../helpers/chat_clear_store.dart';
 import '../../models/chat_block_status.dart';
 import '../../models/message_model.dart';
 import '../../services/chat_permission_service.dart';
@@ -56,6 +58,32 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
     fromJson: MessageModel.fromJson,
   );
 
+  // Single mutation boundary for `cachedMessages`. Every event source
+  // (optimistic send, API ack, Realtime/disk snapshot, reactions) goes
+  // through this instead of assigning `cachedMessages` directly. See
+  // `message_reconciler.dart` for why.
+  //
+  // Merge precedence: the incoming representation (Realtime row / API ack)
+  // is treated as the source of truth for content, EXCEPT `reactions` /
+  // `reactionsCreatedAt`, which come from a separate stream
+  // (`_listenReactions`) and must not be clobbered by a snapshot or ack
+  // event that simply doesn't carry them (that stream table is not part of
+  // `messages`/`group_messages`).
+  static final _reconciler = MessageReconciler<MessageModel>(
+    idOf: (m) => m.id,
+    clientMessageIdOf: (m) => m.clientMessageId,
+    createdAtOf: (m) => m.createdAt,
+    merge:
+        (existing, incoming) => incoming.copyWith(
+          reactions:
+              incoming.reactions.isNotEmpty
+                  ? incoming.reactions
+                  : existing.reactions,
+          reactionsCreatedAt:
+              incoming.reactionsCreatedAt ?? existing.reactionsCreatedAt,
+        ),
+  );
+
   final ValueNotifier<ChatPermissionResult> chatPermission = ValueNotifier(
     const ChatPermissionResult(permission: ChatPermission.allowed),
   );
@@ -74,7 +102,14 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
 
   StreamSubscription? _messageSubscription;
   bool _hasReceivedFirstStreamEvent = false;
-  Set<String> _unconfirmedDiskMessageIds = {};
+  // Correlation keys (see `correlationKeyFor`) that should survive one more
+  // snapshot cycle even if the incoming snapshot doesn't contain them yet:
+  // messages just loaded from disk (not yet confronted with a live
+  // snapshot) and messages currently SENDING (optimistic, not yet
+  // acknowledged by the API). This replaces the old
+  // `id.startsWith('temp_')` check, which stops working now that a
+  // message's id is a real UUID (the CID) from the moment it's created.
+  Set<String> _protectedKeys = {};
   bool get hasConfirmedInitialLoad => _hasReceivedFirstStreamEvent;
 
   String? _activeReceiverId;
@@ -267,7 +302,7 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
     _activeReceiverId = receiverId;
     _messageSubscription?.cancel();
     _hasReceivedFirstStreamEvent = false;
-    _unconfirmedDiskMessageIds = {};
+    _protectedKeys = {};
 
     final conversationId = ChatHelper.buildConversationId(
       currentUserId,
@@ -291,8 +326,15 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
 
       cachedMessages = enrichedDiskMessages;
 
-      _unconfirmedDiskMessageIds =
-          enrichedDiskMessages.map((m) => m.id).toSet();
+      _protectedKeys =
+          enrichedDiskMessages
+              .map(
+                (m) => correlationKeyFor(
+                  id: m.id,
+                  clientMessageId: m.clientMessageId,
+                ),
+              )
+              .toSet();
 
       _registerBubbleKeys(enrichedDiskMessages);
 
@@ -319,18 +361,13 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
                   return m.copyWith(reactions: reactions);
                 }).toList();
 
-            final enrichedIds = enriched.map((m) => m.id).toSet();
-            _unconfirmedDiskMessageIds.removeWhere(enrichedIds.contains);
-
-            final protectedLeftovers = cachedMessages.where(
-              (m) =>
-                  (_unconfirmedDiskMessageIds.contains(m.id) ||
-                      m.id.startsWith('temp_')) &&
-                  !enrichedIds.contains(m.id),
+            final reconciliation = _reconciler.applySnapshot(
+              cachedMessages,
+              snapshot: enriched,
+              protectedKeys: _protectedKeys,
             );
-
-            final resolved = [...enriched, ...protectedLeftovers]
-              ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+            _protectedKeys = reconciliation.stillUnconfirmed;
+            final resolved = reconciliation.messages;
 
             _hasReceivedFirstStreamEvent = true;
 
@@ -464,9 +501,16 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
 
     final List<MessageModel> currentMessages = List.from(cachedMessages);
 
-    final tempId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
+    // The CID is generated once, here, and used as both the optimistic
+    // message's `id` (until the server id is known) and its permanent
+    // `clientMessageId` (sent to the server, kept forever). This replaces
+    // the old `'temp_${DateTime.now().millisecondsSinceEpoch}'` scheme,
+    // which could collide between two messages sent within the same
+    // millisecond.
+    final tempId = const Uuid().v4();
     final optimisticMessage = MessageModel(
       id: tempId,
+      clientMessageId: tempId,
       senderId: currentUserId,
       receiverId: receiverId,
       text: messageText,
@@ -501,8 +545,12 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
       replyToStoryDurationSeconds: replyTo?.replyToStoryDurationSeconds,
     );
 
-    final updatedMessages = [optimisticMessage, ...currentMessages];
+    final updatedMessages = _reconciler.applyOptimistic(
+      cachedMessages,
+      optimisticMessage,
+    );
     cachedMessages = updatedMessages;
+    _protectedKeys.add(correlationKeyFor(id: tempId, clientMessageId: tempId));
     emit(MessagesSending(messages: updatedMessages));
 
     final cancelToken = dio_pkg.CancelToken();
@@ -651,44 +699,82 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
         }
       }
 
-      final newMessageId = await _chatServices.sendMessage(
-        senderId: currentUserId,
-        receiverId: receiverId,
-        text: messageText,
-        messageType: messageType,
+      final ({String id, DateTime createdAt}) sent;
+      try {
+        sent = await _chatServices.sendMessage(
+          senderId: currentUserId,
+          receiverId: receiverId,
+          text: messageText,
+          clientMessageId: tempId,
+          messageType: messageType,
+          imageUrl: imageUrl,
+          videoUrl: videoUrl,
+          voiceUrl: voiceUrl,
+          durationSeconds: durationSeconds,
+          fileUrl: fileUrl,
+          fileName: fileName,
+          fileSizeBytes: fileSizeBytes,
+          caption: caption,
+          replyToMessageId: replyTo?.id,
+          replyToText:
+              (replyTo?.text != null && replyTo!.text.isNotEmpty)
+                  ? replyTo.text
+                  : replyTo?.caption,
+          replyToMessageType: replyTo?.messageType,
+          replyToSenderId: replyTo?.senderId,
+          replyToMediaUrl: MessageModel.replyMediaUrlFrom(replyTo),
+
+          imagePublicId: imagePublicId,
+          videoPublicId: videoPublicId,
+          voicePublicId: voicePublicId,
+          filePublicId: filePublicId,
+          forwardedFromUserId: forwardedFromUserId,
+          forwardedFromUserName: forwardedFromUserName,
+          forwardedFromUserAvatar: forwardedFromUserAvatar,
+        );
+      } catch (e) {
+        // UNKNOWN OUTCOME, not definite failure: uploads already
+        // succeeded (we got this far), so the INSERT itself may well have
+        // committed even though this HTTP call failed/timed out before we
+        // saw the response. Do NOT remove the optimistic message — it
+        // stays in `cachedMessages` and its correlation key stays in
+        // `_protectedKeys`, so if a later Realtime snapshot (or a
+        // reconnect, which re-triggers this same `.stream()`) confirms the
+        // row by clientMessageId, it will be reconciled into REAL
+        // automatically. If the row genuinely was never written, the
+        // upsert's `ON CONFLICT ... DO NOTHING` semantics make a future
+        // retry with this same CID safe either way.
+        debugPrint(
+          'sendMessage: unknown outcome, keeping optimistic message: $e',
+        );
+        _cancelTokens.remove(tempId);
+        uploadProgressMap.remove(tempId);
+        unawaited(ConnectivityBannerController.notifyIfOffline());
+        emit(
+          MessagesError(
+            "Couldn't confirm your message was sent. It will update automatically once you're back online.",
+          ),
+        );
+        emit(MessagesSuccessLoaded(messages: cachedMessages));
+        return;
+      }
+
+      final newMessageId = sent.id;
+      final acknowledged = optimisticMessage.copyWith(
+        id: newMessageId,
+        clientMessageId: tempId,
+        createdAt: sent.createdAt,
         imageUrl: imageUrl,
         videoUrl: videoUrl,
         voiceUrl: voiceUrl,
-        durationSeconds: durationSeconds,
         fileUrl: fileUrl,
-        fileName: fileName,
-        fileSizeBytes: fileSizeBytes,
-        caption: caption,
-        replyToMessageId: replyTo?.id,
-        replyToText:
-            (replyTo?.text != null && replyTo!.text.isNotEmpty)
-                ? replyTo.text
-                : replyTo?.caption,
-        replyToMessageType: replyTo?.messageType,
-        replyToSenderId: replyTo?.senderId,
-        replyToMediaUrl: MessageModel.replyMediaUrlFrom(replyTo),
-
-        imagePublicId: imagePublicId,
-        videoPublicId: videoPublicId,
-        voicePublicId: voicePublicId,
-        filePublicId: filePublicId,
-        forwardedFromUserId: forwardedFromUserId,
-        forwardedFromUserName: forwardedFromUserName,
-        forwardedFromUserAvatar: forwardedFromUserAvatar,
       );
-
-      final index = cachedMessages.indexWhere((m) => m.id == tempId);
-      if (index != -1) {
-        final updatedList = List<MessageModel>.from(cachedMessages);
-        updatedList[index] = updatedList[index].copyWith(id: newMessageId);
-        cachedMessages = updatedList;
-        emit(MessagesSuccessLoaded(messages: cachedMessages));
-      }
+      cachedMessages = _reconciler.applyPointEvent(
+        cachedMessages,
+        acknowledged,
+      );
+      _registerBubbleKeys(cachedMessages);
+      emit(MessagesSuccessLoaded(messages: cachedMessages));
 
       if (messageType != 'call') {
         await NotificationRepository.instance.notifyChatMessage(
@@ -721,7 +807,14 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
         return;
       }
 
-      cachedMessages = cachedMessages.where((m) => m.id != tempId).toList();
+      cachedMessages = _reconciler.applyRemoval(
+        cachedMessages,
+        id: tempId,
+        clientMessageId: tempId,
+      );
+      _protectedKeys.remove(
+        correlationKeyFor(id: tempId, clientMessageId: tempId),
+      );
       debugPrint('error sending message: $e');
 
       if (e.toString().contains('session_expired')) {

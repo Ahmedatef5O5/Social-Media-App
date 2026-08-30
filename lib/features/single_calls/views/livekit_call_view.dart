@@ -12,7 +12,7 @@ import '../../../core/widgets/calls/call_control_button.dart';
 import '../../../core/widgets/calls/call_layout_metrics.dart';
 import '../../../core/widgets/calls/calls.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
-import '../model/call_model.dart';
+import '../models/call_model.dart';
 import '../cubits/single_call_cubit/call_cubit.dart';
 
 class LiveKitCallView extends StatefulWidget {
