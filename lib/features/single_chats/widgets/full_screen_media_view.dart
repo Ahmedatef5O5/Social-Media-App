@@ -6,7 +6,7 @@ import 'package:social_media_app/core/helpers/media_duration_badge.dart';
 import 'package:social_media_app/core/widgets/cached_cloudinary_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:social_media_app/features/single_chats/helper/glass_icon_btn.dart';
+import 'package:social_media_app/features/single_chats/helpers/glass_icon_btn.dart';
 import 'package:video_player/video_player.dart';
 import '../../../core/cache/repository/media_cache_repository.dart';
 import '../../../core/services/gallery_services.dart';

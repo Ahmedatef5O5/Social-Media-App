@@ -5,7 +5,7 @@ import 'package:gap/gap.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import 'package:social_media_app/core/themes/app_colors.dart';
 import 'package:social_media_app/core/widgets/reaction_picker_overlay.dart';
-import 'package:social_media_app/features/single_chats/cubit/chat_details_cubit/chat_details_cubit.dart';
+import 'package:social_media_app/features/single_chats/cubits/chat_details_cubit/chat_details_cubit.dart';
 import 'package:social_media_app/features/single_chats/models/message_model.dart';
 import 'package:social_media_app/features/single_chats/widgets/message_content_container_widget.dart';
 import 'package:social_media_app/features/single_chats/widgets/user_chat_avatar_widget.dart';

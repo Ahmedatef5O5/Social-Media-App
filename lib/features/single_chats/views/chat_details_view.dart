@@ -1,5 +1,4 @@
 import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -10,7 +9,7 @@ import 'package:social_media_app/features/chat_forwarding/models/forward_target_
 import 'package:social_media_app/features/chat_forwarding/models/forwardable_message.dart';
 import 'package:social_media_app/features/chat_forwarding/services/forward_service.dart';
 import 'package:social_media_app/features/chat_forwarding/views/forward_target_picker_view.dart';
-import 'package:social_media_app/features/single_chats/cubit/chat_details_cubit/chat_details_cubit.dart';
+import 'package:social_media_app/features/single_chats/cubits/chat_details_cubit/chat_details_cubit.dart';
 import 'package:social_media_app/features/single_chats/models/chat_block_status.dart';
 import 'package:social_media_app/features/single_chats/models/chat_user_model.dart';
 import 'package:social_media_app/features/single_chats/models/message_model.dart';
@@ -18,16 +17,16 @@ import 'package:social_media_app/features/single_chats/services/chat_services.da
 import 'package:social_media_app/features/single_chats/widgets/messages_list_view.dart';
 import 'package:social_media_app/features/single_chats/widgets/receiver_details_header_section.dart';
 import '../../../core/chat_shared/widgets/message_selection_header_bar.dart';
+import '../../../core/notifications/notification_service.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/services/active_screen_tracker.dart';
-import '../../../core/services/notification_services.dart';
 import '../../../core/share_intent/models/incoming_share_payload.dart';
 import '../../../core/themes/app_colors.dart';
 import '../../../core/toast/app_toast.dart';
 import '../../ai_chat/views/ai_chat_view.dart';
-import '../../group_chats/cubit/group_list_cubit/group_list_cubit.dart';
-import '../cubit/chats_cubit/chats_cubit.dart';
-import '../helper/blocked_single_chat_bar_widget.dart';
+import '../../group_chats/cubits/group_list_cubit/group_list_cubit.dart';
+import '../cubits/chats_cubit/chats_cubit.dart';
+import '../helpers/blocked_single_chat_bar_widget.dart';
 import '../services/chat_permission_service.dart';
 import '../widgets/text_input_area_section.dart';
 import 'media_preview_screen.dart';

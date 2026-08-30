@@ -1,6 +1,6 @@
 import '../../../core/connectivity/services/connectivity_banner_controller.dart';
 import '../../../core/supabase/supabase_provider.dart';
-import '../../single_calls/model/call_model.dart';
+import '../../single_calls/models/call_model.dart';
 
 class CallActions {
   static Future<CallModel?> buildCall({

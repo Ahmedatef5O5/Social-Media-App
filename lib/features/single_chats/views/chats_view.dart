@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:social_media_app/features/single_chats/cubit/chats_cubit/chats_cubit.dart';
-import 'package:social_media_app/features/group_chats/cubit/group_list_cubit/group_list_cubit.dart';
+import 'package:social_media_app/features/single_chats/cubits/chats_cubit/chats_cubit.dart';
+import 'package:social_media_app/features/group_chats/cubits/group_list_cubit/group_list_cubit.dart';
 import '../../../core/chat_shared/cubits/conversation_selection_cubit/conversation_selection_cubit.dart';
 import '../../../core/chat_shared/cubits/conversations_cubit/conversations_cubit.dart';
 import '../../../core/chat_shared/helpers/conversation_delete_confirmation.dart';

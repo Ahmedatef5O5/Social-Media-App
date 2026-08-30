@@ -5,7 +5,7 @@ import '../../../core/constants/app_images.dart';
 import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/widgets/custom_pull_to_refresh.dart';
 import '../../../core/widgets/empty_findings_animation_widget.dart';
-import '../cubit/friend_lists_cubit/friends_list_cubit.dart';
+import '../cubits/friend_lists_cubit/friends_list_cubit.dart';
 import '../widgets/friend_tile_widget.dart';
 import '../widgets/friends_list_skeleton.dart';
 

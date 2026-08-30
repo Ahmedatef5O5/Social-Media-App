@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
+import 'package:uuid/uuid.dart';
 import '../../../core/helpers/chat_helper.dart';
 import '../../../core/services/media_cleanup_service.dart';
 import '../../../core/supabase/supabase_provider.dart';
@@ -120,10 +120,11 @@ class ChatMessagesService {
         .toList();
   }
 
-  Future<String> sendMessage({
+  Future<({String id, DateTime createdAt})> sendMessage({
     required String senderId,
     required String receiverId,
     required String text,
+    required String clientMessageId,
     String messageType = 'text',
     String? imageUrl,
     String? videoUrl,
@@ -153,68 +154,87 @@ class ChatMessagesService {
     String? forwardedFromUserName,
     String? forwardedFromUserAvatar,
   }) async {
-    final result =
-        await _supabase
-            .from(SupabaseConstants.messages)
-            .insert({
-              MessagesColumns.senderId: senderId,
-              MessagesColumns.receiverId: receiverId,
-              MessagesColumns.messageText: text,
-              MessagesColumns.messageType: messageType,
-              if (imageUrl != null) MessagesColumns.imageUrl: imageUrl,
-              if (videoUrl != null) MessagesColumns.videoUrl: videoUrl,
-              if (voiceUrl != null) MessagesColumns.voiceUrl: voiceUrl,
-              if (durationSeconds != null)
-                MessagesColumns.durationSeconds: durationSeconds,
-              if (fileUrl != null) MessagesColumns.fileUrl: fileUrl,
-              if (fileName != null) MessagesColumns.fileName: fileName,
-              if (fileSizeBytes != null)
-                MessagesColumns.fileSizeBytes: fileSizeBytes,
-              if (caption != null) MessagesColumns.caption: caption,
-              if (replyToMessageId != null)
-                MessagesColumns.replyToMessageId: replyToMessageId,
-              if (replyToText != null) MessagesColumns.replyToText: replyToText,
-              if (replyToMessageType != null)
-                MessagesColumns.replyToMessageType: replyToMessageType,
-              if (replyToSenderId != null)
-                MessagesColumns.replyToSenderId: replyToSenderId,
-              if (replyToMediaUrl != null)
-                MessagesColumns.replyToMediaUrl: replyToMediaUrl,
-              if (imagePublicId != null)
-                MessagesColumns.imagePublicId: imagePublicId,
-              if (videoPublicId != null)
-                MessagesColumns.videoPublicId: videoPublicId,
-              if (voicePublicId != null)
-                MessagesColumns.voicePublicId: voicePublicId,
-              if (filePublicId != null)
-                MessagesColumns.filePublicId: filePublicId,
-              if (replyToStoryId != null)
-                MessagesColumns.replyToStoryId: replyToStoryId,
-              if (replyToStoryAuthorId != null)
-                MessagesColumns.replyToStoryAuthorId: replyToStoryAuthorId,
-              if (replyToStoryType != null)
-                MessagesColumns.replyToStoryType: replyToStoryType,
-              if (replyToStoryMediaUrl != null)
-                MessagesColumns.replyToStoryMediaUrl: replyToStoryMediaUrl,
-              if (replyToStoryText != null)
-                MessagesColumns.replyToStoryText: replyToStoryText,
-              if (replyToStoryBgColor != null)
-                MessagesColumns.replyToStoryBgColor: replyToStoryBgColor,
-              if (replyToStoryDurationSeconds != null)
-                MessagesColumns.replyToStoryDurationSeconds:
-                    replyToStoryDurationSeconds,
-              if (forwardedFromUserId != null)
-                MessagesColumns.forwardedFromUserId: forwardedFromUserId,
-              if (forwardedFromUserName != null)
-                MessagesColumns.forwardedFromUserName: forwardedFromUserName,
-              if (forwardedFromUserAvatar != null)
-                MessagesColumns.forwardedFromUserAvatar:
-                    forwardedFromUserAvatar,
-            })
-            .select(MessagesColumns.id)
-            .single();
+    final insertData = {
+      MessagesColumns.senderId: senderId,
+      MessagesColumns.receiverId: receiverId,
+      MessagesColumns.clientMessageId: clientMessageId,
+      MessagesColumns.messageText: text,
+      MessagesColumns.messageType: messageType,
+      if (imageUrl != null) MessagesColumns.imageUrl: imageUrl,
+      if (videoUrl != null) MessagesColumns.videoUrl: videoUrl,
+      if (voiceUrl != null) MessagesColumns.voiceUrl: voiceUrl,
+      if (durationSeconds != null)
+        MessagesColumns.durationSeconds: durationSeconds,
+      if (fileUrl != null) MessagesColumns.fileUrl: fileUrl,
+      if (fileName != null) MessagesColumns.fileName: fileName,
+      if (fileSizeBytes != null) MessagesColumns.fileSizeBytes: fileSizeBytes,
+      if (caption != null) MessagesColumns.caption: caption,
+      if (replyToMessageId != null)
+        MessagesColumns.replyToMessageId: replyToMessageId,
+      if (replyToText != null) MessagesColumns.replyToText: replyToText,
+      if (replyToMessageType != null)
+        MessagesColumns.replyToMessageType: replyToMessageType,
+      if (replyToSenderId != null)
+        MessagesColumns.replyToSenderId: replyToSenderId,
+      if (replyToMediaUrl != null)
+        MessagesColumns.replyToMediaUrl: replyToMediaUrl,
+      if (imagePublicId != null) MessagesColumns.imagePublicId: imagePublicId,
+      if (videoPublicId != null) MessagesColumns.videoPublicId: videoPublicId,
+      if (voicePublicId != null) MessagesColumns.voicePublicId: voicePublicId,
+      if (filePublicId != null) MessagesColumns.filePublicId: filePublicId,
+      if (replyToStoryId != null)
+        MessagesColumns.replyToStoryId: replyToStoryId,
+      if (replyToStoryAuthorId != null)
+        MessagesColumns.replyToStoryAuthorId: replyToStoryAuthorId,
+      if (replyToStoryType != null)
+        MessagesColumns.replyToStoryType: replyToStoryType,
+      if (replyToStoryMediaUrl != null)
+        MessagesColumns.replyToStoryMediaUrl: replyToStoryMediaUrl,
+      if (replyToStoryText != null)
+        MessagesColumns.replyToStoryText: replyToStoryText,
+      if (replyToStoryBgColor != null)
+        MessagesColumns.replyToStoryBgColor: replyToStoryBgColor,
+      if (replyToStoryDurationSeconds != null)
+        MessagesColumns.replyToStoryDurationSeconds:
+            replyToStoryDurationSeconds,
+      if (forwardedFromUserId != null)
+        MessagesColumns.forwardedFromUserId: forwardedFromUserId,
+      if (forwardedFromUserName != null)
+        MessagesColumns.forwardedFromUserName: forwardedFromUserName,
+      if (forwardedFromUserAvatar != null)
+        MessagesColumns.forwardedFromUserAvatar: forwardedFromUserAvatar,
+    };
 
-    final newMessageId = result[MessagesColumns.id] as String;
+    final upserted = await _supabase
+        .from(SupabaseConstants.messages)
+        .upsert(
+          insertData,
+          onConflict:
+              '${MessagesColumns.senderId},${MessagesColumns.clientMessageId}',
+          ignoreDuplicates: true,
+        )
+        .select('${MessagesColumns.id}, ${MessagesColumns.createdAt}');
+
+    final String newMessageId;
+    final DateTime serverCreatedAt;
+    if (upserted.isNotEmpty) {
+      newMessageId = upserted.first[MessagesColumns.id] as String;
+      serverCreatedAt = DateTime.parse(
+        upserted.first[MessagesColumns.createdAt] as String,
+      );
+    } else {
+      final existing =
+          await _supabase
+              .from(SupabaseConstants.messages)
+              .select('${MessagesColumns.id}, ${MessagesColumns.createdAt}')
+              .eq(MessagesColumns.senderId, senderId)
+              .eq(MessagesColumns.clientMessageId, clientMessageId)
+              .single();
+      newMessageId = existing[MessagesColumns.id] as String;
+      serverCreatedAt = DateTime.parse(
+        existing[MessagesColumns.createdAt] as String,
+      );
+    }
 
     if (messageType != 'call') {
       final senderInfo = await getCurrentUserInfo(senderId);
@@ -251,7 +271,7 @@ class ChatMessagesService {
       );
     }
 
-    return newMessageId;
+    return (id: newMessageId, createdAt: serverCreatedAt);
   }
 
   Future<void> editMessage({
@@ -384,6 +404,7 @@ class ChatMessagesService {
       senderId: senderId,
       receiverId: receiverId,
       text: callInfoJson,
+      clientMessageId: const Uuid().v4(),
       messageType: 'call',
     );
   }

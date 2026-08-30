@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
-import 'package:social_media_app/features/single_chats/cubit/chat_details_cubit/chat_details_cubit.dart';
+import 'package:social_media_app/features/single_chats/cubits/chat_details_cubit/chat_details_cubit.dart';
 import 'package:social_media_app/features/single_chats/widgets/message_reactions_row_widget.dart';
 import '../../../core/attachment/models/media_transfer_state.dart';
 import '../../../core/attachment/widgets/media_state_overlay.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/themes/app_colors.dart';
 import '../../chat_forwarding/widgets/forwarded_header.dart';
-import '../../reactions/model/live_reaction.dart';
+import '../../reactions/models/live_reaction.dart';
 import '../../reactions/services/reaction_profile_resolver.dart';
 import '../../reactions/widgets/message_reactions_bottom_sheet.dart';
 import '../models/chat_user_model.dart';

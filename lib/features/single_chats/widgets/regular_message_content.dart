@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
-import 'package:social_media_app/features/single_chats/cubit/chat_details_cubit/chat_details_cubit.dart';
+import 'package:social_media_app/features/single_chats/cubits/chat_details_cubit/chat_details_cubit.dart';
 import 'package:social_media_app/features/single_chats/widgets/image_message_widget.dart';
 import 'package:social_media_app/features/single_chats/widgets/reply_bubble_preview_widget.dart';
 import 'package:social_media_app/features/single_chats/widgets/story_reply_preview_bubble.dart';
@@ -15,7 +15,7 @@ import '../../../core/link/widgets/message_link_preview.dart';
 import '../../../core/widgets/read_more_text.dart';
 import '../../gifs/widgets/gif_message_bubble.dart';
 import '../../stickers/widgets/sticker_message_bubble.dart';
-import '../helper/chat_bubble_colors.dart';
+import '../helpers/chat_bubble_colors.dart';
 import '../models/message_model.dart';
 import 'message_time_and_status.dart';
 

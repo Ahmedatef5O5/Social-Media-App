@@ -40,16 +40,13 @@ class _SplashViewState extends State<SplashView>
 
       if (route == AppRoutes.homeRoute) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (DeepLinkService.instance.hasPendingColdStartDeepLink) {
-            ShareIntentService.instance.discardPendingColdStartShare();
-            DeepLinkService.instance.flushPendingColdStartDeepLinkIfAny();
-          } else {
-            ShareIntentService.instance.flushPendingColdStartShareIfAny();
-          }
+          DeepLinkService.instance.markAppReady();
+
+          ShareIntentService.instance.flushPendingColdStartShareIfAny();
         });
       } else {
         ShareIntentService.instance.discardPendingColdStartShare();
-        DeepLinkService.instance.discardPendingColdStartDeepLink();
+        DeepLinkService.instance.discardPendingLink();
       }
     }
   }

@@ -2,6 +2,20 @@ import 'package:social_media_app/core/utilities/supabase_constants.dart';
 
 class MessageModel {
   final String id;
+
+  /// Client-generated correlation id (UUID v4), set once when the message
+  /// is first created on this device and never regenerated afterwards —
+  /// including on retry. Used by [MessageReconciler] to correlate the
+  /// optimistic (temp) representation of a message with its
+  /// server-confirmed representation regardless of which arrives first
+  /// (API response vs Realtime), and as the DB idempotency key so a retry
+  /// can never create a second row for the same logical message.
+  ///
+  /// `null` for legacy rows written before this field existed; those are
+  /// correlated by [id] (server id) only — see `correlationKeyFor` in
+  /// `message_reconciler.dart`.
+  final String? clientMessageId;
+
   final String senderId;
   final String receiverId;
   final String text;
@@ -38,6 +52,7 @@ class MessageModel {
 
   const MessageModel({
     required this.id,
+    this.clientMessageId,
     required this.senderId,
     required this.receiverId,
     required this.text,
@@ -97,6 +112,7 @@ class MessageModel {
 
   MessageModel copyWith({
     String? id,
+    String? clientMessageId,
     String? senderId,
     String? receiverId,
     String? text,
@@ -133,6 +149,7 @@ class MessageModel {
   }) {
     return MessageModel(
       id: id ?? this.id,
+      clientMessageId: clientMessageId ?? this.clientMessageId,
       senderId: senderId ?? this.senderId,
       receiverId: receiverId ?? this.receiverId,
       text: text ?? this.text,
@@ -193,6 +210,7 @@ class MessageModel {
             : null;
     return MessageModel(
       id: json[MessagesColumns.id],
+      clientMessageId: _nullIfEmpty(json[MessagesColumns.clientMessageId]),
       senderId: json[MessagesColumns.senderId],
       receiverId: json[MessagesColumns.receiverId],
       text: json[MessagesColumns.messageText],
@@ -285,6 +303,7 @@ class MessageModel {
   Map<String, dynamic> toCacheJson() {
     return {
       MessagesColumns.id: id,
+      MessagesColumns.clientMessageId: clientMessageId,
       MessagesColumns.senderId: senderId,
       MessagesColumns.receiverId: receiverId,
       MessagesColumns.messageText: text,

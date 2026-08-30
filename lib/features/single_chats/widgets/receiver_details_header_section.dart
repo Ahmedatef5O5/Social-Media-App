@@ -10,9 +10,9 @@ import '../../../core/presence/widgets/presence_status_text.dart';
 import '../../../core/widgets/animated_activity_text.dart';
 import '../../../core/widgets/app_avatar.dart';
 import '../../../core/widgets/calls/call_icon_button.dart';
-import '../../single_calls/model/call_model.dart';
-import '../cubit/chat_details_cubit/chat_details_cubit.dart';
-import '../helper/safe_pop.dart';
+import '../../single_calls/models/call_model.dart';
+import '../cubits/chat_details_cubit/chat_details_cubit.dart';
+import '../helpers/safe_pop.dart';
 import '../models/chat_block_status.dart';
 import '../models/chat_user_model.dart';
 

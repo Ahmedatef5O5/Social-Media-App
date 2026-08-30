@@ -5,8 +5,8 @@ import 'package:social_media_app/core/constants/app_images.dart';
 import 'package:social_media_app/core/router/app_routes.dart';
 import '../../../core/chat_shared/cubits/conversations_cubit/conversations_cubit.dart';
 import '../../../core/widgets/custom_badge.dart';
-import '../../group_chats/cubit/group_list_cubit/group_list_cubit.dart';
-import '../cubit/chats_cubit/chats_cubit.dart';
+import '../../group_chats/cubits/group_list_cubit/group_list_cubit.dart';
+import '../cubits/chats_cubit/chats_cubit.dart';
 
 class MessagesHeaderSection extends StatelessWidget {
   final bool isDark;

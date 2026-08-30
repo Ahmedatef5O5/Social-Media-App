@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../cubit/chat_details_cubit/chat_details_cubit.dart';
+import '../cubits/chat_details_cubit/chat_details_cubit.dart';
 import '../models/chat_block_status.dart';
 import '../views/chat_details_view.dart';
 

@@ -96,10 +96,11 @@ class ChatServices {
     duration: duration,
   );
 
-  Future<String> sendMessage({
+  Future<({String id, DateTime createdAt})> sendMessage({
     required String senderId,
     required String receiverId,
     required String text,
+    required String clientMessageId,
     String messageType = 'text',
     String? imageUrl,
     String? videoUrl,
@@ -132,6 +133,7 @@ class ChatServices {
     senderId: senderId,
     receiverId: receiverId,
     text: text,
+    clientMessageId: clientMessageId,
     messageType: messageType,
     imageUrl: imageUrl,
     videoUrl: videoUrl,

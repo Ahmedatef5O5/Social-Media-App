@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
-import '../cubit/shared_groups_cubit/shared_groups_cubit.dart';
-import '../cubit/shared_groups_cubit/shared_groups_state.dart';
-import '../helper/shared_groups_shimmer.dart';
+import '../cubits/shared_groups_cubit/shared_groups_cubit.dart';
+import '../cubits/shared_groups_cubit/shared_groups_state.dart';
+import '../helpers/shared_groups_shimmer.dart';
 import 'shared_group_tile.dart';
 
 class SharedGroupsSection extends StatelessWidget {

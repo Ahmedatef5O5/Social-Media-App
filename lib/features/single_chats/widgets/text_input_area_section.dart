@@ -14,10 +14,10 @@ import '../../ai_assistant/entities/ai_request_context.dart';
 import '../../ai_assistant/helpers/remote_media_fetcher.dart';
 import '../../ai_assistant/widgets/ai_action_icon.dart';
 import '../../ai_assistant/widgets/ai_chat_command_trigger.dart';
-import '../helper/chat_transcript_builder.dart';
-import '../cubit/chat_details_cubit/chat_details_cubit.dart';
-import '../helper/edit_preview_bar.dart';
-import '../helper/reply_preview_bar.dart';
+import '../helpers/chat_transcript_builder.dart';
+import '../cubits/chat_details_cubit/chat_details_cubit.dart';
+import '../helpers/edit_preview_bar.dart';
+import '../helpers/reply_preview_bar.dart';
 import '../models/chat_user_model.dart';
 import '../models/message_model.dart';
 import '../views/media_preview_screen.dart';
@@ -148,6 +148,7 @@ class _TextInputAreaSectionState extends State<TextInputAreaSection> {
 
         if (_stagedDocument != null)
           ChatStagedFilePreview(
+            file: _stagedDocument,
             fileName: _stagedFileName ?? 'File',
             fileSizeBytes: _stagedFileSizeBytes ?? 0,
             onRemove: () {
