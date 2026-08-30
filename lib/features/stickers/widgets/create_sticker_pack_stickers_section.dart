@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import '../../../core/themes/app_colors.dart';
 import '../../../core/widgets/full_screen_image_viewer.dart';
-import '../cubit/create_sticker_pack_cubit/create_sticker_pack_cubit.dart';
-import '../cubit/create_sticker_pack_cubit/create_sticker_pack_state.dart';
+import '../cubits/create_sticker_pack_cubit/create_sticker_pack_cubit.dart';
+import '../cubits/create_sticker_pack_cubit/create_sticker_pack_state.dart';
 import 'sticker_grid_item.dart';
 
 class CreateStickerPackStickersSection extends StatelessWidget {

@@ -1,7 +1,7 @@
 import 'package:image_picker/image_picker.dart';
 import 'package:social_media_app/features/social_graph/models/friend_list_item_model.dart';
-import '../../model/sticker_pack_model.dart';
-import '../../model/sticker_pack_privacy.dart';
+import '../../models/sticker_pack_model.dart';
+import '../../models/sticker_pack_privacy.dart';
 
 abstract class CreateStickerPackState {}
 

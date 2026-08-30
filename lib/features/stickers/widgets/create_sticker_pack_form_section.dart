@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
-import '../cubit/create_sticker_pack_cubit/create_sticker_pack_cubit.dart';
-import '../cubit/create_sticker_pack_cubit/create_sticker_pack_state.dart';
+import '../cubits/create_sticker_pack_cubit/create_sticker_pack_cubit.dart';
+import '../cubits/create_sticker_pack_cubit/create_sticker_pack_state.dart';
 import 'create_sticker_pack_action_button.dart';
 import 'create_sticker_pack_privacy_section.dart';
 import 'create_sticker_pack_stickers_section.dart';

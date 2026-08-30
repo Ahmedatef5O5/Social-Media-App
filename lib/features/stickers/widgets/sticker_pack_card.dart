@@ -3,7 +3,7 @@ import 'package:gap/gap.dart';
 import '../../../core/themes/app_colors.dart';
 import '../../../core/widgets/cached_cloudinary_image.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
-import '../model/sticker_pack_model.dart';
+import '../models/sticker_pack_model.dart';
 import '../utils/byte_size_utils.dart';
 import 'cancel_progress_bubble.dart';
 import 'download_progress_bar_button.dart';

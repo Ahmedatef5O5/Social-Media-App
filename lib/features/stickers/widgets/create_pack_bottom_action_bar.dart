@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/themes/app_colors.dart';
-import '../cubit/sticker_pack_detail_cubit/sticker_pack_detail_cubit.dart';
-import '../cubit/sticker_pack_detail_cubit/sticker_pack_detail_state.dart';
-import '../model/sticker_pack_model.dart';
+import '../cubits/sticker_pack_detail_cubit/sticker_pack_detail_cubit.dart';
+import '../cubits/sticker_pack_detail_cubit/sticker_pack_detail_state.dart';
+import '../models/sticker_pack_model.dart';
 import 'download_progress_bar_button.dart';
 
 class CreatePackBottomActionBar extends StatelessWidget {

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../cubit/create_sticker_pack_cubit/create_sticker_pack_cubit.dart';
+import '../cubits/create_sticker_pack_cubit/create_sticker_pack_cubit.dart';
 
 class CreateStickerPackTitleField extends StatelessWidget {
   final CreateStickerPackCubit cubit;

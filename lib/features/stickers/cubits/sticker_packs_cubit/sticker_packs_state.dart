@@ -1,4 +1,4 @@
-import '../../model/sticker_pack_model.dart';
+import '../../models/sticker_pack_model.dart';
 
 abstract class StickerPacksState {}
 

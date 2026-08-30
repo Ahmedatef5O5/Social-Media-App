@@ -4,10 +4,10 @@ import '../../../core/themes/app_colors.dart';
 import '../../../core/chat_shared/helpers/avatar_stack.dart';
 import '../../social_graph/models/content_privacy.dart';
 import '../../social_graph/widgets/privacy_selector_sheet.dart';
-import '../cubit/create_sticker_pack_cubit/create_sticker_pack_cubit.dart';
-import '../cubit/create_sticker_pack_cubit/create_sticker_pack_state.dart';
+import '../cubits/create_sticker_pack_cubit/create_sticker_pack_cubit.dart';
+import '../cubits/create_sticker_pack_cubit/create_sticker_pack_state.dart';
 import '../helpers/create_pack_friend_picker.dart';
-import '../model/sticker_pack_privacy.dart';
+import '../models/sticker_pack_privacy.dart';
 
 class CreateStickerPackPrivacySection extends StatelessWidget {
   final ThemeData theme;

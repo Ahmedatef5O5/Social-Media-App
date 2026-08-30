@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:social_media_app/core/widgets/cached_cloudinary_image.dart';
 import 'package:social_media_app/core/widgets/custom_loading_indicator.dart';
-import '../model/sticker_model.dart';
+import '../models/sticker_model.dart';
 import '../utils/sticker_url_utils.dart';
 
 class StickerThumbnail extends StatelessWidget {

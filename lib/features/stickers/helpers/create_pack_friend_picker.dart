@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../social_graph/models/content_privacy.dart';
-import '../cubit/create_sticker_pack_cubit/create_sticker_pack_cubit.dart';
-import '../cubit/create_sticker_pack_cubit/create_sticker_pack_state.dart';
-import '../model/sticker_pack_privacy.dart';
+import '../cubits/create_sticker_pack_cubit/create_sticker_pack_cubit.dart';
+import '../cubits/create_sticker_pack_cubit/create_sticker_pack_state.dart';
+import '../models/sticker_pack_privacy.dart';
 import '../widgets/friend_picker_sheet.dart';
 
 Future<void> showCreatePackFriendPicker(BuildContext context) async {
