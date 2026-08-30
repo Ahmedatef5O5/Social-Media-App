@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:social_media_app/core/widgets/cached_cloudinary_image.dart';
 import 'package:social_media_app/core/widgets/custom_loading_indicator.dart';
-import 'package:social_media_app/features/posts/model/post_reaction_model.dart';
+import 'package:social_media_app/features/posts/models/post_reaction_model.dart';
 import '../../../core/constants/app_images.dart';
 import '../../../core/design/tokens/typography.dart';
 

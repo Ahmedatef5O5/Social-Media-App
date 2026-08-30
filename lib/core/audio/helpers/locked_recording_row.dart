@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'live_Waveform.dart';
+import 'live_waveform.dart';
 import 'pulsing_red_dot.dart';
 
 class LockedRecordingRow extends StatelessWidget {

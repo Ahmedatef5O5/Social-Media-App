@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:receive_sharing_intent/receive_sharing_intent.dart';
+import '../../notifications/notification_navigator_key.dart';
 import '../../router/app_routes.dart';
-import '../../services/notification_services.dart' show navigatorKey;
 import '../models/incoming_share_payload.dart';
 
 class ShareIntentService {

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../features/group_chats/cubit/group_list_cubit/group_list_cubit.dart';
-import '../../../features/single_chats/cubit/chats_cubit/chats_cubit.dart';
+import '../../../features/group_chats/cubits/group_list_cubit/group_list_cubit.dart';
+import '../../../features/single_chats/cubits/chats_cubit/chats_cubit.dart';
 import '../cubits/conversation_selection_cubit/conversation_selection_cubit.dart';
 import '../models/conversation_ref.dart';
 

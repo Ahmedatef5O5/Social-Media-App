@@ -11,7 +11,7 @@ import '../../single_chats/models/chat_user_model.dart';
 import '../../social_graph/models/discover_person_model.dart';
 import '../../social_graph/models/friendship_status.dart';
 import '../../social_graph/widgets/animated_action_button.dart';
-import '../cubit/discover_people_cubit.dart';
+import '../cubits/discover_people_cubit.dart';
 
 class DiscoverPersonCardWidget extends StatelessWidget {
   final DiscoverPersonModel personData;
@@ -77,7 +77,9 @@ class DiscoverPersonCardWidget extends StatelessWidget {
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: colorScheme.outlineVariant.withValues(alpha: isDark ? 0.3 : 0.6),
+          color: colorScheme.outlineVariant.withValues(
+            alpha: isDark ? 0.3 : 0.6,
+          ),
           width: 1,
         ),
         boxShadow:
@@ -424,7 +426,9 @@ class _DiscoverFriendCounts extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (totalFriendsCount == 0) return const SizedBox.shrink();
     final showMutual = mutualFriendsCount > 0;
+
     return InkWell(
       borderRadius: BorderRadius.circular(8),
       onTap: onTap,

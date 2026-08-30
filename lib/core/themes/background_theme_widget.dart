@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:social_media_app/core/themes/cubit/theme_cubit.dart';
+import 'package:social_media_app/core/themes/cubits/theme_cubit.dart';
 
 class BackgroundThemeWidget extends StatelessWidget {
   final Widget child;

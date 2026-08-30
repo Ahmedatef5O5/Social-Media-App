@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../model/gif_result_model.dart';
+import '../models/gif_result_model.dart';
 import 'gif_item.dart';
 
 class GifGrid extends StatelessWidget {

@@ -4,7 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 import '../../../core/constants/app_images.dart';
 import '../../../core/widgets/custom_grey_container.dart';
-import '../cubit/auth_cubit/auth_cubit.dart';
+import '../cubits/auth_cubit/auth_cubit.dart';
 
 class SocialSignSection extends StatelessWidget {
   const SocialSignSection({super.key, required this.label});

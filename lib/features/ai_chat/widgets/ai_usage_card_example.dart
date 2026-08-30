@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../cubit/ai_usage_cubit/ai_usage_cubit.dart';
+import '../cubits/ai_usage_cubit/ai_usage_cubit.dart';
 
 class AiUsageCard extends StatelessWidget {
   const AiUsageCard({super.key});

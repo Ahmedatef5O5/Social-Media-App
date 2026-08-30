@@ -3,12 +3,10 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:social_media_app/core/services/notification_services.dart';
 import 'package:social_media_app/firebase_options.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../cache/services/hive_cache_manager.dart';
 import '../cache/services/local_snapshot_store.dart';
-import '../secrets/app_secrets.dart';
+import '../notifications/notification_service.dart';
 
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {

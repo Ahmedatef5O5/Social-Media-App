@@ -5,8 +5,8 @@ import 'package:gap/gap.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
 import 'package:social_media_app/core/themes/app_colors.dart';
-import 'package:social_media_app/features/comments/model/comment_attachment_draft.dart';
-import 'package:social_media_app/features/comments/model/comment_type.dart';
+import 'package:social_media_app/features/comments/models/comment_attachment_draft.dart';
+import 'package:social_media_app/features/comments/models/comment_type.dart';
 
 class CommentVoiceRecorderSheet extends StatefulWidget {
   const CommentVoiceRecorderSheet({super.key});

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../features/group_calls/views/livekit_group_call_view.dart';
-import '../notification_services.dart';
+import '../../notifications/notification_navigator_key.dart';
 import '../../router/app_routes.dart';
 import 'active_call_session_data.dart';
 import 'pip/call_pip_cubit.dart';

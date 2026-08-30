@@ -4,7 +4,7 @@ import 'package:gap/gap.dart';
 import 'package:social_media_app/core/router/app_routes.dart';
 import 'package:social_media_app/core/utilities/app_formatters.dart';
 import 'package:social_media_app/core/utilities/app_validators.dart';
-import 'package:social_media_app/features/auth/cubit/auth_cubit/auth_cubit.dart';
+import 'package:social_media_app/features/auth/cubits/auth_cubit/auth_cubit.dart';
 import 'package:social_media_app/features/auth/widgets/password_strength_bar.dart';
 import 'package:social_media_app/features/auth/widgets/sign_text_section.dart';
 import 'package:social_media_app/features/auth/widgets/social_sign_section.dart';

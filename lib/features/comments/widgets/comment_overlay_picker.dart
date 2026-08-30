@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:social_media_app/features/comments/helper/comment_menu_action.dart';
+import 'package:social_media_app/features/comments/helpers/comment_menu_action.dart';
 import 'comment_action_menu.dart';
 import 'comment_reactions_picker_bubble.dart';
 

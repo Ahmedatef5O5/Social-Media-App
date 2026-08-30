@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/utilities/supabase_constants.dart';
-import '../helper/comment_tree_builder.dart';
+import '../helpers/comment_tree_builder.dart';
 import '../../../core/mentions/models/mention_ref.dart';
-import '../model/comment_model.dart';
-import '../model/comment_sort_option.dart';
-import '../model/comment_type.dart';
+import '../models/comment_model.dart';
+import '../models/comment_sort_option.dart';
+import '../models/comment_type.dart';
 
 class CommentsService {
   final _supabase = SupabaseProvider.client;

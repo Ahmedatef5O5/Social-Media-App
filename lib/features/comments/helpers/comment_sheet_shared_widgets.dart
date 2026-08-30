@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../core/themes/app_colors.dart';
-import '../model/comment_sort_option.dart';
+import '../models/comment_sort_option.dart';
 
 class CommentSortMenu extends StatelessWidget {
   final CommentSortOption current;

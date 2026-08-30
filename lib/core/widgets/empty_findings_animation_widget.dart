@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lottie/lottie.dart';
-import '../themes/cubit/theme_cubit.dart';
+import '../themes/cubits/theme_cubit.dart';
 
 class EmptyFindingsThemedAnimation extends StatelessWidget {
   final String animationPath;

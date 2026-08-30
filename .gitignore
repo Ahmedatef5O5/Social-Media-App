@@ -71,3 +71,4 @@ app.*.map.json
 # Ignore sensitive credentials
 lib/core/secrets/app_secrets.dart
 mute_test_log.txt
+supabase/.temp/linked-project.json

@@ -1,5 +1,5 @@
-import '../cubit/ai_model_selector_cubit/ai_model_selector_cubit.dart';
-import '../cubit/ai_usage_cubit/ai_usage_cubit.dart';
+import '../cubits/ai_model_selector_cubit/ai_model_selector_cubit.dart';
+import '../cubits/ai_usage_cubit/ai_usage_cubit.dart';
 import '../repository/ai_gateway_client.dart';
 
 class AiGatewayService {

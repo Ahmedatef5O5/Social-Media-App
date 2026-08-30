@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:social_media_app/core/services/network_status_service.dart';
-import 'package:social_media_app/features/auth/handler/auth_exception_handler.dart';
+import 'package:social_media_app/features/auth/handlers/auth_exception_handler.dart';
 import 'package:social_media_app/features/auth/services/supabase_auth_services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/presence/services/presence_service.dart';
@@ -100,13 +100,19 @@ class AuthCubit extends Cubit<AuthState> {
     try {
       await _authServices.signInWithFacebook();
 
-      await Future.delayed(const Duration(seconds: 10));
-      if (state is AuthLoading) {
-        emit(AuthInitial());
-      }
+      await stream
+          .firstWhere((state) => state is! AuthLoading)
+          .timeout(
+            const Duration(seconds: 10),
+            onTimeout: () => throw TimeoutException('Sign-in timed out'),
+          );
     } catch (e) {
-      debugPrint('Facebook Sign-In Error: $e');
-      _handleError(e);
+      if (e is TimeoutException) {
+        emit(AuthInitial());
+      } else {
+        debugPrint('Facebook Sign-In Error: $e');
+        _handleError(e);
+      }
     }
   }
 
@@ -115,13 +121,19 @@ class AuthCubit extends Cubit<AuthState> {
     try {
       await _authServices.signInWithMicrosoft();
 
-      await Future.delayed(const Duration(seconds: 10));
-      if (state is AuthLoading) {
-        emit(AuthInitial());
-      }
+      await stream
+          .firstWhere((state) => state is! AuthLoading)
+          .timeout(
+            const Duration(seconds: 10),
+            onTimeout: () => throw TimeoutException('Sign-in timed out'),
+          );
     } catch (e) {
-      debugPrint('Microsoft Sign-In Error: $e');
-      _handleError(e);
+      if (e is TimeoutException) {
+        emit(AuthInitial());
+      } else {
+        debugPrint('Microsoft Sign-In Error: $e');
+        _handleError(e);
+      }
     }
   }
 

@@ -133,6 +133,11 @@ abstract class GroupMessageColumns {
   static const String videoPublicId = 'video_public_id';
   static const String voicePublicId = 'voice_public_id';
   static const String deletedFor = 'deleted_for';
+
+  // Correlation id generated client-side once per outgoing message, used
+  // for optimistic-to-server reconciliation and retry idempotency. Nullable
+  // for legacy rows written before this column existed.
+  static const String clientMessageId = 'client_message_id';
 }
 
 // group_message_reactions
@@ -429,6 +434,11 @@ abstract class MessagesColumns {
   static const String forwardedFromUserId = 'forwarded_from_user_id';
   static const String forwardedFromUserName = 'forwarded_from_user_name';
   static const String forwardedFromUserAvatar = 'forwarded_from_user_avatar';
+
+  // Correlation id generated client-side once per outgoing message, used
+  // for optimistic-to-server reconciliation and retry idempotency. Nullable
+  // for legacy rows written before this column existed.
+  static const String clientMessageId = 'client_message_id';
 }
 
 // message_reactions

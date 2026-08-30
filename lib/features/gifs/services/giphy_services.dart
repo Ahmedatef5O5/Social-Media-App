@@ -1,7 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:social_media_app/core/secrets/app_secrets.dart';
-import '../model/gif_result_model.dart';
+import '../models/gif_result_model.dart';
 
 class GiphyServices {
   GiphyServices._();

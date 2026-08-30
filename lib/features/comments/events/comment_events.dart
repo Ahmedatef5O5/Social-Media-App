@@ -1,4 +1,4 @@
-import '../model/comment_model.dart';
+import '../models/comment_model.dart';
 
 sealed class CommentEvent {
   final String postId;

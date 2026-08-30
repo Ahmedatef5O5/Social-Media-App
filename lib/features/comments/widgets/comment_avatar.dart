@@ -6,7 +6,7 @@ import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/widgets/app_avatar.dart';
 import '../../single_chats/models/chat_user_model.dart';
 import '../../profile/widgets/user_preview_dialog.dart';
-import '../model/comment_model.dart';
+import '../models/comment_model.dart';
 
 class CommentAvatar extends StatelessWidget {
   final CommentModel comment;
@@ -32,7 +32,7 @@ class CommentAvatar extends StatelessWidget {
       child: AppAvatar(
         imageUrl: imageUrl,
         size: radius * 2,
-        heroTag: comment.authorId,
+        heroTag: 'comment_${comment.id}_author',
         onTap: () => isMe ? _openMyAvatar(context) : _showUserPreview(context),
       ),
     );
@@ -46,7 +46,7 @@ class CommentAvatar extends StatelessWidget {
       AppRoutes.fullScreenImageViewRoute,
       arguments: {
         'url': url,
-        'tag': comment.authorId,
+        'tag': 'comment_${comment.id}_author',
         'isAsset': imageUrl == null || imageUrl!.isEmpty,
       },
     );

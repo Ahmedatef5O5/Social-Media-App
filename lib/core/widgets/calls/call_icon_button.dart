@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../features/single_calls/cubits/single_call_cubit/call_cubit.dart';
-import '../../../features/single_calls/model/call_model.dart';
+import '../../../features/single_calls/models/call_model.dart';
 import '../../../features/single_calls/services/call_signaling_service.dart';
-import '../../../features/single_chats/helper/call_actions.dart';
+import '../../../features/single_chats/helpers/call_actions.dart';
 import '../../services/active_call/active_call_session_data.dart';
 import '../../services/active_call/cubit/active_call_session_cubit.dart';
 import '../../toast/app_toast.dart';

@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../router/app_routes.dart';
 import '../../services/active_screen_tracker.dart';
-import '../cubit/connectivity_cubit.dart';
-import '../cubit/connectivity_state.dart';
+import '../cubits/connectivity_cubit.dart';
+import '../cubits/connectivity_state.dart';
 import '../services/connectivity_banner_controller.dart';
 
 enum _BannerMode { hidden, offline, restored }

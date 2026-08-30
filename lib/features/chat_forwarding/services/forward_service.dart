@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:uuid/uuid.dart';
 import '../../single_chats/services/chat_services.dart';
 import '../../group_chats/services/group_chat_services.dart';
 import '../models/forward_target_selection.dart';
@@ -85,10 +86,11 @@ class ForwardService {
     required String receiverId,
     required ForwardableMessage message,
   }) async {
-    final newMessageId = await _chatServices.sendMessage(
+    final sent = await _chatServices.sendMessage(
       senderId: currentUserId,
       receiverId: receiverId,
       text: message.text,
+      clientMessageId: const Uuid().v4(),
       messageType: message.messageType,
       imageUrl: message.imageUrl,
       videoUrl: message.videoUrl,
@@ -102,6 +104,7 @@ class ForwardService {
       forwardedFromUserName: message.originalSenderName,
       forwardedFromUserAvatar: message.originalSenderAvatar,
     );
+    final newMessageId = sent.id;
 
     await _hydrateSingleChatShadow(
       messageId: newMessageId,

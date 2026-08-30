@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../core/themes/app_colors.dart';
-import '../helper/comment_menu_action.dart';
+import '../helpers/comment_menu_action.dart';
 
 class CommentActionMenu extends StatelessWidget {
   final List<CommentMenuAction> actions;

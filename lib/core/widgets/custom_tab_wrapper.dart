@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:social_media_app/core/widgets/custom_elevated_button.dart';
 import '../constants/app_images.dart';
-import '../themes/cubit/theme_cubit.dart';
+import '../themes/cubits/theme_cubit.dart';
 import '../themes/themed_error_lottie.dart';
 
 class CustomTabWrapper<T> extends StatefulWidget {

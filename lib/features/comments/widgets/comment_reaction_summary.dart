@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../model/comment_model.dart';
+import '../models/comment_model.dart';
 import '../../../core/themes/app_colors.dart';
 import '../../../core/design/tokens/typography.dart';
 

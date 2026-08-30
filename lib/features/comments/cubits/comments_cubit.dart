@@ -15,12 +15,12 @@ import '../../notifications/repository/notifications_repository.dart';
 import '../../../core/services/fcm_services.dart';
 import '../events/comment_event_bus.dart';
 import '../events/comment_events.dart';
-import '../model/comment_attachment_draft.dart';
+import '../models/comment_attachment_draft.dart';
 import '../../../core/mentions/models/mention_ref.dart';
-import '../model/comment_model.dart';
-import '../model/comment_sort_option.dart';
-import '../model/comment_type.dart';
-import '../../posts/model/post_model.dart';
+import '../models/comment_model.dart';
+import '../models/comment_sort_option.dart';
+import '../models/comment_type.dart';
+import '../../posts/models/post_model.dart';
 import '../services/comments_service.dart';
 part 'comments_state.dart';
 
@@ -98,6 +98,7 @@ class CommentsCubit extends Cubit<CommentsState> {
   void _scheduleSilentReload(String postId) {
     _realtimeDebounce?.cancel();
     _realtimeDebounce = Timer(const Duration(milliseconds: 300), () {
+      if (isClosed) return;
       _silentReload(postId);
     });
   }
@@ -108,6 +109,7 @@ class CommentsCubit extends Cubit<CommentsState> {
         postId: postId,
         sort: currentSort,
       );
+      if (isClosed) return;
       comments = freshComments;
       emit(CommentsUiChanged());
     } catch (e) {
@@ -224,16 +226,20 @@ class CommentsCubit extends Cubit<CommentsState> {
     emit(CommentsListLoading());
 
     try {
-      comments = await _commentsService.getComments(
+      final freshComments = await _commentsService.getComments(
         postId: postId,
         sort: targetSort,
       );
+      if (isClosed) return;
+      comments = freshComments;
       isLoadingComments = false;
       emit(CommentsListLoaded());
     } catch (e) {
+      if (isClosed) return;
       isLoadingComments = false;
       debugPrint('Error loading comments: $e');
       final isOffline = await ConnectivityBannerController.notifyIfOffline();
+      if (isClosed) return;
       emit(
         CommentError(
           SupabaseErrorMapper.toUserMessage(e),
@@ -375,6 +381,7 @@ class CommentsCubit extends Cubit<CommentsState> {
         mentions: mentions,
       );
       _insertCommentLocally(optimisticComment, resolvedParentId);
+      if (isClosed) return;
       emit(CommentOptimisticAdded(post.id, optimisticComment, parentCommentId));
     }
 
@@ -384,15 +391,20 @@ class CommentsCubit extends Cubit<CommentsState> {
           isUploading = true;
           uploadProgress = 0;
           _uploadCancelToken = dio_pkg.CancelToken();
-          if (!isMediaAttachment) emit(ComposerUploadProgress(0));
+          if (!isMediaAttachment && !isClosed) emit(ComposerUploadProgress(0));
 
           String prefix = '${attachment.type.value}_';
-          if (attachment.type == CommentType.file && attachment.fileName != null) {
+          if (attachment.type == CommentType.file &&
+              attachment.fileName != null) {
             final originalName = attachment.fileName!;
-            final nameWithoutExt = originalName.contains('.')
-                ? originalName.substring(0, originalName.lastIndexOf('.'))
-                : originalName;
-            final safeName = nameWithoutExt.replaceAll(RegExp(r'[^a-zA-Z0-9\-_]'), '_');
+            final nameWithoutExt =
+                originalName.contains('.')
+                    ? originalName.substring(0, originalName.lastIndexOf('.'))
+                    : originalName;
+            final safeName = nameWithoutExt.replaceAll(
+              RegExp(r'[^a-zA-Z0-9\-_]'),
+              '_',
+            );
             prefix = '${safeName}_';
           }
 
@@ -407,7 +419,7 @@ class CommentsCubit extends Cubit<CommentsState> {
               if (isMediaAttachment) {
                 progressNotifierFor(tempId).value = progress;
               } else {
-                emit(ComposerUploadProgress(progress));
+                if (!isClosed) emit(ComposerUploadProgress(progress));
               }
             },
           );
@@ -474,6 +486,8 @@ class CommentsCubit extends Cubit<CommentsState> {
             durationSeconds: durationSeconds,
           );
 
+      if (isClosed) return;
+
       clearAttachment();
 
       if (isMediaAttachment) {
@@ -528,6 +542,7 @@ class CommentsCubit extends Cubit<CommentsState> {
         } catch (e) {
           debugPrint('Error deleting comment after id resolution: $e');
         }
+        if (isClosed) return;
         emit(
           CommentTempIdResolved(
             postId: post.id,
@@ -604,6 +619,7 @@ class CommentsCubit extends Cubit<CommentsState> {
         );
       }
 
+      if (isClosed) return;
       emit(
         CommentTempIdResolved(postId: post.id, tempId: tempId, realId: realId),
       );
@@ -612,11 +628,11 @@ class CommentsCubit extends Cubit<CommentsState> {
       if (isMediaAttachment) {
         _removeCommentLocally(tempId, resolvedParentId);
         _disposeProgressNotifier(tempId);
-        emit(CommentsUiChanged());
+        if (!isClosed) emit(CommentsUiChanged());
       }
       _pendingCommentIds.remove(tempId);
       _pendingReactions.remove(tempId);
-      emit(ComposerAttachmentUpdated());
+      if (!isClosed) emit(ComposerAttachmentUpdated());
     } catch (e) {
       isUploading = false;
       if (isMediaAttachment) {
@@ -627,6 +643,7 @@ class CommentsCubit extends Cubit<CommentsState> {
       _pendingCommentIds.remove(tempId);
       _pendingReactions.remove(tempId);
       final isOffline = await ConnectivityBannerController.notifyIfOffline();
+      if (isClosed) return;
       emit(
         CommentError(
           SupabaseErrorMapper.toUserMessage(e),
@@ -646,7 +663,7 @@ class CommentsCubit extends Cubit<CommentsState> {
     final resolvedId = resolveId(commentId);
 
     comments = comments.map((c) => _applyEdit(c, resolvedId, trimmed)).toList();
-    emit(CommentsUiChanged());
+    if (!isClosed) emit(CommentsUiChanged());
 
     try {
       await _commentsService.editComment(
@@ -677,7 +694,7 @@ class CommentsCubit extends Cubit<CommentsState> {
             .where((c) => c.id != resolvedId)
             .map((c) => _removeReplyById(c, resolvedId))
             .toList();
-    emit(CommentsUiChanged());
+    if (!isClosed) emit(CommentsUiChanged());
 
     _eventBus.emit(CommentDeletedEvent(postId: postId, commentId: resolvedId));
 
@@ -688,7 +705,7 @@ class CommentsCubit extends Cubit<CommentsState> {
     } catch (e) {
       debugPrint('Error deleting comment: $e');
       comments = previousComments;
-      emit(CommentsUiChanged());
+      if (!isClosed) emit(CommentsUiChanged());
     }
   }
 
@@ -744,7 +761,7 @@ class CommentsCubit extends Cubit<CommentsState> {
         comments
             .map((c) => _updateReactionInTree(c, resolvedCommentId, emoji))
             .toList();
-    emit(CommentsUiChanged());
+    if (!isClosed) emit(CommentsUiChanged());
 
     try {
       final userId = SupabaseProvider.id;
@@ -777,6 +794,7 @@ class CommentsCubit extends Cubit<CommentsState> {
     } catch (e) {
       debugPrint('Error toggling comment reaction: $e');
       final isOffline = await ConnectivityBannerController.notifyIfOffline();
+      if (isClosed) return;
       emit(
         CommentError(
           SupabaseErrorMapper.toUserMessage(e),

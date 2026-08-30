@@ -7,9 +7,9 @@ import 'package:social_media_app/core/cache/utils/cloudinary_url_extensions.dart
 import 'package:video_player/video_player.dart';
 import 'package:social_media_app/core/router/app_routes.dart';
 import 'package:social_media_app/core/widgets/cached_cloudinary_image.dart';
-import 'package:social_media_app/features/comments/model/comment_model.dart';
-import 'package:social_media_app/features/comments/model/comment_type.dart';
-import 'package:social_media_app/features/comments/widget/comment_voice_player.dart';
+import 'package:social_media_app/features/comments/models/comment_model.dart';
+import 'package:social_media_app/features/comments/models/comment_type.dart';
+import 'package:social_media_app/features/comments/widgets/comment_voice_player.dart';
 import '../../../core/attachment/models/media_transfer_state.dart';
 import '../../../core/attachment/utils/video_attachment_meta.dart';
 import '../../../core/attachment/widgets/file_message_bubble.dart';
@@ -18,10 +18,10 @@ import '../../../core/attachment/widgets/media_loading_placeholder.dart';
 import '../../../core/attachment/widgets/media_state_overlay.dart';
 import '../../../core/widgets/video_progress_slider.dart';
 import '../../gifs/utils/loop_limited_gif.dart';
-import '../../single_chats/helper/glass_icon_btn.dart';
+import '../../single_chats/helpers/glass_icon_btn.dart';
 import '../../single_chats/widgets/full_screen_media_view.dart';
 import '../../stickers/utils/animated_loop_cloudinary_sticker.dart';
-import '../cubit/comments_cubit.dart';
+import '../cubits/comments_cubit.dart';
 
 class CommentMediaBubble extends StatelessWidget {
   final CommentModel comment;

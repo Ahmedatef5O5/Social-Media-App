@@ -1,5 +1,5 @@
 import 'dart:io';
-import 'package:social_media_app/features/comments/model/comment_type.dart';
+import 'package:social_media_app/features/comments/models/comment_type.dart';
 
 class CommentAttachmentDraft {
   final CommentType type;

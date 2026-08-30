@@ -2,17 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:social_media_app/core/widgets/custom_loading_indicator.dart';
-import 'package:social_media_app/features/comments/cubit/comments_cubit.dart';
-import 'package:social_media_app/features/comments/model/comment_model.dart';
-import 'package:social_media_app/features/comments/model/comment_sort_option.dart';
-import 'package:social_media_app/features/comments/widget/comments_shimmer_skeleton.dart';
-import 'package:social_media_app/features/posts/cubit/posts_cubit/posts_cubit.dart';
-import 'package:social_media_app/features/posts/model/post_model.dart';
-import 'package:social_media_app/features/comments/widget/comments_section.dart';
+import 'package:social_media_app/features/comments/cubits/comments_cubit.dart';
+import 'package:social_media_app/features/comments/models/comment_model.dart';
+import 'package:social_media_app/features/comments/models/comment_sort_option.dart';
+import 'package:social_media_app/features/comments/widgets/comments_shimmer_skeleton.dart';
+import 'package:social_media_app/features/posts/cubits/posts_cubit/posts_cubit.dart';
+import 'package:social_media_app/features/posts/models/post_model.dart';
+import 'package:social_media_app/features/comments/widgets/comments_section.dart';
 import '../../../core/helpers/comment_helper.dart';
 import '../../posts/widgets/post_reactions_bottom_sheet.dart';
-import '../helper/comment_sheet_shared_widgets.dart';
-import '../helper/comments_reaction_avatar_stack.dart';
+import '../helpers/comment_sheet_shared_widgets.dart';
+import '../helpers/comments_reaction_avatar_stack.dart';
 
 class CommentsInlineSection extends StatelessWidget {
   final String postId;

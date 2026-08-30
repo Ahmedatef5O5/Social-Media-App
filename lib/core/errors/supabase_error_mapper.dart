@@ -1,5 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../features/auth/handler/auth_exception_handler.dart';
+import '../../features/auth/handlers/auth_exception_handler.dart';
 import 'network_error_utils.dart';
 
 /// Single entry point every non-auth Cubit/Repository should route
