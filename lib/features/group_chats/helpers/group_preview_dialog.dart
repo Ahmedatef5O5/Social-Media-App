@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/constants/app_images.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
+import 'group_navigation.dart';
 import '../models/group_model.dart';
 
 class GroupPreviewDialog extends StatelessWidget {
@@ -125,10 +126,13 @@ class GroupPreviewDialog extends StatelessWidget {
                   icon: Icon(Icons.message_outlined, color: primary),
                   onPressed: () {
                     Navigator.pop(context);
-                    Navigator.of(
-                      context,
-                      rootNavigator: true,
-                    ).pushNamed(AppRoutes.groupChatRoute, arguments: group);
+                    openGroupChat(
+                      group.id,
+                      () => Navigator.of(
+                        context,
+                        rootNavigator: true,
+                      ).pushNamed(AppRoutes.groupChatRoute, arguments: group),
+                    );
                   },
                 ),
                 IconButton(

@@ -10,6 +10,7 @@ import '../../../core/errors/supabase_error_mapper.dart';
 import '../../../core/notifications/notification_navigator_key.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/toast/app_toast.dart';
+import '../helpers/group_navigation.dart';
 import '../models/group_invite_preview.dart';
 import '../services/group_chat_services.dart';
 
@@ -66,9 +67,12 @@ class _GroupInviteBottomSheetState extends State<GroupInviteBottomSheet> {
       final group = await _services.joinGroupViaInvite(widget.inviteHash);
       if (!mounted) return;
       Navigator.of(context).pop();
-      navigatorKey.currentState?.pushNamed(
-        AppRoutes.groupChatRoute,
-        arguments: group,
+      openGroupChat(
+        group.id,
+        () => navigatorKey.currentState?.pushNamed(
+          AppRoutes.groupChatRoute,
+          arguments: group,
+        ),
       );
     } catch (e) {
       if (!mounted) return;
@@ -90,9 +94,12 @@ class _GroupInviteBottomSheetState extends State<GroupInviteBottomSheet> {
         AppToast.warning('This group is no longer available');
         return;
       }
-      navigatorKey.currentState?.pushNamed(
-        AppRoutes.groupChatRoute,
-        arguments: group,
+      openGroupChat(
+        groupId,
+        () => navigatorKey.currentState?.pushNamed(
+          AppRoutes.groupChatRoute,
+          arguments: group,
+        ),
       );
     } catch (e) {
       AppToast.error('Failed to open group chat');

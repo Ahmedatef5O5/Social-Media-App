@@ -21,6 +21,7 @@ import 'package:social_media_app/features/posts/views/post_details_view.dart';
 import 'package:social_media_app/features/single_chats/models/chat_user_model.dart';
 import 'package:social_media_app/features/stories/cubits/stories_cubit/stories_cubit.dart';
 import 'package:social_media_app/features/stories/models/story_model.dart';
+import '../../../features/group_chats/helpers/group_navigation.dart';
 
 class TapActionHandler {
   TapActionHandler._();
@@ -422,9 +423,13 @@ class TapActionHandler {
           AppToast.warning('This group is no longer available');
           return;
         }
-        navigatorKey.currentState?.pushNamed(
-          AppRoutes.groupChatRoute,
-          arguments: group,
+
+        openGroupChat(
+          group.id,
+          () => navigatorKey.currentState?.pushNamed(
+            AppRoutes.groupChatRoute,
+            arguments: group,
+          ),
         );
       });
     } catch (e) {

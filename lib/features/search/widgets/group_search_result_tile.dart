@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../core/constants/app_images.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/widgets/cached_cloudinary_image.dart';
+import '../../group_chats/helpers/group_navigation.dart';
 import '../../group_chats/models/group_model.dart';
 
 class GroupSearchResultTile extends StatelessWidget {
@@ -48,10 +49,13 @@ class GroupSearchResultTile extends StatelessWidget {
         ),
       ),
       onTap:
-          () => Navigator.of(
-            context,
-            rootNavigator: true,
-          ).pushNamed(AppRoutes.groupChatRoute, arguments: group),
+          () => openGroupChat(
+            group.id,
+            () => Navigator.of(
+              context,
+              rootNavigator: true,
+            ).pushNamed(AppRoutes.groupChatRoute, arguments: group),
+          ),
     );
   }
 }

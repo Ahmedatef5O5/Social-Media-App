@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../features/group_chats/cubits/group_list_cubit/group_list_cubit.dart';
+import '../../../features/group_chats/helpers/group_navigation.dart';
 import '../../../features/single_chats/cubits/chats_cubit/chats_cubit.dart';
 import '../../constants/app_images.dart';
 import '../helpers/avatar_stack.dart';
@@ -44,10 +45,13 @@ class _NewChatViewState extends State<NewChatView> {
 
   void _openChat(BuildContext context, NewChatListItem item) async {
     if (item.isGroup) {
-      await Navigator.of(
-        context,
-        rootNavigator: true,
-      ).pushNamed(AppRoutes.groupChatRoute, arguments: item.group);
+      await openGroupChat(
+        item.group!.id,
+        () => Navigator.of(
+          context,
+          rootNavigator: true,
+        ).pushNamed(AppRoutes.groupChatRoute, arguments: item.group),
+      );
 
       if (context.mounted) {
         context.read<GroupListCubit>().loadGroups(isRefresh: true);

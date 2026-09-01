@@ -4,6 +4,7 @@ import '../../../core/constants/app_images.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/themes/app_colors.dart';
 import '../../../core/widgets/cached_cloudinary_image.dart';
+import '../../group_chats/helpers/group_navigation.dart';
 import '../models/shared_group_item.dart';
 
 class SharedGroupTile extends StatelessWidget {
@@ -19,10 +20,13 @@ class SharedGroupTile extends StatelessWidget {
     return InkWell(
       borderRadius: BorderRadius.circular(10),
       onTap: () {
-        Navigator.of(
-          context,
-          rootNavigator: true,
-        ).pushNamed(AppRoutes.groupChatRoute, arguments: group);
+        openGroupChat(
+          group.id,
+          () => Navigator.of(
+            context,
+            rootNavigator: true,
+          ).pushNamed(AppRoutes.groupChatRoute, arguments: group),
+        );
       },
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 6),

@@ -5,7 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 import 'package:social_media_app/core/router/app_routes.dart';
 import 'package:social_media_app/features/profile/cubits/profile_cubit/profile_cubit.dart';
-import '../../../core/presence/model/presence_privacy.dart';
+import '../../../core/presence/models/presence_privacy.dart';
 import '../../../core/presence/widgets/presence_privacy_sheet.dart';
 import '../../../core/toast/app_toast.dart';
 import '../../home/cubits/home_cubit/home_cubit.dart';
