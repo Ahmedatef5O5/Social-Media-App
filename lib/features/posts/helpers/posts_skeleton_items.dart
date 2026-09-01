@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:shimmer/shimmer.dart';
 
-class SavedPostsSkeletonItems extends StatelessWidget {
-  const SavedPostsSkeletonItems({super.key});
+class PostsSkeletonItems extends StatelessWidget {
+  final double bottomPadding;
+
+  const PostsSkeletonItems({super.key, this.bottomPadding = 0});
 
   @override
   Widget build(BuildContext context) {
@@ -17,7 +19,7 @@ class SavedPostsSkeletonItems extends StatelessWidget {
     final screenWidth = MediaQuery.sizeOf(context).width;
 
     return ListView.separated(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.fromLTRB(16, 16, 16, 16 + bottomPadding),
       physics: const NeverScrollableScrollPhysics(),
       itemCount: 3,
       separatorBuilder: (_, __) => const Gap(20),

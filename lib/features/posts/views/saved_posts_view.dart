@@ -7,7 +7,7 @@ import '../../../core/widgets/custom_tab_wrapper.dart';
 import '../../../core/widgets/empty_findings_animation_widget.dart';
 import '../cubits/posts_cubit/posts_cubit.dart';
 import '../cubits/saved_posts_cubit/saved_posts_cubit.dart';
-import '../helpers/saved_posts_skeleton_items.dart';
+import '../helpers/posts_skeleton_items.dart';
 import '../models/post_model.dart';
 import '../widgets/post_item_widget.dart';
 
@@ -82,7 +82,7 @@ class _SavedPostsViewState extends State<SavedPostsView> {
               isLoading:
                   state is SavedPostsInitial || state is SavedPostsLoading,
               errorMessage: state is SavedPostsError ? state.message : null,
-              loadingSkeleton: const SavedPostsSkeletonItems(),
+              loadingSkeleton: const PostsSkeletonItems(),
               onRetry:
                   () => context.read<SavedPostsCubit>().fetchSavedPosts(
                     widget.userId,

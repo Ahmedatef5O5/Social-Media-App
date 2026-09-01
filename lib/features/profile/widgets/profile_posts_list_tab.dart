@@ -1,8 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
-import '../../../core/widgets/custom_loading_indicator.dart';
 import '../../posts/cubits/posts_cubit/posts_cubit.dart';
+import '../../posts/helpers/posts_skeleton_items.dart';
 import '../../posts/widgets/post_item_widget.dart';
 
 class ProfilePostsListTab extends StatefulWidget {
@@ -74,7 +74,12 @@ class _ProfilePostsListTabState extends State<ProfilePostsListTab> {
             ],
           );
         }
-        return const CustomLoadingIndicator();
+        return PostsSkeletonItems(
+          bottomPadding:
+              widget.isCurrentUser
+                  ? MediaQuery.of(context).padding.bottom + 65
+                  : 0,
+        );
       },
     );
   }
