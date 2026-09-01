@@ -1,7 +1,20 @@
+import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:local_auth/local_auth.dart';
 import '../../../core/supabase/supabase_provider.dart';
 import '../repository/settings_repository.dart';
+import 'package:flutter/services.dart' show PlatformException;
+import 'package:local_auth/error_codes.dart' as auth_error;
+
+enum BiometricAvailability {
+  available,
+  noHardware,
+  notEnrolled,
+  lockedOut,
+  permanentlyLockedOut,
+  passcodeNotSet,
+  unknown,
+}
 
 class AppLockService with WidgetsBindingObserver {
   AppLockService._();
@@ -62,7 +75,10 @@ class AppLockService with WidgetsBindingObserver {
     }
   }
 
+  BiometricAvailability? lastUnlockFailureReason;
+
   Future<bool> unlock() async {
+    lastUnlockFailureReason = null;
     try {
       final isSupported = await _auth.isDeviceSupported();
       final canCheckBiometrics = await _auth.canCheckBiometrics;
@@ -84,9 +100,60 @@ class AppLockService with WidgetsBindingObserver {
         lockNotifier.value = false;
       }
       return didAuthenticate;
+    } on PlatformException catch (e) {
+      lastUnlockFailureReason = _mapAuthErrorCode(e.code);
+      debugPrint('[AppLockService] unlock error: ${e.code} ${e.message}');
+      return false;
     } catch (e) {
       debugPrint('[AppLockService] unlock error: $e');
       return false;
+    }
+  }
+
+  Future<BiometricAvailability> checkBiometricAvailability() async {
+    try {
+      final isDeviceSupported = await _auth.isDeviceSupported();
+      if (!isDeviceSupported) {
+        return BiometricAvailability.passcodeNotSet;
+      }
+
+      final canCheckBiometrics = await _auth.canCheckBiometrics;
+      final enrolledBiometrics = await _auth.getAvailableBiometrics();
+
+      if (!canCheckBiometrics && enrolledBiometrics.isEmpty) {
+        return BiometricAvailability.noHardware;
+      }
+
+      if (enrolledBiometrics.isEmpty) {
+        return BiometricAvailability.notEnrolled;
+      }
+
+      return BiometricAvailability.available;
+    } on PlatformException catch (e) {
+      debugPrint(
+        '[AppLockService] checkBiometricAvailability error: ${e.code}',
+      );
+      return _mapAuthErrorCode(e.code);
+    } catch (e) {
+      debugPrint('[AppLockService] checkBiometricAvailability error: $e');
+      return BiometricAvailability.unknown;
+    }
+  }
+
+  BiometricAvailability _mapAuthErrorCode(String code) {
+    switch (code) {
+      case auth_error.notEnrolled:
+        return BiometricAvailability.notEnrolled;
+      case auth_error.notAvailable:
+        return BiometricAvailability.noHardware;
+      case auth_error.lockedOut:
+        return BiometricAvailability.lockedOut;
+      case auth_error.permanentlyLockedOut:
+        return BiometricAvailability.permanentlyLockedOut;
+      case auth_error.passcodeNotSet:
+        return BiometricAvailability.passcodeNotSet;
+      default:
+        return BiometricAvailability.unknown;
     }
   }
 

@@ -49,7 +49,26 @@ class SettingsCubit extends Cubit<SettingsState> {
   Future<void> setOnlineStatus(bool value) async {
     await SettingsRepository.instance.setOnlineStatus(value);
     await PresenceService.instance.setVisibility(value);
-    emit(state.copyWith(onlineStatus: value));
+
+    if (!value) {
+      final previousPrivacy = state.presencePrivacy;
+      emit(
+        state.copyWith(
+          onlineStatus: value,
+          presencePrivacy: PresencePrivacy.nobody,
+        ),
+      );
+      try {
+        await _userService.updatePresencePrivacy(PresencePrivacy.nobody);
+        _homeCubit.currentUserData = _homeCubit.currentUserData?.copyWith(
+          presencePrivacy: PresencePrivacy.nobody,
+        );
+      } catch (e) {
+        emit(state.copyWith(presencePrivacy: previousPrivacy));
+      }
+    } else {
+      emit(state.copyWith(onlineStatus: value));
+    }
   }
 
   Future<void> setPresencePrivacy(PresencePrivacy value) async {
@@ -99,14 +118,11 @@ class SettingsCubit extends Cubit<SettingsState> {
 
   Future<void> toggleBiometricLock(bool value) async {
     if (value) {
-      final supported =
-          await AppLockService.instance.verifyDeviceSupportsBiometrics();
-      if (!supported) {
+      final availability =
+          await AppLockService.instance.checkBiometricAvailability();
+      if (availability != BiometricAvailability.available) {
         emit(
-          state.copyWith(
-            errorMessage:
-                'Your device does not support fingerprint or Face ID, or neither has been registered in the system settings.',
-          ),
+          state.copyWith(errorMessage: _biometricErrorMessage(availability)),
         );
         emit(state.copyWith(errorMessage: null));
         return;
@@ -114,10 +130,13 @@ class SettingsCubit extends Cubit<SettingsState> {
 
       final confirmed = await AppLockService.instance.unlock();
       if (!confirmed) {
+        final reason = AppLockService.instance.lastUnlockFailureReason;
         emit(
           state.copyWith(
             errorMessage:
-                'Your identity has not been verified; please try again.',
+                reason != null
+                    ? _biometricErrorMessage(reason)
+                    : 'Your identity has not been verified; please try again.',
           ),
         );
         emit(state.copyWith(errorMessage: null));
@@ -127,5 +146,23 @@ class SettingsCubit extends Cubit<SettingsState> {
 
     await SettingsRepository.instance.setBiometricLock(value);
     emit(state.copyWith(biometricLock: value));
+  }
+
+  String _biometricErrorMessage(BiometricAvailability reason) {
+    switch (reason) {
+      case BiometricAvailability.noHardware:
+        return "This device doesn't have a fingerprint or Face ID sensor, so App Lock isn't available.";
+      case BiometricAvailability.notEnrolled:
+        return 'No fingerprint or Face ID is set up on this device yet. Add one in your device settings, then try again.';
+      case BiometricAvailability.lockedOut:
+        return 'Too many failed attempts. Please wait a moment before trying again.';
+      case BiometricAvailability.permanentlyLockedOut:
+        return "Biometric authentication is locked. Unlock your device with its PIN, pattern, or password first.";
+      case BiometricAvailability.passcodeNotSet:
+        return 'Set up a screen lock (PIN, pattern, or password) on your device before enabling App Lock.';
+      case BiometricAvailability.available:
+      case BiometricAvailability.unknown:
+        return "We couldn't verify your device's biometric setup. Please try again.";
+    }
   }
 }
