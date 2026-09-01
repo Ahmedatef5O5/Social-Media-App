@@ -40,6 +40,8 @@ import 'package:social_media_app/features/splash/views/on_boarding_view.dart';
 import 'package:social_media_app/features/splash/views/splash_view.dart';
 import '../../features/ai_chat/views/ai_chat_view.dart';
 import '../../features/auth/data/models/user_data.dart';
+import '../../features/blocked_users/cubits/blocked_users_cubit/blocked_users_cubit.dart';
+import '../../features/blocked_users/views/blocked_users_view.dart';
 import '../../features/posts/cubits/posts_cubit/posts_cubit.dart';
 import '../../features/posts/cubits/saved_posts_cubit/saved_posts_cubit.dart';
 import '../../features/posts/models/post_model.dart';
@@ -67,6 +69,7 @@ import '../../features/profile/views/profile_view.dart';
 import '../../features/stories/views/my_stories_list_view.dart';
 import '../../features/stories/views/pending_story_resolver_view.dart';
 import '../../features/stories/views/user_stories_grid_view.dart';
+import '../../features/support/views/markdown_document_view.dart';
 import '../cache/repository/media_cache_repository.dart';
 import '../chat_shared/cubits/conversations_cubit/conversations_cubit.dart';
 import '../chat_shared/cubits/new_chat_cubit/new_chat_cubit.dart';
@@ -220,6 +223,9 @@ class AppRouter {
       case AppRoutes.settingsViewRoute:
       case AppRoutes.themesSelectViewRoute:
       case AppRoutes.aiSettingsViewRoute:
+      case AppRoutes.blockedUsersViewRoute:
+      case AppRoutes.helpFaqViewRoute:
+      case AppRoutes.privacyPolicyViewRoute:
         return _profileAndSettingsRoutes(settings);
 
       default:
@@ -739,6 +745,38 @@ class AppRouter {
         );
       case AppRoutes.aboutUsViewRoute:
         return _buildRoute(AboutUsView(), settings: settings);
+      case AppRoutes.blockedUsersViewRoute:
+        return _buildRoute(
+          BlocProvider(
+            create: (context) => BlockedUsersCubit(),
+            child: const BlockedUsersView(),
+          ),
+          settings: settings,
+        );
+      case AppRoutes.helpFaqViewRoute:
+        return _buildRoute(
+          const MarkdownDocumentView(
+            args: MarkdownDocumentArgs(
+              title: 'Help & FAQ',
+              subtitle: 'Get answers to common questions',
+              icon: Icons.help_outline_rounded,
+              assetPath: 'assets/docs/help_faq.md',
+            ),
+          ),
+          settings: settings,
+        );
+      case AppRoutes.privacyPolicyViewRoute:
+        return _buildRoute(
+          const MarkdownDocumentView(
+            args: MarkdownDocumentArgs(
+              title: 'Privacy Policy',
+              subtitle: 'How we handle your data',
+              icon: Icons.policy_outlined,
+              assetPath: 'assets/docs/privacy_policy.md',
+            ),
+          ),
+          settings: settings,
+        );
       case AppRoutes.aiSettingsViewRoute:
         return _buildRoute(const AiSettingsView(), settings: settings);
 

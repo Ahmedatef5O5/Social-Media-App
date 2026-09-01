@@ -21,8 +21,12 @@ class AppRoutes {
 
   // select themes
   static const String themesSelectViewRoute = '/themes-select-view';
-  //
+
+  // at settings view items
   static const String aboutUsViewRoute = '/about-us';
+  static const String blockedUsersViewRoute = '/blocked-users-view';
+  static const String helpFaqViewRoute = '/help-faq-view';
+  static const String privacyPolicyViewRoute = '/privacy-policy-view';
 
   // Group chat
   static const String groupChatRoute = '/group-chat';
