@@ -216,7 +216,7 @@ class _ChatsViewState extends State<ChatsView>
                                 builder: (context, selection) {
                                   final headerColumn = Column(
                                     children: [
-                                      const SizedBox(height: 40),
+                                      const SizedBox(height: 12),
                                       AnimatedSwitcher(
                                         duration: const Duration(
                                           milliseconds: 260,

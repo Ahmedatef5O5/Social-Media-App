@@ -83,6 +83,22 @@ class ChatBlockService {
     return controller.stream;
   }
 
+  static const _personFields = 'id,name,image_url,title,last_seen';
+
+  Future<List<Map<String, dynamic>>> getBlockedUsersList() async {
+    final rows = await _supabase
+        .from(SupabaseConstants.blockedUsers)
+        .select(
+          '${BlockedUsersColumns.blockedId}, ${BlockedUsersColumns.createdAt}, '
+          'blocked_user:${BlockedUsersColumns.blockedId}($_personFields)',
+        )
+        .eq(BlockedUsersColumns.blockerId, SupabaseProvider.id)
+        .order(BlockedUsersColumns.createdAt, ascending: false);
+
+    return List<Map<String, dynamic>>.from(rows as List);
+  }
+
+
   Future<void> blockUser({
     required String blockerId,
     required String blockedId,
