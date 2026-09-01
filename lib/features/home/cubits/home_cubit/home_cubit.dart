@@ -18,14 +18,17 @@ class HomeCubit extends Cubit<HomeState> {
   final PostsCubit _postsCubit;
   // ignore: unused_field
   final NetworkStatusService _networkStatus;
+  final String Function() _currentUserId;
 
   HomeCubit({
     required UserService userService,
     NetworkStatusService? networkStatus,
     required PostsCubit postsCubit,
+    @visibleForTesting String Function()? currentUserIdProvider,
   }) : _userService = userService,
        _postsCubit = postsCubit,
        _networkStatus = networkStatus ?? NetworkStatusService.instance,
+       _currentUserId = currentUserIdProvider ?? (() => SupabaseProvider.id),
        super(HomeInitial());
 
   UserData? currentUserData;
@@ -35,7 +38,7 @@ class HomeCubit extends Cubit<HomeState> {
 
   Future<void> getCurrentUserData({bool isRefresh = false}) async {
     if (!isRefresh) emit(UserDataLoading());
-    final userId = SupabaseProvider.id;
+    final userId = _currentUserId();
     await _getCurrentUser(userId, isRefresh: isRefresh);
   }
 
