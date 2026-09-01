@@ -10,9 +10,14 @@ part 'auth_state.dart';
 
 class AuthCubit extends Cubit<AuthState> {
   final SupabaseAuthServices _authServices;
+  final NetworkStatusService _networkStatus;
   StreamSubscription? _authSubscription;
 
-  AuthCubit(this._authServices) : super(AuthInitial()) {
+  AuthCubit(
+    this._authServices, {
+    @visibleForTesting NetworkStatusService? networkStatus,
+  }) : _networkStatus = networkStatus ?? NetworkStatusService.instance,
+       super(AuthInitial()) {
     _monitorAuthState();
   }
 
@@ -41,17 +46,23 @@ class AuthCubit extends Cubit<AuthState> {
   }
 
   void _handleError(Object e) {
+    final rawError = e.toString().toLowerCase();
+
+    if (rawError.contains('cancelled') ||
+        rawError.contains('aborted') ||
+        rawError.contains('user_cancelled') ||
+        rawError.contains('user_cancel')) {
+      emit(AuthInitial());
+      return;
+    }
+
     final message = AuthExceptionHandler.handle(e);
     final displayMessage =
         message == 'no-internet'
             ? 'No internet connection. Please check your network.'
             : message;
 
-    if (displayMessage.isEmpty ||
-        displayMessage.contains('cancelled') ||
-        displayMessage.contains('aborted') ||
-        displayMessage.contains('cancel') ||
-        displayMessage.contains('user_cancelled')) {
+    if (displayMessage.isEmpty) {
       emit(AuthInitial());
       return;
     }
@@ -95,24 +106,30 @@ class AuthCubit extends Cubit<AuthState> {
     }
   }
 
+  static const _oauthResultTimeout = Duration(seconds: 10);
+
+  Future<void> _waitForAuthResultOrTimeout() async {
+    if (state is! AuthLoading) return;
+
+    try {
+      await stream
+          .firstWhere((s) => s is! AuthLoading)
+          .timeout(_oauthResultTimeout);
+    } on TimeoutException {
+      if (state is AuthLoading) {
+        emit(AuthInitial());
+      }
+    }
+  }
+
   Future<void> signInWithFacebook() async {
     emit(AuthLoading());
     try {
       await _authServices.signInWithFacebook();
-
-      await stream
-          .firstWhere((state) => state is! AuthLoading)
-          .timeout(
-            const Duration(seconds: 10),
-            onTimeout: () => throw TimeoutException('Sign-in timed out'),
-          );
+      await _waitForAuthResultOrTimeout();
     } catch (e) {
-      if (e is TimeoutException) {
-        emit(AuthInitial());
-      } else {
-        debugPrint('Facebook Sign-In Error: $e');
-        _handleError(e);
-      }
+      debugPrint('Facebook Sign-In Error: $e');
+      _handleError(e);
     }
   }
 
@@ -120,20 +137,10 @@ class AuthCubit extends Cubit<AuthState> {
     emit(AuthLoading());
     try {
       await _authServices.signInWithMicrosoft();
-
-      await stream
-          .firstWhere((state) => state is! AuthLoading)
-          .timeout(
-            const Duration(seconds: 10),
-            onTimeout: () => throw TimeoutException('Sign-in timed out'),
-          );
+      await _waitForAuthResultOrTimeout();
     } catch (e) {
-      if (e is TimeoutException) {
-        emit(AuthInitial());
-      } else {
-        debugPrint('Microsoft Sign-In Error: $e');
-        _handleError(e);
-      }
+      debugPrint('Microsoft Sign-In Error: $e');
+      _handleError(e);
     }
   }
 
@@ -171,7 +178,7 @@ class AuthCubit extends Cubit<AuthState> {
       return;
     }
 
-    final isOnline = await NetworkStatusService.instance.isConnected();
+    final isOnline = await _networkStatus.isConnected();
 
     if (!isOnline) {
       debugPrint(
