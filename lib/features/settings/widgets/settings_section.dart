@@ -98,72 +98,80 @@ class SettingsSection extends StatelessWidget {
         InkWell(
           borderRadius: BorderRadius.circular(18),
           onTap:
-              item.toggle == null
+              (item.toggle == null && item.enabled)
                   ? () {
                     HapticFeedback.selectionClick();
                     item.onTap?.call();
                   }
                   : null,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
-            child: Row(
-              children: [
-                Container(
-                  width: 38,
-                  height: 38,
-                  decoration: BoxDecoration(
-                    color: primary.withValues(alpha: 0.10),
-                    borderRadius: BorderRadius.circular(11),
+          child: Opacity(
+            opacity: item.enabled ? 1 : 0.4,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+              child: Row(
+                children: [
+                  Container(
+                    width: 38,
+                    height: 38,
+                    decoration: BoxDecoration(
+                      color: primary.withValues(alpha: 0.10),
+                      borderRadius: BorderRadius.circular(11),
+                    ),
+                    child: Icon(item.icon, color: primary, size: 18),
                   ),
-                  child: Icon(item.icon, color: primary, size: 18),
-                ),
-                const Gap(14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        item.label,
-                        style: TextStyle(
-                          fontSize: 14.5,
-                          fontWeight: FontWeight.w600,
-                          color: isDark ? Colors.white : Colors.black87,
-                          letterSpacing: -0.2,
-                        ),
-                      ),
-                      if (item.subtitle != null) ...[
-                        const Gap(2),
+                  const Gap(14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
                         Text(
-                          item.subtitle!,
+                          item.label,
                           style: TextStyle(
-                            fontSize: 12,
-                            color:
-                                isDark ? Colors.white38 : Colors.grey.shade500,
+                            fontSize: 14.5,
+                            fontWeight: FontWeight.w600,
+                            color: isDark ? Colors.white : Colors.black87,
+                            letterSpacing: -0.2,
                           ),
                         ),
+                        if (item.subtitle != null) ...[
+                          const Gap(2),
+                          Text(
+                            item.subtitle!,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color:
+                                  isDark
+                                      ? Colors.white38
+                                      : Colors.grey.shade500,
+                            ),
+                          ),
+                        ],
                       ],
-                    ],
-                  ),
-                ),
-                if (item.toggle != null)
-                  Transform.scale(
-                    scale: 0.85,
-                    child: CupertinoSwitch(
-                      value: item.toggle!,
-                      activeTrackColor: primary,
-                      onChanged: (v) {
-                        HapticFeedback.lightImpact();
-                        item.onToggle?.call(v);
-                      },
                     ),
-                  )
-                else
-                  Icon(
-                    Icons.arrow_forward_ios_rounded,
-                    size: 14,
-                    color: isDark ? Colors.white24 : Colors.grey.shade300,
                   ),
-              ],
+                  if (item.toggle != null)
+                    Transform.scale(
+                      scale: 0.85,
+                      child: CupertinoSwitch(
+                        value: item.toggle!,
+                        activeTrackColor: primary,
+                        onChanged:
+                            item.enabled
+                                ? (v) {
+                                  HapticFeedback.lightImpact();
+                                  item.onToggle?.call(v);
+                                }
+                                : null,
+                      ),
+                    )
+                  else
+                    Icon(
+                      Icons.arrow_forward_ios_rounded,
+                      size: 14,
+                      color: isDark ? Colors.white24 : Colors.grey.shade300,
+                    ),
+                ],
+              ),
             ),
           ),
         ),

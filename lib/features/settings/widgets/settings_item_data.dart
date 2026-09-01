@@ -8,6 +8,7 @@ class SettingsItemData {
   final VoidCallback? onTap;
   final ValueChanged<bool>? onToggle;
   final Widget? footer;
+  final bool enabled;
 
   const SettingsItemData({
     required this.icon,
@@ -17,5 +18,6 @@ class SettingsItemData {
     this.onTap,
     this.onToggle,
     this.footer,
+    this.enabled = true,
   });
 }

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
-import 'package:social_media_app/core/helpers/formatted_date.dart';
 import 'package:social_media_app/features/single_chats/models/chat_block_status.dart';
 import 'package:social_media_app/features/single_chats/models/chat_user_model.dart';
 import '../../../core/cache/services/starred_message_store.dart';
@@ -12,10 +11,9 @@ import '../../../core/chat_shared/cubits/shared_media_cubit/shared_media_cubit.d
 import '../../../core/chat_shared/widgets/shared_media_preview_section.dart';
 import '../../../core/chat_shared/models/starred_message_entry.dart';
 import '../../../core/chat_shared/widgets/starred_messages_row.dart';
-import '../../../core/presence/cubits/presence_cubit/presence_cubit.dart';
 import '../../../core/presence/models/chat_action_type.dart';
-import '../../../core/presence/models/presence_info.dart';
 import '../../../core/chat_shared/services/shared_media_data_source.dart';
+import '../../../core/presence/widgets/presence_status_text.dart';
 import '../../../core/services/active_call/active_call_session_data.dart';
 import '../../../core/services/active_call/cubit/active_call_session_cubit.dart';
 import '../../../core/supabase/supabase_provider.dart';
@@ -212,58 +210,11 @@ class _ReceiverProfileViewState extends State<ReceiverProfileView> {
                       );
                     }
 
-                    return Builder(
-                      builder: (context) {
-                        final presenceInfo = context
-                            .select<PresenceCubit, PresenceInfo?>(
-                              (cubit) => cubit.of(widget.receiverUser.id),
-                            );
-                        final isOnline =
-                            presenceInfo?.isEffectivelyOnline ??
-                            widget.receiverUser.isOnline;
-                        final lastSeen =
-                            presenceInfo?.lastSeen ??
-                            widget.receiverUser.lastSeen;
-
-                        if (isOnline) {
-                          return const Text(
-                            'Online',
-                            style: TextStyle(
-                              color: Colors.green,
-                              fontWeight: FontWeight.w500,
-                              fontSize: 12,
-                            ),
-                          );
-                        }
-
-                        if (lastSeen != null) {
-                          final lastSeenStr = FormattedDate.getLastSeen(
-                            lastSeen,
-                          );
-
-                          if (lastSeenStr == 'Online' ||
-                              lastSeenStr == 'just now') {
-                            return const Text(
-                              'Online',
-                              style: TextStyle(
-                                color: Colors.green,
-                                fontWeight: FontWeight.w500,
-                                fontSize: 12,
-                              ),
-                            );
-                          }
-
-                          return Text(
-                            "Last seen $lastSeenStr",
-                            style: const TextStyle(
-                              color: Colors.grey,
-                              fontSize: 12,
-                            ),
-                          );
-                        }
-
-                        return const SizedBox.shrink();
-                      },
+                    return PresenceStatusText(
+                      userId: widget.receiverUser.id,
+                      fallbackIsOnline: widget.receiverUser.isOnline,
+                      fallbackLastSeen: widget.receiverUser.lastSeen,
+                      presencePrivacy: widget.receiverUser.presencePrivacy,
                     );
                   },
                 );

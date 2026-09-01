@@ -126,6 +126,7 @@ class NewChatContactTile extends StatelessWidget {
               : PresenceStatusText(
                 userId: user.id,
                 fallbackLastSeen: user.lastSeen,
+                presencePrivacy: user.presencePrivacy,
               ),
     );
 

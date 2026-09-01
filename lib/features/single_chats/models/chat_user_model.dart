@@ -1,4 +1,5 @@
 import 'package:social_media_app/core/utilities/supabase_constants.dart';
+import '../../../core/presence/models/presence_privacy.dart';
 import '../../auth/data/models/user_data.dart';
 
 class ChatUserModel {
@@ -15,6 +16,7 @@ class ChatUserModel {
   final int unreadCount;
   final DateTime? lastSeen;
   final bool isOnline;
+  final PresencePrivacy presencePrivacy;
 
   const ChatUserModel({
     required this.id,
@@ -30,6 +32,7 @@ class ChatUserModel {
     this.unreadCount = 0,
     this.lastSeen,
     this.isOnline = false,
+    this.presencePrivacy = PresencePrivacy.friends,
   });
 
   factory ChatUserModel.fromUserData(
@@ -56,6 +59,9 @@ class ChatUserModel {
               ? DateTime.parse(map['last_seen'].toString())
               : null,
       isOnline: false,
+      presencePrivacy: PresencePrivacy.fromValue(
+        map['presence_privacy'] as String?,
+      ),
     );
   }
 
@@ -73,6 +79,7 @@ class ChatUserModel {
     bool? isTyping,
     bool? isRecording,
     bool? isOnline,
+    PresencePrivacy? presencePrivacy,
   }) {
     return ChatUserModel(
       id: id ?? this.id,
@@ -88,6 +95,7 @@ class ChatUserModel {
       isTyping: isTyping ?? this.isTyping,
       isRecording: isRecording ?? this.isRecording,
       isOnline: isOnline ?? this.isOnline,
+      presencePrivacy: presencePrivacy ?? this.presencePrivacy,
     );
   }
 
@@ -101,6 +109,7 @@ class ChatUserModel {
       lastMessageIsMe: false,
       lastMessageIsRead: false,
       isOnline: false,
+      presencePrivacy: userData.presencePrivacy,
     );
   }
 

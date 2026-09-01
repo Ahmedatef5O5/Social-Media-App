@@ -140,6 +140,7 @@ class ReceiverDetailsHeaderSection extends StatelessWidget {
                           userId: receiverUser.id,
                           fallbackIsOnline: receiverUser.isOnline,
                           fallbackLastSeen: receiverUser.lastSeen,
+                          presencePrivacy: receiverUser.presencePrivacy,
                         );
                       },
                     ),
