@@ -135,6 +135,7 @@ class _ProfileViewState extends State<ProfileView> {
               return CustomTabWrapper(
                 isLoading: isLoading,
                 errorMessage: errorMessage,
+                isTopSafeArea: false,
                 loadingSkeleton: ProfileShimmerLoading(
                   isCurrentUser: isCurrentUser,
                 ),

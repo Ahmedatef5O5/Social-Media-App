@@ -11,6 +11,8 @@ class CustomTabWrapper<T> extends StatefulWidget {
   final bool isLoading;
   final String? errorMessage;
   final VoidCallback onRetry;
+  final bool isTopSafeArea;
+
   const CustomTabWrapper({
     super.key,
     required this.loadingSkeleton,
@@ -18,6 +20,7 @@ class CustomTabWrapper<T> extends StatefulWidget {
     required this.isLoading,
     this.errorMessage,
     required this.onRetry,
+    this.isTopSafeArea = true,
   });
 
   @override
@@ -26,17 +29,19 @@ class CustomTabWrapper<T> extends StatefulWidget {
 
 class _CustomTabWrapperState<T> extends State<CustomTabWrapper<T>> {
   bool _isRetrying = false;
+
   @override
   Widget build(BuildContext context) {
     final screenSize = MediaQuery.sizeOf(context);
     final theme = Theme.of(context);
     final appTheme = context.watch<ThemeCubit>().state.theme;
 
+    Widget content;
+
     if (widget.isLoading) {
-      return widget.loadingSkeleton;
-    }
-    if (widget.errorMessage != null) {
-      return Center(
+      content = widget.loadingSkeleton;
+    } else if (widget.errorMessage != null) {
+      content = Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -99,8 +104,10 @@ class _CustomTabWrapperState<T> extends State<CustomTabWrapper<T>> {
           ],
         ),
       );
+    } else {
+      content = widget.child;
     }
 
-    return widget.child;
+    return SafeArea(top: widget.isTopSafeArea, bottom: false, child: content);
   }
 }

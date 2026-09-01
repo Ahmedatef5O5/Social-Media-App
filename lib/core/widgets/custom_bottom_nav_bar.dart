@@ -126,144 +126,163 @@ class _CustomBottomNavBarState extends State<CustomBottomNavBar> {
                     )..getProfileData(userId),
               ),
             ],
-            child: Scaffold(
-              backgroundColor: currentTheme.bgBase,
-              key: _scaffoldKey,
-              extendBody: true,
-              endDrawer: ProfileDrawer(navController: _controller),
-              body: Stack(
-                children: [
-                  PersistentTabView(
-                    backgroundColor: Colors.transparent,
-                    controller: _controller,
-                    gestureNavigationEnabled: true,
-                    handleAndroidBackButtonPress: false,
-                    selectedTabPressConfig: const SelectedTabPressConfig(
-                      popAction: PopActionType.all,
-                    ),
-                    navBarBuilder: (config) => const SizedBox.shrink(),
-                    tabs: [
-                      PersistentTabConfig(
-                        screen: HomeView(
-                          navController: _controller,
-                          scrollController: _scrollControllers[0],
-                        ),
-                        item: ItemConfig(icon: const Icon(Icons.home)),
-                      ),
-                      PersistentTabConfig(
-                        screen: DiscoverView(
-                          scrollController: _scrollControllers[1],
-                        ),
-                        item: ItemConfig(icon: const Icon(Icons.group)),
-                      ),
-                      PersistentTabConfig(
-                        screen: ChatsView(
-                          scrollController: _scrollControllers[2],
-                        ),
-                        item: ItemConfig(icon: const Icon(Icons.chat)),
-                      ),
-                      PersistentTabConfig(
-                        screen: ProfileView(
-                          scrollController: _scrollControllers[3],
-                        ),
-                        item: ItemConfig(icon: const Icon(Icons.person)),
-                      ),
-                    ],
+            child: AnnotatedRegion<SystemUiOverlayStyle>(
+              value: (currentTheme.isDark
+                      ? SystemUiOverlayStyle.light
+                      : SystemUiOverlayStyle.dark)
+                  .copyWith(
+                    statusBarColor: Colors.transparent,
+                    systemNavigationBarColor: currentTheme.bgBase,
+                    systemNavigationBarIconBrightness:
+                        currentTheme.isDark
+                            ? Brightness.light
+                            : Brightness.dark,
                   ),
-                  Positioned(
-                    left: 0,
-                    right: 0,
-                    bottom: 8,
-                    child: Center(
-                      child: SizedBox(
-                        width: MediaQuery.of(context).size.width * 0.92,
-                        child: BlocBuilder<ChatsCubit, ChatsState>(
-                          buildWhen:
-                              (previous, current) =>
-                                  current is ChatsSuccessloaded,
-                          builder: (context, chatsState) {
-                            int singleChatsUnread = 0;
-                            if (chatsState is ChatsSuccessloaded) {
-                              singleChatsUnread = chatsState.chats.fold(
-                                0,
-                                (s, c) => s + c.unreadCount,
-                              );
-                            }
-                            return BlocBuilder<GroupListCubit, GroupListState>(
-                              buildWhen:
-                                  (previous, current) =>
-                                      current is GroupListLoaded,
-                              builder: (context, groupState) {
-                                int groupChatsUnread = 0;
-                                if (groupState is GroupListLoaded) {
-                                  groupChatsUnread = groupState.groups.fold(
-                                    0,
-                                    (s, g) => s + g.unreadCount,
-                                  );
-                                }
-                                final unread =
-                                    singleChatsUnread + groupChatsUnread;
-
-                                return BlocBuilder<ProfileCubit, ProfileState>(
-                                  builder: (context, profileState) {
-                                    String? imageUrl;
-                                    if (profileState is ProfileLoaded) {
-                                      imageUrl = profileState.user.imageUrl;
-                                    }
-                                    return CustomFloatingNavBar(
-                                      currentIndex: _controller.index,
-                                      onTap: (i) {
-                                        if (_controller.index == i) {
-                                          if (_scrollControllers[i]
-                                              .hasClients) {
-                                            _scrollControllers[i].animateTo(
-                                              0.0,
-                                              duration: const Duration(
-                                                milliseconds: 400,
-                                              ),
-                                              curve: Curves.easeOutBack,
-                                            );
-                                          }
-                                        } else {
-                                          _controller.jumpToTab(i);
-                                        }
-                                        if (i == 3) {
-                                          _scaffoldKey.currentState!
-                                              .openEndDrawer();
-                                        }
-                                        setState(() {});
-                                      },
-                                      items: [
-                                        const NavBarItem(
-                                          icon: Icons.home_outlined,
-                                        ),
-                                        const NavBarItem(
-                                          icon: Icons.group_outlined,
-                                        ),
-                                        NavBarItem(
-                                          icon: Icons.chat_bubble_outline,
-                                          badgeCount: unread,
-                                        ),
-                                        NavBarItem(
-                                          child: MainUserAvatar(
-                                            userId: userId,
-                                            imageUrl: imageUrl,
-                                            showBorder: false,
-                                            size: 30,
-                                          ),
-                                        ),
-                                      ],
-                                    );
-                                  },
+              child: Scaffold(
+                backgroundColor: currentTheme.bgBase,
+                key: _scaffoldKey,
+                extendBody: true,
+                endDrawer: ProfileDrawer(navController: _controller),
+                body: Stack(
+                  children: [
+                    PersistentTabView(
+                      backgroundColor: Colors.transparent,
+                      controller: _controller,
+                      gestureNavigationEnabled: true,
+                      handleAndroidBackButtonPress: false,
+                      selectedTabPressConfig: const SelectedTabPressConfig(
+                        popAction: PopActionType.all,
+                      ),
+                      navBarBuilder: (config) => const SizedBox.shrink(),
+                      tabs: [
+                        PersistentTabConfig(
+                          screen: HomeView(
+                            navController: _controller,
+                            scrollController: _scrollControllers[0],
+                          ),
+                          item: ItemConfig(icon: const Icon(Icons.home)),
+                        ),
+                        PersistentTabConfig(
+                          screen: DiscoverView(
+                            scrollController: _scrollControllers[1],
+                          ),
+                          item: ItemConfig(icon: const Icon(Icons.group)),
+                        ),
+                        PersistentTabConfig(
+                          screen: ChatsView(
+                            scrollController: _scrollControllers[2],
+                          ),
+                          item: ItemConfig(icon: const Icon(Icons.chat)),
+                        ),
+                        PersistentTabConfig(
+                          screen: ProfileView(
+                            scrollController: _scrollControllers[3],
+                          ),
+                          item: ItemConfig(icon: const Icon(Icons.person)),
+                        ),
+                      ],
+                    ),
+                    Positioned(
+                      left: 0,
+                      right: 0,
+                      bottom: 8,
+                      child: Center(
+                        child: SizedBox(
+                          width: MediaQuery.of(context).size.width * 0.92,
+                          child: BlocBuilder<ChatsCubit, ChatsState>(
+                            buildWhen:
+                                (previous, current) =>
+                                    current is ChatsSuccessloaded,
+                            builder: (context, chatsState) {
+                              int singleChatsUnread = 0;
+                              if (chatsState is ChatsSuccessloaded) {
+                                singleChatsUnread = chatsState.chats.fold(
+                                  0,
+                                  (s, c) => s + c.unreadCount,
                                 );
-                              },
-                            );
-                          },
+                              }
+                              return BlocBuilder<
+                                GroupListCubit,
+                                GroupListState
+                              >(
+                                buildWhen:
+                                    (previous, current) =>
+                                        current is GroupListLoaded,
+                                builder: (context, groupState) {
+                                  int groupChatsUnread = 0;
+                                  if (groupState is GroupListLoaded) {
+                                    groupChatsUnread = groupState.groups.fold(
+                                      0,
+                                      (s, g) => s + g.unreadCount,
+                                    );
+                                  }
+                                  final unread =
+                                      singleChatsUnread + groupChatsUnread;
+
+                                  return BlocBuilder<
+                                    ProfileCubit,
+                                    ProfileState
+                                  >(
+                                    builder: (context, profileState) {
+                                      String? imageUrl;
+                                      if (profileState is ProfileLoaded) {
+                                        imageUrl = profileState.user.imageUrl;
+                                      }
+                                      return CustomFloatingNavBar(
+                                        currentIndex: _controller.index,
+                                        onTap: (i) {
+                                          if (_controller.index == i) {
+                                            if (_scrollControllers[i]
+                                                .hasClients) {
+                                              _scrollControllers[i].animateTo(
+                                                0.0,
+                                                duration: const Duration(
+                                                  milliseconds: 400,
+                                                ),
+                                                curve: Curves.easeOutBack,
+                                              );
+                                            }
+                                          } else {
+                                            _controller.jumpToTab(i);
+                                          }
+                                          if (i == 3) {
+                                            _scaffoldKey.currentState!
+                                                .openEndDrawer();
+                                          }
+                                          setState(() {});
+                                        },
+                                        items: [
+                                          const NavBarItem(
+                                            icon: Icons.home_outlined,
+                                          ),
+                                          const NavBarItem(
+                                            icon: Icons.group_outlined,
+                                          ),
+                                          NavBarItem(
+                                            icon: Icons.chat_bubble_outline,
+                                            badgeCount: unread,
+                                          ),
+                                          NavBarItem(
+                                            child: MainUserAvatar(
+                                              userId: userId,
+                                              imageUrl: imageUrl,
+                                              showBorder: false,
+                                              size: 30,
+                                            ),
+                                          ),
+                                        ],
+                                      );
+                                    },
+                                  );
+                                },
+                              );
+                            },
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),

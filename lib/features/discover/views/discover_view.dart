@@ -91,7 +91,7 @@ class _DiscoverViewState extends State<DiscoverView> {
                     SliverToBoxAdapter(
                       child: Column(
                         children: [
-                          const Gap(20),
+                          const Gap(12),
                           DiscoverPeopleHeaderSection(),
                           const Gap(8),
                         ],

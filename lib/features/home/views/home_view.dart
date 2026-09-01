@@ -196,7 +196,7 @@ class _HomeViewState extends State<HomeView> {
                                   ),
                                   scrollDirection: Axis.vertical,
                                   slivers: [
-                                    const SliverGap(44),
+                                    const SliverGap(12),
                                     SliverToBoxAdapter(
                                       child: HomeViewHeaderSection(
                                         navController: widget.navController,
