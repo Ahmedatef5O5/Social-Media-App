@@ -258,7 +258,7 @@ class _TextInputAreaSectionState extends State<TextInputAreaSection> {
                       widget.onCancelReply?.call();
                       context.read<ChatDetailsCubit>().sendMessage(
                         receiverId: widget.receiverUser.id,
-                        messageText: '',
+                        messageText: nameToSend ?? 'File',
                         messageType: 'file',
                         documentFile: docToSend,
                         fileName: nameToSend,

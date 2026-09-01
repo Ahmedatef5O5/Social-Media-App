@@ -10,7 +10,8 @@ import 'package:social_media_app/features/single_chats/widgets/empty_placeholder
 import 'package:social_media_app/features/single_chats/widgets/typing_bubble_widget.dart';
 import '../../../core/constants/app_images.dart';
 import '../../../core/helpers/formatted_date.dart';
-import '../../../core/presence/model/chat_action_type.dart';
+import '../../../core/messaging/message_reconciler.dart';
+import '../../../core/presence/models/chat_action_type.dart';
 import '../../../core/supabase/supabase_provider.dart';
 import '../cubits/chat_details_cubit/chat_details_cubit.dart';
 import '../helpers/chat_date_separator_helper.dart';
@@ -135,12 +136,16 @@ class _MessagesListViewState extends State<MessagesListView> {
                         );
 
                     if (msg.isSystemEvent) {
+                      final stableKey = correlationKeyFor(
+                        id: msg.id,
+                        clientMessageId: msg.clientMessageId,
+                      );
                       return Column(
-                        key: ValueKey('item_${msg.id}'),
+                        key: ValueKey('item_$stableKey'),
                         children: [
                           if (showDateSeparator)
                             DateSeparatorGlassmorphismWidget(
-                              key: ValueKey('date_${msg.id}'),
+                              key: ValueKey('date_$stableKey'),
                               date: FormattedDate.getChatTime(msg.createdAt),
                             ),
                           ChatSystemEventSeparator(
@@ -164,12 +169,16 @@ class _MessagesListViewState extends State<MessagesListView> {
                           getCreatedAt: (m) => m.createdAt,
                         );
 
+                    final stableKey = correlationKeyFor(
+                      id: msg.id,
+                      clientMessageId: msg.clientMessageId,
+                    );
                     return Column(
-                      key: ValueKey('item_${msg.id}'),
+                      key: ValueKey('item_$stableKey'),
                       children: [
                         if (showDateSeparator)
                           DateSeparatorGlassmorphismWidget(
-                            key: ValueKey('date_${msg.id}'),
+                            key: ValueKey('date_$stableKey'),
                             date: FormattedDate.getChatTime(msg.createdAt),
                           ),
                         ChatBubble(

@@ -217,11 +217,13 @@ class ChatMessagesService {
 
     final String newMessageId;
     final DateTime serverCreatedAt;
+    final bool isNewInsert;
     if (upserted.isNotEmpty) {
       newMessageId = upserted.first[MessagesColumns.id] as String;
       serverCreatedAt = DateTime.parse(
         upserted.first[MessagesColumns.createdAt] as String,
       );
+      isNewInsert = true;
     } else {
       final existing =
           await _supabase
@@ -234,13 +236,15 @@ class ChatMessagesService {
       serverCreatedAt = DateTime.parse(
         existing[MessagesColumns.createdAt] as String,
       );
+      isNewInsert = false;
     }
 
-    if (messageType != 'call') {
+    if (isNewInsert && messageType != 'call') {
       final senderInfo = await getCurrentUserInfo(senderId);
       unawaited(
         ChatNotificationDispatcher.instance.notifyMessage(
           messageId: newMessageId,
+          clientMessageId: clientMessageId,
           senderId: senderId,
           receiverId: receiverId,
           senderName: senderInfo['name'] ?? 'Unknown',

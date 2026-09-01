@@ -11,13 +11,13 @@ import '../../../../core/cache/repository/media_cache_repository.dart';
 import '../../../../core/cache/services/messages_snapshot_cache.dart';
 import '../../../../core/chat_shared/controllers/chat_search_controller.dart';
 import '../../../../core/chat_shared/helpers/chat_mute_status_cache.dart';
-import '../../../../core/messaging/message_reconciler.dart';
 import '../../../../core/chat_shared/services/chat_mute_service.dart';
 import '../../../../core/connectivity/services/connectivity_banner_controller.dart';
 import '../../../../core/errors/supabase_error_mapper.dart';
 import '../../../../core/helpers/chat_helper.dart';
 import '../../../../core/helpers/selected_message_star_controller.dart';
-import '../../../../core/presence/model/chat_action_type.dart';
+import '../../../../core/messaging/message_reconciler.dart';
+import '../../../../core/presence/models/chat_action_type.dart';
 import '../../../../core/services/fcm_services.dart';
 import '../../../../core/services/supabase_storage_services.dart';
 import '../../../../core/supabase/supabase_provider.dart';
@@ -111,7 +111,7 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
   // message's id is a real UUID (the CID) from the moment it's created.
   Set<String> _protectedKeys = {};
   bool get hasConfirmedInitialLoad => _hasReceivedFirstStreamEvent;
-
+  bool _hasHydratedFromDisk = false;
   String? _activeReceiverId;
 
   @override
@@ -154,7 +154,15 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed && _activeReceiverId != null) {
+    final wasBackgrounded =
+        _lastLifecycleState == AppLifecycleState.paused ||
+        _lastLifecycleState == AppLifecycleState.inactive ||
+        _lastLifecycleState == AppLifecycleState.hidden;
+    _lastLifecycleState = state;
+
+    if (state == AppLifecycleState.resumed &&
+        wasBackgrounded &&
+        _activeReceiverId != null) {
       getMessagesStream(receiverId: _activeReceiverId!);
     }
   }
@@ -298,8 +306,12 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
     isAtBottomNotifier.value = isAtBottom;
   }
 
+  int _messagesStreamEpoch = 0;
+  AppLifecycleState? _lastLifecycleState;
+
   void getMessagesStream({required String receiverId}) {
     _activeReceiverId = receiverId;
+    final int myEpoch = ++_messagesStreamEpoch;
     _messageSubscription?.cancel();
     _hasReceivedFirstStreamEvent = false;
     _protectedKeys = {};
@@ -310,36 +322,39 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
     );
     _messagesSnapshotKey = 'chat_messages_snapshot_$conversationId';
 
-    final diskMessages = _readMessagesSnapshot(_messagesSnapshotKey!);
-    if (diskMessages.isNotEmpty) {
-      for (var m in diskMessages) {
-        if (m.reactions.isNotEmpty) {
-          _reactionsCache[m.id] = Map<String, String>.from(m.reactions);
+    if (!_hasHydratedFromDisk) {
+      _hasHydratedFromDisk = true;
+      final diskMessages = _readMessagesSnapshot(_messagesSnapshotKey!);
+      if (diskMessages.isNotEmpty) {
+        for (var m in diskMessages) {
+          if (m.reactions.isNotEmpty) {
+            _reactionsCache[m.id] = Map<String, String>.from(m.reactions);
+          }
         }
+
+        final enrichedDiskMessages =
+            diskMessages.map((m) {
+              final reactions = _reactionsCache[m.id] ?? m.reactions;
+              return m.copyWith(reactions: reactions);
+            }).toList();
+
+        final dedupedDiskMessages = _reconciler.dedupe(enrichedDiskMessages);
+
+        cachedMessages = dedupedDiskMessages;
+        _registerBubbleKeys(dedupedDiskMessages);
+        emit(MessagesSuccessLoaded(messages: dedupedDiskMessages));
       }
-
-      final enrichedDiskMessages =
-          diskMessages.map((m) {
-            final reactions = _reactionsCache[m.id] ?? m.reactions;
-            return m.copyWith(reactions: reactions);
-          }).toList();
-
-      cachedMessages = enrichedDiskMessages;
-
-      _protectedKeys =
-          enrichedDiskMessages
-              .map(
-                (m) => correlationKeyFor(
-                  id: m.id,
-                  clientMessageId: m.clientMessageId,
-                ),
-              )
-              .toSet();
-
-      _registerBubbleKeys(enrichedDiskMessages);
-
-      emit(MessagesSuccessLoaded(messages: enrichedDiskMessages));
     }
+
+    _protectedKeys =
+        cachedMessages
+            .map(
+              (m) => correlationKeyFor(
+                id: m.id,
+                clientMessageId: m.clientMessageId,
+              ),
+            )
+            .toSet();
 
     _listenReactions(conversationId);
 
@@ -347,6 +362,8 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
         .getMessagesStream(senderId: currentUserId, receiverId: receiverId)
         .listen(
           (rawMessages) {
+            if (myEpoch != _messagesStreamEpoch) return;
+
             final clearedAt = ChatClearStore.instance.clearedAtFor(receiverId);
             final messages =
                 clearedAt == null
@@ -397,8 +414,6 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
               return;
             }
 
-            final currentIds = resolved.map((m) => m.id).toSet();
-            bubbleKeys.removeWhere((key, _) => !currentIds.contains(key));
             _registerBubbleKeys(resolved);
 
             cachedMessages = resolved;
@@ -416,8 +431,6 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
 
   void flushPendingMessages() {
     if (_pendingMessagesSnapshot.isEmpty) return;
-    final currentIds = _pendingMessagesSnapshot.map((m) => m.id).toSet();
-    bubbleKeys.removeWhere((key, _) => !currentIds.contains(key));
     _registerBubbleKeys(_pendingMessagesSnapshot);
     cachedMessages = _pendingMessagesSnapshot;
     _pendingMessagesSnapshot = [];
@@ -425,11 +438,30 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
     emit(MessagesSuccessLoaded(messages: cachedMessages));
   }
 
+  // Keyed by stable logical identity (clientMessageId when present, else
+  // server id — see correlationKeyFor), NOT by the mutable `id` field.
+  // `bubbleKeys` isn't currently wired into any ChatBubble's `key:` (it's
+  // unused scaffolding as of this codebase snapshot), but keeping its
+  // bookkeeping on the stable identity now avoids silently reintroducing
+  // the same widget-remount-on-reconciliation bug this whole fix is about
+  // the moment it does get wired up.
   void _registerBubbleKeys(List<MessageModel> messages) {
-    final currentIds = messages.map((m) => m.id).toSet();
-    bubbleKeys.removeWhere((key, _) => !currentIds.contains(key));
+    final currentKeys =
+        messages
+            .map(
+              (m) => correlationKeyFor(
+                id: m.id,
+                clientMessageId: m.clientMessageId,
+              ),
+            )
+            .toSet();
+    bubbleKeys.removeWhere((key, _) => !currentKeys.contains(key));
     for (final msg in messages) {
-      bubbleKeys.putIfAbsent(msg.id, () => GlobalKey<ChatBubbleState>());
+      final key = correlationKeyFor(
+        id: msg.id,
+        clientMessageId: msg.clientMessageId,
+      );
+      bubbleKeys.putIfAbsent(key, () => GlobalKey<ChatBubbleState>());
     }
   }
 
@@ -845,13 +877,12 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
     final isCaptionEdit =
         target.messageType == 'image' || target.messageType == 'video';
 
-    cachedMessages =
-        cachedMessages.map((m) {
-          if (m.id != messageId) return m;
-          return isCaptionEdit
-              ? m.copyWith(caption: trimmed, isEdited: true)
-              : m.copyWith(text: trimmed, isEdited: true);
-        }).toList();
+    cachedMessages = _reconciler.applyFieldUpdate(cachedMessages, (m) {
+      if (m.id != messageId) return m;
+      return isCaptionEdit
+          ? m.copyWith(caption: trimmed, isEdited: true)
+          : m.copyWith(text: trimmed, isEdited: true);
+    });
     // _emitLoaded();
     emit(MessagesSuccessLoaded(messages: cachedMessages));
 

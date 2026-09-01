@@ -336,7 +336,7 @@ class _FollowsYouBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: isMini ? 6 : 7, vertical: 2),
+      padding: EdgeInsets.symmetric(horizontal: isMini ? 4 : 5, vertical: 2),
       decoration: BoxDecoration(
         color: theme.primaryColor.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
@@ -346,14 +346,14 @@ class _FollowsYouBadge extends StatelessWidget {
         children: [
           Icon(
             Icons.check_circle_rounded,
-            size: isMini ? 10 : 11,
+            size: isMini ? 6 : 7,
             color: theme.primaryColor,
           ),
-          const SizedBox(width: 3),
+          const SizedBox(width: 2),
           Text(
             'Follows you',
             style: TextStyle(
-              fontSize: isMini ? 10 : 11,
+              fontSize: isMini ? 6 : 7,
               fontWeight: FontWeight.w600,
               color: theme.primaryColor,
             ),

@@ -47,7 +47,12 @@ class RegularMessageContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final displayDraft = message.caption ?? message.text;
+    final displayDraft =
+        (message.messageType == 'text' ||
+                message.messageType == 'block_event' ||
+                message.messageType == 'unblock_event')
+            ? (message.caption ?? message.text)
+            : (message.caption ?? '');
 
     return IntrinsicWidth(
       child: Column(

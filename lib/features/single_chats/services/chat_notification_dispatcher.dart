@@ -13,6 +13,7 @@ class ChatNotificationDispatcher {
 
   Future<void> notifyMessage({
     required String messageId,
+    required String? clientMessageId,
     required String senderId,
     required String receiverId,
     required String senderName,
@@ -58,6 +59,7 @@ class ChatNotificationDispatcher {
 
       await _fcm.sendChatNotification(
         messageId: messageId,
+        clientMessageId: clientMessageId,
         receiverFcmToken: receiverInfo.fcmToken,
         receiverId: receiverId,
         senderId: senderId,
