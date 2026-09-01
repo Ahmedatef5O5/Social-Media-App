@@ -9,6 +9,7 @@ import '../../../core/chat_shared/widgets/recording_indicator_widget.dart';
 import '../../../core/design/tokens/typography.dart';
 import '../../../core/helpers/bidi_text_helper.dart';
 import '../../../core/helpers/emoji_helper.dart';
+import '../../../core/helpers/file_icon_helper.dart';
 import '../../../core/helpers/formatted_date.dart';
 import '../../../core/presence/widgets/presence_avatar_widget.dart';
 import '../../../core/router/app_routes.dart';
@@ -166,6 +167,22 @@ class ChatItemTile extends StatelessWidget {
     );
   }
 
+  String _extractCleanFileName(String? raw) {
+    if (raw == null ||
+        raw.trim().isEmpty ||
+        raw.trim().toLowerCase() == 'file') {
+      return 'File';
+    }
+    String clean = raw.trim();
+    if (clean.startsWith('📄 ')) {
+      clean = clean.substring(3).trim();
+    }
+    if (clean.contains(' • ')) {
+      clean = clean.split(' • ').first.trim();
+    }
+    return clean;
+  }
+
   String _getNormalMessageText() {
     switch (user.lastMessageType) {
       case 'image':
@@ -175,16 +192,12 @@ class ChatItemTile extends StatelessWidget {
       case 'voice':
         return '🎤 Voice message';
       case 'gif':
-        return '🎞️ GIF';
+        return '🖼️ GIF';
       case 'sticker':
-        return '😊 Sticker';
+        return '🏷️ Sticker';
       case 'file':
-        final fileName =
-            (user.lastMessage != null &&
-                    user.lastMessage!.trim().isNotEmpty &&
-                    user.lastMessage!.toLowerCase() != 'file')
-                ? user.lastMessage!.trim()
-                : 'File';
+      case 'document':
+        final fileName = _extractCleanFileName(user.lastMessage);
         return '📄 $fileName';
       case 'block_event':
         return user.lastMessageIsMe
@@ -221,9 +234,9 @@ class ChatItemTile extends StatelessWidget {
         if (user.lastMessage != null) {
           callData = jsonDecode(user.lastMessage!) as Map<String, dynamic>;
         }
-} catch (e) {
-  debugPrint('[ChatItemTile] failed to decode last message payload: $e');
-} 
+      } catch (e) {
+        debugPrint('[ChatItemTile] failed to decode last message payload: $e');
+      }
 
       final status = callData['status'] as String? ?? 'ended';
       final callType = callData['call_type'] as String? ?? 'audio';
@@ -262,6 +275,36 @@ class ChatItemTile extends StatelessWidget {
       );
     }
 
+    if (user.lastMessageType == 'file' || user.lastMessageType == 'document') {
+      final fileName = _extractCleanFileName(user.lastMessage);
+
+      String ext = '';
+      if (fileName.contains('.')) {
+        ext = fileName.substring(fileName.lastIndexOf('.') + 1);
+      }
+
+      final (icon, color) = FileIconHelper.getIconAndColor(
+        ext,
+        Colors.grey.shade600,
+      );
+
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          FaIcon(icon, size: 14, color: color),
+          const Gap(6),
+          Expanded(
+            child: Text(
+              fileName,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textDirection: BidiTextHelper.detectDirection(fileName),
+              style: textStyle,
+            ),
+          ),
+        ],
+      );
+    }
     final normalText = EmojiHelper.normalize(_getNormalMessageText());
     final direction = BidiTextHelper.detectDirection(normalText);
 

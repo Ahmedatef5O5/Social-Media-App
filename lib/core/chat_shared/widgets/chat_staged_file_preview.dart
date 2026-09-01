@@ -4,6 +4,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:gap/gap.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:social_media_app/core/helpers/chat_helper.dart';
+import '../../helpers/file_icon_helper.dart';
 import '../../toast/app_toast.dart';
 import '../../router/app_routes.dart';
 
@@ -61,62 +62,11 @@ class ChatStagedFilePreview extends StatelessWidget {
     }
   }
 
-  (FaIconData, Color) _getFileIconAndColor(String ext, Color defaultColor) {
-    switch (ext.toLowerCase()) {
-      case 'pdf':
-        return (FontAwesomeIcons.solidFilePdf, const Color(0xFFE5252A));
-      case 'doc':
-      case 'docx':
-        return (FontAwesomeIcons.solidFileWord, const Color(0xFF185ABD));
-      case 'xls':
-      case 'xlsx':
-      case 'csv':
-        return (FontAwesomeIcons.solidFileExcel, const Color(0xFF217346));
-      case 'ppt':
-      case 'pptx':
-        return (FontAwesomeIcons.solidFilePowerpoint, const Color(0xFFD24726));
-      case 'txt':
-      case 'rtf':
-        return (FontAwesomeIcons.solidFileLines, const Color(0xFF2E7D52));
-      case 'md':
-        return (FontAwesomeIcons.solidFileLines, const Color(0xFF3B82F6));
-      case 'json':
-      case 'dart':
-      case 'py':
-      case 'js':
-      case 'ts':
-      case 'html':
-      case 'css':
-        return (FontAwesomeIcons.solidFileCode, const Color(0xFF00B4D8));
-      case 'zip':
-      case 'rar':
-      case '7z':
-      case 'tar':
-        return (FontAwesomeIcons.solidFileZipper, const Color(0xFFF59E0B));
-      case 'mp3':
-      case 'wav':
-      case 'm4a':
-      case 'ogg':
-        return (FontAwesomeIcons.solidFileAudio, const Color(0xFF9333EA));
-      case 'mp4':
-      case 'avi':
-      case 'mkv':
-        return (FontAwesomeIcons.solidFileVideo, const Color(0xFFE11D48));
-      case 'png':
-      case 'jpg':
-      case 'jpeg':
-      case 'webp':
-        return (FontAwesomeIcons.solidFileImage, const Color(0xFF059669));
-      default:
-        return (FontAwesomeIcons.solidFile, defaultColor);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final ext = _extension;
     final primary = Theme.of(context).primaryColor;
-    final (fileIcon, iconAccent) = _getFileIconAndColor(ext, primary);
+    final (fileIcon, iconAccent) = FileIconHelper.getIconAndColor(ext, primary);
 
     return GestureDetector(
       onTap: () => _openStagedMediaPreview(context),

@@ -1,9 +1,11 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:social_media_app/core/constants/app_images.dart';
 import 'package:social_media_app/core/router/app_routes.dart';
 import '../../../core/helpers/bidi_text_helper.dart';
+import '../../../core/helpers/file_icon_helper.dart';
 import '../models/app_notification_model.dart';
 
 class NotificationListItem extends StatelessWidget {
@@ -196,25 +198,75 @@ class NotificationListItem extends StatelessWidget {
                     ),
                     const SizedBox(height: 3),
 
-                    Text(
-                      notif.displaySubtitle,
-                      textDirection: BidiTextHelper.detectDirection(
-                        notif.displaySubtitle,
-                      ),
-                      style: TextStyle(
-                        fontSize: 13,
-                        color:
-                            isDark
-                                ? (notif.isRead
-                                    ? Colors.white38
-                                    : Colors.white60)
-                                : (notif.isRead
-                                    ? Colors.grey.shade500
-                                    : Colors.grey.shade700),
-                        height: 1.35,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
+                    Builder(
+                      builder: (context) {
+                        String text = notif.displaySubtitle;
+                        final textStyle = TextStyle(
+                          fontSize: 13,
+                          color:
+                              isDark
+                                  ? (notif.isRead
+                                      ? Colors.white38
+                                      : Colors.white60)
+                                  : (notif.isRead
+                                      ? Colors.grey.shade500
+                                      : Colors.grey.shade700),
+                          height: 1.35,
+                        );
+
+                        if (text.contains('📄 ')) {
+                          final parts = text.split('📄 ');
+                          final prefix = parts[0];
+                          final fileInfo = parts[1];
+                          final fileNamePart =
+                              fileInfo.split(' • ').first.trim();
+
+                          String ext = '';
+                          if (fileNamePart.contains('.')) {
+                            ext = fileNamePart.substring(
+                              fileNamePart.lastIndexOf('.') + 1,
+                            );
+                          }
+
+                          final (icon, color) = FileIconHelper.getIconAndColor(
+                            ext,
+                            isDark ? Colors.white60 : Colors.grey.shade600,
+                          );
+
+                          return RichText(
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            textDirection: BidiTextHelper.detectDirection(text),
+                            text: TextSpan(
+                              children: [
+                                if (prefix.isNotEmpty)
+                                  TextSpan(text: prefix, style: textStyle),
+                                WidgetSpan(
+                                  alignment: PlaceholderAlignment.middle,
+                                  child: Padding(
+                                    padding: const EdgeInsets.only(
+                                      right: 5.0,
+                                      bottom: 2.0,
+                                    ),
+                                    child: FaIcon(icon, size: 12, color: color),
+                                  ),
+                                ),
+                                TextSpan(
+                                  text: fileInfo,
+                                  style: textStyle.copyWith(fontFamily: null),
+                                ),
+                              ],
+                            ),
+                          );
+                        }
+                        return Text(
+                          text,
+                          textDirection: BidiTextHelper.detectDirection(text),
+                          style: textStyle,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        );
+                      },
                     ),
 
                     if (notif.type == NotificationType.friendRequest) ...[

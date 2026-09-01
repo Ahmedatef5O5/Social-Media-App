@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:gap/gap.dart';
 import '../../../core/helpers/chat_helper.dart';
+import '../../../core/helpers/file_icon_helper.dart';
 
 class AiChatStagedFilePreview extends StatelessWidget {
   final String fileName;
@@ -32,82 +33,11 @@ class AiChatStagedFilePreview extends StatelessWidget {
     return '${(kb / 1024).toStringAsFixed(1)} MB';
   }
 
-  (FaIconData, Color) _getFileIconAndColor(String ext, Color defaultColor) {
-    switch (ext.toLowerCase()) {
-      case 'pdf':
-        return (FontAwesomeIcons.solidFilePdf, const Color(0xFFE5252A));
-      case 'doc':
-      case 'docx':
-        return (FontAwesomeIcons.solidFileWord, const Color(0xFF185ABD));
-      case 'xls':
-      case 'xlsx':
-      case 'csv':
-        return (FontAwesomeIcons.solidFileExcel, const Color(0xFF217346));
-      case 'ppt':
-      case 'pptx':
-        return (FontAwesomeIcons.solidFilePowerpoint, const Color(0xFFD24726));
-      case 'txt':
-      case 'md':
-      case 'rtf':
-        return (FontAwesomeIcons.solidFileLines, Colors.grey.shade400);
-      case 'json':
-      case 'dart':
-      case 'py':
-      case 'pyw':
-      case 'js':
-      case 'ts':
-      case 'html':
-      case 'htm':
-      case 'css':
-      case 'xml':
-      case 'yaml':
-      case 'yml':
-      case 'java':
-      case 'kt':
-      case 'kts':
-      case 'c':
-      case 'cpp':
-      case 'cc':
-      case 'cxx':
-      case 'h':
-      case 'hpp':
-      case 'cs':
-      case 'swift':
-      case 'go':
-      case 'rb':
-      case 'rs':
-      case 'sql':
-      case 'sh':
-      case 'bat':
-      case 'env':
-        return (FontAwesomeIcons.solidFileCode, const Color(0xFF00B4D8));
-      case 'zip':
-      case 'rar':
-      case '7z':
-        return (FontAwesomeIcons.solidFileZipper, Colors.amber.shade700);
-      case 'mp3':
-      case 'wav':
-      case 'm4a':
-        return (FontAwesomeIcons.solidFileAudio, Colors.purpleAccent);
-      case 'mp4':
-      case 'avi':
-      case 'mkv':
-        return (FontAwesomeIcons.solidFileVideo, Colors.redAccent);
-      case 'png':
-      case 'jpg':
-      case 'jpeg':
-        return (FontAwesomeIcons.solidFileImage, const Color(0xFF2E8B57));
-      default:
-        return (FontAwesomeIcons.solidFile, defaultColor);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final ext = _extension;
     final primary = Theme.of(context).primaryColor;
-    final (fileIcon, iconAccent) = _getFileIconAndColor(ext, primary);
-
+    final (fileIcon, iconAccent) = FileIconHelper.getIconAndColor(ext, primary);
     return Container(
       margin: const EdgeInsets.only(bottom: 6),
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),

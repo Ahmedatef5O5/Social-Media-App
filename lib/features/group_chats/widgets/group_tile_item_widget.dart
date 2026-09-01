@@ -10,6 +10,7 @@ import '../../../core/constants/app_images.dart';
 import '../../../core/design/tokens/typography.dart';
 import '../../../core/helpers/bidi_text_helper.dart';
 import '../../../core/helpers/emoji_helper.dart';
+import '../../../core/helpers/file_icon_helper.dart';
 import '../../../core/helpers/formatted_date.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/supabase/supabase_provider.dart';
@@ -206,6 +207,79 @@ class GroupTileItem extends StatelessWidget {
           group.lastMessage != null
               ? Builder(
                 builder: (context) {
+                  final textStyle = TextStyle(
+                    color:
+                        highlightUnreadMessage
+                            ? Theme.of(context).colorScheme.onSurface
+                            : Colors.grey.shade600,
+                    fontSize: 13,
+                    fontWeight:
+                        highlightUnreadMessage
+                            ? FontWeight.w500
+                            : FontWeight.w400,
+                    fontFamily: null,
+                    fontFamilyFallback: AppTypography.fontFallback,
+                  );
+
+                  if (group.lastMessageType == 'file' ||
+                      group.lastMessageType == 'document') {
+                    final senderId = group.lastMessageSenderId;
+                    final senderNameFromData = group.lastMessageSenderName;
+                    final isMe = senderId != null && senderId == currentUserId;
+
+                    final senderName =
+                        isMe
+                            ? 'You'
+                            : (senderNameFromData?.trim().isNotEmpty == true
+                                ? senderNameFromData!
+                                : 'Someone');
+
+                    // تنظيف اسم الملف واستخراجه
+                    String fileName = 'File';
+                    final rawText = group.lastMessage;
+                    if (rawText != null &&
+                        rawText.trim().isNotEmpty &&
+                        rawText.trim().toLowerCase() != 'file') {
+                      fileName = rawText.trim();
+                      if (fileName.startsWith('📄 ')) {
+                        fileName = fileName.substring(3).trim();
+                      }
+                      if (fileName.contains(' • ')) {
+                        fileName = fileName.split(' • ').first.trim();
+                      }
+                    }
+
+                    String ext = '';
+                    if (fileName.contains('.')) {
+                      ext = fileName.substring(fileName.lastIndexOf('.') + 1);
+                    }
+
+                    final (icon, color) = FileIconHelper.getIconAndColor(
+                      ext,
+                      Colors.grey.shade600,
+                    );
+
+                    return Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text('$senderName: ', style: textStyle),
+                        FaIcon(icon, size: 12, color: color),
+                        const Gap(4),
+                        Expanded(
+                          child: Text(
+                            fileName,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            textDirection: BidiTextHelper.detectDirection(
+                              fileName,
+                            ),
+                            style: textStyle,
+                          ),
+                        ),
+                      ],
+                    );
+                  }
+
                   final fullText = buildGroupLastMessagePreview(
                     group: group,
                     currentUserId: currentUserId,
@@ -224,20 +298,6 @@ class GroupTileItem extends StatelessWidget {
 
                   final direction = BidiTextHelper.detectDirection(
                     content.trimLeft(),
-                  );
-
-                  final textStyle = TextStyle(
-                    color:
-                        highlightUnreadMessage
-                            ? Theme.of(context).colorScheme.onSurface
-                            : Colors.grey.shade600,
-                    fontSize: 13,
-                    fontWeight:
-                        highlightUnreadMessage
-                            ? FontWeight.w500
-                            : FontWeight.w400,
-                    fontFamily: null,
-                    fontFamilyFallback: AppTypography.fontFallback,
                   );
 
                   if (prefix.isEmpty) {

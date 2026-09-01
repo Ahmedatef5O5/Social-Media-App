@@ -11,6 +11,7 @@ import 'package:social_media_app/features/comments/models/comment_attachment_dra
 import 'package:social_media_app/features/comments/models/comment_type.dart';
 import 'package:social_media_app/features/comments/widgets/comment_voice_player.dart';
 import '../../../core/attachment/widgets/transfer_ring.dart';
+import '../../../core/helpers/file_icon_helper.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/utilities/file_size_formatter.dart';
 import '../../single_chats/widgets/full_screen_media_view.dart';
@@ -84,83 +85,6 @@ class _PreviewThumbnail extends StatelessWidget {
       return name.substring(name.lastIndexOf('.') + 1).toUpperCase();
     }
     return 'FILE';
-  }
-
-  (FaIconData, Color) _getFileIconAndColor(String ext, Color defaultColor) {
-    switch (ext.toLowerCase()) {
-      case 'pdf':
-        return (FontAwesomeIcons.solidFilePdf, const Color(0xFFE5252A));
-      case 'doc':
-      case 'docx':
-        return (FontAwesomeIcons.solidFileWord, const Color(0xFF185ABD));
-      case 'xls':
-      case 'xlsx':
-      case 'csv':
-        return (FontAwesomeIcons.solidFileExcel, const Color(0xFF217346));
-      case 'ppt':
-      case 'pptx':
-        return (FontAwesomeIcons.solidFilePowerpoint, const Color(0xFFD24726));
-      case 'txt':
-      case 'rtf':
-        return (FontAwesomeIcons.solidFileLines, const Color(0xFF2E7D52));
-      case 'md':
-        return (FontAwesomeIcons.solidFileLines, const Color(0xFF3B82F6));
-      case 'json':
-      case 'dart':
-      case 'py':
-      case 'pyw':
-      case 'js':
-      case 'ts':
-      case 'html':
-      case 'htm':
-      case 'css':
-      case 'xml':
-      case 'yaml':
-      case 'yml':
-      case 'java':
-      case 'kt':
-      case 'kts':
-      case 'c':
-      case 'cpp':
-      case 'cc':
-      case 'cxx':
-      case 'h':
-      case 'hpp':
-      case 'cs':
-      case 'swift':
-      case 'go':
-      case 'rb':
-      case 'rs':
-      case 'sql':
-      case 'sh':
-      case 'bat':
-      case 'env':
-        return (FontAwesomeIcons.solidFileCode, const Color(0xFF00B4D8));
-      case 'zip':
-      case 'rar':
-      case '7z':
-      case 'tar':
-      case 'gz':
-        return (FontAwesomeIcons.solidFileZipper, const Color(0xFFF59E0B));
-      case 'mp3':
-      case 'wav':
-      case 'm4a':
-      case 'aac':
-      case 'ogg':
-        return (FontAwesomeIcons.solidFileAudio, const Color(0xFF9333EA));
-      case 'mp4':
-      case 'avi':
-      case 'mkv':
-      case 'mov':
-        return (FontAwesomeIcons.solidFileVideo, const Color(0xFFE11D48));
-      case 'png':
-      case 'jpg':
-      case 'jpeg':
-      case 'webp':
-        return (FontAwesomeIcons.solidFileImage, const Color(0xFF059669));
-      default:
-        return (FontAwesomeIcons.solidFile, defaultColor);
-    }
   }
 
   @override
@@ -251,7 +175,10 @@ class _PreviewThumbnail extends StatelessWidget {
 
       case CommentType.file:
         final ext = _getFileExtension();
-        final (fileIcon, iconAccent) = _getFileIconAndColor(ext, primary);
+        final (fileIcon, iconAccent) = FileIconHelper.getIconAndColor(
+          ext,
+          primary,
+        );
         return Container(
           width: size,
           height: size,
