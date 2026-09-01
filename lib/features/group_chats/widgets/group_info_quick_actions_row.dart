@@ -51,7 +51,7 @@ class GroupInfoQuickActionsRow extends StatelessWidget {
                 isMuted
                     ? Icons.notifications_off_rounded
                     : Icons.notifications_rounded,
-            label: 'Mute',
+            label: isMuted ? 'Unmute' :   'Mute',
             color: isMuted ? Colors.orange : primary,
             onTap: onToggleMute,
           ),

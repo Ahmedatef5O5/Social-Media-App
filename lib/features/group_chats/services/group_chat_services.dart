@@ -137,6 +137,21 @@ class GroupChatServices {
         .toList();
   }
 
+  Future<bool> checkIsActiveMember({
+    required String groupId,
+    required String userId,
+  }) async {
+    final response =
+        await _supabase
+            .from(SupabaseConstants.groupMembers)
+            .select(GroupMemberColumns.membershipStatus)
+            .eq(GroupMemberColumns.groupId, groupId)
+            .eq(GroupMemberColumns.userId, userId)
+            .maybeSingle();
+
+    return response?[GroupMemberColumns.membershipStatus] == 'active';
+  }
+
   Future<void> promoteToAdmin(String groupId, String targetUserId) async {
     await _supabase.rpc(
       'promote_group_member_to_admin',

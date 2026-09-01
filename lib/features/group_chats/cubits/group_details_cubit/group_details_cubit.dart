@@ -158,7 +158,7 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState>
         getId: (m) => m.id,
       );
 
-  void init() {
+  Future<void> init() async {
     _messagesSnapshotKey = 'group_messages_snapshot_${group.id}';
 
     final listState = groupListCubit.state;
@@ -194,6 +194,19 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState>
       );
     } else {
       emit(GroupDetailsLoading());
+    }
+
+    try {
+      final confirmedIsMember = await _services.checkIsActiveMember(
+        groupId: group.id,
+        userId: currentUserId,
+      );
+      if (confirmedIsMember != isMember) {
+        isMember = confirmedIsMember;
+        _emitLoaded(force: true);
+      }
+    } catch (e) {
+      debugPrint('[GroupDetailsCubit] membership check failed: $e');
     }
 
     groupListCubit.setActiveGroupId(group.id);
