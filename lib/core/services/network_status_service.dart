@@ -9,9 +9,22 @@ import '../secrets/app_secrets.dart';
 ///   3. Direct reachability probe against our own backend (Supabase)
 
 class NetworkStatusService {
-  NetworkStatusService._();
+  NetworkStatusService._({Dio? dio})
+    : _dio =
+          dio ??
+          Dio(
+            BaseOptions(
+              connectTimeout: const Duration(seconds: 4),
+              receiveTimeout: const Duration(seconds: 4),
+              sendTimeout: const Duration(seconds: 4),
+            ),
+          );
 
   static final NetworkStatusService instance = NetworkStatusService._();
+
+  @visibleForTesting
+  factory NetworkStatusService.withDio(Dio dio) =>
+      NetworkStatusService._(dio: dio);
 
   static const Duration _lookupTimeout = Duration(seconds: 3);
   static const Duration _socketTimeout = Duration(seconds: 3);
@@ -22,20 +35,14 @@ class NetworkStatusService {
   static const List<String> _dnsProbeHosts = ['one.one.one.one', 'dns.google'];
   static const List<String> _socketProbeIps = ['1.1.1.1', '8.8.8.8'];
 
-  final Dio _dio = Dio(
-    BaseOptions(
-      connectTimeout: const Duration(seconds: 4),
-      receiveTimeout: const Duration(seconds: 4),
-      sendTimeout: const Duration(seconds: 4),
-    ),
-  );
+  final Dio _dio;
 
   /// Public API kept identical to before — every existing caller
   /// (PostsServices, UserService, ChatServices, ...) needs zero changes.
   Future<bool> isConnected() async {
     if (await _dnsReachable()) return true;
     if (await _socketReachable()) return true;
-    if (await _backendReachable()) return true;
+    if (await backendReachable()) return true;
     return false;
   }
 
@@ -70,7 +77,8 @@ class NetworkStatusService {
     return false;
   }
 
-  Future<bool> _backendReachable() async {
+  @visibleForTesting
+  Future<bool> backendReachable() async {
     try {
       final response = await _dio.head(
         AppSecrets.supabaseUrl,
