@@ -1,7 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import '../../../core/audio/helpers/pulsing_mic_dot.dart';
-import '../../../core/presence/model/chat_action_type.dart';
+import '../../../core/presence/models/chat_action_type.dart';
 import '../../../core/presence/widgets/presence_avatar_widget.dart';
 import '../../../core/widgets/animated_activity_text.dart';
 import '../../../core/widgets/overlapping_avatar_stack.dart';

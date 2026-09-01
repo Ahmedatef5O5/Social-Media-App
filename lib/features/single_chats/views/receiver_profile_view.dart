@@ -12,9 +12,9 @@ import '../../../core/chat_shared/cubits/shared_media_cubit/shared_media_cubit.d
 import '../../../core/chat_shared/widgets/shared_media_preview_section.dart';
 import '../../../core/chat_shared/models/starred_message_entry.dart';
 import '../../../core/chat_shared/widgets/starred_messages_row.dart';
-import '../../../core/presence/cubit/presence_cubit/presence_cubit.dart';
-import '../../../core/presence/model/chat_action_type.dart';
-import '../../../core/presence/model/presence_info.dart';
+import '../../../core/presence/cubits/presence_cubit/presence_cubit.dart';
+import '../../../core/presence/models/chat_action_type.dart';
+import '../../../core/presence/models/presence_info.dart';
 import '../../../core/chat_shared/services/shared_media_data_source.dart';
 import '../../../core/services/active_call/active_call_session_data.dart';
 import '../../../core/services/active_call/cubit/active_call_session_cubit.dart';

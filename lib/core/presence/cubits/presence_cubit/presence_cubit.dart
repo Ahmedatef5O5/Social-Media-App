@@ -4,7 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../supabase/supabase_provider.dart';
 import '../../../utilities/supabase_constants.dart';
-import '../../model/presence_info.dart';
+import '../../models/presence_info.dart';
 
 class PresenceCubit extends Cubit<Map<String, PresenceInfo>> {
   PresenceCubit({SupabaseClient? client})

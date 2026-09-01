@@ -5,7 +5,7 @@ import 'package:html/parser.dart' as html_parser;
 import 'package:html/dom.dart' as html_dom;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:social_media_app/core/cache/services/local_snapshot_store.dart';
-import 'package:social_media_app/core/link/model/link_preview_data.dart';
+import 'package:social_media_app/core/link/models/link_preview_data.dart';
 import '../../../features/group_chats/services/group_chat_services.dart';
 import '../../../features/posts/services/posts_services.dart';
 import '../../../features/stories/services/stories_services.dart';

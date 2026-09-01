@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../cubit/presence_cubit/presence_cubit.dart';
+import '../cubits/presence_cubit/presence_cubit.dart';
 
 class PresenceAvatarWidget extends StatelessWidget {
   const PresenceAvatarWidget({

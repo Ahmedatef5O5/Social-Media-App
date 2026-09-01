@@ -5,7 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:social_media_app/core/router/app_routes.dart';
 import '../../../core/constants/app_images.dart';
 import '../../../core/widgets/app_avatar.dart';
-import '../presence/cubit/presence_cubit/presence_cubit.dart';
+import '../presence/cubits/presence_cubit/presence_cubit.dart';
 import '../presence/widgets/presence_avatar_widget.dart';
 
 class CustomUserProfileImagesSection extends StatelessWidget {

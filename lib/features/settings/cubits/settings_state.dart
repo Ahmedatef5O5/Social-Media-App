@@ -1,4 +1,4 @@
-import '../../../core/presence/model/presence_privacy.dart';
+import '../../../core/presence/models/presence_privacy.dart';
 import '../repository/settings_repository.dart';
 
 class SettingsState {

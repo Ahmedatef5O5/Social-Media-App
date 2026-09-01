@@ -1,4 +1,4 @@
-import '../../../core/presence/model/chat_action_type.dart';
+import '../../../core/presence/models/chat_action_type.dart';
 import '../models/group_presence_entry.dart';
 
 typedef PresencePhrase = ({String text, ChatActionType action});

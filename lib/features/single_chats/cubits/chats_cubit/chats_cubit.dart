@@ -6,7 +6,7 @@ import 'package:social_media_app/core/cache/services/local_snapshot_store.dart';
 import 'package:social_media_app/features/single_chats/models/chat_user_model.dart';
 import 'package:social_media_app/features/single_chats/services/chat_services.dart';
 import '../../../../core/helpers/chat_helper.dart';
-import '../../../../core/presence/model/chat_action_type.dart';
+import '../../../../core/presence/models/chat_action_type.dart';
 import '../../../../core/supabase/supabase_provider.dart';
 import '../../../auth/handlers/auth_exception_handler.dart';
 import '../../helpers/chat_clear_store.dart';

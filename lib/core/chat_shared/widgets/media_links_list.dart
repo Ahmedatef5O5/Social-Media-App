@@ -4,7 +4,7 @@ import 'package:linkify/linkify.dart' as linkify_pkg;
 import 'package:shimmer/shimmer.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../helpers/formatted_date.dart';
-import '../../link/model/link_preview_data.dart';
+import '../../link/models/link_preview_data.dart';
 import '../../link/services/link_preview_service.dart';
 import '../../link/widgets/link_preview_card.dart';
 import '../../link/widgets/message_link_preview.dart';

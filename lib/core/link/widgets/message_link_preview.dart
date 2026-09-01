@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:linkify/linkify.dart' as linkify_pkg;
-import '../model/link_preview_data.dart';
+import '../models/link_preview_data.dart';
 import '../services/link_preview_service.dart';
 import 'link_preview_card.dart';
 

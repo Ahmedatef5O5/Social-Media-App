@@ -4,7 +4,7 @@ import 'package:social_media_app/features/auth/data/models/user_data.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/services/network_status_service.dart';
 import '../../../core/supabase/supabase_provider.dart';
-import '../../../core/presence/model/presence_privacy.dart';
+import '../../../core/presence/models/presence_privacy.dart';
 import '../models/profile_overview_model.dart';
 
 class UserService {

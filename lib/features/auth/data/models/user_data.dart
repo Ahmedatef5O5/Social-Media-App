@@ -1,5 +1,5 @@
 import 'package:social_media_app/core/utilities/supabase_constants.dart';
-import '../../../../core/presence/model/presence_privacy.dart';
+import '../../../../core/presence/models/presence_privacy.dart';
 
 class UserData {
   final String id;

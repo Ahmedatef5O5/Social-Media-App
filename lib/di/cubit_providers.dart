@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:social_media_app/core/cache/repository/media_cache_repository.dart';
 import 'package:social_media_app/core/connectivity/cubits/connectivity_cubit.dart';
-import 'package:social_media_app/core/presence/cubit/presence_cubit/presence_cubit.dart';
+import 'package:social_media_app/core/presence/cubits/presence_cubit/presence_cubit.dart';
 import 'package:social_media_app/core/services/active_call/cubit/active_call_session_cubit.dart';
 import 'package:social_media_app/core/services/active_call/pip/call_pip_cubit.dart';
 import 'package:social_media_app/core/services/cloudinary_storage_services.dart';

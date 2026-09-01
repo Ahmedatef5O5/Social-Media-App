@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../helpers/formatted_date.dart';
-import '../cubit/presence_cubit/presence_cubit.dart';
-import '../model/presence_info.dart';
+import '../cubits/presence_cubit/presence_cubit.dart';
+import '../models/presence_info.dart';
 
 class PresenceStatusText extends StatelessWidget {
   final String userId;

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
-import '../model/presence_privacy.dart';
+import '../models/presence_privacy.dart';
 
 class PresencePrivacySheet extends StatelessWidget {
   const PresencePrivacySheet({super.key, required this.selected});

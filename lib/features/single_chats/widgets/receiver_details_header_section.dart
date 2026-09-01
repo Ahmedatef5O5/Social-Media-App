@@ -4,7 +4,7 @@ import 'package:gap/gap.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import 'package:social_media_app/core/router/app_routes.dart';
 import '../../../core/chat_shared/helpers/muted_badge_icon.dart';
-import '../../../core/presence/model/chat_action_type.dart';
+import '../../../core/presence/models/chat_action_type.dart';
 import '../../../core/presence/widgets/presence_avatar_widget.dart';
 import '../../../core/presence/widgets/presence_status_text.dart';
 import '../../../core/widgets/animated_activity_text.dart';

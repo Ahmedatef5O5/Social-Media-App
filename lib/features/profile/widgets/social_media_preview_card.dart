@@ -4,7 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../../../core/link/model/link_preview_data.dart';
+import '../../../core/link/models/link_preview_data.dart';
 import '../../../core/link/services/link_preview_service.dart';
 import '../../../core/toast/app_toast.dart';
 import '../models/social_platform_info.dart';

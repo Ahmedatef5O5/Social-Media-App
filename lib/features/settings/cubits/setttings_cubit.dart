@@ -4,7 +4,7 @@ import '../../../core/presence/services/presence_service.dart';
 import '../../auth/data/models/user_data.dart';
 import '../../home/cubits/home_cubit/home_cubit.dart';
 import '../../profile/services/user_services.dart';
-import '../../../core/presence/model/presence_privacy.dart';
+import '../../../core/presence/models/presence_privacy.dart';
 import '../repository/settings_repository.dart';
 import '../services/app_lock_service.dart';
 

@@ -1,7 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:social_media_app/core/link/model/link_preview_data.dart';
+import 'package:social_media_app/core/link/models/link_preview_data.dart';
 import '../../../features/group_chats/widgets/group_invite_bottom_sheet.dart';
 import '../../deep_link/services/deep_link_service.dart';
 import '../../helpers/chat_helper.dart';
