@@ -14,7 +14,11 @@ class StoriesListSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final storiesCubit = BlocProvider.of<StoriesCubit>(context);
-    final currentUserId = SupabaseProvider.id;
+    final currentUserId = SupabaseProvider.idOrNull;
+
+    if (currentUserId == null) {
+      return const SizedBox.shrink();
+    }
 
     return SizedBox(
       height: StoryCardWidget.cardHeight + 24,

@@ -105,6 +105,9 @@ class StoryHeader extends StatelessWidget {
                 url: url,
                 shareText:
                     "Check out ${story.authorName}'s story on Social Media App: $url",
+                originalAuthorId: story.authorId,
+                originalAuthorName: story.authorName,
+                originalAuthorAvatarUrl: story.authorImageUrl,
               ).whenComplete(onResume);
             },
             child: const Icon(CupertinoIcons.paperplane, color: Colors.white),
@@ -121,6 +124,9 @@ class StoryHeader extends StatelessWidget {
                   context,
                   url: url,
                   shareText: 'Check out my story on Social Media App: $url',
+                  originalAuthorId: story.authorId,
+                  originalAuthorName: story.authorName,
+                  originalAuthorAvatarUrl: story.authorImageUrl,
                 ).whenComplete(onResume);
                 return;
               }

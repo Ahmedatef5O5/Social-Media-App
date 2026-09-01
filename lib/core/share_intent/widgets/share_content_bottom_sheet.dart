@@ -18,6 +18,9 @@ class ShareContentBottomSheet {
     BuildContext context, {
     required String url,
     required String shareText,
+    String? originalAuthorId,
+    String? originalAuthorName,
+    String? originalAuthorAvatarUrl,
     VoidCallback? onShared,
   }) {
     return showModalBottomSheet(
@@ -29,6 +32,9 @@ class ShareContentBottomSheet {
           (_) => _ShareContentSheet(
             url: url,
             shareText: shareText,
+            originalAuthorId: originalAuthorId,
+            originalAuthorName: originalAuthorName,
+            originalAuthorAvatarUrl: originalAuthorAvatarUrl,
             onShared: onShared,
           ),
     );
@@ -38,11 +44,17 @@ class ShareContentBottomSheet {
 class _ShareContentSheet extends StatelessWidget {
   final String url;
   final String shareText;
+  final String? originalAuthorId;
+  final String? originalAuthorName;
+  final String? originalAuthorAvatarUrl;
   final VoidCallback? onShared;
 
   const _ShareContentSheet({
     required this.url,
     required this.shareText,
+    this.originalAuthorId,
+    this.originalAuthorName,
+    this.originalAuthorAvatarUrl,
     this.onShared,
   });
 
@@ -75,8 +87,9 @@ class _ShareContentSheet extends StatelessWidget {
     }
 
     final message = ForwardableMessage(
-      originalSenderId: currentUserId,
-      originalSenderName: 'You',
+      originalSenderId: originalAuthorId ?? currentUserId,
+      originalSenderName: originalAuthorName ?? 'You',
+      originalSenderAvatar: originalAuthorAvatarUrl,
       text: shareText,
       messageType: 'text',
     );

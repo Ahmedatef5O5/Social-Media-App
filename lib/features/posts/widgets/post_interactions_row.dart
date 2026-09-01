@@ -513,6 +513,9 @@ class _ShareLinkButtonWidget extends StatelessWidget {
           context,
           url: url,
           shareText: 'Check out this post on Social Media App: $url',
+          originalAuthorId: currentPost.authorId,
+          originalAuthorName: currentPost.authorName,
+          originalAuthorAvatarUrl: currentPost.authorImageUrl,
           onShared:
               () => context.read<PostsCubit>().incrementLinkShareCount(
                 currentPost.id,

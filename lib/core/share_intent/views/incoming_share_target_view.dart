@@ -10,6 +10,7 @@ import '../../chat_shared/cubits/conversations_cubit/conversations_cubit.dart';
 import '../../chat_shared/models/conversation_item.dart';
 import '../../constants/app_images.dart';
 import '../../router/app_routes.dart';
+import '../../services/active_screen_tracker.dart';
 import '../../toast/app_toast.dart';
 import '../../widgets/custom_loading_indicator.dart';
 import '../models/incoming_share_payload.dart';
@@ -133,6 +134,11 @@ class IncomingShareTargetView extends StatelessWidget {
   void _onChatTap(BuildContext context, ConversationItem item) =>
       _safeNavigate(context, 'Chat', () {
         if (item.kind == ConversationKind.group) {
+          final groupId = item.group!.id;
+          if (ActiveScreenTracker.isViewingGroup(groupId)) {
+            Navigator.of(context).pop();
+            return;
+          }
           Navigator.of(context).pushReplacementNamed(
             AppRoutes.groupChatRoute,
             arguments: {'group': item.group, 'incomingShare': payload},
