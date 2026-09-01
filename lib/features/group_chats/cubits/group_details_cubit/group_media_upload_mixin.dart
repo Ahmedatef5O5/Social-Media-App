@@ -53,13 +53,14 @@ mixin GroupMediaUploadMixin on Cubit<GroupDetailsState> {
     final reply = replyToMessage.value;
     replyToMessage.value = null;
 
-    final tempId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
+    final tempId = const Uuid().v4();
 
     final cancelToken = dio_pkg.CancelToken();
     _cancelTokens[tempId] = cancelToken;
 
     final tempMsg = GroupMessageModel(
       id: tempId,
+      clientMessageId: tempId,
       groupId: group.id,
       senderId: currentUserId,
       senderName: senderName,
@@ -90,7 +91,13 @@ mixin GroupMediaUploadMixin on Cubit<GroupDetailsState> {
       forwardedFromUserName: forwardedFromUserName,
       forwardedFromUserAvatar: forwardedFromUserAvatar,
     );
-    cachedMessages = [tempMsg, ...cachedMessages];
+    cachedMessages = GroupDetailsCubit._reconciler.applyOptimistic(
+      cachedMessages,
+      tempMsg,
+    );
+    (this as GroupDetailsCubit)._protectedKeys.add(
+      correlationKeyFor(id: tempId, clientMessageId: tempId),
+    );
     _emitLoaded();
 
     try {
@@ -207,36 +214,58 @@ mixin GroupMediaUploadMixin on Cubit<GroupDetailsState> {
         (this as GroupDetailsCubit).disposeProgressNotifier(tempId);
       }
 
-      final newMsg = await _services.sendGroupMessage(
-        groupId: group.id,
-        groupName: group.name,
-        groupImageUrl: group.avatarUrl,
-        text: text,
-        messageType: messageType,
-        imageUrl: uploadedImageUrl,
-        videoUrl: uploadedVideoUrl,
-        voiceUrl: uploadedVoiceUrl,
-        fileUrl: uploadedFileUrl,
-        fileName: fileName,
-        fileSizeBytes: fileSizeBytes,
-        caption: caption,
-        replyTo: reply,
+      final ({GroupMessageModel message, bool isNewInsert}) sent;
+      try {
+        sent = await _services.sendGroupMessage(
+          groupId: group.id,
+          groupName: group.name,
+          groupImageUrl: group.avatarUrl,
+          text: text,
+          clientMessageId: tempId,
+          messageType: messageType,
+          imageUrl: uploadedImageUrl,
+          videoUrl: uploadedVideoUrl,
+          voiceUrl: uploadedVoiceUrl,
+          fileUrl: uploadedFileUrl,
+          fileName: fileName,
+          fileSizeBytes: fileSizeBytes,
+          caption: caption,
+          replyTo: reply,
 
-        imagePublicId: imagePublicId,
-        videoPublicId: videoPublicId,
-        voicePublicId: voicePublicId,
-        durationSeconds: durationSeconds,
-        filePublicId: filePublicId,
-        mentions: mentions,
-        forwardedFromUserId: forwardedFromUserId,
-        forwardedFromUserName: forwardedFromUserName,
-        forwardedFromUserAvatar: forwardedFromUserAvatar,
-      );
+          imagePublicId: imagePublicId,
+          videoPublicId: videoPublicId,
+          voicePublicId: voicePublicId,
+          durationSeconds: durationSeconds,
+          filePublicId: filePublicId,
+          mentions: mentions,
+          forwardedFromUserId: forwardedFromUserId,
+          forwardedFromUserName: forwardedFromUserName,
+          forwardedFromUserAvatar: forwardedFromUserAvatar,
+        );
+      } catch (e) {
+        debugPrint(
+          'sendGroupMessage: unknown outcome, keeping optimistic message: $e',
+        );
+        _cancelTokens.remove(tempId);
+        uploadProgressMap.remove(tempId);
+        unawaited(ConnectivityBannerController.notifyIfOffline());
 
-      final index = cachedMessages.indexWhere((m) => m.id == tempId);
-      if (index != -1) {
-        cachedMessages[index] = cachedMessages[index].copyWith(id: newMsg.id);
+        if (isClosed) return;
+
+        emit(
+          GroupDetailsError(
+            "Couldn't confirm your message was sent. It will update automatically once you're back online.",
+          ),
+        );
+        emit(GroupDetailsLoaded(messages: List.from(cachedMessages)));
+        return;
       }
+
+      final newMsg = sent.message;
+      cachedMessages = GroupDetailsCubit._reconciler.applyPointEvent(
+        cachedMessages,
+        newMsg,
+      );
       _emitLoaded();
 
       final memberIds =
@@ -245,25 +274,27 @@ mixin GroupMediaUploadMixin on Cubit<GroupDetailsState> {
               .where((id) => id != currentUserId)
               .toList();
 
-      final notificationFutures = memberIds.map(
-        (memberId) => NotificationRepository.instance.notifyGroupMessage(
-          receiverId: memberId,
-          senderId: currentUserId,
-          senderName: senderName,
-          senderImageUrl: senderAvatar,
-          groupId: group.id,
-          groupName: group.name,
-          messageBody: text.isNotEmpty ? text : (caption ?? ''),
-          messageType: messageType,
-          fileName: fileName,
-        ),
-      );
-      unawaited(
-        Future.wait(notificationFutures, eagerError: false).catchError((e) {
-          debugPrint('Notification batch error: $e');
-          return <void>[];
-        }),
-      );
+      if (sent.isNewInsert) {
+        final notificationFutures = memberIds.map(
+          (memberId) => NotificationRepository.instance.notifyGroupMessage(
+            receiverId: memberId,
+            senderId: currentUserId,
+            senderName: senderName,
+            senderImageUrl: senderAvatar,
+            groupId: group.id,
+            groupName: group.name,
+            messageBody: text.isNotEmpty ? text : (caption ?? ''),
+            messageType: messageType,
+            fileName: fileName,
+          ),
+        );
+        unawaited(
+          Future.wait(notificationFutures, eagerError: false).catchError((e) {
+            debugPrint('Notification batch error: $e');
+            return <void>[];
+          }),
+        );
+      }
 
       final rawPreview = switch (messageType) {
         'image' => caption ?? '',
@@ -276,23 +307,20 @@ mixin GroupMediaUploadMixin on Cubit<GroupDetailsState> {
       groupListCubit.updateGroupLastMessage(
         groupId: group.id,
         message: rawPreview,
-        messageId: tempId,
+        messageId: newMsg.id,
         messageType: messageType,
-        createdAt: DateTime.now(),
+        createdAt: newMsg.createdAt,
         lastMessageSenderId: currentUserId,
         lastMessageSenderName: senderName,
       );
-
-      Future.delayed(const Duration(seconds: 2), () {
-        if (!(this as Cubit).isClosed) {
-          cachedMessages.removeWhere((m) => m.id == tempId);
-          _emitLoaded();
-        }
-      });
+      return;
     } on UploadCanceledException {
       return;
     } catch (e) {
-      cachedMessages.removeWhere((m) => m.id == tempId);
+      cachedMessages = GroupDetailsCubit._reconciler.removeById(
+        cachedMessages,
+        tempId,
+      );
       uploadProgressMap.remove(tempId);
 
       final isOffline = await ConnectivityBannerController.notifyIfOffline();
@@ -302,6 +330,7 @@ mixin GroupMediaUploadMixin on Cubit<GroupDetailsState> {
         debugPrint('Upload canceled for tempId: $tempId');
       }
       if (e.toString().contains('session_expired')) {
+        if (isClosed) return;
         emit(
           GroupDetailsError('Your session has expired; please log in again'),
         );
@@ -312,7 +341,11 @@ mixin GroupMediaUploadMixin on Cubit<GroupDetailsState> {
         _cancelTokens.remove(tempId);
         uploadProgressMap.remove(tempId);
         (this as GroupDetailsCubit).disposeProgressNotifier(tempId);
-        cachedMessages.removeWhere((m) => m.id == tempId);
+        (this as GroupDetailsCubit)._protectedKeys.remove(
+          correlationKeyFor(id: tempId, clientMessageId: tempId),
+        );
+
+        if (isClosed) return;
 
         if (!isOffline) {
           emit(GroupDetailsError(SupabaseErrorMapper.toUserMessage(e)));
@@ -324,7 +357,10 @@ mixin GroupMediaUploadMixin on Cubit<GroupDetailsState> {
   }
 
   Future<void> deleteMessage(String messageId) async {
-    cachedMessages.removeWhere((m) => m.id == messageId);
+    cachedMessages = GroupDetailsCubit._reconciler.removeById(
+      cachedMessages,
+      messageId,
+    );
     _emitLoaded();
     await _services.deleteGroupMessage(messageId);
   }
@@ -336,7 +372,13 @@ mixin GroupMediaUploadMixin on Cubit<GroupDetailsState> {
       _cancelTokens.remove(tempId);
       uploadProgressMap.remove(tempId);
       (this as GroupDetailsCubit).disposeProgressNotifier(tempId);
-      cachedMessages.removeWhere((m) => m.id == tempId);
+      cachedMessages = GroupDetailsCubit._reconciler.removeById(
+        cachedMessages,
+        tempId,
+      );
+      (this as GroupDetailsCubit)._protectedKeys.remove(
+        correlationKeyFor(id: tempId, clientMessageId: tempId),
+      );
 
       emit(GroupDetailsLoaded(messages: List.from(cachedMessages)));
     }

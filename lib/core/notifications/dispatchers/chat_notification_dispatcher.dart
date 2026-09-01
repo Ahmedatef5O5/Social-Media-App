@@ -318,8 +318,9 @@ class ChatNotificationDispatcher {
           groupId: conversationId,
           groupName: conversationTitle,
           text: replyText,
+          clientMessageId: const Uuid().v4(),
         );
-        newMessageId = result.id;
+        newMessageId = result.message.id;
       } else {
         newMessageId =
             (await ChatServices().sendMessage(
@@ -508,6 +509,9 @@ class ChatNotificationDispatcher {
       final String? messageId = data['messageId'] as String?;
       if (messageId == null || messageId.isEmpty) return;
 
+      final String? clientMessageId = _s(data['clientMessageId']);
+      if (clientMessageId == null) return;
+
       final String messageType = data['messageType'] ?? 'text';
       final String? attachmentUrl = _s(data['attachmentUrl']);
       final String createdAt = DateTime.now().toIso8601String();
@@ -522,6 +526,7 @@ class ChatNotificationDispatcher {
 
         shadowMessage = {
           'id': messageId,
+          GroupMessageColumns.clientMessageId: clientMessageId,
           GroupMemberColumns.groupId: groupId,
           'sender_id': data['senderId'] ?? '',
           'sender_name': data['senderName'] ?? 'Unknown',
@@ -575,6 +580,7 @@ class ChatNotificationDispatcher {
 
         shadowMessage = {
           MessagesColumns.id: messageId,
+          MessagesColumns.clientMessageId: clientMessageId,
           MessagesColumns.senderId: senderId,
           MessagesColumns.receiverId: currentUserId,
           MessagesColumns.messageText: data['messageBody'] ?? '',

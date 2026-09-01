@@ -26,11 +26,10 @@ mixin GroupMentionsMixin on Cubit<GroupDetailsState> {
         _mentionsCache[msgId] ??= [];
         _mentionsCache[msgId]!.add(MentionRef.fromMap(m));
       }
-      cachedMessages =
-          cachedMessages.map((msg) {
-            final mentions = _mentionsCache[msg.id] ?? msg.mentions;
-            return msg.copyWith(mentions: mentions);
-          }).toList();
+      cachedMessages = GroupDetailsCubit._reconciler.applyFieldUpdate(
+        cachedMessages,
+        (msg) => msg.copyWith(mentions: _mentionsCache[msg.id] ?? msg.mentions),
+      );
       _emitLoaded();
       if (_messagesSnapshotKey != null) {
         _persistMessagesSnapshot(_messagesSnapshotKey!, cachedMessages);

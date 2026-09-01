@@ -11,7 +11,6 @@ mixin GroupMessagesStreamMixin on Cubit<GroupDetailsState> {
   Map<String, Map<String, String>> get _reactionsCache;
   bool _isFirstLoad = true;
   bool _hasReceivedFirstStreamEvent = false;
-  Set<String> _unconfirmedDiskMessageIds = {};
   GroupPresenceSnapshot _presence = GroupPresenceSnapshot.empty;
   final ValueNotifier<GroupPresenceSnapshot> presenceNotifier = ValueNotifier(
     GroupPresenceSnapshot.empty,
@@ -88,12 +87,24 @@ mixin GroupMessagesStreamMixin on Cubit<GroupDetailsState> {
     if (!isMember) return;
 
     _hasReceivedFirstStreamEvent = false;
-    _unconfirmedDiskMessageIds = cachedMessages.map((m) => m.id).toSet();
+    final int myEpoch = ++(this as GroupDetailsCubit)._messagesEpoch;
+    (this as GroupDetailsCubit)._protectedKeys =
+        cachedMessages
+            .map(
+              (m) => correlationKeyFor(
+                id: m.id,
+                clientMessageId: m.clientMessageId,
+              ),
+            )
+            .toSet();
+
     final clearedAt = GroupChatClearStore.instance.clearedAtFor(group.id);
 
     _messagesSubscription = _services.getGroupMessagesStream(group.id).listen((
       messages,
     ) {
+      if (myEpoch != (this as GroupDetailsCubit)._messagesEpoch) return;
+
       final visibleMessages =
           clearedAt == null
               ? messages
@@ -114,20 +125,14 @@ mixin GroupMessagesStreamMixin on Cubit<GroupDetailsState> {
 
       final bool isFirstEventThisTime = !_hasReceivedFirstStreamEvent;
 
-      final enrichedIds = enriched.map((m) => m.id).toSet();
-      _unconfirmedDiskMessageIds.removeWhere(enrichedIds.contains);
-
-      final protectedLeftovers = cachedMessages.where(
-        (m) =>
-            (_unconfirmedDiskMessageIds.contains(m.id) ||
-                m.id.startsWith('temp_')) &&
-            !enrichedIds.contains(m.id),
+      final reconciliation = GroupDetailsCubit._reconciler.applySnapshot(
+        cachedMessages,
+        snapshot: enriched,
+        protectedKeys: (this as GroupDetailsCubit)._protectedKeys,
       );
-
-      final List<GroupMessageModel> resolved = [
-        ...enriched,
-        ...protectedLeftovers,
-      ]..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      (this as GroupDetailsCubit)._protectedKeys =
+          reconciliation.stillUnconfirmed;
+      final List<GroupMessageModel> resolved = reconciliation.messages;
 
       _hasReceivedFirstStreamEvent = true;
 
@@ -230,15 +235,17 @@ mixin GroupMessagesStreamMixin on Cubit<GroupDetailsState> {
           }
 
           bool changed = false;
-          cachedMessages =
-              cachedMessages.map((msg) {
-                final newReadBy = receiptMap[msg.id];
-                if (newReadBy != null && newReadBy != msg.readBy) {
-                  changed = true;
-                  return msg.copyWith(readBy: newReadBy);
-                }
-                return msg;
-              }).toList();
+          cachedMessages = GroupDetailsCubit._reconciler.applyFieldUpdate(
+            cachedMessages,
+            (msg) {
+              final newReadBy = receiptMap[msg.id];
+              if (newReadBy != null && newReadBy != msg.readBy) {
+                changed = true;
+                return msg.copyWith(readBy: newReadBy);
+              }
+              return msg;
+            },
+          );
 
           if (changed) _emitLoaded();
         });

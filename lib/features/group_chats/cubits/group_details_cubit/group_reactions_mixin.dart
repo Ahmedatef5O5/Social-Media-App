@@ -40,14 +40,13 @@ mixin GroupReactionsMixin on Cubit<GroupDetailsState> {
         }
       }
 
-      cachedMessages =
-          cachedMessages.map((msg) {
-            final reactions = _reactionsCache[msg.id] ?? {};
-            return msg.copyWith(
-              reactions: reactions,
-              reactionsCreatedAt: _reactionsCreatedAtCache[msg.id],
-            );
-          }).toList();
+      cachedMessages = GroupDetailsCubit._reconciler.applyFieldUpdate(
+        cachedMessages,
+        (msg) => msg.copyWith(
+          reactions: _reactionsCache[msg.id] ?? {},
+          reactionsCreatedAt: _reactionsCreatedAtCache[msg.id],
+        ),
+      );
       _emitLoaded();
 
       if (_messagesSnapshotKey != null && cachedMessages.isNotEmpty) {
@@ -81,14 +80,13 @@ mixin GroupReactionsMixin on Cubit<GroupDetailsState> {
       _reactionsCreatedAtCache[messageId]![currentUserId] =
           DateTime.now().toIso8601String();
     }
-    cachedMessages =
-        cachedMessages.map((msg) {
-          final reactions = _reactionsCache[msg.id] ?? {};
-          return msg.copyWith(
-            reactions: reactions,
-            reactionsCreatedAt: _reactionsCreatedAtCache[msg.id],
-          );
-        }).toList();
+    cachedMessages = GroupDetailsCubit._reconciler.applyFieldUpdate(
+      cachedMessages,
+      (msg) => msg.copyWith(
+        reactions: _reactionsCache[msg.id] ?? {},
+        reactionsCreatedAt: _reactionsCreatedAtCache[msg.id],
+      ),
+    );
     _emitLoaded();
     try {
       await _services.toggleReaction(

@@ -89,7 +89,11 @@ class ForwardService {
     final sent = await _chatServices.sendMessage(
       senderId: currentUserId,
       receiverId: receiverId,
-      text: message.text,
+      text:
+          message.messageType == 'file'
+              ? (message.fileName ??
+                  (message.text.isNotEmpty ? message.text : 'File'))
+              : message.text,
       clientMessageId: const Uuid().v4(),
       messageType: message.messageType,
       imageUrl: message.imageUrl,
@@ -108,6 +112,7 @@ class ForwardService {
 
     await _hydrateSingleChatShadow(
       messageId: newMessageId,
+      clientMessageId: const Uuid().v4(),
       currentUserId: currentUserId,
       receiverId: receiverId,
       message: message,
@@ -121,8 +126,13 @@ class ForwardService {
   }) async {
     final result = await _groupChatServices.sendGroupMessage(
       groupId: groupId,
+      clientMessageId: const Uuid().v4(),
       groupName: groupName,
-      text: message.text,
+      text:
+          message.messageType == 'file'
+              ? (message.fileName ??
+                  (message.text.isNotEmpty ? message.text : 'File'))
+              : message.text,
       messageType: message.messageType,
       imageUrl: message.imageUrl,
       videoUrl: message.videoUrl,
@@ -142,6 +152,7 @@ class ForwardService {
 
   Future<void> _hydrateSingleChatShadow({
     required String messageId,
+    required String clientMessageId,
     required String currentUserId,
     required String receiverId,
     required ForwardableMessage message,
@@ -155,6 +166,7 @@ class ForwardService {
 
       final shadowMessage = {
         MessagesColumns.id: messageId,
+        MessagesColumns.clientMessageId: clientMessageId,
         MessagesColumns.senderId: currentUserId,
         MessagesColumns.receiverId: receiverId,
         MessagesColumns.messageText: message.text,

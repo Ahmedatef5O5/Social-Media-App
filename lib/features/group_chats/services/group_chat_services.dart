@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:social_media_app/core/mentions/mentions.dart';
 import 'package:social_media_app/features/group_chats/services/group_notification_dispatcher.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../../core/presence/model/chat_action_type.dart';
+import '../../../core/presence/models/chat_action_type.dart';
 import '../../../core/presence/services/presence_service.dart';
 import '../../../core/services/cloudinary_storage_services.dart';
 import '../../../core/services/cloudinary_upload_result.dart';
@@ -497,11 +497,12 @@ class GroupChatServices {
         );
   }
 
-  Future<GroupMessageModel> sendGroupMessage({
+  Future<({GroupMessageModel message, bool isNewInsert})> sendGroupMessage({
     required String groupId,
     required String groupName,
     String? groupImageUrl,
     required String text,
+    required String clientMessageId,
     String messageType = 'text',
     String? imageUrl,
     String? videoUrl,
@@ -538,6 +539,7 @@ class GroupChatServices {
       'sender_id': currentUser.id,
       'sender_name': senderName,
       'sender_avatar': senderAvatar,
+      GroupMessageColumns.clientMessageId: clientMessageId,
       'message_text': text,
       'message_type': messageType,
       if (imageUrl != null) 'image_url': imageUrl,
@@ -572,16 +574,35 @@ class GroupChatServices {
         'forwarded_from_user_avatar': forwardedFromUserAvatar,
     };
 
-    final result =
+    final upserted =
         await _supabase
             .from(SupabaseConstants.groupMessages)
-            .insert(insertData)
-            .select()
-            .single();
+            .upsert(
+              insertData,
+              onConflict: 'sender_id,${GroupMessageColumns.clientMessageId}',
+              ignoreDuplicates: true,
+            )
+            .select();
+
+    final Map<String, dynamic> result;
+    final bool isNewInsert;
+    if (upserted.isNotEmpty) {
+      result = upserted.first;
+      isNewInsert = true;
+    } else {
+      result =
+          await _supabase
+              .from(SupabaseConstants.groupMessages)
+              .select()
+              .eq('sender_id', currentUser.id)
+              .eq(GroupMessageColumns.clientMessageId, clientMessageId)
+              .single();
+      isNewInsert = false;
+    }
 
     final newMessageId = result['id'] as String;
 
-    if (mentions.isNotEmpty) {
+    if (isNewInsert && mentions.isNotEmpty) {
       await _supabase
           .from(SupabaseConstants.groupMessageMentions)
           .insert(
@@ -600,40 +621,48 @@ class GroupChatServices {
           );
     }
 
-    unawaited(
-      GroupNotificationDispatcher.instance.notifyMessage(
-        messageId: newMessageId,
-        groupId: groupId,
-        groupName: groupName,
-        groupImageUrl: groupImageUrl ?? '',
-        senderId: currentUser.id,
-        senderName: senderName,
-        senderAvatar: senderAvatar,
-        messageBody: text,
-        messageType: messageType,
-        attachmentUrl: imageUrl ?? videoUrl ?? fileUrl,
-        mentionedUserIds: mentions.map((m) => m.mentionedUserId).toList(),
-        caption: caption,
-        durationSeconds: durationSeconds,
-        fileName: fileName,
-        fileSizeBytes: fileSizeBytes,
-        replyToMessageId: replyTo?.id,
-        replyToText:
-            replyTo?.text.isNotEmpty == true ? replyTo?.text : replyTo?.caption,
-        replyToMessageType: replyTo?.messageType,
-        replyToSenderId: replyTo?.senderId,
-        replyToMediaUrl: GroupMessageModel.replyMediaUrlFrom(replyTo),
-        forwardedFromUserId: forwardedFromUserId,
-        forwardedFromUserName: forwardedFromUserName,
-        forwardedFromUserAvatar: forwardedFromUserAvatar,
-      ),
-    );
+    if (isNewInsert) {
+      unawaited(
+        GroupNotificationDispatcher.instance.notifyMessage(
+          messageId: newMessageId,
+          clientMessageId: clientMessageId,
+          groupId: groupId,
+          groupName: groupName,
+          groupImageUrl: groupImageUrl ?? '',
+          senderId: currentUser.id,
+          senderName: senderName,
+          senderAvatar: senderAvatar,
+          messageBody: text,
+          messageType: messageType,
+          attachmentUrl: imageUrl ?? videoUrl ?? fileUrl,
+          mentionedUserIds: mentions.map((m) => m.mentionedUserId).toList(),
+          caption: caption,
+          durationSeconds: durationSeconds,
+          fileName: fileName,
+          fileSizeBytes: fileSizeBytes,
+          replyToMessageId: replyTo?.id,
+          replyToText:
+              replyTo?.text.isNotEmpty == true
+                  ? replyTo?.text
+                  : replyTo?.caption,
+          replyToMessageType: replyTo?.messageType,
+          replyToSenderId: replyTo?.senderId,
+          replyToMediaUrl: GroupMessageModel.replyMediaUrlFrom(replyTo),
+          forwardedFromUserId: forwardedFromUserId,
+          forwardedFromUserName: forwardedFromUserName,
+          forwardedFromUserAvatar: forwardedFromUserAvatar,
+        ),
+      );
+    }
 
-    return GroupMessageModel.fromMap({
-      ...result,
-      'sender_name': senderName,
-      'sender_avatar': senderAvatar,
-    }).copyWith(mentions: mentions);
+    return (
+      message: GroupMessageModel.fromMap({
+        ...result,
+        'sender_name': senderName,
+        'sender_avatar': senderAvatar,
+      }).copyWith(mentions: mentions),
+      isNewInsert: isNewInsert,
+    );
   }
 
   Future<void> editGroupMessage({

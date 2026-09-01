@@ -51,7 +51,11 @@ class GroupRegularMessageContent extends StatelessWidget {
     final isVoice = message.messageType == 'voice';
     final isFile = message.messageType == 'file';
     final currentUserId = SupabaseProvider.id;
-    final displayText = message.caption ?? message.text;
+    final displayText =
+        (message.messageType == 'text' ||
+                message.messageType == GroupMessageModel.systemEventType)
+            ? (message.caption ?? message.text)
+            : (message.caption ?? '');
     final timeWidget = GroupTimeRow(message: message, isMe: isMe);
 
     final hasReactions = message.reactions.isNotEmpty;

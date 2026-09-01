@@ -11,6 +11,7 @@ class GroupNotificationDispatcher {
 
   Future<void> notifyMessage({
     required String messageId,
+    required String? clientMessageId,
     required String groupId,
     required String groupName,
     required String groupImageUrl,
@@ -41,6 +42,7 @@ class GroupNotificationDispatcher {
       payloadBuilder:
           (memberId, token) => _fcm.sendGroupNotification(
             messageId: messageId,
+            clientMessageId: clientMessageId,
             receiverFcmToken: token,
             receiverId: memberId,
             groupId: groupId,

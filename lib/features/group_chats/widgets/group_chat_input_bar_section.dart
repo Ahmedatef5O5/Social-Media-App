@@ -114,7 +114,8 @@ class _GroupChatInputBarSectionState extends State<GroupChatInputBarSection> {
         widget.controller.clear();
         widget.controller.clearMentions();
         _cubit.sendMessage(
-          text: '',
+          text: nameToSend ?? 'File',
+
           messageType: 'file',
           documentFile: docToSend,
           fileName: nameToSend,

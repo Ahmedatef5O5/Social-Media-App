@@ -8,6 +8,7 @@ class FcmService {
 
   Future<void> sendChatNotification({
     required String messageId,
+    required String? clientMessageId,
     required String receiverFcmToken,
     required String receiverId,
     required String senderId,
@@ -39,6 +40,7 @@ class FcmService {
     await _sendToEdgeFunction({
       'type': 'chat',
       'messageId': messageId,
+      if (clientMessageId != null) 'clientMessageId': clientMessageId,
       'receiverFcmToken': receiverFcmToken,
       'receiverId': receiverId,
       'senderId': senderId,
@@ -145,6 +147,7 @@ class FcmService {
 
   Future<void> sendGroupNotification({
     required String messageId,
+    required String? clientMessageId,
     required String receiverFcmToken,
     required String receiverId,
     required String groupId,
@@ -173,6 +176,7 @@ class FcmService {
     await _sendToEdgeFunction({
       'type': 'group',
       'messageId': messageId,
+      if (clientMessageId != null) 'clientMessageId': clientMessageId,
       'receiverFcmToken': receiverFcmToken,
       'receiverId': receiverId,
       'groupId': groupId,

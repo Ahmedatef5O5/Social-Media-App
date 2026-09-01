@@ -7,10 +7,12 @@ import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import 'package:social_media_app/core/chat_shared/controllers/chat_search_controller.dart';
 import 'package:social_media_app/core/connectivity/services/connectivity_banner_controller.dart';
 import 'package:social_media_app/core/mentions/mentions.dart';
+import 'package:uuid/uuid.dart';
 import '../../../../core/cache/repository/media_cache_repository.dart';
 import '../../../../core/cache/services/messages_snapshot_cache.dart';
 import '../../../../core/errors/supabase_error_mapper.dart';
-import '../../../../core/presence/model/chat_action_type.dart';
+import '../../../../core/messaging/message_reconciler.dart';
+import '../../../../core/presence/models/chat_action_type.dart';
 import '../../../../core/services/fcm_services.dart';
 import '../../../../core/services/supabase_storage_services.dart';
 import '../../../../core/supabase/supabase_provider.dart';
@@ -60,6 +62,27 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState>
     fromJson: GroupMessageModel.fromJson,
   );
 
+  static final _reconciler = MessageReconciler<GroupMessageModel>(
+    idOf: (m) => m.id,
+    clientMessageIdOf: (m) => m.clientMessageId,
+    createdAtOf: (m) => m.createdAt,
+    merge:
+        (existing, incoming) => incoming.copyWith(
+          reactions:
+              incoming.reactions.isNotEmpty
+                  ? incoming.reactions
+                  : existing.reactions,
+          reactionsCreatedAt:
+              incoming.reactionsCreatedAt ?? existing.reactionsCreatedAt,
+          mentions:
+              incoming.mentions.isNotEmpty
+                  ? incoming.mentions
+                  : existing.mentions,
+        ),
+  );
+
+  Set<String> _protectedKeys = {};
+
   GroupDetailsCubit(
     this._services,
     this.group,
@@ -72,9 +95,18 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState>
     WidgetsBinding.instance.addObserver(this);
   }
 
+  int _messagesEpoch = 0;
+  AppLifecycleState? _lastLifecycleState;
+
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed && isMember) {
+    final wasBackgrounded =
+        _lastLifecycleState == AppLifecycleState.paused ||
+        _lastLifecycleState == AppLifecycleState.inactive ||
+        _lastLifecycleState == AppLifecycleState.hidden;
+    _lastLifecycleState = state;
+
+    if (state == AppLifecycleState.resumed && wasBackgrounded && isMember) {
       _listenMembership();
       _listenMessages();
       _listenReadReceipts();
@@ -137,8 +169,10 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState>
                 .isMember
             : group.isMember;
 
-    final diskMessages = _readMessagesSnapshot(_messagesSnapshotKey!);
-    if (diskMessages.isNotEmpty) {
+    final rawDiskMessages = _readMessagesSnapshot(_messagesSnapshotKey!);
+    if (rawDiskMessages.isNotEmpty) {
+      final diskMessages = _reconciler.dedupe(rawDiskMessages);
+
       for (var m in diskMessages) {
         if (m.mentions.isNotEmpty) {
           _mentionsCache[m.id] = List<MentionRef>.from(m.mentions);

@@ -3,11 +3,12 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import '../../../core/helpers/formatted_date.dart';
+import '../../../core/messaging/message_reconciler.dart';
 import '../../../core/supabase/supabase_provider.dart';
 import '../../single_chats/helpers/chat_date_separator_helper.dart';
 import '../../single_chats/widgets/date_separator_glassmorphism_widget.dart';
-import '../cubits/group_details_cubit/group_details_cubit.dart';
 import '../../group_calls/models/group_call_model.dart';
+import '../cubits/group_details_cubit/group_details_cubit.dart';
 import '../helpers/group_system_event_text_builder.dart';
 import '../models/groupe_message_model.dart';
 import 'group_message_bubble.dart';
@@ -36,6 +37,10 @@ class GroupMessageItemBuilder extends StatelessWidget {
     }
 
     final msg = messages[msgIndex];
+    final stableKey = correlationKeyFor(
+      id: msg.id,
+      clientMessageId: msg.clientMessageId,
+    );
 
     final isMe = msg.senderId == SupabaseProvider.id;
 
@@ -47,7 +52,7 @@ class GroupMessageItemBuilder extends StatelessWidget {
 
     if (msg.isSystemEvent) {
       return Column(
-        key: ValueKey(msg.id),
+        key: ValueKey(stableKey),
         children: [
           if (showDate)
             DateSeparatorGlassmorphismWidget(
@@ -151,7 +156,7 @@ class GroupMessageItemBuilder extends StatelessWidget {
         );
 
     return Column(
-      key: ValueKey(msg.id),
+      key: ValueKey(stableKey),
       children: [
         if (showDate)
           DateSeparatorGlassmorphismWidget(

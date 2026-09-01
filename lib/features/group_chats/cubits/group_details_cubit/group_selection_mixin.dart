@@ -4,6 +4,7 @@ mixin GroupSelectionMixin on Cubit<GroupDetailsState> {
   String get currentUserId;
   GroupChatServices get _services;
   List<GroupMessageModel> get cachedMessages;
+  set cachedMessages(List<GroupMessageModel> value);
   bool get isMember;
   void cancelUpload(String tempId);
   void _emitLoaded({bool force = false});
@@ -69,13 +70,26 @@ mixin GroupSelectionMixin on Cubit<GroupDetailsState> {
     final ids = selectedMessageIds.value.toList();
     if (ids.isEmpty) return;
 
-    cachedMessages.removeWhere((m) => ids.contains(m.id));
+    final selectedSet = ids.toSet();
+    final selected =
+        cachedMessages.where((m) => selectedSet.contains(m.id)).toList();
+
+    bool isStillSending(GroupMessageModel m) =>
+        m.clientMessageId != null && m.id == m.clientMessageId;
+
+    final stillSendingIds =
+        selected.where(isStillSending).map((m) => m.id).toList();
+    final realIds =
+        selected.where((m) => !isStillSending(m)).map((m) => m.id).toList();
+
+    var updated = cachedMessages;
+    for (final id in selectedSet) {
+      updated = GroupDetailsCubit._reconciler.removeById(updated, id);
+    }
+    cachedMessages = updated;
     _emitLoaded();
 
-    final realIds = ids.where((id) => !id.startsWith('temp_')).toList();
-    final tempIds = ids.where((id) => id.startsWith('temp_')).toList();
-
-    for (final tempId in tempIds) {
+    for (final tempId in stillSendingIds) {
       cancelUpload(tempId);
     }
 

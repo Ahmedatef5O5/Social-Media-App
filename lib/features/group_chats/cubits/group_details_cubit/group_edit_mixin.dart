@@ -30,13 +30,15 @@ mixin GroupEditMixin on Cubit<GroupDetailsState> {
     final isCaptionEdit =
         target.messageType == 'image' || target.messageType == 'video';
 
-    cachedMessages =
-        cachedMessages.map((m) {
-          if (m.id != messageId) return m;
-          return isCaptionEdit
-              ? m.copyWith(caption: trimmed, isEdited: true)
-              : m.copyWith(text: trimmed, isEdited: true);
-        }).toList();
+    cachedMessages = GroupDetailsCubit._reconciler.applyFieldUpdate(
+      cachedMessages,
+      (m) {
+        if (m.id != messageId) return m;
+        return isCaptionEdit
+            ? m.copyWith(caption: trimmed, isEdited: true)
+            : m.copyWith(text: trimmed, isEdited: true);
+      },
+    );
     _emitLoaded();
 
     try {
