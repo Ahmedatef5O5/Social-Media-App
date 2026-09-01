@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 import 'package:social_media_app/core/router/app_routes.dart';
 import 'package:social_media_app/features/profile/cubits/profile_cubit/profile_cubit.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../core/presence/models/presence_privacy.dart';
 import '../../../core/presence/widgets/presence_privacy_sheet.dart';
 import '../../../core/toast/app_toast.dart';
@@ -69,6 +70,33 @@ class _SettingsViewState extends State<SettingsView>
     HapticFeedback.selectionClick();
 
     AppToast.info('$feature is coming soon');
+  }
+
+  Future<void> _sendFeedback(BuildContext context) async {
+    HapticFeedback.selectionClick();
+
+    final uri = Uri(
+      scheme: 'mailto',
+      path: 'ahmedateif0@gmail.com',
+      queryParameters: {
+        'subject': 'Syncra App Feedback',
+        'body': 'Hi Ahmed,\n\n',
+      },
+    );
+
+    try {
+      final launched = await launchUrl(
+        uri,
+        mode: LaunchMode.externalApplication,
+      );
+      if (!launched && context.mounted) {
+        AppToast.error('Could not open your email app.');
+      }
+    } catch (e) {
+      if (context.mounted) {
+        AppToast.error('Could not open your email app.');
+      }
+    }
   }
 
   Widget _buildScaffold(BuildContext context, SettingsState settingsState) {
@@ -198,6 +226,7 @@ class _SettingsViewState extends State<SettingsView>
                         subtitle: _presencePrivacyLabel(
                           settingsState.presencePrivacy,
                         ),
+                        enabled: settingsState.onlineStatus,
                         onTap:
                             () => _pickPresencePrivacy(
                               context,
@@ -228,7 +257,10 @@ class _SettingsViewState extends State<SettingsView>
                         icon: Icons.block_outlined,
                         label: 'Blocked Users',
                         subtitle: 'Manage blocked accounts',
-                        onTap: () => _showComingSoon(context, 'Blocked Users'),
+                        onTap:
+                            () => Navigator.of(
+                              context,
+                            ).pushNamed(AppRoutes.blockedUsersViewRoute),
                       ),
                     ],
                   ),
@@ -295,19 +327,27 @@ class _SettingsViewState extends State<SettingsView>
                         icon: Icons.help_outline_rounded,
                         label: 'Help & FAQ',
                         subtitle: 'Get answers to common questions',
-                        onTap: () => _showComingSoon(context, 'Help & FAQ'),
+                        onTap:
+                            () => Navigator.pushNamed(
+                              context,
+                              AppRoutes.helpFaqViewRoute,
+                            ),
                       ),
                       SettingsItemData(
                         icon: Icons.feedback_outlined,
                         label: 'Send Feedback',
                         subtitle: 'Tell us what you think',
-                        onTap: () => _showComingSoon(context, 'Send Feedback'),
+                        onTap: () => _sendFeedback(context),
                       ),
                       SettingsItemData(
                         icon: Icons.policy_outlined,
                         label: 'Privacy Policy',
                         subtitle: 'How we handle your data',
-                        onTap: () => _showComingSoon(context, 'Privacy Policy'),
+                        onTap:
+                            () => Navigator.pushNamed(
+                              context,
+                              AppRoutes.privacyPolicyViewRoute,
+                            ),
                       ),
                     ],
                   ),

@@ -104,6 +104,7 @@ flutter:
     - assets/icons/inputAreaIcons/
     - assets/lotties/
     - assets/sounds/
+    - assets/docs/
  
   fonts:
     - family: Inter
