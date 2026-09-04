@@ -53,3 +53,9 @@ class ComposerUploadError extends CommentsState {
 class CommentsListLoading extends CommentsState {}
 
 class CommentsListLoaded extends CommentsState {}
+
+//  pending (buffered) comments waiting to be merged into view ──
+class CommentsPendingChanged extends CommentsState {}
+
+// someone started/stopped typing a comment on this post ──
+class CommentTypingUsersChanged extends CommentsState {}

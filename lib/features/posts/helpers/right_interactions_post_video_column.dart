@@ -108,7 +108,7 @@ class _RightInteractionsPostVideoColumnState
             child: CommentsSheetSection(postId: post.id),
           ),
     ).whenComplete(() {
-      commentsCubit.resetCollapsedComments();
+      commentsCubit.resetExpandedComments();
       if (wasPlaying && widget.videoController.value.isInitialized) {
         widget.videoController.play();
       }

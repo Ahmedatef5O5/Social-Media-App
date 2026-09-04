@@ -7,6 +7,7 @@ import 'package:uuid/uuid.dart';
 import '../../../core/cache/repository/media_cache_repository.dart';
 import '../../../core/connectivity/services/connectivity_banner_controller.dart';
 import '../../../core/errors/supabase_error_mapper.dart';
+import '../../../core/helpers/comment_helper.dart';
 import '../../../core/services/cloudinary_storage_services.dart';
 import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/utilities/supabase_constants.dart';
@@ -21,6 +22,7 @@ import '../models/comment_model.dart';
 import '../models/comment_sort_option.dart';
 import '../models/comment_type.dart';
 import '../../posts/models/post_model.dart';
+import '../models/comment_typing_user.dart';
 import '../services/comments_service.dart';
 part 'comments_state.dart';
 
@@ -42,7 +44,161 @@ class CommentsCubit extends Cubit<CommentsState> {
 
   final _eventBus = CommentEventBus.instance;
 
-  final Set<String> collapsedComments = {};
+  final Set<String> expandedComments = {};
+
+  // ── Pending (buffered) comments — jank prevention + "New Comments" pill ──
+  List<CommentModel>? pendingComments;
+  int pendingCommentsCount = 0;
+  bool _isNearEdge = true;
+
+  void setNearEdge(bool value) {
+    if (_isNearEdge == value) return;
+    _isNearEdge = value;
+    if (value && pendingComments != null) {
+      mergePendingComments();
+    }
+
+    if (!isClosed) emit(CommentsUiChanged());
+  }
+
+  bool get isNearEdge => _isNearEdge;
+
+  void mergePendingComments() {
+    if (pendingComments == null) return;
+    comments = pendingComments!;
+    pendingComments = null;
+    pendingCommentsCount = 0;
+    emit(CommentsUiChanged());
+  }
+
+  ({CommentModel comment, String? parentId})? firstPendingComment() {
+    final pending = pendingComments;
+    if (pending == null) return null;
+
+    final existingIds = <String>{};
+    void collectIds(CommentModel node) {
+      existingIds.add(node.id);
+      for (final reply in node.replies) {
+        collectIds(reply);
+      }
+    }
+
+    for (final c in comments) {
+      collectIds(c);
+    }
+
+    ({CommentModel comment, String? parentId})? search(
+      CommentModel node,
+      String? parentId,
+    ) {
+      if (!existingIds.contains(node.id)) {
+        return (comment: node, parentId: parentId);
+      }
+      for (final reply in node.replies) {
+        final found = search(reply, node.id);
+        if (found != null) return found;
+      }
+      return null;
+    }
+
+    for (final c in pending) {
+      final found = search(c, null);
+      if (found != null) return found;
+    }
+    return null;
+  }
+
+  /// Makes sure every ancestor of [commentId] is expanded, so a reply that
+  /// was posted under a currently-collapsed thread becomes visible before we
+  /// try to scroll to it.
+  void expandAncestorsOf(String commentId) {
+    final path = _ancestorPathOf(commentId);
+    bool changed = false;
+    for (final ancestorId in path) {
+      if (!expandedComments.contains(ancestorId)) {
+        expandedComments.add(ancestorId);
+        changed = true;
+      }
+    }
+    if (changed && !isClosed) emit(CommentsUiChanged());
+  }
+
+  List<String> _ancestorPathOf(String commentId) {
+    List<String>? search(CommentModel node, List<String> pathSoFar) {
+      if (node.id == commentId) return pathSoFar;
+      for (final reply in node.replies) {
+        final found = search(reply, [...pathSoFar, node.id]);
+        if (found != null) return found;
+      }
+      return null;
+    }
+
+    for (final c in comments) {
+      final found = search(c, []);
+      if (found != null) return found;
+    }
+    return [];
+  }
+
+  // ── Typing indicator (ephemeral, Realtime Broadcast — no DB table) ──
+  RealtimeChannel? _channel;
+  final Map<String, CommentTypingUser> typingUsersById = {};
+  final Map<String, Timer> _typingExpiryTimers = {};
+  DateTime? _lastTypingSentAt;
+
+  void sendTypingSignal(String postId) {
+    final now = DateTime.now();
+    if (_lastTypingSentAt != null &&
+        now.difference(_lastTypingSentAt!) < const Duration(seconds: 2)) {
+      return; // client-side throttle, avoids flooding the channel
+    }
+    _lastTypingSentAt = now;
+    _channel?.sendBroadcastMessage(
+      event: 'typing',
+      payload: {
+        'userId': SupabaseProvider.id,
+        'name': currentUserData?.name ?? 'Someone',
+        'imageUrl': currentUserData?.imageUrl ?? '',
+      },
+    );
+  }
+
+  void sendStoppedTypingSignal(String postId) {
+    _lastTypingSentAt = null;
+    _channel?.sendBroadcastMessage(
+      event: 'stopped_typing',
+      payload: {'userId': SupabaseProvider.id},
+    );
+  }
+
+  void _handleTypingBroadcast(Map<String, dynamic> payload) {
+    final userId = payload['userId'] as String?;
+    if (userId == null || userId == SupabaseProvider.id) return;
+
+    typingUsersById[userId] = CommentTypingUser(
+      id: userId,
+      name: payload['name'] as String? ?? 'Someone',
+      imageUrl: payload['imageUrl'] as String?,
+    );
+
+    _typingExpiryTimers[userId]?.cancel();
+    _typingExpiryTimers[userId] = Timer(const Duration(seconds: 4), () {
+      typingUsersById.remove(userId);
+      _typingExpiryTimers.remove(userId);
+      if (!isClosed) emit(CommentTypingUsersChanged());
+    });
+
+    if (!isClosed) emit(CommentTypingUsersChanged());
+  }
+
+  void _handleStoppedTypingBroadcast(Map<String, dynamic> payload) {
+    final userId = payload['userId'] as String?;
+    if (userId == null) return;
+    if (typingUsersById.remove(userId) != null) {
+      _typingExpiryTimers.remove(userId)?.cancel();
+      if (!isClosed) emit(CommentTypingUsersChanged());
+    }
+  }
 
   final Map<String, String> _resolvedIds = {};
 
@@ -58,6 +214,7 @@ class CommentsCubit extends Cubit<CommentsState> {
     _realtimeDebounce?.cancel();
 
     final channel = SupabaseProvider.client.channel('comments_sheet_$postId');
+    _channel = channel;
 
     channel
         .onPostgresChanges(
@@ -92,6 +249,11 @@ class CommentsCubit extends Cubit<CommentsState> {
             }
           },
         )
+        .onBroadcast(event: 'typing', callback: _handleTypingBroadcast)
+        .onBroadcast(
+          event: 'stopped_typing',
+          callback: _handleStoppedTypingBroadcast,
+        )
         .subscribe();
   }
 
@@ -110,7 +272,23 @@ class CommentsCubit extends Cubit<CommentsState> {
         sort: currentSort,
       );
       if (isClosed) return;
+
+      final currentCount = countAllComments(comments);
+      final freshCount = countAllComments(freshComments);
+
+      // Buffer only on genuine growth (new insert) while the user is mid-scroll.
+      // Reaction-only updates or deletions never grow the count, so they always
+      // apply immediately — there's nothing "new" to show a pill for.
+      if (!_isNearEdge && freshCount > currentCount) {
+        pendingComments = freshComments;
+        pendingCommentsCount = freshCount - currentCount;
+        emit(CommentsPendingChanged());
+        return;
+      }
+
       comments = freshComments;
+      pendingComments = null;
+      pendingCommentsCount = 0;
       emit(CommentsUiChanged());
     } catch (e) {
       debugPrint('Realtime comments sync error: $e');
@@ -160,16 +338,16 @@ class CommentsCubit extends Cubit<CommentsState> {
   }
 
   void toggleReplies(String commentId) {
-    if (collapsedComments.contains(commentId)) {
-      collapsedComments.remove(commentId);
+    if (expandedComments.contains(commentId)) {
+      expandedComments.remove(commentId);
     } else {
-      collapsedComments.add(commentId);
+      expandedComments.add(commentId);
     }
     emit(CommentsUiChanged());
   }
 
-  void resetCollapsedComments() {
-    collapsedComments.clear();
+  void resetExpandedComments() {
+    expandedComments.clear();
     emit(CommentsUiChanged());
   }
 
@@ -874,6 +1052,12 @@ class CommentsCubit extends Cubit<CommentsState> {
     _uploadCancelToken?.cancel();
     for (final notifier in commentUploadProgress.values) {
       notifier.dispose();
+    }
+    for (final timer in _typingExpiryTimers.values) {
+      timer.cancel();
+    }
+    if (_channel != null) {
+      SupabaseProvider.client.removeChannel(_channel!);
     }
     return super.close();
   }
