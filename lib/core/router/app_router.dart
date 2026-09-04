@@ -69,7 +69,8 @@ import '../../features/profile/views/profile_view.dart';
 import '../../features/stories/views/my_stories_list_view.dart';
 import '../../features/stories/views/pending_story_resolver_view.dart';
 import '../../features/stories/views/user_stories_grid_view.dart';
-import '../../features/support/views/markdown_document_view.dart';
+import '../../features/support/views/help_faq_view.dart';
+import '../../features/support/views/privacy_policy_view.dart';
 import '../cache/repository/media_cache_repository.dart';
 import '../chat_shared/cubits/conversations_cubit/conversations_cubit.dart';
 import '../chat_shared/cubits/new_chat_cubit/new_chat_cubit.dart';
@@ -754,29 +755,9 @@ class AppRouter {
           settings: settings,
         );
       case AppRoutes.helpFaqViewRoute:
-        return _buildRoute(
-          const MarkdownDocumentView(
-            args: MarkdownDocumentArgs(
-              title: 'Help & FAQ',
-              subtitle: 'Get answers to common questions',
-              icon: Icons.help_outline_rounded,
-              assetPath: 'assets/docs/help_faq.md',
-            ),
-          ),
-          settings: settings,
-        );
+        return _buildRoute(const HelpFaqView(), settings: settings);
       case AppRoutes.privacyPolicyViewRoute:
-        return _buildRoute(
-          const MarkdownDocumentView(
-            args: MarkdownDocumentArgs(
-              title: 'Privacy Policy',
-              subtitle: 'How we handle your data',
-              icon: Icons.policy_outlined,
-              assetPath: 'assets/docs/privacy_policy.md',
-            ),
-          ),
-          settings: settings,
-        );
+        return _buildRoute(const PrivacyPolicyView(), settings: settings);
       case AppRoutes.aiSettingsViewRoute:
         return _buildRoute(const AiSettingsView(), settings: settings);
 
