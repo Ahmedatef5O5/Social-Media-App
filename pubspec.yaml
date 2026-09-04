@@ -32,6 +32,8 @@ dependencies:
   flutter_linkify: ^6.0.0
   flutter_local_notifications: ^17.2.2
   flutter_markdown_plus: ^1.0.12
+  flutter_highlight: ^0.7.0
+  markdown: ^7.0.0
   flutter_svg: 2.2.2
   font_awesome_flutter: ^11.0.0
   gal: ^2.3.2
