@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
+import '../../group_chats/models/groupe_message_model.dart';
 import '../../single_chats/services/chat_services.dart';
 import '../../group_chats/services/group_chat_services.dart';
 import '../models/forward_target_selection.dart';
@@ -86,6 +87,8 @@ class ForwardService {
     required String receiverId,
     required ForwardableMessage message,
   }) async {
+    final clientMessageId = const Uuid().v4();
+
     final sent = await _chatServices.sendMessage(
       senderId: currentUserId,
       receiverId: receiverId,
@@ -94,7 +97,7 @@ class ForwardService {
               ? (message.fileName ??
                   (message.text.isNotEmpty ? message.text : 'File'))
               : message.text,
-      clientMessageId: const Uuid().v4(),
+      clientMessageId: clientMessageId,
       messageType: message.messageType,
       imageUrl: message.imageUrl,
       videoUrl: message.videoUrl,
@@ -112,7 +115,7 @@ class ForwardService {
 
     await _hydrateSingleChatShadow(
       messageId: newMessageId,
-      clientMessageId: const Uuid().v4(),
+      clientMessageId: clientMessageId,
       currentUserId: currentUserId,
       receiverId: receiverId,
       message: message,
@@ -147,7 +150,7 @@ class ForwardService {
       forwardedFromUserAvatar: message.originalSenderAvatar,
     );
 
-    await _hydrateGroupShadow(groupId: groupId, message: result);
+    await _hydrateGroupShadow(groupId: groupId, message: result.message);
   }
 
   Future<void> _hydrateSingleChatShadow({
@@ -214,12 +217,12 @@ class ForwardService {
 
   Future<void> _hydrateGroupShadow({
     required String groupId,
-    required dynamic message,
+    required GroupMessageModel message,
   }) async {
     try {
       final key = 'group_messages_snapshot_$groupId';
 
-      final shadowMessage = message.toCacheJson() as Map<String, dynamic>;
+      final shadowMessage = message.toCacheJson();
 
       final existing = LocalSnapshotStore.instance.readList(key);
       if (existing.any((m) => m['id'] == shadowMessage['id'])) return;
