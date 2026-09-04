@@ -2,13 +2,12 @@ import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
-import '../../../core/attachment/widgets/transfer_ring.dart';
-import '../../../core/utilities/file_size_formatter.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
 import '../../../core/widgets/vertical_volume_indicator.dart';
 import '../../../core/widgets/video_progress_slider.dart';
 import '../../single_chats/helpers/glass_icon_btn.dart';
 import '../../single_chats/widgets/full_screen_media_view.dart';
+import '../helpers/media_size_badge.dart';
 
 class CreatePostVideoPreview extends StatefulWidget {
   final String videoPath;
@@ -143,138 +142,146 @@ class _CreatePostVideoPreviewState extends State<CreatePostVideoPreview>
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 10),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(15),
-        color: Colors.black,
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: AspectRatio(
-        aspectRatio: _isInitialized ? _controller.value.aspectRatio : 16 / 9,
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            Positioned(
-              top: 8,
-              left: 50,
-              child: GlassPillBadge(
-                leading: const Icon(
-                  Icons.videocam_outlined,
-                  size: 14,
-                  color: Colors.white,
-                ),
-                caption: formatMediaFileSize(widget.fileSizeBytes),
-              ),
-            ),
-            if (_isInitialized)
-              VideoPlayer(_controller)
-            else
-              const CustomLoadingIndicator(),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        Container(
+          margin: const EdgeInsets.only(top: 10, bottom: 4),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(15),
+            color: Colors.black,
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: AspectRatio(
+            aspectRatio:
+                _isInitialized ? _controller.value.aspectRatio : 16 / 9,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                if (_isInitialized)
+                  VideoPlayer(_controller)
+                else
+                  const CustomLoadingIndicator(),
 
-            if (_isInitialized)
-              GestureDetector(
-                onTap: _togglePlayPause,
-                child: Container(
-                  color: Colors.transparent,
-                  child: Center(
-                    child: AnimatedOpacity(
-                      opacity: _controller.value.isPlaying ? 0.0 : 1.0,
-                      duration: const Duration(milliseconds: 300),
-                      child: GlassIconButton(
-                        size: 38,
-                        iconSize: 24,
-                        icon:
-                            _controller.value.isPlaying
-                                ? Icons.pause_rounded
-                                : Icons.play_arrow_rounded,
-                        onTap: _togglePlayPause,
+                if (_isInitialized)
+                  GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: _togglePlayPause,
+                    onDoubleTap: _openFullScreen,
+                    child: Container(
+                      color: Colors.transparent,
+                      child: Center(
+                        child: AnimatedOpacity(
+                          opacity: _controller.value.isPlaying ? 0.0 : 1.0,
+                          duration: const Duration(milliseconds: 300),
+                          child: GlassIconButton(
+                            size: 38,
+                            iconSize: 24,
+                            icon:
+                                _controller.value.isPlaying
+                                    ? Icons.pause_rounded
+                                    : Icons.play_arrow_rounded,
+                            onTap: _togglePlayPause,
+                          ),
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ),
 
-            if (_isInitialized)
-              Positioned.fill(
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: FractionallySizedBox(
-                    widthFactor: 0.5,
-                    heightFactor: 1,
-                    child: GestureDetector(
-                      behavior: HitTestBehavior.translucent,
-                      onVerticalDragUpdate: _onVolumeDragUpdate,
-                      onVerticalDragEnd: _onVolumeDragEnd,
+                if (_isInitialized)
+                  Positioned.fill(
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: FractionallySizedBox(
+                        widthFactor: 0.5,
+                        heightFactor: 1,
+                        child: GestureDetector(
+                          behavior: HitTestBehavior.translucent,
+                          onVerticalDragUpdate: _onVolumeDragUpdate,
+                          onVerticalDragEnd: _onVolumeDragEnd,
+                        ),
+                      ),
                     ),
                   ),
-                ),
-              ),
 
-            if (_isInitialized)
-              Positioned(
-                left: 12,
-                top: 0,
-                bottom: 0,
-                child: Center(
-                  child: VerticalVolumeIndicator(
-                    volume: _volumeNotifier,
-                    opacity: _volumeIndicatorController,
+                if (_isInitialized)
+                  Positioned(
+                    left: 12,
+                    top: 0,
+                    bottom: 0,
+                    child: Center(
+                      child: VerticalVolumeIndicator(
+                        volume: _volumeNotifier,
+                        opacity: _volumeIndicatorController,
+                      ),
+                    ),
                   ),
-                ),
-              ),
 
-            Positioned(
-              top: 8,
-              left: 8,
-              child: GlassIconButton(
-                size: 32,
-                iconSize: 15,
-                icon:
-                    !_isInitialized
-                        ? Icons.volume_up_rounded
-                        : _controller.value.volume <= 0
-                        ? Icons.volume_off_rounded
-                        : _controller.value.volume < 0.5
-                        ? Icons.volume_down_rounded
-                        : Icons.volume_up_rounded,
-                onTap: _isInitialized ? _toggleMute : null,
-              ),
-            ),
-
-            Positioned(
-              top: 8,
-              right: 8,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  GlassIconButton(
+                Positioned(
+                  top: 8,
+                  left: 8,
+                  child: GlassIconButton(
                     size: 32,
                     iconSize: 15,
-                    icon: Icons.fullscreen_rounded,
-                    onTap: _isInitialized ? _openFullScreen : null,
+                    icon:
+                        !_isInitialized
+                            ? Icons.volume_up_rounded
+                            : _controller.value.volume <= 0
+                            ? Icons.volume_off_rounded
+                            : _controller.value.volume < 0.5
+                            ? Icons.volume_down_rounded
+                            : Icons.volume_up_rounded,
+                    onTap: _isInitialized ? _toggleMute : null,
                   ),
-                  const SizedBox(width: 8),
-                  GlassIconButton(
-                    size: 32,
-                    iconSize: 15,
-                    icon: Icons.close_rounded,
-                    onTap: widget.onRemove,
-                  ),
-                ],
-              ),
-            ),
+                ),
 
-            if (_isInitialized)
-              Positioned(
-                bottom: 2,
-                left: 10,
-                right: 10,
-                child: VideoProgressSlider(controller: _controller),
-              ),
-          ],
+                Positioned(
+                  top: 8,
+                  right: 8,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      GlassIconButton(
+                        size: 32,
+                        iconSize: 15,
+                        icon: Icons.fullscreen_rounded,
+                        onTap: _isInitialized ? _openFullScreen : null,
+                      ),
+                      const SizedBox(width: 8),
+                      GlassIconButton(
+                        size: 32,
+                        iconSize: 15,
+                        icon: Icons.close_rounded,
+                        onTap: widget.onRemove,
+                      ),
+                    ],
+                  ),
+                ),
+
+                if (_isInitialized)
+                  Positioned(
+                    bottom: 5,
+                    left: 12,
+                    right: 12,
+                    child: VideoProgressSlider(
+                      controller: _controller,
+                      showPosition: true,
+                    ),
+                  ),
+              ],
+            ),
+          ),
         ),
-      ),
+        if (widget.fileSizeBytes != null && widget.fileSizeBytes! > 0)
+          Padding(
+            padding: const EdgeInsets.only(top: 2, right: 2),
+            child: MediaSizeBadge(
+              fileSizeBytes: widget.fileSizeBytes,
+              icon: Icons.videocam_outlined,
+            ),
+          ),
+      ],
     );
   }
 }

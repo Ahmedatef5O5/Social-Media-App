@@ -1,3 +1,5 @@
+// lib/features/posts/widgets/create_post_user_info.dart
+
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:social_media_app/core/widgets/main_user_avatar.dart';
@@ -21,7 +23,7 @@ class CreatePostUserInfo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Hero(
           tag: 'user-avatar-hero',
@@ -31,18 +33,31 @@ class CreatePostUserInfo extends StatelessWidget {
             showBorder: true,
           ),
         ),
-
-        Gap(12),
-        Text(
-          userName,
-          style: Theme.of(context).textTheme.titleMedium!.copyWith(
-            fontSize: 20,
-            fontWeight: FontWeight.w400,
-          ),
+        const Gap(12),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              userName,
+              style: Theme.of(context).textTheme.titleMedium!.copyWith(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                height: 1.15,
+              ),
+            ),
+            const Gap(3),
+            // تحديد الارتفاع الفعلي داخل الـ Layout ليطابق حجم الأيقونة والنص
+            SizedBox(
+              height: 22,
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: PrivacyChip(privacy: privacy, onTap: onPrivacyTap),
+              ),
+            ),
+          ],
         ),
-        Spacer(),
-
-        PrivacyChip(privacy: privacy, onTap: onPrivacyTap),
       ],
     );
   }
