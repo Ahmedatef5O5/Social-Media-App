@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../core/helpers/chat_helper.dart';
+import 'ai_code_block_builder.dart';
 
 class AiTypewriterText extends StatefulWidget {
   final String text;
@@ -176,15 +177,16 @@ class _AiTypewriterTextState extends State<AiTypewriterText> {
         fontWeight: FontWeight.bold,
       ),
 
+      // Inline `code` spans only — fenced code blocks are fully handled by
+      // AiCodeBlockBuilder via the 'pre' builder below, this no longer applies
+      // to them.
       code: base.copyWith(
         fontFamily: 'monospace',
         backgroundColor: Colors.black.withValues(alpha: 0.25),
       ),
 
-      codeblockDecoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.25),
-        borderRadius: BorderRadius.circular(8),
-      ),
+      codeblockDecoration: const BoxDecoration(color: Colors.transparent),
+      codeblockPadding: EdgeInsets.zero,
 
       a: base.copyWith(
         color: Colors.blue,
@@ -211,6 +213,7 @@ class _AiTypewriterTextState extends State<AiTypewriterText> {
         softLineBreak: true,
         styleSheet: _styleSheetFor(widget.style),
         onTapLink: _onTapLink,
+        builders: {'pre': AiCodeBlockBuilder()},
       ),
     );
   }
