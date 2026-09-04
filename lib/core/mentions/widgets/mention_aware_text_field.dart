@@ -8,7 +8,6 @@ import '../../widgets/custom_loading_indicator.dart';
 import '../models/mention_suggestion.dart';
 import '../services/mention_search_service.dart';
 import 'mention_text_editing_controller.dart';
-import 'package:flutter/services.dart';
 import '../../helpers/emoji_text_input_formatter.dart';
 
 class MentionAwareTextField extends StatefulWidget {
@@ -317,7 +316,19 @@ class _MentionAwareTextFieldState extends State<MentionAwareTextField> {
                       fontWeight: FontWeight.w400,
                       fontSize: 15,
                     ),
-                suffixIcon: widget.trailingIcon,
+                suffixIcon:
+                    widget.trailingIcon == null
+                        ? null
+                        : Padding(
+                          padding: EdgeInsets.only(
+                            right: widget.border == InputBorder.none ? 0 : 10,
+                          ),
+                          child: widget.trailingIcon,
+                        ),
+                suffixIconConstraints: const BoxConstraints(
+                  minWidth: 0,
+                  minHeight: 0,
+                ),
                 filled: widget.filled,
                 fillColor:
                     widget.fillColor ??
