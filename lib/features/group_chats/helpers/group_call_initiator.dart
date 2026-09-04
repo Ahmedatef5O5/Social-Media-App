@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/connectivity/services/connectivity_banner_controller.dart';
 import '../../../core/supabase/supabase_provider.dart';
+import '../../profile/services/user_services.dart';
 import '../../group_calls/models/group_call_model.dart';
 import '../../group_calls/services/group_call_signaling_service.dart';
 import '../../group_calls/views/livekit_group_call_view.dart';
@@ -27,14 +28,8 @@ class GroupCallInitiator {
       if (isOffline) return;
 
       final user = SupabaseProvider.user!;
-      final profileData =
-          await SupabaseProvider.client
-              .from('users')
-              .select('name')
-              .eq('id', user.id)
-              .maybeSingle();
-      final currentUserName =
-          (profileData?['name'] as String?) ?? user.email ?? 'Me';
+      final fetchedName = await UserService().fetchUserName(user.id);
+      final currentUserName = fetchedName ?? user.email ?? 'Me';
       if (!context.mounted) return;
       final signaling = context.read<GroupCallSignalingService>();
       final existingCall = await signaling.getActiveCall(group.id);

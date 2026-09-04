@@ -74,4 +74,39 @@ class UserService {
         .update({UserColumns.presenceVisibleTo: userIds})
         .eq(UserColumns.id, SupabaseProvider.id);
   }
+
+  Future<String?> fetchUserName(String userId) async {
+    try {
+      final data =
+          await _supabase
+              .from(SupabaseConstants.users)
+              .select(UserColumns.name)
+              .eq(UserColumns.id, userId)
+              .maybeSingle();
+      return data?[UserColumns.name] as String?;
+    } catch (e) {
+      debugPrint('fetchUserName error: $e');
+      return null;
+    }
+  }
+
+  Future<({String? name, String? avatarUrl})> fetchUserNameAndAvatar(
+    String userId,
+  ) async {
+    try {
+      final data =
+          await _supabase
+              .from(SupabaseConstants.users)
+              .select('${UserColumns.name}, ${UserColumns.imageUrl}')
+              .eq(UserColumns.id, userId)
+              .maybeSingle();
+      return (
+        name: data?[UserColumns.name] as String?,
+        avatarUrl: data?[UserColumns.imageUrl] as String?,
+      );
+    } catch (e) {
+      debugPrint('fetchUserNameAndAvatar error: $e');
+      return (name: null, avatarUrl: null);
+    }
+  }
 }

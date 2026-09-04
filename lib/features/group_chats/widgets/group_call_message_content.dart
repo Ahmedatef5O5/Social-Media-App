@@ -10,6 +10,7 @@ import '../../../core/widgets/cached_cloudinary_image.dart';
 import '../../group_calls/models/group_call_model.dart';
 import '../../group_calls/services/group_call_signaling_service.dart';
 import '../../group_calls/views/livekit_group_call_view.dart';
+import '../../profile/services/user_services.dart';
 import '../models/groupe_message_model.dart';
 
 class GroupCallMessageContent extends StatelessWidget {
@@ -358,13 +359,8 @@ class GroupCallMessageContent extends StatelessWidget {
             final signaling = context.read<GroupCallSignalingService>();
             final joined = await signaling.acceptCall(activeCall.callId);
             final user = SupabaseProvider.user!;
-            final profile =
-                await SupabaseProvider.client
-                    .from('users')
-                    .select('name')
-                    .eq('id', user.id)
-                    .maybeSingle();
-            final userName = (profile?['name'] as String?) ?? 'Me';
+            final fetchedName = await UserService().fetchUserName(user.id);
+            final userName = fetchedName ?? 'Me';
             if (context.mounted) {
               Navigator.push(
                 context,

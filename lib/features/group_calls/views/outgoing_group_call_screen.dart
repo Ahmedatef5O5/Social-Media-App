@@ -6,6 +6,7 @@ import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/widgets/calls/call_avatar_backdrop.dart';
 import '../../../core/widgets/calls/call_layout_metrics.dart';
 import '../../../core/widgets/calls/calls.dart';
+import '../../profile/services/user_services.dart';
 import '../models/group_call_model.dart';
 import '../services/group_call_signaling_service.dart';
 import 'livekit_group_call_view.dart';
@@ -32,6 +33,7 @@ class OutgoingGroupCallScreen extends StatefulWidget {
 class _OutgoingGroupCallScreenState extends State<OutgoingGroupCallScreen>
     with TickerProviderStateMixin {
   final AudioPlayer _audioPlayer = AudioPlayer();
+  final _userService = UserService();
 
   StreamSubscription? _callSubscription;
   Timer? _timeoutTimer;
@@ -71,14 +73,9 @@ class _OutgoingGroupCallScreenState extends State<OutgoingGroupCallScreen>
 
   Future<void> _fetchMyName() async {
     final user = SupabaseProvider.user!;
-    final data =
-        await SupabaseProvider.client
-            .from('users')
-            .select('name')
-            .eq('id', user.id)
-            .maybeSingle();
+    final name = await _userService.fetchUserName(user.id);
     if (mounted) {
-      setState(() => _currentUserName = (data?['name'] as String?) ?? 'Me');
+      setState(() => _currentUserName = name ?? 'Me');
     }
   }
 

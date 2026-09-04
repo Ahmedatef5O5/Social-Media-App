@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/services/fcm_services.dart';
 import '../../../../core/supabase/supabase_provider.dart';
+import '../../../profile/services/user_services.dart';
 import '../../local/story_reaction_local_data_source.dart';
 import '../../services/stories_services.dart';
 part 'story_reaction_state.dart';
@@ -12,15 +13,18 @@ class StoryReactionCubit extends Cubit<StoryReactionState> {
   final String storyAuthorId;
   final StoriesServices _storiesServices;
   final StoryReactionLocalDataSource _localDataSource;
+  final UserService _userService;
 
   StoryReactionCubit({
     required this.storyId,
     required this.storyAuthorId,
     StoriesServices? storiesServices,
     StoryReactionLocalDataSource? localDataSource,
+    UserService? userService,
   }) : _storiesServices = storiesServices ?? StoriesServices(),
        _localDataSource =
            localDataSource ?? StoryReactionLocalDataSource.instance,
+       _userService = userService ?? UserService(),
        super(
          StoryReactionIdle(
            (localDataSource ?? StoryReactionLocalDataSource.instance)
@@ -84,18 +88,13 @@ class StoryReactionCubit extends Cubit<StoryReactionState> {
 
   Future<void> _notifyStoryAuthor({required String reaction}) async {
     try {
-      final me =
-          await SupabaseProvider.client
-              .from('users')
-              .select('name, image_url')
-              .eq('id', _currentUserId)
-              .maybeSingle();
+      final me = await _userService.fetchUserNameAndAvatar(_currentUserId);
 
       await FcmService.instance.notifyStoryReact(
         receiverId: storyAuthorId,
         actorId: _currentUserId,
-        actorName: (me?['name'] as String?) ?? 'Someone',
-        actorImageUrl: (me?['image_url'] as String?) ?? '',
+        actorName: me.name ?? 'Someone',
+        actorImageUrl: me.avatarUrl ?? '',
         storyId: storyId,
         reactionType: reaction,
       );

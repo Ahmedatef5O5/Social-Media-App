@@ -1,5 +1,6 @@
 import '../../../core/connectivity/services/connectivity_banner_controller.dart';
 import '../../../core/supabase/supabase_provider.dart';
+import '../../profile/services/user_services.dart';
 import '../../single_calls/models/call_model.dart';
 
 class CallActions {
@@ -17,15 +18,10 @@ class CallActions {
     final currentUser = SupabaseProvider.user;
     if (currentUser == null) return null;
 
-    final userData =
-        await SupabaseProvider.client
-            .from('users')
-            .select('name, image_url')
-            .eq('id', currentUser.id)
-            .maybeSingle();
+    final userInfo = await UserService().fetchUserNameAndAvatar(currentUser.id);
 
-    final callerName = (userData?['name'] as String?) ?? 'Unknown';
-    final callerAvatar = (userData?['image_url'] as String?) ?? '';
+    final callerName = userInfo.name ?? 'Unknown';
+    final callerAvatar = userInfo.avatarUrl ?? '';
 
     return CallModel(
       callId: 'room_${DateTime.now().millisecondsSinceEpoch}',

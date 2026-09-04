@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:social_media_app/features/profile/services/user_services.dart';
 import 'package:social_media_app/features/single_chats/services/chat_services.dart';
 import '../../../../core/services/fcm_services.dart';
 import '../../../../core/supabase/supabase_provider.dart';
@@ -13,6 +14,7 @@ part 'call_state.dart';
 class CallCubit extends Cubit<CallState> {
   final CallSignalingService signalingService;
   final ChatServices _chatServices;
+  final UserService _userService;
   final _fcmService = FcmService.instance;
 
   StreamSubscription? _callSubscription;
@@ -25,7 +27,9 @@ class CallCubit extends Cubit<CallState> {
   CallCubit({
     required this.signalingService,
     required ChatServices chatServices,
+    UserService? userService,
   }) : _chatServices = chatServices,
+       _userService = userService ?? UserService(),
        super(CallInitial()) {
     _authSubscription = SupabaseProvider.authChanges.listen((data) {
       if (data.session != null) {
@@ -143,17 +147,7 @@ class CallCubit extends Cubit<CallState> {
   Future<String> _fetchCurrentUserName() async {
     final currentUser = SupabaseProvider.user;
     if (currentUser == null) return 'Unknown';
-    try {
-      final userData =
-          await SupabaseProvider.client
-              .from('users')
-              .select('name')
-              .eq('id', currentUser.id)
-              .maybeSingle();
-      return (userData?['name'] as String?) ?? 'Unknown';
-    } catch (_) {
-      return 'Unknown';
-    }
+    return await _userService.fetchUserName(currentUser.id) ?? 'Unknown';
   }
 
   Future<void> _sendCallFcm(CallModel call) async {
