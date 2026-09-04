@@ -83,6 +83,8 @@ class AppImages {
   static const String chatBotIcon = 'assets/icons/chat-bot.png';
   static const String addUserIcon = 'assets/icons/add_user.png';
   static const String addStickerPackIcon = 'assets/icons/add_sticker_pack.png';
+  static const String addCommentIcon = 'assets/icons/add_comment.png';
+  static const String newCommentIcon = 'assets/icons/new_comment.png';
 
   // themes
   static const String postTheme1 = 'assets/images/PostThemeImgs/unsplash_1.png';
