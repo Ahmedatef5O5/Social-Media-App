@@ -5,13 +5,13 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 import 'package:social_media_app/core/router/app_routes.dart';
 import 'package:social_media_app/features/profile/cubits/profile_cubit/profile_cubit.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../../../core/presence/models/presence_privacy.dart';
 import '../../../core/presence/widgets/presence_privacy_sheet.dart';
 import '../../../core/toast/app_toast.dart';
 import '../../home/cubits/home_cubit/home_cubit.dart';
 import '../../profile/services/user_services.dart';
 import '../../social_graph/views/audience_picker_view.dart';
+import '../../support/utils/support_actions.dart';
 import '../cubits/settings_state.dart';
 import '../cubits/setttings_cubit.dart';
 import '../widgets/settings_danger_zone.dart';
@@ -74,29 +74,7 @@ class _SettingsViewState extends State<SettingsView>
 
   Future<void> _sendFeedback(BuildContext context) async {
     HapticFeedback.selectionClick();
-
-    final uri = Uri(
-      scheme: 'mailto',
-      path: 'ahmedateif0@gmail.com',
-      queryParameters: {
-        'subject': 'Syncra App Feedback',
-        'body': 'Hi Ahmed,\n\n',
-      },
-    );
-
-    try {
-      final launched = await launchUrl(
-        uri,
-        mode: LaunchMode.externalApplication,
-      );
-      if (!launched && context.mounted) {
-        AppToast.error('Could not open your email app.');
-      }
-    } catch (e) {
-      if (context.mounted) {
-        AppToast.error('Could not open your email app.');
-      }
-    }
+    await SupportActions.sendFeedback(context);
   }
 
   Widget _buildScaffold(BuildContext context, SettingsState settingsState) {
@@ -249,9 +227,10 @@ class _SettingsViewState extends State<SettingsView>
                         label: 'Two-Factor Auth',
                         subtitle: 'Extra layer of security',
                         toggle: settingsState.twoFactor,
-                        onToggle:
-                            (v) =>
-                                context.read<SettingsCubit>().setTwoFactor(v),
+                        onToggle: (v) {
+                          context.read<SettingsCubit>().setTwoFactor(v);
+                          _showComingSoon(context, 'Two-Factor Auth');
+                        },
                       ),
                       SettingsItemData(
                         icon: Icons.block_outlined,
@@ -275,9 +254,6 @@ class _SettingsViewState extends State<SettingsView>
 
                         label: 'AI Settings',
                         subtitle: 'Personalize your AI-powered experience',
-
-                        // subtitle:
-                        //     '${[aiState.autoCompleteEnabled, aiState.autoDetectEnabled, aiState.commentSuggestionsEnabled].where((e) => e).length} of 3 features enabled',
                         onTap:
                             () => Navigator.of(
                               context,
