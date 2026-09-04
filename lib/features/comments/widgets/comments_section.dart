@@ -10,6 +10,8 @@ class CommentsSection extends StatelessWidget {
   final List<CommentModel> comments;
   final void Function(String commentId, String authorName)? onReplyTap;
   final void Function(CommentModel)? onEditTap;
+  final String? highlightCommentId;
+  final GlobalKey? highlightKey;
 
   const CommentsSection({
     super.key,
@@ -18,6 +20,8 @@ class CommentsSection extends StatelessWidget {
     required this.comments,
     this.onReplyTap,
     this.onEditTap,
+    this.highlightCommentId,
+    this.highlightKey,
   });
 
   @override
@@ -52,6 +56,8 @@ class CommentsSection extends StatelessWidget {
           depth: 0,
           onReplyTap: onReplyTap,
           onEditTap: onEditTap,
+          highlightCommentId: highlightCommentId,
+          highlightKey: highlightKey,
         );
       },
     );
