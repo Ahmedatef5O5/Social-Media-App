@@ -12,6 +12,8 @@ abstract class AiRepository {
   Future<AiResult> getCommentSuggestions({
     required String postId,
     required String postText,
+    String? imageBase64,
+    String? imageMimeType,
   });
 
   Future<AiResult> summarizeChat({

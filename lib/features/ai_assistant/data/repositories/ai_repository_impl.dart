@@ -41,10 +41,17 @@ class AiRepositoryImpl implements AiRepository {
   Future<AiResult> getCommentSuggestions({
     required String postId,
     required String postText,
+    String? imageBase64,
+    String? imageMimeType,
   }) async {
     final json = await _remote.invoke(
       action: AiActionType.commentSuggestions.wireValue,
-      payload: {'post_id': postId, 'post_text': postText},
+      payload: {
+        'post_id': postId,
+        'post_text': postText,
+        if (imageBase64 != null) 'image_base64': imageBase64,
+        if (imageMimeType != null) 'image_mime_type': imageMimeType,
+      },
     );
     return AiResult.fromJson(json);
   }
