@@ -4,12 +4,13 @@ import 'package:gap/gap.dart';
 import 'package:social_media_app/features/comments/cubits/comments_cubit.dart';
 import 'package:social_media_app/features/comments/models/comment_model.dart';
 import 'package:social_media_app/features/comments/services/comments_service.dart';
+import 'package:social_media_app/features/comments/widgets/new_comments_pill.dart';
 import 'package:social_media_app/features/comments/widgets/send_comment_section.dart';
 import '../../../core/cache/repository/media_cache_repository.dart';
+import '../../../core/mentions/widgets/mention_text_editing_controller.dart';
 import '../../../core/supabase/supabase_provider.dart';
 import '../../comments/helpers/editing_comment_banner.dart';
 import '../../comments/helpers/replying_to_banner.dart';
-import '../../comments/models/comment_sort_option.dart';
 import '../../home/cubits/home_cubit/home_cubit.dart';
 import '../../reels/widgets/shared_reel_preview_card.dart';
 import '../cubits/posts_cubit/posts_cubit.dart';
@@ -43,12 +44,22 @@ class _PostDetailsViewState extends State<PostDetailsView> {
   late final CommentsCubit _commentsCubit;
   final ScrollController _mainScrollController = ScrollController();
   final GlobalKey _commentsTopKey = GlobalKey();
+  final GlobalKey<CommentsInlineSectionState> _inlineSectionKey =
+      GlobalKey<CommentsInlineSectionState>();
   late PostDetailsActiveMode _activeMode;
   bool _commentsLoaded = false;
-
+  final GlobalKey _composerKey = GlobalKey();
+  double _composerHeight = 0;
   String? _replyingToCommentId;
   String? _replyingToAuthorName;
+  MentionTextEditingController? _commentController;
   CommentModel? _editingComment;
+
+  String get _targetPostId {
+    return widget.post.isSharedPost
+        ? (widget.post.originalPost?.id ?? widget.post.id)
+        : widget.post.id;
+  }
 
   @override
   void initState() {
@@ -64,7 +75,8 @@ class _PostDetailsViewState extends State<PostDetailsView> {
 
     if (_activeMode == PostDetailsActiveMode.comments) {
       _commentsLoaded = true;
-      _commentsCubit.loadComments(postId: widget.post.id);
+      _commentsCubit.loadComments(postId: _targetPostId);
+      _scheduleComposerMeasurement();
     }
   }
 
@@ -80,10 +92,26 @@ class _PostDetailsViewState extends State<PostDetailsView> {
       _activeMode = _activeMode == target ? PostDetailsActiveMode.none : target;
     });
 
-    if (_activeMode == PostDetailsActiveMode.comments && !_commentsLoaded) {
-      _commentsLoaded = true;
-      _commentsCubit.loadComments(postId: widget.post.id);
+    if (_activeMode == PostDetailsActiveMode.comments) {
+      if (!_commentsLoaded) {
+        _commentsLoaded = true;
+        _commentsCubit.loadComments(postId: _targetPostId);
+      }
+
+      _scheduleComposerMeasurement();
     }
+  }
+
+  void _scheduleComposerMeasurement() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final renderBox =
+          _composerKey.currentContext?.findRenderObject() as RenderBox?;
+      final newHeight = renderBox?.size.height ?? 0;
+      if (newHeight != _composerHeight) {
+        setState(() => _composerHeight = newHeight);
+      }
+    });
   }
 
   void _startReply(String commentId, String authorName) {
@@ -128,34 +156,9 @@ class _PostDetailsViewState extends State<PostDetailsView> {
           if (state is CommentTempIdResolved) {
             _cancelReply();
           }
-          if (state is CommentOptimisticAdded &&
-              _activeMode == PostDetailsActiveMode.comments) {
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (_mainScrollController.hasClients) {
-                final cubit = context.read<CommentsCubit>();
-
-                if (cubit.currentSort == CommentSortOption.oldest) {
-                  _mainScrollController.animateTo(
-                    _mainScrollController.position.maxScrollExtent,
-                    duration: const Duration(milliseconds: 300),
-                    curve: Curves.easeInOut,
-                  );
-                } else {
-                  if (_commentsTopKey.currentContext != null) {
-                    Scrollable.ensureVisible(
-                      _commentsTopKey.currentContext!,
-                      duration: const Duration(milliseconds: 300),
-                      curve: Curves.easeInOut,
-                      alignment: 0.0,
-                    );
-                  }
-                }
-              }
-            });
-          }
         },
         child: Scaffold(
-          backgroundColor: colorScheme.surface,
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           resizeToAvoidBottomInset: true,
           body: SafeArea(
             child: BlocBuilder<PostsCubit, PostsState>(
@@ -198,124 +201,181 @@ class _PostDetailsViewState extends State<PostDetailsView> {
                 return Column(
                   children: [
                     Expanded(
-                      child: CustomScrollView(
-                        physics: const ClampingScrollPhysics(),
-                        controller: _mainScrollController,
-                        slivers: [
-                          SliverToBoxAdapter(
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16.0,
-                                vertical: 12.0,
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  if (isSharedReel) ...[
-                                    SharedPostHeaderWidget(
-                                      sharedPost: currentPost,
-                                      currentUserId: currentUserId,
-                                      postsCubit: postsCubit,
-                                      contentLabel: 'a reel',
-                                      trailingAction:
-                                          HeaderTrailingAction.closeScreen,
-                                    ),
-                                    const Gap(12),
-                                  ],
-                                  if (isSharedReel &&
-                                      displayPost.sharedReel != null)
-                                    SharedReelPreviewCard(
-                                      reel: displayPost.sharedReel!,
-                                    )
-                                  else ...[
-                                    PostHeaderWidget(
-                                      post: displayPost,
-                                      currentUserId: currentUserId,
-                                      postsCubit: postsCubit,
-                                      trailingAction:
-                                          HeaderTrailingAction.closeScreen,
-                                    ),
-                                    const Gap(12),
-                                    PostTxtContentWidget(post: displayPost),
-                                    const Gap(8),
+                      child: Stack(
+                        children: [
+                          CustomScrollView(
+                            physics: const ClampingScrollPhysics(),
+                            controller: _mainScrollController,
+                            slivers: [
+                              SliverToBoxAdapter(
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16.0,
+                                    vertical: 12.0,
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      if (isSharedReel) ...[
+                                        SharedPostHeaderWidget(
+                                          sharedPost: currentPost,
+                                          currentUserId: currentUserId,
+                                          postsCubit: postsCubit,
+                                          contentLabel: 'a reel',
+                                          trailingAction:
+                                              HeaderTrailingAction.closeScreen,
+                                        ),
+                                        const Gap(12),
+                                      ],
+                                      if (isSharedReel &&
+                                          displayPost.sharedReel != null)
+                                        SharedReelPreviewCard(
+                                          reel: displayPost.sharedReel!,
+                                        )
+                                      else ...[
+                                        PostHeaderWidget(
+                                          post: displayPost,
+                                          currentUserId: currentUserId,
+                                          postsCubit: postsCubit,
+                                          trailingAction:
+                                              HeaderTrailingAction.closeScreen,
+                                        ),
+                                        const Gap(12),
+                                        PostTxtContentWidget(post: displayPost),
+                                        const Gap(8),
 
-                                    ClipRRect(
-                                      borderRadius: BorderRadius.circular(12),
-                                      child: PostMediaWidget(
-                                        post: displayPost,
-                                        postsCubit: postsCubit,
-                                        currentUserId: currentUserId,
+                                        ClipRRect(
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
+                                          child: PostMediaWidget(
+                                            post: displayPost,
+                                            postsCubit: postsCubit,
+                                            currentUserId: currentUserId,
+                                          ),
+                                        ),
+                                      ],
+
+                                      const Gap(16),
+                                      PostInteractionsRow(
+                                        postId: displayPost.id,
+                                        onCommentsTap:
+                                            () => _toggleView(
+                                              PostDetailsActiveMode.comments,
+                                            ),
+                                        onReactionsTap:
+                                            () => _toggleView(
+                                              PostDetailsActiveMode.reactions,
+                                            ),
                                       ),
-                                    ),
-                                  ],
 
-                                  const Gap(16),
-                                  PostInteractionsRow(
-                                    postId: displayPost.id,
-                                    onCommentsTap:
-                                        () => _toggleView(
-                                          PostDetailsActiveMode.comments,
-                                        ),
-                                    onReactionsTap:
-                                        () => _toggleView(
-                                          PostDetailsActiveMode.reactions,
-                                        ),
+                                      const Gap(6),
+                                      Divider(
+                                        key: _commentsTopKey,
+                                        color: colorScheme.outlineVariant
+                                            .withValues(alpha: 0.3),
+                                        thickness: 1,
+                                        height: 1,
+                                      ),
+                                    ],
                                   ),
-
-                                  const Gap(16),
-                                  Divider(
-                                    key: _commentsTopKey,
-                                    color: colorScheme.outlineVariant
-                                        .withValues(alpha: 0.3),
-                                    thickness: 1,
-                                  ),
-                                ],
+                                ),
                               ),
-                            ),
+
+                              SliverToBoxAdapter(
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16.0,
+                                  ),
+                                  child: switch (_activeMode) {
+                                    PostDetailsActiveMode.comments =>
+                                      CommentsInlineSection(
+                                        key: _inlineSectionKey,
+                                        postId: displayPost.id,
+                                        onReplyTap: _startReply,
+                                        onEditTap: _startEdit,
+                                        onAiSuggestionSelected: (text) {
+                                          _commentController?.text = text;
+                                          _commentController?.selection =
+                                              TextSelection.collapsed(
+                                                offset: text.length,
+                                              );
+                                        },
+                                      ),
+                                    PostDetailsActiveMode.reactions =>
+                                      PostReactionsInlineList(
+                                        postId: displayPost.id,
+                                      ),
+                                    PostDetailsActiveMode.none =>
+                                      const SizedBox.shrink(),
+                                  },
+                                ),
+                              ),
+                              SliverToBoxAdapter(
+                                child: SizedBox(
+                                  height:
+                                      _activeMode ==
+                                              PostDetailsActiveMode.comments
+                                          ? (_composerHeight > 0
+                                              ? _composerHeight
+                                              : 72)
+                                          : 24,
+                                ),
+                              ),
+                            ],
                           ),
 
-                          SliverToBoxAdapter(
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16.0,
+                          if (_activeMode == PostDetailsActiveMode.comments)
+                            Positioned(
+                              right: 12,
+                              bottom: 16,
+                              child: BlocBuilder<CommentsCubit, CommentsState>(
+                                buildWhen:
+                                    (previous, current) =>
+                                        current is CommentsPendingChanged ||
+                                        current is CommentsUiChanged,
+                                builder: (context, state) {
+                                  return NewCommentsPill(
+                                    count: _commentsCubit.pendingCommentsCount,
+                                    onTap:
+                                        () =>
+                                            _inlineSectionKey.currentState
+                                                ?.jumpToNewComments(),
+                                  );
+                                },
                               ),
-                              child: switch (_activeMode) {
-                                PostDetailsActiveMode.comments =>
-                                  CommentsInlineSection(
-                                    postId: currentPost.id,
-                                    onReplyTap: _startReply,
-                                    onEditTap: _startEdit,
-                                  ),
-                                PostDetailsActiveMode.reactions =>
-                                  PostReactionsInlineList(
-                                    postId: currentPost.id,
-                                  ),
-                                PostDetailsActiveMode.none =>
-                                  const SizedBox.shrink(),
-                              },
                             ),
-                          ),
-
-                          const SliverToBoxAdapter(child: Gap(24)),
                         ],
                       ),
                     ),
 
                     if (_activeMode == PostDetailsActiveMode.comments)
-                      _CommentComposerBar(
-                        post: currentPost,
-                        replyingToCommentId: _replyingToCommentId,
-                        replyingToAuthorName: _replyingToAuthorName,
-                        editingComment: _editingComment,
-                        onCancelReply: _cancelReply,
-                        onCancelEdit: _cancelEdit,
-                        onReplySent: () {
-                          setState(() {
-                            _replyingToCommentId = null;
-                            _replyingToAuthorName = null;
-                          });
+                      NotificationListener<SizeChangedLayoutNotification>(
+                        onNotification: (_) {
+                          _scheduleComposerMeasurement();
+                          return false;
                         },
-                        onEditSaved: _cancelEdit,
+                        child: SizeChangedLayoutNotifier(
+                          key: _composerKey,
+                          child: _CommentComposerBar(
+                            post: currentPost,
+                            replyingToCommentId: _replyingToCommentId,
+                            replyingToAuthorName: _replyingToAuthorName,
+                            editingComment: _editingComment,
+                            onCancelReply: _cancelReply,
+                            onCancelEdit: _cancelEdit,
+                            onReplySent: () {
+                              setState(() {
+                                _replyingToCommentId = null;
+                                _replyingToAuthorName = null;
+                              });
+                            },
+                            onEditSaved: _cancelEdit,
+                            onControllerReady:
+                                (controller) => _commentController = controller,
+                          ),
+                        ),
                       ),
                   ],
                 );
@@ -337,6 +397,7 @@ class _CommentComposerBar extends StatelessWidget {
   final VoidCallback onCancelEdit;
   final VoidCallback onReplySent;
   final VoidCallback onEditSaved;
+  final ValueChanged<MentionTextEditingController>? onControllerReady;
 
   const _CommentComposerBar({
     required this.post,
@@ -347,13 +408,15 @@ class _CommentComposerBar extends StatelessWidget {
     required this.onCancelEdit,
     required this.onReplySent,
     required this.onEditSaved,
+    this.onControllerReady,
   });
 
   @override
   Widget build(BuildContext context) {
     return Material(
       color: Theme.of(context).scaffoldBackgroundColor,
-      elevation: 8,
+      elevation: 0,
+      surfaceTintColor: Colors.transparent,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16.0),
         child: Column(
@@ -370,6 +433,7 @@ class _CommentComposerBar extends StatelessWidget {
                 commentText: editingComment!.text,
                 onCancel: onCancelEdit,
               ),
+
             SendCommentSection(
               post: post,
               replyingToCommentId: replyingToCommentId,
@@ -377,6 +441,7 @@ class _CommentComposerBar extends StatelessWidget {
               onReplySent: onReplySent,
               editingComment: editingComment,
               onEditSaved: onEditSaved,
+              onControllerReady: onControllerReady,
             ),
             const SizedBox(height: 8),
           ],

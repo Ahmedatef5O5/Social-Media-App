@@ -93,103 +93,111 @@ class PostItemWidget extends StatelessWidget {
             ],
           ),
           clipBehavior: Clip.antiAlias,
-          child: Material(
-            type: MaterialType.transparency,
-            child: InkWell(
-              borderRadius: BorderRadius.circular(16),
-              onTap: () {
-                Navigator.of(context, rootNavigator: true).pushNamed(
-                  AppRoutes.postDetailsViewRoute,
-                  arguments: PostDetailsRouteArgs(
-                    post: currentPost,
-                    initialActiveMode: PostDetailsActiveMode.comments,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Material(
+                type: MaterialType.transparency,
+                child: InkWell(
+                  onTap: () {
+                    Navigator.of(context, rootNavigator: true).pushNamed(
+                      AppRoutes.postDetailsViewRoute,
+                      arguments: PostDetailsRouteArgs(
+                        post: currentPost,
+                        initialActiveMode: PostDetailsActiveMode.comments,
+                      ),
+                    );
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(12.0, 12.0, 12.0, 4.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (isSharedPost) ...[
+                          SharedPostHeaderWidget(
+                            sharedPost: currentPost,
+                            currentUserId: currentUserId,
+                            postsCubit: postsCubit,
+                            contentLabel: isSharedReel ? 'a reel' : 'a post',
+                            trailingAction: HeaderTrailingAction.moreActions,
+                          ),
+                          const SizedBox(height: 10),
+                        ] else if (isSharedReel) ...[
+                          SharedPostHeaderWidget(
+                            sharedPost: currentPost,
+                            currentUserId: currentUserId,
+                            postsCubit: postsCubit,
+                            contentLabel: 'a reel',
+                            trailingAction: HeaderTrailingAction.moreActions,
+                          ),
+                          const SizedBox(height: 10),
+                        ],
+                        if (isSharedReel)
+                          SharedReelPreviewCard(reel: displayPost.sharedReel!)
+                        else ...[
+                          Container(
+                            padding:
+                                isSharedPost
+                                    ? const EdgeInsets.all(12)
+                                    : EdgeInsets.zero,
+                            decoration:
+                                isSharedPost
+                                    ? BoxDecoration(
+                                      borderRadius: BorderRadius.circular(14),
+                                      gradient: LinearGradient(
+                                        begin: Alignment.topLeft,
+                                        end: Alignment.bottomRight,
+                                        colors: [
+                                          colorScheme.onSurface.withValues(
+                                            alpha: 0.03,
+                                          ),
+                                          colorScheme.onSurface.withValues(
+                                            alpha: 0.01,
+                                          ),
+                                        ],
+                                      ),
+                                      border: Border.all(
+                                        color: colorScheme.outlineVariant
+                                            .withValues(alpha: 0.2),
+                                        width: 1,
+                                      ),
+                                    )
+                                    : null,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                PostHeaderWidget(
+                                  post: displayPost,
+                                  currentUserId: currentUserId,
+                                  postsCubit: postsCubit,
+                                  trailingAction:
+                                      isSharedPost
+                                          ? HeaderTrailingAction.none
+                                          : HeaderTrailingAction.moreActions,
+                                ),
+                                const SizedBox(height: 8),
+                                PostTxtContentWidget(post: displayPost),
+                                PostMediaWidget(
+                                  post: displayPost,
+                                  postsCubit: postsCubit,
+                                  currentUserId: currentUserId,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
                   ),
-                );
-              },
-              child: Padding(
-                padding: const EdgeInsets.all(12.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (isSharedPost) ...[
-                      SharedPostHeaderWidget(
-                        sharedPost: currentPost,
-                        currentUserId: currentUserId,
-                        postsCubit: postsCubit,
-                        contentLabel: isSharedReel ? 'a reel' : 'a post',
-                        trailingAction: HeaderTrailingAction.moreActions,
-                      ),
-                      const SizedBox(height: 10),
-                    ] else if (isSharedReel) ...[
-                      SharedPostHeaderWidget(
-                        sharedPost: currentPost,
-                        currentUserId: currentUserId,
-                        postsCubit: postsCubit,
-                        contentLabel: 'a reel',
-                        trailingAction: HeaderTrailingAction.moreActions,
-                      ),
-                      const SizedBox(height: 10),
-                    ],
-                    if (isSharedReel)
-                      SharedReelPreviewCard(reel: displayPost.sharedReel!)
-                    else ...[
-                      Container(
-                        padding:
-                            isSharedPost
-                                ? const EdgeInsets.all(12)
-                                : EdgeInsets.zero,
-                        decoration:
-                            isSharedPost
-                                ? BoxDecoration(
-                                  borderRadius: BorderRadius.circular(14),
-                                  gradient: LinearGradient(
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
-                                    colors: [
-                                      colorScheme.onSurface.withValues(
-                                        alpha: 0.03,
-                                      ),
-                                      colorScheme.onSurface.withValues(
-                                        alpha: 0.01,
-                                      ),
-                                    ],
-                                  ),
-                                  border: Border.all(
-                                    color: colorScheme.outlineVariant
-                                        .withValues(alpha: 0.2),
-                                    width: 1,
-                                  ),
-                                )
-                                : null,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            PostHeaderWidget(
-                              post: displayPost,
-                              currentUserId: currentUserId,
-                              postsCubit: postsCubit,
-                              trailingAction:
-                                  isSharedPost
-                                      ? HeaderTrailingAction.none
-                                      : HeaderTrailingAction.moreActions,
-                            ),
-                            const SizedBox(height: 8),
-                            PostTxtContentWidget(post: displayPost),
-                            PostMediaWidget(
-                              post: displayPost,
-                              postsCubit: postsCubit,
-                              currentUserId: currentUserId,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                    const SizedBox(height: 4),
-                    PostInteractionsRow(postId: displayPost.id),
-                  ],
                 ),
               ),
-            ),
+
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12.0, 0, 12.0, 6.0),
+                child: PostInteractionsRow(postId: displayPost.id),
+              ),
+            ],
           ),
         );
       },

@@ -97,41 +97,41 @@ class _InteractionsContent extends StatelessWidget {
 
     return Column(
       children: [
-        const Gap(12),
+        const Gap(4),
         Row(
           children: [
-            const Gap(16),
-
-            _LikeButtonWidget(
-              post: post,
-              currUserId: currUserId,
-              onReactionsTap: onReactionsTap,
+            const Gap(8),
+            Expanded(
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: AlignmentDirectional.centerStart,
+                child: Row(
+                  children: [
+                    _LikeButtonWidget(
+                      post: post,
+                      currUserId: currUserId,
+                      onReactionsTap: onReactionsTap,
+                    ),
+                    const Gap(10),
+                    _CommentButtonWidget(
+                      post: post,
+                      totalComments: totalComments,
+                      onTap: onCommentsTap,
+                    ),
+                    const Gap(10),
+                    _ReshareButtonWidget(post: post),
+                    const Gap(10),
+                    _ShareLinkButtonWidget(post: post),
+                  ],
+                ),
+              ),
             ),
-
-            const Gap(22), // مسافة ثابتة ومتقاربة
-
-            _CommentButtonWidget(
-              post: post,
-              totalComments: totalComments,
-              onTap: onCommentsTap,
-            ),
-
-            const Gap(22), // مسافة ثابتة ومتقاربة
-
-            _ReshareButtonWidget(post: post),
-
-            const Gap(22), // مسافة ثابتة ومتقاربة
-
-            _ShareLinkButtonWidget(post: post),
-
-            const Spacer(), // Spacer وحيد لملء الفراغ ودفع زر الحفظ لليمين
-
+            const Gap(6),
             _SaveButtonWidget(post: post),
-
-            const Gap(16),
+            const Gap(8),
           ],
         ),
-        const Gap(8),
+        const Gap(4),
       ],
     );
   }
@@ -247,6 +247,7 @@ class _LikeButtonWidgetState extends State<_LikeButtonWidget>
       children: [
         GestureDetector(
           key: _anchorKey,
+          behavior: HitTestBehavior.opaque,
           onTapDown: (_) => setState(() => _pressed = true),
           onTapCancel: () => setState(() => _pressed = false),
           onTap: () {
@@ -257,37 +258,40 @@ class _LikeButtonWidgetState extends State<_LikeButtonWidget>
             HapticFeedback.mediumImpact();
             _showPicker(currentPost);
           },
-          child: ScaleTransition(
-            scale: _scaleAnimation,
-            child: AnimatedScale(
-              scale: _pressed ? 0.85 : 1.0,
-              duration: const Duration(milliseconds: 100),
-              curve: Curves.easeOut,
-              child:
-                  isDefaultLike
-                      ? Icon(
-                        myReaction == 'like'
-                            ? Icons.thumb_up_alt
-                            : Icons.thumb_up_alt_outlined,
-                        color:
-                            myReaction == 'like'
-                                ? Theme.of(context).primaryColor
-                                : AppColors.grey6,
-                        size: 24,
-                      )
-                      : Text(
-                        myReaction,
-                        style: TextStyle(
-                          inherit: false,
-                          fontSize: 22,
-                          fontFamilyFallback: AppTypography.emojiFontFallback,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
+            child: ScaleTransition(
+              scale: _scaleAnimation,
+              child: AnimatedScale(
+                scale: _pressed ? 0.85 : 1.0,
+                duration: const Duration(milliseconds: 100),
+                curve: Curves.easeOut,
+                child:
+                    isDefaultLike
+                        ? Icon(
+                          myReaction == 'like'
+                              ? Icons.thumb_up_alt
+                              : Icons.thumb_up_alt_outlined,
+                          color:
+                              myReaction == 'like'
+                                  ? Theme.of(context).primaryColor
+                                  : AppColors.grey6,
+                          size: 24,
+                        )
+                        : Text(
+                          myReaction,
+                          style: TextStyle(
+                            inherit: false,
+                            fontSize: 22,
+                            fontFamilyFallback: AppTypography.emojiFontFallback,
+                          ),
                         ),
-                      ),
+              ),
             ),
           ),
         ),
-        const Gap(6),
         GestureDetector(
+          behavior: HitTestBehavior.opaque,
           onTap: () {
             if (currentPost.reactions.isNotEmpty) {
               if (widget.onReactionsTap != null) {
@@ -304,8 +308,10 @@ class _LikeButtonWidgetState extends State<_LikeButtonWidget>
               }
             }
           },
-
-          child: PostReactionsSummary(reactions: currentPost.reactions),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+            child: PostReactionsSummary(reactions: currentPost.reactions),
+          ),
         ),
       ],
     );
@@ -325,7 +331,8 @@ class _CommentButtonWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
       onTap: () {
         final postsCubit = context.read<PostsCubit>();
 
@@ -361,21 +368,24 @@ class _CommentButtonWidget extends StatelessWidget {
                 child: CommentsSheetSection(postId: post.id),
               ),
         ).whenComplete(() {
-          commentsCubit.resetCollapsedComments();
+          commentsCubit.resetExpandedComments();
         });
       },
-      child: Row(
-        children: [
-          Image.asset(AppImages.commentAtPostIcon, width: 24, height: 24),
-
-          if (totalComments > 0) ...[
-            const Gap(4),
-            Text(
-              '$totalComments',
-              style: Theme.of(context).textTheme.bodyLarge,
-            ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Image.asset(AppImages.commentAtPostIcon, width: 24, height: 24),
+            if (totalComments > 0) ...[
+              const Gap(4),
+              Text(
+                '$totalComments',
+                style: Theme.of(context).textTheme.bodyLarge,
+              ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }
@@ -458,36 +468,41 @@ class _ReshareButtonWidgetState extends State<_ReshareButtonWidget>
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () => _handleTap(currentPost),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          ScaleTransition(
-            scale: _scaleAnimation,
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 250),
-              transitionBuilder:
-                  (child, animation) =>
-                      ScaleTransition(scale: animation, child: child),
-              child: Icon(
-                CupertinoIcons.arrow_2_squarepath,
-                key: ValueKey(isShared),
-                color:
-                    isShared ? Theme.of(context).primaryColor : AppColors.grey6,
-                size: 24,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ScaleTransition(
+              scale: _scaleAnimation,
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 250),
+                transitionBuilder:
+                    (child, animation) =>
+                        ScaleTransition(scale: animation, child: child),
+                child: Icon(
+                  CupertinoIcons.arrow_2_squarepath,
+                  key: ValueKey(isShared),
+                  color:
+                      isShared
+                          ? Theme.of(context).primaryColor
+                          : AppColors.grey6,
+                  size: 24,
+                ),
               ),
             ),
-          ),
-          if (currentPost.sharesCount > 0) ...[
-            const Gap(4),
-            Text(
-              '${currentPost.sharesCount}',
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                color: isShared ? Theme.of(context).primaryColor : null,
-                fontWeight: isShared ? FontWeight.w600 : FontWeight.normal,
+            if (currentPost.sharesCount > 0) ...[
+              const Gap(4),
+              Text(
+                '${currentPost.sharesCount}',
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  color: isShared ? Theme.of(context).primaryColor : null,
+                  fontWeight: isShared ? FontWeight.w600 : FontWeight.normal,
+                ),
               ),
-            ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }
@@ -522,18 +537,21 @@ class _ShareLinkButtonWidget extends StatelessWidget {
               ),
         );
       },
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(CupertinoIcons.paperplane, color: AppColors.grey6, size: 22),
-          if (currentPost.linkShareCount > 0) ...[
-            const Gap(4),
-            Text(
-              '${currentPost.linkShareCount}',
-              style: Theme.of(context).textTheme.bodyLarge,
-            ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(CupertinoIcons.paperplane, color: AppColors.grey6, size: 22),
+            if (currentPost.linkShareCount > 0) ...[
+              const Gap(4),
+              Text(
+                '${currentPost.linkShareCount}',
+                style: Theme.of(context).textTheme.bodyLarge,
+              ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }
@@ -615,37 +633,40 @@ class _SaveButtonWidgetState extends State<_SaveButtonWidget>
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () => _handleTap(currentPost),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          ScaleTransition(
-            scale: _scaleAnimation,
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 250),
-              transitionBuilder:
-                  (child, animation) =>
-                      ScaleTransition(scale: animation, child: child),
-              child: Icon(
-                isSaved
-                    ? Icons.bookmark_rounded
-                    : Icons.bookmark_border_rounded,
-                key: ValueKey(isSaved),
-                color: isSaved ? AppColors.goldenYellow : AppColors.grey6,
-                size: 24,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ScaleTransition(
+              scale: _scaleAnimation,
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 250),
+                transitionBuilder:
+                    (child, animation) =>
+                        ScaleTransition(scale: animation, child: child),
+                child: Icon(
+                  isSaved
+                      ? Icons.bookmark_rounded
+                      : Icons.bookmark_border_rounded,
+                  key: ValueKey(isSaved),
+                  color: isSaved ? AppColors.goldenYellow : AppColors.grey6,
+                  size: 24,
+                ),
               ),
             ),
-          ),
-          if (currentPost.savedCount > 0) ...[
-            const Gap(4),
-            Text(
-              '${currentPost.savedCount}',
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                color: isSaved ? AppColors.goldenYellow : null,
-                fontWeight: isSaved ? FontWeight.w600 : FontWeight.normal,
+            if (currentPost.savedCount > 0) ...[
+              const Gap(4),
+              Text(
+                '${currentPost.savedCount}',
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  color: isSaved ? AppColors.goldenYellow : null,
+                  fontWeight: isSaved ? FontWeight.w600 : FontWeight.normal,
+                ),
               ),
-            ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }
