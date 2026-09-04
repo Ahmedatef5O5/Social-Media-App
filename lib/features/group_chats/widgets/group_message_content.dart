@@ -340,18 +340,21 @@ class _GroupMessageContentState extends State<GroupMessageContent> {
               : const EdgeInsets.only(left: 10, right: 10, bottom: 8, top: 6),
       child:
           widget.message.isForwarded
-              ? Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  ForwardedHeader(
-                    name: widget.message.forwardedFromUserName ?? 'Unknown',
-                    originalSenderId: widget.message.forwardedFromUserId ?? '',
-                    avatarUrl: widget.message.forwardedFromUserAvatar,
-                    onColoredBubble: widget.isMe && !isStickerOrGif,
-                  ),
-                  content,
-                ],
+              ? IntrinsicWidth(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    ForwardedHeader(
+                      name: widget.message.forwardedFromUserName ?? 'Unknown',
+                      originalSenderId:
+                          widget.message.forwardedFromUserId ?? '',
+                      avatarUrl: widget.message.forwardedFromUserAvatar,
+                      onColoredBubble: widget.isMe && !isStickerOrGif,
+                    ),
+                    content,
+                  ],
+                ),
               )
               : content,
     );

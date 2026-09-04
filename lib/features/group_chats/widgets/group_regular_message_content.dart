@@ -71,7 +71,7 @@ class GroupRegularMessageContent extends StatelessWidget {
       child: Container(
         constraints: BoxConstraints(minWidth: minBubbleWidth),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           mainAxisSize: MainAxisSize.min,
           children: [
             if (message.replyToMessageId != null)
@@ -242,7 +242,7 @@ class GroupRegularMessageContent extends StatelessWidget {
                   top: (isImage || isVideo || isGif || isSticker) ? 8 : 0,
                 ),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     if (message.messageType == 'text')
                       MessageLinkPreview(

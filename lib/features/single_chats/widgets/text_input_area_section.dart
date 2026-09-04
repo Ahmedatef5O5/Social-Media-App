@@ -196,6 +196,15 @@ class _TextInputAreaSectionState extends State<TextInputAreaSection> {
                       generationAction: AiActionType.replySuggestion,
                       actionContext: AiActionContext.chatReply,
                       hasReplyContext: widget.replyTo != null,
+                      targetUserName:
+                          widget.replyTo == null
+                              ? widget.receiverUser.name
+                              : (widget.replyTo!.senderId ==
+                                      context
+                                          .read<ChatDetailsCubit>()
+                                          .currentUserId
+                                  ? 'You'
+                                  : widget.receiverUser.name),
                       targetText:
                           (widget.replyTo == null ||
                                   widget.replyTo!.messageType == 'text')

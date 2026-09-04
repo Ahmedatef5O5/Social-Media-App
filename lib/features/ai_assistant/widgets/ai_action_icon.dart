@@ -53,8 +53,11 @@ class AiActionIcon extends StatefulWidget {
 
 class _AiActionIconState extends State<AiActionIcon> {
   late final AiTextFieldCubit _cubit;
+  bool _isPreparing = false;
+
   bool get _isMuted =>
-      widget.targetMediaType == AiTargetMediaType.video &&
+      (widget.targetMediaType == AiTargetMediaType.video ||
+          widget.targetMediaType == AiTargetMediaType.document) &&
       (widget.mediaCaption == null || widget.mediaCaption!.trim().isEmpty);
 
   @override
@@ -201,12 +204,20 @@ class _AiActionIconState extends State<AiActionIcon> {
             }
           },
           builder: (context, state) {
-            if (state is AiFieldHidden) return const SizedBox.shrink();
+            final isLoading =
+                _isPreparing ||
+                state is AiFieldChecking ||
+                state is AiFieldLoading;
 
-            if (state is AiFieldChecking || state is AiFieldLoading) {
-              return const Padding(
-                padding: EdgeInsets.all(12),
-                child: AnimatedAiStarsIcon(size: 18),
+            if (state is AiFieldHidden && !_isPreparing) {
+              return const SizedBox.shrink();
+            }
+
+            if (isLoading) {
+              return const SizedBox(
+                width: 24,
+                height: 24,
+                child: Center(child: AnimatedAiStarsIcon(size: 24)),
               );
             }
 
@@ -223,35 +234,55 @@ class _AiActionIconState extends State<AiActionIcon> {
             final theme = Theme.of(context);
             final isDisabledLook = isQuotaExceeded || isVisionUnavailable;
 
-            return IconButton(
-              tooltip:
+            return SizedBox(
+              width: 24,
+              height: 24,
+              child: IconButton(
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+                visualDensity: VisualDensity.compact,
+                tooltip:
+                    isSpellingError
+                        ? 'Spelling Correction'
+                        : (isVisionUnavailable
+                            ? 'Smart reply to images is currently unavailable'
+                            : 'AI Suggestion'),
+                icon: Icon(
                   isSpellingError
-                      ? 'Spelling Correction'
-                      : (isVisionUnavailable
-                          ? 'Smart reply to images is currently unavailable'
-                          : 'AI Suggestion'),
-              icon: Icon(
-                isSpellingError
-                    ? Icons.spellcheck_rounded
-                    : Icons.auto_awesome_rounded,
-                color:
-                    isDisabledLook
-                        ? theme.disabledColor
-                        : (isSpellingError
-                            ? Colors.orangeAccent
-                            : theme.primaryColor),
+                      ? Icons.spellcheck_rounded
+                      : Icons.auto_awesome_rounded,
+                  size: 22,
+                  color:
+                      isDisabledLook
+                          ? theme.disabledColor
+                          : (isSpellingError
+                              ? Colors.orangeAccent
+                              : theme.primaryColor),
+                ),
+                onPressed: () async {
+                  if (isQuotaExceeded) {
+                    _showQuotaToast((state).isGlobal);
+                    return;
+                  }
+                  if (isVisionUnavailable) {
+                    _showVisionUnavailableToast();
+                    return;
+                  }
+                  setState(() => _isPreparing = true);
+                  widget.onGeneratingChanged?.call(true);
+
+                  await Future.delayed(Duration.zero);
+
+                  try {
+                    final reqContext = await _buildContext();
+                    _cubit.onIconTapped(reqContext);
+                  } finally {
+                    if (mounted) {
+                      setState(() => _isPreparing = false);
+                    }
+                  }
+                },
               ),
-              onPressed: () async {
-                if (isQuotaExceeded) {
-                  _showQuotaToast((state).isGlobal);
-                  return;
-                }
-                if (isVisionUnavailable) {
-                  _showVisionUnavailableToast();
-                  return;
-                }
-                _cubit.onIconTapped(await _buildContext());
-              },
             );
           },
         ),

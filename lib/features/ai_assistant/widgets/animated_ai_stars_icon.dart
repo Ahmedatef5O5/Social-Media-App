@@ -5,7 +5,7 @@ class AnimatedAiStarsIcon extends StatefulWidget {
   final double size;
   final Color? color;
 
-  const AnimatedAiStarsIcon({super.key, this.size = 18, this.color});
+  const AnimatedAiStarsIcon({super.key, this.size = 22, this.color});
 
   @override
   State<AnimatedAiStarsIcon> createState() => _AnimatedAiStarsIconState();
@@ -20,7 +20,7 @@ class _AnimatedAiStarsIconState extends State<AnimatedAiStarsIcon>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1800),
+      duration: const Duration(milliseconds: 1500),
     )..repeat();
   }
 
@@ -41,24 +41,25 @@ class _AnimatedAiStarsIconState extends State<AnimatedAiStarsIcon>
         animation: _controller,
         builder: (context, _) {
           return Stack(
+            clipBehavior: Clip.none,
             children: [
               _buildSparkle(
                 color: color,
                 phase: 0.0,
-                starSize: widget.size * 0.55,
-                alignment: const Alignment(-0.3, 0.2),
+                starSize: widget.size * 0.54,
+                alignment: const Alignment(-0.55, 0.20),
               ),
               _buildSparkle(
                 color: color,
                 phase: 0.33,
-                starSize: widget.size * 0.35,
-                alignment: const Alignment(0.8, -0.7),
+                starSize: widget.size * 0.32,
+                alignment: const Alignment(0.65, -0.70),
               ),
               _buildSparkle(
                 color: color,
                 phase: 0.66,
-                starSize: widget.size * 0.25,
-                alignment: const Alignment(0.6, 0.8),
+                starSize: widget.size * 0.24,
+                alignment: const Alignment(0.52, 0.75),
               ),
             ],
           );
@@ -76,8 +77,8 @@ class _AnimatedAiStarsIconState extends State<AnimatedAiStarsIcon>
     final angle = (_controller.value - phase) * 2 * math.pi;
     final pulse = (math.sin(angle) + 1) / 2;
 
-    final scale = 0.4 + (0.6 * pulse);
-    final opacity = 0.2 + (0.8 * pulse);
+    final scale = 0.52 + (0.56 * pulse);
+    final opacity = 0.35 + (0.65 * pulse);
 
     return Align(
       alignment: alignment,
@@ -115,7 +116,6 @@ class _SparklePainter extends CustomPainter {
     final cy = h / 2;
 
     path.moveTo(cx, 0);
-
     path.quadraticBezierTo(cx, cy, w, cy);
     path.quadraticBezierTo(cx, cy, cx, h);
     path.quadraticBezierTo(cx, cy, 0, cy);

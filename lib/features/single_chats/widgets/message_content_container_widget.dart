@@ -201,20 +201,23 @@ class _MessageContentContainerState extends State<MessageContentContainer> {
             opacity: 1,
             child:
                 widget.message.isForwarded
-                    ? Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        ForwardedHeader(
-                          name:
-                              widget.message.forwardedFromUserName ?? 'Unknown',
-                          avatarUrl: widget.message.forwardedFromUserAvatar,
-                          originalSenderId:
-                              widget.message.forwardedFromUserId ?? '',
-                          onColoredBubble: widget.isMe && !isStickerOrGif,
-                        ),
-                        regularContent,
-                      ],
+                    ? IntrinsicWidth(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          ForwardedHeader(
+                            name:
+                                widget.message.forwardedFromUserName ??
+                                'Unknown',
+                            avatarUrl: widget.message.forwardedFromUserAvatar,
+                            originalSenderId:
+                                widget.message.forwardedFromUserId ?? '',
+                            onColoredBubble: widget.isMe && !isStickerOrGif,
+                          ),
+                          regularContent,
+                        ],
+                      ),
                     )
                     : regularContent,
           ),

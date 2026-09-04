@@ -57,7 +57,7 @@ class RegularMessageContent extends StatelessWidget {
     return IntrinsicWidth(
       child: Column(
         mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           if (message.replyToMessageId != null)
             GestureDetector(
@@ -195,7 +195,7 @@ class RegularMessageContent extends StatelessWidget {
                 left: (isImage || isVideo) ? 6 : 0,
               ),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   if (message.messageType == 'text')
                     MessageLinkPreview(

@@ -52,13 +52,21 @@ class _SendCommentSectionState extends State<SendCommentSection> {
 
   final FocusNode _focusNode = FocusNode();
   bool _hasText = false;
+  late final CommentsCubit _commentsCubit;
 
   @override
   void initState() {
     super.initState();
+    _commentsCubit = context.read<CommentsCubit>();
     _commentController.addListener(() {
       final has = _commentController.text.trim().isNotEmpty;
       if (has != _hasText) setState(() => _hasText = has);
+
+      if (has) {
+        _commentsCubit.sendTypingSignal(widget.post.id);
+      } else {
+        _commentsCubit.sendStoppedTypingSignal(widget.post.id);
+      }
     });
     widget.onControllerReady?.call(_commentController);
   }
@@ -93,6 +101,7 @@ class _SendCommentSectionState extends State<SendCommentSection> {
 
   @override
   void dispose() {
+    _commentsCubit.sendStoppedTypingSignal(widget.post.id);
     _commentController.dispose();
     _focusNode.dispose();
     super.dispose();
@@ -209,149 +218,154 @@ class _SendCommentSectionState extends State<SendCommentSection> {
   Widget build(BuildContext context) {
     final isReplying = widget.replyingToCommentId != null;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        const CommentAttachmentPreview(),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Expanded(
-              child: BlocConsumer<CommentsCubit, CommentsState>(
-                listener: (context, state) {
-                  if (state is CommentOptimisticAdded) {
-                    _commentController.clear();
-                  }
-                  if (state is CommentError && !state.isConnectivityError) {
-                    AppToast.error(state.message);
-                  }
-                },
-                builder: (context, state) {
-                  final cubit = context.read<CommentsCubit>();
-                  final isLoading = state is AddingComment || cubit.isUploading;
-                  final isStickerOnly =
-                      cubit.pendingAttachment?.type == CommentType.sticker;
-                  final canSend = _canSend(cubit);
-                  final pendingMedia = cubit.pendingAttachment;
-                  final isMediaCaptionable =
-                      pendingMedia?.type == CommentType.image ||
-                      pendingMedia?.type == CommentType.video;
-                  final repliedComment =
-                      widget.replyingToCommentId == null
-                          ? null
-                          : _findRepliedComment(
-                            cubit.comments,
-                            widget.replyingToCommentId!,
-                          );
+    return ColoredBox(
+      color: Theme.of(context).scaffoldBackgroundColor,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const CommentAttachmentPreview(),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Expanded(
+                child: BlocConsumer<CommentsCubit, CommentsState>(
+                  listener: (context, state) {
+                    if (state is CommentOptimisticAdded) {
+                      _commentController.clear();
+                    }
+                    if (state is CommentError && !state.isConnectivityError) {
+                      AppToast.error(state.message);
+                    }
+                  },
+                  builder: (context, state) {
+                    final cubit = context.read<CommentsCubit>();
+                    final isLoading =
+                        state is AddingComment || cubit.isUploading;
+                    final isStickerOnly =
+                        cubit.pendingAttachment?.type == CommentType.sticker;
+                    final canSend = _canSend(cubit);
+                    final pendingMedia = cubit.pendingAttachment;
+                    final isMediaCaptionable =
+                        pendingMedia?.type == CommentType.image ||
+                        pendingMedia?.type == CommentType.video;
+                    final repliedComment =
+                        widget.replyingToCommentId == null
+                            ? null
+                            : _findRepliedComment(
+                              cubit.comments,
+                              widget.replyingToCommentId!,
+                            );
 
-                  return Container(
-                    padding: const EdgeInsets.symmetric(vertical: 4),
-                    child: Row(
-                      children: [
-                        InkWell(
-                          onTap: isLoading ? null : _openAttachmentPicker,
-                          child: Image.asset(
-                            AppImages.attachmentIcon,
-                            width: 35,
-                            height: 35,
-                            fit: BoxFit.cover,
-                            color: Theme.of(
-                              context,
-                            ).primaryColor.withValues(alpha: 2),
-                          ),
-                        ),
-                        const Gap(5),
-                        Expanded(
-                          child: MentionAwareTextField(
-                            controller: _commentController,
-                            focusNode: _focusNode,
-                            enabled: !isLoading && !isStickerOnly,
-                            hintText:
-                                isStickerOnly
-                                    ? 'Sticker ready to send'
-                                    : isReplying
-                                    ? 'Reply to @${widget.replyingToAuthorName}...'
-                                    : 'Write a comment...',
-                            onSubmitted: (_) => _submitComment(),
-                            trailingIcon: AiActionIcon(
-                              controller: _commentController,
-                              surface: AiSurfaceType.comment,
-                              generationAction: AiActionType.replySuggestion,
-                              actionContext:
-                                  isMediaCaptionable
-                                      ? AiActionContext.mediaCaption
-                                      : AiActionContext.commentReply,
-                              hasMediaAttached: isMediaCaptionable,
-                              hasReplyContext: isReplying,
-                              imageBytesProvider:
-                                  pendingMedia?.type == CommentType.image &&
-                                          pendingMedia?.localFile != null
-                                      ? () =>
-                                          pendingMedia!.localFile!.readAsBytes()
-                                      : null,
-                              targetUserName: widget.replyingToAuthorName,
-                              targetText:
-                                  (repliedComment == null)
-                                      ? widget.post.text
-                                      : (repliedComment.commentType ==
-                                              CommentType.text
-                                          ? repliedComment.text
-                                          : null),
-                              targetImageBytesProvider:
-                                  (repliedComment != null &&
-                                          repliedComment.commentType ==
-                                              CommentType.image &&
-                                          repliedComment.imageUrl != null)
-                                      ? () => RemoteMediaFetcher.fetchBytes(
-                                        repliedComment.imageUrl!,
-                                      )
-                                      : null,
-                              mediaCaption:
-                                  (repliedComment != null &&
-                                          repliedComment.commentType !=
-                                              CommentType.text)
-                                      ? repliedComment.text
-                                      : null,
-                              targetMediaType:
-                                  isMediaCaptionable
-                                      ? _mapCommentType(pendingMedia!.type)
-                                      : (repliedComment != null
-                                          ? _mapCommentType(
-                                            repliedComment.commentType,
-                                          )
-                                          : AiTargetMediaType.text),
+                    return Container(
+                      padding: const EdgeInsets.symmetric(vertical: 4),
+                      child: Row(
+                        children: [
+                          InkWell(
+                            onTap: isLoading ? null : _openAttachmentPicker,
+                            child: Image.asset(
+                              AppImages.attachmentIcon,
+                              width: 35,
+                              height: 35,
+                              fit: BoxFit.cover,
+                              color: Theme.of(
+                                context,
+                              ).primaryColor.withValues(alpha: 2),
                             ),
                           ),
-                        ),
-                        const Gap(8),
-                        isLoading
-                            ? const SizedBox(
-                              height: 24,
-                              width: 24,
-                              child: CustomLoadingIndicator(),
-                            )
-                            : InkWell(
-                              onTap: canSend ? _submitComment : null,
-                              child: Image.asset(
-                                AppImages.sendIcon,
-                                width: 24,
-                                height: 24,
-                                color:
-                                    canSend
-                                        ? Theme.of(context).primaryColor
-                                        : AppColors.grey5,
+                          const Gap(5),
+                          Expanded(
+                            child: MentionAwareTextField(
+                              controller: _commentController,
+                              focusNode: _focusNode,
+                              enabled: !isLoading && !isStickerOnly,
+                              hintText:
+                                  isStickerOnly
+                                      ? 'Sticker ready to send'
+                                      : isReplying
+                                      ? 'Reply to @${widget.replyingToAuthorName}...'
+                                      : 'Write a comment...',
+                              onSubmitted: (_) => _submitComment(),
+                              trailingIcon: AiActionIcon(
+                                controller: _commentController,
+                                surface: AiSurfaceType.comment,
+                                generationAction: AiActionType.replySuggestion,
+                                actionContext:
+                                    isMediaCaptionable
+                                        ? AiActionContext.mediaCaption
+                                        : AiActionContext.commentReply,
+                                hasMediaAttached: isMediaCaptionable,
+                                hasReplyContext: isReplying,
+                                imageBytesProvider:
+                                    pendingMedia?.type == CommentType.image &&
+                                            pendingMedia?.localFile != null
+                                        ? () =>
+                                            pendingMedia!.localFile!
+                                                .readAsBytes()
+                                        : null,
+                                targetUserName: widget.replyingToAuthorName,
+                                targetText:
+                                    (repliedComment == null)
+                                        ? widget.post.text
+                                        : (repliedComment.commentType ==
+                                                CommentType.text
+                                            ? repliedComment.text
+                                            : null),
+                                targetImageBytesProvider:
+                                    (repliedComment != null &&
+                                            repliedComment.commentType ==
+                                                CommentType.image &&
+                                            repliedComment.imageUrl != null)
+                                        ? () => RemoteMediaFetcher.fetchBytes(
+                                          repliedComment.imageUrl!,
+                                        )
+                                        : null,
+                                mediaCaption:
+                                    (repliedComment != null &&
+                                            repliedComment.commentType !=
+                                                CommentType.text)
+                                        ? repliedComment.text
+                                        : null,
+                                targetMediaType:
+                                    isMediaCaptionable
+                                        ? _mapCommentType(pendingMedia!.type)
+                                        : (repliedComment != null
+                                            ? _mapCommentType(
+                                              repliedComment.commentType,
+                                            )
+                                            : AiTargetMediaType.text),
                               ),
                             ),
-                        const Gap(2),
-                      ],
-                    ),
-                  );
-                },
+                          ),
+                          const Gap(8),
+                          isLoading
+                              ? const SizedBox(
+                                height: 24,
+                                width: 24,
+                                child: CustomLoadingIndicator(),
+                              )
+                              : InkWell(
+                                onTap: canSend ? _submitComment : null,
+                                child: Image.asset(
+                                  AppImages.sendIcon,
+                                  width: 24,
+                                  height: 24,
+                                  color:
+                                      canSend
+                                          ? Theme.of(context).primaryColor
+                                          : AppColors.grey5,
+                                ),
+                              ),
+                          const Gap(2),
+                        ],
+                      ),
+                    );
+                  },
+                ),
               ),
-            ),
-          ],
-        ),
-      ],
+            ],
+          ),
+        ],
+      ),
     );
   }
 }
