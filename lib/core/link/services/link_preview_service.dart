@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:convert';
+import 'package:crypto/crypto.dart';
 import 'package:dio/dio.dart' as dio_pkg;
 import 'package:flutter/foundation.dart';
 import 'package:html/parser.dart' as html_parser;
@@ -76,11 +78,21 @@ class LinkPreviewService {
     );
   }
 
+  String _getSafeCacheKey(String url) {
+    final rawKey = '$_cacheKeyPrefix$url';
+    if (rawKey.length <= 255) return rawKey;
+
+    // Fallback for URLs exceeding Hive's 255 char limit
+    final bytes = utf8.encode(url);
+    final digest = md5.convert(bytes);
+    return '$_cacheKeyPrefix${digest.toString()}';
+  }
+
   LinkPreviewData? peek(String url) {
     if (_memoryCache.containsKey(url)) return _memoryCache[url];
 
     final cached = LocalSnapshotStore.instance.readObject(
-      '$_cacheKeyPrefix$url',
+      _getSafeCacheKey(url),
     );
     if (cached == null) return null;
 
@@ -100,7 +112,7 @@ class LinkPreviewService {
     if (_memoryCache.containsKey(url)) return true;
 
     final cached = LocalSnapshotStore.instance.readObject(
-      '$_cacheKeyPrefix$url',
+      _getSafeCacheKey(url),
     );
     if (cached == null) return false;
 
@@ -306,7 +318,7 @@ class LinkPreviewService {
   }
 
   Future<void> _persistSuccess(String url, LinkPreviewData data) {
-    return LocalSnapshotStore.instance.saveObject('$_cacheKeyPrefix$url', {
+    return LocalSnapshotStore.instance.saveObject(_getSafeCacheKey(url), {
       ...data.toCacheJson(),
       'cachedAt': DateTime.now().toIso8601String(),
       'isFailure': false,
@@ -316,7 +328,7 @@ class LinkPreviewService {
   void _cacheFailure(String url) {
     _memoryCache[url] = null;
     unawaited(
-      LocalSnapshotStore.instance.saveObject('$_cacheKeyPrefix$url', {
+      LocalSnapshotStore.instance.saveObject(_getSafeCacheKey(url), {
         'url': url,
         'cachedAt': DateTime.now().toIso8601String(),
         'isFailure': true,
