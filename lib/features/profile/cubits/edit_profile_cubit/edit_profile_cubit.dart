@@ -10,9 +10,13 @@ import '../../../../core/utilities/supabase_constants.dart';
 part 'edit_profile_state.dart';
 
 class EditProfileCubit extends Cubit<EditProfileState> {
-  // Dependency Injection
   final EditProfileServices _editProfileServices;
   EditProfileCubit(this._editProfileServices) : super(EditProfileInitial());
+
+  @override
+  void emit(EditProfileState state) {
+    if (!isClosed) super.emit(state);
+  }
 
   Future<File?> pickImage(ImageSource source) {
     return _editProfileServices.pickImage(source);
@@ -32,8 +36,6 @@ class EditProfileCubit extends Cubit<EditProfileState> {
   }) async {
     emit(EditProfileLoading());
     try {
-      // ── تحسين السرعة: رفع صورة البروفايل وصورة الكفر بالتوازي
-      // بدل ما ننتظر كل واحدة لوحدها بالتتابع (Sequential await) ──
       final uploadResults = await Future.wait([
         profileImage != null
             ? _editProfileServices.uploadImage(
@@ -50,6 +52,8 @@ class EditProfileCubit extends Cubit<EditProfileState> {
             )
             : Future.value(null),
       ]);
+
+      if (isClosed) return;
 
       final profileUploadResult = uploadResults[0];
       final backgroundUploadResult = uploadResults[1];
@@ -80,10 +84,8 @@ class EditProfileCubit extends Cubit<EditProfileState> {
 
       await _editProfileServices.updateUserData(oldUser.id, updates);
 
-      // ── تنظيف أي صورة قديمة بقت orphan على Cloudinary، بعد نجاح
-      // الحفظ في الداتابيز فقط، وبدون await عشان ميأخرش ظهور النجاح
-      // للمستخدم (fire-and-forget، وMediaCleanupService أصلاً
-      // بتعمل catch داخلي فمافيش خطر على استقرار الشاشة) ──
+      if (isClosed) return;
+
       _cleanupStaleAssets(
         oldUser: oldUser,
         profileReplaced: profileUploadResult != null,
@@ -110,6 +112,7 @@ class EditProfileCubit extends Cubit<EditProfileState> {
 
       emit(EditProfileSuccess(updatedUser));
     } catch (e) {
+      if (isClosed) return;
       debugPrint('Error updating profile: $e');
       emit(EditProfileError(SupabaseErrorMapper.toUserMessage(e)));
     }
