@@ -7,7 +7,7 @@ import '../../../core/services/media_cleanup_service.dart';
 import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/utilities/supabase_constants.dart';
 import '../models/message_model.dart';
-import 'chat_notification_dispatcher.dart';
+import 'chat_fcm_push_dispatcher.dart';
 
 class ChatMessagesService {
   final _supabase = SupabaseProvider.client;
@@ -242,7 +242,7 @@ class ChatMessagesService {
     if (isNewInsert && messageType != 'call') {
       final senderInfo = await getCurrentUserInfo(senderId);
       unawaited(
-        ChatNotificationDispatcher.instance.notifyMessage(
+        ChatFcmPushDispatcher.instance.notifyMessage(
           messageId: newMessageId,
           clientMessageId: clientMessageId,
           senderId: senderId,

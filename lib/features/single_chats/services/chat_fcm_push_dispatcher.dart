@@ -1,11 +1,11 @@
 import 'package:flutter/foundation.dart';
 import 'package:social_media_app/core/services/fcm_services.dart';
-import '../../../../core/supabase/supabase_provider.dart';
+import '../../../core/supabase/supabase_provider.dart';
 import 'chat_list_service.dart';
 
-class ChatNotificationDispatcher {
-  ChatNotificationDispatcher._();
-  static final instance = ChatNotificationDispatcher._();
+class ChatFcmPushDispatcher {
+  ChatFcmPushDispatcher._();
+  static final instance = ChatFcmPushDispatcher._();
 
   final _fcm = FcmService.instance;
   final _supabase = SupabaseProvider.client;
@@ -53,7 +53,7 @@ class ChatNotificationDispatcher {
 
       final receiverInfo = await _list.getReceiverPushInfo(receiverId);
       if (receiverInfo == null) {
-        debugPrint('[ChatNotificationDispatcher] no FCM token — skipping');
+        debugPrint('[ChatFcmPushDispatcher] no FCM token — skipping');
         return;
       }
 
@@ -89,7 +89,7 @@ class ChatNotificationDispatcher {
         forwardedFromUserAvatar: forwardedFromUserAvatar,
       );
     } catch (e) {
-      debugPrint('[ChatNotificationDispatcher] error: $e');
+      debugPrint('[ChatFcmPushDispatcher] error: $e');
     }
   }
 }
