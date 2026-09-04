@@ -254,6 +254,7 @@ class _HomeViewState extends State<HomeView> {
                                           .length;
                                   return NewPostsPill(
                                     count: pendingCount,
+                                    hideForOverlap: _showBackToTop,
                                     onTap: () {
                                       context
                                           .read<PostsCubit>()
