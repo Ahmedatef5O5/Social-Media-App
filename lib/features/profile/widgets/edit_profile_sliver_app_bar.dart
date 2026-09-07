@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:ui';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:social_media_app/core/router/app_routes.dart';
 import '../../../core/constants/app_images.dart';
 
 class EditProfileSliverAppBar extends StatelessWidget {
@@ -52,6 +53,28 @@ class EditProfileSliverAppBar extends StatelessWidget {
       ),
     );
   }
+}
+
+void _openFullScreenImage(
+  BuildContext context, {
+  required File? selectedFile,
+  required String? networkUrl,
+  required String fallbackAsset,
+  required String heroTag,
+}) {
+  final Map<String, dynamic> args;
+
+  if (selectedFile != null) {
+    args = {'url': selectedFile.path, 'isLocalFile': true, 'tag': heroTag};
+  } else if (networkUrl != null && networkUrl.startsWith('http')) {
+    args = {'url': networkUrl, 'tag': heroTag};
+  } else {
+    args = {'url': fallbackAsset, 'isAsset': true, 'tag': heroTag};
+  }
+
+  Navigator.of(
+    context,
+  ).pushNamed(AppRoutes.fullScreenImageViewRoute, arguments: args);
 }
 
 class _ProfileHeaderDelegate extends SliverPersistentHeaderDelegate {
@@ -153,45 +176,56 @@ class _ProfileHeaderDelegate extends SliverPersistentHeaderDelegate {
           height: coverHeight,
           child: Opacity(
             opacity: 1.0 - progress,
-            child: ClipRRect(
-              borderRadius: const BorderRadius.vertical(
-                bottom: Radius.circular(24),
-              ),
-              child: ShaderMask(
-                shaderCallback: (Rect bounds) {
-                  return const LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [Colors.black, Colors.black, Colors.transparent],
-                    stops: [0.0, 0.75, 1.0],
-                  ).createShader(bounds);
-                },
-                blendMode: BlendMode.dstIn,
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    Image(image: _resolveCoverImage(), fit: BoxFit.cover),
-                    const DecoratedBox(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [Color(0x66000000), Colors.transparent],
-                          stops: [0.0, 0.35],
+            child: GestureDetector(
+              onTap:
+                  () => _openFullScreenImage(
+                    context,
+                    selectedFile: selectedCoverFile,
+                    networkUrl: coverUrl,
+                    fallbackAsset: AppImages.defaultBackgroundImg,
+                    heroTag: 'edit_profile_cover',
+                  ),
+              onLongPress: onEditCover,
+              child: ClipRRect(
+                borderRadius: const BorderRadius.vertical(
+                  bottom: Radius.circular(24),
+                ),
+                child: ShaderMask(
+                  shaderCallback: (Rect bounds) {
+                    return const LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [Colors.black, Colors.black, Colors.transparent],
+                      stops: [0.0, 0.75, 1.0],
+                    ).createShader(bounds);
+                  },
+                  blendMode: BlendMode.dstIn,
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      Image(image: _resolveCoverImage(), fit: BoxFit.cover),
+                      const DecoratedBox(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [Color(0x66000000), Colors.transparent],
+                            stops: [0.0, 0.35],
+                          ),
                         ),
                       ),
-                    ),
-                    const DecoratedBox(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.bottomCenter,
-                          end: Alignment.topCenter,
-                          colors: [Color(0x77000000), Colors.transparent],
-                          stops: [0.0, 0.4],
+                      const DecoratedBox(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.bottomCenter,
+                            end: Alignment.topCenter,
+                            colors: [Color(0x77000000), Colors.transparent],
+                            stops: [0.0, 0.4],
+                          ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -247,15 +281,23 @@ class _ProfileHeaderDelegate extends SliverPersistentHeaderDelegate {
         Positioned(
           top: currentAvatarTop,
           right: currentAvatarRight,
-          child: GestureDetector(
-            onTap: onEditAvatar,
-            child: SizedBox(
-              width: currentAvatarSize,
-              height: currentAvatarSize,
-              child: Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  Container(
+          child: SizedBox(
+            width: currentAvatarSize,
+            height: currentAvatarSize,
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                GestureDetector(
+                  onTap:
+                      () => _openFullScreenImage(
+                        context,
+                        selectedFile: selectedAvatarFile,
+                        networkUrl: avatarUrl,
+                        fallbackAsset: AppImages.defaultUserImg,
+                        heroTag: 'edit_profile_avatar',
+                      ),
+                  onLongPress: onEditAvatar,
+                  child: Container(
                     width: currentAvatarSize,
                     height: currentAvatarSize,
                     decoration: BoxDecoration(
@@ -272,12 +314,15 @@ class _ProfileHeaderDelegate extends SliverPersistentHeaderDelegate {
                       ),
                     ),
                   ),
-                  if (progress < 0.5)
-                    Positioned(
-                      bottom: 0,
-                      right: 0,
-                      child: Opacity(
-                        opacity: (1.0 - (progress * 2)).clamp(0.0, 1.0),
+                ),
+                if (progress < 0.5)
+                  Positioned(
+                    bottom: 0,
+                    right: 0,
+                    child: Opacity(
+                      opacity: (1.0 - (progress * 2)).clamp(0.0, 1.0),
+                      child: GestureDetector(
+                        onTap: onEditAvatar,
                         child: Container(
                           padding: EdgeInsets.all(currentAvatarSize * 0.06),
                           decoration: BoxDecoration(
@@ -296,8 +341,8 @@ class _ProfileHeaderDelegate extends SliverPersistentHeaderDelegate {
                         ),
                       ),
                     ),
-                ],
-              ),
+                  ),
+              ],
             ),
           ),
         ),

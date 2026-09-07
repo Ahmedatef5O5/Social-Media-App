@@ -40,7 +40,9 @@ class EditProfileServices {
   Future<File?> pickImage(ImageSource source) async {
     final XFile? pickedFile = await _picker.pickImage(
       source: source,
-      // imageQuality: 70,
+      maxWidth: 1600,
+      maxHeight: 1600,
+      imageQuality: 80,
     );
     if (pickedFile != null) {
       return File(pickedFile.path);
