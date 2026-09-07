@@ -54,7 +54,7 @@ dependencies:
   path: ^1.9.1
   path_provider: ^2.1.5
   persistent_bottom_nav_bar_v2: ^6.3.1
-  receive_sharing_intent: ^1.9.0
+  receive_sharing_intent: 1.8.1
   record: ^6.2.0
   scrollable_positioned_list: ^0.3.8
   share_plus: ^12.0.0
@@ -72,6 +72,7 @@ dependencies:
   youtube_player_iframe: ^6.0.2
 
 dev_dependencies:
+  flutter_native_splash: ^2.4.6
   bloc_test: ^10.0.0
   build_runner: ^2.4.13
   change_app_package_name: ^1.5.0
@@ -95,6 +96,14 @@ flutter_launcher_icons:
   android: "launcher_icon"
   ios: true
   image_path: "assets/images/launcher.png"
+
+
+flutter_native_splash:
+  color: "#FFFFFF"
+  image: "assets/images/launcher.png"  
+  android_12:
+    color: "#FFFFFF"
+    image: "assets/images/launcher.png"
 
 flutter:
   uses-material-design: true

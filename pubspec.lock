@@ -33,6 +33,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "12.1.0"
+  ansicolor:
+    dependency: transitive
+    description:
+      name: ansicolor
+      sha256: "50e982d500bc863e1d703448afdbf9e5a72eb48840a4f766fa361ffd6877055f"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.0.3"
   app_links:
     dependency: "direct main"
     description:
@@ -763,6 +771,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.12"
+  flutter_native_splash:
+    dependency: "direct dev"
+    description:
+      name: flutter_native_splash
+      sha256: "9db4b80b044e9af17cc4b1272137fc7ace0054d879ef8210a76adc34aaf4cdff"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.4.8"
   flutter_plugin_android_lifecycle:
     dependency: transitive
     description:
@@ -1633,10 +1649,10 @@ packages:
     dependency: "direct main"
     description:
       name: receive_sharing_intent
-      sha256: "72f229a38f2910029c11d840770c173b27072e348ef3376130b37514bc4556f6"
+      sha256: ec76056e4d258ad708e76d85591d933678625318e411564dcb9059048ca3a593
       url: "https://pub.dev"
     source: hosted
-    version: "1.9.0"
+    version: "1.8.1"
   record:
     dependency: "direct main"
     description:
@@ -2098,6 +2114,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.4.0"
+  universal_io:
+    dependency: transitive
+    description:
+      name: universal_io
+      sha256: f63cbc48103236abf48e345e07a03ce5757ea86285ed313a6a032596ed9301e2
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.3.1"
   url_launcher:
     dependency: "direct main"
     description:
