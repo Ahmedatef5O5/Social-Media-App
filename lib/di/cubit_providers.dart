@@ -7,7 +7,6 @@ import 'package:social_media_app/core/services/active_call/cubit/active_call_ses
 import 'package:social_media_app/core/services/active_call/pip/call_pip_cubit.dart';
 import 'package:social_media_app/core/services/cloudinary_storage_services.dart';
 import 'package:social_media_app/core/services/network_status_service.dart';
-import 'package:social_media_app/core/supabase/supabase_provider.dart';
 import 'package:social_media_app/core/themes/cubits/theme_cubit.dart';
 import 'package:social_media_app/features/ai_assistant/cubits/ai_preferences_cubit/ai_preferences_cubit.dart';
 import 'package:social_media_app/features/auth/cubits/auth_cubit/auth_cubit.dart';
@@ -84,15 +83,6 @@ class CubitProviders {
   ];
 
   static ThemeCubit Function(BuildContext) themeCubitCreate(String savedTheme) {
-    return (_) {
-      final cubit = ThemeCubit(initialTheme: savedTheme);
-      final user = SupabaseProvider.user;
-
-      if (user != null) {
-        cubit.loaderUserTheme(user.id);
-      }
-
-      return cubit;
-    };
+    return (_) => ThemeCubit(initialTheme: savedTheme);
   }
 }

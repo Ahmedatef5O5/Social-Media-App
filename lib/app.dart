@@ -42,8 +42,9 @@ Widget buildApp(String savedTheme) {
 }
 
 class MyApp extends StatelessWidget {
-  final String savedTheme;
   const MyApp({super.key, required this.savedTheme});
+
+  final String savedTheme;
 
   @override
   Widget build(BuildContext context) {
@@ -202,16 +203,18 @@ class MyApp extends StatelessWidget {
 }
 
 class _RouteObserver extends NavigatorObserver {
+  @override
+  void didPop(Route route, Route? previousRoute) => _update(previousRoute);
+
+  @override
+  void didPush(Route route, Route? previousRoute) => _update(route);
+
+  @override
+  void didReplace({Route? newRoute, Route? oldRoute}) => _update(newRoute);
+
   void _update(Route? route) {
     if (route?.settings.name != null) {
       ActiveScreenTracker.setCurrentRoute(route!.settings.name!);
     }
   }
-
-  @override
-  void didPush(Route route, Route? previousRoute) => _update(route);
-  @override
-  void didPop(Route route, Route? previousRoute) => _update(previousRoute);
-  @override
-  void didReplace({Route? newRoute, Route? oldRoute}) => _update(newRoute);
 }
