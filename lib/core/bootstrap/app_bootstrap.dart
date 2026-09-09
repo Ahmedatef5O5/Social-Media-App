@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:social_media_app/core/cache/services/hive_cache_manager.dart';
 import 'package:social_media_app/core/cache/services/local_snapshot_store.dart';
 import 'package:social_media_app/core/firebase/firebase_background_handlers.dart';
@@ -83,6 +84,8 @@ Future<void> initializeCoreServices() async {
     deepLinkReady,
   ]);
 
+  await _guardAgainstCrossAccountCacheLeak();
+
   await _safely(
     'ConsumeShare',
     ShareIntentService.instance.consumeInitialShareIfAny,
@@ -103,6 +106,28 @@ Future<void> _safely(String label, Future<void> Function() step) async {
     await step();
   } catch (e, s) {
     debugPrint('⚠️ Non-critical bootstrap step "$label" failed: $e\n$s');
+  }
+}
+
+const String _kLocalSnapshotOwnerPrefsKey = 'local_snapshot_owner_user_id';
+
+Future<void> _guardAgainstCrossAccountCacheLeak() async {
+  final prefs = await SharedPreferences.getInstance();
+  final cachedOwnerId = prefs.getString(_kLocalSnapshotOwnerPrefsKey);
+  final currentUserId = SupabaseProvider.user?.id;
+
+  if (cachedOwnerId != currentUserId) {
+    debugPrint(
+      '🧹 LocalSnapshotStore owner mismatch ("$cachedOwnerId" -> '
+      '"$currentUserId") — clearing cached chats/groups/posts/etc. so '
+      "one account's data never leaks into another's session.",
+    );
+    await LocalSnapshotStore.instance.clearAll();
+    if (currentUserId != null) {
+      await prefs.setString(_kLocalSnapshotOwnerPrefsKey, currentUserId);
+    } else {
+      await prefs.remove(_kLocalSnapshotOwnerPrefsKey);
+    }
   }
 }
 

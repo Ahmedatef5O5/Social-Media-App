@@ -659,7 +659,8 @@ class GroupListCubit extends Cubit<GroupListState> with WidgetsBindingObserver {
               final existingGroup = _cached[existingIndex];
               final isNewMessageEmpty = newGroup.lastMessage?.isEmpty ?? true;
               return newGroup.copyWith(
-                unreadCount: existingGroup.unreadCount,
+                unreadCount:
+                    existingGroup.unreadCount == 0 ? 0 : newGroup.unreadCount,
                 lastMessage:
                     isNewMessageEmpty
                         ? existingGroup.lastMessage

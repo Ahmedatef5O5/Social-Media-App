@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -43,6 +44,50 @@ class _CustomBottomNavBarState extends State<CustomBottomNavBar> {
     ScrollController(), // for Profile
   ];
 
+  StreamSubscription<ChatsState>? _chatsSub;
+  StreamSubscription<GroupListState>? _groupListSub;
+
+  bool _chatsReady = false;
+  bool _groupsReady = false;
+  int _singleChatsUnread = 0;
+  int _groupChatsUnread = 0;
+
+  int? get _combinedUnreadCount {
+    if (!_chatsReady || !_groupsReady) return null;
+    return _singleChatsUnread + _groupChatsUnread;
+  }
+
+  void _listenForUnreadCounts() {
+    final chatsCubit = context.read<ChatsCubit>();
+    final groupListCubit = context.read<GroupListCubit>();
+
+    _applyChatsState(chatsCubit.state);
+    _applyGroupListState(groupListCubit.state);
+
+    _chatsSub = chatsCubit.stream.listen(_applyChatsState);
+    _groupListSub = groupListCubit.stream.listen(_applyGroupListState);
+  }
+
+  void _applyChatsState(ChatsState state) {
+    if (state is! ChatsSuccessloaded) return;
+    final unread = state.chats.fold<int>(0, (s, c) => s + c.unreadCount);
+    if (!mounted) return;
+    setState(() {
+      _singleChatsUnread = unread;
+      _chatsReady = true;
+    });
+  }
+
+  void _applyGroupListState(GroupListState state) {
+    if (state is! GroupListLoaded) return;
+    final unread = state.groups.fold<int>(0, (s, g) => s + g.unreadCount);
+    if (!mounted) return;
+    setState(() {
+      _groupChatsUnread = unread;
+      _groupsReady = true;
+    });
+  }
+
   @override
   void initState() {
     super.initState();
@@ -59,6 +104,7 @@ class _CustomBottomNavBarState extends State<CustomBottomNavBar> {
         setState(() {});
       }
     });
+    _listenForUnreadCounts();
   }
 
   @override
@@ -67,6 +113,8 @@ class _CustomBottomNavBarState extends State<CustomBottomNavBar> {
     for (var controller in _scrollControllers) {
       controller.dispose();
     }
+    _chatsSub?.cancel();
+    _groupListSub?.cancel();
     super.dispose();
   }
 
@@ -189,92 +237,49 @@ class _CustomBottomNavBarState extends State<CustomBottomNavBar> {
                       child: Center(
                         child: SizedBox(
                           width: MediaQuery.of(context).size.width * 0.92,
-                          child: BlocBuilder<ChatsCubit, ChatsState>(
-                            buildWhen:
-                                (previous, current) =>
-                                    current is ChatsSuccessloaded,
-                            builder: (context, chatsState) {
-                              int singleChatsUnread = 0;
-                              if (chatsState is ChatsSuccessloaded) {
-                                singleChatsUnread = chatsState.chats.fold(
-                                  0,
-                                  (s, c) => s + c.unreadCount,
-                                );
+                          child: BlocBuilder<ProfileCubit, ProfileState>(
+                            builder: (context, profileState) {
+                              String? imageUrl;
+                              if (profileState is ProfileLoaded) {
+                                imageUrl = profileState.user.imageUrl;
                               }
-                              return BlocBuilder<
-                                GroupListCubit,
-                                GroupListState
-                              >(
-                                buildWhen:
-                                    (previous, current) =>
-                                        current is GroupListLoaded,
-                                builder: (context, groupState) {
-                                  int groupChatsUnread = 0;
-                                  if (groupState is GroupListLoaded) {
-                                    groupChatsUnread = groupState.groups.fold(
-                                      0,
-                                      (s, g) => s + g.unreadCount,
-                                    );
-                                  }
-                                  final unread =
-                                      singleChatsUnread + groupChatsUnread;
-
-                                  return BlocBuilder<
-                                    ProfileCubit,
-                                    ProfileState
-                                  >(
-                                    builder: (context, profileState) {
-                                      String? imageUrl;
-                                      if (profileState is ProfileLoaded) {
-                                        imageUrl = profileState.user.imageUrl;
-                                      }
-                                      return CustomFloatingNavBar(
-                                        currentIndex: _controller.index,
-                                        onTap: (i) {
-                                          if (_controller.index == i) {
-                                            if (_scrollControllers[i]
-                                                .hasClients) {
-                                              _scrollControllers[i].animateTo(
-                                                0.0,
-                                                duration: const Duration(
-                                                  milliseconds: 400,
-                                                ),
-                                                curve: Curves.easeOutBack,
-                                              );
-                                            }
-                                          } else {
-                                            _controller.jumpToTab(i);
-                                          }
-                                          if (i == 3) {
-                                            _scaffoldKey.currentState!
-                                                .openEndDrawer();
-                                          }
-                                          setState(() {});
-                                        },
-                                        items: [
-                                          const NavBarItem(
-                                            icon: Icons.home_outlined,
-                                          ),
-                                          const NavBarItem(
-                                            icon: Icons.group_outlined,
-                                          ),
-                                          NavBarItem(
-                                            icon: Icons.chat_bubble_outline,
-                                            badgeCount: unread,
-                                          ),
-                                          NavBarItem(
-                                            child: MainUserAvatar(
-                                              userId: userId,
-                                              imageUrl: imageUrl,
-                                              showBorder: false,
-                                              size: 30,
-                                            ),
-                                          ),
-                                        ],
+                              return CustomFloatingNavBar(
+                                currentIndex: _controller.index,
+                                onTap: (i) {
+                                  if (_controller.index == i) {
+                                    if (_scrollControllers[i].hasClients) {
+                                      _scrollControllers[i].animateTo(
+                                        0.0,
+                                        duration: const Duration(
+                                          milliseconds: 400,
+                                        ),
+                                        curve: Curves.easeOutBack,
                                       );
-                                    },
-                                  );
+                                    }
+                                  } else {
+                                    _controller.jumpToTab(i);
+                                  }
+                                  if (i == 3) {
+                                    _scaffoldKey.currentState!.openEndDrawer();
+                                  }
+                                  setState(() {});
                                 },
+                                items: [
+                                  const NavBarItem(icon: Icons.home_outlined),
+                                  const NavBarItem(icon: Icons.group_outlined),
+                                  NavBarItem(
+                                    icon: Icons.chat_bubble_outline,
+                                    badgeCount: _combinedUnreadCount ?? 0,
+                                  ),
+                                  NavBarItem(
+                                    child: MainUserAvatar(
+                                      userId: userId,
+                                      imageUrl: imageUrl,
+                                      showBorder: false,
+                                      size: 30,
+                                    ),
+                                  ),
+                                ],
                               );
                             },
                           ),
