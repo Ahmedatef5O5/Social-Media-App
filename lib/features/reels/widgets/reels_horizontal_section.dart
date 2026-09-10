@@ -19,6 +19,9 @@ class ReelsHorizontalSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final reelsColor =
+        Theme.of(context).textTheme.titleSmall?.color ??
+        Theme.of(context).colorScheme.onSurface;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -34,7 +37,12 @@ class ReelsHorizontalSection extends StatelessWidget {
                   fontSize: 13,
                 ),
               ),
-              Image.asset(AppImages.reelsIcon, width: 24, height: 24),
+              Image.asset(
+                AppImages.reelsIcon,
+                width: 24,
+                height: 24,
+                color: reelsColor,
+              ),
             ],
           ),
         ),
