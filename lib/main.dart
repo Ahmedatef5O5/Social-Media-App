@@ -2,7 +2,6 @@ import 'dart:async';
 import 'app.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'core/bootstrap/app_bootstrap.dart';
 import 'core/errors/network_error_utils.dart';
 import 'core/toast/app_toast.dart';
@@ -28,16 +27,13 @@ void main() {
         return true;
       };
 
-      try {
-        await initializeApp();
-      } catch (e, s) {
-        debugPrint('❌ Critical bootstrap failure: $e\n$s');
-      }
+      await initializeCriticalBeforeRunApp();
 
-      final prefs = await SharedPreferences.getInstance();
-      final savedTheme = prefs.getString('user_theme_key') ?? 'ocean';
+      const defaultThemeName = 'ocean';
 
-      runApp(buildApp(savedTheme));
+      runApp(buildApp(defaultThemeName));
+
+      startCoreServicesBootstrap();
     },
 
     (error, stack) {

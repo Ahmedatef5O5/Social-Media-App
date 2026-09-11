@@ -25,24 +25,77 @@ import '../share_intent/services/share_intent_service.dart';
 import '../supabase/supabase_provider.dart';
 import '../toast/app_toast.dart';
 
-Future<void> initializeApp() async {
+Future<void> initializeCriticalBeforeRunApp() async {
   await _lockOrientation();
+}
+
+Completer<void>? _coreServicesCompleter;
+
+Future<void> startCoreServicesBootstrap() {
+  final existing = _coreServicesCompleter;
+  if (existing != null) return existing.future;
+
+  final completer = Completer<void>();
+  _coreServicesCompleter = completer;
+
+  initializeCoreServices().then((_) => completer.complete()).catchError((e, s) {
+    debugPrint('❌ Critical bootstrap failure: $e\n$s');
+    // Never leave SplashView waiting forever on a bootstrap bug —
+    // individual steps already fail safely on their own via
+    // `_safely`, so completing here just unblocks navigation.
+    completer.complete();
+  });
+
+  return completer.future;
+}
+
+Future<void> waitForCoreServicesReady() {
+  return _coreServicesCompleter?.future ?? startCoreServicesBootstrap();
+}
+
+Future<void> initializeCoreServices() async {
   AppSecrets.assertSecretsLoaded();
-  await SettingsRepository.instance.init();
-  await _initHiveCache();
-  await _initSupabase();
-  await _safely('Firebase', _initFirebase);
-  await _safely('Notifications', _initNotifications);
-  await _safely('ShareIntent', ShareIntentService.instance.init);
-  await _safely('DeepLink', DeepLinkService.instance.init);
+
+  // Group A — fully independent: each touches a different
+  // storage/plugin (Hive, Supabase SDK, SharedPreferences). Safe to
+  // run in parallel.
+  final coreReady = Future.wait([
+    _initHiveCache(),
+    _initSupabase(),
+    SettingsRepository.instance.init(),
+  ]);
+
+  // Group C — Firebase CORE only (app init + background-handler
+  // registration). No permission dialog here on purpose — that part
+  // is split into Group D below. Independent of Group A.
+  final firebaseCoreReady = _safely('FirebaseCore', _initFirebaseCore);
+
+  final shareIntentReady = _safely(
+    'ShareIntent',
+    ShareIntentService.instance.init,
+  );
+  final deepLinkReady = _safely('DeepLink', DeepLinkService.instance.init);
+
+  await Future.wait([
+    coreReady,
+    firebaseCoreReady,
+    shareIntentReady,
+    deepLinkReady,
+  ]);
+
   await _safely(
     'ConsumeShare',
     ShareIntentService.instance.consumeInitialShareIfAny,
   );
   _initForegroundTask();
-  await _safely('Presence', PresenceService.instance.init);
 
+  await _safely('Presence', PresenceService.instance.init);
   _setupAuthListener();
+
+  unawaited(
+    _safely('FirebasePermissions', _requestFirebaseNotificationPermissions),
+  );
+  unawaited(_safely('Notifications', _initNotifications));
 }
 
 Future<void> _safely(String label, Future<void> Function() step) async {
@@ -147,11 +200,12 @@ Future<void> requestBatteryOptimizationExemptionIfNeeded() async {
   await FlutterForegroundTask.requestIgnoreBatteryOptimization();
 }
 
-Future<void> _initFirebase() async {
+Future<void> _initFirebaseCore() async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-
   FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+}
 
+Future<void> _requestFirebaseNotificationPermissions() async {
   await FirebaseMessaging.instance.requestPermission(
     alert: true,
     badge: true,
