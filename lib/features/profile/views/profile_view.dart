@@ -19,7 +19,8 @@ class ProfileView extends StatefulWidget {
 }
 
 class _ProfileViewState extends State<ProfileView> {
-  final currentUserId = SupabaseProvider.id;
+  String? get currentUserId => SupabaseProvider.idOrNull;
+
   late ScrollController _scrollController;
   final ValueNotifier<double> _refreshProgress = ValueNotifier(0.0);
   final ValueNotifier<bool> _isRefreshing = ValueNotifier(false);
@@ -45,7 +46,9 @@ class _ProfileViewState extends State<ProfileView> {
 
   void _loadProfileData() {
     final effectiveId = widget.userId ?? currentUserId;
-    context.read<ProfileCubit>().getProfileData(effectiveId);
+    if (effectiveId != null) {
+      context.read<ProfileCubit>().getProfileData(effectiveId);
+    }
   }
 
   @override
@@ -75,11 +78,18 @@ class _ProfileViewState extends State<ProfileView> {
 
   @override
   Widget build(BuildContext context) {
+    final effectiveId = widget.userId ?? currentUserId;
+
+    if (effectiveId == null) {
+      return const SizedBox.shrink();
+    }
+
     final isCurrentUser =
         widget.userId == null || widget.userId == currentUserId;
     final size = MediaQuery.sizeOf(context);
     final profileCubit = context.read<ProfileCubit>();
     final postsCubit = context.read<PostsCubit>();
+
     return Stack(
       children: [
         Listener(
@@ -140,10 +150,11 @@ class _ProfileViewState extends State<ProfileView> {
                   isCurrentUser: isCurrentUser,
                 ),
                 onRetry: () {
-                  final effectiveId = widget.userId ?? currentUserId;
-                  context.read<ProfileCubit>().getProfileData(effectiveId);
+                  final retryId = widget.userId ?? currentUserId;
+                  if (retryId != null) {
+                    context.read<ProfileCubit>().getProfileData(retryId);
+                  }
                 },
-
                 child:
                     state is ProfileLoaded
                         ? NotificationListener<ScrollNotification>(

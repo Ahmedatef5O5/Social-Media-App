@@ -134,7 +134,10 @@ class _CustomBottomNavBarState extends State<CustomBottomNavBar> {
 
   @override
   Widget build(BuildContext context) {
-    final userId = SupabaseProvider.id;
+    final userId = SupabaseProvider.idOrNull;
+    if (userId == null) {
+      return const SizedBox.shrink();
+    }
 
     return BlocBuilder<ThemeCubit, ThemeState>(
       builder: (context, themeState) {
