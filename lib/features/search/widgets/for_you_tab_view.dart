@@ -2,11 +2,11 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
-import '../../../core/widgets/custom_loading_indicator.dart';
 import '../../../core/widgets/custom_pull_to_refresh.dart';
 import '../../../core/constants/app_images.dart';
 import '../../../core/widgets/empty_findings_animation_widget.dart';
 import '../../posts/cubits/posts_cubit/posts_cubit.dart';
+import '../../posts/helpers/posts_skeleton_items.dart';
 import '../../posts/models/post_model.dart';
 import '../../posts/widgets/post_item_widget.dart';
 import '../../reels/models/reel_model.dart';
@@ -174,12 +174,7 @@ class _ForYouTabViewState extends State<ForYouTabView>
       );
     }
     if (state is SearchPostsInitial || state is SearchPostsLoading) {
-      return Center(
-        child: SizedBox(
-          height: MediaQuery.sizeOf(context).height * 0.4,
-          child: const CustomLoadingIndicator(radius: 11),
-        ),
-      );
+      return const PostsSkeletonItems();
     }
 
     final posts = (state as SearchPostsLoaded).posts;
@@ -240,13 +235,9 @@ class _ForYouTabViewState extends State<ForYouTabView>
         onRetry: () => context.read<PostsCubit>().fetchPosts(isRefresh: true),
       );
     }
+
     if (postsState is! PostsLoaded) {
-      return Center(
-        child: SizedBox(
-          height: MediaQuery.sizeOf(context).height * 0.4,
-          child: const CustomLoadingIndicator(radius: 11),
-        ),
-      );
+      return const PostsSkeletonItems();
     }
 
     final posts = postsState.posts;

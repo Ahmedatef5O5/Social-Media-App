@@ -4,8 +4,15 @@ import 'package:shimmer/shimmer.dart';
 
 class PostsSkeletonItems extends StatelessWidget {
   final double bottomPadding;
+  final bool shrinkWrap;
+  final ScrollPhysics? physics;
 
-  const PostsSkeletonItems({super.key, this.bottomPadding = 0});
+  const PostsSkeletonItems({
+    super.key,
+    this.bottomPadding = 0,
+    this.shrinkWrap = false,
+    this.physics,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -19,8 +26,9 @@ class PostsSkeletonItems extends StatelessWidget {
     final screenWidth = MediaQuery.sizeOf(context).width;
 
     return ListView.separated(
+      shrinkWrap: shrinkWrap,
       padding: EdgeInsets.fromLTRB(16, 16, 16, 16 + bottomPadding),
-      physics: const NeverScrollableScrollPhysics(),
+      physics: physics ?? const NeverScrollableScrollPhysics(),
       itemCount: 3,
       separatorBuilder: (_, __) => const Gap(20),
       itemBuilder: (_, __) {
