@@ -15,7 +15,7 @@ import '../../../core/presence/models/chat_action_type.dart';
 import '../../../core/chat_shared/services/shared_media_data_source.dart';
 import '../../../core/presence/widgets/presence_status_text.dart';
 import '../../../core/services/active_call/active_call_session_data.dart';
-import '../../../core/services/active_call/cubit/active_call_session_cubit.dart';
+import '../../../core/services/active_call/cubits/active_call_session_cubit.dart';
 import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/widgets/animated_activity_text.dart';
 import '../../../core/widgets/calls/call_icon_button.dart';

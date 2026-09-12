@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 import '../../../core/services/active_call/call_navigation_helper.dart';
-import '../../../core/services/active_call/cubit/active_call_session_cubit.dart';
+import '../../../core/services/active_call/cubits/active_call_session_cubit.dart';
 import '../../../core/services/active_call/pip/call_pip_cubit.dart';
 import '../helpers/return_to_ongoing_single_call_btn.dart';
 import '../models/message_model.dart';

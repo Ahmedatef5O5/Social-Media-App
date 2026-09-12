@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
-import 'cubit/active_call_session_cubit.dart';
+import 'cubits/active_call_session_cubit.dart';
 import 'pip/call_pip_cubit.dart';
 
 class CallTerminationService {

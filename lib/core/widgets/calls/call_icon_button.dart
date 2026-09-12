@@ -5,7 +5,7 @@ import '../../../features/single_calls/models/call_model.dart';
 import '../../../features/single_calls/services/call_signaling_service.dart';
 import '../../../features/single_chats/helpers/call_actions.dart';
 import '../../services/active_call/active_call_session_data.dart';
-import '../../services/active_call/cubit/active_call_session_cubit.dart';
+import '../../services/active_call/cubits/active_call_session_cubit.dart';
 import '../../toast/app_toast.dart';
 
 class CallIconButton extends StatelessWidget {

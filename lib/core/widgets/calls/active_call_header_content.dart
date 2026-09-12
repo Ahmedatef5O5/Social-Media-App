@@ -7,7 +7,7 @@ import '../../../features/single_calls/cubits/single_call_cubit/call_cubit.dart'
 import '../../services/active_call/active_call_session_data.dart';
 import '../../services/active_call/call_navigation_helper.dart';
 import '../../services/active_call/call_termination_service.dart';
-import '../../services/active_call/cubit/active_call_session_cubit.dart';
+import '../../services/active_call/cubits/active_call_session_cubit.dart';
 import '../../services/active_call/pip/call_pip_cubit.dart';
 import '../custom_loading_indicator.dart';
 import 'call_header_avatar_with_badge.dart';

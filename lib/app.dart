@@ -20,7 +20,7 @@ import 'core/connectivity/cubits/connectivity_cubit.dart';
 import 'core/connectivity/cubits/connectivity_state.dart';
 import 'core/connectivity/widgets/connectivity_banner.dart';
 import 'core/presence/services/presence_service.dart';
-import 'core/services/active_call/cubit/active_call_session_cubit.dart';
+import 'core/services/active_call/cubits/active_call_session_cubit.dart';
 import 'core/services/active_call/pip/call_pip_cubit.dart';
 import 'core/services/global_group_call_listener.dart';
 import 'core/services/incoming_call_navigation_guard.dart';

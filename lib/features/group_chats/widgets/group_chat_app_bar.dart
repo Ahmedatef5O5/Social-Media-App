@@ -9,7 +9,7 @@ import '../../../core/chat_shared/helpers/muted_badge_icon.dart';
 import '../../../core/constants/app_images.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/services/active_call/active_call_session_data.dart';
-import '../../../core/services/active_call/cubit/active_call_session_cubit.dart';
+import '../../../core/services/active_call/cubits/active_call_session_cubit.dart';
 import '../cubits/group_details_cubit/group_details_cubit.dart';
 import '../cubits/group_list_cubit/group_list_cubit.dart';
 import '../../group_calls/models/group_call_model.dart';
