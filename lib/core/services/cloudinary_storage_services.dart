@@ -3,6 +3,8 @@ import 'package:dio/dio.dart' as dio_pkg;
 import 'package:flutter/foundation.dart';
 import 'package:social_media_app/core/services/cloudinary_upload_result.dart';
 import '../secrets/app_secrets.dart';
+import '../errors/exceptions.dart';
+export '../errors/exceptions.dart' show UploadCanceledException;
 
 class CloudinaryStorageServices {
   CloudinaryStorageServices._();
@@ -179,11 +181,4 @@ class CloudinaryStorageServices {
     if (videoOrAudioExts.contains(ext)) return 'video';
     return 'raw';
   }
-}
-
-class UploadCanceledException implements Exception {
-  const UploadCanceledException();
-
-  @override
-  String toString() => 'UploadCanceledException: upload was canceled by user';
 }

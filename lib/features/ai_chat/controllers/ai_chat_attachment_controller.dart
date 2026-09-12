@@ -255,7 +255,7 @@ class AiChatAttachmentController extends ChangeNotifier {
           dio_pkg.DioExceptionType.cancel == e.type) {
         return;
       }
-      if (e.toString().contains('UploadCanceledException')) {
+      if (e is UploadCanceledException) {
         return;
       }
       if (isMounted()) {
@@ -407,7 +407,7 @@ class AiChatAttachmentController extends ChangeNotifier {
           dio_pkg.DioExceptionType.cancel == e.type) {
         return;
       }
-      if (e.toString().contains('UploadCanceledException')) {
+      if (e is UploadCanceledException) {
         return;
       }
       if (isMounted()) AppToast.error('Failed to upload. Please try again.');
@@ -508,7 +508,7 @@ class AiChatAttachmentController extends ChangeNotifier {
           dio_pkg.DioExceptionType.cancel == e.type) {
         return;
       }
-      if (e.toString().contains('UploadCanceledException')) {
+      if (e is UploadCanceledException) {
         return;
       }
       if (isMounted()) {
