@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/errors/supabase_error_mapper.dart';
+import '../../../../core/helpers/safe_emit_mixin.dart';
 import '../../helpers/ai_chat_style_heuristic.dart';
 import '../../models/ai_chat_language.dart';
 import '../../models/ai_chat_message.dart';
@@ -9,7 +10,8 @@ import '../../repository/ai_chat_repository.dart';
 import '../../services/ai_gateway_service.dart';
 part 'ai_chat_state.dart';
 
-class AiChatCubit extends Cubit<AiChatMessagesState> {
+class AiChatCubit extends Cubit<AiChatMessagesState>
+    with SafeEmitMixin<AiChatMessagesState> {
   AiChatCubit({
     required AiChatRepository repository,
     required AiGatewayService gatewayService,

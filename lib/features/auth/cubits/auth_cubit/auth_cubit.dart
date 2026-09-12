@@ -5,10 +5,11 @@ import 'package:social_media_app/core/services/network_status_service.dart';
 import 'package:social_media_app/features/auth/handlers/auth_exception_handler.dart';
 import 'package:social_media_app/features/auth/services/supabase_auth_services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../../core/helpers/safe_emit_mixin.dart';
 import '../../../../core/presence/services/presence_service.dart';
 part 'auth_state.dart';
 
-class AuthCubit extends Cubit<AuthState> {
+class AuthCubit extends Cubit<AuthState> with SafeEmitMixin<AuthState> {
   final SupabaseAuthServices _authServices;
   final NetworkStatusService _networkStatus;
   StreamSubscription? _authSubscription;
@@ -189,6 +190,9 @@ class AuthCubit extends Cubit<AuthState> {
       emit(AuthSuccess());
       return;
     }
+
+    if (isClosed) return;
+
     try {
       final response = await _authServices.refreshSession();
       if (response.session != null) {

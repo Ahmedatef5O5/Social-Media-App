@@ -3,16 +3,17 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:uuid/uuid.dart';
+import '../../../../core/helpers/safe_emit_mixin.dart';
 import '../../../../core/services/cloudinary_storage_services.dart';
 import '../../../../core/services/fcm_services.dart';
 import '../../../../core/supabase/supabase_provider.dart';
 import '../../../notifications/repository/notifications_repository.dart';
 import '../../../single_chats/services/chat_services.dart';
 import '../../models/story_model.dart';
-
 part 'story_reply_state.dart';
 
-class StoryReplyCubit extends Cubit<StoryReplyState> {
+class StoryReplyCubit extends Cubit<StoryReplyState>
+    with SafeEmitMixin<StoryReplyState> {
   final ChatServices _chatServices;
 
   StoryReplyCubit({ChatServices? chatServices})

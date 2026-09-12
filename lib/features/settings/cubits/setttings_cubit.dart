@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:social_media_app/features/settings/cubits/settings_state.dart';
+import '../../../core/helpers/safe_emit_mixin.dart';
 import '../../../core/presence/services/presence_service.dart';
 import '../../auth/data/models/user_data.dart';
 import '../../home/cubits/home_cubit/home_cubit.dart';
@@ -8,7 +9,8 @@ import '../../../core/presence/models/presence_privacy.dart';
 import '../repository/settings_repository.dart';
 import '../services/app_lock_service.dart';
 
-class SettingsCubit extends Cubit<SettingsState> {
+class SettingsCubit extends Cubit<SettingsState>
+    with SafeEmitMixin<SettingsState> {
   final UserService _userService;
   final HomeCubit _homeCubit;
 

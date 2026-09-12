@@ -9,13 +9,15 @@ import 'package:social_media_app/core/toast/app_toast.dart';
 import 'package:social_media_app/features/social_graph/services/friendship_services.dart';
 import '../../../../core/cache/repository/media_cache_repository.dart';
 import '../../../../core/errors/supabase_error_mapper.dart';
+import '../../../../core/helpers/safe_emit_mixin.dart';
 import '../../../../core/services/cloudinary_storage_services.dart';
 import '../../../../core/services/media_cleanup_service.dart';
 import '../../models/sticker_pack_privacy.dart';
 import '../../repository/stickers_repository.dart';
 import 'create_sticker_pack_state.dart';
 
-class CreateStickerPackCubit extends Cubit<CreateStickerPackState> {
+class CreateStickerPackCubit extends Cubit<CreateStickerPackState>
+    with SafeEmitMixin<CreateStickerPackState> {
   final StickersRepository _repository;
   final FilePickerServices _filePicker;
   final MediaCacheRepository _mediaCache;

@@ -164,6 +164,8 @@ mixin PostCreationMixin on Cubit<PostsState> {
       _resetMedia();
       emit(PostCreated());
 
+      if (isClosed) return;
+
       await fetchPosts(isRefresh: true);
     } catch (e) {
       final isOffline = await ConnectivityBannerController.notifyIfOffline();
@@ -265,6 +267,7 @@ mixin PostCreationMixin on Cubit<PostsState> {
       }
 
       if (isSharedNow && targetPost.authorId != userId) {
+        if (isClosed) return true;
         await NotificationRepository.instance.notifyShare(
           receiverId: targetPost.authorId,
           sharerId: userId,
@@ -272,6 +275,7 @@ mixin PostCreationMixin on Cubit<PostsState> {
           sharerImageUrl: currentUserData?.imageUrl ?? '',
           postId: targetPost.id,
         );
+
         unawaited(
           FcmService.instance.notifyPostReshare(
             receiverId: targetPost.authorId,

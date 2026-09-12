@@ -3,6 +3,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:social_media_app/features/profile/services/user_services.dart';
 import 'package:social_media_app/features/single_chats/services/chat_services.dart';
+import '../../../../core/helpers/safe_emit_mixin.dart';
 import '../../../../core/services/fcm_services.dart';
 import '../../../../core/supabase/supabase_provider.dart';
 import '../../../group_calls/models/group_call_model.dart';
@@ -11,7 +12,7 @@ import '../../models/call_model.dart';
 import '../../services/call_signaling_service.dart';
 part 'call_state.dart';
 
-class CallCubit extends Cubit<CallState> {
+class CallCubit extends Cubit<CallState> with SafeEmitMixin<CallState> {
   final CallSignalingService signalingService;
   final ChatServices _chatServices;
   final UserService _userService;

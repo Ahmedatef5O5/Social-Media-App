@@ -136,6 +136,7 @@ mixin GroupFetchPersistenceMixin on GroupListBase {
       avatarPublicId: avatarPublicId,
       memberIds: memberIds,
     );
+    if (isClosed) return group;
     await loadGroups(isRefresh: true);
     return group;
   }

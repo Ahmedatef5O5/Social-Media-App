@@ -4,10 +4,12 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:social_media_app/core/cache/repository/media_cache_repository.dart';
 import '../../../../core/errors/supabase_error_mapper.dart';
+import '../../../../core/helpers/safe_emit_mixin.dart';
 import '../../repository/stickers_repository.dart';
 import 'sticker_packs_state.dart';
 
-class StickerPacksCubit extends Cubit<StickerPacksState> {
+class StickerPacksCubit extends Cubit<StickerPacksState>
+    with SafeEmitMixin<StickerPacksState> {
   StickerPacksCubit({
     StickersRepository? repository,
     required MediaCacheRepository mediaCacheRepository,
@@ -96,7 +98,7 @@ class StickerPacksCubit extends Cubit<StickerPacksState> {
 
       _activeDownloads.remove(packId);
       await _repository.markPackDownloaded(packId);
-
+      if (isClosed) return;
       final updatedIds = await _repository.getDownloadedPackIds();
       final latest = state;
       if (latest is StickerPacksLoaded) {

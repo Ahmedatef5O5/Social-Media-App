@@ -1,10 +1,12 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/helpers/safe_emit_mixin.dart';
 import '../../../../core/supabase/supabase_provider.dart';
 import '../../../single_chats/services/chat_block_service.dart';
 import '../../models/blocked_user_item_model.dart';
 part 'blocked_users_state.dart';
 
-class BlockedUsersCubit extends Cubit<BlockedUsersState> {
+class BlockedUsersCubit extends Cubit<BlockedUsersState>
+    with SafeEmitMixin<BlockedUsersState> {
   final ChatBlockService _chatBlockService;
 
   BlockedUsersCubit({ChatBlockService? chatBlockService})

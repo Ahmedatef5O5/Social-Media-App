@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/helpers/safe_emit_mixin.dart';
 import '../../../home/cubits/home_cubit/home_cubit.dart';
 import '../../../social_graph/services/follow_services.dart';
 import '../../../social_graph/services/friendship_services.dart';
@@ -7,7 +8,8 @@ import '../../models/app_notification_model.dart';
 import '../../repository/notifications_repository.dart';
 import 'notifications_state.dart';
 
-class NotificationsCubit extends Cubit<NotificationsState> {
+class NotificationsCubit extends Cubit<NotificationsState>
+    with SafeEmitMixin<NotificationsState> {
   final FriendshipServices _friendshipServices;
   final FollowServices _followServices;
   final HomeCubit _homeCubit;

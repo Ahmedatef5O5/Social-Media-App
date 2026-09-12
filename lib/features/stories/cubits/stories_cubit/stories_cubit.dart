@@ -18,6 +18,7 @@ import 'package:social_media_app/core/services/fcm_services.dart';
 import 'package:social_media_app/features/auth/data/models/user_data.dart';
 import '../../../../core/connectivity/services/connectivity_banner_controller.dart';
 import '../../../../core/errors/supabase_error_mapper.dart';
+import '../../../../core/helpers/safe_emit_mixin.dart';
 import '../../../../core/toast/app_toast.dart';
 import '../../../social_graph/models/content_privacy.dart';
 import 'package:social_media_app/core/mentions/mentions.dart';
@@ -28,7 +29,7 @@ part 'stories_state.dart';
 const Duration kMaxStoryVideoDuration = Duration(seconds: 60);
 const int kMaxCachedStoriesSnapshot = 30;
 
-class StoriesCubit extends Cubit<StoriesState> {
+class StoriesCubit extends Cubit<StoriesState> with SafeEmitMixin<StoriesState> {
   final StoriesServices _storiesServices;
   RealtimeChannel? _storiesChannel;
 

@@ -3,11 +3,13 @@ import '../../../../features/auth/data/models/user_data.dart';
 import '../../../../features/group_chats/models/group_model.dart';
 import '../../../../features/group_chats/services/group_chat_services.dart';
 import '../../../../features/social_graph/services/connections_service.dart';
+import '../../../helpers/safe_emit_mixin.dart';
 import '../../models/new_chat_list_item.dart';
 import '../../models/new_chat_row.dart';
 part 'new_chat_state.dart';
 
-class NewChatCubit extends Cubit<NewChatState> {
+class NewChatCubit extends Cubit<NewChatState>
+    with SafeEmitMixin<NewChatState> {
   final ConnectionsService _connectionsService;
   final GroupChatServices _groupChatServices;
 

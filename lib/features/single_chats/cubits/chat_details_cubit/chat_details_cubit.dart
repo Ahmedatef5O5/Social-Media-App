@@ -16,6 +16,7 @@ import '../../../../core/connectivity/services/connectivity_banner_controller.da
 import '../../../../core/errors/exceptions.dart';
 import '../../../../core/errors/supabase_error_mapper.dart';
 import '../../../../core/helpers/chat_helper.dart';
+import '../../../../core/helpers/safe_emit_mixin.dart';
 import '../../../../core/helpers/selected_message_star_controller.dart';
 import '../../../../core/messaging/message_reconciler.dart';
 import '../../../../core/presence/models/chat_action_type.dart';
@@ -42,7 +43,8 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
         ChatReactionsMixin,
         ChatSelectionMixin,
         ChatPresenceActionMixin,
-        WidgetsBindingObserver {
+        WidgetsBindingObserver,
+        SafeEmitMixin<ChatDetailsState> {
   @override
   final ChatServices _chatServices;
   @override
@@ -809,6 +811,7 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
       emit(MessagesSuccessLoaded(messages: cachedMessages));
 
       if (messageType != 'call') {
+        if (isClosed) return;
         await NotificationRepository.instance.notifyChatMessage(
           receiverId: receiverId,
           senderId: currentUserId,

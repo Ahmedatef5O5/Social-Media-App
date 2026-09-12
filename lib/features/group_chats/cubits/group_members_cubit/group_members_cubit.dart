@@ -104,8 +104,7 @@ class GroupMembersCubit extends Cubit<GroupMembersState> {
     return s.members.any(
       (m) =>
           m.userId == currentUserId &&
-          (m.role == GroupMemberRole.admin ||
-              m.role == GroupMemberRole.owner),
+          (m.role == GroupMemberRole.admin || m.role == GroupMemberRole.owner),
     );
   }
 
@@ -190,6 +189,7 @@ class GroupMembersCubit extends Cubit<GroupMembersState> {
 
     final result = await _services.addMembers(groupId, userIds);
     if (result.added.isNotEmpty) {
+      if (isClosed) return result;
       await refresh();
     }
     return result;

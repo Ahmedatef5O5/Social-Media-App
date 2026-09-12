@@ -2,11 +2,13 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../helpers/safe_emit_mixin.dart';
 import '../../../supabase/supabase_provider.dart';
 import '../../../utilities/supabase_constants.dart';
 import '../../models/presence_info.dart';
 
-class PresenceCubit extends Cubit<Map<String, PresenceInfo>> {
+class PresenceCubit extends Cubit<Map<String, PresenceInfo>>
+    with SafeEmitMixin<Map<String, PresenceInfo>> {
   PresenceCubit({SupabaseClient? client})
     : _supabase = client ?? SupabaseProvider.client,
       super(const {}) {

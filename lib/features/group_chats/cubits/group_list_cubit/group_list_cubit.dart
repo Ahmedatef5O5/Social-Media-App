@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/cache/constants/snapshot_keys.dart';
 import '../../../../core/cache/services/local_snapshot_store.dart';
+import '../../../../core/helpers/safe_emit_mixin.dart';
 import '../../../../core/supabase/supabase_provider.dart';
 import '../../../../core/utilities/supabase_constants.dart';
 import '../../../auth/handlers/auth_exception_handler.dart';
@@ -24,7 +25,8 @@ class GroupListCubit extends GroupListBase
         WidgetsBindingObserver,
         GroupRealtimeSyncMixin,
         GroupLocalMutationsMixin,
-        GroupFetchPersistenceMixin {
+        GroupFetchPersistenceMixin,
+        SafeEmitMixin<GroupListState> {
   List<GroupModel> get cachedGroupsChats => cached;
 
   GroupListCubit(super.services) {

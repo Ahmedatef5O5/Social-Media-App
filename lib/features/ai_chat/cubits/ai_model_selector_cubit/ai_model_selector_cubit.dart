@@ -1,8 +1,10 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/helpers/safe_emit_mixin.dart';
 import '../../models/ai_model_preference_store.dart';
 part 'ai_model_selector_state.dart';
 
-class AiModelSelectorCubit extends Cubit<AiModelSelectorState> {
+class AiModelSelectorCubit extends Cubit<AiModelSelectorState>
+    with SafeEmitMixin<AiModelSelectorState> {
   final AiModelPreferenceStore _store;
 
   AiModelSelectorCubit(this._store)

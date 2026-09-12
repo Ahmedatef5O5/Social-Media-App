@@ -12,6 +12,7 @@ import '../../../../core/cache/repository/media_cache_repository.dart';
 import '../../../../core/cache/services/messages_snapshot_cache.dart';
 import '../../../../core/errors/exceptions.dart';
 import '../../../../core/errors/supabase_error_mapper.dart';
+import '../../../../core/helpers/safe_emit_mixin.dart';
 import '../../../../core/messaging/message_reconciler.dart';
 import '../../../../core/presence/models/chat_action_type.dart';
 import '../../../../core/services/fcm_services.dart';
@@ -44,7 +45,8 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState>
         GroupEditMixin,
         GroupMediaUploadMixin,
         GroupSelectionMixin,
-        WidgetsBindingObserver {
+        WidgetsBindingObserver,
+        SafeEmitMixin<GroupDetailsState> {
   @override
   final GroupChatServices _services;
   @override

@@ -1,4 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/helpers/safe_emit_mixin.dart';
 import '../../entities/ai_autocomplete_language.dart';
 import '../../entities/ai_reply_length.dart';
 import '../../entities/ai_reply_tone.dart';
@@ -7,7 +8,8 @@ import '../../entities/ai_usage_snapshot.dart';
 import '../../services/ai_preferences_store.dart';
 part 'ai_preferences_state.dart';
 
-class AiPreferencesCubit extends Cubit<AiPreferencesState> {
+class AiPreferencesCubit extends Cubit<AiPreferencesState>
+    with SafeEmitMixin<AiPreferencesState> {
   final AiPreferencesStore _store;
 
   AiPreferencesCubit({AiPreferencesStore? store})

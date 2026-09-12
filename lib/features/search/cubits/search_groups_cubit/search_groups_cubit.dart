@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/helpers/safe_emit_mixin.dart';
 import '../../../group_chats/models/group_model.dart';
 import '../../../group_chats/services/group_chat_services.dart';
 part 'search_groups_state.dart';
 
-class SearchGroupsCubit extends Cubit<SearchGroupsState> {
+class SearchGroupsCubit extends Cubit<SearchGroupsState>
+    with SafeEmitMixin<SearchGroupsState> {
   final GroupChatServices _groupChatServices;
 
   SearchGroupsCubit({GroupChatServices? groupChatServices})

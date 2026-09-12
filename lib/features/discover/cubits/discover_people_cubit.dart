@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:social_media_app/features/discover/services/discover_people_services.dart';
 import 'package:social_media_app/features/social_graph/models/discover_person_model.dart';
+import '../../../core/helpers/safe_emit_mixin.dart';
 import '../../../core/services/fcm_services.dart';
 import '../../home/cubits/home_cubit/home_cubit.dart';
 import '../../notifications/repository/notifications_repository.dart';
@@ -10,7 +11,8 @@ import '../../social_graph/services/follow_services.dart';
 import '../../social_graph/services/friendship_services.dart';
 part 'discover_people_state.dart';
 
-class DiscoverPeopleCubit extends Cubit<DiscoverPeopleState> {
+class DiscoverPeopleCubit extends Cubit<DiscoverPeopleState>
+    with SafeEmitMixin<DiscoverPeopleState> {
   final DiscoverPeopleServices _discoverPeopleServices;
   final FriendshipServices _friendshipServices;
   final FollowServices _followServices;

@@ -7,6 +7,7 @@ import 'package:social_media_app/features/profile/models/profile_stats_model.dar
 import 'package:social_media_app/features/social_graph/models/friendship_status.dart';
 import '../../../../core/connectivity/cubits/connectivity_cubit.dart';
 import '../../../../core/connectivity/cubits/connectivity_state.dart';
+import '../../../../core/helpers/safe_emit_mixin.dart';
 import '../../../../core/services/fcm_services.dart';
 import '../../../auth/handlers/auth_exception_handler.dart';
 import '../../../home/cubits/home_cubit/home_cubit.dart';
@@ -16,7 +17,8 @@ import '../../../social_graph/services/friendship_services.dart';
 import '../../services/user_services.dart';
 part 'profile_state.dart';
 
-class ProfileCubit extends Cubit<ProfileState> {
+class ProfileCubit extends Cubit<ProfileState>
+    with SafeEmitMixin<ProfileState> {
   final UserService _userService;
   final FriendshipServices _friendshipServices;
   final FollowServices _followServices;

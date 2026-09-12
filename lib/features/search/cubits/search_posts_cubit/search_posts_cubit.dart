@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/helpers/safe_emit_mixin.dart';
 import '../../../posts/models/post_model.dart';
 import '../../../posts/services/posts_services.dart';
 part 'search_posts_state.dart';
 
-class SearchPostsCubit extends Cubit<SearchPostsState> {
+class SearchPostsCubit extends Cubit<SearchPostsState>
+    with SafeEmitMixin<SearchPostsState> {
   final PostsServices _postsServices;
 
   SearchPostsCubit({PostsServices? postsServices})
@@ -42,6 +44,8 @@ class SearchPostsCubit extends Cubit<SearchPostsState> {
         return;
       }
 
+      if (isClosed) return;
+
       final posts = await _postsServices.fetchPostsByIds(ids);
       if (_query != trimmed) return;
 
@@ -74,6 +78,7 @@ class SearchPostsCubit extends Cubit<SearchPostsState> {
       if (ids.isEmpty) {
         _hasReachedMax = true;
       } else {
+        if (isClosed) return;
         final more = await _postsServices.fetchPostsByIds(ids);
         _results.addAll(more);
         if (ids.length < _pageSize) _hasReachedMax = true;

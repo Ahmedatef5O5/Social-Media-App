@@ -1,11 +1,13 @@
 import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/errors/supabase_error_mapper.dart';
+import '../../../../core/helpers/safe_emit_mixin.dart';
 import '../../models/ai_chat_session.dart';
 import '../../repository/ai_chat_repository.dart';
 part 'ai_chat_sessions_state.dart';
 
-class AiChatSessionsCubit extends Cubit<AiChatSessionsState> {
+class AiChatSessionsCubit extends Cubit<AiChatSessionsState>
+    with SafeEmitMixin<AiChatSessionsState> {
   AiChatSessionsCubit(this._repository) : super(AiChatSessionsLoading()) {
     _subscription = _repository.watchSessions().listen(
       (sessions) => emit(AiChatSessionsLoaded(sessions)),

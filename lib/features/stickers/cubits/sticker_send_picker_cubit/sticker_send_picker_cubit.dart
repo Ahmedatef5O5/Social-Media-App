@@ -1,9 +1,11 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/errors/supabase_error_mapper.dart';
+import '../../../../core/helpers/safe_emit_mixin.dart';
 import '../../repository/stickers_repository.dart';
 import 'sticker_send_picker_state.dart';
 
-class StickerSendPickerCubit extends Cubit<StickerSendPickerState> {
+class StickerSendPickerCubit extends Cubit<StickerSendPickerState>
+    with SafeEmitMixin<StickerSendPickerState> {
   StickerSendPickerCubit({StickersRepository? repository})
     : _repository = repository ?? StickersRepository.instance,
       super(StickerSendPickerLoading()) {

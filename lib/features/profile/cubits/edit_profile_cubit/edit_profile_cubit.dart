@@ -6,17 +6,14 @@ import 'package:social_media_app/core/services/media_cleanup_service.dart';
 import 'package:social_media_app/features/auth/data/models/user_data.dart';
 import 'package:social_media_app/features/profile/services/edit_profile_services.dart';
 import '../../../../core/errors/supabase_error_mapper.dart';
+import '../../../../core/helpers/safe_emit_mixin.dart';
 import '../../../../core/utilities/supabase_constants.dart';
 part 'edit_profile_state.dart';
 
-class EditProfileCubit extends Cubit<EditProfileState> {
+class EditProfileCubit extends Cubit<EditProfileState>
+    with SafeEmitMixin<EditProfileState> {
   final EditProfileServices _editProfileServices;
   EditProfileCubit(this._editProfileServices) : super(EditProfileInitial());
-
-  @override
-  void emit(EditProfileState state) {
-    if (!isClosed) super.emit(state);
-  }
 
   Future<File?> pickImage(ImageSource source) {
     return _editProfileServices.pickImage(source);

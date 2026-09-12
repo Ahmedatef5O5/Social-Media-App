@@ -1,9 +1,11 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:social_media_app/features/social_graph/services/friendship_services.dart';
+import '../../../../core/helpers/safe_emit_mixin.dart';
 import '../../models/friend_list_item_model.dart';
 part 'friends_list_state.dart';
 
-class FriendsListCubit extends Cubit<FriendsListState> {
+class FriendsListCubit extends Cubit<FriendsListState>
+    with SafeEmitMixin<FriendsListState> {
   final FriendshipServices _friendshipServices;
   final String userId;
 

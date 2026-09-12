@@ -10,6 +10,7 @@ import '../../../../features/group_chats/models/group_model.dart';
 import '../../../../features/group_chats/services/group_chat_services.dart';
 import '../../../../features/single_chats/cubits/chats_cubit/chats_cubit.dart';
 import '../../../../features/single_chats/models/chat_user_model.dart';
+import '../../../helpers/safe_emit_mixin.dart';
 import '../../../supabase/supabase_provider.dart';
 import '../../helpers/chat_mute_status_cache.dart';
 import '../../models/conversation_flags.dart';
@@ -19,7 +20,8 @@ import '../../services/chat_mute_service.dart';
 import '../../services/conversation_flags_store.dart';
 part 'conversations_state.dart';
 
-class ConversationsCubit extends Cubit<ConversationsState> {
+class ConversationsCubit extends Cubit<ConversationsState>
+    with SafeEmitMixin<ConversationsState> {
   final ChatsCubit chatsCubit;
   final GroupListCubit groupListCubit;
   final GroupChatServices groupChatServices;
@@ -261,6 +263,9 @@ class ConversationsCubit extends Cubit<ConversationsState> {
     if (!value) {
       await ConversationFlagsStore.instance.setArchivePinned(ref, false);
     }
+
+    if (isClosed) return;
+
     if (ref.type == ConversationType.group) {
       await _syncGroupMuteWithArchive(ref, archiving: value);
     } else {

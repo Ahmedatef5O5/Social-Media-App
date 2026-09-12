@@ -1,12 +1,14 @@
 import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../core/helpers/safe_emit_mixin.dart';
 import '../entities/ai_action_type.dart';
 import '../entities/ai_request_context.dart';
 import '../entities/ai_result.dart';
 import '../repository/ai_repository.dart';
 part 'ai_text_field_state.dart';
 
-class AiTextFieldCubit extends Cubit<AiTextFieldState> {
+class AiTextFieldCubit extends Cubit<AiTextFieldState>
+    with SafeEmitMixin<AiTextFieldState> {
   final AiRepository _repository;
   final AiActionType generationAction;
   final AiSurfaceType surface;
