@@ -1,14 +1,34 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
 import 'package:social_media_app/core/notifications/dispatchers/call_notification_dispatcher.dart';
 import 'package:social_media_app/core/notifications/dispatchers/chat_notification_dispatcher.dart';
 import 'package:social_media_app/core/notifications/dispatchers/group_call_dispatcher.dart';
 import 'package:social_media_app/core/notifications/dispatchers/social_notification_dispatcher.dart';
 import 'package:social_media_app/core/services/active_screen_tracker.dart';
+import 'package:social_media_app/core/supabase/supabase_provider.dart';
 import 'package:social_media_app/features/settings/repository/settings_repository.dart';
 
 class ForegroundMessageHandler {
   void listen() {
     FirebaseMessaging.onMessage.listen((RemoteMessage message) async {
+      final currentUserId = SupabaseProvider.idOrNull;
+      if (currentUserId == null) return;
+
+      final receiverId = message.data['receiverId'] as String?;
+      if (receiverId != null &&
+          receiverId.isNotEmpty &&
+          receiverId != currentUserId) {
+        debugPrint(
+          '🛑 Notification ignored: intended for $receiverId but active session is $currentUserId',
+        );
+        return;
+      }
+
+      final senderId = message.data['senderId'] as String?;
+      if (senderId != null && senderId == currentUserId) {
+        return;
+      }
+
       final type = message.data['notificationType'] as String? ?? 'chat';
 
       if (type == 'incoming_group_call') {
@@ -30,7 +50,6 @@ class ForegroundMessageHandler {
       if (!SettingsRepository.instance.pushNotifications) return;
 
       if (type == 'chat') {
-        final senderId = message.data['senderId'] as String?;
         if (senderId != null &&
             !ActiveScreenTracker.isViewingChatWith(senderId)) {
           await ChatNotificationDispatcher.instance.showNotificationFromMessage(

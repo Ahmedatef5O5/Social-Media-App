@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:social_media_app/core/services/network_status_service.dart';
@@ -7,6 +8,8 @@ import 'package:social_media_app/features/auth/services/supabase_auth_services.d
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/helpers/safe_emit_mixin.dart';
 import '../../../../core/presence/services/presence_service.dart';
+import '../../../../core/supabase/supabase_provider.dart';
+import '../../../../core/utilities/supabase_constants.dart';
 part 'auth_state.dart';
 
 class AuthCubit extends Cubit<AuthState> with SafeEmitMixin<AuthState> {
@@ -148,6 +151,25 @@ class AuthCubit extends Cubit<AuthState> with SafeEmitMixin<AuthState> {
   Future<void> signOut() async {
     emit(AuthLoading());
     try {
+      // 1. Cleanup FCM token in Supabase while user is still authenticated
+      final currentUserId = SupabaseProvider.idOrNull;
+      if (currentUserId != null) {
+        try {
+          await SupabaseProvider.client
+              .from(SupabaseConstants.users)
+              .update({UserColumns.fcmToken: null})
+              .eq(UserColumns.id, currentUserId);
+        } catch (e) {
+          debugPrint('⚠️ Error clearing FCM token in Supabase on signOut: $e');
+        }
+      }
+      // 2. Invalidate the device token with Firebase servers
+      try {
+        await FirebaseMessaging.instance.deleteToken();
+      } catch (e) {
+        debugPrint('⚠️ Error deleting FCM token from Firebase: $e');
+      }
+      // 3. Mark user offline & proceed with sign out
       await PresenceService.instance.setVisibility(false);
       await _authServices.signOut();
       emit(AuthSignedOut());

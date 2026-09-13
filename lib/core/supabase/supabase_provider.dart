@@ -4,7 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 class UnauthenticatedException implements Exception {
   final String message;
   UnauthenticatedException([this.message = 'User is not authenticated.']);
-  
+
   @override
   String toString() => 'UnauthenticatedException: $message';
 }
@@ -18,7 +18,9 @@ class SupabaseProvider {
       return Supabase.instance.client;
     } catch (e) {
       debugPrint('⚠️ Supabase accessed before initialization: $e');
-      throw Exception('Supabase must be initialized before accessing the client.');
+      throw Exception(
+        'Supabase must be initialized before accessing the client.',
+      );
     }
   }
 
@@ -35,9 +37,10 @@ class SupabaseProvider {
   static String get id {
     final currentUser = user;
     if (currentUser == null) {
-      throw UnauthenticatedException(
-        'SupabaseProvider.id was accessed but the user is logged out or not registered yet.',
+      debugPrint(
+        '⚠️ Warning: SupabaseProvider.id was accessed while user is logged out.',
       );
+      return '';
     }
     return currentUser.id;
   }
