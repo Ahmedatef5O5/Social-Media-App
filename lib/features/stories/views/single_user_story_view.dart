@@ -4,6 +4,7 @@ import 'package:social_media_app/core/design/tokens/typography.dart';
 import 'package:social_media_app/core/link/widgets/message_link_preview.dart';
 import 'package:social_media_app/core/toast/app_toast.dart';
 import 'package:video_player/video_player.dart';
+import '../../../core/cache/repository/media_cache_repository.dart';
 import '../../../core/mentions/widgets/mention_rich_text.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/supabase/supabase_provider.dart';
@@ -54,6 +55,8 @@ class _SingleUserStoryViewState extends State<SingleUserStoryView>
     with WidgetsBindingObserver {
   VideoPlayerController? _videoController;
   bool _isDisposed = false;
+  bool _isComposing = false;
+
   @override
   void initState() {
     super.initState();
@@ -66,7 +69,9 @@ class _SingleUserStoryViewState extends State<SingleUserStoryView>
         state == AppLifecycleState.paused) {
       _pauseStory();
     } else if (state == AppLifecycleState.resumed) {
-      _resumeStory();
+      if (!_isComposing) {
+        _resumeStory();
+      }
     }
   }
 
@@ -77,6 +82,7 @@ class _SingleUserStoryViewState extends State<SingleUserStoryView>
   }
 
   void _resumeStory() {
+    if (_isComposing) return;
     widget.onLongPressEnd();
     if (_isDisposed || !mounted) return;
     _videoController?.play();
@@ -135,7 +141,12 @@ class _SingleUserStoryViewState extends State<SingleUserStoryView>
 
     return MultiBlocProvider(
       providers: [
-        BlocProvider(create: (_) => StoryReplyCubit()),
+        BlocProvider(
+          create:
+              (context) => StoryReplyCubit(
+                mediaCacheRepository: context.read<MediaCacheRepository>(),
+              ),
+        ),
         if (!isMyStory)
           BlocProvider(
             create:
@@ -302,7 +313,8 @@ class _SingleUserStoryViewState extends State<SingleUserStoryView>
                                   color: Colors.white,
                                   fontSize: 16,
                                   fontFamily: null,
-                                  fontFamilyFallback: AppTypography.fontFallback,
+                                  fontFamilyFallback:
+                                      AppTypography.fontFallback,
                                 ),
                                 collapsedMaxLines: 9,
                                 onExpandChanged: (expanded) {
@@ -335,8 +347,14 @@ class _SingleUserStoryViewState extends State<SingleUserStoryView>
                       if (!isMyStory)
                         StoryReplyInputBar(
                           story: widget.story,
-                          onComposingStart: _pauseStory,
-                          onComposingEnd: _resumeStory,
+                          onComposingStart: () {
+                            _isComposing = true;
+                            _pauseStory();
+                          },
+                          onComposingEnd: () {
+                            _isComposing = false;
+                            _resumeStory();
+                          },
                           onSent: () {
                             AppToast.success('Reply sent ✓');
                           },

@@ -10,11 +10,13 @@ import '../models/message_model.dart';
 class StoryReplyPreviewBubble extends StatelessWidget {
   final MessageModel message;
   final bool isMe;
+  final bool onColoredBubble;
 
   const StoryReplyPreviewBubble({
     super.key,
     required this.message,
     required this.isMe,
+    this.onColoredBubble = true,
   });
 
   static const double _thumbnailSize = 54;
@@ -26,20 +28,21 @@ class StoryReplyPreviewBubble extends StatelessWidget {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     final type = message.replyToStoryType;
     final storyText = message.replyToStoryText?.trim();
+    final bool useWhiteText = isMe && onColoredBubble;
 
     final Color surfaceColor =
-        isMe
+        useWhiteText
             ? Colors.white.withValues(alpha: 0.14)
             : (isDarkMode
-                ? Colors.white.withValues(alpha: 0.05)
+                ? Colors.white.withValues(alpha: 0.08)
                 : AppColors.grey1);
-
     final Color accentColor =
-        isMe ? Colors.white : Theme.of(context).primaryColor;
+        useWhiteText ? Colors.white : Theme.of(context).primaryColor;
+
     final Color subTextColor =
-        isMe
+        useWhiteText
             ? Colors.white70
-            : (isDarkMode ? Colors.white60 : AppColors.greyColor);
+            : (isDarkMode ? Colors.white70 : AppColors.greyColor);
 
     return Material(
       color: Colors.transparent,

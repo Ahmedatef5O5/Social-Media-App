@@ -17,6 +17,7 @@ class DirectionalTextField extends StatelessWidget {
   final ValueChanged<String>? onChanged;
   final ValueChanged<String>? onSubmitted;
   final List<TextInputFormatter>? inputFormatters;
+  final TextAlignVertical? textAlignVertical;
 
   const DirectionalTextField({
     super.key,
@@ -32,6 +33,7 @@ class DirectionalTextField extends StatelessWidget {
     this.onChanged,
     this.onSubmitted,
     this.inputFormatters,
+    this.textAlignVertical,
   });
 
   @override
@@ -82,6 +84,7 @@ class DirectionalTextField extends StatelessWidget {
           textInputAction: textInputAction,
           textDirection: direction,
           textAlign: BidiTextHelper.alignFor(direction),
+          textAlignVertical: textAlignVertical,
           onChanged: onChanged,
           onSubmitted: onSubmitted,
           inputFormatters: [

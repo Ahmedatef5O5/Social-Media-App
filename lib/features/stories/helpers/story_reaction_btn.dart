@@ -94,8 +94,8 @@ class _StoryReactionButtonState extends State<StoryReactionButton> {
                 (child, anim) => ScaleTransition(scale: anim, child: child),
             child: Container(
               key: ValueKey('$_isOpen${active ?? 'default'}'),
-              width: 48,
-              height: 48,
+              width: 44,
+              height: 44,
               alignment: Alignment.center,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,

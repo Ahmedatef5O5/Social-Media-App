@@ -96,7 +96,11 @@ class RegularMessageContent extends StatelessWidget {
               ),
             ),
           if (message.isStoryReply)
-            StoryReplyPreviewBubble(message: message, isMe: isMe),
+            StoryReplyPreviewBubble(
+              message: message,
+              isMe: isMe,
+              onColoredBubble: isMe && !(isGif || isSticker),
+            ),
 
           if (isImage)
             SizedBox(
@@ -210,10 +214,11 @@ class RegularMessageContent extends StatelessWidget {
                   else
                     _buildLinkifyText(context, displayDraft, maxLines: 4),
 
-                  Align(
-                    alignment: Alignment.bottomRight,
-                    child: MessageTimeAndStatus(message: message, isMe: isMe),
-                  ),
+                  if (!(isGif || isSticker))
+                    Align(
+                      alignment: Alignment.bottomRight,
+                      child: MessageTimeAndStatus(message: message, isMe: isMe),
+                    ),
                 ],
               ),
             ),
@@ -279,14 +284,21 @@ class RegularMessageContent extends StatelessWidget {
     required int maxLines,
   }) {
     final searchController = context.read<ChatDetailsCubit>().searchController;
+    final bool onColoredBubble = isMe && !(isGif || isSticker);
+
     final linkColor = LinkColorHelper.forBubble(
-      isMe ? getSenderBubbleColor(context) : getReceiverBubbleColor(context),
+      onColoredBubble
+          ? getSenderBubbleColor(context)
+          : getReceiverBubbleColor(context),
     );
+
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     final textStyle = Theme.of(context).textTheme.titleMedium!.copyWith(
       color:
-          isMe
+          onColoredBubble
               ? Theme.of(context).colorScheme.onPrimary
-              : Theme.of(context).colorScheme.onSurface,
+              : (isDarkMode ? Colors.white : Colors.black87),
       fontSize: 15,
       height: 1.3,
       fontWeight: FontWeight.w400,

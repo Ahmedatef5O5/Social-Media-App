@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:uuid/uuid.dart';
+import '../../../../core/cache/repository/media_cache_repository.dart';
 import '../../../../core/helpers/safe_emit_mixin.dart';
 import '../../../../core/services/cloudinary_storage_services.dart';
 import '../../../../core/services/fcm_services.dart';
@@ -15,10 +16,14 @@ part 'story_reply_state.dart';
 class StoryReplyCubit extends Cubit<StoryReplyState>
     with SafeEmitMixin<StoryReplyState> {
   final ChatServices _chatServices;
+  final MediaCacheRepository? _mediaCacheRepository;
 
-  StoryReplyCubit({ChatServices? chatServices})
-    : _chatServices = chatServices ?? ChatServices(),
-      super(StoryReplyIdle());
+  StoryReplyCubit({
+    ChatServices? chatServices,
+    MediaCacheRepository? mediaCacheRepository,
+  }) : _chatServices = chatServices ?? ChatServices(),
+       _mediaCacheRepository = mediaCacheRepository,
+       super(StoryReplyIdle());
 
   final String currentUserId = SupabaseProvider.id;
 
@@ -27,8 +32,13 @@ class StoryReplyCubit extends Cubit<StoryReplyState>
     String text = '',
     File? mediaFile,
     String? mediaMessageType,
+    String? remoteMediaUrl,
+    int? fileSizeBytes,
+    String? fileName,
   }) async {
-    if (text.trim().isEmpty && mediaFile == null) return;
+    if (text.trim().isEmpty && mediaFile == null && remoteMediaUrl == null) {
+      return;
+    }
 
     if (story.authorId == currentUserId) return;
 
@@ -36,8 +46,13 @@ class StoryReplyCubit extends Cubit<StoryReplyState>
 
     try {
       String? imageUrl, videoUrl, imagePublicId, videoPublicId;
+      int? effectiveSize = fileSizeBytes;
+      String? effectiveName = fileName;
 
       if (mediaFile != null) {
+        effectiveSize ??= await mediaFile.length();
+        effectiveName ??= mediaFile.path.split(Platform.pathSeparator).last;
+
         final result = await CloudinaryStorageServices.instance.uploadFile(
           mediaFile,
           'chats',
@@ -51,10 +66,25 @@ class StoryReplyCubit extends Cubit<StoryReplyState>
           imageUrl = result.secureUrl;
           imagePublicId = result.publicId;
         }
+
+        // Adopt local file into cache immediately for the sender
+        if (_mediaCacheRepository != null) {
+          final uploadedUrl = imageUrl ?? videoUrl;
+          if (uploadedUrl != null) {
+            await _mediaCacheRepository.adoptUploadedFile(
+              uploadedUrl,
+              mediaFile,
+            );
+          }
+        }
+      } else if (remoteMediaUrl != null) {
+        imageUrl = remoteMediaUrl;
       }
 
       final resolvedMessageType =
-          mediaFile != null ? mediaMessageType! : 'text';
+          mediaFile != null
+              ? mediaMessageType!
+              : (remoteMediaUrl != null ? mediaMessageType! : 'text');
 
       final String? storyPreviewText =
           story.storyType == StoryType.text ? story.contentText : story.caption;
@@ -67,7 +97,12 @@ class StoryReplyCubit extends Cubit<StoryReplyState>
         messageType: resolvedMessageType,
         imageUrl: imageUrl,
         videoUrl: videoUrl,
-        caption: mediaFile != null && text.isNotEmpty ? text : null,
+        fileSizeBytes: effectiveSize,
+        fileName: effectiveName,
+        caption:
+            (mediaFile != null || remoteMediaUrl != null) && text.isNotEmpty
+                ? text
+                : null,
         imagePublicId: imagePublicId,
         videoPublicId: videoPublicId,
         replyToStoryId: story.id,
@@ -90,6 +125,7 @@ class StoryReplyCubit extends Cubit<StoryReplyState>
           text: text,
           messageType: resolvedMessageType,
           mediaUrl: imageUrl ?? videoUrl,
+          fileName: effectiveName,
         ),
       );
     } catch (e) {
