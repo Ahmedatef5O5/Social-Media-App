@@ -10,6 +10,7 @@ class DiscoverPersonModel {
   final int totalFriendsCount;
   final int mutualFriendsCount;
   final int mutualGroupsCount;
+  final List<MutualFriendPreviewModel> mutualFriendsPreview;
 
   const DiscoverPersonModel({
     required this.user,
@@ -20,6 +21,7 @@ class DiscoverPersonModel {
     required this.totalFriendsCount,
     required this.mutualFriendsCount,
     required this.mutualGroupsCount,
+    this.mutualFriendsPreview = const [],
   });
 
   factory DiscoverPersonModel.fromMap(Map<String, dynamic> map) {
@@ -34,6 +36,13 @@ class DiscoverPersonModel {
       totalFriendsCount: (map['total_friends_count'] as num?)?.toInt() ?? 0,
       mutualFriendsCount: (map['mutual_friends_count'] as num?)?.toInt() ?? 0,
       mutualGroupsCount: (map['mutual_groups_count'] as num?)?.toInt() ?? 0,
+      mutualFriendsPreview:
+          (map['mutual_friends_preview'] as List<dynamic>? ?? const [])
+              .map(
+                (e) =>
+                    MutualFriendPreviewModel.fromMap(e as Map<String, dynamic>),
+              )
+              .toList(),
     );
   }
 
@@ -51,6 +60,7 @@ class DiscoverPersonModel {
       totalFriendsCount: totalFriendsCount,
       mutualFriendsCount: mutualFriendsCount,
       mutualGroupsCount: mutualGroupsCount,
+      mutualFriendsPreview: mutualFriendsPreview,
     );
   }
 
@@ -64,6 +74,21 @@ class DiscoverPersonModel {
       totalFriendsCount: totalFriendsCount,
       mutualFriendsCount: mutualFriendsCount,
       mutualGroupsCount: mutualGroupsCount,
+      mutualFriendsPreview: mutualFriendsPreview,
+    );
+  }
+}
+
+class MutualFriendPreviewModel {
+  final String id;
+  final String? imageUrl;
+
+  const MutualFriendPreviewModel({required this.id, this.imageUrl});
+
+  factory MutualFriendPreviewModel.fromMap(Map<String, dynamic> map) {
+    return MutualFriendPreviewModel(
+      id: map['id'] as String,
+      imageUrl: map['image_url'] as String?,
     );
   }
 }

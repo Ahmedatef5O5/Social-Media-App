@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
+import '../cubits/discover_people_cubit.dart';
 import '../views/discover_people_search_view.dart';
 
 class DiscoverPeopleHeaderSection extends StatelessWidget {
@@ -40,10 +42,15 @@ class DiscoverPeopleHeaderSection extends StatelessWidget {
           InkWell(
             borderRadius: BorderRadius.circular(22),
             onTap: () {
+              final discoverCubit = context.read<DiscoverPeopleCubit>();
+
               Navigator.of(context, rootNavigator: true).push(
                 PageRouteBuilder(
                   pageBuilder:
-                      (_, animation, __) => const DiscoverPeopleSearchView(),
+                      (_, animation, __) => BlocProvider.value(
+                        value: discoverCubit,
+                        child: const DiscoverPeopleSearchView(),
+                      ),
                   transitionsBuilder: (_, anim, __, child) {
                     return FadeTransition(
                       opacity: anim,
