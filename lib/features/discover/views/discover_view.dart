@@ -1,5 +1,7 @@
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:gap/gap.dart';
 import 'package:social_media_app/core/themes/background_theme_widget.dart';
 import 'package:social_media_app/core/widgets/custom_pull_to_refresh.dart';
@@ -9,8 +11,9 @@ import 'package:social_media_app/features/discover/views/discover_skeleton_view.
 import '../../../core/connectivity/cubits/connectivity_cubit.dart';
 import '../../../core/connectivity/cubits/connectivity_state.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
+import '../utils/discover_grid_metrics.dart';
 import '../widgets/discover_people_header_section.dart';
-import '../widgets/discover_person_card_widget.dart';
+import '../widgets/discover_person_grid_card_widget.dart';
 
 class DiscoverView extends StatefulWidget {
   final ScrollController scrollController;
@@ -103,30 +106,27 @@ class _DiscoverViewState extends State<DiscoverView> {
                         if (state is DiscoverPeopleSuccess) {
                           return SliverPadding(
                             padding: const EdgeInsets.only(
-                              top: 16,
+                              top: 4,
                               left: 12,
                               right: 12,
-                              bottom: 100,
                             ),
-                            sliver: SliverList.builder(
-                              itemCount:
-                                  state.users.length + (hasReachedMax ? 0 : 1),
+                            sliver: SliverMasonryGrid.count(
+                              crossAxisCount:
+                                  DiscoverGridMetrics.crossAxisCount,
+                              mainAxisSpacing:
+                                  DiscoverGridMetrics.mainAxisSpacing,
+                              crossAxisSpacing:
+                                  DiscoverGridMetrics.crossAxisSpacing,
+                              childCount: state.users.length,
                               itemBuilder: (BuildContext context, int index) {
-                                if (index >= state.users.length) {
-                                  return const Padding(
-                                    padding: EdgeInsets.symmetric(vertical: 24),
-                                    child: Center(
-                                      child: CustomLoadingIndicator(radius: 12),
-                                    ),
-                                  );
-                                }
-
-                                return Padding(
-                                  padding: const EdgeInsets.only(bottom: 16),
-                                  child: DiscoverPersonCardWidget(
-                                    key: ValueKey(state.users[index].user.id),
-                                    personData: state.users[index],
-                                  ),
+                                final person = state.users[index];
+                                return DiscoverPersonGridCardWidget(
+                                  key: ValueKey(person.user.id),
+                                  personData: person,
+                                  onDismiss:
+                                      () => context
+                                          .read<DiscoverPeopleCubit>()
+                                          .dismissSuggestion(person.user.id),
                                 );
                               },
                             ),
@@ -138,6 +138,18 @@ class _DiscoverViewState extends State<DiscoverView> {
                         }
                       },
                     ),
+
+                    if (state is DiscoverPeopleSuccess && !hasReachedMax)
+                      const SliverToBoxAdapter(
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(vertical: 24),
+                          child: Center(
+                            child: CustomLoadingIndicator(radius: 12),
+                          ),
+                        ),
+                      ),
+
+                    const SliverToBoxAdapter(child: SizedBox(height: 100)),
                   ],
                 ),
               ),

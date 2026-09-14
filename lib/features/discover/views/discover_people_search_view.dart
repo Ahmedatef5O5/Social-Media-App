@@ -1,9 +1,14 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import '../../../core/constants/app_images.dart';
-import '../../../core/router/app_routes.dart';
-import '../../../core/supabase/supabase_provider.dart';
+import '../../../core/widgets/custom_loading_indicator.dart';
 import '../../../core/widgets/empty_findings_animation_widget.dart';
+import '../../search/utils/accounts_skeleton_list.dart';
+import '../../social_graph/models/discover_person_model.dart';
+import '../cubits/discover_people_cubit.dart';
+import '../utils/discover_grid_metrics.dart';
+import '../widgets/discover_person_grid_card_widget.dart';
 
 class DiscoverPeopleSearchView extends StatefulWidget {
   const DiscoverPeopleSearchView({super.key});
@@ -13,75 +18,33 @@ class DiscoverPeopleSearchView extends StatefulWidget {
       _DiscoverPeopleSearchViewState();
 }
 
-class _DiscoverPeopleSearchViewState extends State<DiscoverPeopleSearchView>
-    with SingleTickerProviderStateMixin {
+class _DiscoverPeopleSearchViewState extends State<DiscoverPeopleSearchView> {
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _focusNode = FocusNode();
-  late AnimationController _animController;
-  late Animation<double> _fadeAnim;
-
-  List<Map<String, dynamic>> _allUsers = [];
-  List<Map<String, dynamic>> _filteredUsers = [];
-  bool _isLoading = true;
-  String _query = '';
+  late final DiscoverPeopleCubit _cubit;
 
   @override
   void initState() {
     super.initState();
-    _animController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 400),
-    );
-    _fadeAnim = CurvedAnimation(parent: _animController, curve: Curves.easeOut);
-    _loadUsers();
-    _searchController.addListener(_onSearch);
+    _cubit = context.read<DiscoverPeopleCubit>();
+    if (_cubit.state is DiscoverPeopleInitial) {
+      _cubit.getDiscoverPeople();
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _focusNode.requestFocus();
     });
   }
 
-  Future<void> _loadUsers() async {
-    final currentId = SupabaseProvider.id;
-    try {
-      final data = await SupabaseProvider.client
-          .from('users')
-          .select('id, name, username, image_url, bio')
-          .neq('id', currentId)
-          .order('name');
-      if (mounted) {
-        setState(() {
-          _allUsers = (data as List).cast<Map<String, dynamic>>();
-          _filteredUsers = _allUsers;
-          _isLoading = false;
-        });
-        _animController.forward();
-      }
-    } catch (e) {
-      if (mounted) setState(() => _isLoading = false);
-    }
-  }
-
-  void _onSearch() {
-    final q = _searchController.text.trim();
-    setState(() {
-      _query = q;
-      _filteredUsers =
-          q.isEmpty
-              ? _allUsers
-              : _allUsers.where((u) {
-                final name = (u['name'] as String? ?? '').toLowerCase();
-                final username = (u['username'] as String? ?? '').toLowerCase();
-                return name.contains(q.toLowerCase()) ||
-                    username.contains(q.toLowerCase());
-              }).toList();
-    });
+  void _handleBack() {
+    _cubit.searchPeople('');
+    Navigator.pop(context);
   }
 
   @override
   void dispose() {
+    _cubit.searchPeople('');
     _searchController.dispose();
     _focusNode.dispose();
-    _animController.dispose();
     super.dispose();
   }
 
@@ -98,16 +61,88 @@ class _DiscoverPeopleSearchViewState extends State<DiscoverPeopleSearchView>
           children: [
             _buildHeader(context, isDark, primary),
             Expanded(
-              child:
-                  _isLoading
-                      ? _buildShimmerList(isDark)
-                      : FadeTransition(
-                        opacity: _fadeAnim,
-                        child:
-                            _filteredUsers.isEmpty
-                                ? _buildEmptyState(isDark, primary)
-                                : _buildUserGrid(isDark, primary),
-                      ),
+              child: BlocBuilder<DiscoverPeopleCubit, DiscoverPeopleState>(
+                bloc: _cubit,
+                builder: (context, state) {
+                  final query = _searchController.text.trim();
+
+                  if (state is DiscoverPeopleInitial ||
+                      state is DiscoverPeopleLoading) {
+                    return const AccountsSkeletonList();
+                  }
+
+                  if (state is DiscoverPeopleFailure) {
+                    return _buildErrorState(theme, state.message, query);
+                  }
+
+                  final users =
+                      state is DiscoverPeopleSuccess
+                          ? state.users
+                          : const <DiscoverPersonModel>[];
+                  final hasReachedMax =
+                      state is DiscoverPeopleSuccess
+                          ? state.hasReachedMax
+                          : true;
+
+                  if (users.isEmpty) {
+                    return _buildEmptyState(theme, query);
+                  }
+
+                  return NotificationListener<ScrollNotification>(
+                    onNotification: (scrollInfo) {
+                      if (scrollInfo.metrics.pixels >=
+                          scrollInfo.metrics.maxScrollExtent - 200) {
+                        if (query.isEmpty) {
+                          _cubit.getDiscoverPeople();
+                        } else {
+                          _cubit.loadMoreSearchResults();
+                        }
+                      }
+                      return false;
+                    },
+                    child: CustomScrollView(
+                      physics: const ClampingScrollPhysics(),
+                      slivers: [
+                        SliverPadding(
+                          padding: const EdgeInsets.all(16),
+                          sliver: SliverMasonryGrid.count(
+                            crossAxisCount: DiscoverGridMetrics.crossAxisCount,
+                            mainAxisSpacing:
+                                DiscoverGridMetrics.mainAxisSpacing,
+                            crossAxisSpacing:
+                                DiscoverGridMetrics.crossAxisSpacing,
+                            childCount: users.length,
+                            itemBuilder: (context, i) {
+                              final person = users[i];
+                              return DiscoverPersonGridCardWidget(
+                                key: ValueKey(person.user.id),
+                                personData: person,
+                                highlightQuery: query.isEmpty ? null : query,
+                                onDismiss:
+                                    query.isEmpty
+                                        ? () => _cubit.dismissSuggestion(
+                                          person.user.id,
+                                        )
+                                        : null,
+                              );
+                            },
+                          ),
+                        ),
+                        if (!hasReachedMax)
+                          const SliverToBoxAdapter(
+                            child: Padding(
+                              padding: EdgeInsets.symmetric(vertical: 20),
+                              child: Center(
+                                child: CustomLoadingIndicator(radius: 12),
+                              ),
+                            ),
+                          ),
+                        const SliverToBoxAdapter(child: SizedBox(height: 24)),
+                      ],
+                    ),
+                  );
+                },
+              ),
             ),
           ],
         ),
@@ -138,7 +173,7 @@ class _DiscoverPeopleSearchViewState extends State<DiscoverPeopleSearchView>
               size: 20,
               color: Theme.of(context).primaryColor,
             ),
-            onPressed: () => Navigator.pop(context),
+            onPressed: _handleBack,
           ),
           Expanded(
             child: Container(
@@ -153,6 +188,10 @@ class _DiscoverPeopleSearchViewState extends State<DiscoverPeopleSearchView>
               child: TextField(
                 controller: _searchController,
                 focusNode: _focusNode,
+                onChanged: (value) {
+                  setState(() {});
+                  _cubit.searchPeople(value);
+                },
                 style: TextStyle(
                   fontSize: 15,
                   color: isDark ? Colors.white : Colors.black87,
@@ -172,7 +211,7 @@ class _DiscoverPeopleSearchViewState extends State<DiscoverPeopleSearchView>
                     size: 22,
                   ),
                   suffixIcon:
-                      _query.isNotEmpty
+                      _searchController.text.isNotEmpty
                           ? IconButton(
                             icon: Icon(
                               Icons.close_rounded,
@@ -184,7 +223,9 @@ class _DiscoverPeopleSearchViewState extends State<DiscoverPeopleSearchView>
                             ),
                             onPressed: () {
                               _searchController.clear();
+                              _cubit.searchPeople('');
                               _focusNode.requestFocus();
+                              setState(() {});
                             },
                           )
                           : null,
@@ -199,355 +240,73 @@ class _DiscoverPeopleSearchViewState extends State<DiscoverPeopleSearchView>
     );
   }
 
-  Widget _buildUserGrid(bool isDark, Color primary) {
-    if (_query.isEmpty) {
-      // Grid view when no search
-      return GridView.builder(
-        padding: const EdgeInsets.all(16),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          crossAxisSpacing: 12,
-          mainAxisSpacing: 12,
-          childAspectRatio: 0.82,
-        ),
-        itemCount: _filteredUsers.length,
-        itemBuilder: (context, i) {
-          return _buildUserTile(_filteredUsers[i], isDark, primary, i);
-        },
-      );
-    } else {
-      // List view when searching
-      return ListView.separated(
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        itemCount: _filteredUsers.length,
-        separatorBuilder:
-            (_, __) => Divider(
-              height: 1,
-              indent: 72,
-              color:
-                  isDark
-                      ? Colors.white.withValues(alpha: 0.06)
-                      : Colors.black.withValues(alpha: 0.05),
-            ),
-        itemBuilder: (context, i) {
-          return _buildSearchResultItem(_filteredUsers[i], isDark, primary, i);
-        },
-      );
-    }
-  }
-
-  Widget _buildUserTile(
-    Map<String, dynamic> user,
-    bool isDark,
-    Color primary,
-    int index,
-  ) {
-    final name = user['name'] as String? ?? '';
-    final username = user['username'] as String? ?? '';
-    final imageUrl = user['image_url'] as String? ?? '';
-
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0.0, end: 1.0),
-      duration: Duration(milliseconds: 300 + (index * 50).clamp(0, 400)),
-      curve: Curves.easeOut,
-      builder: (context, value, child) {
-        return Opacity(
-          opacity: value,
-          child: Transform.translate(
-            offset: Offset(0, 20 * (1 - value)),
-            child: child,
-          ),
-        );
-      },
-      child: GestureDetector(
-        onTap: () => _navigateToProfile(user['id']),
-        child: Container(
-          decoration: BoxDecoration(
-            color:
-                isDark
-                    ? Colors.white.withValues(alpha: 0.05)
-                    : Colors.grey.shade50,
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(
-              color:
-                  isDark
-                      ? Colors.white.withValues(alpha: 0.07)
-                      : Colors.black.withValues(alpha: 0.06),
-              width: 0.8,
-            ),
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const SizedBox(height: 18),
-              _buildAvatar(imageUrl, name, primary, radius: 38),
-              const SizedBox(height: 12),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 10),
-                child: Text(
-                  name,
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: isDark ? Colors.white : Colors.black87,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  textAlign: TextAlign.center,
-                ),
-              ),
-              if (username.isNotEmpty) ...[
-                const SizedBox(height: 3),
-                Text(
-                  '@$username',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: primary.withValues(alpha: 0.8),
-                    fontWeight: FontWeight.w500,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-              const SizedBox(height: 14),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSearchResultItem(
-    Map<String, dynamic> user,
-    bool isDark,
-    Color primary,
-    int index,
-  ) {
-    final name = user['name'] as String? ?? '';
-    final username = user['username'] as String? ?? '';
-    final imageUrl = user['image_url'] as String? ?? '';
-    final bio = user['bio'] as String? ?? '';
-
-    return InkWell(
-      onTap: () => _navigateToProfile(user['id']),
+  Widget _buildEmptyState(ThemeData theme, String query) {
+    return Center(
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        child: Row(
+        padding: const EdgeInsets.symmetric(horizontal: 32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            _buildAvatar(imageUrl, name, primary, radius: 26),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildHighlightedText(
-                    name,
-                    _query,
-                    primary,
-                    isDark,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                  ),
-                  if (username.isNotEmpty) ...[
-                    const SizedBox(height: 2),
-                    _buildHighlightedText(
-                      '@$username',
-                      _query,
-                      primary,
-                      isDark,
-                      fontSize: 13,
-                      isUsername: true,
-                    ),
-                  ],
-                  if (bio.isNotEmpty) ...[
-                    const SizedBox(height: 3),
-                    Text(
-                      bio,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: isDark ? Colors.white38 : Colors.grey.shade500,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ],
+            EmptyFindingsThemedAnimation(
+              animationPath: AppImages.emptyFindingsLot,
+              width: 260,
+              height: 220,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              query.isEmpty
+                  ? 'No suggestions right now'
+                  : 'No results for "$query"',
+              textAlign: TextAlign.center,
+              style: theme.textTheme.titleMedium!.copyWith(
+                fontWeight: FontWeight.w700,
               ),
             ),
-            Icon(
-              Icons.arrow_forward_ios_rounded,
-              size: 14,
-              color: isDark ? Colors.white24 : Colors.grey.shade300,
-            ),
+            if (query.isNotEmpty) ...[
+              const SizedBox(height: 6),
+              Text(
+                'Try a different name or username',
+                style: theme.textTheme.bodySmall!.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
           ],
         ),
       ),
     );
   }
 
-  Widget _buildHighlightedText(
-    String text,
-    String query,
-    Color primary,
-    bool isDark, {
-    double fontSize = 14,
-    FontWeight fontWeight = FontWeight.normal,
-    bool isUsername = false,
-  }) {
-    if (query.isEmpty) {
-      return Text(
-        text,
-        style: TextStyle(
-          fontSize: fontSize,
-          fontWeight: fontWeight,
-          color:
-              isUsername
-                  ? primary.withValues(alpha: 0.8)
-                  : (isDark ? Colors.white : Colors.black87),
-        ),
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-      );
-    }
-
-    final lowerText = text.toLowerCase();
-    final lowerQuery = query.toLowerCase();
-    final List<TextSpan> spans = [];
-    int start = 0;
-
-    while (start < text.length) {
-      final index = lowerText.indexOf(lowerQuery, start);
-      if (index == -1) {
-        spans.add(
-          TextSpan(
-            text: text.substring(start),
-            style: TextStyle(
-              color:
-                  isUsername
-                      ? (isDark ? Colors.white38 : Colors.grey.shade500)
-                      : (isDark ? Colors.white70 : Colors.black54),
-              fontWeight: fontWeight,
-            ),
-          ),
-        );
-        break;
-      }
-      if (index > start) {
-        spans.add(
-          TextSpan(
-            text: text.substring(start, index),
-            style: TextStyle(
-              color:
-                  isUsername
-                      ? (isDark ? Colors.white38 : Colors.grey.shade500)
-                      : (isDark ? Colors.white70 : Colors.black54),
-              fontWeight: fontWeight,
-            ),
-          ),
-        );
-      }
-      spans.add(
-        TextSpan(
-          text: text.substring(index, index + query.length),
-          style: TextStyle(
-            color: primary,
-            fontWeight: FontWeight.w700,
-            backgroundColor: primary.withValues(alpha: 0.12),
-          ),
-        ),
-      );
-      start = index + query.length;
-    }
-
-    return Text.rich(
-      TextSpan(children: spans, style: TextStyle(fontSize: fontSize)),
-      maxLines: 1,
-      overflow: TextOverflow.ellipsis,
-    );
-  }
-
-  Widget _buildAvatar(
-    String imageUrl,
-    String name,
-    Color primary, {
-    double radius = 26,
-  }) {
-    return CircleAvatar(
-      radius: radius,
-      backgroundColor: primary.withValues(alpha: 0.12),
-      backgroundImage:
-          imageUrl.isNotEmpty ? CachedNetworkImageProvider(imageUrl) : null,
-      child:
-          imageUrl.isEmpty
-              ? Text(
-                name.isNotEmpty ? name[0].toUpperCase() : '?',
-                style: TextStyle(
-                  color: primary,
-                  fontWeight: FontWeight.bold,
-                  fontSize: radius * 0.55,
-                ),
-              )
-              : null,
-    );
-  }
-
-  Widget _buildEmptyState(bool isDark, Color primary) {
+  Widget _buildErrorState(ThemeData theme, String message, String query) {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          EmptyFindingsThemedAnimation(
-            animationPath: AppImages.emptyFindingsLot,
-            width: 320,
-            height: 280,
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'No results for "$_query"',
-            style: TextStyle(
-              fontSize: 16,
-              color: isDark ? Colors.white38 : Colors.grey.shade500,
-              fontWeight: FontWeight.w500,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.wifi_off_rounded,
+              size: 42,
+              color: theme.colorScheme.onSurfaceVariant,
             ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            'Try a different name or username',
-            style: TextStyle(
-              fontSize: 13,
-              color: isDark ? Colors.white24 : Colors.grey.shade400,
+            const SizedBox(height: 12),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodyMedium,
             ),
-          ),
-        ],
+            const SizedBox(height: 14),
+            TextButton(
+              onPressed:
+                  () =>
+                      query.isEmpty
+                          ? _cubit.getDiscoverPeople()
+                          : _cubit.searchPeople(query),
+              child: const Text('Retry'),
+            ),
+          ],
+        ),
       ),
     );
-  }
-
-  Widget _buildShimmerList(bool isDark) {
-    final baseColor =
-        isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey.shade200;
-    return GridView.builder(
-      padding: const EdgeInsets.all(16),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 12,
-        childAspectRatio: 0.82,
-      ),
-      itemCount: 8,
-      itemBuilder:
-          (_, __) => Container(
-            decoration: BoxDecoration(
-              color: baseColor,
-              borderRadius: BorderRadius.circular(18),
-            ),
-          ),
-    );
-  }
-
-  void _navigateToProfile(String userId) {
-    Navigator.of(
-      context,
-    ).pushNamed(AppRoutes.profileViewRoute, arguments: userId);
   }
 }
