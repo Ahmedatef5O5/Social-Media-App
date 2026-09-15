@@ -1,10 +1,9 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import '../helpers/ai_model_iconography.dart';
 import '../models/ai_model_option.dart';
 import 'syncra_backdrop.dart';
 
-/// Compact glass "pill" that shows the active model and opens a bottom
-/// sheet to switch between them. Sits above the composer text field.
 class AiModelSelector extends StatelessWidget {
   final AiModelOption selected;
   final ValueChanged<AiModelOption> onChanged;
@@ -51,7 +50,11 @@ class AiModelSelector extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(selected.icon, size: 15, color: selected.accentColor),
+                AiModelIconography.buildBrandIcon(
+                  AiModelIconography.brandFromWire(selected.provider.name),
+                  size: 15,
+                  useOriginalColors: true,
+                ),
                 const SizedBox(width: 6),
                 Text(
                   selected.name,
@@ -85,7 +88,6 @@ class _AiModelPickerSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 👈 1. سحب الـ Primary Color واللون المدمج للثيم الحالي
     final primary = Theme.of(context).primaryColor;
     final topBgColor = SyncraBackdrop.gradientColors(primary).first;
 
@@ -96,14 +98,9 @@ class _AiModelPickerSheet extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
           decoration: BoxDecoration(
-            // 👈 2. استبدال اللون الثابت الغامق باللون المستخلص مع شفافية
             color: topBgColor.withValues(alpha: 0.90),
             border: Border(
-              top: BorderSide(
-                color: Colors.white.withValues(
-                  alpha: 0.15,
-                ), // 👈 تفتيح خفيف للحدود العلوية لزيادة الشياكة
-              ),
+              top: BorderSide(color: Colors.white.withValues(alpha: 0.15)),
             ),
           ),
           child: SafeArea(
@@ -191,11 +188,18 @@ class _ModelTile extends StatelessWidget {
             Container(
               width: 36,
               height: 36,
+              alignment: Alignment.center,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: model.accentColor.withValues(alpha: 0.18),
               ),
-              child: Icon(model.icon, color: model.accentColor, size: 18),
+              child: Center(
+                child: AiModelIconography.buildBrandIcon(
+                  AiModelIconography.brandFromWire(model.provider.name),
+                  size: 18,
+                  useOriginalColors: true,
+                ),
+              ),
             ),
             const SizedBox(width: 12),
             Expanded(
