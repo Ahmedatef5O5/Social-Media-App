@@ -174,6 +174,15 @@ class DiscoverPeopleCubit extends Cubit<DiscoverPeopleState>
     }
   }
 
+  void dismissSuggestion(String userId) {
+    final beforeLength = _users.length + _searchResults.length;
+    _users.removeWhere((u) => u.user.id == userId);
+    _searchResults.removeWhere((u) => u.user.id == userId);
+    final afterLength = _users.length + _searchResults.length;
+    if (beforeLength == afterLength) return;
+    _emitActive();
+  }
+
   void _updateUser(
     String userId,
     DiscoverPersonModel Function(DiscoverPersonModel) update,

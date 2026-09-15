@@ -1,12 +1,14 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:gap/gap.dart';
 import '../../../core/constants/app_images.dart';
 import '../../../core/widgets/custom_pull_to_refresh.dart';
 import '../../../core/widgets/empty_findings_animation_widget.dart';
 import '../../discover/cubits/discover_people_cubit.dart';
-import '../../discover/widgets/discover_person_card_widget.dart';
+import '../../discover/utils/discover_grid_metrics.dart';
+import '../../discover/widgets/discover_person_grid_card_widget.dart';
 import '../../social_graph/models/discover_person_model.dart';
 import '../utils/accounts_skeleton_list.dart';
 import '../utils/search_view_metrics.dart';
@@ -88,31 +90,52 @@ class _AccountsTabViewState extends State<AccountsTabView>
                     () => context.read<DiscoverPeopleCubit>().getDiscoverPeople(
                       isRefresh: true,
                     ),
-                child: ListView.separated(
-                  padding: const EdgeInsets.fromLTRB(
-                    SearchViewMetrics.horizontalPadding,
-                    SearchViewMetrics.topGap,
-                    SearchViewMetrics.horizontalPadding,
-                    SearchViewMetrics.bottomGap,
+                child: CustomScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(
+                    parent: ClampingScrollPhysics(),
                   ),
-                  physics: const ClampingScrollPhysics(),
-                  itemCount: users.length + (!hasReachedMax ? 1 : 0),
-                  separatorBuilder:
-                      (_, __) => const Gap(SearchViewMetrics.itemGap),
-                  itemBuilder: (context, i) {
-                    if (i >= users.length) {
-                      return const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 16),
-                        child: Center(
-                          child: CircularProgressIndicator(strokeWidth: 2),
+                  slivers: [
+                    SliverPadding(
+                      padding: const EdgeInsets.fromLTRB(
+                        SearchViewMetrics.horizontalPadding,
+                        SearchViewMetrics.topGap,
+                        SearchViewMetrics.horizontalPadding,
+                        0,
+                      ),
+                      sliver: SliverMasonryGrid.count(
+                        crossAxisCount: DiscoverGridMetrics.crossAxisCount,
+                        mainAxisSpacing: DiscoverGridMetrics.mainAxisSpacing,
+                        crossAxisSpacing: DiscoverGridMetrics.crossAxisSpacing,
+                        childCount: users.length,
+                        itemBuilder: (context, i) {
+                          final person = users[i];
+                          return DiscoverPersonGridCardWidget(
+                            key: ValueKey(person.user.id),
+                            personData: person,
+                            highlightQuery: query.isEmpty ? null : query,
+                            onDismiss:
+                                query.isEmpty
+                                    ? () => context
+                                        .read<DiscoverPeopleCubit>()
+                                        .dismissSuggestion(person.user.id)
+                                    : null,
+                          );
+                        },
+                      ),
+                    ),
+                    if (!hasReachedMax)
+                      const SliverToBoxAdapter(
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(vertical: 16),
+                          child: Center(
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
                         ),
-                      );
-                    }
-                    return DiscoverPersonCardWidget(
-                      key: ValueKey(users[i].user.id),
-                      personData: users[i],
-                    );
-                  },
+                      ),
+                    SliverToBoxAdapter(
+                      child: SizedBox(height: SearchViewMetrics.bottomGap),
+                    ),
+                  ],
                 ),
               ),
             );

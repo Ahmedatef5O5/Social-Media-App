@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:gap/gap.dart';
 import 'package:shimmer/shimmer.dart';
-import 'package:social_media_app/features/search/utils/search_view_metrics.dart';
 import '../../../core/widgets/skeleton_shapes.dart';
+import '../../discover/utils/discover_grid_metrics.dart';
+import 'search_view_metrics.dart';
 
 class AccountsSkeletonList extends StatelessWidget {
-  const AccountsSkeletonList({super.key});
+  final bool _isSliver;
+  const AccountsSkeletonList({super.key}) : _isSliver = false;
+  const AccountsSkeletonList.sliver({super.key}) : _isSliver = true;
 
   @override
   Widget build(BuildContext context) {
@@ -17,74 +21,90 @@ class AccountsSkeletonList extends StatelessWidget {
     final borderColor = theme.colorScheme.outlineVariant.withValues(
       alpha: 0.12,
     );
-    final screenWidth = MediaQuery.sizeOf(context).width;
 
-    return ListView.separated(
+    const padding = EdgeInsets.fromLTRB(
+      SearchViewMetrics.horizontalPadding,
+      SearchViewMetrics.topGap,
+      SearchViewMetrics.horizontalPadding,
+      SearchViewMetrics.bottomGap,
+    );
+
+    if (_isSliver) {
+      return SliverPadding(
+        padding: padding,
+        sliver: SliverMasonryGrid.count(
+          crossAxisCount: DiscoverGridMetrics.crossAxisCount,
+          mainAxisSpacing: DiscoverGridMetrics.mainAxisSpacing,
+          crossAxisSpacing: DiscoverGridMetrics.crossAxisSpacing,
+          childCount: 6,
+          itemBuilder:
+              (_, index) => _buildSkeletonItem(
+                index,
+                cardColor,
+                borderColor,
+                baseColor,
+                highlightColor,
+              ),
+        ),
+      );
+    }
+
+    return MasonryGridView.count(
+      crossAxisCount: DiscoverGridMetrics.crossAxisCount,
+      mainAxisSpacing: DiscoverGridMetrics.mainAxisSpacing,
+      crossAxisSpacing: DiscoverGridMetrics.crossAxisSpacing,
+      padding: padding,
       physics: const NeverScrollableScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(
-        SearchViewMetrics.horizontalPadding,
-        SearchViewMetrics.topGap,
-        SearchViewMetrics.horizontalPadding,
-        SearchViewMetrics.bottomGap,
-      ),
       itemCount: 6,
-      separatorBuilder: (_, __) => const Gap(SearchViewMetrics.itemGap),
-      itemBuilder: (_, __) {
-        return Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: cardColor,
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: borderColor),
+      itemBuilder:
+          (_, index) => _buildSkeletonItem(
+            index,
+            cardColor,
+            borderColor,
+            baseColor,
+            highlightColor,
           ),
-          child: Shimmer.fromColors(
-            baseColor: baseColor,
-            highlightColor: highlightColor,
-            period: const Duration(milliseconds: 1200),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    const SkeletonCircle(size: 52),
-                    const Gap(12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          SkeletonBox(height: 15, width: screenWidth * 0.34),
-                          const Gap(8),
-                          SkeletonBox(height: 11, width: screenWidth * 0.2),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                const Gap(14),
-                Row(
-                  children: [
-                    Expanded(
-                      child: SkeletonBox(
-                        height: 38,
-                        width: double.infinity,
-                        radius: 19,
-                      ),
-                    ),
-                    const Gap(10),
-                    Expanded(
-                      child: SkeletonBox(
-                        height: 38,
-                        width: double.infinity,
-                        radius: 19,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
+    );
+  }
+
+  Widget _buildSkeletonItem(
+    int index,
+    Color cardColor,
+    Color borderColor,
+    Color baseColor,
+    Color highlightColor,
+  ) {
+    final height = index.isEven ? 260.0 : 220.0;
+    return SizedBox(
+      height: height,
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(14, 16, 14, 14),
+        decoration: BoxDecoration(
+          color: cardColor,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: borderColor),
+        ),
+        child: Shimmer.fromColors(
+          baseColor: baseColor,
+          highlightColor: highlightColor,
+          period: const Duration(milliseconds: 1200),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              const SkeletonCircle(size: 64),
+              const Gap(10),
+              SkeletonBox(height: 13, width: 90),
+              const Gap(6),
+              SkeletonBox(height: 10, width: 60),
+              const Spacer(),
+              SkeletonBox(height: 36, width: double.infinity, radius: 10),
+              const Gap(6),
+              SkeletonBox(height: 36, width: double.infinity, radius: 10),
+            ],
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 }

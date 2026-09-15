@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:gap/gap.dart';
 import '../../../core/widgets/skeleton_shapes.dart';
+import '../utils/discover_grid_metrics.dart';
 
 class DiscoverPeopleSkeleton extends StatelessWidget {
   const DiscoverPeopleSkeleton({super.key});
@@ -46,70 +48,53 @@ class DiscoverPeopleSkeleton extends StatelessWidget {
           ),
         ),
 
+        // [FIX] استخدام MasonryGridView.count (RenderBox) بدلاً من SliverMasonryGrid داخل Expanded/Column
         Expanded(
-          child: ListView.separated(
-            physics: const NeverScrollableScrollPhysics(),
+          child: MasonryGridView.count(
+            crossAxisCount: DiscoverGridMetrics.crossAxisCount,
+            mainAxisSpacing: DiscoverGridMetrics.mainAxisSpacing,
+            crossAxisSpacing: DiscoverGridMetrics.crossAxisSpacing,
             padding: const EdgeInsets.symmetric(horizontal: 12),
+            physics: const NeverScrollableScrollPhysics(),
             itemCount: 6,
-            separatorBuilder: (_, __) => const Gap(14),
-            itemBuilder: (_, __) {
-              return Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: cardColor,
-                  borderRadius: BorderRadius.circular(18),
-                  border: Border.all(color: borderColor),
-                ),
-                child: Shimmer.fromColors(
-                  baseColor: baseColor,
-                  highlightColor: highlightColor,
-                  period: const Duration(milliseconds: 1200),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          const SkeletonCircle(size: 52),
-                          const Gap(12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                SkeletonBox(
-                                  height: 15,
-                                  width: screenWidth * 0.34,
-                                ),
-                                const Gap(8),
-                                SkeletonBox(
-                                  height: 11,
-                                  width: screenWidth * 0.2,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                      const Gap(14),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: SkeletonBox(
-                              height: 38,
-                              width: double.infinity,
-                              radius: 19,
-                            ),
-                          ),
-                          const Gap(10),
-                          Expanded(
-                            child: SkeletonBox(
-                              height: 38,
-                              width: double.infinity,
-                              radius: 19,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
+            itemBuilder: (_, index) {
+              final height = index.isEven ? 260.0 : 220.0;
+              return SizedBox(
+                height: height,
+                child: Container(
+                  padding: const EdgeInsets.fromLTRB(14, 16, 14, 14),
+                  decoration: BoxDecoration(
+                    color: cardColor,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: borderColor),
+                  ),
+                  child: Shimmer.fromColors(
+                    baseColor: baseColor,
+                    highlightColor: highlightColor,
+                    period: const Duration(milliseconds: 1200),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        const SkeletonCircle(size: 64),
+                        const Gap(10),
+                        SkeletonBox(height: 13, width: 90),
+                        const Gap(6),
+                        SkeletonBox(height: 10, width: 60),
+                        const Spacer(),
+                        SkeletonBox(
+                          height: 36,
+                          width: double.infinity,
+                          radius: 10,
+                        ),
+                        const Gap(6),
+                        SkeletonBox(
+                          height: 36,
+                          width: double.infinity,
+                          radius: 10,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               );
