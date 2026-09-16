@@ -150,16 +150,24 @@ class AiChatRepository {
         .eq('session_id', sessionId)
         .order('created_at', ascending: true)
         .limit(limit);
-
     final fresh =
         (rows as List)
             .map((r) => AiChatMessageRecord.fromJson(r as Map<String, dynamic>))
             .toList();
-
     for (final m in fresh) {
-      await _messagesBox.put('$sessionId:${m.id}', m);
+      final local = _messagesBox.get('$sessionId:${m.id}');
+      final merged =
+          (local != null && local.replyToMessageId != null)
+              ? m.copyWith(
+                replyToMessageId: local.replyToMessageId,
+                replyToText: local.replyToText,
+                replyToSenderRole: local.replyToSenderRole,
+                replyToMediaType: local.replyToMediaType,
+                replyToMediaUrl: local.replyToMediaUrl,
+              )
+              : m;
+      await _messagesBox.put('$sessionId:${m.id}', merged);
     }
-
     return fresh;
   }
 
@@ -176,6 +184,11 @@ class AiChatRepository {
     String? model,
     bool degraded = false,
     String? requestId,
+    String? replyToMessageId,
+    String? replyToText,
+    String? replyToSenderRole,
+    String? replyToMediaType,
+    String? replyToMediaUrl,
   }) async {
     final row =
         await _supabase
@@ -194,6 +207,11 @@ class AiChatRepository {
                 'p_file_name': fileName,
                 'p_file_size_bytes': fileSizeBytes,
                 'p_duration_seconds': durationSeconds,
+                'p_reply_to_message_id': replyToMessageId,
+                'p_reply_to_message_text': replyToText,
+                'p_reply_to_sender_role': replyToSenderRole,
+                'p_reply_to_media_type': replyToMediaType,
+                'p_reply_to_media_url': replyToMediaUrl,
               },
             )
             .single();
