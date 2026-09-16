@@ -22,6 +22,11 @@ class AiChatMessageRecord extends HiveObject {
     this.requestId,
     required this.status,
     required this.createdAt,
+    this.replyToMessageId,
+    this.replyToText,
+    this.replyToSenderRole,
+    this.replyToMediaType,
+    this.replyToMediaUrl,
   });
 
   @HiveField(0)
@@ -69,6 +74,21 @@ class AiChatMessageRecord extends HiveObject {
   @HiveField(14)
   final DateTime createdAt;
 
+  @HiveField(15)
+  final String? replyToMessageId;
+
+  @HiveField(16)
+  final String? replyToText;
+
+  @HiveField(17)
+  final String? replyToSenderRole;
+
+  @HiveField(18)
+  final String? replyToMediaType;
+
+  @HiveField(19)
+  final String? replyToMediaUrl;
+
   factory AiChatMessageRecord.fromJson(Map<String, dynamic> json) =>
       AiChatMessageRecord(
         id: json['id'] as String,
@@ -86,6 +106,12 @@ class AiChatMessageRecord extends HiveObject {
         requestId: json['request_id'] as String?,
         status: json['status'] as String? ?? 'sent',
         createdAt: DateTime.parse(json['created_at'] as String),
+        // [FIX] كانت ناقصة تمامًا
+        replyToMessageId: json['reply_to_message_id'] as String?,
+        replyToText: json['reply_to_message_text'] as String?,
+        replyToSenderRole: json['reply_to_sender_role'] as String?,
+        replyToMediaType: json['reply_to_media_type'] as String?,
+        replyToMediaUrl: json['reply_to_media_url'] as String?,
       );
 
   Map<String, dynamic> toJson() => {
@@ -104,9 +130,21 @@ class AiChatMessageRecord extends HiveObject {
     'request_id': requestId,
     'status': status,
     'created_at': createdAt.toIso8601String(),
+    'reply_to_message_id': replyToMessageId,
+    'reply_to_message_text': replyToText,
+    'reply_to_sender_role': replyToSenderRole,
+    'reply_to_media_type': replyToMediaType,
+    'reply_to_media_url': replyToMediaUrl,
   };
 
-  AiChatMessageRecord copyWith({String? status}) {
+  AiChatMessageRecord copyWith({
+    String? status,
+    String? replyToMessageId,
+    String? replyToText,
+    String? replyToSenderRole,
+    String? replyToMediaType,
+    String? replyToMediaUrl,
+  }) {
     return AiChatMessageRecord(
       id: id,
       sessionId: sessionId,
@@ -123,6 +161,11 @@ class AiChatMessageRecord extends HiveObject {
       requestId: requestId,
       status: status ?? this.status,
       createdAt: createdAt,
+      replyToMessageId: replyToMessageId ?? this.replyToMessageId,
+      replyToText: replyToText ?? this.replyToText,
+      replyToSenderRole: replyToSenderRole ?? this.replyToSenderRole,
+      replyToMediaType: replyToMediaType ?? this.replyToMediaType,
+      replyToMediaUrl: replyToMediaUrl ?? this.replyToMediaUrl,
     );
   }
 }
@@ -144,6 +187,11 @@ extension AiChatMessageRecordMapping on AiChatMessageRecord {
           (provider != null && provider!.isNotEmpty && model != null)
               ? AiModelDisplay.fromRaw(provider!, model!)
               : null,
+      replyToMessageId: replyToMessageId,
+      replyToText: replyToText,
+      replyToSenderRole: replyToSenderRole,
+      replyToMediaType: replyToMediaType,
+      replyToMediaUrl: replyToMediaUrl,
     );
   }
 

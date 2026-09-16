@@ -32,13 +32,18 @@ class AiChatMessageRecordAdapter extends TypeAdapter<AiChatMessageRecord> {
       requestId: fields[12] as String?,
       status: fields[13] as String,
       createdAt: fields[14] as DateTime,
+      replyToMessageId: fields[15] as String?,
+      replyToText: fields[16] as String?,
+      replyToSenderRole: fields[17] as String?,
+      replyToMediaType: fields[18] as String?,
+      replyToMediaUrl: fields[19] as String?,
     );
   }
 
   @override
   void write(BinaryWriter writer, AiChatMessageRecord obj) {
     writer
-      ..writeByte(15)
+      ..writeByte(20) // 20 حقل
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -68,7 +73,17 @@ class AiChatMessageRecordAdapter extends TypeAdapter<AiChatMessageRecord> {
       ..writeByte(13)
       ..write(obj.status)
       ..writeByte(14)
-      ..write(obj.createdAt);
+      ..write(obj.createdAt)
+      ..writeByte(15)
+      ..write(obj.replyToMessageId)
+      ..writeByte(16)
+      ..write(obj.replyToText)
+      ..writeByte(17)
+      ..write(obj.replyToSenderRole)
+      ..writeByte(18)
+      ..write(obj.replyToMediaType)
+      ..writeByte(19)
+      ..write(obj.replyToMediaUrl);
   }
 
   @override
