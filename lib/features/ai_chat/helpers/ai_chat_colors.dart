@@ -41,4 +41,21 @@ class AiChatColors {
         hsl.withLightness((hsl.lightness - 0.12).clamp(0.0, 1.0)).toColor();
     return [start, end];
   }
+
+  static Color _highlightSeed(Color primary) {
+    final hsl = HSLColor.fromColor(primary);
+    return hsl
+        .withLightness((hsl.lightness + 0.30).clamp(0.0, 0.82))
+        .withSaturation((hsl.saturation * 0.55 + 0.25).clamp(0.0, 1.0))
+        .toColor();
+  }
+
+  static Color highlightFill(Color primary) =>
+      _highlightSeed(primary).withValues(alpha: 0.42);
+
+  static Color highlightStroke(Color primary) =>
+      _highlightSeed(primary).withValues(alpha: 0.85);
+
+  static Color highlightGlow(Color primary) =>
+      _highlightSeed(primary).withValues(alpha: 0.40);
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../ai_assistant/widgets/animated_ai_stars_icon.dart';
 import '../../single_chats/widgets/typing_indicator_widget.dart';
+import '../helpers/ai_model_iconography.dart';
 import '../models/ai_model_option.dart';
 import '../models/ai_reply_phase.dart';
 
@@ -29,7 +30,7 @@ class AiThinkingBubble extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            _Avatar(color: model.accentColor),
+            _Avatar(model: model),
             const SizedBox(width: 8),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -66,20 +67,29 @@ class AiThinkingBubble extends StatelessWidget {
 }
 
 class _Avatar extends StatelessWidget {
-  final Color color;
-  const _Avatar({required this.color});
+  final AiModelOption model;
+  const _Avatar({required this.model});
 
   @override
   Widget build(BuildContext context) {
+    final brand = AiModelIconography.brandFromWire(model.provider.name);
+
     return Container(
       width: 26,
       height: 26,
+      alignment: Alignment.center,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: color.withValues(alpha: 0.18),
-        border: Border.all(color: color.withValues(alpha: 0.4)),
+        color: model.accentColor.withValues(alpha: 0.18),
+        border: Border.all(color: model.accentColor.withValues(alpha: 0.4)),
       ),
-      child: Icon(Icons.auto_awesome_rounded, size: 13, color: color),
+      child: Center(
+        child: AiModelIconography.buildBrandIcon(
+          brand,
+          size: 14,
+          useOriginalColors: true,
+        ),
+      ),
     );
   }
 }

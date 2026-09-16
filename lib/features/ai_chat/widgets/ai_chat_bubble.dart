@@ -1,42 +1,59 @@
-import 'dart:async';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:share_plus/share_plus.dart';
 import '../../../core/attachment/models/media_transfer_state.dart';
 import '../../../core/attachment/widgets/file_message_bubble.dart';
 import '../../../core/attachment/widgets/media_state_overlay.dart';
 import '../../../core/design/tokens/typography.dart';
+import '../../../core/helpers/bidi_text_helper.dart';
 import '../../../core/helpers/chat_helper.dart';
 import '../../../core/helpers/formatted_date.dart';
-import '../../../core/toast/app_toast.dart';
 import '../../../core/widgets/custom_linkify_text.dart';
 import '../../single_chats/widgets/image_message_widget.dart';
 import '../../single_chats/widgets/video_message_widget.dart';
 import '../../single_chats/widgets/voice_message_bubble_widget.dart';
 import '../helpers/ai_chat_colors.dart';
 import '../helpers/ai_model_display.dart';
+import '../helpers/ai_model_iconography.dart';
 import '../models/ai_chat_message.dart';
-import 'ai_message_action_row.dart';
+import 'ai_chat_selection_header_bar.dart' show kAiChatStarGold;
+import 'ai_swipe_to_reply_wrapper.dart';
 import 'ai_typewriter_text.dart';
 
 const _kEntranceDuration = Duration(milliseconds: 380);
-const _kActionsVisibleDuration = Duration(milliseconds: 4500);
-const _kActionsFadeDuration = Duration(milliseconds: 220);
+const _kMultiSelectLongPressDuration = Duration(milliseconds: 400);
 
 class AiChatBubble extends StatefulWidget {
   final AiChatMessage message;
   final VoidCallback? onCancelUpload;
   final VoidCallback? onRetry;
-  final VoidCallback? onForward;
   final bool animate;
+  final bool isSelectionMode;
+  final bool isSelected;
+  final VoidCallback? onLongPressSelect;
+  final VoidCallback? onTapSelect;
+  final bool isStarred;
+  final ValueChanged<String>? onTypewriterDone;
+  final ValueChanged<String>? onTapReply;
+  final bool isHighlighted;
+  final ValueChanged<AiChatMessage>? onSwipeReply;
+  final AiChatMessage? replyOrigin;
 
   const AiChatBubble({
     super.key,
     required this.message,
+    this.replyOrigin,
     this.onCancelUpload,
     this.onRetry,
-    this.onForward,
     this.animate = false,
+    this.isSelectionMode = false,
+    this.isSelected = false,
+    this.onLongPressSelect,
+    this.onTapSelect,
+    this.isStarred = false,
+    this.isHighlighted = false,
+    this.onSwipeReply,
+    this.onTypewriterDone,
+    this.onTapReply,
   });
 
   @override
@@ -44,9 +61,27 @@ class AiChatBubble extends StatefulWidget {
 }
 
 class _AiChatBubbleState extends State<AiChatBubble> {
-  bool _actionsVisible = false;
-  Timer? _hideTimer;
-  bool _liked = false;
+  late bool _typewriterFinished;
+
+  @override
+  void initState() {
+    super.initState();
+    _typewriterFinished = !widget.animate;
+  }
+
+  void _handleTypewriterDone() {
+    if (!mounted || _typewriterFinished) return;
+    setState(() => _typewriterFinished = true);
+    widget.onTypewriterDone?.call(widget.message.id);
+  }
+
+  @override
+  void didUpdateWidget(covariant AiChatBubble oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.message.id != widget.message.id) {
+      _typewriterFinished = !widget.animate;
+    }
+  }
 
   bool get _isUploading =>
       widget.message.status == AiChatDeliveryStatus.sending &&
@@ -68,62 +103,21 @@ class _AiChatBubbleState extends State<AiChatBubble> {
   Alignment get _statusRowAlignmentGeometry =>
       _isRtl ? Alignment.centerLeft : Alignment.centerRight;
 
-  @override
-  void initState() {
-    super.initState();
-    if (widget.message.isMe) return;
-
-    final hasText = widget.message.text.trim().isNotEmpty;
-    if (widget.animate && hasText) {
-      return;
-    }
-
-    Future.delayed(_kEntranceDuration, _revealActions);
-  }
-
-  @override
-  void dispose() {
-    _hideTimer?.cancel();
-    super.dispose();
-  }
-
-  void _revealActions() {
-    if (!mounted || widget.message.isMe) return;
-    _hideTimer?.cancel();
-    if (!_actionsVisible) {
-      setState(() => _actionsVisible = true);
-    }
-    _hideTimer = Timer(_kActionsVisibleDuration, () {
-      if (mounted) setState(() => _actionsVisible = false);
-    });
-  }
+  bool get _isSelectable => !widget.message.isMe;
 
   void _handleLongPress() {
-    _revealActions();
-    widget.onForward?.call();
+    if (!_isSelectable) return;
+    widget.onLongPressSelect?.call();
   }
 
   void _handleTap() {
-    _revealActions();
+    if (widget.isSelectionMode) {
+      if (_isSelectable) widget.onTapSelect?.call();
+      return;
+    }
     if (widget.message.status == AiChatDeliveryStatus.failed) {
       widget.onRetry?.call();
     }
-  }
-
-  Future<void> _handleCopy() async {
-    await Clipboard.setData(ClipboardData(text: widget.message.text));
-    if (mounted) AppToast.success('Copied to clipboard');
-    _revealActions();
-  }
-
-  Future<void> _handleShare() async {
-    _revealActions();
-    await SharePlus.instance.share(ShareParams(text: widget.message.text));
-  }
-
-  void _handleToggleLike() {
-    setState(() => _liked = !_liked);
-    _revealActions();
   }
 
   BorderRadius _radius(bool isMe) => BorderRadius.only(
@@ -149,10 +143,8 @@ class _AiChatBubbleState extends State<AiChatBubble> {
       fontFamilyFallback: AppTypography.fontFallback,
     );
 
-    final bubble = GestureDetector(
-      onTap: _handleTap,
-      onLongPress: !isMe ? _handleLongPress : null,
-      onDoubleTap: !isMe ? _revealActions : null,
+    final bubble = RawGestureDetector(
+      gestures: _buildBubbleGestures(),
       child: Container(
         constraints: BoxConstraints(
           maxWidth: MediaQuery.of(context).size.width * 0.74,
@@ -191,10 +183,16 @@ class _AiChatBubbleState extends State<AiChatBubble> {
                   : null,
         ),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-
+          crossAxisAlignment:
+              _isRtl ? CrossAxisAlignment.end : CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
+            if (message.hasReply)
+              SizedBox(
+                width: double.infinity,
+                child: _buildReplyCard(context, isMe),
+              ),
+
             if (hasMedia) _buildMedia(context, isMe),
             IntrinsicWidth(
               child: Column(
@@ -225,11 +223,7 @@ class _AiChatBubbleState extends State<AiChatBubble> {
                                     ),
                                     bubbleColor: Theme.of(context).primaryColor,
                                   )
-                                  : AiTypewriterText(
-                                    text: message.text,
-                                    style: textStyle,
-                                    animate: widget.animate,
-                                  ),
+                                  : _buildAssistantText(message, textStyle),
                         ),
                       ),
                     ),
@@ -252,23 +246,96 @@ class _AiChatBubbleState extends State<AiChatBubble> {
       ),
     );
 
+    final selectionColor = Theme.of(
+      context,
+    ).primaryColor.withValues(alpha: 0.16);
+    final isRowSelected = _isSelectable && widget.isSelected;
+
     final messageRow = Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        mainAxisAlignment:
-            isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          if (!isMe) ...[
-            _AssistantAvatar(model: message.model),
-            const SizedBox(width: 8),
+      child: Container(
+        color: isRowSelected ? selectionColor : Colors.transparent,
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+        child: Row(
+          mainAxisAlignment:
+              isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            if (!isMe) ...[
+              AnimatedSize(
+                duration: const Duration(milliseconds: 180),
+                curve: Curves.easeOut,
+                child:
+                    widget.isSelectionMode
+                        ? Padding(
+                          padding: const EdgeInsets.only(right: 6),
+                          child: Icon(
+                            widget.isSelected
+                                ? Icons.check_circle_rounded
+                                : Icons.circle_outlined,
+                            size: 20,
+                            color:
+                                widget.isSelected
+                                    ? Theme.of(context).primaryColor
+                                    : Colors.white.withValues(alpha: 0.4),
+                          ),
+                        )
+                        : const SizedBox.shrink(),
+              ),
+              _AssistantAvatar(model: message.model),
+              const SizedBox(width: 8),
+            ],
+            Flexible(
+              child: AiSwipeToReplyWrapper(
+                isMe: isMe,
+                enabled:
+                    !widget.isSelectionMode &&
+                    widget.message.status != AiChatDeliveryStatus.sending,
+                onReply: () => widget.onSwipeReply?.call(message),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 260),
+                  curve: Curves.easeOutCubic,
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color:
+                        widget.isHighlighted
+                            ? AiChatColors.highlightFill(
+                              Theme.of(context).primaryColor,
+                            )
+                            : Colors.transparent,
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(
+                      color:
+                          widget.isHighlighted
+                              ? AiChatColors.highlightStroke(
+                                Theme.of(context).primaryColor,
+                              )
+                              : Colors.transparent,
+                      width: 1.4,
+                    ),
+                    boxShadow:
+                        widget.isHighlighted
+                            ? [
+                              BoxShadow(
+                                color: AiChatColors.highlightGlow(
+                                  Theme.of(context).primaryColor,
+                                ),
+                                blurRadius: 18,
+                                spreadRadius: 1,
+                              ),
+                            ]
+                            : const <BoxShadow>[],
+                  ),
+                  child: bubble,
+                ),
+              ),
+            ),
           ],
-          Flexible(child: bubble),
-        ],
+        ),
       ),
     );
 
-    final animatedMessageRow = TweenAnimationBuilder<double>(
+    return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0, end: 1),
       duration: _kEntranceDuration,
       curve: Curves.easeOutCubic,
@@ -282,32 +349,35 @@ class _AiChatBubbleState extends State<AiChatBubble> {
           ),
       child: messageRow,
     );
+  }
 
-    if (isMe) return animatedMessageRow;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        animatedMessageRow,
-        Padding(
-          padding: const EdgeInsets.only(left: 34, top: 2),
-          child: AnimatedOpacity(
-            duration: _kActionsFadeDuration,
-            opacity: _actionsVisible ? 1 : 0,
-            child: IgnorePointer(
-              ignoring: !_actionsVisible,
-              child: AiMessageActionRow(
-                liked: _liked,
-                onToggleLike: _handleToggleLike,
-                onCopy: _handleCopy,
-                onShare: _handleShare,
-                showRetry: message.status == AiChatDeliveryStatus.failed,
-                onRetry: widget.onRetry,
-              ),
-            ),
+  Map<Type, GestureRecognizerFactory> _buildBubbleGestures() {
+    return <Type, GestureRecognizerFactory>{
+      TapGestureRecognizer:
+          GestureRecognizerFactoryWithHandlers<TapGestureRecognizer>(
+            () => TapGestureRecognizer(),
+            (instance) => instance.onTap = _handleTap,
           ),
-        ),
-      ],
+      if (_isSelectable)
+        LongPressGestureRecognizer:
+            GestureRecognizerFactoryWithHandlers<LongPressGestureRecognizer>(
+              () => LongPressGestureRecognizer(
+                duration: _kMultiSelectLongPressDuration,
+              ),
+              (instance) => instance.onLongPress = _handleLongPress,
+            ),
+    };
+  }
+
+  Widget _buildAssistantText(AiChatMessage message, TextStyle textStyle) {
+    final bool shouldAnimate = !_typewriterFinished && widget.animate;
+
+    return AiTypewriterText(
+      key: ValueKey('ai-typewriter-${message.id}'),
+      text: message.text,
+      style: textStyle,
+      animate: shouldAnimate,
+      onDone: _handleTypewriterDone,
     );
   }
 
@@ -334,6 +404,10 @@ class _AiChatBubbleState extends State<AiChatBubble> {
           FormattedDate.getMessageTime(widget.message.createdAt),
           style: timeStyle,
         ),
+        if (widget.isStarred) ...[
+          const SizedBox(width: 4),
+          const Icon(Icons.star_rounded, size: 11, color: kAiChatStarGold),
+        ],
         if (widget.message.status == AiChatDeliveryStatus.sending) ...[
           const SizedBox(width: 5),
           SizedBox(
@@ -363,6 +437,190 @@ class _AiChatBubbleState extends State<AiChatBubble> {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       textDirection: _isRtl ? TextDirection.ltr : TextDirection.rtl,
       children: [timeGroup, Text(modelLabel, style: timeStyle)],
+    );
+  }
+
+  String get _repliedMediaType =>
+      widget.message.replyToMediaType ??
+      widget.replyOrigin?.mediaType.name ??
+      'none';
+
+  String _repliedMediaLabel() {
+    switch (_repliedMediaType) {
+      case 'image':
+        return 'Photo';
+      case 'video':
+        return 'Video';
+      case 'voice':
+        final seconds = widget.replyOrigin?.durationSeconds;
+        return seconds == null
+            ? 'Voice message'
+            : 'Voice message · ${_formatReplyDuration(seconds)}';
+      case 'file':
+        return widget.replyOrigin?.fileName ?? 'File';
+      default:
+        return 'Message';
+    }
+  }
+
+  IconData? _repliedMediaIcon() {
+    switch (_repliedMediaType) {
+      case 'image':
+        return Icons.photo_rounded;
+      case 'video':
+        return Icons.videocam_rounded;
+      case 'voice':
+        return Icons.mic_rounded;
+      case 'file':
+        return Icons.insert_drive_file_rounded;
+      default:
+        return null;
+    }
+  }
+
+  static String _formatReplyDuration(int seconds) {
+    final minutes = seconds ~/ 60;
+    final rest = seconds % 60;
+    return '${minutes.toString().padLeft(2, '0')}:'
+        '${rest.toString().padLeft(2, '0')}';
+  }
+
+  Widget _buildReplyCard(BuildContext context, bool isMe) {
+    final message = widget.message;
+    final origin = widget.replyOrigin;
+
+    final senderTitle =
+        message.replyToSenderRole == 'user'
+            ? 'You'
+            : (origin?.model?.fullLabel ??
+                message.model?.fullLabel ??
+                'Syncra');
+
+    final replyText = message.replyToText?.trim() ?? '';
+    final previewText = replyText.isNotEmpty ? replyText : _repliedMediaLabel();
+    final mediaIcon = _repliedMediaIcon();
+
+    final hasThumbnail =
+        message.replyToMediaUrl != null &&
+        message.replyToMediaUrl!.startsWith('http') &&
+        (_repliedMediaType == 'image' || _repliedMediaType == 'video');
+
+    final bodyDirection = BidiTextHelper.detectDirection(
+      replyText.isNotEmpty ? replyText : _repliedMediaLabel(),
+    );
+    final bodyAlign = BidiTextHelper.alignFor(bodyDirection);
+
+    final titleDirection = BidiTextHelper.detectDirection(senderTitle);
+    final titleAlign = BidiTextHelper.alignFor(titleDirection);
+
+    final accentColor = isMe ? Colors.white70 : Theme.of(context).primaryColor;
+
+    return GestureDetector(
+      onTap: () {
+        if (message.replyToMessageId != null) {
+          widget.onTapReply?.call(message.replyToMessageId!);
+        }
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 6),
+        decoration: BoxDecoration(
+          color:
+              isMe
+                  ? Colors.white.withValues(alpha: 0.16)
+                  : Theme.of(context).primaryColor.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Directionality(
+          textDirection: bodyDirection,
+          child: IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Container(width: 3.5, color: accentColor),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 5,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          senderTitle,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: titleAlign,
+                          textDirection: titleDirection,
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color:
+                                isMe
+                                    ? Colors.white.withValues(alpha: 0.95)
+                                    : Theme.of(context).primaryColor,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Directionality(
+                          textDirection: bodyDirection,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.max,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              if (mediaIcon != null) ...[
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 1),
+                                  child: Icon(
+                                    mediaIcon,
+                                    size: 13,
+                                    color: Colors.white.withValues(alpha: 0.75),
+                                  ),
+                                ),
+                                const SizedBox(width: 5),
+                              ],
+                              Expanded(
+                                child: Text(
+                                  previewText,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  textAlign: bodyAlign,
+                                  textDirection: bodyDirection,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.white.withValues(alpha: 0.75),
+                                    height: 1.25,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                if (hasThumbnail)
+                  Padding(
+                    padding: const EdgeInsets.all(4),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(6),
+                      child: Image.network(
+                        message.replyToMediaUrl!,
+                        width: 36,
+                        height: 36,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 
@@ -462,16 +720,24 @@ class _AssistantAvatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = model?.accentColor ?? Theme.of(context).primaryColor;
-    final icon = model?.icon ?? Icons.auto_awesome_rounded;
+    final brand = AiModelIconography.brandFromWire(model?.providerLabel);
+
     return Container(
       width: 26,
       height: 26,
+      alignment: Alignment.center,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         color: color.withValues(alpha: 0.18),
         border: Border.all(color: color.withValues(alpha: 0.4)),
       ),
-      child: Icon(icon, size: 13, color: color),
+      child: Center(
+        child: AiModelIconography.buildBrandIcon(
+          brand,
+          size: 14,
+          useOriginalColors: true,
+        ),
+      ),
     );
   }
 }
