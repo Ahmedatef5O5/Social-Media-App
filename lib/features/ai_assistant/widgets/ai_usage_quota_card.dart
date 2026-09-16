@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 import 'package:intl/intl.dart';
+import '../../ai_chat/helpers/ai_model_iconography.dart';
 import '../cubits/ai_preferences_cubit/ai_preferences_cubit.dart';
 import '../entities/ai_active_provider.dart';
 
@@ -103,14 +104,20 @@ class AiUsageQuotaCard extends StatelessWidget {
                       ),
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(
-                          usage.activeProvider.icon,
-                          size: 12,
-                          color: primary,
+                        AiModelIconography.buildBrandIcon(
+                          usage.activeProvider == AiActiveProvider.unknown
+                              ? AiModelBrand.gemini
+                              : AiModelIconography.brandFromWire(
+                                usage.activeProvider.wireValue,
+                              ),
+                          size: 13,
+                          useOriginalColors: true,
                         ),
                         const Gap(6),
                         Text(
-                          usage.activeProvider.displayName,
+                          usage.activeProvider == AiActiveProvider.unknown
+                              ? 'Gemini'
+                              : usage.activeProvider.displayName,
                           style: TextStyle(
                             fontSize: 11.5,
                             fontWeight: FontWeight.w600,

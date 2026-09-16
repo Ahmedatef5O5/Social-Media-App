@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import '../helpers/ai_model_iconography.dart';
 
 enum AiModelProvider { gemini, llama, openrouter }
 
@@ -6,7 +8,7 @@ class AiModelOption {
   final AiModelProvider provider;
   final String name;
   final String tagline;
-  final IconData icon;
+  final FaIconData icon;
   final Color accentColor;
 
   const AiModelOption({
@@ -21,27 +23,27 @@ class AiModelOption {
 class AiModelCatalog {
   const AiModelCatalog._();
 
-  static const List<AiModelOption> all = [
+  static final List<AiModelOption> all = [
     AiModelOption(
       provider: AiModelProvider.gemini,
       name: 'Gemini',
       tagline: 'Fast, and great with images',
-      icon: Icons.auto_awesome_rounded,
-      accentColor: Color(0xFF4285F4),
+      icon: AiModelIconography.geminiFallbackIcon,
+      accentColor: AiModelIconography.geminiColor,
     ),
-    AiModelOption(
+    const AiModelOption(
       provider: AiModelProvider.llama,
       name: 'Llama',
       tagline: 'Open-weight and efficient',
-      icon: Icons.hub_rounded,
-      accentColor: Color(0xFF7C5CFC),
+      icon: AiModelIconography.groqIcon,
+      accentColor: AiModelIconography.groqColor,
     ),
-    AiModelOption(
+    const AiModelOption(
       provider: AiModelProvider.openrouter,
       name: 'OpenRouter',
       tagline: 'Auto-picks a free model for you',
-      icon: Icons.alt_route_rounded,
-      accentColor: Color(0xFFDA7756),
+      icon: AiModelIconography.openRouterIcon,
+      accentColor: AiModelIconography.openRouterColor,
     ),
   ];
 

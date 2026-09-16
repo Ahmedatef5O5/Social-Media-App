@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import '../../ai_chat/helpers/ai_model_iconography.dart';
 
 enum AiActiveProvider { gemini, groq, openRouter, unknown }
 
@@ -16,16 +17,16 @@ extension AiActiveProviderX on AiActiveProvider {
     }
   }
 
-  IconData get icon {
+  FaIconData get icon {
     switch (this) {
       case AiActiveProvider.gemini:
-        return Icons.auto_awesome_rounded;
+        return AiModelIconography.geminiFallbackIcon;
       case AiActiveProvider.groq:
-        return Icons.bolt_rounded;
+        return AiModelIconography.groqIcon;
       case AiActiveProvider.openRouter:
-        return Icons.hub_rounded;
+        return AiModelIconography.openRouterIcon;
       case AiActiveProvider.unknown:
-        return Icons.smart_toy_outlined;
+        return AiModelIconography.unknownIcon;
     }
   }
 
