@@ -5,6 +5,7 @@ import 'package:social_media_app/core/widgets/app_avatar.dart';
 import '../../../core/constants/app_images.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/supabase/supabase_provider.dart';
+import '../../ai_chat/helpers/ai_model_iconography.dart';
 import '../../single_chats/models/chat_user_model.dart';
 import '../../profile/widgets/user_preview_dialog.dart';
 import '../../home/cubits/home_cubit/home_cubit.dart';
@@ -30,18 +31,27 @@ class ForwardedHeader extends StatefulWidget {
 
 class _ForwardedHeaderState extends State<ForwardedHeader> {
   late TapGestureRecognizer _nameTapRecognizer;
+  TapGestureRecognizer? _aiNameTapRecognizer;
   bool get _isAi => widget.originalSenderId == ForwardableMessage.aiSenderId;
-
   @override
   void initState() {
     super.initState();
     _nameTapRecognizer = TapGestureRecognizer()..onTap = _onNameTap;
+    _aiNameTapRecognizer = TapGestureRecognizer()..onTap = _openAiChat;
   }
 
   @override
   void dispose() {
     _nameTapRecognizer.dispose();
+    _aiNameTapRecognizer?.dispose();
     super.dispose();
+  }
+
+  void _openAiChat() {
+    Navigator.of(
+      context,
+      rootNavigator: true,
+    ).pushNamed(AppRoutes.aiChatViewRoute);
   }
 
   void _onAvatarTap() {
@@ -155,7 +165,11 @@ class _ForwardedHeaderState extends State<ForwardedHeader> {
                 padding: const EdgeInsets.symmetric(horizontal: 3),
                 child:
                     _isAi
-                        ? const _AiAvatar()
+                        ? GestureDetector(
+                          onTap: _openAiChat,
+                          behavior: HitTestBehavior.opaque,
+                          child: _AiAvatar(modelName: widget.name),
+                        )
                         : AppAvatar(
                           imageUrl: widget.avatarUrl,
                           size: 15,
@@ -166,7 +180,7 @@ class _ForwardedHeaderState extends State<ForwardedHeader> {
             TextSpan(
               text: widget.name,
               style: const TextStyle(fontWeight: FontWeight.w700),
-              recognizer: _isAi ? null : _nameTapRecognizer,
+              recognizer: _isAi ? _aiNameTapRecognizer : _nameTapRecognizer,
             ),
           ],
         ),
@@ -176,25 +190,44 @@ class _ForwardedHeaderState extends State<ForwardedHeader> {
 }
 
 class _AiAvatar extends StatelessWidget {
-  const _AiAvatar();
+  final String? modelName;
+  const _AiAvatar({this.modelName});
 
   @override
   Widget build(BuildContext context) {
+    final nameLower = (modelName ?? '').toLowerCase();
+    final brand =
+        nameLower.contains('llama') || nameLower.contains('groq')
+            ? AiModelBrand.groq
+            : (nameLower.contains('openrouter')
+                ? AiModelBrand.openRouter
+                : AiModelBrand.gemini);
+
     return Container(
-      width: 15,
-      height: 15,
-      decoration: const BoxDecoration(
+      width: 20,
+      height: 20,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
         shape: BoxShape.circle,
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFF7C5CFC), Color(0xFFDA7756)],
+        color: Colors.white.withValues(alpha: 0.02),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.32),
+          width: 0.9,
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.14),
+            blurRadius: 3,
+            offset: const Offset(0, 1),
+          ),
+        ],
       ),
-      child: const Icon(
-        Icons.auto_awesome_rounded,
-        size: 9,
-        color: Colors.white,
+      child: Center(
+        child: AiModelIconography.buildBrandIcon(
+          brand,
+          size: 13.5,
+          useOriginalColors: true,
+        ),
       ),
     );
   }
