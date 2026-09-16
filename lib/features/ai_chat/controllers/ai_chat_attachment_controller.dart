@@ -162,7 +162,14 @@ class AiChatAttachmentController extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> sendStagedMedia({required String caption}) async {
+  Future<void> sendStagedMedia({
+    required String caption,
+    String? replyToMessageId,
+    String? replyToMessageText,
+    String? replyToSenderRole,
+    String? replyToMediaType,
+    String? replyToMediaUrl,
+  }) async {
     if (stagedMediaFile == null) return;
     final file = stagedMediaFile!;
     final type = stagedMediaType!;
@@ -172,18 +179,40 @@ class AiChatAttachmentController extends ChangeNotifier {
     removeStagedMedia();
 
     if (type == AiChatMediaType.image) {
-      await sendImage(file, caption: caption, remoteImageUrl: remoteImageUrl);
+      await sendImage(
+        file,
+        caption: caption,
+        remoteImageUrl: remoteImageUrl,
+        replyToMessageId: replyToMessageId,
+        replyToMessageText: replyToMessageText,
+        replyToSenderRole: replyToSenderRole,
+        replyToMediaType: replyToMediaType,
+        replyToMediaUrl: replyToMediaUrl,
+      );
     } else {
       await sendFile(
         file,
         fileName: fileName ?? 'file',
         fileSizeBytes: fileSizeBytes ?? await file.length(),
         caption: caption,
+        replyToMessageId: replyToMessageId,
+        replyToMessageText: replyToMessageText,
+        replyToSenderRole: replyToSenderRole,
+        replyToMediaType: replyToMediaType,
+        replyToMediaUrl: replyToMediaUrl,
       );
     }
   }
 
-  Future<void> sendVoice(File file, int durationSeconds) async {
+  Future<void> sendVoice(
+    File file,
+    int durationSeconds, {
+    String? replyToMessageId,
+    String? replyToMessageText,
+    String? replyToSenderRole,
+    String? replyToMediaType,
+    String? replyToMediaUrl,
+  }) async {
     if (isSendingVoice) return;
     if (!await file.exists()) {
       AppToast.error('Voice message not found. Please try recording again.');
@@ -217,6 +246,11 @@ class AiChatAttachmentController extends ChangeNotifier {
       localFilePath: file.path,
       fileSizeBytes: fileSizeBytes,
       durationSeconds: durationSeconds,
+      replyToMessageId: replyToMessageId,
+      replyToMessageText: replyToMessageText,
+      replyToSenderRole: replyToSenderRole,
+      replyToMediaType: replyToMediaType,
+      replyToMediaUrl: replyToMediaUrl,
     );
     final cancelToken = dio_pkg.CancelToken();
     _uploadCancelTokens[tempId] = cancelToken;
@@ -247,6 +281,11 @@ class AiChatAttachmentController extends ChangeNotifier {
         durationSeconds: durationSeconds,
         targetMediaType: 'voice_record',
         replacingMessageId: tempId,
+        replyToMessageId: replyToMessageId,
+        replyToMessageText: replyToMessageText,
+        replyToSenderRole: replyToSenderRole,
+        replyToMediaType: replyToMediaType,
+        replyToMediaUrl: replyToMediaUrl,
       );
     } catch (e) {
       _uploadCancelTokens.remove(tempId);
@@ -274,6 +313,11 @@ class AiChatAttachmentController extends ChangeNotifier {
     required String fileName,
     required int fileSizeBytes,
     required String caption,
+    String? replyToMessageId,
+    String? replyToMessageText,
+    String? replyToSenderRole,
+    String? replyToMediaType,
+    String? replyToMediaUrl,
   }) async {
     if (isSendingFile) return;
     onBeforeSend();
@@ -423,6 +467,11 @@ class AiChatAttachmentController extends ChangeNotifier {
     File file, {
     String? caption,
     String? remoteImageUrl,
+    String? replyToMessageId,
+    String? replyToMessageText,
+    String? replyToSenderRole,
+    String? replyToMediaType,
+    String? replyToMediaUrl,
   }) async {
     if (isUploadingImage) return;
     onBeforeSend();

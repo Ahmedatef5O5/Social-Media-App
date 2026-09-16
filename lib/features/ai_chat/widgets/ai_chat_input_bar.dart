@@ -8,7 +8,9 @@ import '../../../core/audio/voice_recorder/widgets/voice_recorder_input_section.
 import '../../../core/toast/app_toast.dart';
 import '../../../core/widgets/directional_text_field.dart';
 import '../helpers/ai_chat_dictation_controller.dart';
+import '../models/ai_chat_message.dart';
 import '../models/ai_model_option.dart';
+import 'ai_chat_reply_preview_bar.dart';
 import 'ai_chat_staged_file_preview.dart';
 
 class AiChatInputBar extends StatefulWidget {
@@ -24,6 +26,9 @@ class AiChatInputBar extends StatefulWidget {
   final File? stagedImageFile;
   final VoidCallback? onRemoveStagedFile;
   final VoidCallback? onTapStagedFile;
+  final AiChatMessage? replyingTo;
+  final VoidCallback? onCancelReply;
+  final VoidCallback? onTapReplyPreview;
 
   const AiChatInputBar({
     super.key,
@@ -39,6 +44,9 @@ class AiChatInputBar extends StatefulWidget {
     this.onRemoveStagedFile,
     this.stagedImageFile,
     this.onTapStagedFile,
+    this.replyingTo,
+    this.onCancelReply,
+    this.onTapReplyPreview,
   });
 
   @override
@@ -77,6 +85,7 @@ class _AiChatInputBarState extends State<AiChatInputBar> {
     if (_isDictating) _toggleDictation();
     widget.onSendText(text);
     widget.controller.clear();
+    widget.onCancelReply?.call(); // الشريط يقفل بمجرد الإرسال
   }
 
   Future<void> _openAttachmentSheet() async {
@@ -158,6 +167,12 @@ class _AiChatInputBarState extends State<AiChatInputBar> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
+          if (widget.replyingTo != null)
+            AiChatReplyPreviewBar(
+              message: widget.replyingTo!,
+              onCancel: widget.onCancelReply ?? () {},
+              onTap: widget.onTapReplyPreview ?? () {},
+            ),
           if (widget.stagedFileName != null)
             AiChatStagedFilePreview(
               fileName: widget.stagedFileName!,
