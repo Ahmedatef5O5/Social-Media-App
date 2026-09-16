@@ -3,22 +3,29 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:gap/gap.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:shimmer/shimmer.dart';
+import '../../../core/constants/app_images.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/toast/app_toast.dart';
+import '../../../core/widgets/app_avatar.dart';
+import '../../../core/widgets/full_screen_image_viewer.dart';
 import '../../../core/widgets/skeleton_shapes.dart';
-import '../../single_chats/helpers/glass_icon_btn.dart';
+import '../../auth/data/models/user_data.dart';
+import '../../home/cubits/home_cubit/home_cubit.dart';
 import '../cubits/ai_chat_sessions_cubit/ai_chat_sessions_cubit.dart';
 import '../di/ai_chat_dependencies.dart';
-import '../helpers/ai_model_display.dart';
+import '../helpers/ai_model_iconography.dart';
 import '../models/ai_chat_session.dart';
+import '../models/ai_model_option.dart';
 import 'syncra_backdrop.dart';
 
 class AiChatSessionsDrawer extends StatelessWidget {
   final AiChatDependencies? deps;
   final String? activeSessionId;
+  final AiModelOption? selectedModel;
   final VoidCallback onStartNewChat;
   final ValueChanged<AiChatSession> onOpenSession;
   final ValueChanged<AiChatSession> onDeleteSession;
@@ -27,6 +34,7 @@ class AiChatSessionsDrawer extends StatelessWidget {
     super.key,
     required this.deps,
     required this.activeSessionId,
+    this.selectedModel,
     required this.onStartNewChat,
     required this.onOpenSession,
     required this.onDeleteSession,
@@ -112,7 +120,7 @@ class AiChatSessionsDrawer extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _DrawerRow(
-            leadingIcon: Icons.tune_rounded,
+            leadingIcon: FontAwesomeIcons.gear,
             leadingColor: Colors.white70,
             title: 'AI Settings',
             isActive: false,
@@ -138,8 +146,26 @@ class AiChatSessionsDrawer extends StatelessWidget {
 class _DrawerTopBar extends StatelessWidget {
   const _DrawerTopBar();
 
+  void _openUserAvatarViewer(BuildContext context, UserData? currentUser) {
+    final hasAvatar = (currentUser?.imageUrl ?? '').isNotEmpty;
+    Navigator.of(context, rootNavigator: true).push(
+      MaterialPageRoute(
+        builder: (_) => const FullScreenImageViewer(),
+        settings: RouteSettings(
+          arguments: {
+            'url': hasAvatar ? currentUser!.imageUrl : AppImages.defaultUserImg,
+            'tag': 'ai-chat-drawer-user-avatar',
+            'isAsset': !hasAvatar,
+          },
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final currentUser = context.read<HomeCubit>().currentUserData;
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 14, 8, 4),
       child: Row(
@@ -157,11 +183,13 @@ class _DrawerTopBar extends StatelessWidget {
               ),
             ),
           ),
-          GlassIconButton(
-            icon: Icons.close_rounded,
-            size: 36,
-            iconSize: 18,
-            onTap: () => Navigator.of(context).pop(),
+          AppAvatar(
+            imageUrl: currentUser?.imageUrl,
+            size: 32,
+            borderColor: Colors.white.withValues(alpha: 0.22),
+            borderWidth: 1.2,
+            heroTag: 'ai-chat-drawer-user-avatar',
+            onTap: () => _openUserAvatarViewer(context, currentUser),
           ),
         ],
       ),
@@ -276,18 +304,22 @@ class _SessionsMessage extends StatelessWidget {
 }
 
 class _SessionsListSection extends StatefulWidget {
+
+  final List<AiChatSession> sessions;
+  final String? activeSessionId;
+  final AiModelOption? selectedModel;
+  final ValueChanged<AiChatSession> onOpenSession;
+  final ValueChanged<AiChatSession> onDeleteSession;
+  
   const _SessionsListSection({
     required this.sessions,
     required this.activeSessionId,
+    this.selectedModel,
     required this.onOpenSession,
     required this.onDeleteSession,
   });
 
-  final List<AiChatSession> sessions;
-  final String? activeSessionId;
-  final ValueChanged<AiChatSession> onOpenSession;
-  final ValueChanged<AiChatSession> onDeleteSession;
-
+  
   @override
   State<_SessionsListSection> createState() => _SessionsListSectionState();
 }
@@ -321,6 +353,7 @@ class _SessionsListSectionState extends State<_SessionsListSection> {
               (session) => _SessionTile(
                 session: session,
                 isActive: session.id == widget.activeSessionId,
+                selectedModel: widget.selectedModel,
                 onTap: () => widget.onOpenSession(session),
                 onDelete: () => widget.onDeleteSession(session),
               ),
@@ -338,9 +371,6 @@ class _SessionGroup {
   final List<AiChatSession> sessions;
 }
 
-/// Buckets by recency the same way ChatGPT/Gemini's own sidebars do —
-/// sessions arrive already sorted newest-first (see AiChatRepository),
-/// so each bucket stays internally sorted too.
 List<_SessionGroup> _groupByRecency(List<AiChatSession> sessions) {
   final now = DateTime.now();
   final today = DateTime(now.year, now.month, now.day);
@@ -399,12 +429,20 @@ class _SectionLabel extends StatelessWidget {
   }
 }
 
-/// Shared visual shell for every row in the Drawer — session tiles, the
-/// "Load more" tile, and the "AI Settings" footer row all render through
-/// this so the whole surface stays pixel-consistent.
 class _DrawerRow extends StatelessWidget {
+
+  final FaIconData leadingIcon;
+  final Widget? leadingWidget;
+  final Color leadingColor;
+  final String title;
+  final String? subtitle;
+  final Widget? trailing;
+  final bool isActive;
+  final VoidCallback onTap;
+
   const _DrawerRow({
-    required this.leadingIcon,
+    this.leadingIcon = FontAwesomeIcons.robot,
+    this.leadingWidget,
     required this.leadingColor,
     required this.title,
     this.subtitle,
@@ -412,14 +450,6 @@ class _DrawerRow extends StatelessWidget {
     required this.isActive,
     required this.onTap,
   });
-
-  final IconData leadingIcon;
-  final Color leadingColor;
-  final String title;
-  final String? subtitle;
-  final Widget? trailing;
-  final bool isActive;
-  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -441,12 +471,18 @@ class _DrawerRow extends StatelessWidget {
                 Container(
                   width: 34,
                   height: 34,
+                  alignment: Alignment.center,
                   decoration: BoxDecoration(
                     color: leadingColor.withValues(alpha: 0.16),
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(leadingIcon, size: 16, color: leadingColor),
+                  child: Center(
+                    child:
+                        leadingWidget ??
+                        FaIcon(leadingIcon, size: 16, color: leadingColor),
+                  ),
                 ),
+
                 const Gap(10),
                 Expanded(
                   child: Column(
@@ -492,17 +528,20 @@ class _DrawerRow extends StatelessWidget {
 }
 
 class _SessionTile extends StatelessWidget {
-  const _SessionTile({
-    required this.session,
-    required this.isActive,
-    required this.onTap,
-    required this.onDelete,
-  });
 
   final AiChatSession session;
   final bool isActive;
+  final AiModelOption? selectedModel;
   final VoidCallback onTap;
   final VoidCallback onDelete;
+
+  const _SessionTile({
+    required this.session,
+    required this.isActive,
+    this.selectedModel,
+    required this.onTap,
+    required this.onDelete,
+  });
 
   // Same "now / Xm / Xh / Xd / d/m" convention already used for
   // notification timestamps elsewhere in the app.
@@ -544,15 +583,24 @@ class _SessionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final display = AiModelDisplay.fromRaw(
-      session.activeProvider ?? '',
-      session.activeModel ?? '',
-    );
+    final effectiveProvider =
+        (isActive && selectedModel != null)
+            ? selectedModel!.provider.name
+            : ((session.activeProvider != null &&
+                    session.activeProvider!.isNotEmpty)
+                ? session.activeProvider!
+                : (selectedModel?.provider.name ?? 'gemini'));
+    final brand = AiModelIconography.brandFromWire(effectiveProvider);
+    final accentColor = AiModelIconography.colorFor(brand);
     final preview = session.lastMessagePreview?.trim();
 
     return _DrawerRow(
-      leadingIcon: display.icon,
-      leadingColor: display.accentColor,
+      leadingWidget: AiModelIconography.buildBrandIcon(
+        brand,
+        size: 16,
+        useOriginalColors: true,
+      ),
+      leadingColor: accentColor,
       title: session.title,
       subtitle: preview,
       isActive: isActive,
@@ -593,13 +641,13 @@ class _SessionTile extends StatelessWidget {
 }
 
 class _LoadMoreTile extends StatelessWidget {
-  const _LoadMoreTile({required this.onTap});
   final VoidCallback onTap;
+  const _LoadMoreTile({required this.onTap});
 
   @override
   Widget build(BuildContext context) {
     return _DrawerRow(
-      leadingIcon: Icons.expand_more_rounded,
+      leadingIcon: FontAwesomeIcons.expand,
       leadingColor: Colors.white54,
       title: 'Load more',
       isActive: false,
@@ -739,7 +787,6 @@ class _AiSessionActionMenuOverlayState
     const verticalPadding = 16.0;
     final menuHeight = 48.0 * widget.actions.length + verticalPadding;
 
-    // ضبط الموضع عشان تظهر القائمة على يسار النقط (3 dots) أو حسب المتاح
     double left = widget.anchor.dx - menuWidth + 30;
     left = left.clamp(12.0, screen.width - menuWidth - 12);
 
@@ -780,21 +827,17 @@ class _AiSessionActionMenuOverlayState
                 child: BackdropFilter(
                   filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
                   child: Builder(
-                    // 👈 استخدمنا Builder عشان نجيب الـ Theme
                     builder: (context) {
                       final primary = Theme.of(context).primaryColor;
-                      // سحبنا اللون العلوي من الـ Gradient الخاص بالثيم الحالي
                       final topBgColor =
                           SyncraBackdrop.gradientColors(primary).first;
 
                       return Container(
                         width: menuWidth,
                         decoration: BoxDecoration(
-                          // دمج اللون المستخلص مع شفافية عشان التأثير الزجاجي
                           color: topBgColor.withValues(alpha: 0.85),
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
-                            // بوردر خفيف بلون الـ Primary بتاع الثيم
                             color: primary.withValues(alpha: 0.35),
                             width: 1,
                           ),
@@ -809,7 +852,6 @@ class _AiSessionActionMenuOverlayState
                         padding: const EdgeInsets.symmetric(vertical: 8),
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
-                          // ... (باقي الكود الخاص بالـ actions كما هو بدون تغيير)
                           children: [
                             for (final action in widget.actions)
                               InkWell(
