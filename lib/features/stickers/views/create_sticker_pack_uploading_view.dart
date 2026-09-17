@@ -93,6 +93,7 @@ class CreateStickerPackUploadingView extends StatelessWidget {
                   state.overallProgress < 1.0
                       ? CancelProgressBubble(
                         size: 18,
+                        isPositioned: false,
                         visible: state.overallProgress < 1.0,
                         onCancel:
                             () =>

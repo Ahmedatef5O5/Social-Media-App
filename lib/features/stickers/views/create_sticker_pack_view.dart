@@ -58,8 +58,10 @@ class _CreateStickerPackBody extends StatelessWidget {
             builder: (context, state) {
               switch (state) {
                 case CreateStickerPackLoading():
-                case CreateStickerPackSuccess():
                   return const CreateStickerPackFormSkeleton();
+
+                case CreateStickerPackSuccess():
+                  return const SizedBox.shrink();
 
                 case CreateStickerPackError():
                   return Center(child: Text(state.message));
