@@ -87,6 +87,7 @@ class _AnimatedActivityTextState extends State<AnimatedActivityText> {
           start: 0,
           top: 0,
           bottom: 0,
+          end: 0,
           child: Text(
             displayText,
             style: widget.style,

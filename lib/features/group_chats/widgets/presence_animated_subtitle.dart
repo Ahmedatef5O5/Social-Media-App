@@ -55,26 +55,30 @@ class _PresenceAnimatedSubtitleState extends State<PresenceAnimatedSubtitle> {
           },
           child: Align(
             key: ValueKey(phrase == null ? 'fallback' : phrase.text),
-            alignment: Alignment.centerLeft,
+            alignment: AlignmentDirectional.centerStart,
             child:
                 phrase == null
                     ? widget.fallback
-                    : AnimatedActivityText(
-                      text: phrase.text,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: (widget.activeStyle ??
-                              const TextStyle(
-                                fontSize: 11,
-                                fontStyle: FontStyle.italic,
-                              ))
-                          .copyWith(
-                            color:
-                                phrase.action == ChatActionType.recording
-                                    ? Colors.red.shade700
-                                    : (widget.activeStyle?.color ??
-                                        Colors.green.shade600),
-                          ),
+                    : FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: AlignmentDirectional.centerStart,
+                      child: AnimatedActivityText(
+                        text: phrase.text,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: (widget.activeStyle ??
+                                const TextStyle(
+                                  fontSize: 11,
+                                  fontStyle: FontStyle.italic,
+                                ))
+                            .copyWith(
+                              color:
+                                  phrase.action == ChatActionType.recording
+                                      ? Colors.red.shade700
+                                      : (widget.activeStyle?.color ??
+                                          Colors.green.shade600),
+                            ),
+                      ),
                     ),
           ),
         );
