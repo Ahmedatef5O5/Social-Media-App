@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:gap/gap.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/themes/app_colors.dart';
 import '../../auth/data/models/user_data.dart';
@@ -20,6 +21,10 @@ class ProfileHeaderUserInfoSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final showFriendsBadge =
+        state.friendsCount > 0 &&
+        (isMe || state.friendshipStatus == FriendshipStatus.accepted);
+
     return Transform.translate(
       offset: const Offset(0, -30),
       child: Padding(
@@ -31,17 +36,21 @@ class ProfileHeaderUserInfoSection extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    user.name,
-                    style: const TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: AlignmentDirectional.centerStart,
+                    child: Text(
+                      user.name,
+                      style: const TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      maxLines: 1,
+                      softWrap: false,
                     ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    softWrap: false,
                   ),
                   if (user.userName != null && user.userName!.isNotEmpty) ...[
+                    const Gap(2),
                     Text(
                       "@${user.userName?.toLowerCase().replaceAll(' ', '_')}",
                       maxLines: 1,
@@ -52,22 +61,20 @@ class ProfileHeaderUserInfoSection extends StatelessWidget {
                 ],
               ),
             ),
-            if (state.friendsCount > 0 &&
-                (isMe || state.friendshipStatus == FriendshipStatus.accepted))
-              SizedBox(
-                width: 174,
-                child: FriendsCountBadge(
-                  isMe: isMe,
-                  friendsCount: state.friendsCount,
-                  mutualFriendsCount: state.mutualFriendsCount,
-                  onTap: () {
-                    Navigator.of(context, rootNavigator: true).pushNamed(
-                      AppRoutes.friendsListViewRoute,
-                      arguments: user.id,
-                    );
-                  },
-                ),
+            if (showFriendsBadge) ...[
+              const Gap(12),
+              FriendsCountBadge(
+                isMe: isMe,
+                friendsCount: state.friendsCount,
+                mutualFriendsCount: state.mutualFriendsCount,
+                onTap: () {
+                  Navigator.of(context, rootNavigator: true).pushNamed(
+                    AppRoutes.friendsListViewRoute,
+                    arguments: user.id,
+                  );
+                },
               ),
+            ],
           ],
         ),
       ),

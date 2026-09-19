@@ -81,6 +81,7 @@ class _SavedPostsViewState extends State<SavedPostsView> {
             return CustomTabWrapper(
               isLoading:
                   state is SavedPostsInitial || state is SavedPostsLoading,
+              isTopSafeArea: false,
               errorMessage: state is SavedPostsError ? state.message : null,
               loadingSkeleton: const PostsSkeletonItems(),
               onRetry:
