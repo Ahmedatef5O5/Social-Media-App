@@ -23,6 +23,7 @@ import '../connectivity/cubits/connectivity_state.dart';
 import '../connectivity/services/connectivity_banner_controller.dart';
 import '../constants/app_images.dart';
 import '../supabase/supabase_provider.dart';
+import '../router/main_tab_bridge.dart';
 import 'custom_floating_nav_bar.dart';
 
 class CustomBottomNavBar extends StatefulWidget {
@@ -46,6 +47,7 @@ class _CustomBottomNavBarState extends State<CustomBottomNavBar> {
 
   StreamSubscription<ChatsState>? _chatsSub;
   StreamSubscription<GroupListState>? _groupListSub;
+  StreamSubscription<int>? _tabRequestSub;
 
   bool _chatsReady = false;
   bool _groupsReady = false;
@@ -105,6 +107,13 @@ class _CustomBottomNavBarState extends State<CustomBottomNavBar> {
       }
     });
     _listenForUnreadCounts();
+
+    _tabRequestSub = MainTabBridge.instance.requests.listen((tabIndex) {
+      if (!mounted) return;
+      if (tabIndex < 0 || tabIndex > 3) return;
+      _controller.jumpToTab(tabIndex);
+      setState(() {});
+    });
   }
 
   @override
@@ -115,6 +124,7 @@ class _CustomBottomNavBarState extends State<CustomBottomNavBar> {
     }
     _chatsSub?.cancel();
     _groupListSub?.cancel();
+    _tabRequestSub?.cancel();
     super.dispose();
   }
 

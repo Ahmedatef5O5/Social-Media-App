@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import '../../../core/presence/widgets/presence_avatar_widget.dart';
 import '../../../core/router/app_routes.dart';
+import '../../../core/router/main_tab_bridge.dart';
+import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/themes/app_colors.dart';
 import '../../../core/widgets/app_avatar.dart';
 import '../models/friend_list_item_model.dart';
@@ -26,11 +28,16 @@ class FriendTileWidget extends StatelessWidget {
 
     return InkWell(
       borderRadius: BorderRadius.circular(16),
-      onTap:
-          () => Navigator.of(
-            context,
-            rootNavigator: true,
-          ).pushNamed(AppRoutes.profileViewRoute, arguments: user.id),
+      onTap: () {
+        if (user.id == SupabaseProvider.id) {
+          MainTabBridge.openMyProfileTab(context);
+          return;
+        }
+        Navigator.of(
+          context,
+          rootNavigator: true,
+        ).pushNamed(AppRoutes.profileViewRoute, arguments: user.id);
+      },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(
