@@ -19,6 +19,7 @@ final class ProfileLoaded extends ProfileState {
   final String? friendshipId;
   final bool isFollowing;
   final bool followsMe;
+  final ProfileMutualsModel mutuals;
 
   const ProfileLoaded({
     required this.stats,
@@ -29,25 +30,31 @@ final class ProfileLoaded extends ProfileState {
     this.friendshipId,
     required this.isFollowing,
     required this.followsMe,
+    this.mutuals = ProfileMutualsModel.empty,
   });
 
   ProfileLoaded copyWith({
     ProfileStatsModel? stats,
+    int? friendsCount,
+    int? mutualFriendsCount,
     FriendshipStatus? friendshipStatus,
     String? friendshipId,
     bool clearFriendshipId = false,
     bool? isFollowing,
+    bool? followsMe,
+    ProfileMutualsModel? mutuals,
   }) {
     return ProfileLoaded(
       stats: stats ?? this.stats,
       user: user,
-      friendsCount: friendsCount,
-      mutualFriendsCount: mutualFriendsCount,
+      friendsCount: friendsCount ?? this.friendsCount,
+      mutualFriendsCount: mutualFriendsCount ?? this.mutualFriendsCount,
       friendshipStatus: friendshipStatus ?? this.friendshipStatus,
       friendshipId:
           clearFriendshipId ? null : (friendshipId ?? this.friendshipId),
       isFollowing: isFollowing ?? this.isFollowing,
-      followsMe: followsMe,
+      followsMe: followsMe ?? this.followsMe,
+      mutuals: mutuals ?? this.mutuals,
     );
   }
 }

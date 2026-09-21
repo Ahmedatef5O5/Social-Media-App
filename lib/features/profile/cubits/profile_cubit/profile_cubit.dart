@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:social_media_app/features/auth/data/models/user_data.dart';
+import 'package:social_media_app/features/profile/models/profile_mutuals_model.dart';
 import 'package:social_media_app/features/profile/models/profile_overview_model.dart';
 import 'package:social_media_app/features/profile/models/profile_stats_model.dart';
 import 'package:social_media_app/features/social_graph/models/friendship_status.dart';
@@ -9,6 +10,7 @@ import '../../../../core/connectivity/cubits/connectivity_cubit.dart';
 import '../../../../core/connectivity/cubits/connectivity_state.dart';
 import '../../../../core/helpers/safe_emit_mixin.dart';
 import '../../../../core/services/fcm_services.dart';
+import '../../../../core/supabase/supabase_provider.dart';
 import '../../../auth/handlers/auth_exception_handler.dart';
 import '../../../home/cubits/home_cubit/home_cubit.dart';
 import '../../../notifications/repository/notifications_repository.dart';
@@ -57,40 +59,56 @@ class ProfileCubit extends Cubit<ProfileState>
     });
   }
 
+  ProfileStatsModel _buildStats(ProfileOverviewModel overview) {
+    return ProfileStatsModel(
+      postsCount: overview.postsCount,
+      photosCount: overview.postsCount,
+      followersCount: overview.followersCount,
+      followingCount: overview.followingCount,
+    );
+  }
+
+  ProfileLoaded _buildLoadedState(
+    UserData user,
+    ProfileOverviewModel overview, {
+    ProfileMutualsModel mutuals = ProfileMutualsModel.empty,
+  }) {
+    return ProfileLoaded(
+      stats: _buildStats(overview),
+      user: user,
+      friendsCount: overview.friendsCount,
+      mutualFriendsCount: overview.mutualFriendsCount,
+      friendshipStatus: overview.friendshipStatus,
+      friendshipId: overview.friendshipId,
+      isFollowing: overview.isFollowing,
+      followsMe: overview.followsMe,
+      mutuals: mutuals,
+    );
+  }
+
   Future<void> getProfileData(String userId, {bool isRefresh = false}) async {
     _currentUserId = userId;
     if (!isRefresh) emit(ProfileLoading());
     try {
-      final results = await Future.wait([
+      final isOwnProfile = userId == SupabaseProvider.id;
+      final results = await Future.wait<Object>([
         _userService.fetchCurrentUser(userId),
         _userService.getProfileOverview(userId),
+        // Mutuals only make sense when looking at somebody else.
+        isOwnProfile
+            ? Future<ProfileMutualsModel>.value(ProfileMutualsModel.empty)
+            : _userService.getProfileMutuals(userId),
       ]);
 
       final user = results[0] as UserData;
       final overview = results[1] as ProfileOverviewModel;
+      final mutuals = results[2] as ProfileMutualsModel;
 
-      final stats = ProfileStatsModel(
-        postsCount: overview.postsCount,
-        photosCount: overview.postsCount,
-        followersCount: overview.followersCount,
-        followingCount: overview.followingCount,
-      );
       if (isRefresh) {
         emit(ProfileRefreshFeedback());
         await Future.delayed(const Duration(milliseconds: 500));
       }
-      emit(
-        ProfileLoaded(
-          stats: stats,
-          user: user,
-          friendsCount: overview.friendsCount,
-          mutualFriendsCount: overview.mutualFriendsCount,
-          friendshipStatus: overview.friendshipStatus,
-          friendshipId: overview.friendshipId,
-          isFollowing: overview.isFollowing,
-          followsMe: overview.followsMe,
-        ),
-      );
+      emit(_buildLoadedState(user, overview, mutuals: mutuals));
     } catch (e) {
       final errorMessage = AuthExceptionHandler.handle(e);
 
@@ -105,103 +123,247 @@ class ProfileCubit extends Cubit<ProfileState>
     }
   }
 
-  Future<void> sendFriendRequest() async {
-    if (state is! ProfileLoaded) return;
+  Future<void> _resyncFromServer(ProfileLoaded fallback) async {
+    final userId = _currentUserId;
+    if (userId == null) {
+      if (!isClosed) emit(fallback);
+      return;
+    }
+    try {
+      final overview = await _userService.getProfileOverview(userId);
+      if (isClosed) return;
+      final current = state;
+      final base = current is ProfileLoaded ? current : fallback;
+      // Friendship actions never change the mutuals, so keep what we have.
+      emit(_buildLoadedState(base.user, overview, mutuals: base.mutuals));
+    } catch (e) {
+      debugPrint('[ProfileCubit] resync failed: $e');
+      if (!isClosed) emit(fallback);
+    }
+  }
+
+  /// Runs a side effect (notification / push) that must never roll back a
+  /// friendship change that was already persisted in the database.
+  Future<void> _runBestEffort(
+    String label,
+    Future<void> Function() action,
+  ) async {
+    try {
+      await action();
+    } catch (e) {
+      debugPrint('[ProfileCubit] $label failed (non-blocking): $e');
+    }
+  }
+
+  Future<bool> sendFriendRequest() async {
+    if (state is! ProfileLoaded) return false;
     final s = state as ProfileLoaded;
     emit(s.copyWith(friendshipStatus: FriendshipStatus.pendingSent));
+
+    String friendshipId;
     try {
-      final friendshipId = await _friendshipServices.sendFriendRequest(
-        s.user.id,
-      );
-      if (state is ProfileLoaded) {
-        emit((state as ProfileLoaded).copyWith(friendshipId: friendshipId));
-      }
-      final me = _homeCubit.currentUserData;
-      if (me != null) {
-        await NotificationRepository.instance.notifyFriendRequest(
-          receiverId: s.user.id,
-          requesterId: me.id,
-          requesterName: me.name,
-          requesterImageUrl: me.imageUrl ?? '',
-          friendshipId: friendshipId,
-        );
-        await FcmService.instance.notifyFriendRequest(
-          receiverId: s.user.id,
-          requesterId: me.id,
-          requesterName: me.name,
-          requesterImageUrl: me.imageUrl ?? '',
-        );
-      }
+      friendshipId = await _friendshipServices.sendFriendRequest(s.user.id);
     } catch (e) {
-      emit(s);
       debugPrint('sendFriendRequest error: $e');
+      await _resyncFromServer(s);
+      return false;
     }
+
+    if (state is ProfileLoaded) {
+      emit((state as ProfileLoaded).copyWith(friendshipId: friendshipId));
+    }
+
+    final me = _homeCubit.currentUserData;
+    if (me != null) {
+      unawaited(
+        _runBestEffort(
+          'notifyFriendRequest',
+          () => NotificationRepository.instance.notifyFriendRequest(
+            receiverId: s.user.id,
+            requesterId: me.id,
+            requesterName: me.name,
+            requesterImageUrl: me.imageUrl ?? '',
+            friendshipId: friendshipId,
+          ),
+        ),
+      );
+      unawaited(
+        _runBestEffort(
+          'fcm notifyFriendRequest',
+          () => FcmService.instance.notifyFriendRequest(
+            receiverId: s.user.id,
+            requesterId: me.id,
+            requesterName: me.name,
+            requesterImageUrl: me.imageUrl ?? '',
+          ),
+        ),
+      );
+    }
+    return true;
   }
 
   Future<void> acceptFriendRequest() async {
     if (state is! ProfileLoaded) return;
     final s = state as ProfileLoaded;
 
-    emit(s.copyWith(friendshipStatus: FriendshipStatus.accepted));
-
-    try {
-      await _friendshipServices.acceptFriendRequest(s.user.id);
-
-      final me = _homeCubit.currentUserData;
-      if (me != null) {
-        await NotificationRepository.instance.removeFriendRequestNotification(
-          receiverId: me.id,
-          senderId: s.user.id,
-        );
-
-        await NotificationRepository.instance.notifyFriendAccept(
-          receiverId: s.user.id,
-          accepterId: me.id,
-          accepterName: me.name,
-          accepterImageUrl: me.imageUrl ?? '',
-        );
-
-        await FcmService.instance.notifyFriendAccept(
-          receiverId: s.user.id,
-          accepterId: me.id,
-          accepterName: me.name,
-          accepterImageUrl: me.imageUrl ?? '',
-        );
-      }
-    } catch (e) {
-      emit(s);
-      debugPrint('acceptFriendRequest error: $e');
+    final friendshipId = s.friendshipId;
+    if (friendshipId == null) {
+      await _resyncFromServer(s);
+      return;
     }
+
+    emit(
+      s.copyWith(
+        friendshipStatus: FriendshipStatus.accepted,
+        friendsCount: s.friendsCount + 1,
+      ),
+    );
+
+    bool wasAccepted;
+    try {
+      wasAccepted = await _friendshipServices.acceptFriendRequest(friendshipId);
+    } catch (e) {
+      debugPrint('acceptFriendRequest error: $e');
+      if (!isClosed) emit(s);
+      return;
+    }
+
+    if (!wasAccepted) {
+      // The request was cancelled or already handled elsewhere.
+      await _resyncFromServer(s);
+      return;
+    }
+
+    final me = _homeCubit.currentUserData;
+    if (me == null) return;
+    await _runBestEffort(
+      'removeFriendRequestNotification',
+      () => NotificationRepository.instance.removeFriendRequestNotification(
+        receiverId: me.id,
+        senderId: s.user.id,
+      ),
+    );
+    await _runBestEffort(
+      'notifyFriendAccept',
+      () => NotificationRepository.instance.notifyFriendAccept(
+        receiverId: s.user.id,
+        accepterId: me.id,
+        accepterName: me.name,
+        accepterImageUrl: me.imageUrl ?? '',
+      ),
+    );
+    await _runBestEffort(
+      'fcm notifyFriendAccept',
+      () => FcmService.instance.notifyFriendAccept(
+        receiverId: s.user.id,
+        accepterId: me.id,
+        accepterName: me.name,
+        accepterImageUrl: me.imageUrl ?? '',
+      ),
+    );
   }
 
-  Future<void> cancelFriendRequest() async {
-    if (state is! ProfileLoaded) return;
+  Future<bool> cancelFriendRequest() async {
+    if (state is! ProfileLoaded) return false;
     final s = state as ProfileLoaded;
-    if (s.friendshipId == null) return;
-    final friendshipId = s.friendshipId!;
+    final friendshipId = s.friendshipId;
+    if (friendshipId == null) return false;
+
     emit(
       s.copyWith(
         friendshipStatus: FriendshipStatus.none,
         clearFriendshipId: true,
       ),
     );
+
     try {
       await _friendshipServices.cancelFriendRequest(friendshipId);
-      final me = _homeCubit.currentUserData;
-      if (me != null) {
-        await NotificationRepository.instance.removeFriendRequestNotification(
-          receiverId: s.user.id,
-          senderId: me.id,
-        );
-      }
     } catch (e) {
-      emit(s);
       debugPrint('cancelFriendRequest error: $e');
+      if (!isClosed) emit(s);
+      return false;
+    }
+
+    final me = _homeCubit.currentUserData;
+    if (me != null) {
+      unawaited(
+        _runBestEffort(
+          'removeFriendRequestNotification',
+          () => NotificationRepository.instance.removeFriendRequestNotification(
+            receiverId: s.user.id,
+            senderId: me.id,
+          ),
+        ),
+      );
+    }
+    return true;
+  }
+
+  /// Declines an incoming friend request (the "X" next to Accept).
+  Future<void> declineFriendRequest() async {
+    if (state is! ProfileLoaded) return;
+    final s = state as ProfileLoaded;
+    final friendshipId = s.friendshipId;
+    if (friendshipId == null) {
+      await _resyncFromServer(s);
+      return;
+    }
+
+    emit(
+      s.copyWith(
+        friendshipStatus: FriendshipStatus.none,
+        clearFriendshipId: true,
+      ),
+    );
+
+    try {
+      await _friendshipServices.rejectFriendRequest(friendshipId);
+    } catch (e) {
+      debugPrint('declineFriendRequest error: $e');
+      if (!isClosed) emit(s);
+      return;
+    }
+
+    final me = _homeCubit.currentUserData;
+    if (me == null) return;
+    await _runBestEffort(
+      'removeFriendRequestNotification',
+      () => NotificationRepository.instance.removeFriendRequestNotification(
+        receiverId: me.id,
+        senderId: s.user.id,
+      ),
+    );
+  }
+
+  /// Removes an accepted friend (confirmed by the caller beforehand).
+  Future<void> unfriend() async {
+    if (state is! ProfileLoaded) return;
+    final s = state as ProfileLoaded;
+    final friendshipId = s.friendshipId;
+    if (friendshipId == null) {
+      await _resyncFromServer(s);
+      return;
+    }
+
+    emit(
+      s.copyWith(
+        friendshipStatus: FriendshipStatus.none,
+        clearFriendshipId: true,
+        friendsCount: s.friendsCount > 0 ? s.friendsCount - 1 : 0,
+      ),
+    );
+
+    try {
+      await _friendshipServices.unfriend(friendshipId);
+    } catch (e) {
+      debugPrint('unfriend error: $e');
+      if (!isClosed) emit(s);
     }
   }
 
-  Future<void> toggleFollow() async {
-    if (state is! ProfileLoaded) return;
+  /// Returns `true` when the follow / unfollow was persisted.
+  Future<bool> toggleFollow() async {
+    if (state is! ProfileLoaded) return false;
     final s = state as ProfileLoaded;
     final wasFollowing = s.isFollowing;
     final me = _homeCubit.currentUserData;
@@ -219,34 +381,53 @@ class ProfileCubit extends Cubit<ProfileState>
     try {
       if (wasFollowing) {
         await _followServices.unfollowUser(s.user.id);
-        if (me != null) {
-          await NotificationRepository.instance.removeFollowNotification(
-            receiverId: s.user.id,
-            senderId: me.id,
-          );
-        }
       } else {
         await _followServices.followUser(s.user.id);
-        final me = _homeCubit.currentUserData;
-        if (me != null) {
-          await NotificationRepository.instance.notifyFollow(
-            receiverId: s.user.id,
-            followerId: me.id,
-            followerName: me.name,
-            followerImageUrl: me.imageUrl ?? '',
-          );
-          await FcmService.instance.notifyFollow(
-            receiverId: s.user.id,
-            followerId: me.id,
-            followerName: me.name,
-            followerImageUrl: me.imageUrl ?? '',
-          );
-        }
       }
     } catch (e) {
-      emit(s);
       debugPrint('toggleFollow error: $e');
+      if (!isClosed) emit(s);
+      return false;
     }
+
+    // The follow row is saved: notifications are best-effort side effects.
+    if (me != null) {
+      if (wasFollowing) {
+        unawaited(
+          _runBestEffort(
+            'removeFollowNotification',
+            () => NotificationRepository.instance.removeFollowNotification(
+              receiverId: s.user.id,
+              senderId: me.id,
+            ),
+          ),
+        );
+      } else {
+        unawaited(
+          _runBestEffort(
+            'notifyFollow',
+            () => NotificationRepository.instance.notifyFollow(
+              receiverId: s.user.id,
+              followerId: me.id,
+              followerName: me.name,
+              followerImageUrl: me.imageUrl ?? '',
+            ),
+          ),
+        );
+        unawaited(
+          _runBestEffort(
+            'fcm notifyFollow',
+            () => FcmService.instance.notifyFollow(
+              receiverId: s.user.id,
+              followerId: me.id,
+              followerName: me.name,
+              followerImageUrl: me.imageUrl ?? '',
+            ),
+          ),
+        );
+      }
+    }
+    return true;
   }
 
   @override
