@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:social_media_app/features/profile/widgets/profile_details_widget_tab.dart';
 import 'package:social_media_app/features/profile/widgets/profile_header.dart';
+import 'package:social_media_app/features/profile/widgets/profile_mutuals_card.dart';
 import 'package:social_media_app/features/profile/widgets/profile_posts_list_tab.dart';
 import 'package:social_media_app/features/profile/widgets/proflie_states_widget.dart';
 import 'package:social_media_app/features/profile/widgets/sliver_tab_bar_delegate.dart';
@@ -48,6 +49,10 @@ class ProfileBodyContent extends StatelessWidget {
                     ProfileHeader(size: size, state: state),
                     Gap(20),
                     ProfileStatsWidget(stats: state.stats),
+                    if (!isCurrentUser && !state.mutuals.isEmpty) ...[
+                      Gap(12),
+                      ProfileMutualsCard(mutuals: state.mutuals),
+                    ],
                     Gap(20),
                   ],
                 ),
