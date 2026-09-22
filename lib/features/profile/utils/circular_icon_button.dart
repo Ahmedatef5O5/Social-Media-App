@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../core/themes/app_colors.dart';
+import 'profile_ui_tokens.dart';
 
 class CircularIconButton extends StatefulWidget {
   final ThemeData theme;
@@ -15,7 +15,7 @@ class CircularIconButton extends StatefulWidget {
     this.icon,
     this.assetPath,
     required this.onPressed,
-    required this.size,
+    this.size = ProfileUiTokens.iconButtonSize,
     this.tooltip,
   });
 
@@ -28,29 +28,17 @@ class _CircularIconButtonState extends State<CircularIconButton> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = widget.theme;
-    final isDark = theme.brightness == Brightness.dark;
-    final Color iconColor = isDark ? Colors.white : theme.primaryColor;
-    final Color bgColor = isDark
-        ? theme.colorScheme.surface
-        : theme.scaffoldBackgroundColor.withValues(alpha: 0.99);
-    final Color borderColor = isDark
-        ? Colors.white.withValues(alpha: 0.18)
-        : AppColors.grey3;
+    final tokens = ProfileUiTokens.of(context);
+    final Color iconColor = tokens.iconAccent;
+    final double iconSize = widget.size * 0.45;
 
-    return AnimatedScale(
+    final button = AnimatedScale(
       scale: _pressed ? 0.9 : 1.0,
       duration: const Duration(milliseconds: 110),
       curve: Curves.easeOut,
       child: Material(
-        color: bgColor,
-        shape: CircleBorder(
-          side: BorderSide(
-            color: borderColor,
-            width: 1,
-          ),
-        ),
-        elevation: 1.1,
+        color: tokens.surface,
+        shape: CircleBorder(side: BorderSide(color: tokens.outline, width: 1)),
         child: InkWell(
           customBorder: const CircleBorder(),
           onTapDown: (_) => setState(() => _pressed = true),
@@ -65,19 +53,18 @@ class _CircularIconButtonState extends State<CircularIconButton> {
                   widget.assetPath != null
                       ? Image.asset(
                         widget.assetPath!,
-                        width: widget.size * 0.43,
-                        height: widget.size * 0.43,
+                        width: iconSize,
+                        height: iconSize,
                         color: iconColor,
                       )
-                      : Icon(
-                        widget.icon,
-                        color: iconColor,
-                        size: widget.size * 0.43,
-                      ),
+                      : Icon(widget.icon, color: iconColor, size: iconSize),
             ),
           ),
         ),
       ),
     );
+
+    if (widget.tooltip == null) return button;
+    return Tooltip(message: widget.tooltip!, child: button);
   }
 }
