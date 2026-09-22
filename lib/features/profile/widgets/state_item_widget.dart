@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:gap/gap.dart';
+import '../utils/profile_ui_tokens.dart';
 
 class StatItemWidget extends StatelessWidget {
   final String label;
@@ -8,22 +8,30 @@ class StatItemWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = ProfileUiTokens.of(context);
     return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
         Text(
           value,
-          style: Theme.of(context).textTheme.titleLarge!.copyWith(
-            fontWeight: FontWeight.bold,
-            fontSize: 23,
-            height: 0.6,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+            height: 1.1,
+            color: tokens.onSurface,
           ),
         ),
-        const Gap(4),
+        const SizedBox(height: 6),
         Text(
           label,
-          style: Theme.of(context).textTheme.titleSmall!.copyWith(
-            fontSize: 12,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            fontSize: 11,
             fontWeight: FontWeight.w400,
+            color: tokens.onSurfaceVariant,
           ),
         ),
       ],

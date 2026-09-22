@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:social_media_app/core/themes/app_colors.dart';
 import '../models/profile_stats_model.dart';
+import '../utils/profile_ui_tokens.dart';
 import 'state_item_widget.dart';
 
 class ProfileStatsWidget extends StatelessWidget {
@@ -9,41 +9,47 @@ class ProfileStatsWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 18),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
+    final tokens = ProfileUiTokens.of(context);
 
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: AppColors.grey4),
+    final items = <({String label, String value})>[
+      (label: 'Posts', value: stats.postsCount.toString()),
+      (label: 'Photos', value: stats.photosCount.toString()),
+      (label: 'Followers', value: _formatNumber(stats.followersCount)),
+      (label: 'Following', value: _formatNumber(stats.followingCount)),
+    ];
+
+    return Container(
+      margin: const EdgeInsets.symmetric(
+        horizontal: ProfileUiTokens.screenPadding,
+      ),
+      padding: const EdgeInsets.symmetric(vertical: 16),
+      decoration: BoxDecoration(
+        color: tokens.surface,
+        borderRadius: BorderRadius.circular(ProfileUiTokens.cardRadius),
+        border: Border.all(color: tokens.outline),
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          StatItemWidget(label: 'Posts', value: stats.postsCount.toString()),
-
-          _buildDivider(),
-          StatItemWidget(label: 'Photos', value: stats.photosCount.toString()),
-
-          _buildDivider(),
-          StatItemWidget(
-            label: 'Followers',
-            value: _formatNumber(stats.followersCount),
-          ),
-
-          _buildDivider(),
-          StatItemWidget(
-            label: 'Following',
-            value: _formatNumber(stats.followingCount),
-          ),
+          for (var i = 0; i < items.length; i++)
+            Expanded(
+              child: Container(
+                decoration:
+                    i == 0
+                        ? null
+                        : BoxDecoration(
+                          border: Border(
+                            left: BorderSide(color: tokens.outline),
+                          ),
+                        ),
+                child: StatItemWidget(
+                  label: items[i].label,
+                  value: items[i].value,
+                ),
+              ),
+            ),
         ],
       ),
     );
-  }
-
-  Widget _buildDivider() {
-    return Container(height: 32, width: 1.2, color: AppColors.grey4);
   }
 
   String _formatNumber(int number) {
