@@ -11,7 +11,19 @@ class FriendsListLoading extends FriendsListState {}
 class FriendsListLoaded extends FriendsListState {
   final List<FriendListItemModel> friends;
   final bool hasReachedMax;
-  const FriendsListLoaded({required this.friends, required this.hasReachedMax});
+  final int? totalCount;
+  final bool isLoadingMore;
+  final bool loadMoreFailed;
+
+  const FriendsListLoaded({
+    required this.friends,
+    required this.hasReachedMax,
+    this.totalCount,
+    this.isLoadingMore = false,
+    this.loadMoreFailed = false,
+  });
+
+  int get total => totalCount ?? friends.length;
 }
 
 class FriendsListError extends FriendsListState {
