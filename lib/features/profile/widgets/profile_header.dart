@@ -7,15 +7,16 @@ import 'package:social_media_app/features/auth/data/models/user_data.dart';
 import 'package:social_media_app/features/profile/cubits/profile_cubit/profile_cubit.dart';
 import '../../../core/constants/app_images.dart';
 import '../../../core/supabase/supabase_provider.dart';
-import '../../../core/themes/app_colors.dart';
-import '../../../core/widgets/custom_elevated_button.dart';
 import '../../posts/cubits/posts_cubit/posts_cubit.dart';
 import '../../single_chats/models/chat_user_model.dart';
 import '../../social_graph/models/friendship_status.dart';
-import '../../social_graph/widgets/animated_action_button.dart';
+import '../../social_graph/widgets/unfriend_confirmation_dialog.dart';
 import '../../stories/cubits/stories_cubit/stories_cubit.dart';
 import '../utils/circular_icon_button.dart';
+import '../utils/profile_action_button.dart';
+import '../utils/profile_animated_action_button.dart';
 import '../utils/profile_header_back_btn_container.dart';
+import '../utils/profile_ui_tokens.dart';
 import 'profile_header_user_info_section.dart';
 
 class ProfileHeader extends StatelessWidget {
@@ -29,11 +30,9 @@ class ProfileHeader extends StatelessWidget {
     final currentUserId = SupabaseProvider.id;
     final isMe = user.id == currentUserId;
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final double bgHeight = MediaQuery.of(context).size.width / 1.7;
-
-    final friendshipTopWidget =
-        isMe ? null : _buildFriendshipActionWidget(context, theme);
+    final double screenWidth = MediaQuery.of(context).size.width;
+    final double bgHeight = screenWidth / 1.7;
+    final double avatarSize = screenWidth * 0.26;
 
     return Column(
       mainAxisAlignment: MainAxisAlignment.start,
@@ -42,7 +41,12 @@ class ProfileHeader extends StatelessWidget {
         Stack(
           clipBehavior: Clip.none,
           children: [
-            SizedBox(height: bgHeight + 100, width: double.infinity),
+            SizedBox(
+              height: bgHeight + avatarSize / 2 + 12,
+              width: double.infinity,
+            ),
+
+            // ── Cover + avatar (unchanged) ──
             CustomUserProfileImagesSection(
               aspectRatio: 1.7,
               avatarSizeFactor: 0.26,
@@ -57,69 +61,53 @@ class ProfileHeader extends StatelessWidget {
             ),
 
             Positioned(
-              right: 20,
-              top: bgHeight + 10,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
+              right: ProfileUiTokens.screenPadding,
+              top:
+                  bgHeight +
+                  avatarSize / 2 -
+                  ProfileUiTokens.iconButtonSize -
+                  8,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  if (!isMe && friendshipTopWidget != null) ...[
-                    SizedBox(width: 166, child: friendshipTopWidget),
-                    const Gap(8),
-                  ],
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      _buildCircularIconButton(
-                        context,
-                        theme: theme,
-                        icon:
-                            isMe
-                                ? Icons.bookmark_rounded
-                                : Icons.people_alt_rounded,
-                        tooltip: isMe ? 'Saved Posts' : 'Friends List',
-                        onPressed: () {
-                          if (isMe) {
-                            final postsCubit = context.read<PostsCubit>();
-                            Navigator.of(
-                              context,
-                              rootNavigator: true,
-                            ).pushNamed(
-                              AppRoutes.savedPostsViewRoute,
-                              arguments: {
-                                'postsCubit': postsCubit,
-                                'userId': user.id,
-                              },
-                            );
-                          } else {
-                            Navigator.of(
-                              context,
-                              rootNavigator: true,
-                            ).pushNamed(
-                              AppRoutes.friendsListViewRoute,
-                              arguments: user.id,
-                            );
-                          }
+                  _buildCircularIconButton(
+                    theme: theme,
+                    icon:
+                        isMe
+                            ? Icons.bookmark_rounded
+                            : Icons.people_alt_rounded,
+                    tooltip: isMe ? 'Saved Posts' : 'Friends List',
+                    onPressed: () {
+                      if (isMe) {
+                        final postsCubit = context.read<PostsCubit>();
+                        Navigator.of(context, rootNavigator: true).pushNamed(
+                          AppRoutes.savedPostsViewRoute,
+                          arguments: {
+                            'postsCubit': postsCubit,
+                            'userId': user.id,
+                          },
+                        );
+                      } else {
+                        _openFriendsList(context);
+                      }
+                    },
+                  ),
+                  const Gap(8),
+                  _buildCircularIconButton(
+                    theme: theme,
+                    assetPath: AppImages.filledStoriesIcon,
+                    tooltip: 'Stories',
+                    onPressed: () {
+                      final storiesCubit = context.read<StoriesCubit>();
+                      Navigator.of(context, rootNavigator: true).pushNamed(
+                        AppRoutes.userStoriesGridViewRoute,
+                        arguments: {
+                          'userId': user.id,
+                          'authorName': user.name,
+                          'storiesCubit': storiesCubit,
                         },
-                      ),
-                      const Gap(12),
-                      _buildCircularIconButton(
-                        context,
-                        theme: theme,
-                        assetPath: AppImages.filledStoriesIcon,
-                        tooltip: 'Stories',
-                        onPressed: () {
-                          final storiesCubit = context.read<StoriesCubit>();
-                          Navigator.of(context, rootNavigator: true).pushNamed(
-                            AppRoutes.userStoriesGridViewRoute,
-                            arguments: {
-                              'userId': user.id,
-                              'authorName': user.name,
-                              'storiesCubit': storiesCubit,
-                            },
-                          );
-                        },
-                      ),
-                    ],
+                      );
+                    },
                   ),
                 ],
               ),
@@ -128,198 +116,171 @@ class ProfileHeader extends StatelessWidget {
             if (!isMe) ProfileHeaderBackBtnContainer(),
           ],
         ),
+
         ProfileHeaderUserInfoSection(user: user, isMe: isMe, state: state),
-        Gap(size.height * 0.003),
+        const Gap(16),
+
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
+          padding: const EdgeInsets.symmetric(
+            horizontal: ProfileUiTokens.screenPadding,
+          ),
           child:
               isMe
-                  ? Row(
-                    children: [
-                      Expanded(
-                        child: CustomElevatedButton(
-                          minimumSize: const Size(double.infinity, 46),
-                          maximumSize: const Size(double.infinity, 46),
-                          txtBtn: 'Edit Profile',
-                          txtBtnStyle: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
-                            letterSpacing: 0.2,
-                            color: isDark ? Colors.white : theme.primaryColor,
-                          ),
-                          prefixIcon: Icon(
-                            Icons.edit_rounded,
-                            size: 16,
-                            color: isDark ? Colors.white : theme.primaryColor,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          side: BorderSide(
-                            color:
-                                isDark
-                                    ? Colors.white.withValues(alpha: 0.18)
-                                    : AppColors.grey3,
-                            width: 1.3,
-                          ),
-                          elevation: 0,
-                          bgColor: theme.colorScheme.surface,
-                          onPressed: () async {
-                            final profileCubit = context.read<ProfileCubit>();
-                            await Navigator.of(
-                              context,
-                              rootNavigator: true,
-                            ).pushNamed(
-                              AppRoutes.editProfileViewRoute,
-                              arguments: user,
-                            );
-                            if (context.mounted) {
-                              profileCubit.getProfileData(user.id);
-                            }
-                          },
-                        ),
-                      ),
-                      const Gap(10),
-                      _buildCircularIconButton(
-                        context,
-                        theme: theme,
-                        icon: Icons.people_alt_rounded,
-                        tooltip: 'Friends List',
-                        size: 46,
-                        onPressed: () {
-                          Navigator.of(context, rootNavigator: true).pushNamed(
-                            AppRoutes.friendsListViewRoute,
-                            arguments: user.id,
-                          );
-                        },
-                      ),
-                    ],
-                  )
-                  : Row(
-                    children: [
-                      Expanded(
-                        child: AnimatedActionButton(
-                          height: 46,
-                          isActive: state.isFollowing,
-                          idleLabel: 'Follow',
-                          activeLabel: 'Following',
-                          idleIcon: Icons.person_add_rounded,
-                          activeIcon: Icons.check_rounded,
-                          onPressed: () async {
-                            await context.read<ProfileCubit>().toggleFollow();
-                          },
-                        ),
-                      ),
-                      const Gap(10),
-                      _buildCircularIconButton(
-                        context,
-                        theme: theme,
-                        icon: Icons.message_rounded,
-                        tooltip: 'Send message',
-                        size: 46,
-                        onPressed: () {
-                          final chatUser = ChatUserModel(
-                            id: user.id,
-                            name: user.name,
-                            imageUrl: user.imageUrl,
-                            lastSeen: user.lastSeen,
-                          );
-                          Navigator.of(context, rootNavigator: true).pushNamed(
-                            AppRoutes.chatDetailsViewRoute,
-                            arguments: chatUser,
-                          );
-                        },
-                      ),
-                    ],
-                  ),
+                  ? _buildMyProfileActions(context)
+                  : _buildOtherProfileActions(context),
         ),
       ],
     );
   }
 
-  Widget? _buildFriendshipActionWidget(BuildContext context, ThemeData theme) {
-    final cubit = context.read<ProfileCubit>();
+  // ───────────────────────── My profile ─────────────────────────
 
-    switch (state.friendshipStatus) {
-      case FriendshipStatus.none:
-        return AnimatedActionButton(
-          height: 42,
-          isActive: false,
-          idleLabel: 'Add friend',
-          activeLabel: 'Requested',
-          idleIcon: Icons.person_add_alt_1_rounded,
-          activeIcon: Icons.hourglass_top_rounded,
-          onPressed: () => cubit.sendFriendRequest(),
-        );
-      case FriendshipStatus.pendingSent:
-        return AnimatedActionButton(
-          height: 42,
-          isActive: true,
-          idleLabel: 'Add friend',
-          activeLabel: 'Requested',
-          idleIcon: Icons.person_add_alt_1_rounded,
-          activeIcon: Icons.hourglass_top_rounded,
-          onPressed: () => cubit.cancelFriendRequest(),
-        );
-      case FriendshipStatus.pendingReceived:
-        return _buildSmallActionButton(
-          context,
-          label: 'Accept',
-          txtColor: Colors.white,
-          bgColor: theme.primaryColor,
-          iconWidget: const Icon(
-            Icons.person_add_alt_1_rounded,
-            size: 18,
-            color: Colors.white,
+  Widget _buildMyProfileActions(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: ProfileActionButton(
+            label: 'Edit Profile',
+            icon: Icons.edit_rounded,
+            style: ProfileActionStyle.outlinePrimary,
+            onPressed: () async {
+              final profileCubit = context.read<ProfileCubit>();
+              await Navigator.of(
+                context,
+                rootNavigator: true,
+              ).pushNamed(AppRoutes.editProfileViewRoute, arguments: user);
+              if (context.mounted) {
+                profileCubit.getProfileData(user.id);
+              }
+            },
           ),
-          onPressed: () {
-            cubit.acceptFriendRequest();
-          },
-        );
-      case FriendshipStatus.accepted:
-        return null;
-    }
-  }
-
-  Widget _buildSmallActionButton(
-    BuildContext context, {
-    required String label,
-    required Widget iconWidget,
-    required VoidCallback onPressed,
-    TextStyle? txtBtnStyle,
-    Color? txtColor,
-    BorderSide? side,
-    bgColor,
-  }) {
-    return CustomElevatedButton(
-      txtBtn: label,
-      onPressed: onPressed,
-      maximumSize: const Size(double.infinity, 42),
-      minimumSize: const Size(double.infinity, 42),
-      txtColor: txtColor,
-      txtBtnStyle:
-          txtBtnStyle ??
-          TextStyle(
-            color: txtColor ?? Colors.white,
-            fontSize: 12.5,
-            fontWeight: FontWeight.bold,
-          ),
-      bgColor: bgColor,
-      side: side,
-      elevation: 1.1,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
-      prefixIcon: iconWidget,
+        ),
+        const Gap(8),
+        ProfileSquareIconButton(
+          icon: Icons.people_alt_rounded,
+          tooltip: 'Friends List',
+          onPressed: () => _openFriendsList(context),
+        ),
+      ],
     );
   }
 
-  Widget _buildCircularIconButton(
-    BuildContext context, {
+  // ───────────────────────── Other user ─────────────────────────
+
+  Widget _buildOtherProfileActions(BuildContext context) {
+    final cubit = context.read<ProfileCubit>();
+    final isPendingReceived =
+        state.friendshipStatus == FriendshipStatus.pendingReceived;
+
+    return Row(
+      children: [
+        Expanded(child: _buildFriendshipButton(context, cubit)),
+        if (isPendingReceived) ...[
+          const Gap(8),
+          ProfileSquareIconButton(
+            icon: Icons.close_rounded,
+            tooltip: 'Decline request',
+            iconColor: ProfileUiTokens.of(context).onSurfaceVariant,
+            onPressed: () => cubit.declineFriendRequest(),
+          ),
+        ],
+        const Gap(8),
+        ProfileAnimatedActionButton(
+          width: 112,
+          isActive: state.isFollowing,
+          idleLabel: 'Follow',
+          activeLabel: 'Following',
+          idleIcon: Icons.add_rounded,
+          activeIcon: Icons.check_rounded,
+          idleStyle: ProfileActionStyle.outlineAccent,
+          activeStyle: ProfileActionStyle.neutral,
+          onPressed: cubit.toggleFollow,
+        ),
+        const Gap(8),
+        ProfileSquareIconButton(
+          icon: Icons.message_rounded,
+          tooltip: 'Send message',
+          onPressed: () {
+            final chatUser = ChatUserModel(
+              id: user.id,
+              name: user.name,
+              imageUrl: user.imageUrl,
+              lastSeen: user.lastSeen,
+            );
+            Navigator.of(
+              context,
+              rootNavigator: true,
+            ).pushNamed(AppRoutes.chatDetailsViewRoute, arguments: chatUser);
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFriendshipButton(BuildContext context, ProfileCubit cubit) {
+    switch (state.friendshipStatus) {
+      case FriendshipStatus.none:
+      case FriendshipStatus.pendingSent:
+        final isRequested =
+            state.friendshipStatus == FriendshipStatus.pendingSent;
+        return ProfileAnimatedActionButton(
+          key: const ValueKey('friendship-request-button'),
+          isActive: isRequested,
+          idleLabel: 'Add Friend',
+          activeLabel: 'Requested',
+          idleIcon: Icons.person_add_alt_1_rounded,
+          activeIcon: Icons.hourglass_top_rounded,
+          idleStyle: ProfileActionStyle.primary,
+          activeStyle: ProfileActionStyle.outlineMuted,
+          onPressed:
+              () =>
+                  isRequested
+                      ? cubit.cancelFriendRequest()
+                      : cubit.sendFriendRequest(),
+        );
+      case FriendshipStatus.pendingReceived:
+        return ProfileActionButton(
+          label: 'Accept',
+          icon: Icons.check_rounded,
+          style: ProfileActionStyle.primary,
+          onPressed: () => cubit.acceptFriendRequest(),
+        );
+      case FriendshipStatus.accepted:
+        return ProfileActionButton(
+          label: 'Friends',
+          icon: Icons.check_rounded,
+          style: ProfileActionStyle.tonal,
+          onPressed: () => _confirmUnfriend(context, cubit),
+        );
+    }
+  }
+
+  Future<void> _confirmUnfriend(
+    BuildContext context,
+    ProfileCubit cubit,
+  ) async {
+    final confirmed = await showUnfriendConfirmationDialog(
+      context,
+      friendName: user.name,
+    );
+    if (confirmed == true) {
+      await cubit.unfriend();
+    }
+  }
+
+  void _openFriendsList(BuildContext context) {
+    Navigator.of(
+      context,
+      rootNavigator: true,
+    ).pushNamed(AppRoutes.friendsListViewRoute, arguments: user.id);
+  }
+
+  Widget _buildCircularIconButton({
     required ThemeData theme,
     IconData? icon,
     String? assetPath,
     required VoidCallback onPressed,
     String? tooltip,
-    double size = 44,
   }) {
     return CircularIconButton(
       theme: theme,
@@ -327,7 +288,7 @@ class ProfileHeader extends StatelessWidget {
       assetPath: assetPath,
       onPressed: onPressed,
       tooltip: tooltip,
-      size: size,
+      size: ProfileUiTokens.iconButtonSize,
     );
   }
 }
