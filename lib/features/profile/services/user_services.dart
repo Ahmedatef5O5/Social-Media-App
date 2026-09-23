@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/services/network_status_service.dart';
 import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/presence/models/presence_privacy.dart';
+import '../models/profile_mutuals_model.dart';
 import '../models/profile_overview_model.dart';
 
 class UserService {
@@ -59,6 +60,23 @@ class UserService {
     );
     final row = (data as List).first as Map<String, dynamic>;
     return ProfileOverviewModel.fromMap(row);
+  }
+
+  static const String _getProfileMutualsRpc = 'get_profile_mutuals';
+
+  Future<ProfileMutualsModel> getProfileMutuals(String viewedUserId) async {
+    try {
+      final data = await _supabase.rpc(
+        _getProfileMutualsRpc,
+        params: {'p_viewed_user_id': viewedUserId},
+      );
+      final rows = data as List;
+      if (rows.isEmpty) return ProfileMutualsModel.empty;
+      return ProfileMutualsModel.fromMap(rows.first as Map<String, dynamic>);
+    } catch (e) {
+      debugPrint('getProfileMutuals error: $e');
+      return ProfileMutualsModel.empty;
+    }
   }
 
   Future<void> updatePresencePrivacy(PresencePrivacy privacy) async {
