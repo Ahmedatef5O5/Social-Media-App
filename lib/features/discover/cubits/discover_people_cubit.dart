@@ -199,31 +199,38 @@ class DiscoverPeopleCubit extends Cubit<DiscoverPeopleState>
     _emitActive();
   }
 
+  DiscoverPersonModel? _findPerson(String userId) {
+    for (final person in _users) {
+      if (person.user.id == userId) return person;
+    }
+    for (final person in _searchResults) {
+      if (person.user.id == userId) return person;
+    }
+    return null;
+  }
+
+  /// Runs a side effect (notification / push) that must never roll back a
+  /// friendship change that was already persisted in the database.
+  Future<void> _runBestEffort(
+    String label,
+    Future<void> Function() action,
+  ) async {
+    try {
+      await action();
+    } catch (e) {
+      debugPrint('$label failed (non-blocking): $e');
+    }
+  }
+
   Future<void> sendFriendRequest(String userId) async {
     _updateUser(
       userId,
       (u) => u.copyWith(friendshipStatus: FriendshipStatus.pendingSent),
     );
-    try {
-      final friendshipId = await _friendshipServices.sendFriendRequest(userId);
-      _updateUser(userId, (u) => u.withFriendshipId(friendshipId));
 
-      final me = _homeCubit.currentUserData;
-      if (me != null) {
-        await NotificationRepository.instance.notifyFriendRequest(
-          receiverId: userId,
-          requesterId: me.id,
-          requesterName: me.name,
-          requesterImageUrl: me.imageUrl ?? '',
-          friendshipId: friendshipId,
-        );
-        await FcmService.instance.notifyFriendRequest(
-          receiverId: userId,
-          requesterId: me.id,
-          requesterName: me.name,
-          requesterImageUrl: me.imageUrl ?? '',
-        );
-      }
+    String friendshipId;
+    try {
+      friendshipId = await _friendshipServices.sendFriendRequest(userId);
     } catch (e) {
       _updateUser(
         userId,
@@ -234,35 +241,53 @@ class DiscoverPeopleCubit extends Cubit<DiscoverPeopleState>
       debugPrint('sendFriendRequest error: $e');
       rethrow;
     }
+
+    // The request is persisted from this point on: never roll the UI back
+    // because of a failing notification.
+    _updateUser(userId, (u) => u.withFriendshipId(friendshipId));
+
+    final me = _homeCubit.currentUserData;
+    if (me == null) return;
+    await _runBestEffort(
+      'notifyFriendRequest',
+      () => NotificationRepository.instance.notifyFriendRequest(
+        receiverId: userId,
+        requesterId: me.id,
+        requesterName: me.name,
+        requesterImageUrl: me.imageUrl ?? '',
+        friendshipId: friendshipId,
+      ),
+    );
+    await _runBestEffort(
+      'fcm notifyFriendRequest',
+      () => FcmService.instance.notifyFriendRequest(
+        receiverId: userId,
+        requesterId: me.id,
+        requesterName: me.name,
+        requesterImageUrl: me.imageUrl ?? '',
+      ),
+    );
   }
 
   Future<void> acceptFriendRequest(String userId) async {
+    // FriendshipServices.acceptFriendRequest expects the friendship row id,
+    // NOT the other user's id.
+    final friendshipId = _findPerson(userId)?.friendshipId;
+    if (friendshipId == null) {
+      throw StateError('Cannot accept request: missing friendship id.');
+    }
+
     _updateUser(
       userId,
       (u) => u.copyWith(friendshipStatus: FriendshipStatus.accepted),
     );
 
     try {
-      await _friendshipServices.acceptFriendRequest(userId);
-      final me = _homeCubit.currentUserData;
-      if (me != null) {
-        await NotificationRepository.instance.removeFriendRequestNotification(
-          receiverId: me.id,
-          senderId: userId,
-        );
-
-        await NotificationRepository.instance.notifyFriendAccept(
-          receiverId: userId,
-          accepterId: me.id,
-          accepterName: me.name,
-          accepterImageUrl: me.imageUrl ?? '',
-        );
-        await FcmService.instance.notifyFriendAccept(
-          receiverId: userId,
-          accepterId: me.id,
-          accepterName: me.name,
-          accepterImageUrl: me.imageUrl ?? '',
-        );
+      final wasAccepted = await _friendshipServices.acceptFriendRequest(
+        friendshipId,
+      );
+      if (!wasAccepted) {
+        throw StateError('Friend request $friendshipId is no longer pending.');
       }
     } catch (e) {
       _updateUser(
@@ -272,6 +297,34 @@ class DiscoverPeopleCubit extends Cubit<DiscoverPeopleState>
       debugPrint('acceptFriendRequest error: $e');
       rethrow;
     }
+
+    final me = _homeCubit.currentUserData;
+    if (me == null) return;
+    await _runBestEffort(
+      'removeFriendRequestNotification',
+      () => NotificationRepository.instance.removeFriendRequestNotification(
+        receiverId: me.id,
+        senderId: userId,
+      ),
+    );
+    await _runBestEffort(
+      'notifyFriendAccept',
+      () => NotificationRepository.instance.notifyFriendAccept(
+        receiverId: userId,
+        accepterId: me.id,
+        accepterName: me.name,
+        accepterImageUrl: me.imageUrl ?? '',
+      ),
+    );
+    await _runBestEffort(
+      'fcm notifyFriendAccept',
+      () => FcmService.instance.notifyFriendAccept(
+        receiverId: userId,
+        accepterId: me.id,
+        accepterName: me.name,
+        accepterImageUrl: me.imageUrl ?? '',
+      ),
+    );
   }
 
   Future<void> cancelFriendRequest(String userId, String friendshipId) async {
@@ -281,15 +334,9 @@ class DiscoverPeopleCubit extends Cubit<DiscoverPeopleState>
           .copyWith(friendshipStatus: FriendshipStatus.none)
           .withFriendshipId(null),
     );
+
     try {
       await _friendshipServices.cancelFriendRequest(friendshipId);
-      final me = _homeCubit.currentUserData;
-      if (me != null) {
-        await NotificationRepository.instance.removeFriendRequestNotification(
-          receiverId: userId,
-          senderId: me.id,
-        );
-      }
     } catch (e) {
       _updateUser(
         userId,
@@ -300,6 +347,16 @@ class DiscoverPeopleCubit extends Cubit<DiscoverPeopleState>
       debugPrint('cancelFriendRequest error: $e');
       rethrow;
     }
+
+    final me = _homeCubit.currentUserData;
+    if (me == null) return;
+    await _runBestEffort(
+      'removeFriendRequestNotification',
+      () => NotificationRepository.instance.removeFriendRequestNotification(
+        receiverId: userId,
+        senderId: me.id,
+      ),
+    );
   }
 
   Future<void> toggleFollow(
