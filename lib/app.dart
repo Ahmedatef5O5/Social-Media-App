@@ -181,7 +181,7 @@ class MyApp extends StatelessWidget {
                 );
               },
               debugShowCheckedModeBanner: false,
-              title: 'Social Media App',
+              title: 'Social Mate',
               theme: state.theme.themeData,
               initialRoute: AppRoutes.splashViewRoute,
               onGenerateInitialRoutes:
