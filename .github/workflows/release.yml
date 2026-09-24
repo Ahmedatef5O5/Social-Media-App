@@ -3,8 +3,8 @@ name: Release
 # CI proves a change is safe. CD ships it. Keeping them in one file is how
 # you end up building a signed release bundle on every pull request.
 on:
-  push:
-    tags: ["v*.*.*"]
+  # push:
+  #   tags: ["v*.*.*"]
   workflow_dispatch:
     inputs:
       build_type:
