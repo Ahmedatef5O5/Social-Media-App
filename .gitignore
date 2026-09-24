@@ -22,7 +22,8 @@ migrate_working_dir/
 # VS Code which you may wish to be included in version control, so this line
 # is commented out by default.
 .vscode/
-docs/
+/docs/
+!assets/docs/
 
 # Security & Signing Files
 **/key.properties
@@ -69,7 +70,7 @@ app.*.map.json
 /android/app/release
 
 # Ignore sensitive credentials
-lib/core/secrets/app_secrets.dart
+# lib/core/secrets/app_secrets.dart
 mute_test_log.txt
 supabase/.temp/linked-project.json
 
