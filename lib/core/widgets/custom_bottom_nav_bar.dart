@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -15,7 +16,10 @@ import 'package:social_media_app/features/settings/widgets/profile_drawer.dart';
 import '../../features/group_chats/cubits/group_list_cubit/group_list_cubit.dart';
 import '../../features/home/cubits/home_cubit/home_cubit.dart';
 import '../../features/home/views/home_view.dart';
+import '../../features/posts/cubits/posts_cubit/posts_cubit.dart';
+import '../../features/posts/services/posts_services.dart';
 import '../../features/profile/cubits/profile_cubit/profile_cubit.dart';
+import '../../features/profile/cubits/profile_posts_cubit/profile_posts_cubit.dart';
 import '../../features/social_graph/services/follow_services.dart';
 import '../../features/social_graph/services/friendship_services.dart';
 import '../connectivity/cubits/connectivity_cubit.dart';
@@ -186,6 +190,15 @@ class _CustomBottomNavBarState extends State<CustomBottomNavBar> {
                       connectivityCubit: context.read<ConnectivityCubit>(),
                     )..getProfileData(userId),
               ),
+
+              BlocProvider(
+                create:
+                    (context) => ProfilePostsCubit(
+                      userId: userId,
+                      postsServices: context.read<PostsServices>(),
+                      postsCubit: context.read<PostsCubit>(),
+                    )..loadInitial(),
+              ),
             ],
             child: AnnotatedRegion<SystemUiOverlayStyle>(
               value: (currentTheme.isDark
@@ -217,27 +230,33 @@ class _CustomBottomNavBarState extends State<CustomBottomNavBar> {
                       navBarBuilder: (config) => const SizedBox.shrink(),
                       tabs: [
                         PersistentTabConfig(
-                          screen: HomeView(
-                            navController: _controller,
-                            scrollController: _scrollControllers[0],
+                          screen: _withVerticalPriority(
+                            HomeView(
+                              navController: _controller,
+                              scrollController: _scrollControllers[0],
+                            ),
                           ),
                           item: ItemConfig(icon: const Icon(Icons.home)),
                         ),
                         PersistentTabConfig(
-                          screen: DiscoverView(
-                            scrollController: _scrollControllers[1],
+                          screen: _withVerticalPriority(
+                            DiscoverView(
+                              scrollController: _scrollControllers[1],
+                            ),
                           ),
                           item: ItemConfig(icon: const Icon(Icons.group)),
                         ),
                         PersistentTabConfig(
-                          screen: ChatsView(
-                            scrollController: _scrollControllers[2],
+                          screen: _withVerticalPriority(
+                            ChatsView(scrollController: _scrollControllers[2]),
                           ),
                           item: ItemConfig(icon: const Icon(Icons.chat)),
                         ),
                         PersistentTabConfig(
-                          screen: ProfileView(
-                            scrollController: _scrollControllers[3],
+                          screen: _withVerticalPriority(
+                            ProfileView(
+                              scrollController: _scrollControllers[3],
+                            ),
                           ),
                           item: ItemConfig(icon: const Icon(Icons.person)),
                         ),
@@ -304,6 +323,19 @@ class _CustomBottomNavBarState extends State<CustomBottomNavBar> {
               ),
             ),
           ),
+        );
+      },
+    );
+  }
+
+  Widget _withVerticalPriority(Widget child) {
+    return Builder(
+      builder: (context) {
+        return MediaQuery(
+          data: MediaQuery.of(context).copyWith(
+            gestureSettings: const DeviceGestureSettings(touchSlop: 8.0),
+          ),
+          child: child,
         );
       },
     );

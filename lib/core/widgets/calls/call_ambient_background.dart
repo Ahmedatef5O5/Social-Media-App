@@ -70,7 +70,7 @@ class _CallAmbientBackgroundState extends State<CallAmbientBackground>
 }
 
 class _OrbitOrnaments extends StatelessWidget {
-  final double t; 
+  final double t;
   final bool isVideo;
   final Size size;
 
@@ -120,10 +120,7 @@ class _OrbitOrnaments extends StatelessWidget {
         Positioned(
           top: size.height * 0.32 - float * 0.5,
           left: shortest * 0.04,
-          child: Opacity(
-            opacity: 0.08,
-            child: _DotGrid(size: shortest * 0.14),
-          ),
+          child: Opacity(opacity: 0.08, child: _DotGrid(size: shortest * 0.14)),
         ),
       ],
     );

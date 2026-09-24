@@ -304,13 +304,12 @@ class _SessionsMessage extends StatelessWidget {
 }
 
 class _SessionsListSection extends StatefulWidget {
-
   final List<AiChatSession> sessions;
   final String? activeSessionId;
   final AiModelOption? selectedModel;
   final ValueChanged<AiChatSession> onOpenSession;
   final ValueChanged<AiChatSession> onDeleteSession;
-  
+
   const _SessionsListSection({
     required this.sessions,
     required this.activeSessionId,
@@ -319,7 +318,6 @@ class _SessionsListSection extends StatefulWidget {
     required this.onDeleteSession,
   });
 
-  
   @override
   State<_SessionsListSection> createState() => _SessionsListSectionState();
 }
@@ -430,7 +428,6 @@ class _SectionLabel extends StatelessWidget {
 }
 
 class _DrawerRow extends StatelessWidget {
-
   final FaIconData leadingIcon;
   final Widget? leadingWidget;
   final Color leadingColor;
@@ -528,7 +525,6 @@ class _DrawerRow extends StatelessWidget {
 }
 
 class _SessionTile extends StatelessWidget {
-
   final AiChatSession session;
   final bool isActive;
   final AiModelOption? selectedModel;

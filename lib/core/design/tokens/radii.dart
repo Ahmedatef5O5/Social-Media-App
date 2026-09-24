@@ -1,7 +1,7 @@
 import 'package:flutter/widgets.dart';
 
 /// Design tokens for standardized border radiuses across all surfaces and components.
-/// 
+///
 /// Strictly use these predefined radiuses instead of arbitrary values.
 abstract final class AppRadii {
   // --- Raw Radius Values (double) ---
@@ -51,10 +51,14 @@ abstract final class AppRadii {
   static const BorderRadius radiusXl = BorderRadius.all(Radius.circular(rawXl));
 
   /// 24px circular border radius (floating containers, expanded sheets)
-  static const BorderRadius radius2xl = BorderRadius.all(Radius.circular(raw2xl));
+  static const BorderRadius radius2xl = BorderRadius.all(
+    Radius.circular(raw2xl),
+  );
 
   /// 9999px pill / circular border radius (pills, avatars, floating nav bar)
-  static const BorderRadius radiusFull = BorderRadius.all(Radius.circular(rawFull));
+  static const BorderRadius radiusFull = BorderRadius.all(
+    Radius.circular(rawFull),
+  );
 
   // --- Directional / Specialized Radiuses ---
 

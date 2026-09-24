@@ -121,8 +121,15 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
   @override
   String? _messagesSnapshotKey;
 
+  /// Resolved through an injectable provider rather than read straight off
+  /// the `SupabaseProvider` singleton.
+  ///
+  /// Every production call site (`app_router.dart`, two places) omits the
+  /// parameter and behaves exactly as before. Tests supply a fixed id, which
+  /// is what makes this Cubit testable at all — the same seam `HomeCubit`
+  /// already uses.
   @override
-  final currentUserId = SupabaseProvider.id;
+  final String currentUserId;
 
   final String currentUserName;
 
@@ -144,8 +151,10 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
     this.currentUserName = 'Someone',
     ChatPermissionService? chatPermissionService,
     AudioCompressionService? audioCompressionService,
+    String Function()? currentUserIdProvider,
     required ChatPresenceService presenceService,
   }) : _presenceService = presenceService,
+       currentUserId = (currentUserIdProvider ?? (() => SupabaseProvider.id))(),
        _chatPermissionService =
            chatPermissionService ?? ChatPermissionService(),
        _audioCompressionService =
@@ -312,6 +321,12 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
   AppLifecycleState? _lastLifecycleState;
 
   void getMessagesStream({required String receiverId}) {
+    final bool isSwitchingPeer =
+        _activeReceiverId != null && _activeReceiverId != receiverId;
+    if (isSwitchingPeer) {
+      cachedMessages = [];
+      _hasHydratedFromDisk = false;
+    }
     _activeReceiverId = receiverId;
     final int myEpoch = ++_messagesStreamEpoch;
     _messageSubscription?.cancel();
