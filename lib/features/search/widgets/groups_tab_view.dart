@@ -8,6 +8,7 @@ import '../../group_chats/cubits/group_list_cubit/group_list_cubit.dart';
 import '../../group_chats/models/group_model.dart';
 import '../cubits/search_groups_cubit/search_groups_cubit.dart';
 import '../utils/chat_tile_skeleton_list.dart';
+import '../utils/error_search_state.dart';
 import '../utils/search_view_metrics.dart';
 import 'group_search_result_tile.dart';
 
@@ -157,36 +158,10 @@ class _GroupsTabViewState extends State<GroupsTabView>
     ThemeData theme,
     String message,
     String query,
-  ) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.wifi_off_rounded,
-              size: 42,
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-            const Gap(12),
-            Text(
-              message,
-              textAlign: TextAlign.center,
-              style: theme.textTheme.bodyMedium,
-            ),
-            const Gap(14),
-            TextButton(
-              onPressed: () {
-                if (query.isNotEmpty) {
-                  context.read<SearchGroupsCubit>().search(query);
-                }
-              },
-              child: const Text('Retry'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  ) => ErrorSearchState(
+    message: message,
+    onRetry: () {
+      if (query.isNotEmpty) context.read<SearchGroupsCubit>().search(query);
+    },
+  );
 }

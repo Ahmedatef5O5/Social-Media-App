@@ -7,6 +7,7 @@ import '../../../core/widgets/empty_findings_animation_widget.dart';
 import '../../reels/models/reel_model.dart';
 import '../../reels/views/reels_full_screen_view.dart';
 import '../cubits/search_reels_cubit/search_reels_cubit.dart';
+import '../utils/error_search_state.dart';
 import '../utils/search_view_metrics.dart';
 import 'reel_grid_tile.dart';
 import '../utils/reels_grid_skeleton.dart';
@@ -173,36 +174,12 @@ class _ReelsTabViewState extends State<ReelsTabView>
     ThemeData theme,
     String message,
     String query,
-  ) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.wifi_off_rounded,
-              size: 42,
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-            const Gap(12),
-            Text(
-              message,
-              textAlign: TextAlign.center,
-              style: theme.textTheme.bodyMedium,
-            ),
-            const Gap(14),
-            TextButton(
-              onPressed:
-                  () =>
-                      query.isEmpty
-                          ? context.read<SearchReelsCubit>().getReels()
-                          : context.read<SearchReelsCubit>().searchReels(query),
-              child: const Text('Retry'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  ) => ErrorSearchState(
+    message: message,
+    onRetry:
+        () =>
+            query.isEmpty
+                ? context.read<SearchReelsCubit>().getReels()
+                : context.read<SearchReelsCubit>().searchReels(query),
+  );
 }

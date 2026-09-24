@@ -11,6 +11,7 @@ import '../../discover/utils/discover_grid_metrics.dart';
 import '../../discover/widgets/discover_person_grid_card_widget.dart';
 import '../../social_graph/models/discover_person_model.dart';
 import '../utils/accounts_skeleton_list.dart';
+import '../utils/error_search_state.dart';
 import '../utils/search_view_metrics.dart';
 
 class AccountsTabView extends StatefulWidget {
@@ -178,40 +179,12 @@ class _AccountsTabViewState extends State<AccountsTabView>
     ThemeData theme,
     String message,
     String query,
-  ) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.wifi_off_rounded,
-              size: 42,
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-            const Gap(12),
-            Text(
-              message,
-              textAlign: TextAlign.center,
-              style: theme.textTheme.bodyMedium,
-            ),
-            const Gap(14),
-            TextButton(
-              onPressed:
-                  () =>
-                      query.isEmpty
-                          ? context
-                              .read<DiscoverPeopleCubit>()
-                              .getDiscoverPeople()
-                          : context.read<DiscoverPeopleCubit>().searchPeople(
-                            query,
-                          ),
-              child: const Text('Retry'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  ) => ErrorSearchState(
+    message: message,
+    onRetry:
+        () =>
+            query.isEmpty
+                ? context.read<DiscoverPeopleCubit>().getDiscoverPeople()
+                : context.read<DiscoverPeopleCubit>().searchPeople(query),
+  );
 }

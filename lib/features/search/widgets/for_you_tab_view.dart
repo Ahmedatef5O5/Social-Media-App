@@ -13,6 +13,7 @@ import '../../reels/models/reel_model.dart';
 import '../cubits/search_reels_cubit/search_reels_cubit.dart';
 import '../cubits/search_posts_cubit/search_posts_cubit.dart';
 import '../models/injection_plan_entry.dart';
+import '../utils/error_search_state.dart';
 import '../utils/search_view_metrics.dart';
 import 'for_you_feed_item.dart';
 import 'for_you_reels_grid_section.dart';
@@ -358,29 +359,5 @@ class _ForYouTabViewState extends State<ForYouTabView>
     ThemeData theme,
     String message, {
     required VoidCallback onRetry,
-  }) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.wifi_off_rounded,
-              size: 42,
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-            const Gap(12),
-            Text(
-              message,
-              textAlign: TextAlign.center,
-              style: theme.textTheme.bodyMedium,
-            ),
-            const Gap(14),
-            TextButton(onPressed: onRetry, child: const Text('Retry')),
-          ],
-        ),
-      ),
-    );
-  }
+  }) => ErrorSearchState(message: message, onRetry: onRetry);
 }
