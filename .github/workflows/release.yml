@@ -1,0 +1,134 @@
+name: Release
+
+# CI proves a change is safe. CD ships it. Keeping them in one file is how
+# you end up building a signed release bundle on every pull request.
+on:
+  push:
+    tags: ["v*.*.*"]
+  workflow_dispatch:
+    inputs:
+      build_type:
+        description: "Artifact to produce"
+        required: true
+        default: aab
+        type: choice
+        options: [aab, apk, both]
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  FLUTTER_VERSION: "3.29.3"
+
+jobs:
+  release:
+    name: Build signed artifacts
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    # Create a GitHub Environment named `production` and add a required
+    # reviewer. That is what stops an accidental tag push from shipping.
+    # environment: production
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - run: flutter pub get
+
+      # Re-run the gates. A tag can point at any commit, including one that
+      # never went through a PR.
+      - run: dart format --output=none --set-exit-if-changed .
+      - run: flutter analyze --no-fatal-infos
+      - run: flutter test
+
+      - name: Restore Firebase config
+        env:
+          GOOGLE_SERVICES_JSON_BASE64: ${{ secrets.GOOGLE_SERVICES_JSON_BASE64 }}
+          FIREBASE_OPTIONS_DART_BASE64: ${{ secrets.FIREBASE_OPTIONS_DART_BASE64 }}
+        run: |
+          echo "$GOOGLE_SERVICES_JSON_BASE64" | base64 -d > android/app/google-services.json
+          echo "$FIREBASE_OPTIONS_DART_BASE64" | base64 -d > lib/firebase_options.dart
+
+      - name: Restore dart-define file
+        env:
+          DART_DEFINE_ENV_BASE64: ${{ secrets.DART_DEFINE_ENV_PROD_BASE64 }}
+        run: echo "$DART_DEFINE_ENV_BASE64" | base64 -d > ci.env
+
+      # ⚠️ `android/app/build.gradle(.kts)` was NOT in the repomix, so I
+      # cannot confirm your signingConfig reads these property names. Open
+      # it and check before enabling this step. The standard Flutter layout
+      # expects a `key.properties` with exactly these four keys.
+      - name: Restore signing keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          echo "$KEYSTORE_BASE64" | base64 -d > android/app/upload-keystore.jks
+          cat > android/key.properties <<EOF
+          storePassword=$STORE_PASSWORD
+          keyPassword=$KEY_PASSWORD
+          keyAlias=$KEY_ALIAS
+          storeFile=upload-keystore.jks
+          EOF
+
+      - name: Resolve version
+        id: version
+        run: |
+          RAW="${GITHUB_REF_NAME#v}"
+          echo "app_version=${RAW:-0.0.0}" >> "$GITHUB_OUTPUT"
+
+      - name: Build App Bundle
+        if: inputs.build_type != 'apk'
+        run: |
+          flutter build appbundle --release \
+            --dart-define-from-file=ci.env \
+            --dart-define=APP_ENV=production \
+            --dart-define=APP_VERSION=${{ steps.version.outputs.app_version }} \
+            --dart-define=BUILD_NUMBER=${GITHUB_RUN_NUMBER} \
+            --dart-define=COMMIT_SHA=${GITHUB_SHA::7}
+
+      - name: Build split APKs
+        if: inputs.build_type != 'aab'
+        run: |
+          flutter build apk --release --split-per-abi \
+            --dart-define-from-file=ci.env \
+            --dart-define=APP_ENV=production \
+            --dart-define=APP_VERSION=${{ steps.version.outputs.app_version }} \
+            --dart-define=BUILD_NUMBER=${GITHUB_RUN_NUMBER} \
+            --dart-define=COMMIT_SHA=${GITHUB_SHA::7}
+
+      - name: Clean up secrets
+        if: always()
+        run: |
+          rm -f ci.env android/key.properties android/app/upload-keystore.jks
+          rm -f android/app/google-services.json lib/firebase_options.dart
+
+      - name: Publish GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: |
+            build/app/outputs/bundle/release/*.aab
+            build/app/outputs/flutter-apk/*.apk
+
+      # NOT IMPLEMENTED ON PURPOSE — Play Store upload.
+      # It needs a service-account JSON with Play Developer API access. I
+      # have no evidence that account exists, and inventing the step would
+      # produce a workflow that fails on its first real run. Add Fastlane's
+      # `supply` action here once the account is provisioned; see
+      # docs/ci-cd.md for why Fastlane is NOT recommended before that point.

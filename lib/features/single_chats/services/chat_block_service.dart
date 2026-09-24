@@ -55,9 +55,10 @@ class ChatBlockService {
           otherUserId: otherUserId,
         );
         if (!controller.isClosed) controller.add(status);
-    } catch (e) {
-  debugPrint('[ChatBlockService] failed to fetch block status: $e');
-}}
+      } catch (e) {
+        debugPrint('[ChatBlockService] failed to fetch block status: $e');
+      }
+    }
 
     final channelName =
         'blocked_users_${ChatHelper.buildConversationId(currentUserId, otherUserId)}';
@@ -97,7 +98,6 @@ class ChatBlockService {
 
     return List<Map<String, dynamic>>.from(rows as List);
   }
-
 
   Future<void> blockUser({
     required String blockerId,

@@ -1,5 +1,5 @@
 /// Design tokens for standardized component dimensions, sizes, and layout constraints.
-/// 
+///
 /// Enforces consistent component sizing across all 23 features.
 abstract final class AppDimensions {
   // --- Buttons ---

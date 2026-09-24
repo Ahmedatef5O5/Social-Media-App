@@ -1,0 +1,96 @@
+[
+    {
+        "title": "Account",
+        "icon": "person_outline",
+        "items": [
+            {
+                "question": "How do I edit my profile?",
+                "answer": "Go to your Profile tab, tap Edit Profile, then update your photo, name, bio, or social links and tap Save."
+            },
+            {
+                "question": "How do I change my password?",
+                "answer": "Go to Settings → Change Password, enter your current password, then choose a new one."
+            },
+            {
+                "question": "How do I delete my account?",
+                "answer": "Go to Settings → Danger Zone → Delete Account. This permanently removes your account and cannot be undone."
+            }
+        ]
+    },
+    {
+        "title": "Messaging",
+        "icon": "chat_bubble_outline",
+        "items": [
+            {
+                "question": "How do I start a chat?",
+                "answer": "Go to the Chats tab and tap the new chat icon, then pick a friend or search by name."
+            },
+            {
+                "question": "How do I forward a message?",
+                "answer": "Long-press any message, tap Forward, then pick one or more chats or groups to send it to."
+            },
+            {
+                "question": "Can I unsend a message?",
+                "answer": "Long-press a message you sent and choose Delete. Note this removes it from your view — check your chat's specific delete options for removing it for everyone."
+            },
+            {
+                "question": "Why can't I send messages to someone?",
+                "answer": "They may have blocked you, or their privacy settings may require a message request before you can chat freely."
+            }
+        ]
+    },
+    {
+        "title": "Privacy & Safety",
+        "icon": "shield_outlined",
+        "items": [
+            {
+                "question": "Why can't I see someone's online status?",
+                "answer": "They may have turned off Online Status in their Privacy settings, or set their visibility to a group that doesn't include you."
+            },
+            {
+                "question": "How do I block someone?",
+                "answer": "Open their profile or chat, tap the menu icon, then choose Block. You can manage everyone you've blocked from Settings → Privacy → Blocked Users."
+            },
+            {
+                "question": "How do I control who sees my last seen?",
+                "answer": "Go to Settings → Privacy → Online Status Visibility and choose Everyone, My Friends, Specific People, or Nobody."
+            },
+            {
+                "question": "How do I enable App Lock?",
+                "answer": "Go to Settings → Privacy → App Lock and turn it on. Your device needs a fingerprint, Face ID, or a screen lock (PIN/pattern/password) set up first."
+            }
+        ]
+    },
+    {
+        "title": "Notifications",
+        "icon": "notifications_none",
+        "items": [
+            {
+                "question": "How do I mute notifications for a specific chat?",
+                "answer": "Open the chat, tap the menu icon, then choose Mute Notifications."
+            },
+            {
+                "question": "Why am I not receiving notifications?",
+                "answer": "Check that notifications are enabled for the app in your device settings, and that you have an active internet connection."
+            }
+        ]
+    },
+    {
+        "title": "Troubleshooting & Support",
+        "icon": "build_outlined",
+        "items": [
+            {
+                "question": "The app is running slowly, what can I do?",
+                "answer": "Try closing and reopening the app, and make sure you're on the latest version from the app store."
+            },
+            {
+                "question": "How do I report a problem?",
+                "answer": "Use Settings → Support → Send Feedback to email us directly, and we'll get back to you as soon as we can."
+            },
+            {
+                "question": "How do I request a feature?",
+                "answer": "We'd love to hear it! Use Send Feedback and describe what you'd like to see."
+            }
+        ]
+    }
+]

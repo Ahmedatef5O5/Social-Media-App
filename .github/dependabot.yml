@@ -1,0 +1,33 @@
+version: 2
+updates:
+  # Pub. Weekly, grouped, and capped — a 60-dependency Flutter app produces
+  # a firehose of individual PRs otherwise, and a firehose gets ignored.
+  - package-ecosystem: pub
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      firebase:
+        patterns: ["firebase_*"]
+      dev-dependencies:
+        dependency-type: development
+    ignore:
+      # Pinned without a caret in pubspec.yaml on purpose (native/platform
+      # compatibility). Let Dependabot leave them alone rather than open a
+      # PR every week that always gets closed.
+      - dependency-name: livekit_client
+      - dependency-name: video_player
+      - dependency-name: audio_session
+      - dependency-name: flutter_svg
+      - dependency-name: receive_sharing_intent
+      - dependency-name: shared_preferences
+      - dependency-name: intl
+
+  # Action versions are a real supply-chain surface: a compromised third
+  # party action runs with your secrets.
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly

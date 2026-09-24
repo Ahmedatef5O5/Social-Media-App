@@ -1,5 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+import '../observability/error_category.dart';
+import '../observability/observability.dart';
 
 class UnauthenticatedException implements Exception {
   final String message;
@@ -34,11 +39,31 @@ class SupabaseProvider {
   static bool get isAuthenticated => user != null;
 
   /// Current user id.
+  ///
+  /// Returns `''` when signed out. The empty string is NOT harmless: it
+  /// flows into `ChatHelper.buildConversationId`, into Hive snapshot keys
+  /// and into `.eq(user_id, '')` filters, where it silently produces empty
+  /// results and mis-keyed caches instead of an error. The behaviour is
+  /// preserved on purpose (changing it to a throw would break screens that
+  /// work today) — but it is now REPORTED, so C-02 regressions surface in
+  /// Crashlytics instead of in a user complaint.
   static String get id {
     final currentUser = user;
     if (currentUser == null) {
       debugPrint(
         '⚠️ Warning: SupabaseProvider.id was accessed while user is logged out.',
+      );
+      unawaited(
+        obs.recordError(
+          UnauthenticatedException(
+            'SupabaseProvider.id accessed while signed out',
+          ),
+          StackTrace.current,
+          category: ErrorCategory.authentication,
+          feature: 'session',
+          operation: 'resolve_user_id',
+          reason: 'empty user id returned to caller',
+        ),
       );
       return '';
     }
