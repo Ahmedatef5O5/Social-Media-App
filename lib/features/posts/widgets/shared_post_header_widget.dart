@@ -10,6 +10,7 @@ import '../../home/cubits/home_cubit/home_cubit.dart';
 import '../cubits/posts_cubit/posts_cubit.dart';
 import '../helpers/header_trailing_action.dart';
 import '../models/post_model.dart';
+import 'pinned_post_badge.dart';
 import 'post_actions_menu.dart';
 
 class SharedPostHeaderWidget extends StatelessWidget {
@@ -17,6 +18,8 @@ class SharedPostHeaderWidget extends StatelessWidget {
   final String currentUserId;
   final PostsCubit postsCubit;
   final String contentLabel;
+  final bool showPinAction;
+  final bool showPinnedBadge;
   final HeaderTrailingAction trailingAction;
 
   const SharedPostHeaderWidget({
@@ -25,6 +28,8 @@ class SharedPostHeaderWidget extends StatelessWidget {
     required this.currentUserId,
     required this.postsCubit,
     this.contentLabel = 'a post',
+    this.showPinAction = false,
+    this.showPinnedBadge = false,
     required this.trailingAction,
   });
 
@@ -82,6 +87,7 @@ class SharedPostHeaderWidget extends StatelessWidget {
             post: sharedPost,
             currentUserId: currentUserId,
             postsCubit: postsCubit,
+            showPinAction: showPinAction,
           );
 
         case HeaderTrailingAction.openOriginal:
@@ -96,6 +102,7 @@ class SharedPostHeaderWidget extends StatelessWidget {
                 post: sharedPost,
                 currentUserId: currentUserId,
                 postsCubit: postsCubit,
+                showPinAction: showPinAction,
               ),
             ],
           );
@@ -218,6 +225,10 @@ class SharedPostHeaderWidget extends StatelessWidget {
                         color: colorScheme.onSurface.withValues(alpha: 0.4),
                       ),
                     ),
+                    if (showPinnedBadge) ...[
+                      const Gap(6),
+                      const PinnedPostBadge(),
+                    ],
                   ],
                 ),
               ],

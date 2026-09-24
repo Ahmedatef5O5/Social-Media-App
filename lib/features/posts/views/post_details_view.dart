@@ -29,11 +29,13 @@ enum PostDetailsActiveMode { none, comments, reactions }
 class PostDetailsView extends StatefulWidget {
   final PostModel post;
   final PostDetailsActiveMode initialActiveMode;
+  final bool isProfileContext;
 
   const PostDetailsView({
     super.key,
     required this.post,
     this.initialActiveMode = PostDetailsActiveMode.comments,
+    this.isProfileContext = false,
   });
 
   @override
@@ -198,6 +200,11 @@ class _PostDetailsViewState extends State<PostDetailsView> {
 
                 final bool isSharedReel = displayPost!.isSharedReel;
 
+                final bool showPinnedBadge =
+                    widget.isProfileContext &&
+                    currentPost.isPinned &&
+                    !isSharedPost;
+
                 return Column(
                   children: [
                     Expanded(
@@ -240,6 +247,7 @@ class _PostDetailsViewState extends State<PostDetailsView> {
                                           postsCubit: postsCubit,
                                           trailingAction:
                                               HeaderTrailingAction.closeScreen,
+                                          showPinnedBadge: showPinnedBadge,
                                         ),
                                         const Gap(12),
                                         PostTxtContentWidget(post: displayPost),

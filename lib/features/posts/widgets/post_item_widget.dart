@@ -17,10 +17,13 @@ import 'shared_post_header_widget.dart';
 class PostItemWidget extends StatelessWidget {
   final PostModel currPost;
   final PostsCubit postsCubit;
+  final bool isProfileContext;
+
   const PostItemWidget({
     super.key,
     required this.currPost,
     required this.postsCubit,
+    this.isProfileContext = false,
   });
 
   @override
@@ -48,7 +51,8 @@ class PostItemWidget extends StatelessWidget {
               oldPost.displayPost.sharesCount !=
                   newPost.displayPost.sharesCount ||
               oldPost.displayPost.isSharedByMe !=
-                  newPost.displayPost.isSharedByMe;
+                  newPost.displayPost.isSharedByMe ||
+              oldPost.isPinned != newPost.isPinned;
         }
         return true;
       },
@@ -63,6 +67,10 @@ class PostItemWidget extends StatelessWidget {
         }
 
         final bool isSharedPost = currentPost.isSharedPost;
+        final bool showPinnedBadge = isProfileContext && currentPost.isPinned;
+
+        final bool canPin =
+            isProfileContext && currentPost.authorId == currentUserId;
         final PostModel? displayPost =
             isSharedPost ? currentPost.originalPost : currentPost;
 
@@ -106,6 +114,7 @@ class PostItemWidget extends StatelessWidget {
                       arguments: PostDetailsRouteArgs(
                         post: currentPost,
                         initialActiveMode: PostDetailsActiveMode.comments,
+                        isProfileContext: isProfileContext,
                       ),
                     );
                   },
@@ -121,6 +130,8 @@ class PostItemWidget extends StatelessWidget {
                             postsCubit: postsCubit,
                             contentLabel: isSharedReel ? 'a reel' : 'a post',
                             trailingAction: HeaderTrailingAction.moreActions,
+                            showPinAction: canPin,
+                            showPinnedBadge: showPinnedBadge,
                           ),
                           const SizedBox(height: 10),
                         ] else if (isSharedReel) ...[
@@ -130,6 +141,8 @@ class PostItemWidget extends StatelessWidget {
                             postsCubit: postsCubit,
                             contentLabel: 'a reel',
                             trailingAction: HeaderTrailingAction.moreActions,
+                            showPinAction: canPin,
+                            showPinnedBadge: showPinnedBadge,
                           ),
                           const SizedBox(height: 10),
                         ],
@@ -175,6 +188,10 @@ class PostItemWidget extends StatelessWidget {
                                       isSharedPost
                                           ? HeaderTrailingAction.none
                                           : HeaderTrailingAction.moreActions,
+                                  showPinAction: canPin,
+                                  showPinnedBadge:
+                                      isSharedPost ? false : showPinnedBadge,
+                                  isProfileContext: isProfileContext,
                                 ),
                                 const SizedBox(height: 8),
                                 PostTxtContentWidget(post: displayPost),

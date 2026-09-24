@@ -14,11 +14,15 @@ import '../models/post_details_route_args.dart';
 import '../models/post_model.dart';
 import '../views/post_details_view.dart';
 import 'author_image_widget.dart';
+import 'pinned_post_badge.dart';
 
 class PostHeaderWidget extends StatelessWidget {
   final PostModel post;
   final String currentUserId;
   final PostsCubit postsCubit;
+  final bool showPinAction;
+  final bool showPinnedBadge;
+  final bool isProfileContext;
   final HeaderTrailingAction trailingAction;
 
   const PostHeaderWidget({
@@ -26,6 +30,9 @@ class PostHeaderWidget extends StatelessWidget {
     required this.post,
     required this.currentUserId,
     required this.postsCubit,
+    this.showPinAction = false,
+    this.showPinnedBadge = false,
+    this.isProfileContext = false,
     this.trailingAction = HeaderTrailingAction.moreActions,
   });
 
@@ -47,6 +54,26 @@ class PostHeaderWidget extends StatelessWidget {
           rootNavigator: true,
         ).pushNamed(AppRoutes.postDetailsViewRoute, arguments: post);
       },
+    );
+  }
+
+  Widget _buildSuggestedBadge(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Container(
+      margin: const EdgeInsets.only(left: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+      decoration: BoxDecoration(
+        color: colorScheme.primary.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(5),
+      ),
+      child: Text(
+        'Suggested for you',
+        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+          fontWeight: FontWeight.w600,
+          fontSize: 9.3,
+          color: colorScheme.primary,
+        ),
+      ),
     );
   }
 
@@ -85,6 +112,7 @@ class PostHeaderWidget extends StatelessWidget {
             post: post,
             currentUserId: currentUserId,
             postsCubit: postsCubit,
+            showPinAction: showPinAction,
           );
 
         case HeaderTrailingAction.openOriginal:
@@ -99,6 +127,7 @@ class PostHeaderWidget extends StatelessWidget {
                 post: post,
                 currentUserId: currentUserId,
                 postsCubit: postsCubit,
+                showPinAction: showPinAction,
               ),
             ],
           );
@@ -157,6 +186,7 @@ class PostHeaderWidget extends StatelessWidget {
                   arguments: PostDetailsRouteArgs(
                     post: post,
                     initialActiveMode: PostDetailsActiveMode.comments,
+                    isProfileContext: isProfileContext,
                   ),
                 );
               },
@@ -177,12 +207,21 @@ class PostHeaderWidget extends StatelessWidget {
                     );
                   }
                 },
-        child: Text(
-          post.authorName ?? 'Unknown',
-          style: Theme.of(context).textTheme.titleSmall!.copyWith(
-            fontWeight: FontWeight.w500,
-            fontSize: 16,
-          ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Flexible(
+              child: Text(
+                post.authorName ?? 'Unknown',
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.titleSmall!.copyWith(
+                  fontWeight: FontWeight.w500,
+                  fontSize: 16,
+                ),
+              ),
+            ),
+            if (post.isSuggestedForYou) _buildSuggestedBadge(context),
+          ],
         ),
       ),
       subtitle: Row(
@@ -209,6 +248,10 @@ class PostHeaderWidget extends StatelessWidget {
               ).colorScheme.onSurface.withValues(alpha: 0.4),
             ),
           ),
+          if (showPinnedBadge) ...[
+            const SizedBox(width: 6),
+            const PinnedPostBadge(),
+          ],
         ],
       ),
       trailing: buildTrailingWidget(),
