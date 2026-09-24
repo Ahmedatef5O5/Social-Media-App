@@ -11,6 +11,8 @@ class ReelPage extends StatefulWidget {
   final bool keepAlive;
   final ValueChanged<double> onVerticalDragUpdate;
   final ValueChanged<double> onVerticalDragEnd;
+  final ValueChanged<YoutubePlayerController> onControllerMounted;
+  final ValueChanged<YoutubePlayerController> onControllerUnmounted;
 
   const ReelPage({
     super.key,
@@ -19,6 +21,8 @@ class ReelPage extends StatefulWidget {
     required this.keepAlive,
     required this.onVerticalDragUpdate,
     required this.onVerticalDragEnd,
+    required this.onControllerMounted,
+    required this.onControllerUnmounted,
   });
 
   @override
@@ -33,6 +37,7 @@ class _ReelPageState extends State<ReelPage> {
   @override
   void initState() {
     super.initState();
+    widget.onControllerMounted(widget.controller);
     _sub = widget.controller.listen((value) {
       if (value.error != YoutubeError.none && mounted) {
         debugPrint('YT ERROR [${widget.reel.youtubeVideoId}]: ${value.error}');
@@ -41,7 +46,26 @@ class _ReelPageState extends State<ReelPage> {
   }
 
   @override
+  void didUpdateWidget(covariant ReelPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.controller != widget.controller) {
+      oldWidget.onControllerUnmounted(oldWidget.controller);
+      widget.onControllerMounted(widget.controller);
+
+      _sub?.cancel();
+      _sub = widget.controller.listen((value) {
+        if (value.error != YoutubeError.none && mounted) {
+          debugPrint(
+            'YT ERROR [${widget.reel.youtubeVideoId}]: ${value.error}',
+          );
+        }
+      });
+    }
+  }
+
+  @override
   void dispose() {
+    widget.onControllerUnmounted(widget.controller);
     _sub?.cancel();
     super.dispose();
   }

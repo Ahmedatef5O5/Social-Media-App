@@ -14,7 +14,8 @@ class ReelsServices {
   Future<List<ReelModel>> fetchReelsBatch({
     required int limit,
     Set<String> excludeIds = const {},
-    List<String>? categories,
+    List<String>? preferredCategories,
+    List<String>? categoryFilter,
   }) async {
     final poolSize = (limit * _poolMultiplier).clamp(limit, _maxPoolSize);
 
@@ -23,8 +24,10 @@ class ReelsServices {
       params: {
         'limit_per_request': poolSize,
         'exclude_video_ids': excludeIds.toList(),
-        if (categories != null && categories.isNotEmpty)
-          'category_filter': categories,
+        if (preferredCategories != null && preferredCategories.isNotEmpty)
+          'preferred_categories': preferredCategories,
+        if (categoryFilter != null && categoryFilter.isNotEmpty)
+          'category_filter': categoryFilter,
       },
     );
 
@@ -36,10 +39,6 @@ class ReelsServices {
     final shuffled = ReelsInterleaver.shuffle(pool);
     return shuffled.take(limit).toList();
   }
-
-  /// Real backend search via the `search_reels` RPC — matches title,
-  /// description, category, and channel name server-side, ranked by
-  /// relevance.
 
   Future<List<ReelModel>> searchReels({
     required String query,

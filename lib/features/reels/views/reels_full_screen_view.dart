@@ -184,11 +184,14 @@ class _ReelsFullScreenViewState extends State<ReelsFullScreenView> {
           isActive: index == _currentIndex,
         );
         return ReelPage(
+          key: ValueKey('reel_page_${reel.id}'),
           reel: reel,
           controller: controller,
           keepAlive: _controllerPool.isWithinWindow(index, _currentIndex),
           onVerticalDragUpdate: _handleDragUpdate,
           onVerticalDragEnd: _handleDragEnd,
+          onControllerMounted: _controllerPool.markMounted,
+          onControllerUnmounted: _controllerPool.markUnmounted,
         );
       },
     );
