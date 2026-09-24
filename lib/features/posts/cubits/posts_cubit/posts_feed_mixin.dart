@@ -7,6 +7,8 @@ mixin PostsFeedMixin on Cubit<PostsState> {
   List<PostModel> _fixLikersImages(List<PostModel> posts);
   void listenToPosts();
 
+  int feedEpoch = 0;
+
   Future<void> refreshPosts({bool isRefresh = false}) async {
     try {
       final start = DateTime.now();
@@ -43,8 +45,11 @@ mixin PostsFeedMixin on Cubit<PostsState> {
   Future<void> fetchPosts({bool isRefresh = false}) async {
     if (!isRefresh) emit(PostsLoading());
     try {
-      cachedPosts = await _postsServices.fetchPosts();
+      cachedPosts = await _postsServices.fetchRankedHomeFeed();
       cachedPosts = _fixLikersImages(cachedPosts);
+
+      feedEpoch++;
+
       emit(PostsLoaded(cachedPosts, DateTime.now()));
 
       listenToPosts();
@@ -55,15 +60,21 @@ mixin PostsFeedMixin on Cubit<PostsState> {
         debugPrint('Silent error: no internet, showing cached posts.');
         return;
       }
+
       final diskPosts = readPostsSnapshot();
       if (diskPosts.isNotEmpty) {
         debugPrint(
           'Silent error: no internet, showing posts snapshot from disk.',
         );
+
         cachedPosts = diskPosts;
+
+        feedEpoch++;
+
         emit(PostsLoaded(diskPosts, DateTime.now()));
         return;
       }
+
       emit(
         PostsLoadError(
           e.toString().contains('no-internet')
@@ -74,20 +85,31 @@ mixin PostsFeedMixin on Cubit<PostsState> {
     }
   }
 
-  void mergePostsIntoCache(List<PostModel> posts) {
+  void mergePostsIntoCache(List<PostModel> posts, {bool appendNew = false}) {
     if (posts.isEmpty || isClosed) return;
 
     final List<PostModel> basePosts =
         state is PostsLoaded ? (state as PostsLoaded).posts : cachedPosts;
 
-    final Map<String, PostModel> byId = {for (final p in basePosts) p.id: p};
-    for (final incoming in posts) {
-      byId[incoming.id] = incoming;
-    }
+    final Map<String, PostModel> incomingById = {
+      for (final p in _fixLikersImages(posts)) p.id: p,
+    };
+
+    final updatedExisting =
+        basePosts.map((existing) {
+          final incoming = incomingById.remove(existing.id);
+          if (incoming == null) return existing;
+          return incoming.copyWith(
+            isSuggestedForYou: existing.isSuggestedForYou,
+          );
+        }).toList();
+
+    final brandNewPosts = incomingById.values.toList();
 
     cachedPosts =
-        byId.values.toList()
-          ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+        appendNew
+            ? [...updatedExisting, ...brandNewPosts]
+            : [...brandNewPosts, ...updatedExisting];
 
     emit(PostsLoaded(cachedPosts, DateTime.now()));
   }

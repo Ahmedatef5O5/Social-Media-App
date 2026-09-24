@@ -147,9 +147,15 @@ mixin PostsRealtimeMixin on Cubit<PostsState> {
 
   List<PostModel> _mergeUpdatedPost(List<PostModel> posts, PostModel updated) {
     return posts.map((p) {
-      if (p.id == updated.id) return updated;
+      if (p.id == updated.id) {
+        return updated.copyWith(isSuggestedForYou: p.isSuggestedForYou);
+      }
       if (p.originalPost?.id == updated.id) {
-        return p.copyWith(originalPost: updated);
+        return p.copyWith(
+          originalPost: updated.copyWith(
+            isSuggestedForYou: p.originalPost!.isSuggestedForYou,
+          ),
+        );
       }
       return p;
     }).toList();

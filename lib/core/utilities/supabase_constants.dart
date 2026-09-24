@@ -49,6 +49,8 @@ abstract class SupabaseConstants {
   static const String stickerPackShares = 'sticker_pack_shares';
 
   // ── RPC (Stored Functions) ──
+  static const String getRankedHomeFeedRpc = 'get_ranked_home_feed';
+  static const String setPostPinnedRpc = 'set_post_pinned';
   static const String getChatsWithLastMessage = 'get_chats_with_last_message';
   static const String toggleStoryReactionRpc = 'toggle_story_reaction';
   static const String markStoryViewedRpc = 'mark_story_viewed';
@@ -58,7 +60,11 @@ abstract class SupabaseConstants {
   static const String createUserStickerPackRpc = 'create_user_sticker_pack';
   // comments_upgrade_migration.sql
   static const String addCommentWithMentionsRpc = 'add_comment_with_mentions';
+
+  // user_profile_upgrade_migration.sql
   static const String getProfileOverviewRpc = 'get_profile_overview';
+  static const String getUserProfilePostIdsRpc = 'get_user_profile_post_ids';
+  static const String getProfileMediaCountRpc = 'get_profile_media_count';
   static const String getMutualGroupsRpc = 'get_mutual_groups';
 
   // ── Reels Feature ──
@@ -262,14 +268,13 @@ abstract class PostColumns {
   static const String mediaHeight = 'media_height';
   // ── Shared Post feature ──
   static const String sharedPostId = 'shared_post_id';
+  static const String isPinned = 'is_pinned';
 
   /// Alias used in the Supabase join query for the nested original post
   static const String originalPostRelation = 'original_post';
 
   // ── Shared Reel feature ──
   static const String sharedReelId = 'shared_reel_id';
-
-  //
   static const String privacyType = 'privacy_type';
 }
 

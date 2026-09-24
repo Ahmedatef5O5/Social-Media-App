@@ -49,6 +49,7 @@ class PostModel {
   // ── Shared Post feature ──────────────────────────────────────────────
   final String? sharedPostId;
   final PostModel? originalPost;
+  final bool isPinned;
   final int sharesCount;
   final bool isSharedByMe;
   final int linkShareCount;
@@ -59,6 +60,7 @@ class PostModel {
 
   // - Privacy publishing
   final ContentPrivacy privacyType;
+  final bool isSuggestedForYou;
 
   double get mediaAspectRatio {
     if (mediaWidth != null && mediaHeight != null && mediaHeight! > 0) {
@@ -88,6 +90,7 @@ class PostModel {
     this.isSavedByMe = false,
     this.sharedPostId,
     this.originalPost,
+    this.isPinned = false,
     this.sharesCount = 0,
     this.isSharedByMe = false,
     this.linkShareCount = 0,
@@ -96,6 +99,7 @@ class PostModel {
     this.sharedReelId,
     this.sharedReel,
     this.privacyType = ContentPrivacy.public,
+    this.isSuggestedForYou = false,
   });
 
   Map<String, dynamic> toMap() {
@@ -195,6 +199,7 @@ class PostModel {
       sharedPostId: map[PostColumns.sharedPostId] as String?,
       originalPost:
           originalPostData != null ? PostModel.fromMap(originalPostData) : null,
+      isPinned: map[PostColumns.isPinned] as bool? ?? false,
       sharesCount: map['shares_count'] as int? ?? 0,
       linkShareCount: map['link_share_count'] as int? ?? 0,
       isSharedByMe: map['is_post_shared'] as bool? ?? false,
@@ -204,6 +209,7 @@ class PostModel {
       privacyType: contentPrivacyFromString(
         map[PostColumns.privacyType] as String?,
       ),
+      isSuggestedForYou: map['is_suggested_for_you'] as bool? ?? false,
     );
   }
 
@@ -228,6 +234,7 @@ class PostModel {
     final bool? isSavedByMe,
     String? sharedPostId,
     PostModel? originalPost,
+    bool? isPinned,
     int? sharesCount,
     int? linkShareCount,
     bool? isSharedByMe,
@@ -236,6 +243,7 @@ class PostModel {
     String? sharedReelId,
     ReelModel? sharedReel,
     ContentPrivacy? privacyType,
+    bool? isSuggestedForYou,
   }) {
     return PostModel(
       id: id ?? this.id,
@@ -260,12 +268,14 @@ class PostModel {
       mediaHeight: mediaHeight ?? this.mediaHeight,
       sharedPostId: sharedPostId ?? this.sharedPostId,
       originalPost: originalPost ?? this.originalPost,
+      isPinned: isPinned ?? this.isPinned,
       sharesCount: sharesCount ?? this.sharesCount,
       linkShareCount: linkShareCount ?? this.linkShareCount,
       isSharedByMe: isSharedByMe ?? this.isSharedByMe,
       sharedReelId: sharedReelId ?? this.sharedReelId,
       sharedReel: sharedReel ?? this.sharedReel,
       privacyType: privacyType ?? this.privacyType,
+      isSuggestedForYou: isSuggestedForYou ?? this.isSuggestedForYou,
     );
   }
 
@@ -290,6 +300,7 @@ class PostModel {
     'is_post_saved': isSavedByMe,
     'shared_post_id': sharedPostId,
     'original_post': originalPost?.toCacheJson(),
+    PostColumns.isPinned: isPinned,
     'shares_count': sharesCount,
     'link_share_count': linkShareCount,
     'is_post_shared': isSharedByMe,
@@ -298,6 +309,7 @@ class PostModel {
     'media_width': mediaWidth,
     'media_height': mediaHeight,
     PostColumns.privacyType: contentPrivacyToString(privacyType),
+    'is_suggested_for_you': isSuggestedForYou,
   };
 
   factory PostModel.fromCacheJson(Map<String, dynamic> map) {
@@ -345,6 +357,7 @@ class PostModel {
                 map['original_post'] as Map<String, dynamic>,
               )
               : null,
+      isPinned: map[PostColumns.isPinned] as bool? ?? false,
       sharesCount: map['shares_count'] as int? ?? 0,
       linkShareCount: map['link_share_count'] as int? ?? 0,
       isSharedByMe: map['is_post_shared'] as bool? ?? false,
@@ -356,6 +369,7 @@ class PostModel {
       privacyType: contentPrivacyFromString(
         map[PostColumns.privacyType] as String?,
       ),
+      isSuggestedForYou: map['is_suggested_for_you'] as bool? ?? false,
     );
   }
 }

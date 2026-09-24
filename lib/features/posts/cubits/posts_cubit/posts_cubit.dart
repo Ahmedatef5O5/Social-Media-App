@@ -37,6 +37,7 @@ part 'posts_state.dart';
 part 'posts_feed_mixin.dart';
 part 'posts_realtime_mixin.dart';
 part 'posts_comment_bridge_mixin.dart';
+part 'post_pin_mixin.dart';
 part 'post_creation_mixin.dart';
 part 'post_reactions_mixin.dart';
 part 'reel_share_mixin.dart';
@@ -48,6 +49,7 @@ class PostsCubit extends Cubit<PostsState>
         PostsRealtimeMixin,
         PostsFeedMixin,
         PostsCommentBridgeMixin,
+        PostPinMixin,
         PostCreationMixin,
         PostReactionsMixin,
         ReelShareMixin {
