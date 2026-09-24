@@ -5,16 +5,19 @@ import 'package:lottie/lottie.dart';
 class EmptyPlaceholderState extends StatefulWidget {
   final String title, img;
   final Color? color;
+  final TextAlign? textAlign;
   final TextStyle? style;
   final double opacity;
   final double? imgHeight, imgWidth;
   final int? periodSpeed;
   final LottieDelegates? delegates;
+
   const EmptyPlaceholderState({
     super.key,
     required this.title,
     required this.img,
     this.color,
+    this.textAlign,
     this.style,
     this.opacity = 0.45,
     this.periodSpeed,
@@ -85,6 +88,7 @@ class _EmptyPlaceholderStateState extends State<EmptyPlaceholderState>
             opacity: widget.opacity,
             child: Text(
               widget.title,
+              textAlign: widget.textAlign,
               style:
                   widget.style ??
                   Theme.of(context).textTheme.titleMedium!.copyWith(

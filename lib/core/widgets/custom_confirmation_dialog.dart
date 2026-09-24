@@ -7,6 +7,8 @@ import '../themes/app_colors.dart';
 
 class CustomConfirmationDialog extends StatelessWidget {
   final String title;
+  final TextStyle? style;
+  final TextAlign? textAlign;
   final String img;
   final String confirmBtnText;
   final String cancelBtnText;
@@ -14,6 +16,8 @@ class CustomConfirmationDialog extends StatelessWidget {
   const CustomConfirmationDialog({
     super.key,
     required this.title,
+    this.style,
+    this.textAlign,
     required this.img,
     this.confirmBtnText = 'Yes',
     this.cancelBtnText = 'No',
@@ -48,10 +52,13 @@ class CustomConfirmationDialog extends StatelessWidget {
                 imgHeight: screenWidth * 0.4,
                 imgWidth: screenWidth * 0.45,
                 title: title,
-                style: Theme.of(context).textTheme.titleMedium!.copyWith(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 18,
-                ),
+                textAlign: textAlign,
+                style:
+                    style ??
+                    Theme.of(context).textTheme.titleMedium!.copyWith(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 18,
+                    ),
               ),
               const Gap(24),
               Row(
