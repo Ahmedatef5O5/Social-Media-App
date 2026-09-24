@@ -13,7 +13,7 @@ class ProfileStatsWidget extends StatelessWidget {
 
     final items = <({String label, String value})>[
       (label: 'Posts', value: stats.postsCount.toString()),
-      (label: 'Photos', value: stats.photosCount.toString()),
+      (label: 'Media', value: stats.mediaCount.toString()),
       (label: 'Followers', value: _formatNumber(stats.followersCount)),
       (label: 'Following', value: _formatNumber(stats.followingCount)),
     ];

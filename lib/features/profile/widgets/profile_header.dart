@@ -74,8 +74,8 @@ class ProfileHeader extends StatelessWidget {
                     theme: theme,
                     icon:
                         isMe
-                            ? Icons.bookmark_rounded
-                            : Icons.people_alt_rounded,
+                            ? Icons.bookmark_outline_outlined
+                            : Icons.people_alt_outlined,
                     tooltip: isMe ? 'Saved Posts' : 'Friends List',
                     onPressed: () {
                       if (isMe) {
@@ -95,7 +95,7 @@ class ProfileHeader extends StatelessWidget {
                   const Gap(8),
                   _buildCircularIconButton(
                     theme: theme,
-                    assetPath: AppImages.filledStoriesIcon,
+                    assetPath: AppImages.storyIcon,
                     tooltip: 'Stories',
                     onPressed: () {
                       final storiesCubit = context.read<StoriesCubit>();
@@ -157,7 +157,7 @@ class ProfileHeader extends StatelessWidget {
         ),
         const Gap(8),
         ProfileSquareIconButton(
-          icon: Icons.people_alt_rounded,
+          icon: Icons.people_alt_outlined,
           tooltip: 'Friends List',
           onPressed: () => _openFriendsList(context),
         ),
@@ -198,7 +198,7 @@ class ProfileHeader extends StatelessWidget {
         ),
         const Gap(8),
         ProfileSquareIconButton(
-          icon: Icons.message_rounded,
+          icon: Icons.message_outlined,
           tooltip: 'Send message',
           onPressed: () {
             final chatUser = ChatUserModel(

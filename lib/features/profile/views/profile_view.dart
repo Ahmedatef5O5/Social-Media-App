@@ -8,6 +8,7 @@ import 'package:social_media_app/features/profile/widgets/profile_body_content.d
 import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/widgets/global_refresh_indicator.dart';
 import '../../posts/cubits/posts_cubit/posts_cubit.dart';
+import '../cubits/profile_posts_cubit/profile_posts_cubit.dart';
 
 class ProfileView extends StatefulWidget {
   final String? userId;
@@ -111,11 +112,12 @@ class _ProfileViewState extends State<ProfileView> {
               _isRefreshingManual = true;
               _isRefreshing.value = true;
 
+              final profilePostsCubit = context.read<ProfilePostsCubit>();
               final state = context.read<ProfileCubit>().state;
               if (state is ProfileLoaded) {
                 await Future.wait([
                   profileCubit.getProfileData(state.user.id, isRefresh: true),
-                  postsCubit.fetchPosts(isRefresh: true),
+                  profilePostsCubit.refresh(),
                 ]);
 
                 await Future.delayed(const Duration(milliseconds: 300));
