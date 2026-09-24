@@ -1,25 +1,25 @@
 class ProfileStatsModel {
   final int postsCount;
-  final int photosCount;
+  final int mediaCount;
   final int followersCount;
   final int followingCount;
 
   const ProfileStatsModel({
     required this.postsCount,
-    required this.photosCount,
+    required this.mediaCount,
     required this.followersCount,
     required this.followingCount,
   });
 
   ProfileStatsModel copyWith({
     int? postsCount,
-    int? photosCount,
+    int? mediaCount,
     int? followersCount,
     int? followingCount,
   }) {
     return ProfileStatsModel(
       postsCount: postsCount ?? this.postsCount,
-      photosCount: photosCount ?? this.photosCount,
+      mediaCount: mediaCount ?? this.mediaCount,
       followersCount: followersCount ?? this.followersCount,
       followingCount: followingCount ?? this.followingCount,
     );
@@ -28,7 +28,7 @@ class ProfileStatsModel {
   Map<String, dynamic> toMap() {
     return <String, dynamic>{
       'postsCount': postsCount,
-      'photosCount': photosCount,
+      'mediaCount': mediaCount,
       'followersCount': followersCount,
       'followingCount': followingCount,
     };
@@ -37,7 +37,7 @@ class ProfileStatsModel {
   factory ProfileStatsModel.fromMap(Map<String, dynamic> map) {
     return ProfileStatsModel(
       postsCount: map['postsCount'] as int,
-      photosCount: map['photosCount'] as int,
+      mediaCount: map['mediaCount'] as int,
       followersCount: map['followersCount'] as int,
       followingCount: map['followingCount'] as int,
     );

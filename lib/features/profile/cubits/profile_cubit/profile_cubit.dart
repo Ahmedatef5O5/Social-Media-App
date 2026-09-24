@@ -59,10 +59,10 @@ class ProfileCubit extends Cubit<ProfileState>
     });
   }
 
-  ProfileStatsModel _buildStats(ProfileOverviewModel overview) {
+  ProfileStatsModel _buildStats(ProfileOverviewModel overview, int mediaCount) {
     return ProfileStatsModel(
       postsCount: overview.postsCount,
-      photosCount: overview.postsCount,
+      mediaCount: mediaCount,
       followersCount: overview.followersCount,
       followingCount: overview.followingCount,
     );
@@ -72,9 +72,10 @@ class ProfileCubit extends Cubit<ProfileState>
     UserData user,
     ProfileOverviewModel overview, {
     ProfileMutualsModel mutuals = ProfileMutualsModel.empty,
+    required int mediaCount,
   }) {
     return ProfileLoaded(
-      stats: _buildStats(overview),
+      stats: _buildStats(overview, mediaCount),
       user: user,
       friendsCount: overview.friendsCount,
       mutualFriendsCount: overview.mutualFriendsCount,
@@ -94,24 +95,32 @@ class ProfileCubit extends Cubit<ProfileState>
       final results = await Future.wait<Object>([
         _userService.fetchCurrentUser(userId),
         _userService.getProfileOverview(userId),
-        // Mutuals only make sense when looking at somebody else.
         isOwnProfile
             ? Future<ProfileMutualsModel>.value(ProfileMutualsModel.empty)
             : _userService.getProfileMutuals(userId),
+        _userService.getProfileMediaCount(userId),
       ]);
 
       final user = results[0] as UserData;
       final overview = results[1] as ProfileOverviewModel;
       final mutuals = results[2] as ProfileMutualsModel;
+      final mediaCount = results[3] as int;
+
+      final loaded = _buildLoadedState(
+        user,
+        overview,
+        mutuals: mutuals,
+        mediaCount: mediaCount,
+      );
+      emit(loaded);
 
       if (isRefresh) {
         emit(ProfileRefreshFeedback());
         await Future.delayed(const Duration(milliseconds: 500));
+        emit(loaded);
       }
-      emit(_buildLoadedState(user, overview, mutuals: mutuals));
     } catch (e) {
       final errorMessage = AuthExceptionHandler.handle(e);
-
       if (errorMessage == 'no-internet' ||
           e.toString().contains('no-internet')) {
         emit(
@@ -135,7 +144,14 @@ class ProfileCubit extends Cubit<ProfileState>
       final current = state;
       final base = current is ProfileLoaded ? current : fallback;
       // Friendship actions never change the mutuals, so keep what we have.
-      emit(_buildLoadedState(base.user, overview, mutuals: base.mutuals));
+      emit(
+        _buildLoadedState(
+          base.user,
+          overview,
+          mutuals: base.mutuals,
+          mediaCount: base.stats.mediaCount,
+        ),
+      );
     } catch (e) {
       debugPrint('[ProfileCubit] resync failed: $e');
       if (!isClosed) emit(fallback);

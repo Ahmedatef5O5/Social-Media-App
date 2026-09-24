@@ -36,6 +36,19 @@ class UserService {
     }
   }
 
+  Future<int> getProfileMediaCount(String viewedUserId) async {
+    try {
+      final data = await _supabase.rpc(
+        SupabaseConstants.getProfileMediaCountRpc,
+        params: {'p_user_id': viewedUserId},
+      );
+      return (data as num?)?.toInt() ?? 0;
+    } catch (e) {
+      debugPrint('getProfileMediaCount error: $e');
+      return 0;
+    }
+  }
+
   Future<int> getUserPostsCount(String userId) async {
     try {
       final count = await _supabase

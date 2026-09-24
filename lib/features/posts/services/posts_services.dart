@@ -11,10 +11,10 @@ import '../../../core/utilities/supabase_constants.dart';
 import '../../comments/helpers/comment_tree_builder.dart';
 import '../../comments/models/comment_model.dart';
 import '../../social_graph/models/content_privacy.dart';
-import '../../social_graph/services/connections_service.dart';
 import '../../../core/mentions/models/mention_ref.dart';
 import '../models/post_model.dart';
 import '../models/post_request_body.dart';
+import '../models/profile_posts_page.dart';
 
 class PostsServices {
   final supabaseServices = SupabaseDatabaseServices.instance;
@@ -155,6 +155,63 @@ class PostsServices {
     );
   }
 
+  Future<ProfilePostsPage> fetchUserProfilePosts(
+    String userId, {
+    int pageSize = 15,
+    bool? beforeIsPinned,
+    String? beforeCreatedAt,
+    String? beforeId,
+  }) async {
+    if (!(await _networkStatus.isConnected())) {
+      throw Exception('no-internet');
+    }
+
+    final rows = await _supabase.rpc(
+      SupabaseConstants.getUserProfilePostIdsRpc,
+      params: {
+        'p_user_id': userId,
+        'p_limit': pageSize + 1,
+        if (beforeCreatedAt != null && beforeId != null) ...{
+          'p_before_is_pinned': beforeIsPinned ?? false,
+          'p_before_created_at': beforeCreatedAt,
+          'p_before_id': beforeId,
+        },
+      },
+    );
+
+    final all = (rows as List).cast<Map<String, dynamic>>();
+    final hasMore = all.length > pageSize;
+    final page = hasMore ? all.sublist(0, pageSize) : all;
+    if (page.isEmpty) return ProfilePostsPage.empty;
+
+    final ids = [for (final r in page) r['post_id'] as String];
+    final posts = await fetchPostsByIds(ids); // keeps the RPC order
+    if (posts.isEmpty) throw Exception('profile-posts-hydration-failed');
+
+    return ProfilePostsPage(
+      posts: posts,
+      hasMore: hasMore,
+      nextCursorIsPinned: page.last['post_is_pinned'] as bool? ?? false,
+      nextCursorCreatedAt: page.last['post_created_at'] as String,
+      nextCursorId: page.last['post_id'] as String,
+    );
+  }
+
+  Future<({bool pinned, int pinnedCount})> setPostPinned(
+    String postId,
+    bool pinned,
+  ) async {
+    final rows = await _supabase.rpc(
+      SupabaseConstants.setPostPinnedRpc,
+      params: {'p_post_id': postId, 'p_pinned': pinned},
+    );
+    final row = (rows as List).first as Map<String, dynamic>;
+    return (
+      pinned: row['pinned'] as bool,
+      pinnedCount: (row['pinned_count'] as num).toInt(),
+    );
+  }
+
   Future<PostModel?> fetchPostById(String postId) async {
     try {
       final rows = await _supabase
@@ -228,9 +285,6 @@ class PostsServices {
     }
   }
 
-  /// Ranked post-ID search via the `search_posts` RPC. Matches caption
-  /// text OR author name/username, and enforces the same visibility.
-
   Future<List<String>> searchPostIds({
     required String query,
     int limit = 12,
@@ -248,63 +302,86 @@ class PostsServices {
     return (rows as List).map((r) => r['id'] as String).toList();
   }
 
-  Future<Set<String>> _getPrivateAllowedPostIds(String userId) async {
-    final rows = await _supabase
-        .from(SupabaseConstants.postAllowedViewers)
-        .select('post_id')
-        .eq('user_id', userId);
-    return (rows as List).map((r) => r['post_id'] as String).toSet();
-  }
-
-  Future<List<PostModel>> fetchPosts() async {
+  Future<List<PostModel>> fetchRankedHomeFeed({int limit = 50}) async {
     if (!(await _networkStatus.isConnected())) {
       throw Exception('no-internet');
     }
     try {
       final currentUserId = SupabaseProvider.id;
-      final connectionIds = await ConnectionsService().getMyConnectionIds();
-      final allowedPrivateIds = await _getPrivateAllowedPostIds(currentUserId);
 
-      final orParts = <String>[
-        'privacy_type.eq.public',
-        'author_id.eq.$currentUserId',
-      ];
-      if (connectionIds.isNotEmpty) {
-        orParts.add(
-          'and(privacy_type.eq.friends,author_id.in.(${connectionIds.join(',')}))',
-        );
-      }
-      if (allowedPrivateIds.isNotEmpty) {
-        orParts.add('id.in.(${allowedPrivateIds.join(',')})');
-      }
+      final rankedRows = await _supabase.rpc(
+        SupabaseConstants.getRankedHomeFeedRpc,
+        params: {'p_user_id': currentUserId, 'p_limit': limit},
+      );
 
-      final response = await _supabase
-          .from(SupabaseConstants.posts)
-          .select(_postsQuery)
-          .or(orParts.join(','))
-          .order(PostColumns.createdAt, ascending: false);
+      final ranked = (rankedRows as List).cast<Map<String, dynamic>>();
+      if (ranked.isEmpty) return [];
 
-      final List<Map<String, dynamic>> rawPosts =
-          List<Map<String, dynamic>>.from(response);
+      final orderedIds = ranked.map((r) => r['post_id'] as String).toList();
+      final suggestedById = {
+        for (final r in ranked)
+          r['post_id'] as String: r['is_suggested_for_you'] as bool? ?? false,
+      };
 
-      final posts = await _resolveSharedPostsAndHydrate(rawPosts);
+      final hydrated = await fetchPostsByIds(orderedIds);
 
-      if (posts.isEmpty) return posts;
+      final flagged =
+          hydrated
+              .map(
+                (p) =>
+                    p.copyWith(isSuggestedForYou: suggestedById[p.id] ?? false),
+              )
+              .toList();
 
-      final authorIds =
-          <String>{
-            for (final p in posts) ...[
-              p.authorId,
-              if (p.originalPost != null) p.originalPost!.authorId,
-            ],
-          }.toList();
-
-      final onlineMap = await _fetchOnlineMap(authorIds);
-
-      return posts.map((p) => _applyOnline(p, onlineMap)).toList();
+      return _spreadOutByAuthor(flagged);
     } catch (e) {
       rethrow;
     }
+  }
+
+  List<PostModel> _spreadOutByAuthor(
+    List<PostModel> ranked, {
+    int minGap = 2,
+    int lookahead = 15,
+  }) {
+    final remaining = List<PostModel>.of(ranked);
+    final result = <PostModel>[];
+
+    bool authorAllowed(String authorId) {
+      final start = result.length - minGap;
+      for (var i = result.length - 1; i >= 0 && i >= start; i--) {
+        if (result[i].authorId == authorId) return false;
+      }
+      return true;
+    }
+
+    while (remaining.isNotEmpty) {
+      if (authorAllowed(remaining.first.authorId)) {
+        result.add(remaining.removeAt(0));
+        continue;
+      }
+
+      final searchLimit =
+          remaining.length < lookahead ? remaining.length : lookahead;
+      var swapIndex = -1;
+      for (var i = 1; i < searchLimit; i++) {
+        if (authorAllowed(remaining[i].authorId)) {
+          swapIndex = i;
+          break;
+        }
+      }
+
+      if (swapIndex != -1) {
+        result.add(remaining.removeAt(swapIndex));
+      } else {
+        // No eligible alternative nearby (e.g. this author dominates
+        // the whole remaining pool) — place it anyway rather than
+        // stall or drop content.
+        result.add(remaining.removeAt(0));
+      }
+    }
+
+    return result;
   }
 
   Stream<FeedEvent> getPostsStream() {

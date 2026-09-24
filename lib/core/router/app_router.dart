@@ -49,6 +49,7 @@ import '../../features/posts/models/post_details_route_args.dart';
 import '../../features/posts/services/posts_services.dart';
 import '../../features/posts/views/post_details_view.dart';
 import '../../features/posts/views/saved_posts_view.dart';
+import '../../features/profile/cubits/profile_posts_cubit/profile_posts_cubit.dart';
 import '../../features/settings/views/themes_select_view.dart';
 import '../../features/single_calls/models/call_model.dart';
 import '../../features/single_calls/views/dialing_view.dart';
@@ -303,12 +304,15 @@ class AppRouter {
         final args = settings.arguments;
         final PostModel post;
         final PostDetailsActiveMode initialActiveMode;
+        final bool isProfileContext;
         if (args is PostDetailsRouteArgs) {
           post = args.post;
           initialActiveMode = args.initialActiveMode;
+          isProfileContext = args.isProfileContext;
         } else {
           post = args as PostModel;
           initialActiveMode = PostDetailsActiveMode.comments;
+          isProfileContext = false;
         }
         return MaterialPageRoute(
           settings: settings,
@@ -316,6 +320,7 @@ class AppRouter {
               (_) => PostDetailsView(
                 post: post,
                 initialActiveMode: initialActiveMode,
+                isProfileContext: isProfileContext,
               ),
         );
       case AppRoutes.friendsListViewRoute:
@@ -714,6 +719,15 @@ class AppRouter {
                         homeCubit: context.read<HomeCubit>(),
                         connectivityCubit: context.read<ConnectivityCubit>(),
                       )..getProfileData(userId),
+                ),
+
+                BlocProvider(
+                  create:
+                      (context) => ProfilePostsCubit(
+                        userId: userId,
+                        postsServices: context.read<PostsServices>(),
+                        postsCubit: context.read<PostsCubit>(),
+                      )..loadInitial(),
                 ),
               ],
               child: ProfileView(userId: userId),
