@@ -2,7 +2,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:social_media_app/features/social_graph/helpers/privacy_picker_helper.dart';
 import 'package:social_media_app/features/social_graph/views/audience_picker_view.dart';
-import 'package:social_media_app/features/social_graph/widgets/privacy_chip.dart';
 import 'package:video_player/video_player.dart';
 import 'package:social_media_app/features/auth/data/models/user_data.dart';
 import '../../../core/helpers/safe_navigator.dart';
@@ -15,6 +14,7 @@ import '../../ai_assistant/entities/ai_request_context.dart';
 import '../../ai_assistant/widgets/ai_action_icon.dart';
 import '../../settings/repository/settings_repository.dart';
 import '../../social_graph/models/content_privacy.dart';
+import '../../../core/utilities/file_size_formatter.dart';
 import '../cubits/stories_cubit/stories_cubit.dart';
 
 class AddStoryPreviewView extends StatefulWidget {
@@ -172,12 +172,19 @@ class _AddStoryPreviewViewState extends State<AddStoryPreviewView> {
           children: [
             Positioned.fill(child: _buildMediaPreview()),
 
-            if (widget.isVideo && widget.videoDuration != null)
+            if (widget.isVideo) ...[
               Positioned(
                 top: 12,
-                right: 12,
-                child: _DurationBadge(duration: widget.videoDuration!),
+                left: 12,
+                child: _FileSizeBadge(file: widget.file),
               ),
+              if (widget.videoDuration != null)
+                Positioned(
+                  top: 12,
+                  right: 12,
+                  child: _DurationBadge(duration: widget.videoDuration!),
+                ),
+            ],
 
             if (widget.isVideo && _videoInitialised)
               Center(
@@ -208,38 +215,7 @@ class _AddStoryPreviewViewState extends State<AddStoryPreviewView> {
               bottom: 20,
               left: 12,
               right: 12,
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Expanded(child: _buildCaptionField()),
-                  const SizedBox(width: 8),
-                  Container(
-                    margin: const EdgeInsets.only(bottom: 2),
-                    child: ElevatedButton(
-                      onPressed:
-                          () => _shareStory(context, widget.storiesCubit),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Theme.of(context).primaryColor,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 12,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(24),
-                        ),
-                      ),
-                      child: const Text(
-                        'Share',
-                        style: TextStyle(
-                          fontSize: 13.5,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+              child: _buildCaptionField(),
             ),
           ],
         ),
@@ -254,14 +230,73 @@ class _AddStoryPreviewViewState extends State<AddStoryPreviewView> {
         icon: const Icon(Icons.close, color: AppColors.white),
         onPressed: () => Navigator.of(context, rootNavigator: true).pop(),
       ),
-      title: Text(
-        widget.isVideo ? 'Video Preview' : 'Photo Preview',
-        style: const TextStyle(color: AppColors.white, fontSize: 16),
+      title: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            widget.isVideo ? 'Video Preview' : 'Photo Preview',
+            style: const TextStyle(
+              color: AppColors.white,
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(16),
+              onTap: _pickPrivacy,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.25),
+                    width: 0.8,
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      _selectedPrivacy.icon,
+                      size: 12,
+                      color: Colors.white.withValues(alpha: 0.95),
+                    ),
+                    const SizedBox(width: 2),
+                    Icon(
+                      Icons.keyboard_arrow_down_rounded,
+                      size: 13,
+                      color: Colors.white.withValues(alpha: 0.8),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
       actions: [
         Padding(
-          padding: const EdgeInsets.only(right: 12),
-          child: PrivacyChip(privacy: _selectedPrivacy, onTap: _pickPrivacy),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          child: ElevatedButton(
+            onPressed: () => _shareStory(context, widget.storiesCubit),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Theme.of(context).primaryColor,
+              foregroundColor: Colors.white,
+              elevation: 0,
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(18),
+              ),
+            ),
+            child: const Text(
+              'Share',
+              style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+            ),
+          ),
         ),
       ],
     );
@@ -321,13 +356,13 @@ class _AddStoryPreviewViewState extends State<AddStoryPreviewView> {
               controller: _captionController,
               focusNode: _captionFocusNode,
               enabled: true,
-              hintText: 'Add a caption...',
+              hintText: 'Add an optional caption...',
               style: const TextStyle(color: AppColors.white),
               maxLines: 3,
               minLines: 1,
               maxLength: 150,
               decoration: InputDecoration(
-                hintText: 'Add a caption...',
+                hintText: 'Add an optional caption...',
                 hintStyle: const TextStyle(color: Colors.white70),
                 filled: true,
                 fillColor: Colors.black54,
@@ -342,26 +377,25 @@ class _AddStoryPreviewViewState extends State<AddStoryPreviewView> {
                   borderRadius: BorderRadius.circular(24),
                   borderSide: BorderSide.none,
                 ),
-                suffixIcon: AiActionIcon(
-                  controller: _captionController,
-                  surface: AiSurfaceType.story,
-                  generationAction: AiActionType.autocompleteCaption,
-                  actionContext: AiActionContext.storyCreation,
-                  hasMediaAttached: true,
-                  targetMediaType:
-                      widget.isVideo
-                          ? AiTargetMediaType.video
-                          : AiTargetMediaType.image,
-                  imageBytesProvider:
-                      widget.isVideo ? null : () => widget.file.readAsBytes(),
-                ),
+                suffixIcon:
+                    widget.isVideo
+                        ? null
+                        : AiActionIcon(
+                          controller: _captionController,
+                          surface: AiSurfaceType.story,
+                          generationAction: AiActionType.autocompleteCaption,
+                          actionContext: AiActionContext.storyCreation,
+                          hasMediaAttached: true,
+                          targetMediaType: AiTargetMediaType.image,
+                          imageBytesProvider: () => widget.file.readAsBytes(),
+                        ),
               ),
             ),
 
             if (hasText)
               Positioned(
-                bottom: 8,
-                right: 16,
+                bottom: 3,
+                right: 6,
                 child: Text(
                   '$length/150',
                   style: const TextStyle(
@@ -404,6 +438,39 @@ class _DurationBadge extends StatelessWidget {
           const SizedBox(width: 4),
           Text(
             _format(duration),
+            style: const TextStyle(color: Colors.white70, fontSize: 12),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FileSizeBadge extends StatelessWidget {
+  final File file;
+
+  const _FileSizeBadge({required this.file});
+
+  @override
+  Widget build(BuildContext context) {
+    int bytes = 0;
+    try {
+      bytes = file.lengthSync();
+    } catch (_) {}
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.black54,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.storage_rounded, color: Colors.white70, size: 14),
+          const SizedBox(width: 4),
+          Text(
+            formatMediaFileSize(bytes),
             style: const TextStyle(color: Colors.white70, fontSize: 12),
           ),
         ],

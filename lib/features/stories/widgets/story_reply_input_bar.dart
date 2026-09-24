@@ -327,7 +327,8 @@ class _StoryReplyInputBarState extends State<StoryReplyInputBar> {
                 suffixIcon: AnimatedSwitcher(
                   duration: const Duration(milliseconds: 200),
                   child:
-                      (_focusNode.hasFocus || _isAiGenerating)
+                      (widget.story.storyType != StoryType.video &&
+                              (_focusNode.hasFocus || _isAiGenerating))
                           ? AiActionIcon(
                             key: const ValueKey('story_ai_icon'),
                             controller: _controller,

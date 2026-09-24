@@ -87,24 +87,27 @@ class MyStoryTile extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          EmojiHelper.normalize(_titleFor(story)),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          textDirection:
-                              story.storyType == StoryType.text
-                                  ? ChatHelper.getTextDirection(
-                                    story.contentText ?? 'EN',
-                                  )
-                                  : TextDirection.ltr,
-                          style: (theme.textTheme.titleSmall ??
-                                  const TextStyle())
-                              .copyWith(
-                                fontWeight: FontWeight.w700,
-                                fontSize: 15,
-                                fontFamily: null,
-                                fontFamilyFallback: AppTypography.fontFallback,
+                        Builder(
+                          builder: (context) {
+                            final titleText = _titleFor(story);
+                            return Text(
+                              EmojiHelper.normalize(titleText),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              textDirection: ChatHelper.getTextDirection(
+                                titleText,
                               ),
+                              style: (theme.textTheme.titleSmall ??
+                                      const TextStyle())
+                                  .copyWith(
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 15,
+                                    fontFamily: null,
+                                    fontFamilyFallback:
+                                        AppTypography.fontFallback,
+                                  ),
+                            );
+                          },
                         ),
                         const Gap(6),
                         Row(
