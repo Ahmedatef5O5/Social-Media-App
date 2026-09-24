@@ -39,7 +39,7 @@ master_code.txt
 merge_code.ps1
 repomix-output.xml
 repomix-output.md
-
+social_media_v6_enterprise_audit_fix_issuse_and add CI CD
 export_groups_calls.ps1
 group_calls_ai_dump.md
 
@@ -72,3 +72,6 @@ app.*.map.json
 lib/core/secrets/app_secrets.dart
 mute_test_log.txt
 supabase/.temp/linked-project.json
+
+coverage/
+!scripts/local_ci.ps1

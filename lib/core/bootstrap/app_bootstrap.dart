@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -22,12 +23,41 @@ import '../../features/stories/cubits/stories_cubit/stories_cubit.dart';
 import '../deep_link/services/deep_link_service.dart';
 import '../errors/supabase_error_mapper.dart';
 import '../notifications/notification_service.dart';
+import '../observability/build_info.dart';
+import '../observability/crashlytics_reporter.dart';
+import '../observability/observability.dart';
+import '../observability/realtime_diagnostics.dart';
 import '../share_intent/services/share_intent_service.dart';
 import '../supabase/supabase_provider.dart';
 import '../toast/app_toast.dart';
 
 Future<void> initializeCriticalBeforeRunApp() async {
   await _lockOrientation();
+
+  // Firebase Core moved UP from `initializeCoreServices()`.
+  //
+  // `main.dart` installs FlutterError.onError / PlatformDispatcher.onError
+  // on its very first lines, long before this runs. `Observability` buffers
+  // everything until the line below attaches the real reporter, so nothing
+  // is lost — but the window must stay as short as possible, which is why
+  // Firebase now initialises here instead of after runApp().
+  //
+  // Wrapped in `_safely`: a Firebase outage must never prevent the app from
+  // starting. Losing telemetry is acceptable; losing the app is not.
+  await _safely('FirebaseCore', _initFirebaseCore);
+  await _safely('Observability', _initObservability);
+}
+
+Future<void> _initObservability() async {
+  await obs.attachReporter(
+    CrashlyticsReporter(),
+    environment: BuildInfo.environment,
+    appVersion: BuildInfo.appVersion,
+    buildNumber: BuildInfo.buildNumber,
+    collectionEnabled: !kDebugMode,
+  );
+  await obs.setContext('commit_sha', BuildInfo.commitSha);
+  await obs.setSessionUser(SupabaseProvider.idOrNull);
 }
 
 Completer<void>? _coreServicesCompleter;
@@ -66,10 +96,9 @@ Future<void> initializeCoreServices() async {
     SettingsRepository.instance.init(),
   ]);
 
-  // Group C — Firebase CORE only (app init + background-handler
-  // registration). No permission dialog here on purpose — that part
-  // is split into Group D below. Independent of Group A.
-  final firebaseCoreReady = _safely('FirebaseCore', _initFirebaseCore);
+  // Group C — Firebase CORE has MOVED to initializeCriticalBeforeRunApp()
+  // so Crashlytics exists before the first frame. Do not re-add it here:
+  // Firebase.initializeApp() throws on a duplicate [DEFAULT] app.
 
   final shareIntentReady = _safely(
     'ShareIntent',
@@ -77,12 +106,7 @@ Future<void> initializeCoreServices() async {
   );
   final deepLinkReady = _safely('DeepLink', DeepLinkService.instance.init);
 
-  await Future.wait([
-    coreReady,
-    firebaseCoreReady,
-    shareIntentReady,
-    deepLinkReady,
-  ]);
+  await Future.wait([coreReady, shareIntentReady, deepLinkReady]);
 
   await _guardAgainstCrossAccountCacheLeak();
 
@@ -106,6 +130,17 @@ Future<void> _safely(String label, Future<void> Function() step) async {
     await step();
   } catch (e, s) {
     debugPrint('⚠️ Non-critical bootstrap step "$label" failed: $e\n$s');
+    // Previously this was a debugPrint and nothing else — a bootstrap step
+    // could fail on every device in production and never be noticed.
+    unawaited(
+      obs.recordError(
+        e,
+        s,
+        feature: 'bootstrap',
+        operation: label,
+        reason: 'non-critical bootstrap step failed',
+      ),
+    );
   }
 }
 
@@ -139,6 +174,18 @@ void _setupAuthListener() {
 
       if (event == AuthChangeEvent.signedIn && session != null) {
         debugPrint('✅ Logged in: ${session.user.email}');
+
+        // C-02 instrumentation. Two things happen on every sign-in:
+        //  1. crash reports get re-scoped to the new (hashed) account, so a
+        //     post-switch crash is not attributed to the previous user;
+        //  2. any Realtime channel still owned by the previous account is
+        //     reported as a zombie. This is the mechanism that makes
+        //     "old account's messages appeared in the new account" a
+        //     diagnosable Crashlytics issue instead of a mystery.
+        await obs.setSessionUser(session.user.id);
+        await obs.breadcrumb('signed in', feature: 'auth');
+        RealtimeDiagnostics.instance.detectZombies(session.user.id);
+
         await PresenceService.instance.init();
         final context = navigatorKey.currentContext;
 
@@ -164,6 +211,8 @@ void _setupAuthListener() {
       }
 
       debugPrint('⚠️ Session expired or signed out. Redirecting to Login...');
+      await obs.breadcrumb('signed out ($event)', feature: 'auth');
+      await obs.setSessionUser(null);
       await PresenceService.instance.dispose();
       final context = navigatorKey.currentContext;
 
@@ -226,7 +275,13 @@ Future<void> requestBatteryOptimizationExemptionIfNeeded() async {
 }
 
 Future<void> _initFirebaseCore() async {
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  // Idempotent: initializeApp throws if [DEFAULT] already exists, and this
+  // function moved call sites in this change.
+  if (Firebase.apps.isEmpty) {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+  }
   FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 }
 

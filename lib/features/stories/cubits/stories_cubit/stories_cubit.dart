@@ -29,7 +29,8 @@ part 'stories_state.dart';
 const Duration kMaxStoryVideoDuration = Duration(seconds: 60);
 const int kMaxCachedStoriesSnapshot = 30;
 
-class StoriesCubit extends Cubit<StoriesState> with SafeEmitMixin<StoriesState> {
+class StoriesCubit extends Cubit<StoriesState>
+    with SafeEmitMixin<StoriesState> {
   final StoriesServices _storiesServices;
   RealtimeChannel? _storiesChannel;
 

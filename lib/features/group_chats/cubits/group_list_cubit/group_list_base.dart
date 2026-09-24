@@ -50,4 +50,11 @@ abstract class GroupListBase extends Cubit<GroupListState> {
     String? lastMessageTargetName,
     required int unreadCount,
   });
+
+  @override
+  Future<void> close() {
+    messagesStreamSub?.cancel();
+    presenceSub?.cancel();
+    return super.close();
+  }
 }

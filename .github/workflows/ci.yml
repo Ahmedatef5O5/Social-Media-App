@@ -1,0 +1,213 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main, develop]
+  push:
+    branches: [main, develop]
+  workflow_dispatch:
+
+# A new push to the same PR cancels the previous run. On a repo this size
+# every wasted runner-minute is real money, and nobody reads the results of
+# a superseded commit anyway. `main` is deliberately NOT cancelled — those
+# runs gate releases.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  # ⚠️ SET THIS to the output of `flutter --version` on your machine.
+  # pubspec.yaml only pins `sdk: ^3.7.2` (the Dart SDK), not Flutter, so CI
+  # has to be told explicitly. A floating `stable` would silently change the
+  # analyzer under you and turn a green PR red with no code change.
+  FLUTTER_VERSION: "3.29.3"
+
+jobs:
+  # ── GATE 1 ──────────────────────────────────────────────────────────────
+  # Cheapest checks first. Formatting takes seconds; there is no reason to
+  # spend four minutes resolving dependencies for a build only to fail on a
+  # missing trailing comma.
+  quality:
+    name: Format & analyze
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Restore pub cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.pub-cache
+          key: pub-${{ runner.os }}-${{ hashFiles('pubspec.lock') }}
+          restore-keys: pub-${{ runner.os }}-
+
+      - name: Resolve dependencies
+        run: flutter pub get
+
+      - name: Verify formatting
+        # Local equivalent:
+        #   dart format --output=none --set-exit-if-changed .
+        # To fix:  dart format .
+        run: dart format --output=none --set-exit-if-changed .
+
+      - name: Static analysis
+        # Local equivalent: flutter analyze
+        # BLOCKING. Infos are allowed; warnings and errors are not.
+        run: flutter analyze --no-fatal-infos
+
+  # ── GATE 2 ──────────────────────────────────────────────────────────────
+  # No secrets are needed here, on purpose. `AppSecrets` only asserts inside
+  # `initializeCoreServices()`, which no unit test reaches, and every test
+  # double keeps Supabase / Firebase / Hive out of the process. That means
+  # this job also runs on pull requests from forks.
+  test:
+    name: Unit, cubit & widget tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    needs: quality
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Restore pub cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.pub-cache
+          key: pub-${{ runner.os }}-${{ hashFiles('pubspec.lock') }}
+          restore-keys: pub-${{ runner.os }}-
+
+      - run: flutter pub get
+
+      - name: Run tests with coverage
+        # Local equivalent:
+        #   flutter test --coverage --reporter expanded
+        # `--reporter github` renders failures as annotations on the diff,
+        # so a red PR shows the failing expectation inline instead of in a
+        # 4000-line log.
+        run: flutter test --coverage --reporter github
+
+      - name: Critical-path coverage gate
+        # Deliberately NOT a global percentage. A 40% global number on a
+        # 130k-line codebase says nothing; 0% on MessageReconciler says
+        # everything. This checks the files that can corrupt data or leak
+        # one account's content into another.
+        run: dart run tool/check_coverage.dart
+
+      - name: Upload coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-lcov
+          path: coverage/lcov.info
+          retention-days: 14
+
+  # ── GATE 3 ──────────────────────────────────────────────────────────────
+  # Expensive, and the only job that needs secrets. Skipped entirely on
+  # forks (secrets are unavailable there and a red X would be misleading).
+  build:
+    name: Android build validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    needs: test
+    if: github.event.pull_request.head.repo.full_name == github.repository || github.event_name != 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Restore pub cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.pub-cache
+          key: pub-${{ runner.os }}-${{ hashFiles('pubspec.lock') }}
+          restore-keys: pub-${{ runner.os }}-
+
+      - name: Restore Gradle cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('android/**/*.gradle*', 'android/**/gradle-wrapper.properties') }}
+          restore-keys: gradle-${{ runner.os }}-
+
+      - run: flutter pub get
+
+      # ── Files that are (correctly) not in Git ──────────────────────────
+      # Neither `firebase_options.dart` nor `google-services.json` appears
+      # in the repository, but `app_bootstrap.dart` imports the first and
+      # Firebase needs the second. Both are injected here, base64-encoded,
+      # and never printed.
+      #
+      # Create them once with:
+      #   [Convert]::ToBase64String([IO.File]::ReadAllBytes("android/app/google-services.json")) | Set-Clipboard
+      - name: Restore Firebase config
+        env:
+          GOOGLE_SERVICES_JSON_BASE64: ${{ secrets.GOOGLE_SERVICES_JSON_BASE64 }}
+          FIREBASE_OPTIONS_DART_BASE64: ${{ secrets.FIREBASE_OPTIONS_DART_BASE64 }}
+        run: |
+          if [ -z "$GOOGLE_SERVICES_JSON_BASE64" ]; then
+            echo "::error::GOOGLE_SERVICES_JSON_BASE64 is not set. See docs/ci-cd.md."
+            exit 1
+          fi
+          echo "$GOOGLE_SERVICES_JSON_BASE64" | base64 -d > android/app/google-services.json
+          echo "$FIREBASE_OPTIONS_DART_BASE64" | base64 -d > lib/firebase_options.dart
+
+      # `AppSecrets` reads everything through `String.fromEnvironment`, fed
+      # locally by `--dart-define-from-file=.env`. CI reconstructs the same
+      # file from one secret instead of six, so adding a key later does not
+      # mean touching this workflow.
+      - name: Restore dart-define file
+        env:
+          DART_DEFINE_ENV_BASE64: ${{ secrets.DART_DEFINE_ENV_BASE64 }}
+        run: |
+          if [ -z "$DART_DEFINE_ENV_BASE64" ]; then
+            echo "::error::DART_DEFINE_ENV_BASE64 is not set. See docs/ci-cd.md."
+            exit 1
+          fi
+          echo "$DART_DEFINE_ENV_BASE64" | base64 -d > ci.env
+
+      - name: Build debug APK
+        # Debug, not release: release needs a keystore, and a keystore in a
+        # PR workflow is how signing keys leak. Release builds live in
+        # release.yml, gated on tags.
+        #
+        # Local equivalent (PowerShell):
+        #   flutter build apk --debug --dart-define-from-file=.env
+        run: |
+          flutter build apk --debug \
+            --dart-define-from-file=ci.env \
+            --dart-define=APP_ENV=ci \
+            --dart-define=COMMIT_SHA=${GITHUB_SHA::7} \
+            --dart-define=BUILD_NUMBER=${GITHUB_RUN_NUMBER}
+
+      - name: Clean up injected secrets
+        if: always()
+        run: rm -f ci.env android/app/google-services.json lib/firebase_options.dart
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-debug-${{ github.sha }}
+          path: build/app/outputs/flutter-apk/app-debug.apk
+          retention-days: 7

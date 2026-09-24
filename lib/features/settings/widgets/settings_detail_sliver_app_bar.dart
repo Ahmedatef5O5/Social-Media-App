@@ -67,9 +67,10 @@ class SettingsDetailSliverAppBar extends StatelessWidget {
                     width: 44,
                     height: 44,
                     decoration: BoxDecoration(
-                      color: isDark
-                          ? primary.withValues(alpha: 0.22)
-                          : primary.withValues(alpha: 0.12),
+                      color:
+                          isDark
+                              ? primary.withValues(alpha: 0.22)
+                              : primary.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(14),
                     ),
                     child: Icon(
@@ -102,7 +103,8 @@ class SettingsDetailSliverAppBar extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 13,
                             height: 1.4,
-                            color: isDark ? Colors.white70 : Colors.grey.shade600,
+                            color:
+                                isDark ? Colors.white70 : Colors.grey.shade600,
                           ),
                         ),
                       ],

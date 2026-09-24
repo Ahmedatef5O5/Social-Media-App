@@ -1,11 +1,11 @@
 import 'package:flutter/widgets.dart';
 
 /// Design tokens for standardized spacing, margins, and paddings across the application.
-/// 
+///
 /// Built on a 4px mathematical scale. Avoid using arbitrary magic numbers in widgets.
 abstract final class AppSpacing {
   // --- Raw Spacing Tokens ---
-  
+
   /// 0px - Reset / No spacing
   static const double space0 = 0.0;
 
@@ -66,13 +66,20 @@ abstract final class AppSpacing {
   static const EdgeInsets p24 = EdgeInsets.all(space8);
 
   /// Standard screen horizontal padding: 20px
-  static const EdgeInsets screenHorizontal = EdgeInsets.symmetric(horizontal: space7);
+  static const EdgeInsets screenHorizontal = EdgeInsets.symmetric(
+    horizontal: space7,
+  );
 
   /// Standard card internal padding: 16px
   static const EdgeInsets cardPadding = EdgeInsets.all(space6);
 
   /// Standard bottom sheet content padding: horizontal 20px, top 12px, bottom 24px
-  static const EdgeInsets bottomSheetPadding = EdgeInsets.fromLTRB(space7, space5, space7, space8);
+  static const EdgeInsets bottomSheetPadding = EdgeInsets.fromLTRB(
+    space7,
+    space5,
+    space7,
+    space8,
+  );
 
   /// Standard dialog content padding: 24px
   static const EdgeInsets dialogPadding = EdgeInsets.all(space8);

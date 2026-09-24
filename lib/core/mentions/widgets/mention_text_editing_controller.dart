@@ -157,10 +157,12 @@ class MentionTextEditingController extends TextEditingController {
 
     final spans = <TextSpan>[];
     int cursor = 0;
-    final highlightStyle = effectiveStyle.merge(mentionStyle).copyWith(
-      fontFamily: null,
-      fontFamilyFallback: AppTypography.fontFallback,
-    );
+    final highlightStyle = effectiveStyle
+        .merge(mentionStyle)
+        .copyWith(
+          fontFamily: null,
+          fontFamilyFallback: AppTypography.fontFallback,
+        );
 
     for (final m in sorted) {
       if (m.startIndex > cursor) {
@@ -180,9 +182,7 @@ class MentionTextEditingController extends TextEditingController {
       cursor = m.endIndex;
     }
     if (cursor < text.length) {
-      spans.add(
-        TextSpan(text: text.substring(cursor), style: effectiveStyle),
-      );
+      spans.add(TextSpan(text: text.substring(cursor), style: effectiveStyle));
     }
 
     return TextSpan(style: effectiveStyle, children: spans);
