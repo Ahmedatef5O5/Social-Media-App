@@ -172,7 +172,7 @@ class MessagesHeaderSection extends StatelessWidget {
                                   child: Row(
                                     children: [
                                       Icon(
-                                        Icons.group_add,
+                                        Icons.group_add_outlined,
                                         color: Theme.of(context).primaryColor,
                                       ),
                                       const SizedBox(width: 8),

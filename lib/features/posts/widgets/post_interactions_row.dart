@@ -1,3 +1,4 @@
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -158,6 +159,17 @@ class _LikeButtonWidgetState extends State<_LikeButtonWidget>
   OverlayEntry? _overlayEntry;
   bool _pressed = false;
 
+  static final AudioPlayer _reactionAudioPlayer = AudioPlayer();
+
+  void _playReactionSound() {
+    try {
+      _reactionAudioPlayer.stop();
+      _reactionAudioPlayer.play(AssetSource('sounds/reaction_pop.mp3'));
+    } catch (e) {
+      debugPrint('Post reaction sound error: $e');
+    }
+  }
+
   late AnimationController _animationController;
   late Animation<double> _scaleAnimation;
 
@@ -226,7 +238,7 @@ class _LikeButtonWidgetState extends State<_LikeButtonWidget>
   void _handleReactionTap(PostModel currentPost, String emoji) {
     _animationController.forward(from: 0.0);
     HapticFeedback.lightImpact();
-    SystemSound.play(SystemSoundType.click);
+    _playReactionSound();
     context.read<PostsCubit>().toggleReaction(currentPost, emoji: emoji);
   }
 

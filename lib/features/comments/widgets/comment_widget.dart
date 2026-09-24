@@ -1,3 +1,4 @@
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -208,8 +209,17 @@ class _CommentWidgetState extends State<CommentWidget>
     if (mounted) setState(() {});
   }
 
+  static final AudioPlayer _commentReactionAudioPlayer = AudioPlayer();
+
   void _applyReaction(String emoji) {
     HapticFeedback.selectionClick();
+    try {
+      _commentReactionAudioPlayer.stop();
+      _commentReactionAudioPlayer.play(AssetSource('sounds/reaction_pop.mp3'));
+    } catch (e) {
+      debugPrint('Comment reaction sound error: $e');
+    }
+
     context.read<CommentsCubit>().toggleReaction(
       commentId: widget.comment.id,
       commentOwnerId: widget.comment.authorId,

@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:video_player/video_player.dart';
 import 'package:visibility_detector/visibility_detector.dart';
-import 'package:social_media_app/core/themes/app_colors.dart';
 import '../../../core/cache/repository/media_cache_repository.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/router/app_routes.dart';
@@ -430,45 +429,83 @@ class _PostVideoPlayerState extends State<PostVideoPlayer> with RouteAware {
     required String message,
     required bool showRetry,
   }) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final contentColor = theme.colorScheme.onSurfaceVariant;
+
     return AspectRatio(
       aspectRatio: widget.aspectRatio ?? 16 / 9,
-
       child: Container(
         decoration: BoxDecoration(
-          color: AppColors.grey4.withValues(alpha: 0.1),
+          color: theme.colorScheme.surfaceContainerHighest.withValues(
+            alpha: isDark ? 0.35 : 0.45,
+          ),
           borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: theme.colorScheme.outlineVariant.withValues(
+              alpha: isDark ? 0.3 : 0.5,
+            ),
+            width: 1,
+          ),
         ),
         child: Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, color: AppColors.grey2, size: 30),
-              const SizedBox(height: 8),
-              Text(
-                message,
-                style: TextStyle(
-                  color: AppColors.grey2,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
+              Container(
+                width: 46,
+                height: 46,
+                decoration: BoxDecoration(
+                  color: contentColor.withValues(alpha: isDark ? 0.12 : 0.08),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, color: contentColor, size: 24),
+              ),
+              const SizedBox(height: 10),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Text(
+                  message,
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: contentColor,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ),
               if (showRetry) ...[
-                const SizedBox(height: 10),
+                const SizedBox(height: 12),
                 InkWell(
                   onTap: _retryInitialization,
-                  borderRadius: BorderRadius.circular(8),
-                  child: Padding(
+                  borderRadius: BorderRadius.circular(20),
+                  child: Container(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 4,
+                      horizontal: 14,
+                      vertical: 6,
                     ),
-                    child: Text(
-                      'Retry',
-                      style: TextStyle(
-                        color: Theme.of(context).primaryColor,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 13,
-                      ),
+                    decoration: BoxDecoration(
+                      color: theme.primaryColor.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.refresh_rounded,
+                          size: 14,
+                          color: theme.primaryColor,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          'Retry',
+                          style: TextStyle(
+                            color: theme.primaryColor,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 12.5,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),

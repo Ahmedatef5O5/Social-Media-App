@@ -1,3 +1,4 @@
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../core/design/tokens/typography.dart';
@@ -82,6 +83,17 @@ class StoryReactionBubbleState extends State<_StoryReactionBubble>
   late final Animation<double> _fade;
   int? _hovered;
 
+  static final AudioPlayer _reactionAudioPlayer = AudioPlayer();
+
+  void _playReactionSound() {
+    try {
+      _reactionAudioPlayer.stop();
+      _reactionAudioPlayer.play(AssetSource('sounds/reaction_pop.mp3'));
+    } catch (e) {
+      debugPrint('Reaction sound error: $e');
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -151,6 +163,7 @@ class StoryReactionBubbleState extends State<_StoryReactionBubble>
                   child: GestureDetector(
                     onTap: () {
                       HapticFeedback.mediumImpact();
+                      _playReactionSound();
                       widget.onSelect(emoji);
                     },
                     child: AnimatedContainer(

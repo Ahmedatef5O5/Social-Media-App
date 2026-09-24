@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
+import '../../../core/router/app_routes.dart';
+import '../../profile/cubits/profile_cubit/profile_cubit.dart';
 import '../cubits/discover_people_cubit.dart';
 import '../views/discover_people_search_view.dart';
 
@@ -76,7 +78,29 @@ class DiscoverPeopleHeaderSection extends StatelessWidget {
                 shape: BoxShape.circle,
               ),
               child: Icon(
-                Icons.search_rounded,
+                Icons.search_outlined,
+                size: 22,
+                color: theme.primaryColor,
+              ),
+            ),
+          ),
+          const Gap(10),
+          InkWell(
+            borderRadius: BorderRadius.circular(22),
+            onTap: () {
+              Navigator.of(context, rootNavigator: true).pushNamed(
+                AppRoutes.settingsViewRoute,
+                arguments: context.read<ProfileCubit>(),
+              );
+            },
+            child: Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: theme.primaryColor.withValues(alpha: 0.08),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.settings_outlined,
                 size: 22,
                 color: theme.primaryColor,
               ),
