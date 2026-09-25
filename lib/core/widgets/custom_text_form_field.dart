@@ -4,6 +4,16 @@ import 'package:gap/gap.dart';
 import '../themes/app_colors.dart';
 
 class CustomTextFormField extends StatefulWidget {
+  final String? hintText, labelText, headerText;
+  final TextEditingController? controller;
+  final String? Function(String?)? validator;
+  final bool isPassword;
+  final TextInputType? keyboardType;
+  final List<TextInputFormatter>? inputFormatters;
+  final Widget? suffixIcon;
+  final Widget? prefixIcon;
+  final FocusNode? focusNode;
+
   const CustomTextFormField({
     super.key,
     this.hintText,
@@ -18,16 +28,6 @@ class CustomTextFormField extends StatefulWidget {
     this.labelText,
     this.focusNode,
   });
-  final String? hintText, labelText, headerText;
-  final TextEditingController? controller;
-  final String? Function(String?)? validator;
-  final bool isPassword;
-  final TextInputType? keyboardType;
-  final List<TextInputFormatter>? inputFormatters;
-  final Widget? suffixIcon;
-  final Widget? prefixIcon;
-  final FocusNode? focusNode;
-
   @override
   State<CustomTextFormField> createState() => _CustomTextFormFieldState();
 }
@@ -75,7 +75,7 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
               ).textTheme.headlineSmall!.copyWith(fontSize: 16),
             ),
           ),
-          Gap(12),
+          const Gap(12),
         ],
         TextFormField(
           focusNode: _effectiveFocusNode,
@@ -104,7 +104,6 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
               fontSize: 15,
               fontWeight: FontWeight.w400,
             ),
-
             hintText: widget.hintText,
             hintStyle: Theme.of(context).textTheme.titleSmall!.copyWith(
               fontSize: 15,
@@ -131,7 +130,7 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
                     : widget.prefixIcon,
             prefixIconColor:
                 _effectiveFocusNode.hasFocus
-                    ? Theme.of(context).primaryColor.withValues(alpha: 0.6)
+                    ? Theme.of(context).primaryColor
                     : Theme.of(
                       context,
                     ).colorScheme.onSurface.withValues(alpha: 0.5),
@@ -142,9 +141,7 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
                         _obscureText ? Icons.visibility_off : Icons.visibility,
                         color:
                             _effectiveFocusNode.hasFocus || !_obscureText
-                                ? Theme.of(
-                                  context,
-                                ).primaryColor.withValues(alpha: 0.6)
+                                ? Theme.of(context).primaryColor
                                 : Theme.of(
                                   context,
                                 ).colorScheme.onSurface.withValues(alpha: 0.5),

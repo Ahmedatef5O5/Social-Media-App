@@ -43,7 +43,7 @@ class _LoginViewWidgetState extends State<LoginViewWidget> {
             children: [
               const Gap(12),
               CustomTextFormField(
-                prefixIcon: Icon(Icons.email_rounded),
+                prefixIcon: const Icon(Icons.email_rounded),
                 controller: _emailController,
                 labelText: 'Email',
                 hintText: 'Enter Email',
@@ -52,7 +52,7 @@ class _LoginViewWidgetState extends State<LoginViewWidget> {
               ),
               const Gap(26),
               CustomTextFormField(
-                prefixIcon: Icon(Icons.lock_rounded),
+                prefixIcon: const Icon(Icons.lock_rounded),
                 controller: _passwordController,
                 labelText: 'Password',
                 hintText: 'Enter password',
@@ -60,16 +60,20 @@ class _LoginViewWidgetState extends State<LoginViewWidget> {
                 validator: AppValidators.validatePassword,
               ),
               const Gap(12),
-              Align(
+              const Align(
                 alignment: Alignment.topRight,
                 child: Text('Forgot Password?'),
               ),
               const Gap(42),
               BlocConsumer<AuthCubit, AuthState>(
-                listener: (context, state) {
+                listenWhen:
+                    (previous, current) =>
+                        (previous is! AuthSuccess && current is AuthSuccess) ||
+                        current is AuthFailure,
+                listener: (context, state) async {
                   if (state is AuthSuccess) {
                     AppToast.success('Login Successfully');
-
+                    await Future.delayed(const Duration(milliseconds: 550));
                     if (context.mounted) {
                       Navigator.of(
                         context,
@@ -91,17 +95,13 @@ class _LoginViewWidgetState extends State<LoginViewWidget> {
                         current is AuthInitial ||
                         current is AuthSignedOut,
                 builder: (context, state) {
-                  if (state is AuthLoading) {
-                    return CustomElevatedButton(
-                      txtBtn: "Login",
-                      onPressed: null,
-                      isLoading: true,
-                    );
-                  }
                   return CustomElevatedButton(
-                    txtBtn: "Login",
+                    txtBtn: 'Login',
+                    isLoading: state is AuthLoading,
+                    isSuccess: state is AuthSuccess,
                     onPressed: () {
                       if (_formKey.currentState!.validate()) {
+                        FocusManager.instance.primaryFocus?.unfocus();
                         context.read<AuthCubit>().signInWithEmail(
                           _emailController.text.trim(),
                           _passwordController.text,
@@ -112,7 +112,7 @@ class _LoginViewWidgetState extends State<LoginViewWidget> {
                 },
               ),
               const Gap(14),
-              SocialSignSection(label: 'Or Sign in with'),
+              const SocialSignSection(label: 'Or Sign in with'),
               const Gap(22),
               SignTextSection(
                 staticText: 'Don\'t  have an account?',

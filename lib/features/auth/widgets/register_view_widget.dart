@@ -71,7 +71,7 @@ class _RegisterViewWidgetState extends State<RegisterViewWidget> {
             children: [
               const Gap(8),
               CustomTextFormField(
-                prefixIcon: Icon(Icons.person_rounded),
+                prefixIcon: const Icon(Icons.person_rounded),
                 controller: _fullNameController,
                 labelText: 'Full Name',
                 hintText: 'Your Full Name',
@@ -80,7 +80,7 @@ class _RegisterViewWidgetState extends State<RegisterViewWidget> {
               ),
               const Gap(18),
               CustomTextFormField(
-                prefixIcon: Icon(Icons.email_rounded),
+                prefixIcon: const Icon(Icons.email_rounded),
                 controller: _emailController,
                 labelText: 'Email',
                 hintText: 'Enter New Email',
@@ -89,7 +89,7 @@ class _RegisterViewWidgetState extends State<RegisterViewWidget> {
               ),
               const Gap(18),
               CustomTextFormField(
-                prefixIcon: Icon(Icons.lock_rounded),
+                prefixIcon: const Icon(Icons.lock_rounded),
                 controller: _passwordController,
                 focusNode: _passwordFocusNode,
                 labelText: 'Password',
@@ -97,10 +97,8 @@ class _RegisterViewWidgetState extends State<RegisterViewWidget> {
                 isPassword: true,
                 validator: AppValidators.validatePassword,
               ),
-
               AnimatedSize(
                 duration: const Duration(milliseconds: 300),
-
                 child:
                     _showStrenghtPasswordBar
                         ? Column(
@@ -124,7 +122,7 @@ class _RegisterViewWidgetState extends State<RegisterViewWidget> {
               ),
               const Gap(18),
               CustomTextFormField(
-                prefixIcon: Icon(Icons.lock_rounded),
+                prefixIcon: const Icon(Icons.lock_rounded),
                 controller: _confirmPasswordController,
                 labelText: 'Confirm Password',
                 hintText: 'Retype your password',
@@ -139,11 +137,12 @@ class _RegisterViewWidgetState extends State<RegisterViewWidget> {
               BlocConsumer<AuthCubit, AuthState>(
                 listenWhen:
                     (previous, current) =>
-                        current is AuthSuccess || current is AuthFailure,
-                listener: (BuildContext context, AuthState state) {
+                        (previous is! AuthSuccess && current is AuthSuccess) ||
+                        current is AuthFailure,
+                listener: (BuildContext context, AuthState state) async {
                   if (state is AuthSuccess) {
                     AppToast.success('Sign up Successfully');
-
+                    await Future.delayed(const Duration(milliseconds: 550));
                     if (context.mounted) {
                       Navigator.of(
                         context,
@@ -164,22 +163,16 @@ class _RegisterViewWidgetState extends State<RegisterViewWidget> {
                         current is AuthFailure ||
                         current is AuthInitial ||
                         current is AuthSignedOut,
-
                 builder: (context, state) {
-                  if (state is AuthLoading) {
-                    return CustomElevatedButton(
-                      txtBtn: "Join Now",
-                      onPressed: null,
-                      isLoading: true,
-                    );
-                  }
-
                   return CustomElevatedButton(
-                    txtBtn: "Join Now",
+                    txtBtn: 'Join Now',
+                    isLoading: state is AuthLoading,
+                    isSuccess: state is AuthSuccess,
                     onPressed: () {
                       if (_formKey.currentState!.validate()) {
                         if (_passwordController.text ==
                             _confirmPasswordController.text) {
+                          FocusManager.instance.primaryFocus?.unfocus();
                           context.read<AuthCubit>().signUpWithEmail(
                             _fullNameController.text.trim(),
                             _emailController.text.trim(),
@@ -192,9 +185,9 @@ class _RegisterViewWidgetState extends State<RegisterViewWidget> {
                 },
               ),
               const Gap(18),
-              SocialSignSection(label: 'Or Sign up with'),
+              const SocialSignSection(label: 'Or Sign up with'),
               const Gap(22),
-              SignTextSection(
+              const SignTextSection(
                 staticText: 'By Using this app you agree with the\n',
                 clickableText: 'Terms of Service',
               ),
