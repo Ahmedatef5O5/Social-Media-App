@@ -16,6 +16,7 @@ Future<bool?> showUnfriendConfirmationDialog(
         scale: anim1.value,
         child: CustomConfirmationDialog(
           title: 'Remove $friendName from your friends?',
+          textAlign: TextAlign.center,
           img: AppImages.deleteFilesAnimationLot,
           confirmBtnText: 'Remove',
           cancelBtnText: 'Cancel',

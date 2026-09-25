@@ -123,6 +123,7 @@ class PostActionsMenu extends StatelessWidget {
                   isShareWrapper
                       ? 'Remove this share from your profile?'
                       : 'Are you sure you want to delete this post?',
+              textAlign: TextAlign.center,
               img: AppImages.deleteFilesAnimationLot,
               onConfirm: () async {
                 Navigator.pop(ctx);

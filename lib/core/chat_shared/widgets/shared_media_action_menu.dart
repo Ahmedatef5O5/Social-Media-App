@@ -50,6 +50,7 @@ Future<void> showSharedMediaActionMenu({
                 isMe
                     ? 'Delete this message for everyone?'
                     : 'Delete this message for you?',
+            textAlign: TextAlign.center,
             img: AppImages.deleteFilesAnimationLot,
             confirmBtnText: 'Delete',
             onConfirm: () {

@@ -176,6 +176,7 @@ class _CommentWidgetState extends State<CommentWidget>
       builder:
           (ctx) => CustomConfirmationDialog(
             title: 'Delete this comment ?',
+            textAlign: TextAlign.center,
             img: AppImages.deleteFilesAnimationLot,
             onConfirm: () async {
               Navigator.pop(ctx);

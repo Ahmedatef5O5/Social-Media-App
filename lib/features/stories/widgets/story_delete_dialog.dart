@@ -15,6 +15,7 @@ Future<bool?> showDeleteStoryDialog(BuildContext context, {int count = 1}) {
         scale: anim1.value,
         child: CustomConfirmationDialog(
           title: title,
+          textAlign: TextAlign.center,
           img: AppImages.deleteFilesAnimationLot,
           confirmBtnText: 'Delete',
           cancelBtnText: 'Cancel',

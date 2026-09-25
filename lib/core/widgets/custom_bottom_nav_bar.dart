@@ -138,6 +138,7 @@ class _CustomBottomNavBarState extends State<CustomBottomNavBar> {
       builder:
           (context) => CustomConfirmationDialog(
             title: 'Are you sure you want to quit ?',
+            textAlign: TextAlign.center,
             img: AppImages.exitAnimationLot,
 
             onConfirm:

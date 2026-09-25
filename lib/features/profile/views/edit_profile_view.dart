@@ -250,6 +250,7 @@ class _EditProfileViewState extends State<EditProfileView> {
       builder:
           (context) => CustomConfirmationDialog(
             title: 'You have unsaved changes. Do you want to discard them?',
+            textAlign: TextAlign.center,
             img: AppImages.alertAnimationLot,
             confirmBtnText: 'Discard',
             cancelBtnText: 'Cancel',
