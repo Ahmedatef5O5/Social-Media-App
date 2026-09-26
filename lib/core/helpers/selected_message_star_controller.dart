@@ -9,9 +9,11 @@ class SelectedMessageStarController {
 
   final ValueNotifier<bool> isSelectedStarred = ValueNotifier<bool>(false);
   String? _trackedMessageId;
+  bool _isDisposed = false;
 
   /// Call this whenever the selection set changes (start/toggle/clear).
   Future<void> onSelectionChanged(Set<String> selectedIds) async {
+    if (_isDisposed) return;
     if (selectedIds.length != 1) {
       _trackedMessageId = null;
       isSelectedStarred.value = false;
@@ -26,12 +28,13 @@ class SelectedMessageStarController {
       messageId: messageId,
     );
 
-    if (_trackedMessageId == messageId) {
+    if (!_isDisposed && _trackedMessageId == messageId) {
       isSelectedStarred.value = starred;
     }
   }
 
   Future<void> toggleSelected() async {
+    if (_isDisposed) return;
     final messageId = _trackedMessageId;
     if (messageId == null) return;
 
@@ -40,12 +43,14 @@ class SelectedMessageStarController {
       messageId: messageId,
     );
 
-    if (_trackedMessageId == messageId) {
+    if (!_isDisposed && _trackedMessageId == messageId) {
       isSelectedStarred.value = next;
     }
   }
 
   void dispose() {
+    if (_isDisposed) return;
+    _isDisposed = true;
     isSelectedStarred.dispose();
   }
 }

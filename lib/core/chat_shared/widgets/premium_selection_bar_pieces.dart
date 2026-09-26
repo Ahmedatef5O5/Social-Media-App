@@ -111,13 +111,15 @@ class PremiumSelectionActionIcon extends StatelessWidget {
             ? Colors.red
             : (isMixed
                 ? Theme.of(context).disabledColor
-                : (activeColor ?? primary));
+                : (isOn ? (activeColor ?? primary) : primary));
 
     return Material(
       color:
           isDestructive
               ? Colors.red.withValues(alpha: 0.10)
-              : Colors.transparent,
+              : (isOn && activeColor != null
+                  ? activeColor!.withValues(alpha: 0.14)
+                  : Colors.transparent),
       shape: const CircleBorder(),
       child: InkWell(
         customBorder: const CircleBorder(),

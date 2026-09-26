@@ -53,11 +53,19 @@ class MessageSelectionHeaderBar extends StatelessWidget
           children: [
             PremiumSelectionCloseButton(onPressed: onCancel, color: primary),
             const SizedBox(width: 4),
-            PremiumSelectionCountLabel(
-              count: selectedCount,
-              color: Theme.of(context).colorScheme.onSurface,
+            Expanded(
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: PremiumSelectionCountLabel(
+                    count: selectedCount,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                ),
+              ),
             ),
-            const Spacer(),
 
             PremiumSelectionActionIcon(
               state: PremiumActionVisualState.off,
@@ -78,6 +86,7 @@ class MessageSelectionHeaderBar extends StatelessWidget
                 offIcon: Icons.star_border_rounded,
                 onLabel: 'Unstar',
                 offLabel: 'Star',
+                activeColor: Colors.amber,
                 onTap: onStarToggle,
               ),
 
