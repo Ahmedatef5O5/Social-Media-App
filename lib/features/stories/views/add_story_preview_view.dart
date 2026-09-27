@@ -58,6 +58,14 @@ class _AddStoryPreviewViewState extends State<AddStoryPreviewView> {
     if (widget.isVideo) _initVideoController();
   }
 
+  @override
+  void dispose() {
+    _videoController?.dispose();
+    _captionController.dispose();
+    _captionFocusNode.dispose();
+    super.dispose();
+  }
+
   Future<void> _initVideoController() async {
     try {
       final controller = VideoPlayerController.file(widget.file);
@@ -89,6 +97,18 @@ class _AddStoryPreviewViewState extends State<AddStoryPreviewView> {
         _isPlaying = true;
       }
     });
+  }
+
+  void _pauseVideoIfPlaying() {
+    if (_videoController != null && _videoController!.value.isPlaying) {
+      _videoController!.pause();
+    }
+  }
+
+  void _handleClose() {
+    _pauseVideoIfPlaying();
+    widget.storiesCubit.discardStoryPreview();
+    Navigator.of(context, rootNavigator: true).pop();
   }
 
   Future<void> _pickPrivacy() async {
@@ -131,9 +151,7 @@ class _AddStoryPreviewViewState extends State<AddStoryPreviewView> {
       setState(() => _selectedViewerIds = selected);
     }
 
-    if (_videoController != null && _videoController!.value.isPlaying) {
-      _videoController!.pause();
-    }
+    _pauseVideoIfPlaying();
 
     if (context.mounted) {
       Navigator.of(context, rootNavigator: true).pop();
@@ -163,61 +181,68 @@ class _AddStoryPreviewViewState extends State<AddStoryPreviewView> {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () => FocusScope.of(context).unfocus(),
-      child: Scaffold(
-        backgroundColor: Colors.black,
-        appBar: _buildAppBar(context),
-        body: Stack(
-          children: [
-            Positioned.fill(child: _buildMediaPreview()),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        _handleClose();
+      },
+      child: GestureDetector(
+        onTap: () => FocusScope.of(context).unfocus(),
+        child: Scaffold(
+          backgroundColor: Colors.black,
+          appBar: _buildAppBar(context),
+          body: Stack(
+            children: [
+              Positioned.fill(child: _buildMediaPreview()),
 
-            if (widget.isVideo) ...[
-              Positioned(
-                top: 12,
-                left: 12,
-                child: _FileSizeBadge(file: widget.file),
-              ),
-              if (widget.videoDuration != null)
+              if (widget.isVideo) ...[
                 Positioned(
                   top: 12,
-                  right: 12,
-                  child: _DurationBadge(duration: widget.videoDuration!),
+                  left: 12,
+                  child: _FileSizeBadge(file: widget.file),
                 ),
-            ],
+                if (widget.videoDuration != null)
+                  Positioned(
+                    top: 12,
+                    right: 12,
+                    child: _DurationBadge(duration: widget.videoDuration!),
+                  ),
+              ],
 
-            if (widget.isVideo && _videoInitialised)
-              Center(
-                child: GestureDetector(
-                  onTap: _togglePlayPause,
-                  child: AnimatedOpacity(
-                    opacity: _isPlaying ? 0.0 : 1.0,
-                    duration: const Duration(milliseconds: 200),
-                    child: Container(
-                      padding: const EdgeInsets.all(14),
-                      decoration: const BoxDecoration(
-                        color: Colors.black54,
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        _isPlaying
-                            ? Icons.pause_rounded
-                            : Icons.play_arrow_rounded,
-                        color: Colors.white,
-                        size: 40,
+              if (widget.isVideo && _videoInitialised)
+                Center(
+                  child: GestureDetector(
+                    onTap: _togglePlayPause,
+                    child: AnimatedOpacity(
+                      opacity: _isPlaying ? 0.0 : 1.0,
+                      duration: const Duration(milliseconds: 200),
+                      child: Container(
+                        padding: const EdgeInsets.all(14),
+                        decoration: const BoxDecoration(
+                          color: Colors.black54,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          _isPlaying
+                              ? Icons.pause_rounded
+                              : Icons.play_arrow_rounded,
+                          color: Colors.white,
+                          size: 40,
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
 
-            Positioned(
-              bottom: 20,
-              left: 12,
-              right: 12,
-              child: _buildCaptionField(),
-            ),
-          ],
+              Positioned(
+                bottom: 20,
+                left: 12,
+                right: 12,
+                child: _buildCaptionField(),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -228,7 +253,7 @@ class _AddStoryPreviewViewState extends State<AddStoryPreviewView> {
       backgroundColor: Colors.black,
       leading: IconButton(
         icon: const Icon(Icons.close, color: AppColors.white),
-        onPressed: () => Navigator.of(context, rootNavigator: true).pop(),
+        onPressed: _handleClose,
       ),
       title: Row(
         mainAxisSize: MainAxisSize.min,

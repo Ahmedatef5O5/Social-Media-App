@@ -44,6 +44,48 @@ class StoryModel {
     this.privacyType = ContentPrivacy.public,
   });
 
+  StoryModel copyWith({
+    String? id,
+    String? imageUrl,
+    String? videoUrl,
+    String? contentText,
+    String? backgroundColor,
+    String? authorId,
+    String? authorName,
+    String? authorImageUrl,
+    bool clearAuthorImageUrl = false,
+    String? createdAt,
+    String? caption,
+    DateTime? lastSeen,
+    String? imagePublicId,
+    String? videoPublicId,
+    int? videoDurationSeconds,
+    int? fileSizeBytes,
+    List<MentionRef>? mentions,
+    ContentPrivacy? privacyType,
+  }) {
+    return StoryModel(
+      id: id ?? this.id,
+      imageUrl: imageUrl ?? this.imageUrl,
+      videoUrl: videoUrl ?? this.videoUrl,
+      contentText: contentText ?? this.contentText,
+      backgroundColor: backgroundColor ?? this.backgroundColor,
+      authorId: authorId ?? this.authorId,
+      authorName: authorName ?? this.authorName,
+      authorImageUrl:
+          clearAuthorImageUrl ? null : (authorImageUrl ?? this.authorImageUrl),
+      createdAt: createdAt ?? this.createdAt,
+      caption: caption ?? this.caption,
+      lastSeen: lastSeen ?? this.lastSeen,
+      imagePublicId: imagePublicId ?? this.imagePublicId,
+      videoPublicId: videoPublicId ?? this.videoPublicId,
+      videoDurationSeconds: videoDurationSeconds ?? this.videoDurationSeconds,
+      fileSizeBytes: fileSizeBytes ?? this.fileSizeBytes,
+      mentions: mentions ?? this.mentions,
+      privacyType: privacyType ?? this.privacyType,
+    );
+  }
+
   StoryType get storyType {
     if (videoUrl != null) return StoryType.video;
     if (imageUrl != null) return StoryType.image;

@@ -5,29 +5,42 @@ import '../../../core/helpers/media_duration_badge.dart';
 import '../../../core/helpers/story_reply_navigator.dart';
 import '../../../core/themes/app_colors.dart';
 import '../../../core/widgets/cached_cloudinary_image.dart';
-import '../models/message_model.dart';
 
 class StoryReplyPreviewBubble extends StatelessWidget {
-  final MessageModel message;
+  final String? replyToStoryId;
+  final String? replyToStoryAuthorId;
+  final String? replyToStoryType;
+  final String? replyToStoryMediaUrl;
+  final String? replyToStoryText;
+  final String? replyToStoryBgColor;
+  final int? replyToStoryDurationSeconds;
   final bool isMe;
   final bool onColoredBubble;
 
   const StoryReplyPreviewBubble({
     super.key,
-    required this.message,
+    required this.replyToStoryId,
+    required this.replyToStoryAuthorId,
+    required this.replyToStoryType,
+    required this.replyToStoryMediaUrl,
+    required this.replyToStoryText,
+    required this.replyToStoryBgColor,
+    required this.replyToStoryDurationSeconds,
     required this.isMe,
     this.onColoredBubble = true,
   });
 
   static const double _thumbnailSize = 54;
 
+  bool get _isStoryReply => replyToStoryType != null;
+
   @override
   Widget build(BuildContext context) {
-    if (!message.isStoryReply) return const SizedBox.shrink();
+    if (!_isStoryReply) return const SizedBox.shrink();
 
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    final type = message.replyToStoryType;
-    final storyText = message.replyToStoryText?.trim();
+    final type = replyToStoryType;
+    final storyText = replyToStoryText?.trim();
     final bool useWhiteText = isMe && onColoredBubble;
 
     final Color surfaceColor =
@@ -49,7 +62,12 @@ class StoryReplyPreviewBubble extends StatelessWidget {
       borderRadius: BorderRadius.circular(16),
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
-        onTap: () => StoryReplyNavigator.openOriginalStory(context, message),
+        onTap:
+            () => StoryReplyNavigator.openOriginalStory(
+              context,
+              storyId: replyToStoryId,
+              authorId: replyToStoryAuthorId,
+            ),
         child: Container(
           width: double.infinity,
           margin: const EdgeInsets.only(bottom: 6),
@@ -113,8 +131,6 @@ class StoryReplyPreviewBubble extends StatelessWidget {
                   ],
                 ),
               ),
-              // const Gap(4),
-              // Icon(Icons.chevron_right_rounded, size: 18, color: subTextColor),
             ],
           ),
         ),
@@ -135,11 +151,11 @@ class StoryReplyPreviewBubble extends StatelessWidget {
   }
 
   Widget _buildThumbnail(String? type) {
-    final mediaUrl = message.replyToStoryMediaUrl;
-    final storyText = message.replyToStoryText?.trim();
+    final mediaUrl = replyToStoryMediaUrl;
+    final storyText = replyToStoryText?.trim();
 
     if (type == 'text' || mediaUrl == null || mediaUrl.isEmpty) {
-      final bg = _parseBgColor(message.replyToStoryBgColor);
+      final bg = _parseBgColor(replyToStoryBgColor);
       return Container(
         width: _thumbnailSize,
         height: _thumbnailSize,
@@ -235,7 +251,7 @@ class StoryReplyPreviewBubble extends StatelessWidget {
                 right: 3,
                 bottom: 3,
                 child: MediaDurationBadge(
-                  seconds: message.replyToStoryDurationSeconds,
+                  seconds: replyToStoryDurationSeconds,
                   fontSize: 8,
                 ),
               ),

@@ -46,6 +46,7 @@ class StoriesCubit extends Cubit<StoriesState>
   final Map<String, dio_pkg.CancelToken> _uploadCancelTokens = {};
   File? selectedStoryFile;
   File? _stableVideoFile;
+  bool _isPickingMedia = false;
 
   void _monitorRealtimeStories() {
     _storiesChannel =
@@ -370,6 +371,9 @@ class StoriesCubit extends Cubit<StoriesState>
   }
 
   Future<void> pickAndAddStory({required ImageSource source}) async {
+    if (_isPickingMedia) return;
+    _isPickingMedia = true;
+
     try {
       final XFile? pickedFile =
           source == ImageSource.camera
@@ -378,17 +382,21 @@ class StoriesCubit extends Cubit<StoriesState>
 
       if (pickedFile == null) return;
 
+      _cleanupStableVideo();
       final file = await _writeToAppDir(xFile: pickedFile, extension: 'jpg');
       selectedStoryFile = file;
       emit(StoryImagePicked(file: file));
     } catch (e) {
       debugPrint('Error in pickAndAddStory: $e');
       emit(AddStoryError(e.toString()));
+    } finally {
+      _isPickingMedia = false;
     }
   }
 
   Future<void> pickAndPreviewVideoStory({required ImageSource source}) async {
-    if (state is StoryVideoPicked) return;
+    if (_isPickingMedia) return;
+    _isPickingMedia = true;
 
     try {
       final XFile? pickedFile =
@@ -412,8 +420,7 @@ class StoriesCubit extends Cubit<StoriesState>
       final duration = await _getVideoDuration(stableFile);
 
       if (duration > kMaxStoryVideoDuration) {
-        // ignore: body_might_complete_normally_catch_error
-        await stableFile.delete().catchError((_) {});
+        await _safeDeleteFile(stableFile);
         emit(
           StoryVideoTooLong(
             videoDuration: duration,
@@ -423,12 +430,26 @@ class StoriesCubit extends Cubit<StoriesState>
         return;
       }
 
+      _cleanupStableVideo();
       _stableVideoFile = stableFile;
       selectedStoryFile = stableFile;
       emit(StoryVideoPicked(file: stableFile, videoDuration: duration));
     } catch (e) {
       debugPrint('Error picking video story: $e');
       emit(StoryVideoPickError(SupabaseErrorMapper.toUserMessage(e)));
+    } finally {
+      _isPickingMedia = false;
+    }
+  }
+
+  void discardStoryPreview() {
+    final fileToDelete = selectedStoryFile ?? _stableVideoFile;
+    _stableVideoFile = null;
+    selectedStoryFile = null;
+    unawaited(_safeDeleteFile(fileToDelete));
+
+    if (state is StoryVideoPicked || state is StoryImagePicked) {
+      emit(StoriesLoaded(cachedStories, DateTime.now()));
     }
   }
 
@@ -538,10 +559,45 @@ class StoriesCubit extends Cubit<StoriesState>
     }
   }
 
+  void updateAuthorInfo({
+    required String authorId,
+    required String newName,
+    required String? newImageUrl,
+  }) {
+    bool changed = false;
+    cachedStories =
+        cachedStories.map((story) {
+          if (story.authorId != authorId) return story;
+          changed = true;
+          return story.copyWith(
+            authorName: newName,
+            authorImageUrl: newImageUrl,
+            clearAuthorImageUrl: newImageUrl == null || newImageUrl.isEmpty,
+          );
+        }).toList();
+
+    if (changed) {
+      _persistStoriesSnapshot(cachedStories);
+      emit(StoriesLoaded(List<StoryModel>.from(cachedStories), DateTime.now()));
+    }
+  }
+
+  Future<void> _safeDeleteFile(File? file) async {
+    if (file == null) return;
+    try {
+      if (await file.exists()) {
+        await file.delete();
+      }
+    } catch (_) {}
+  }
+
   void _cleanupStableVideo() {
-    // ignore: body_might_complete_normally_catch_error
-    _stableVideoFile?.delete().catchError((_) {});
+    final fileToDelete = _stableVideoFile;
     _stableVideoFile = null;
+    if (selectedStoryFile?.path == fileToDelete?.path) {
+      selectedStoryFile = null;
+    }
+    unawaited(_safeDeleteFile(fileToDelete));
   }
 
   void resetSession() {

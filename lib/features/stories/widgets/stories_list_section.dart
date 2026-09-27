@@ -4,8 +4,8 @@ import 'package:social_media_app/features/stories/models/story_model.dart';
 import 'package:social_media_app/features/stories/widgets/story_item_widget.dart';
 import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/toast/app_toast.dart';
-import '../../../core/widgets/custom_loading_indicator.dart';
 import '../cubits/stories_cubit/stories_cubit.dart';
+import 'stories_list_skeleton.dart';
 import 'story_card_widget.dart';
 
 class StoriesListSection extends StatelessWidget {
@@ -56,7 +56,7 @@ class StoriesListSection extends StatelessWidget {
                   ? state.stories
                   : storiesCubit.cachedStories;
           if (stories.isEmpty) {
-            if (state is StoriesLoading) return const CustomLoadingIndicator();
+            if (state is StoriesLoading) return const StoriesListSkeleton();
             return const SizedBox.shrink();
           }
 
