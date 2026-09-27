@@ -28,6 +28,8 @@ class GroupReactionPickerBubble extends StatefulWidget {
   @override
   State<GroupReactionPickerBubble> createState() =>
       _GroupReactionPickerBubbleState();
+
+  static const double bubbleWidth = 340.0;
 }
 
 class _GroupReactionPickerBubbleState extends State<GroupReactionPickerBubble>
@@ -60,6 +62,10 @@ class _GroupReactionPickerBubbleState extends State<GroupReactionPickerBubble>
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final myReaction = widget.message.reactions[widget.currentUserId];
     final isCall = widget.message.messageType == 'call';
+    final maxAllowedWidth = (MediaQuery.sizeOf(context).width - 16).clamp(
+      200.0,
+      bubbleWidth,
+    );
 
     return ScaleTransition(
       scale: _scale,
@@ -70,7 +76,7 @@ class _GroupReactionPickerBubbleState extends State<GroupReactionPickerBubble>
         borderRadius: BorderRadius.circular(16),
         clipBehavior: Clip.antiAlias,
         child: Container(
-          width: bubbleWidth,
+          width: maxAllowedWidth,
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
           decoration: BoxDecoration(
             color: scheme.surfaceContainerHighest.withValues(
@@ -96,63 +102,73 @@ class _GroupReactionPickerBubbleState extends State<GroupReactionPickerBubble>
               mainAxisSize: MainAxisSize.min,
               children: [
                 if (!isCall) ...[
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children:
-                        _emojis.map((emoji) {
-                          final isSelected = myReaction == emoji;
-                          return GestureDetector(
-                            onTap: () {
-                              HapticFeedback.lightImpact();
-                              widget.onReact(emoji);
-                            },
-                            child: AnimatedContainer(
-                              duration: const Duration(milliseconds: 180),
-                              curve: Curves.easeOut,
-                              margin: const EdgeInsets.symmetric(horizontal: 3),
-                              padding: const EdgeInsets.all(6),
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(20),
-                                color:
-                                    isSelected
-                                        ? scheme.primary.withValues(alpha: 0.15)
-                                        : Colors.transparent,
-                                border:
-                                    isSelected
-                                        ? Border.all(
-                                          color: scheme.primary.withValues(
-                                            alpha: 0.4,
-                                          ),
-                                          width: 1,
-                                        )
-                                        : null,
-                              ),
-                              transform:
-                                  isSelected
-                                      ? (Matrix4.identity()..scale(1.15))
-                                      : Matrix4.identity(),
-                              child: Text(
-                                emoji,
-                                style: TextStyle(
-                                  fontSize: 26,
-                                  fontFamilyFallback:
-                                      AppTypography.emojiFontFallback,
-                                  shadows:
-                                      isSelected
-                                          ? [
-                                            Shadow(
+                  SizedBox(
+                    width: double.infinity,
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        mainAxisSize: MainAxisSize.min,
+                        children:
+                            _emojis.map((emoji) {
+                              final isSelected = myReaction == emoji;
+                              return GestureDetector(
+                                onTap: () {
+                                  HapticFeedback.lightImpact();
+                                  widget.onReact(emoji);
+                                },
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 180),
+                                  curve: Curves.easeOut,
+                                  margin: const EdgeInsets.symmetric(
+                                    horizontal: 2.5,
+                                  ),
+                                  padding: const EdgeInsets.all(5.5),
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(20),
+                                    color:
+                                        isSelected
+                                            ? scheme.primary.withValues(
+                                              alpha: 0.15,
+                                            )
+                                            : Colors.transparent,
+                                    border:
+                                        isSelected
+                                            ? Border.all(
                                               color: scheme.primary.withValues(
                                                 alpha: 0.4,
                                               ),
-                                              blurRadius: 8,
-                                            ),
-                                          ]
-                                          : [],
+                                              width: 1,
+                                            )
+                                            : null,
+                                  ),
+                                  transform:
+                                      isSelected
+                                          ? (Matrix4.identity()..scale(1.15))
+                                          : Matrix4.identity(),
+                                  child: Text(
+                                    emoji,
+                                    style: TextStyle(
+                                      fontSize: 26,
+                                      fontFamilyFallback:
+                                          AppTypography.emojiFontFallback,
+                                      shadows:
+                                          isSelected
+                                              ? [
+                                                Shadow(
+                                                  color: scheme.primary
+                                                      .withValues(alpha: 0.4),
+                                                  blurRadius: 8,
+                                                ),
+                                              ]
+                                              : [],
+                                    ),
+                                  ),
                                 ),
-                              ),
-                            ),
-                          );
-                        }).toList(),
+                              );
+                            }).toList(),
+                      ),
+                    ),
                   ),
                   Divider(
                     height: 16,

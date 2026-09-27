@@ -29,9 +29,9 @@ class ChatReactionOverlay {
     final offset = renderBox.localToGlobal(Offset.zero, ancestor: overlayBox);
     final anchorRect = offset & renderBox.size;
 
-    const bubbleWidth = 260.0;
+    const bubbleWidth = 316.0;
     const edgePadding = 12.0;
-    const scaleSafeExtra = 24.0;
+    const scaleSafeExtra = 16.0;
 
     final screenWidth = overlayBox.size.width;
 
@@ -42,10 +42,9 @@ class ChatReactionOverlay {
       x = anchorRect.center.dx;
     }
 
-    x = x.clamp(
-      edgePadding,
-      screenWidth - bubbleWidth - edgePadding - scaleSafeExtra,
-    );
+    final maxLeft = (screenWidth - bubbleWidth - edgePadding - scaleSafeExtra)
+        .clamp(edgePadding, screenWidth);
+    x = x.clamp(edgePadding, maxLeft);
 
     final y = anchorRect.bottom + 6;
 
@@ -117,6 +116,10 @@ class _ReactionPickerBubbleState extends State<_ReactionPickerBubble>
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final maxAllowedWidth = (MediaQuery.sizeOf(context).width - 24).clamp(
+      180.0,
+      340.0,
+    );
 
     return ScaleTransition(
       scale: _scale,
@@ -126,107 +129,113 @@ class _ReactionPickerBubbleState extends State<_ReactionPickerBubble>
         elevation: 0,
         borderRadius: BorderRadius.circular(32),
         clipBehavior: Clip.none,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-          decoration: BoxDecoration(
-            color: scheme.surfaceContainerHighest.withValues(
-              alpha: isDark ? 0.88 : 0.78,
-            ),
-            borderRadius: BorderRadius.circular(32),
-            border: Border.all(
-              color: scheme.outline.withValues(alpha: isDark ? 0.4 : 0.2),
-              width: 0.6,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: isDark ? 0.55 : 0.20),
-                blurRadius: isDark ? 16 : 10,
-                spreadRadius: 1,
-                offset: const Offset(0, 3),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: maxAllowedWidth),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              color: scheme.surfaceContainerHighest.withValues(
+                alpha: isDark ? 0.88 : 0.78,
               ),
-            ],
-          ),
-          child: DefaultTextStyle(
-            style: const TextStyle(),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: List.generate(kChatReactions.length, (i) {
-                final r = kChatReactions[i];
-                final isHov = _hovered == i;
-                final isSelected = widget.selectedEmoji == r['emoji'];
-                return MouseRegion(
-                  onEnter: (_) => setState(() => _hovered = i),
-                  onExit: (_) => setState(() => _hovered = null),
-                  child: GestureDetector(
-                    onTap: () {
-                      HapticFeedback.lightImpact();
-                      widget.onSelect(r['emoji']!);
-                    },
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 180),
-                      curve: Curves.easeOut,
-                      margin: const EdgeInsets.symmetric(horizontal: 2.5),
-                      padding: const EdgeInsets.all(4),
-
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(20),
-
-                        color:
-                            isSelected
-                                ? scheme.primary.withValues(alpha: 0.15)
-                                : Colors.transparent,
-
-                        border:
-                            isSelected
-                                ? Border.all(
-                                  color: scheme.primary.withValues(alpha: 0.4),
-                                  width: 1,
-                                )
-                                : null,
-                      ),
-                      transform:
-                          isSelected
-                              ? (Matrix4.identity()..scale(1.18))
-                              : isHov
-                              ? (Matrix4.identity()
-                                ..translate(0.0, -8.0)
-                                ..scale(1.1))
-                              : Matrix4.identity(),
-                      child: Tooltip(
-                        message: r['label']!,
-                        preferBelow: false,
-                        decoration: BoxDecoration(
-                          color: scheme.inverseSurface,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        textStyle: TextStyle(
-                          color: scheme.onInverseSurface,
-                          fontSize: 12,
-                        ),
-                        child: Text(
-                          r['emoji']!,
-                          style: TextStyle(
-                            fontSize: 26,
-                            inherit: false,
-                            fontFamilyFallback: AppTypography.emojiFontFallback,
-                            shadows:
+              borderRadius: BorderRadius.circular(32),
+              border: Border.all(
+                color: scheme.outline.withValues(alpha: isDark ? 0.4 : 0.2),
+                width: 0.6,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: isDark ? 0.55 : 0.20),
+                  blurRadius: isDark ? 16 : 10,
+                  spreadRadius: 1,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            child: DefaultTextStyle(
+              style: const TextStyle(),
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: List.generate(kChatReactions.length, (i) {
+                    final r = kChatReactions[i];
+                    final isHov = _hovered == i;
+                    final isSelected = widget.selectedEmoji == r['emoji'];
+                    return MouseRegion(
+                      onEnter: (_) => setState(() => _hovered = i),
+                      onExit: (_) => setState(() => _hovered = null),
+                      child: GestureDetector(
+                        onTap: () {
+                          HapticFeedback.lightImpact();
+                          widget.onSelect(r['emoji']!);
+                        },
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 180),
+                          curve: Curves.easeOut,
+                          margin: const EdgeInsets.symmetric(horizontal: 2.5),
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(20),
+                            color:
                                 isSelected
-                                    ? [
-                                      Shadow(
-                                        color: scheme.primary.withValues(
-                                          alpha: 0.4,
-                                        ),
-                                        blurRadius: 8,
+                                    ? scheme.primary.withValues(alpha: 0.15)
+                                    : Colors.transparent,
+                            border:
+                                isSelected
+                                    ? Border.all(
+                                      color: scheme.primary.withValues(
+                                        alpha: 0.4,
                                       ),
-                                    ]
-                                    : [],
+                                      width: 1,
+                                    )
+                                    : null,
+                          ),
+                          transform:
+                              isSelected
+                                  ? (Matrix4.identity()..scale(1.18))
+                                  : isHov
+                                  ? (Matrix4.identity()
+                                    ..translate(0.0, -8.0)
+                                    ..scale(1.1))
+                                  : Matrix4.identity(),
+                          child: Tooltip(
+                            message: r['label']!,
+                            preferBelow: false,
+                            decoration: BoxDecoration(
+                              color: scheme.inverseSurface,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            textStyle: TextStyle(
+                              color: scheme.onInverseSurface,
+                              fontSize: 12,
+                            ),
+                            child: Text(
+                              r['emoji']!,
+                              style: TextStyle(
+                                fontSize: 26,
+                                inherit: false,
+                                fontFamilyFallback:
+                                    AppTypography.emojiFontFallback,
+                                shadows:
+                                    isSelected
+                                        ? [
+                                          Shadow(
+                                            color: scheme.primary.withValues(
+                                              alpha: 0.4,
+                                            ),
+                                            blurRadius: 8,
+                                          ),
+                                        ]
+                                        : [],
+                              ),
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  ),
-                );
-              }),
+                    );
+                  }),
+                ),
+              ),
             ),
           ),
         ),

@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:social_media_app/features/comments/helpers/comment_menu_action.dart';
 import 'comment_action_menu.dart';
@@ -18,36 +19,76 @@ class CommentOverlayPicker {
     required VoidCallback onDismiss,
     String? selectedEmoji,
     List<CommentMenuAction> actions = const [],
-    double bubbleWidth = 220,
-    double offsetRight = 80,
+    double bubbleWidth = ReactionsPickerBubble.kBubbleWidth,
+    double offsetRight = 0,
   }) {
     final overlayBox =
         Overlay.of(context).context.findRenderObject() as RenderBox;
+    final mediaQuery = MediaQuery.of(context);
 
-    final offset = anchorRect.topLeft;
-    final size = anchorRect.size;
+    const double horizontalMargin = 12.0;
+    const double verticalGap = 8.0;
+    const double bottomInputBarReserve = 68.0;
 
-    double x = offset.dx + (size.width / 2) - (bubbleWidth / 2);
-    x += offsetRight;
+    final double screenHeight = overlayBox.size.height;
 
-    double y = offset.dy + size.height + 8;
+    final double actionsHeight =
+        actions.isEmpty ? 0.0 : (8.0 + (actions.length * 46.0));
+    final double estimatedTotalHeight =
+        ReactionsPickerBubble.kBubbleHeight + actionsHeight;
 
-    x = x.clamp(12.0, overlayBox.size.width - bubbleWidth - 12);
+    final double bottomSafeLimit =
+        screenHeight -
+        mediaQuery.viewInsets.bottom -
+        mediaQuery.padding.bottom -
+        bottomInputBarReserve;
+    final double topSafeLimit = mediaQuery.padding.top + 12.0;
+
+    final double spaceBelow = bottomSafeLimit - anchorRect.bottom;
+    final bool showAbove =
+        spaceBelow < (estimatedTotalHeight + verticalGap) &&
+        (anchorRect.top - topSafeLimit) > spaceBelow;
+
+    double y =
+        showAbove
+            ? anchorRect.top - estimatedTotalHeight - verticalGap
+            : anchorRect.bottom + verticalGap;
+
+    final double maxTop = math.max(
+      topSafeLimit,
+      screenHeight -
+          mediaQuery.viewInsets.bottom -
+          estimatedTotalHeight -
+          horizontalMargin,
+    );
+    y = y.clamp(topSafeLimit, maxTop);
 
     return OverlayEntry(
       builder:
           (_) => Stack(
             children: [
-              Positioned.fill(child: GestureDetector(onTap: onDismiss)),
+              Positioned.fill(
+                child: GestureDetector(
+                  behavior: HitTestBehavior.translucent,
+                  onTap: onDismiss,
+                  onPanDown: (_) => onDismiss(),
+                ),
+              ),
               Positioned(
-                left: x,
+                right: horizontalMargin,
                 top: y,
                 child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     ReactionsPickerBubble(
                       onReactionSelected: onSelect,
                       onDismiss: onDismiss,
                       selectedEmoji: selectedEmoji,
+                      scaleAlignment:
+                          showAbove
+                              ? Alignment.bottomRight
+                              : Alignment.topRight,
                     ),
                     if (actions.isNotEmpty) ...[
                       const SizedBox(height: 8),
