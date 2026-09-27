@@ -49,6 +49,11 @@ class CloudinaryStorageServices {
       'sh',
       'bat',
       'exe',
+      'apk',
+      'ipa',
+      'msi',
+      'dmg',
+      'iso',
       'css',
       'java',
       'c',
@@ -75,22 +80,32 @@ class CloudinaryStorageServices {
       'md',
       'env',
     };
-    final uploadExt = restrictedRawExts.contains(ext) ? '$ext.txt' : ext;
 
-    onProgress?.call(0.0);
+    Future<dio_pkg.Response<dynamic>> performUpload({
+      required bool wrapAsTxt,
+    }) async {
+      final effectivePublicId =
+          (wrapAsTxt && ext.isNotEmpty)
+              ? '$publicIdPrefix.$ext'
+              : publicIdPrefix;
+      final effectiveFileName =
+          wrapAsTxt
+              ? (ext.isNotEmpty
+                  ? '$publicIdPrefix.$ext.txt'
+                  : '$publicIdPrefix.txt')
+              : (ext.isNotEmpty ? '$publicIdPrefix.$ext' : publicIdPrefix);
 
-    try {
       final formData = dio_pkg.FormData.fromMap({
         'upload_preset': uploadPreset,
         'folder': folderPath,
-        'public_id': publicIdPrefix,
+        'public_id': effectivePublicId,
         'file': await dio_pkg.MultipartFile.fromFile(
           file.path,
-          filename: '$publicIdPrefix.$uploadExt',
+          filename: effectiveFileName,
         ),
       });
 
-      final response = await _dio.post(
+      return _dio.post(
         'https://api.cloudinary.com/v1_1/$cloudName/$resourceType/upload',
         data: formData,
         onSendProgress: (sent, total) {
@@ -100,6 +115,38 @@ class CloudinaryStorageServices {
         },
         cancelToken: cancelToken,
       );
+    }
+
+    final shouldWrapInitially =
+        resourceType == 'raw' &&
+        (ext.isEmpty || restrictedRawExts.contains(ext));
+
+    onProgress?.call(0.0);
+
+    try {
+      dio_pkg.Response<dynamic> response;
+      try {
+        response = await performUpload(wrapAsTxt: shouldWrapInitially);
+      } on dio_pkg.DioException catch (e) {
+        final serverMsg =
+            (e.response?.data is Map)
+                ? (e.response?.data['error']?['message'] as String? ?? '')
+                : '';
+        final isFormatBlocked =
+            resourceType == 'raw' &&
+            !shouldWrapInitially &&
+            serverMsg.toLowerCase().contains('not allowed');
+
+        if (isFormatBlocked) {
+          debugPrint(
+            '⚠️ Cloudinary blocked raw format ".$ext" ($serverMsg). '
+            'Retrying with safe .txt wrapper...',
+          );
+          response = await performUpload(wrapAsTxt: true);
+        } else {
+          rethrow;
+        }
+      }
 
       onProgress?.call(1.0);
 
@@ -152,7 +199,12 @@ class CloudinaryStorageServices {
     return '${secureUrl.substring(0, insertAt)}$transformation/${secureUrl.substring(insertAt)}';
   }
 
-  String _extractExtension(String path) => path.split('.').last.toLowerCase();
+  String _extractExtension(String path) {
+    final fileName = path.split('/').last.split('\\').last;
+    final dotIndex = fileName.lastIndexOf('.');
+    if (dotIndex == -1 || dotIndex == fileName.length - 1) return '';
+    return fileName.substring(dotIndex + 1).toLowerCase();
+  }
 
   String _resolveResourceType(String ext) {
     const imageExts = {
@@ -164,17 +216,29 @@ class CloudinaryStorageServices {
       'heif',
       'heic',
       'svg',
+      'bmp',
+      'tiff',
+      'tif',
+      'avif',
+      'ico',
     };
     const videoOrAudioExts = {
       'mp4',
       'mov',
       'm4a',
       'webm',
+      'mkv',
+      'avi',
+      '3gp',
+      'flv',
+      'wmv',
       'aac',
       'mp3',
       'ogg',
       'wav',
       'opus',
+      'flac',
+      'amr',
     };
 
     if (imageExts.contains(ext)) return 'image';

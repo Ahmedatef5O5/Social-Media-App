@@ -189,6 +189,7 @@ class _CachedCloudinaryImageState extends State<CachedCloudinaryImage> {
       width: widget.width,
       height: widget.height,
       fit: widget.fit,
+      errorListener: (_) {},
       placeholder:
           widget.placeholder != null
               ? (_, __) => widget.placeholder!(context)

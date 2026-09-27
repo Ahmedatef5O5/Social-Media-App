@@ -57,7 +57,6 @@ Future<void> _initObservability() async {
     collectionEnabled: !kDebugMode,
   );
   await obs.setContext('commit_sha', BuildInfo.commitSha);
-  await obs.setSessionUser(SupabaseProvider.idOrNull);
 }
 
 Completer<void>? _coreServicesCompleter;
@@ -107,6 +106,11 @@ Future<void> initializeCoreServices() async {
   final deepLinkReady = _safely('DeepLink', DeepLinkService.instance.init);
 
   await Future.wait([coreReady, shareIntentReady, deepLinkReady]);
+
+  await _safely(
+    'ObservabilitySessionUser',
+    () => obs.setSessionUser(SupabaseProvider.idOrNull),
+  );
 
   await _guardAgainstCrossAccountCacheLeak();
 

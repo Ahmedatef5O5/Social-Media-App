@@ -11,6 +11,7 @@ class VoicePlaybackController {
 
   final Map<String, VideoPlayerController> cache = {};
   final Map<String, Duration> durationCache = {};
+  final Set<String> failedUrls = {};
   final Map<String, Future<void>> _preloadFutures = {};
 
   static const Duration minReliableDuration = Duration(seconds: 1);
@@ -46,6 +47,7 @@ class VoicePlaybackController {
   }
 
   Future<Duration?> fetchDuration(String url) async {
+    if (url.isEmpty || failedUrls.contains(url)) return null;
     if (durationCache.containsKey(url)) return durationCache[url];
     if (_preloadFutures.containsKey(url)) {
       await _preloadFutures[url];
@@ -68,14 +70,17 @@ class VoicePlaybackController {
       if (duration >= minReliableDuration) {
         durationCache[url] = duration;
       }
-      completer.complete();
       return duration;
     } catch (e) {
-      completer.completeError(e);
+      failedUrls.add(url);
+      debugPrint('[VoicePlaybackController] fetchDuration failed for $url: $e');
       return null;
     } finally {
       await temp?.dispose();
       _preloadFutures.remove(url);
+      if (!completer.isCompleted) {
+        completer.complete();
+      }
     }
   }
 
@@ -89,6 +94,7 @@ class VoicePlaybackController {
   Future<void> clearCache() async {
     activeVoiceUrl.value = null;
     _preloadFutures.clear();
+    failedUrls.clear();
     for (final c in cache.values) {
       await c.dispose();
     }

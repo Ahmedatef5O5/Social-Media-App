@@ -25,7 +25,12 @@ void main() {
       // and still show the red screen in debug so nothing is hidden
       // from you during development.
       FlutterError.onError = (details) {
-        FlutterError.dumpErrorToConsole(details);
+        final isImage404 =
+            details.library == 'image resource service' &&
+            details.exception.toString().contains('Invalid statusCode: 404');
+        if (!isImage404) {
+          FlutterError.dumpErrorToConsole(details);
+        }
         unawaited(obs.recordFlutterError(details));
         _notifyUserOfUncaughtError(details.exception);
       };

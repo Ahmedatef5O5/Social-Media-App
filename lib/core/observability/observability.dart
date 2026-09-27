@@ -214,6 +214,22 @@ class Observability {
 
   /// Convenience for `FlutterError.onError`.
   Future<void> recordFlutterError(FlutterErrorDetails details) {
+    final isSilentImageError =
+        details.silent ||
+        details.library == 'image resource service' ||
+        details.exception.toString().contains('Invalid statusCode: 404');
+
+    if (isSilentImageError) {
+      return recordError(
+        details.exception,
+        details.stack,
+        category: ErrorCategory.network,
+        reason: details.context?.toDescription(),
+        feature: 'image_service',
+        fatal: false,
+      );
+    }
+
     return recordError(
       details.exception,
       details.stack,
