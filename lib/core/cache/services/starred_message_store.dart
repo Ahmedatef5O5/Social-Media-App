@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:hive_flutter/adapters.dart';
 import '../constants/hive_box_names.dart';
 
@@ -6,6 +7,7 @@ class StarredMessagesStore {
   static final StarredMessagesStore instance = StarredMessagesStore._();
 
   Box<bool>? _box;
+  final ValueNotifier<int> changes = ValueNotifier<int>(0);
 
   Future<Box<bool>> _openBox() async {
     return _box ??= await Hive.openBox<bool>(HiveBoxNames.starredMessages);
@@ -30,6 +32,7 @@ class StarredMessagesStore {
     final key = _key(currentUserId, messageId);
     final next = !(box.get(key, defaultValue: false)!);
     await box.put(key, next);
+    changes.value++;
     return next;
   }
 

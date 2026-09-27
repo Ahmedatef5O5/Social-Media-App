@@ -186,6 +186,10 @@ class _GroupInfoViewState extends State<GroupInfoView> {
     }
   }
 
+  void _cancelEditingName() {
+    setState(() => _isEditingName = false);
+  }
+
   Future<void> _removeMember(GroupMemberModel member) async {
     final confirm = await _showRemoveConfirmDialog(member);
     if (confirm != true) return;
@@ -255,27 +259,36 @@ class _GroupInfoViewState extends State<GroupInfoView> {
     );
   }
 
-  Future<void> _openStarredMessages(BuildContext context) async {
+  void _openStarredMessages(BuildContext context) {
     final detailsCubit = widget.detailsCubit;
     if (detailsCubit == null) return;
 
-    final starredIds = await StarredMessagesStore.instance.getStarredMessageIds(
-      _currentUserId,
-    );
+    Future<List<StarredMessageEntry>> loadEntries() async {
+      final starredIds = await StarredMessagesStore.instance
+          .getStarredMessageIds(_currentUserId);
+      final membersState = _membersCubit.state;
+      final memberAvatars = <String, String?>{
+        if (membersState is GroupMembersLoaded)
+          for (final member in membersState.members)
+            member.userId: member.userAvatar,
+      };
 
-    if (!context.mounted) return;
-
-    final entries =
-        detailsCubit.cachedMessages
-            .where((m) => starredIds.contains(m.id))
-            .map((m) => m.toStarredEntry(currentUserId: _currentUserId))
-            .toList();
+      return detailsCubit.cachedMessages
+          .where((m) => starredIds.contains(m.id))
+          .map(
+            (m) => m.toStarredEntry(
+              currentUserId: _currentUserId,
+              fallbackAvatar: memberAvatars[m.senderId],
+            ),
+          )
+          .toList();
+    }
 
     Navigator.of(context).push(
       MaterialPageRoute(
         builder:
             (_) => StarredMessagesView(
-              entries: entries,
+              entriesLoader: loadEntries,
               onUnstar:
                   (messageId) => StarredMessagesStore.instance.toggleStar(
                     currentUserId: _currentUserId,
@@ -395,6 +408,7 @@ class _GroupInfoViewState extends State<GroupInfoView> {
                             });
                           },
                           onSubmit: _updateGroupName,
+                          onCancel: _cancelEditingName,
                           onChangePhoto: _changeGroupPhoto,
                           onSettingsTap:
                               () => _openGroupSettings(
@@ -428,6 +442,11 @@ class _GroupInfoViewState extends State<GroupInfoView> {
                           SliverToBoxAdapter(
                             child: StarredMessagesRow(
                               primary: primary,
+                              currentUserId: _currentUserId,
+                              chatMessageIds:
+                                  widget.detailsCubit!.cachedMessages
+                                      .map((m) => m.id)
+                                      .toSet(),
                               onTap: () => _openStarredMessages(context),
                             ),
                           ),

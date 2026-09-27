@@ -76,31 +76,35 @@ class _ReceiverProfileViewState extends State<ReceiverProfileView> {
     super.dispose();
   }
 
-  Future<void> _openStarredMessages(BuildContext context) async {
+  void _openStarredMessages(BuildContext context) {
     final cubit = context.read<ChatDetailsCubit>();
-    final starredIds = await StarredMessagesStore.instance.getStarredMessageIds(
-      cubit.currentUserId,
-    );
 
-    if (!context.mounted) return;
-
-    final entries =
-        cubit.cachedMessages
-            .where((m) => starredIds.contains(m.id))
-            .map(
-              (m) => m.toStarredEntry(
-                currentUserId: cubit.currentUserId,
-                meName: cubit.currentUserName,
-                receiverName: widget.receiverUser.name,
-              ),
-            )
-            .toList();
+    Future<List<StarredMessageEntry>> loadEntries() async {
+      if (cubit.effectiveSenderImageUrl == null ||
+          cubit.effectiveSenderImageUrl!.isEmpty) {
+        await cubit.loadCurrentUserInfo();
+      }
+      final starredIds = await StarredMessagesStore.instance
+          .getStarredMessageIds(cubit.currentUserId);
+      return cubit.cachedMessages
+          .where((m) => starredIds.contains(m.id))
+          .map(
+            (m) => m.toStarredEntry(
+              currentUserId: cubit.currentUserId,
+              meName: cubit.effectiveCurrentUserName,
+              receiverName: widget.receiverUser.name,
+              meAvatar: cubit.effectiveSenderImageUrl,
+              receiverAvatar: widget.receiverUser.imageUrl,
+            ),
+          )
+          .toList();
+    }
 
     Navigator.of(context).push(
       MaterialPageRoute(
         builder:
             (_) => StarredMessagesView(
-              entries: entries,
+              entriesLoader: loadEntries,
               onUnstar:
                   (messageId) => StarredMessagesStore.instance.toggleStar(
                     currentUserId: cubit.currentUserId,
@@ -271,9 +275,16 @@ class _ReceiverProfileViewState extends State<ReceiverProfileView> {
             ),
 
             const Gap(16),
-            StarredMessagesRow(
-              primary: Theme.of(context).primaryColor,
-              onTap: () => _openStarredMessages(context),
+            BlocBuilder<ChatDetailsCubit, ChatDetailsState>(
+              builder: (context, _) {
+                final cubit = context.read<ChatDetailsCubit>();
+                return StarredMessagesRow(
+                  primary: Theme.of(context).primaryColor,
+                  currentUserId: cubit.currentUserId,
+                  chatMessageIds: cubit.cachedMessages.map((m) => m.id).toSet(),
+                  onTap: () => _openStarredMessages(context),
+                );
+              },
             ),
 
             BlocBuilder<SharedMediaCubit, SharedMediaState>(
