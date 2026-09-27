@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../core/chat_shared/helpers/message_reaction_preview_helper.dart';
+import '../../../core/helpers/chat_helper.dart';
 import '../../../core/services/network_status_service.dart';
 import '../../../core/presence/services/presence_service.dart';
 import '../../../core/supabase/supabase_provider.dart';
@@ -93,11 +95,158 @@ class ChatListService {
             row['user_id'] as String,
       };
 
-      return chats
-          .map((c) => c.copyWith(isOnline: onlineSet.contains(c.id)))
-          .toList();
+      var enrichedChats =
+          chats
+              .map((c) => c.copyWith(isOnline: onlineSet.contains(c.id)))
+              .toList();
+
+      enrichedChats = await _enrichWithLatestReactions(
+        enrichedChats,
+        currentUserId,
+      );
+
+      return enrichedChats;
     } catch (e) {
       rethrow;
+    }
+  }
+
+  Future<List<ChatUserModel>> _enrichWithLatestReactions(
+    List<ChatUserModel> chats,
+    String currentUserId,
+  ) async {
+    try {
+      final convIdByPeerId = <String, String>{
+        for (final chat in chats)
+          chat.id: ChatHelper.buildConversationId(currentUserId, chat.id),
+      };
+
+      final conversationIds = convIdByPeerId.values.toList();
+      if (conversationIds.isEmpty) return chats;
+
+      final reactionRows = await _supabase
+          .from(SupabaseConstants.messageReactions)
+          .select('message_id, user_id, reaction, conversation_id, created_at')
+          .inFilter(MessageReactionColumns.conversationId, conversationIds)
+          .order(MessageReactionColumns.createdAt, ascending: false);
+
+      final latestReactionByConv = <String, Map<String, dynamic>>{};
+      for (final r in (reactionRows as List)) {
+        final row = r as Map<String, dynamic>;
+        final convId = row[MessageReactionColumns.conversationId] as String?;
+        if (convId != null && !latestReactionByConv.containsKey(convId)) {
+          latestReactionByConv[convId] = row;
+        }
+      }
+
+      if (latestReactionByConv.isEmpty) return chats;
+
+      final targetMessageIds = <String>{};
+      for (final chat in chats) {
+        final convId = convIdByPeerId[chat.id];
+        final reactionRow =
+            convId != null ? latestReactionByConv[convId] : null;
+        if (reactionRow == null) continue;
+
+        final createdAtStr =
+            reactionRow[MessageReactionColumns.createdAt] as String?;
+        final reactionTime =
+            createdAtStr != null ? DateTime.tryParse(createdAtStr) : null;
+        if (reactionTime == null) continue;
+
+        if (chat.lastMessageTime == null ||
+            reactionTime.isAfter(chat.lastMessageTime!)) {
+          final msgId =
+              reactionRow[MessageReactionColumns.messageId] as String?;
+          if (msgId != null && msgId.isNotEmpty) {
+            targetMessageIds.add(msgId);
+          }
+        }
+      }
+
+      if (targetMessageIds.isEmpty) return chats;
+
+      final msgRows = await _supabase
+          .from(SupabaseConstants.messages)
+          .select(
+            'id, message_text, message_type, caption, file_name, deleted_for',
+          )
+          .inFilter(MessagesColumns.id, targetMessageIds.toList());
+
+      final messagesById = <String, Map<String, dynamic>>{};
+      for (final m in (msgRows as List)) {
+        final map = m as Map<String, dynamic>;
+        final deletedFor =
+            (map[MessagesColumns.deletedFor] as List?)?.cast<String>() ?? [];
+        if (deletedFor.contains(currentUserId)) continue;
+        final id = map[MessagesColumns.id] as String?;
+        if (id != null) {
+          messagesById[id] = map;
+        }
+      }
+
+      if (messagesById.isEmpty) return chats;
+
+      final updated =
+          chats.map((chat) {
+            final convId = convIdByPeerId[chat.id];
+            final reactionRow =
+                convId != null ? latestReactionByConv[convId] : null;
+            if (reactionRow == null) return chat;
+
+            final createdAtStr =
+                reactionRow[MessageReactionColumns.createdAt] as String?;
+            final reactionTime =
+                createdAtStr != null ? DateTime.tryParse(createdAtStr) : null;
+            if (reactionTime == null) return chat;
+
+            if (chat.lastMessageTime != null &&
+                !reactionTime.isAfter(chat.lastMessageTime!)) {
+              return chat;
+            }
+
+            final msgId =
+                reactionRow[MessageReactionColumns.messageId] as String?;
+            final msg = msgId != null ? messagesById[msgId] : null;
+            if (msg == null) return chat;
+
+            final reactorId =
+                reactionRow[MessageReactionColumns.userId] as String? ?? '';
+            final isMe = reactorId == currentUserId;
+            final reactionEmoji =
+                reactionRow[MessageReactionColumns.reaction] as String?;
+
+            final previewText =
+                MessageReactionPreviewHelper.formatReactionPreview(
+                  isMe: isMe,
+                  reactorName: chat.name,
+                  reactionType: reactionEmoji,
+                  messageType: msg[MessagesColumns.messageType] as String?,
+                  messageText: msg[MessagesColumns.messageText] as String?,
+                  fileName: msg[MessagesColumns.fileName] as String?,
+                  caption: msg[MessagesColumns.caption] as String?,
+                );
+
+            return chat.copyWith(
+              lastMessage: previewText,
+              lastMessageType: 'message_react',
+              lastMessageTime: reactionTime,
+              lastMessageIsMe: isMe,
+            );
+          }).toList();
+
+      updated.sort((a, b) {
+        final aTime =
+            a.lastMessageTime ?? DateTime.fromMillisecondsSinceEpoch(0);
+        final bTime =
+            b.lastMessageTime ?? DateTime.fromMillisecondsSinceEpoch(0);
+        return bTime.compareTo(aTime);
+      });
+
+      return updated;
+    } catch (e) {
+      debugPrint('⚠️ _enrichWithLatestReactions failed (non-fatal): $e');
+      return chats;
     }
   }
 

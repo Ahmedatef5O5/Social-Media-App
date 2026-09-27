@@ -3,6 +3,7 @@ part of 'chat_details_cubit.dart';
 mixin ChatReactionsMixin on Cubit<ChatDetailsState> {
   String get currentUserId;
   ChatServices get _chatServices;
+  ChatsCubit? get chatsCubit;
   List<MessageModel> get cachedMessages;
   set cachedMessages(List<MessageModel> val);
   String? get _messagesSnapshotKey;
@@ -65,8 +66,15 @@ mixin ChatReactionsMixin on Cubit<ChatDetailsState> {
     ids.sort();
     final conversationId = ids.join('_');
 
-    final currentEmoji = _reactionsCache[messageId]?[currentUserId];
+    final existingMsg = cachedMessages.firstWhereOrNull(
+      (m) => m.id == messageId,
+    );
+    final currentEmoji =
+        _reactionsCache[messageId]?[currentUserId] ??
+        existingMsg?.reactions[currentUserId];
     final isRemoving = currentEmoji == emoji;
+    final now = DateTime.now();
+
     _reactionsCache[messageId] ??= {};
     if (isRemoving) {
       _reactionsCache[messageId]!.remove(currentUserId);
@@ -75,9 +83,37 @@ mixin ChatReactionsMixin on Cubit<ChatDetailsState> {
       _reactionsCache[messageId]![currentUserId] = emoji;
       _reactionsCreatedAtCache[messageId] ??= {};
       _reactionsCreatedAtCache[messageId]![currentUserId] =
-          DateTime.now().toIso8601String();
+          now.toIso8601String();
     }
     _applyReactionsCacheToMessages();
+
+    if (_messagesSnapshotKey != null && cachedMessages.isNotEmpty) {
+      _persistMessagesSnapshot(_messagesSnapshotKey!, cachedMessages);
+    }
+
+    if (!isRemoving) {
+      final reactedMsg = cachedMessages.firstWhereOrNull(
+        (m) => m.id == messageId,
+      );
+      final previewText = MessageReactionPreviewHelper.formatReactionPreview(
+        isMe: true,
+        reactorName: 'You',
+        reactionType: emoji,
+        messageType: reactedMsg?.messageType,
+        messageText: reactedMsg?.text,
+        fileName: reactedMsg?.fileName,
+        caption: reactedMsg?.caption,
+      );
+      chatsCubit?.updateChatLastMessagePreview(
+        otherUserId: receiverId,
+        lastMessage: previewText,
+        lastMessageType: 'message_react',
+        lastMessageTime: now,
+        lastMessageIsMe: true,
+      );
+    } else {
+      _revertChatPreviewToLatestMessage(receiverId);
+    }
 
     try {
       await _chatServices.toggleReaction(
@@ -85,6 +121,8 @@ mixin ChatReactionsMixin on Cubit<ChatDetailsState> {
         conversationId: conversationId,
         emoji: emoji,
       );
+
+      unawaited(chatsCubit?.getChats(isRefresh: true, silent: true));
 
       if (!isRemoving) {
         unawaited(
@@ -96,8 +134,8 @@ mixin ChatReactionsMixin on Cubit<ChatDetailsState> {
         );
       }
     } catch (e) {
-      if (isRemoving) {
-        _reactionsCache[messageId]![currentUserId] = currentEmoji!;
+      if (isRemoving && currentEmoji != null) {
+        _reactionsCache[messageId]![currentUserId] = currentEmoji;
         _reactionsCreatedAtCache[messageId] ??= {};
         _reactionsCreatedAtCache[messageId]![currentUserId] =
             DateTime.now().toIso8601String();
@@ -105,16 +143,36 @@ mixin ChatReactionsMixin on Cubit<ChatDetailsState> {
         _reactionsCache[messageId]!.remove(currentUserId);
         _reactionsCreatedAtCache[messageId]?.remove(currentUserId);
       }
-      _applyReactionsCacheToMessages();
+      if (!isClosed) {
+        _applyReactionsCacheToMessages();
+      }
+      unawaited(chatsCubit?.getChats(isRefresh: true, silent: true));
       debugPrint('error toggling reaction: $e');
     }
+  }
+
+  void _revertChatPreviewToLatestMessage(String receiverId) {
+    if (cachedMessages.isEmpty) return;
+    final latest = cachedMessages.first;
+    final rawText =
+        (latest.messageType == 'file' || latest.messageType == 'document')
+            ? (latest.fileName ?? latest.text)
+            : latest.text;
+
+    chatsCubit?.updateChatLastMessagePreview(
+      otherUserId: receiverId,
+      lastMessage: rawText,
+      lastMessageType: latest.messageType,
+      lastMessageTime: latest.createdAt,
+      lastMessageIsMe: latest.senderId == currentUserId,
+    );
   }
 
   void _applyReactionsCacheToMessages() {
     cachedMessages = ChatDetailsCubit._reconciler.applyFieldUpdate(
       cachedMessages,
       (m) => m.copyWith(
-        reactions: _reactionsCache[m.id] ?? {},
+        reactions: Map<String, String>.from(_reactionsCache[m.id] ?? {}),
         reactionsCreatedAt: _reactionsCreatedAtCache[m.id],
       ),
     );

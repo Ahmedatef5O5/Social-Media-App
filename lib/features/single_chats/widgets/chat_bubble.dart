@@ -198,7 +198,7 @@ class ChatBubbleState extends State<ChatBubble>
       valueListenable: cubit.selectedMessageIds,
       builder: (context, selectedIds, _) {
         final isSelectionMode = selectedIds.isNotEmpty;
-        final isSelected = selectedIds.contains(widget.message.id);
+        final isSelected = !isCall && selectedIds.contains(widget.message.id);
 
         return ValueListenableBuilder<String?>(
           valueListenable: cubit.highlightedMessageId,
@@ -212,10 +212,13 @@ class ChatBubbleState extends State<ChatBubble>
             ).primaryColor.withValues(alpha: 0.16);
 
             return GestureDetector(
-              onTap: isSelectionMode ? () => _handleTap(cubit) : null,
+              onTap:
+                  (isSelectionMode && !isCall) ? () => _handleTap(cubit) : null,
               onLongPress: isCall ? null : () => _handleLongPress(cubit),
               onDoubleTap:
-                  isSelectionMode ? null : () => _showDeleteMenu(context),
+                  (isSelectionMode || isCall)
+                      ? null
+                      : () => _showDeleteMenu(context),
 
               onHorizontalDragUpdate:
                   (isCall || isSelectionMode)
@@ -260,7 +263,7 @@ class ChatBubbleState extends State<ChatBubble>
                       duration: const Duration(milliseconds: 180),
                       curve: Curves.easeOut,
                       child:
-                          isSelectionMode
+                          (isSelectionMode && !isCall)
                               ? Padding(
                                 padding: const EdgeInsets.only(right: 8),
                                 child: Icon(

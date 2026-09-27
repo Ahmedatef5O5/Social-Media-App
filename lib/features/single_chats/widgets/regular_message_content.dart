@@ -97,7 +97,13 @@ class RegularMessageContent extends StatelessWidget {
             ),
           if (message.isStoryReply)
             StoryReplyPreviewBubble(
-              message: message,
+              replyToStoryId: message.replyToStoryId,
+              replyToStoryAuthorId: message.replyToStoryAuthorId,
+              replyToStoryType: message.replyToStoryType,
+              replyToStoryMediaUrl: message.replyToStoryMediaUrl,
+              replyToStoryText: message.replyToStoryText,
+              replyToStoryBgColor: message.replyToStoryBgColor,
+              replyToStoryDurationSeconds: message.replyToStoryDurationSeconds,
               isMe: isMe,
               onColoredBubble: isMe && !(isGif || isSticker),
             ),

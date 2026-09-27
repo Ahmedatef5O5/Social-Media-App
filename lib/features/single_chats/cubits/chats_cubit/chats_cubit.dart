@@ -5,10 +5,12 @@ import 'package:social_media_app/core/cache/constants/snapshot_keys.dart';
 import 'package:social_media_app/core/cache/services/local_snapshot_store.dart';
 import 'package:social_media_app/features/single_chats/models/chat_user_model.dart';
 import 'package:social_media_app/features/single_chats/services/chat_services.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/helpers/chat_helper.dart';
 import '../../../../core/helpers/safe_emit_mixin.dart';
 import '../../../../core/presence/models/chat_action_type.dart';
 import '../../../../core/supabase/supabase_provider.dart';
+import '../../../../core/utilities/supabase_constants.dart';
 import '../../../auth/handlers/auth_exception_handler.dart';
 import '../../helpers/chat_clear_store.dart';
 part 'chats_state.dart';
@@ -21,9 +23,11 @@ class ChatsCubit extends Cubit<ChatsState>
   final _currentUserId = SupabaseProvider.id;
   StreamSubscription? _chatsSubscription;
   StreamSubscription? _actionsSubscription;
+  RealtimeChannel? _reactionsChannel;
   Timer? _refreshDebounce;
 
   List<ChatUserModel> _cachedChats = [];
+  List<ChatUserModel> get cachedChats => _cachedChats;
   Map<String, ChatActionType> _actionsByUserId = {};
 
   bool _showSkeleton = true;
@@ -50,6 +54,27 @@ class ChatsCubit extends Cubit<ChatsState>
 
     _listenToChatsStream();
     _listenToActionsStream();
+    _listenToReactionsStream();
+  }
+
+  void _listenToReactionsStream() {
+    _reactionsChannel?.unsubscribe();
+
+    final channelName = 'public:message_reactions_overview_$_currentUserId';
+    _reactionsChannel =
+        SupabaseProvider.client.channel(channelName)
+          ..onPostgresChanges(
+            event: PostgresChangeEvent.all,
+            schema: 'public',
+            table: SupabaseConstants.messageReactions,
+            callback: (payload) {
+              _refreshDebounce?.cancel();
+              _refreshDebounce = Timer(const Duration(milliseconds: 100), () {
+                getChats(isRefresh: true, silent: true);
+              });
+            },
+          )
+          ..subscribe();
   }
 
   void _listenToChatsStream() {
@@ -59,7 +84,7 @@ class ChatsCubit extends Cubit<ChatsState>
     ) {
       _refreshDebounce?.cancel();
       _refreshDebounce = Timer(const Duration(milliseconds: 100), () {
-        getChats(isRefresh: true);
+        getChats(isRefresh: true, silent: true);
       });
     }, onError: (error) => debugPrint('Stream Error: $error'));
   }
@@ -126,9 +151,43 @@ class ChatsCubit extends Cubit<ChatsState>
     _persistChatsSnapshot(newList);
   }
 
-  Future<void> getChats({bool isRefresh = false}) async {
+  void updateChatLastMessagePreview({
+    required String otherUserId,
+    required String lastMessage,
+    required String lastMessageType,
+    required DateTime lastMessageTime,
+    required bool lastMessageIsMe,
+  }) {
     if (isClosed) return;
-    if (!isRefresh) {
+
+    final idx = _cachedChats.indexWhere((c) => c.id == otherUserId);
+    if (idx == -1) {
+      getChats(isRefresh: true, silent: true);
+      return;
+    }
+
+    final updatedList = List<ChatUserModel>.from(_cachedChats);
+    updatedList[idx] = updatedList[idx].copyWith(
+      lastMessage: lastMessage,
+      lastMessageType: lastMessageType,
+      lastMessageTime: lastMessageTime,
+      lastMessageIsMe: lastMessageIsMe,
+    );
+
+    updatedList.sort((a, b) {
+      final aTime = a.lastMessageTime ?? DateTime.fromMillisecondsSinceEpoch(0);
+      final bTime = b.lastMessageTime ?? DateTime.fromMillisecondsSinceEpoch(0);
+      return bTime.compareTo(aTime);
+    });
+
+    _cachedChats = updatedList;
+    _emitWithPresence();
+    _persistChatsSnapshot(updatedList);
+  }
+
+  Future<void> getChats({bool isRefresh = false, bool silent = false}) async {
+    if (isClosed) return;
+    if (!isRefresh && !silent) {
       _showSkeleton = true;
       emit(ChatsLoading());
     }
@@ -144,7 +203,7 @@ class ChatsCubit extends Cubit<ChatsState>
       _cachedChats = chats;
       _showSkeleton = false;
 
-      if (isRefresh) {
+      if (isRefresh && !silent) {
         emit(ChatsRefreshFeedback());
         final elapsed = DateTime.now().difference(start);
         if (elapsed < const Duration(milliseconds: 500)) {

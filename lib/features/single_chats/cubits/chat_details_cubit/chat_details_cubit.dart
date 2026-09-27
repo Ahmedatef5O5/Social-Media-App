@@ -26,6 +26,7 @@ import '../../../../core/toast/app_toast.dart';
 import '../../../../core/utilities/supabase_constants.dart';
 import '../../../notifications/repository/notifications_repository.dart';
 import '../../../settings/repository/settings_repository.dart';
+import '../../../../core/chat_shared/helpers/message_reaction_preview_helper.dart';
 import '../../helpers/chat_clear_store.dart';
 import '../../models/chat_block_status.dart';
 import '../../models/message_model.dart';
@@ -33,6 +34,7 @@ import '../../services/chat_permission_service.dart';
 import '../../services/chat_presence_service.dart';
 import '../../services/chat_services.dart';
 import '../../widgets/chat_bubble.dart';
+import '../chats_cubit/chats_cubit.dart';
 part 'chat_details_state.dart';
 part 'chat_reactions_mixin.dart';
 part 'chat_selection_mixin.dart';
@@ -47,6 +49,8 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
         SafeEmitMixin<ChatDetailsState> {
   @override
   final ChatServices _chatServices;
+  @override
+  final ChatsCubit? chatsCubit;
   @override
   final ChatPresenceService _presenceService;
   final MediaCacheRepository _mediaCacheRepository;
@@ -67,20 +71,13 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
   //
   // Merge precedence: the incoming representation (Realtime row / API ack)
   // is treated as the source of truth for content, EXCEPT `reactions` /
-  // `reactionsCreatedAt`, which come from a separate stream
-  // (`_listenReactions`) and must not be clobbered by a snapshot or ack
-  // event that simply doesn't carry them (that stream table is not part of
-  // `messages`/`group_messages`).
-  static final _reconciler = MessageReconciler<MessageModel>(
+    static final _reconciler = MessageReconciler<MessageModel>(
     idOf: (m) => m.id,
     clientMessageIdOf: (m) => m.clientMessageId,
     createdAtOf: (m) => m.createdAt,
     merge:
         (existing, incoming) => incoming.copyWith(
-          reactions:
-              incoming.reactions.isNotEmpty
-                  ? incoming.reactions
-                  : existing.reactions,
+          reactions: incoming.reactions,
           reactionsCreatedAt:
               incoming.reactionsCreatedAt ?? existing.reactionsCreatedAt,
         ),
@@ -147,6 +144,7 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
     this._chatServices,
     this.receiverName,
     this._mediaCacheRepository, {
+    this.chatsCubit,
     this.senderImageUrl,
     this.currentUserName = 'Someone',
     ChatPermissionService? chatPermissionService,
@@ -915,10 +913,18 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
     }
   }
 
-  // ignore: unused_field
   String _resolvedCurrentUserName = '';
-  // ignore: unused_field
   String _resolvedSenderImageUrl = '';
+
+  String get effectiveCurrentUserName =>
+      _resolvedCurrentUserName.isNotEmpty
+          ? _resolvedCurrentUserName
+          : currentUserName;
+
+  String? get effectiveSenderImageUrl =>
+      _resolvedSenderImageUrl.isNotEmpty
+          ? _resolvedSenderImageUrl
+          : senderImageUrl;
 
   Future<void> loadCurrentUserInfo() async {
     try {
@@ -994,21 +1000,22 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
   }
 
   @override
-  Future<void> close() {
+  Future<void> close() async {
     WidgetsBinding.instance.removeObserver(this);
+    _blockStatusSubscription?.cancel();
+    _muteStatusSubscription?.cancel();
+    _messageSubscription?.cancel();
+    await super.close();
     chatPermission.dispose();
     blockStatus.dispose();
-    _blockStatusSubscription?.cancel();
     muteStatus.dispose();
-    _muteStatusSubscription?.cancel();
+    replyToMessage.dispose();
     highlightedMessageId.dispose();
     searchController.dispose();
     for (final notifier in uploadProgressNotifiers.values) {
       notifier.dispose();
     }
-    _messageSubscription?.cancel();
     isAtBottomNotifier.dispose();
     pendingNewCountNotifier.dispose();
-    return super.close();
   }
 }
