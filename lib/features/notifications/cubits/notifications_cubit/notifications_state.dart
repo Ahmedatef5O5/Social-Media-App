@@ -18,6 +18,15 @@ class NotificationsState {
 
   List<AppNotification> get filtered {
     if (activeFilter == null) return notifications;
+    if (activeFilter == NotificationType.chat) {
+      return notifications
+          .where(
+            (n) =>
+                n.type == NotificationType.chat ||
+                n.type == NotificationType.groupMessage,
+          )
+          .toList();
+    }
     return notifications.where((n) => n.type == activeFilter).toList();
   }
 

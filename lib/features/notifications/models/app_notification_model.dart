@@ -41,6 +41,7 @@ extension AppNotificationDisplayX on AppNotification {
 class AppNotification {
   final String id;
   final NotificationType type;
+  final String rawType;
   final String title;
   final String body;
   final String? senderImageUrl;
@@ -52,6 +53,7 @@ class AppNotification {
   AppNotification({
     required this.id,
     required this.type,
+    this.rawType = 'general',
     required this.title,
     required this.body,
     this.senderImageUrl,
@@ -62,9 +64,11 @@ class AppNotification {
   });
 
   factory AppNotification.fromMap(Map<String, dynamic> map) {
+    final raw = map['type'] as String? ?? 'general';
     return AppNotification(
       id: map['id'] as String,
-      type: _typeFromString(map['type'] as String? ?? 'general'),
+      type: _typeFromString(raw),
+      rawType: raw,
       title: map['title'] as String? ?? '',
       body: map['body'] as String? ?? '',
       senderImageUrl: map['sender_image_url'] as String?,
@@ -78,7 +82,7 @@ class AppNotification {
   Map<String, dynamic> toMap() {
     return {
       'id': id,
-      'type': _typeToString(type),
+      'type': rawType.isNotEmpty ? rawType : _typeToString(type),
       'title': title,
       'body': body,
       'sender_image_url': senderImageUrl,
@@ -92,18 +96,27 @@ class AppNotification {
   static NotificationType _typeFromString(String type) {
     switch (type) {
       case 'chat':
+      case 'story_reply':
         return NotificationType.chat;
       case 'call':
+      case 'group_call':
         return NotificationType.call;
       case 'group_message':
+      case 'group':
         return NotificationType.groupMessage;
       case 'like':
+      case 'post_react':
         return NotificationType.like;
       case 'comment':
+      case 'post_comment':
+      case 'comment_reply':
+      case 'comment_react':
+      case 'share':
+      case 'post_reshare':
+      case 'mention':
         return NotificationType.comment;
       case 'follow':
         return NotificationType.follow;
-
       case 'friend_request':
         return NotificationType.friendRequest;
       case 'friend_accept':
@@ -136,13 +149,19 @@ class AppNotification {
     }
   }
 
-  AppNotification copyWith({bool? isRead}) {
+  AppNotification copyWith({
+    bool? isRead,
+    String? title,
+    String? body,
+    String? senderImageUrl,
+  }) {
     return AppNotification(
       id: id,
       type: type,
-      title: title,
-      body: body,
-      senderImageUrl: senderImageUrl,
+      rawType: rawType,
+      title: title ?? this.title,
+      body: body ?? this.body,
+      senderImageUrl: senderImageUrl ?? this.senderImageUrl,
       senderId: senderId,
       referenceId: referenceId,
       createdAt: createdAt,
