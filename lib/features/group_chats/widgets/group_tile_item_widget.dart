@@ -5,12 +5,12 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 import 'package:social_media_app/features/group_chats/helpers/group_preview_dialog.dart';
 import '../../../core/chat_shared/cubits/conversation_selection_cubit/conversation_selection_cubit.dart';
+import '../../../core/chat_shared/helpers/message_reaction_preview_helper.dart';
 import '../../../core/chat_shared/models/conversation_ref.dart';
 import '../../../core/constants/app_images.dart';
 import '../../../core/design/tokens/typography.dart';
 import '../../../core/helpers/bidi_text_helper.dart';
 import '../../../core/helpers/emoji_helper.dart';
-import '../../../core/helpers/file_icon_helper.dart';
 import '../../../core/helpers/formatted_date.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/supabase/supabase_provider.dart';
@@ -234,47 +234,22 @@ class GroupTileItem extends StatelessWidget {
                                 ? senderNameFromData!
                                 : 'Someone');
 
-                    // تنظيف اسم الملف واستخراجه
-                    String fileName = 'File';
-                    final rawText = group.lastMessage;
-                    if (rawText != null &&
-                        rawText.trim().isNotEmpty &&
-                        rawText.trim().toLowerCase() != 'file') {
-                      fileName = rawText.trim();
-                      if (fileName.startsWith('📄 ')) {
-                        fileName = fileName.substring(3).trim();
-                      }
-                      if (fileName.contains(' • ')) {
-                        fileName = fileName.split(' • ').first.trim();
-                      }
-                    }
-
-                    String ext = '';
-                    if (fileName.contains('.')) {
-                      ext = fileName.substring(fileName.lastIndexOf('.') + 1);
-                    }
-
-                    final (icon, color) = FileIconHelper.getIconAndColor(
-                      ext,
-                      Colors.grey.shade600,
-                    );
-
                     return Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text('$senderName: ', style: textStyle),
-                        FaIcon(icon, size: 12, color: color),
-                        const Gap(4),
-                        Expanded(
-                          child: Text(
-                            fileName,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            textDirection: BidiTextHelper.detectDirection(
-                              fileName,
-                            ),
-                            style: textStyle,
-                          ),
+                        Text(
+                          '$senderName: ',
+                          style: textStyle,
+                          textDirection: TextDirection.ltr,
+                        ),
+                        Flexible(
+                          child:
+                              MessageReactionPreviewHelper.buildDirectionalFilePreview(
+                                fileName: group.lastMessage ?? 'File',
+                                style: textStyle,
+                                defaultIconColor: Colors.grey.shade600,
+                                iconSize: 12,
+                              ),
                         ),
                       ],
                     );
@@ -285,10 +260,23 @@ class GroupTileItem extends StatelessWidget {
                     currentUserId: currentUserId,
                   );
 
+                  if (group.lastMessageType == 'message_react') {
+                    return MessageReactionPreviewHelper.buildReactionPreviewWidget(
+                      rawPreview: EmojiHelper.normalize(fullText),
+                      style: textStyle,
+                      defaultIconColor: Colors.grey.shade600,
+                      iconSize: 12,
+                    );
+                  }
+
                   String prefix = '';
                   String content = fullText;
 
-                  final colonIndex = fullText.indexOf(': ');
+                  final isEventOrReact =
+                      group.lastMessageType == 'system_event';
+
+                  final colonIndex =
+                      isEventOrReact ? -1 : fullText.indexOf(': ');
                   if (colonIndex != -1 && colonIndex < 25) {
                     prefix = fullText.substring(0, colonIndex + 2);
                     content = fullText.substring(colonIndex + 2);
@@ -307,7 +295,6 @@ class GroupTileItem extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       textDirection: direction,
                       textAlign: TextAlign.left,
-
                       style: textStyle,
                     );
                   }

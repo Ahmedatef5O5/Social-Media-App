@@ -741,21 +741,19 @@ class CommentsCubit extends Cubit<CommentsState> {
         );
       }
 
-      if (post.authorId != user.id) {
-        await NotificationRepository.instance.notifyComment(
-          receiverId: post.authorId,
-          commenterId: user.id,
-          commenterName: currentUserData?.name ?? 'unKnown',
-          commenterImageUrl: currentUserData?.imageUrl ?? '',
-          postId: post.id,
-          commentPreview: trimmedText.isEmpty ? '📎 Attachment' : trimmedText,
-        );
-      }
-
       final String previewText =
           trimmedText.isEmpty ? '📎 Attachment' : trimmedText;
+
       if (resolvedParentId == null) {
         if (post.authorId != user.id) {
+          await NotificationRepository.instance.notifyComment(
+            receiverId: post.authorId,
+            commenterId: user.id,
+            commenterName: currentUserData?.name ?? 'unKnown',
+            commenterImageUrl: currentUserData?.imageUrl ?? '',
+            postId: post.id,
+            commentPreview: previewText,
+          );
           unawaited(
             FcmService.instance.notifyPostComment(
               receiverId: post.authorId,
@@ -770,6 +768,15 @@ class CommentsCubit extends Cubit<CommentsState> {
       } else {
         final parentAuthorId = _findCommentAuthorId(resolvedParentId);
         if (parentAuthorId != null && parentAuthorId != user.id) {
+          await NotificationRepository.instance.notifyComment(
+            receiverId: parentAuthorId,
+            commenterId: user.id,
+            commenterName: currentUserData?.name ?? 'unKnown',
+            commenterImageUrl: currentUserData?.imageUrl ?? '',
+            postId: post.id,
+            commentPreview: previewText,
+            isReply: true,
+          );
           unawaited(
             FcmService.instance.notifyCommentReply(
               receiverId: parentAuthorId,
@@ -780,6 +787,16 @@ class CommentsCubit extends Cubit<CommentsState> {
               commentId: realId,
               commentText: previewText,
             ),
+          );
+        }
+        if (post.authorId != user.id && post.authorId != parentAuthorId) {
+          await NotificationRepository.instance.notifyComment(
+            receiverId: post.authorId,
+            commenterId: user.id,
+            commenterName: currentUserData?.name ?? 'unKnown',
+            commenterImageUrl: currentUserData?.imageUrl ?? '',
+            postId: post.id,
+            commentPreview: previewText,
           );
         }
       }
@@ -950,12 +967,15 @@ class CommentsCubit extends Cubit<CommentsState> {
       );
 
       if (commentOwnerId != userId) {
-        NotificationRepository.instance.notifyLike(
-          receiverId: commentOwnerId,
-          likerId: userId,
-          likerName: currentUserData?.name ?? 'unKnown',
-          likerImageUrl: currentUserData?.imageUrl ?? '',
-          postId: postId,
+        unawaited(
+          NotificationRepository.instance.notifyCommentReaction(
+            receiverId: commentOwnerId,
+            reactorId: userId,
+            reactorName: currentUserData?.name ?? 'unKnown',
+            reactorImageUrl: currentUserData?.imageUrl ?? '',
+            postId: postId,
+            emoji: emoji,
+          ),
         );
         unawaited(
           FcmService.instance.notifyCommentReact(

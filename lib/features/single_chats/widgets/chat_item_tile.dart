@@ -4,12 +4,12 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:gap/gap.dart';
 import '../../../core/chat_shared/cubits/conversation_selection_cubit/conversation_selection_cubit.dart';
+import '../../../core/chat_shared/helpers/message_reaction_preview_helper.dart';
 import '../../../core/chat_shared/models/conversation_ref.dart';
 import '../../../core/chat_shared/widgets/recording_indicator_widget.dart';
 import '../../../core/design/tokens/typography.dart';
 import '../../../core/helpers/bidi_text_helper.dart';
 import '../../../core/helpers/emoji_helper.dart';
-import '../../../core/helpers/file_icon_helper.dart';
 import '../../../core/helpers/formatted_date.dart';
 import '../../../core/presence/widgets/presence_avatar_widget.dart';
 import '../../../core/router/app_routes.dart';
@@ -36,7 +36,8 @@ class ChatItemTile extends StatelessWidget {
 
   bool get _isSystemEventPreview =>
       user.lastMessageType == 'block_event' ||
-      user.lastMessageType == 'unblock_event';
+      user.lastMessageType == 'unblock_event' ||
+      user.lastMessageType == 'message_react';
 
   @override
   Widget build(BuildContext context) {
@@ -276,35 +277,31 @@ class ChatItemTile extends StatelessWidget {
     }
 
     if (user.lastMessageType == 'file' || user.lastMessageType == 'document') {
-      final fileName = _extractCleanFileName(user.lastMessage);
-
-      String ext = '';
-      if (fileName.contains('.')) {
-        ext = fileName.substring(fileName.lastIndexOf('.') + 1);
-      }
-
-      final (icon, color) = FileIconHelper.getIconAndColor(
-        ext,
-        Colors.grey.shade600,
-      );
-
-      return Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          FaIcon(icon, size: 14, color: color),
-          const Gap(6),
-          Expanded(
-            child: Text(
-              fileName,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              textDirection: BidiTextHelper.detectDirection(fileName),
-              style: textStyle,
-            ),
-          ),
-        ],
+      return Align(
+        alignment: Alignment.centerLeft,
+        child: MessageReactionPreviewHelper.buildDirectionalFilePreview(
+          fileName: user.lastMessage ?? 'File',
+          style: textStyle,
+          defaultIconColor: Colors.grey.shade600,
+          iconSize: 14,
+        ),
       );
     }
+
+    final effectiveStyle = textStyle.copyWith(
+      fontFamily: null,
+      fontFamilyFallback: AppTypography.fontFallback,
+    );
+
+    if (user.lastMessageType == 'message_react') {
+      return MessageReactionPreviewHelper.buildReactionPreviewWidget(
+        rawPreview: EmojiHelper.normalize(_getNormalMessageText()),
+        style: effectiveStyle,
+        defaultIconColor: Colors.grey.shade600,
+        iconSize: 13,
+      );
+    }
+
     final normalText = EmojiHelper.normalize(_getNormalMessageText());
     final direction = BidiTextHelper.detectDirection(normalText);
 
@@ -314,10 +311,7 @@ class ChatItemTile extends StatelessWidget {
       overflow: TextOverflow.ellipsis,
       textDirection: direction,
       textAlign: TextAlign.left,
-      style: textStyle.copyWith(
-        fontFamily: null,
-        fontFamilyFallback: AppTypography.fontFallback,
-      ),
+      style: effectiveStyle,
     );
   }
 

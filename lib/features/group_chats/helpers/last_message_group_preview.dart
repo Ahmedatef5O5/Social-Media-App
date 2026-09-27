@@ -53,6 +53,8 @@ String buildGroupLastMessagePreview({
               : 'Someone');
 
   switch (type) {
+    case 'message_react':
+      return group.lastMessage ?? '';
     case 'image':
       return '$senderName: 📷 Photo';
     case 'video':

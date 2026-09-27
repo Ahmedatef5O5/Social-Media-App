@@ -12,6 +12,7 @@ class ContentDeepLinkNavigator {
   static Future<void> openPost(
     String postId, [
     PostDetailsActiveMode initialActiveMode = PostDetailsActiveMode.comments,
+    bool resetToHome = true,
   ]) async {
     final post = await PostsServices().fetchPostById(postId);
     if (post == null) {
@@ -20,10 +21,12 @@ class ContentDeepLinkNavigator {
     }
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      navigatorKey.currentState?.pushNamedAndRemoveUntil(
-        AppRoutes.homeRoute,
-        (route) => false,
-      );
+      if (resetToHome) {
+        navigatorKey.currentState?.pushNamedAndRemoveUntil(
+          AppRoutes.homeRoute,
+          (route) => false,
+        );
+      }
       navigatorKey.currentState?.pushNamed(
         AppRoutes.postDetailsViewRoute,
         arguments: PostDetailsRouteArgs(

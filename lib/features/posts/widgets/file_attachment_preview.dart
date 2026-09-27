@@ -161,7 +161,14 @@ class _FileAttachmentPreviewState extends State<FileAttachmentPreview>
     if (widget.fileName != null && widget.fileName!.isNotEmpty) {
       return widget.fileName!;
     }
-    return _cleanUrl.split('/').last.split('?').first;
+    final rawName = Uri.decodeFull(_cleanUrl.split('/').last.split('?').first);
+    if (rawName.toLowerCase().endsWith('.txt')) {
+      final withoutTxt = rawName.substring(0, rawName.length - 4);
+      if (withoutTxt.contains('.')) {
+        return withoutTxt;
+      }
+    }
+    return rawName;
   }
 
   String _getFileExtension(String fileName) {
