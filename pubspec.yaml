@@ -116,7 +116,6 @@ flutter:
 
   assets:
     - assets/images/
-    - assets/images/PostThemeImgs/
     - assets/icons/
     - assets/icons/inputAreaIcons/
     - assets/lotties/
