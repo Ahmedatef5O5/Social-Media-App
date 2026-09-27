@@ -46,6 +46,7 @@ class TextInputAreaSection extends StatefulWidget {
 
 class _TextInputAreaSectionState extends State<TextInputAreaSection> {
   final FocusNode _focusNode = FocusNode();
+  late final ChatDetailsCubit _chatCubit;
   bool _isTextNotEmpty = false;
   File? _stagedDocument;
   String? _stagedFileName;
@@ -55,6 +56,7 @@ class _TextInputAreaSectionState extends State<TextInputAreaSection> {
   @override
   void initState() {
     super.initState();
+    _chatCubit = context.read<ChatDetailsCubit>();
     widget.messageController.addListener(_onTextChanged);
   }
 
@@ -81,7 +83,7 @@ class _TextInputAreaSectionState extends State<TextInputAreaSection> {
 
     if (text.trim().toLowerCase() == AiChatCommandTrigger.trigger) {
       widget.messageController.clear();
-      final cubit = context.read<ChatDetailsCubit>();
+      final cubit = _chatCubit;
       AiChatCommandTrigger.showCommandMenu(
         context: context,
         buildTranscript:
@@ -98,14 +100,14 @@ class _TextInputAreaSectionState extends State<TextInputAreaSection> {
     final notEmpty = text.trim().isNotEmpty || _stagedDocument != null;
     if (notEmpty != _isTextNotEmpty) setState(() => _isTextNotEmpty = notEmpty);
 
-    final cubit = context.read<ChatDetailsCubit>();
+    if (_chatCubit.isClosed) return;
     if (notEmpty) {
-      cubit.onUserTyping(widget.receiverUser.id);
-      if (cubit.searchController.isActive.value) {
-        cubit.searchController.deactivate();
+      _chatCubit.onUserTyping(widget.receiverUser.id);
+      if (_chatCubit.searchController.isActive.value) {
+        _chatCubit.searchController.deactivate();
       }
     } else {
-      cubit.stopTyping(widget.receiverUser.id);
+      _chatCubit.stopTyping(widget.receiverUser.id);
     }
   }
 
@@ -113,10 +115,8 @@ class _TextInputAreaSectionState extends State<TextInputAreaSection> {
   void dispose() {
     widget.messageController.removeListener(_onTextChanged);
     _focusNode.dispose();
-    try {
-      context.read<ChatDetailsCubit>().stopTyping(widget.receiverUser.id);
-    } catch (e) {
-      debugPrint('[TextInputArea] failed to send stopTyping on dispose: $e');
+    if (!_chatCubit.isClosed) {
+      _chatCubit.stopTyping(widget.receiverUser.id);
     }
     super.dispose();
   }

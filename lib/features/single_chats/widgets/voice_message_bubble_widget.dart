@@ -49,7 +49,15 @@ class _VoiceMessageBubbleWidgetState extends State<VoiceMessageBubbleWidget> {
   double get _currentSpeed => _speeds[_speedIndex];
 
   Future<void> _preloadDuration() async {
-    if (widget.isUploading || widget.voiceUrl.startsWith('/')) return;
+    if (widget.isUploading ||
+        widget.voiceUrl.isEmpty ||
+        widget.voiceUrl.startsWith('/')) {
+      return;
+    }
+    if (widget.initialDurationSeconds != null &&
+        widget.initialDurationSeconds! > 0) {
+      return;
+    }
 
     await _voice.fetchDuration(widget.voiceUrl);
     if (mounted) {
@@ -141,24 +149,31 @@ class _VoiceMessageBubbleWidgetState extends State<VoiceMessageBubbleWidget> {
     }
     if (mounted) setState(() => _isLoading = true);
 
-    final controller = VideoPlayerController.networkUrl(
-      Uri.parse(widget.voiceUrl),
-    );
-    await controller.initialize();
+    VideoPlayerController? controller;
+    try {
+      controller = VideoPlayerController.networkUrl(Uri.parse(widget.voiceUrl));
+      await controller.initialize();
 
-    controller.addListener(_onControllerUpdate);
-    _voice.register(widget.voiceUrl, controller);
+      controller.addListener(_onControllerUpdate);
+      _voice.register(widget.voiceUrl, controller);
 
-    _voice.setActive(widget.voiceUrl);
-    await controller.setPlaybackSpeed(_currentSpeed);
-    await controller.play();
+      _voice.setActive(widget.voiceUrl);
+      await controller.setPlaybackSpeed(_currentSpeed);
+      await controller.play();
 
-    if (mounted) {
-      setState(() {
-        _isInitialized = true;
-        _isLoading = false;
-        _isPlaying = true;
-      });
+      if (mounted) {
+        setState(() {
+          _isInitialized = true;
+          _isLoading = false;
+          _isPlaying = true;
+        });
+      }
+    } catch (e) {
+      debugPrint('[VoiceMessageBubbleWidget] playback failed: $e');
+      await controller?.dispose();
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 

@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../features/group_calls/services/group_call_signaling_service.dart';
 import '../../features/group_calls/views/incoming_group_call_screen.dart';
+import '../bootstrap/app_bootstrap.dart';
 import '../notifications/notification_navigator_key.dart';
 import '../supabase/supabase_provider.dart';
 import 'incoming_call_navigation_guard.dart';
@@ -26,6 +27,12 @@ class _GlobalGroupCallListenerState extends State<GlobalGroupCallListener> {
   @override
   void initState() {
     super.initState();
+    _initAfterBootstrap();
+  }
+
+  Future<void> _initAfterBootstrap() async {
+    await waitForCoreServicesReady();
+    if (!mounted) return;
 
     _signaling = context.read<GroupCallSignalingService>();
 

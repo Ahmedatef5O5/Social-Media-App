@@ -472,6 +472,7 @@ class AppRouter {
                   context.read<ChatServices>(),
                   user.name,
                   context.read<MediaCacheRepository>(),
+                  chatsCubit: context.read<ChatsCubit>(),
                   presenceService: context.read<ChatPresenceService>(),
                 )..loadCurrentUserInfo(),
             child: ChatDetailsView(

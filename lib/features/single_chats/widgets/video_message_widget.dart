@@ -87,7 +87,13 @@ class _VideoMessageWidgetState extends State<VideoMessageWidget> {
             if (_isLocal && _localThumbnail != null)
               Image.file(_localThumbnail!, fit: BoxFit.cover)
             else if (!_isLocal && thumbnailUrl != null)
-              CachedNetworkImage(imageUrl: thumbnailUrl, fit: BoxFit.cover)
+              CachedNetworkImage(
+                imageUrl: thumbnailUrl,
+                fit: BoxFit.cover,
+                errorListener: (_) {},
+                errorWidget:
+                    (_, __, ___) => Container(color: Colors.grey.shade800),
+              )
             else
               Container(color: Colors.grey.shade800),
 

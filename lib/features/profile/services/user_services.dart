@@ -9,7 +9,7 @@ import '../models/profile_mutuals_model.dart';
 import '../models/profile_overview_model.dart';
 
 class UserService {
-  final _supabase = SupabaseProvider.client;
+  SupabaseClient get _supabase => SupabaseProvider.client;
   final NetworkStatusService _networkStatus;
 
   UserService({NetworkStatusService? networkStatus})
