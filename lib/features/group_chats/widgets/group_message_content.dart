@@ -174,7 +174,8 @@ class _GroupMessageContentState extends State<GroupMessageContent> {
           valueListenable: cubit.selectedMessageIds,
           builder: (context, selectedIds, _) {
             final isSelectionMode = selectedIds.isNotEmpty;
-            final isSelected = selectedIds.contains(widget.message.id);
+            final isSelected =
+                !isCall && selectedIds.contains(widget.message.id);
 
             return ValueListenableBuilder<String?>(
               valueListenable: cubit.highlightedMessageId,
@@ -189,7 +190,7 @@ class _GroupMessageContentState extends State<GroupMessageContent> {
 
                 return GestureDetector(
                   onTap:
-                      (isSelectionMode && widget.isMember)
+                      (isSelectionMode && widget.isMember && !isCall)
                           ? () => _handleTap(cubit)
                           : null,
                   onLongPress:
@@ -217,7 +218,7 @@ class _GroupMessageContentState extends State<GroupMessageContent> {
                           duration: const Duration(milliseconds: 180),
                           curve: Curves.easeOut,
                           child:
-                              isSelectionMode
+                              (isSelectionMode && !isCall)
                                   ? Padding(
                                     padding: const EdgeInsets.only(right: 8),
                                     child: Icon(

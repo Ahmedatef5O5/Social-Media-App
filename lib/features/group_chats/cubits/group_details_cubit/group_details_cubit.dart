@@ -10,6 +10,7 @@ import 'package:social_media_app/core/mentions/mentions.dart';
 import 'package:uuid/uuid.dart';
 import '../../../../core/cache/repository/media_cache_repository.dart';
 import '../../../../core/cache/services/messages_snapshot_cache.dart';
+import '../../../../core/chat_shared/helpers/message_reaction_preview_helper.dart';
 import '../../../../core/errors/exceptions.dart';
 import '../../../../core/errors/supabase_error_mapper.dart';
 import '../../../../core/helpers/safe_emit_mixin.dart';
@@ -28,6 +29,7 @@ import '../../models/group_model.dart';
 import '../../models/group_presence_entry.dart';
 import '../../models/groupe_message_model.dart';
 import '../../services/group_chat_services.dart';
+import '../../widgets/group_chat_reaction_overlay.dart';
 import '../group_list_cubit/group_list_cubit.dart';
 part 'group_details_state.dart';
 part 'group_messages_stream_mixin.dart';
@@ -70,10 +72,7 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState>
     createdAtOf: (m) => m.createdAt,
     merge:
         (existing, incoming) => incoming.copyWith(
-          reactions:
-              incoming.reactions.isNotEmpty
-                  ? incoming.reactions
-                  : existing.reactions,
+          reactions: incoming.reactions,
           reactionsCreatedAt:
               incoming.reactionsCreatedAt ?? existing.reactionsCreatedAt,
           mentions:
@@ -203,6 +202,7 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState>
         groupId: group.id,
         userId: currentUserId,
       );
+      if (isClosed) return;
       if (confirmedIsMember != isMember) {
         isMember = confirmedIsMember;
         _emitLoaded(force: true);
@@ -211,6 +211,7 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState>
       debugPrint('[GroupDetailsCubit] membership check failed: $e');
     }
 
+    if (isClosed) return;
     groupListCubit.setActiveGroupId(group.id);
     _listenMembership();
     _listenMentions();
@@ -294,23 +295,28 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState>
   }
 
   @override
-  Future<void> close() {
+  Future<void> close() async {
     WidgetsBinding.instance.removeObserver(this);
     groupListCubit.resetGroupUnreadCount(group.id);
     if (isMember) {
       _services.markGroupMessagesRead(group.id);
     }
     groupListCubit.setActiveGroupId(null);
-    isAtBottomNotifier.dispose();
     _messagesSubscription?.cancel();
     _readReceiptsSubscription?.cancel();
     _typingSubscription?.cancel();
     _membershipSubscription?.cancel();
     _typingDebounce?.cancel();
 
+    await super.close();
+
+    isAtBottomNotifier.dispose();
+    searchController.dispose();
+    for (final notifier in uploadProgressNotifiers.values) {
+      notifier.dispose();
+    }
     replyToMessage.dispose();
     editingMessage.dispose();
     highlightedMessageId.dispose();
-    return super.close();
   }
 }

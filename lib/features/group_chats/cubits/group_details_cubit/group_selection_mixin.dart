@@ -26,14 +26,23 @@ mixin GroupSelectionMixin on Cubit<GroupDetailsState> {
       selectedMessages.isNotEmpty &&
       selectedMessages.every((m) => m.senderId == currentUserId);
 
+  bool _isSelectableMessage(String messageId) {
+    for (final m in cachedMessages) {
+      if (m.id == messageId) {
+        return m.messageType != 'call';
+      }
+    }
+    return false;
+  }
+
   void startSelection(String messageId) {
-    if (!isMember) return;
+    if (!isMember || !_isSelectableMessage(messageId)) return;
     selectedMessageIds.value = {messageId};
     starController.onSelectionChanged(selectedMessageIds.value);
   }
 
   void toggleMessageSelection(String messageId) {
-    if (!isMember) return;
+    if (!isMember || !_isSelectableMessage(messageId)) return;
     final current = Set<String>.from(selectedMessageIds.value);
     if (current.contains(messageId)) {
       current.remove(messageId);
@@ -45,11 +54,15 @@ mixin GroupSelectionMixin on Cubit<GroupDetailsState> {
   }
 
   void clearSelection() {
+    GroupChatReactionOverlay.dismiss();
     selectedMessageIds.value = {};
     starController.onSelectionChanged(const {});
   }
 
-  Future<void> toggleStarSelected() => starController.toggleSelected();
+  Future<void> toggleStarSelected() async {
+    await starController.toggleSelected();
+    clearSelection();
+  }
 
   Future<void> deleteSelectedForMe() async {
     final messages = selectedMessages;

@@ -89,6 +89,26 @@ mixin GroupRealtimeSyncMixin on GroupListBase {
             ? DateTime.tryParse(createdAtStr) ?? DateTime.now()
             : DateTime.now();
 
+    final currentState = state as GroupListLoaded;
+    final existingIdx = currentState.groups.indexWhere((g) => g.id == groupId);
+    if (existingIdx != -1) {
+      final existingGroup = currentState.groups[existingIdx];
+      if (existingGroup.lastMessageType == 'message_react' &&
+          existingGroup.lastMessageAt != null &&
+          existingGroup.lastMessageAt!.isAfter(createdAt)) {
+        updateGroupInState(
+          groupId: groupId,
+          lastMessage: existingGroup.lastMessage ?? '',
+          lastMessageType: 'message_react',
+          lastMessageAt: existingGroup.lastMessageAt!,
+          lastMessageSenderId: existingGroup.lastMessageSenderId,
+          lastMessageSenderName: existingGroup.lastMessageSenderName,
+          unreadCount: unreadCount,
+        );
+        return;
+      }
+    }
+
     final messageType = row['message_type'] as String? ?? 'text';
     final senderId = row['sender_id'] as String?;
     final senderName = row['sender_name'] as String? ?? '';
@@ -143,6 +163,12 @@ mixin GroupRealtimeSyncMixin on GroupListBase {
           schema: 'public',
           table: 'group_calls',
           callback: (payload) => _handleGroupCallChange(payload),
+        )
+        .onPostgresChanges(
+          event: PostgresChangeEvent.all,
+          schema: 'public',
+          table: SupabaseConstants.groupMessageReactions,
+          callback: (_) => scheduleReconcile(),
         )
         .onPostgresChanges(
           event: PostgresChangeEvent.insert,
