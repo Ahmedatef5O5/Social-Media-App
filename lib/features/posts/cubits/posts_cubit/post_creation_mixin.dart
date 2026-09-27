@@ -38,9 +38,16 @@ mixin PostCreationMixin on Cubit<PostsState> {
     try {
       void updateProgress(int sentBytes, int totalBytes) {
         if (state is! PostCreating) return;
-        final ratio =
+        final rawRatio =
             totalBytes > 0 ? (sentBytes / totalBytes).clamp(0.0, 1.0) : 0.0;
-        emit(PostCreating(ratio, sentBytes: sentBytes, totalBytes: totalBytes));
+        final scaledRatio = (rawRatio * 0.95).clamp(0.0, 0.95);
+        emit(
+          PostCreating(
+            scaledRatio,
+            sentBytes: sentBytes,
+            totalBytes: totalBytes,
+          ),
+        );
       }
 
       if (selectedImage != null) {
@@ -57,8 +64,7 @@ mixin PostCreationMixin on Cubit<PostsState> {
           imagePublicId = result.publicId;
           mediaWidth = result.width;
           mediaHeight = result.height;
-          final length = await imageFile.length();
-          updateProgress(length, length);
+          emit(const PostCreating(0.95));
         } else {
           throw Exception('image_not_found');
         }
@@ -78,8 +84,7 @@ mixin PostCreationMixin on Cubit<PostsState> {
           videoPublicId = result.publicId;
           mediaWidth = result.width ?? mediaWidth;
           mediaHeight = result.height ?? mediaHeight;
-          final length = await videoFile.length();
-          updateProgress(length, length);
+          emit(const PostCreating(0.95));
         } else {
           throw Exception('video_not_found');
         }
@@ -112,8 +117,7 @@ mixin PostCreationMixin on Cubit<PostsState> {
             result.secureUrl,
             docFile,
           );
-          final length = await docFile.length();
-          updateProgress(length, length);
+          emit(const PostCreating(0.95));
         } else {
           throw Exception("file_not_found");
         }
@@ -463,10 +467,17 @@ mixin PostCreationMixin on Cubit<PostsState> {
         error.contains('not_found')) {
       return "The selected file is no longer available. Please re-select it.";
     } else if (error.contains('socketexception') ||
-        error.contains('connection reset')) {
+        error.contains('connection reset') ||
+        error.contains('timed out') ||
+        error.contains('timeout')) {
       return "Connection lost. Please check your internet and try again.";
-    } else if (error.contains('storage-byte-range-not-satisfiable')) {
+    } else if (error.contains('file size too large') ||
+        error.contains('too large') ||
+        error.contains('maximum') ||
+        error.contains('storage-byte-range-not-satisfiable')) {
       return "File size is too large or upload was interrupted.";
+    } else if (error.contains('not allowed') || error.contains('unsupported')) {
+      return "This file format is not supported.";
     } else if (error.contains('post_images/images')) {
       return "Storage error: Make sure you have permission to upload.";
     }

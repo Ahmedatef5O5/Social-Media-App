@@ -1,6 +1,7 @@
 // ignore_for_file: avoid_unnecessary_containers
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
+import '../../stories/widgets/stories_list_skeleton.dart';
 
 class HomeShimmerSkeleton extends StatelessWidget {
   const HomeShimmerSkeleton({super.key});
@@ -180,63 +181,7 @@ class HomeShimmerSkeleton extends StatelessWidget {
               ),
               height: 170 + 24,
               padding: const EdgeInsets.symmetric(vertical: 12),
-              child: buildShimmer(
-                child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: 5,
-                  itemBuilder: (_, index) {
-                    final randomWidthFactors = [0.65, 0.75, 0.70, 0.80, 0.62];
-                    final textWidth =
-                        110 *
-                        randomWidthFactors[index % randomWidthFactors.length];
-
-                    return Padding(
-                      padding: EdgeInsets.only(
-                        left: index == 0 ? 14 : 10,
-                        right: index == 4 ? 14 : 10,
-                      ),
-                      child: Container(
-                        width: 110,
-                        height: 170,
-                        decoration: BoxDecoration(
-                          color: skeletonColor.withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                        child: Stack(
-                          children: [
-                            Positioned(
-                              top: 8,
-                              left: 8,
-                              child: Container(
-                                width: 34,
-                                height: 34,
-                                decoration: BoxDecoration(
-                                  color: skeletonColor,
-                                  shape: BoxShape.circle,
-                                  border: Border.all(color: skeletonColor),
-                                ),
-                              ),
-                            ),
-                            Positioned(
-                              left: 8,
-                              bottom: 8,
-                              child: Container(
-                                height: 10,
-                                width: textWidth,
-                                decoration: BoxDecoration(
-                                  color: skeletonColor,
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
+              child: const StoriesListSkeleton(),
             ),
             const SizedBox(height: 8),
 

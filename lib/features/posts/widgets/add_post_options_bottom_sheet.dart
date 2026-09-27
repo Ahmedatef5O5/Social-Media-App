@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
-import 'package:social_media_app/core/router/app_routes.dart';
 import 'package:social_media_app/features/posts/widgets/build_option_item.dart';
 import '../../../core/toast/app_toast.dart';
 import '../cubits/posts_cubit/posts_cubit.dart';
@@ -9,6 +8,38 @@ import '../cubits/posts_cubit/posts_cubit.dart';
 class AddPostOptionsBottomSheet extends StatelessWidget {
   final DraggableScrollableController controller;
   const AddPostOptionsBottomSheet({super.key, required this.controller});
+
+  static const double _initialSize = 0.2;
+  static const double _minSize = 0.15;
+  static const double _maxSize = 0.75;
+
+  void _onHandleDragUpdate(DragUpdateDetails details) {
+    if (!controller.isAttached) return;
+    final deltaPixels = details.primaryDelta ?? 0.0;
+    final currentPixels = controller.sizeToPixels(controller.size);
+    final nextSize = controller
+        .pixelsToSize(currentPixels - deltaPixels)
+        .clamp(_minSize, _maxSize);
+    controller.jumpTo(nextSize);
+  }
+
+  void _onHandleDragEnd(DragEndDetails details) {
+    if (!controller.isAttached) return;
+    final velocity = details.primaryVelocity ?? 0.0;
+    if (velocity < -250) {
+      controller.animateTo(
+        _maxSize,
+        duration: const Duration(milliseconds: 260),
+        curve: Curves.easeOutCubic,
+      );
+    } else if (velocity > 250) {
+      controller.animateTo(
+        _minSize,
+        duration: const Duration(milliseconds: 260),
+        curve: Curves.easeOutCubic,
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -19,9 +50,9 @@ class AddPostOptionsBottomSheet extends StatelessWidget {
 
     return DraggableScrollableSheet(
       controller: controller,
-      initialChildSize: 0.2,
-      minChildSize: 0.15,
-      maxChildSize: 0.75,
+      initialChildSize: _initialSize,
+      minChildSize: _minSize,
+      maxChildSize: _maxSize,
       builder: (context, scrollController) {
         return Container(
           decoration: BoxDecoration(
@@ -37,18 +68,33 @@ class AddPostOptionsBottomSheet extends StatelessWidget {
           ),
           child: Column(
             children: [
-              const Gap(12),
-              Center(
-                child: Container(
-                  width: 48,
-                  height: 5,
-                  decoration: BoxDecoration(
-                    color: colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
-                    borderRadius: BorderRadius.circular(10),
+              GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onVerticalDragUpdate: _onHandleDragUpdate,
+                onVerticalDragEnd: _onHandleDragEnd,
+                child: SizedBox(
+                  width: double.infinity,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Gap(12),
+                      Center(
+                        child: Container(
+                          width: 48,
+                          height: 5,
+                          decoration: BoxDecoration(
+                            color: colorScheme.onSurfaceVariant.withValues(
+                              alpha: 0.3,
+                            ),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                      ),
+                      const Gap(16),
+                    ],
                   ),
                 ),
               ),
-              const Gap(16),
               Expanded(
                 child: ListView(
                   physics: const ClampingScrollPhysics(),
@@ -84,9 +130,8 @@ class AddPostOptionsBottomSheet extends StatelessWidget {
                       'Background Color',
                       const Color(0xFFE91E63),
                       onTap:
-                          () => Navigator.of(
-                            context,
-                          ).pushNamed(AppRoutes.postThemesViewRoute),
+                          () =>
+                              AppToast.info('Background Color is coming soon'),
                     ),
                     BuildOptionItem(
                       Icons.gif_box_rounded,

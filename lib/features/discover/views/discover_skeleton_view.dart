@@ -42,13 +42,19 @@ class DiscoverPeopleSkeleton extends StatelessWidget {
                     SkeletonBox(height: 12, width: screenWidth * 0.3),
                   ],
                 ),
-                const SkeletonCircle(size: 40),
+                Spacer(),
+                Row(
+                  children: [
+                    const SkeletonCircle(size: 39),
+                    const Gap(10),
+                    const SkeletonCircle(size: 39),
+                  ],
+                ),
               ],
             ),
           ),
         ),
 
-        // [FIX] استخدام MasonryGridView.count (RenderBox) بدلاً من SliverMasonryGrid داخل Expanded/Column
         Expanded(
           child: MasonryGridView.count(
             crossAxisCount: DiscoverGridMetrics.crossAxisCount,

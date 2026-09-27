@@ -33,6 +33,7 @@ class _ForwardedHeaderState extends State<ForwardedHeader> {
   late TapGestureRecognizer _nameTapRecognizer;
   TapGestureRecognizer? _aiNameTapRecognizer;
   bool get _isAi => widget.originalSenderId == ForwardableMessage.aiSenderId;
+
   @override
   void initState() {
     super.initState();
@@ -55,7 +56,7 @@ class _ForwardedHeaderState extends State<ForwardedHeader> {
   }
 
   void _onAvatarTap() {
-    if (_isAi) return; // no profile to show for Syncra
+    if (_isAi) return;
 
     final currentUserId = SupabaseProvider.id;
     final isOriginalSenderMe = widget.originalSenderId == currentUserId;
@@ -68,7 +69,7 @@ class _ForwardedHeaderState extends State<ForwardedHeader> {
   }
 
   void _onNameTap() {
-    if (_isAi) return; // no profile to show for Syncra
+    if (_isAi) return;
 
     final currentUserId = SupabaseProvider.id;
     final isOriginalSenderMe = widget.originalSenderId == currentUserId;
@@ -168,7 +169,10 @@ class _ForwardedHeaderState extends State<ForwardedHeader> {
                         ? GestureDetector(
                           onTap: _openAiChat,
                           behavior: HitTestBehavior.opaque,
-                          child: _AiAvatar(modelName: widget.name),
+                          child: _AiAvatar(
+                            modelName: widget.name,
+                            onColoredBubble: widget.onColoredBubble,
+                          ),
                         )
                         : AppAvatar(
                           imageUrl: widget.avatarUrl,
@@ -191,7 +195,9 @@ class _ForwardedHeaderState extends State<ForwardedHeader> {
 
 class _AiAvatar extends StatelessWidget {
   final String? modelName;
-  const _AiAvatar({this.modelName});
+  final bool onColoredBubble;
+
+  const _AiAvatar({this.modelName, this.onColoredBubble = false});
 
   @override
   Widget build(BuildContext context) {
@@ -203,21 +209,31 @@ class _AiAvatar extends StatelessWidget {
                 ? AiModelBrand.openRouter
                 : AiModelBrand.gemini);
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       width: 20,
       height: 20,
       alignment: Alignment.center,
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: Colors.white.withValues(alpha: 0.02),
+        color: Colors.white,
         border: Border.all(
-          color: Colors.white.withValues(alpha: 0.32),
-          width: 0.9,
+          color:
+              onColoredBubble
+                  ? Colors.white.withValues(alpha: 0.65)
+                  : (isDark
+                      ? Colors.white.withValues(alpha: 0.2)
+                      : Colors.black.withValues(alpha: 0.08)),
+          width: 0.8,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.14),
-            blurRadius: 3,
+            color: Colors.black.withValues(
+              alpha: onColoredBubble ? 0.16 : 0.06,
+            ),
+            blurRadius: 2.5,
             offset: const Offset(0, 1),
           ),
         ],
@@ -225,7 +241,7 @@ class _AiAvatar extends StatelessWidget {
       child: Center(
         child: AiModelIconography.buildBrandIcon(
           brand,
-          size: 13.5,
+          size: 13,
           useOriginalColors: true,
         ),
       ),

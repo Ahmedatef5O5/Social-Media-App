@@ -100,6 +100,7 @@ mixin PostReactionsMixin on Cubit<PostsState> {
           likerName: currentUserData?.name ?? 'unKnown',
           likerImageUrl: currentUserData?.imageUrl ?? '',
           postId: post.id,
+          emoji: emoji,
         );
       }
 

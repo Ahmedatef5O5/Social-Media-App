@@ -141,4 +141,43 @@ mixin PostsFeedMixin on Cubit<PostsState> {
       return [];
     }
   }
+
+  void updateAuthorInfo({
+    required String authorId,
+    required String newName,
+    required String? newImageUrl,
+  }) {
+    PostModel patchPost(PostModel post) {
+      PostModel updated = post;
+      if (updated.authorId == authorId) {
+        updated = updated.copyWith(
+          authorName: newName,
+          authorImageUrl: newImageUrl ?? '',
+        );
+      }
+      if (updated.originalPost != null) {
+        updated = updated.copyWith(
+          originalPost: patchPost(updated.originalPost!),
+        );
+      }
+      if (updated.likes != null &&
+          updated.likersImages != null &&
+          updated.likes!.contains(authorId)) {
+        final idx = updated.likes!.indexOf(authorId);
+        if (idx >= 0 && idx < updated.likersImages!.length) {
+          final newLikersImages = List<String>.from(updated.likersImages!);
+          newLikersImages[idx] =
+              (newImageUrl != null && newImageUrl.isNotEmpty)
+                  ? newImageUrl
+                  : 'asset:default';
+          updated = updated.copyWith(likersImages: newLikersImages);
+        }
+      }
+      return updated;
+    }
+
+    cachedPosts = cachedPosts.map(patchPost).toList();
+    persistPostsSnapshot(cachedPosts);
+    emit(PostsLoaded(List<PostModel>.from(cachedPosts), DateTime.now()));
+  }
 }

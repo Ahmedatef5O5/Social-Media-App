@@ -343,7 +343,9 @@ class _CreatePostViewState extends State<CreatePostView> {
                                     Text(
                                       state.progress >= 1.0
                                           ? 'Posted'
-                                          : (state.totalBytes > 0
+                                          : (state.totalBytes > 0 &&
+                                                  state.sentBytes <
+                                                      state.totalBytes
                                               ? formatMediaFileSizeRatio(
                                                 state.sentBytes,
                                                 state.totalBytes,
