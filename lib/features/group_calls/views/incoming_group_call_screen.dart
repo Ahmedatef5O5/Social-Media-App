@@ -2,12 +2,14 @@ import 'dart:async';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../core/notifications/dispatchers/group_call_dispatcher.dart';
+import '../../../core/services/current_user_name_resolver.dart';
+import '../../../core/services/permissions/app_permissions_service.dart';
 import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/utilities/supabase_constants.dart';
 import '../../../core/widgets/calls/call_avatar_backdrop.dart';
 import '../../../core/widgets/calls/call_layout_metrics.dart';
 import '../../../core/widgets/calls/calls.dart';
-import '../../profile/services/user_services.dart';
 import '../models/group_call_model.dart';
 import '../services/group_call_signaling_service.dart';
 import 'livekit_group_call_view.dart';
@@ -25,9 +27,9 @@ class IncomingGroupCallScreen extends StatefulWidget {
 class _IncomingGroupCallScreenState extends State<IncomingGroupCallScreen>
     with TickerProviderStateMixin {
   final AudioPlayer _audioPlayer = AudioPlayer();
-  final _userService = UserService();
 
-  String _currentUserName = 'Loading...';
+  late final Future<String> _nameFuture;
+  bool _isAccepting = false;
   StreamSubscription? _statusSubscription;
   StreamSubscription? _membershipSubscription;
   late final GroupCallSignalingService _signaling;
@@ -39,7 +41,9 @@ class _IncomingGroupCallScreenState extends State<IncomingGroupCallScreen>
   void initState() {
     super.initState();
     _signaling = context.read<GroupCallSignalingService>();
-    _fetchMyName();
+    // Start resolving the real display name right away so it is ready by the
+    // time Accept is tapped.
+    _nameFuture = CurrentUserNameResolver.resolve();
     _playRingtone();
     _initAnimations();
     _listenToCallStatus();
@@ -70,14 +74,6 @@ class _IncomingGroupCallScreenState extends State<IncomingGroupCallScreen>
         });
   }
 
-  Future<void> _fetchMyName() async {
-    final user = SupabaseProvider.user!;
-    final name = await _userService.fetchUserName(user.id);
-    if (mounted) {
-      setState(() => _currentUserName = name ?? 'Me');
-    }
-  }
-
   Future<void> _playRingtone() async {
     try {
       await _audioPlayer.setReleaseMode(ReleaseMode.loop);
@@ -87,7 +83,14 @@ class _IncomingGroupCallScreenState extends State<IncomingGroupCallScreen>
     }
   }
 
-  void _cleanup() => _audioPlayer.stop();
+  void _cleanup() {
+    _audioPlayer.stop();
+    unawaited(
+      GroupCallDispatcher.instance.cancelIncomingGroupCallNotification(
+        widget.call.callId,
+      ),
+    );
+  }
 
   void _listenToMembership() {
     final myId = SupabaseProvider.id;
@@ -112,20 +115,37 @@ class _IncomingGroupCallScreenState extends State<IncomingGroupCallScreen>
   }
 
   Future<void> _acceptCall(BuildContext context) async {
-    _cleanup();
-    final updatedCall = await _signaling.acceptCall(widget.call.callId);
-    if (!context.mounted) return;
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder:
-            (_) => LiveKitGroupCallView(
-              call: updatedCall,
-              currentUserId: SupabaseProvider.id,
-              currentUserName: _currentUserName,
-            ),
-      ),
-    );
+    if (_isAccepting) return;
+    _isAccepting = true;
+    try {
+      // Permissions first: the OS dialog must not appear over a connecting
+      // call, and a denial keeps the ringing screen so the user can retry
+      // or decline.
+      final granted = await AppPermissionsService.instance
+          .ensureCallPermissions(
+            isVideo: widget.call.type == GroupCallType.video,
+            context: context,
+          );
+      if (!granted || !context.mounted) return;
+
+      _cleanup();
+      final userName = await _nameFuture;
+      final updatedCall = await _signaling.acceptCall(widget.call.callId);
+      if (!context.mounted) return;
+      await Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder:
+              (_) => LiveKitGroupCallView(
+                call: updatedCall,
+                currentUserId: SupabaseProvider.id,
+                currentUserName: userName,
+              ),
+        ),
+      );
+    } finally {
+      _isAccepting = false;
+    }
   }
 
   @override

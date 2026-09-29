@@ -2,11 +2,13 @@ import 'dart:async';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../core/services/call_identity.dart';
+import '../../../core/services/current_user_name_resolver.dart';
+import '../../../core/services/incoming_call_navigation_guard.dart';
 import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/widgets/calls/call_avatar_backdrop.dart';
 import '../../../core/widgets/calls/call_layout_metrics.dart';
 import '../../../core/widgets/calls/calls.dart';
-import '../../profile/services/user_services.dart';
 import '../models/group_call_model.dart';
 import '../services/group_call_signaling_service.dart';
 import 'livekit_group_call_view.dart';
@@ -33,12 +35,16 @@ class OutgoingGroupCallScreen extends StatefulWidget {
 class _OutgoingGroupCallScreenState extends State<OutgoingGroupCallScreen>
     with TickerProviderStateMixin {
   final AudioPlayer _audioPlayer = AudioPlayer();
-  final _userService = UserService();
 
   StreamSubscription? _callSubscription;
   Timer? _timeoutTimer;
   String? _currentCallId;
-  String _currentUserName = 'Loading...';
+  bool _isNavigating = false;
+
+  // Empty == "not resolved yet" (CallIdentity.isPlaceholderName treats it as
+  // a placeholder). Never sent to LiveKit until replaced by the real name.
+  String _currentUserName = '';
+  late final Future<String> _nameFuture;
 
   late final GroupCallSignalingService _signaling;
   late final AnimationController _dotController;
@@ -50,7 +56,12 @@ class _OutgoingGroupCallScreenState extends State<OutgoingGroupCallScreen>
   void initState() {
     super.initState();
     _signaling = context.read<GroupCallSignalingService>();
-    _fetchMyName();
+    // Belt-and-braces: `GroupCallInitiator` already set this before
+    // `initiateCall`, but a screen pushed from anywhere else must hold the
+    // flag too so no IncomingGroupCallScreen can stack on top of it.
+    IncomingCallNavigationGuard.setOutgoingGroupCallActive(true);
+    _nameFuture = CurrentUserNameResolver.resolve();
+    unawaited(_captureName());
     _playRingtone();
     _initAnimations();
     _startCallMonitoring();
@@ -71,12 +82,9 @@ class _OutgoingGroupCallScreenState extends State<OutgoingGroupCallScreen>
     _fadeAnim = CurvedAnimation(parent: _fadeController, curve: Curves.easeOut);
   }
 
-  Future<void> _fetchMyName() async {
-    final user = SupabaseProvider.user!;
-    final name = await _userService.fetchUserName(user.id);
-    if (mounted) {
-      setState(() => _currentUserName = name ?? 'Me');
-    }
+  Future<void> _captureName() async {
+    final name = await _nameFuture;
+    if (mounted) _currentUserName = name;
   }
 
   Future<void> _playRingtone() async {
@@ -97,21 +105,32 @@ class _OutgoingGroupCallScreenState extends State<OutgoingGroupCallScreen>
 
       if (call.status == GroupCallStatus.accepted ||
           call.status == GroupCallStatus.ongoing) {
-        _navigateToLiveKit(call);
+        unawaited(_navigateToLiveKit(call));
       }
     });
   }
 
-  void _navigateToLiveKit(GroupCallModel call) {
+  Future<void> _navigateToLiveKit(GroupCallModel call) async {
+    if (_isNavigating) return;
+    _isNavigating = true;
     _cleanup();
-    Navigator.pushReplacement(
+
+    // The call can be accepted before the name lookup finishes. Wait for it:
+    // 'Loading...' / 'Me' must never reach LiveKit as the participant name.
+    var name = _currentUserName;
+    if (CallIdentity.isPlaceholderName(name)) {
+      name = await _nameFuture;
+    }
+    if (!mounted) return;
+
+    await Navigator.pushReplacement(
       context,
       MaterialPageRoute(
         builder:
             (_) => LiveKitGroupCallView(
               call: call,
               currentUserId: SupabaseProvider.id,
-              currentUserName: _currentUserName,
+              currentUserName: name,
             ),
       ),
     );
@@ -130,6 +149,7 @@ class _OutgoingGroupCallScreenState extends State<OutgoingGroupCallScreen>
 
   @override
   void dispose() {
+    IncomingCallNavigationGuard.setOutgoingGroupCallActive(false);
     _cleanup();
     _audioPlayer.dispose();
     _dotController.dispose();
@@ -222,9 +242,15 @@ class _OutgoingGroupCallScreenState extends State<OutgoingGroupCallScreen>
                         onTap: () async {
                           _cleanup();
                           if (_currentCallId != null) {
-                            await _signaling.endCall(_currentCallId!);
+                            // Was still ringing — nobody ever joined. `markAsMissed` is the
+                            // correct terminal state here (not `endCall`, which is reserved for
+                            // a call that actually connected). This also fires the cancellation
+                            // push to backgrounded receivers — see GroupCallSignalingService.
+                            await _signaling.markAsMissed(_currentCallId!);
                           }
-                          if (mounted) Navigator.pop(context);
+                          if (context.mounted) {
+                            Navigator.pop(context);
+                          }
                         },
                       ),
 

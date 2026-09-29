@@ -17,6 +17,7 @@ class GroupCallModel {
   final DateTime? endedAt;
   final int participantCount;
   final String? duration;
+  final DateTime? lastHeartbeatAt;
 
   const GroupCallModel({
     required this.callId,
@@ -31,6 +32,7 @@ class GroupCallModel {
     this.endedAt,
     this.participantCount = 0,
     this.duration,
+    this.lastHeartbeatAt,
   });
 
   bool get isActive =>
@@ -54,6 +56,7 @@ class GroupCallModel {
     DateTime? endedAt,
     int? participantCount,
     String? duration,
+    DateTime? lastHeartbeatAt,
   }) {
     return GroupCallModel(
       callId: callId ?? this.callId,
@@ -68,6 +71,7 @@ class GroupCallModel {
       endedAt: endedAt ?? this.endedAt,
       participantCount: participantCount ?? this.participantCount,
       duration: duration ?? this.duration,
+      lastHeartbeatAt: lastHeartbeatAt ?? this.lastHeartbeatAt,
     );
   }
 
@@ -84,6 +88,8 @@ class GroupCallModel {
     if (endedAt != null) 'ended_at': endedAt!.toIso8601String(),
     'participant_count': participantCount,
     if (duration != null) 'duration': duration,
+    'last_heartbeat_at':
+        (lastHeartbeatAt ?? startedAt).toUtc().toIso8601String(),
   };
 
   factory GroupCallModel.fromMap(Map<String, dynamic> map) => GroupCallModel(
@@ -103,6 +109,10 @@ class GroupCallModel {
             : null,
     participantCount: (map['participant_count'] as int?) ?? 0,
     duration: map['duration'] as String?,
+    lastHeartbeatAt:
+        map['last_heartbeat_at'] != null
+            ? DateTime.tryParse(map['last_heartbeat_at'] as String)
+            : null,
   );
 
   String get lastMessagePreview {

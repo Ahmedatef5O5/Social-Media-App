@@ -1,9 +1,10 @@
 import 'package:flutter/foundation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/supabase/supabase_provider.dart';
 import '../models/call_model.dart';
 
 class CallSignalingService {
-  final _supabase = SupabaseProvider.client;
+  SupabaseClient get _supabase => SupabaseProvider.client;
 
   Future<void> sendCallRequest(CallModel call) async {
     await _supabase.from('calls').upsert(call.toMap());

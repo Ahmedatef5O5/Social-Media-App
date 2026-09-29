@@ -2,12 +2,14 @@ import 'dart:async';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:livekit_client/livekit_client.dart';
+import '../../../core/services/active_call/call_control_message.dart';
 import '../../../core/services/active_call/call_termination_service.dart';
 import '../../../core/services/active_call/cubits/active_call_session_cubit.dart';
+import '../../../core/services/active_call/group_call_leave_or_end_resolver.dart';
 import '../../../core/services/active_call/pip/call_pip_cubit.dart';
-import '../../../core/services/call_foreground_task_handler.dart';
+import '../../../core/services/call_foreground_service.dart';
+import '../../../core/services/call_identity.dart';
 import '../../../core/services/livekit_token_service.dart';
 import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/widgets/calls/call_control_button.dart';
@@ -101,10 +103,52 @@ class _LiveKitGroupCallViewState extends State<LiveKitGroupCallView> {
       call,
     ) {
       if (!mounted || _isEnding) return;
-      if (call == null || call.callId != widget.call.callId) {
+
+      // The row says the call is over: close NOW, no confirmation window.
+      if (call != null &&
+          call.callId == widget.call.callId &&
+          (call.status == GroupCallStatus.ended ||
+              call.status == GroupCallStatus.missed)) {
         _terminateCallSilently();
+        return;
+      }
+
+      // A different call replaced ours: definitely not ours anymore.
+      if (call != null && call.callId != widget.call.callId) {
+        _terminateCallSilently();
+        return;
+      }
+
+      // `null` can also be a transient stream hiccup, so it (and only it) is
+      // confirmed — with one direct lookup instead of a fixed wait.
+      if (call == null) {
+        unawaited(_confirmCallGoneThenClose());
       }
     });
+  }
+
+  Future<void> _confirmCallGoneThenClose() async {
+    try {
+      final active = await _signaling.getActiveCall(widget.call.groupId);
+      if (!mounted || _isEnding) return;
+      if (active == null || active.callId != widget.call.callId) {
+        await _terminateCallSilently();
+      }
+    } catch (e) {
+      // Could not verify (offline?): stay in the call. A real end still
+      // arrives via the LiveKit data packet or the room disconnect.
+      debugPrint('[LiveKitGroupCallView] end-confirmation lookup failed: $e');
+    }
+  }
+
+  /// Reliable data packet from whoever ended the call for everyone.
+  void _onDataReceived(DataReceivedEvent event) {
+    if (!mounted || _isEnding) return;
+    final msg = CallControlMessage.tryDecode(event.data);
+    if (msg != null &&
+        msg.endsCall(CallControlMessage.groupCallEnded, widget.call.callId)) {
+      unawaited(_terminateCallSilently());
+    }
   }
 
   Future<void> _connectNewRoom() async {
@@ -147,19 +191,21 @@ class _LiveKitGroupCallViewState extends State<LiveKitGroupCallView> {
         isVideo: _isVideo,
         isGroup: true,
         onSoloTimeout: _terminateCall,
+        onHeartbeat: () => _signaling.sendHeartbeat(widget.call.callId),
       );
 
       _attachTo(room);
 
-      await FlutterForegroundTask.startService(
+      await CallForegroundService.start(
         serviceId: 102,
-        notificationTitle: widget.call.groupName,
-        notificationText: 'Ongoing Group Call',
-        callback: startCallServiceCallback,
+        title: 'Ongoing Group Call',
+        text: 'Tap to return to the group call',
+        isVideo: widget.call.type == GroupCallType.video,
       );
     } catch (e, st) {
       debugPrint('❌ LiveKitGroupCallView._connectNewRoom failed: $e');
       debugPrintStack(stackTrace: st);
+      unawaited(CallForegroundService.stop());
       if (!mounted) return;
       _sessionCubit.endSession();
       setState(() {
@@ -185,6 +231,7 @@ class _LiveKitGroupCallViewState extends State<LiveKitGroupCallView> {
           _activeSpeakerIds = event.speakers.map((p) => p.identity).toSet();
         });
       })
+      ..on<DataReceivedEvent>(_onDataReceived)
       ..on<RoomDisconnectedEvent>((_) => _onRoomDisconnected());
 
     _recomputeParticipants();
@@ -270,11 +317,14 @@ class _LiveKitGroupCallViewState extends State<LiveKitGroupCallView> {
   Future<String?> _avatarFuture(String identity) {
     return _avatarCache.putIfAbsent(identity, () async {
       try {
+        // identity == Supabase user id per the token function's contract,
+        // but tolerate tokens minted with the display name as identity.
+        final column = CallIdentity.looksLikeUserId(identity) ? 'id' : 'name';
         final data =
             await SupabaseProvider.client
                 .from('users')
                 .select('image_url')
-                .eq('id', identity)
+                .eq(column, identity)
                 .maybeSingle();
         return data?['image_url'] as String?;
       } catch (_) {
@@ -330,8 +380,10 @@ class _LiveKitGroupCallViewState extends State<LiveKitGroupCallView> {
     }
   }
 
-  void _handleMinimize() => Navigator.of(context).pop();
+  void _handleMinimize() => CallTerminationService.popRouteIfActive(context);
 
+  /// Someone else already ended the call (data packet / DB row): tear down
+  /// locally without signalling or broadcasting again.
   Future<void> _terminateCallSilently() async {
     if (_isEnding) return;
     _isEnding = true;
@@ -341,7 +393,7 @@ class _LiveKitGroupCallViewState extends State<LiveKitGroupCallView> {
       sessionCubit: _sessionCubit,
       signalEnd: () async {},
     );
-    if (mounted) Navigator.of(context).pop();
+    if (mounted) CallTerminationService.popRouteIfActive(context);
   }
 
   Future<void> _terminateCall() async {
@@ -350,23 +402,39 @@ class _LiveKitGroupCallViewState extends State<LiveKitGroupCallView> {
     if (mounted) setState(() {});
 
     final duration = _formatDuration(DateTime.now().difference(_startedAt));
-    final remainingAfterLeave = _participantIds.length - 1;
-    final endForEveryone = remainingAfterLeave <= 1;
+
+    // Captured BEFORE teardown: `CallTerminationService.endActiveCall`
+    // disconnects the room before `signalEnd` actually runs, at which point
+    // `_room.remoteParticipants` would already read as empty.
+    final room = _room;
+    final knownCount = widget.call.participantCount;
+    final endForEveryone = GroupCallLeaveOrEndResolver.shouldEndCallForEveryone(
+      room: room,
+      knownParticipantCount: knownCount,
+    );
+    final remainingAfterLeave = GroupCallLeaveOrEndResolver.remainingAfterLeave(
+      room: room,
+      knownParticipantCount: knownCount,
+    );
 
     await CallTerminationService.endActiveCall(
       pipCubit: _pipCubit,
       sessionCubit: _sessionCubit,
       signalEnd:
-          () =>
-              endForEveryone
-                  ? _signaling.endCall(
-                    widget.call.callId,
-                    duration: duration,
-                    participantCount: remainingAfterLeave.clamp(0, 1 << 30),
-                  )
-                  : _signaling.leaveCall(widget.call.callId),
+          () => GroupCallLeaveOrEndResolver.signal(
+            remainingAfterLeave: remainingAfterLeave,
+            signaling: _signaling,
+            callId: widget.call.callId,
+            durationIfEnding: duration,
+          ),
+      // Instant hang-up for whoever is left. Only when the call really ends:
+      // leaving a 3+ person call must not close the others' screens.
+      endMessage:
+          endForEveryone
+              ? CallControlMessage.groupEnded(widget.call.callId)
+              : null,
     );
-    if (mounted) Navigator.of(context).pop();
+    if (mounted) CallTerminationService.popRouteIfActive(context);
   }
 
   String _formatDuration(Duration d) {
@@ -398,7 +466,8 @@ class _LiveKitGroupCallViewState extends State<LiveKitGroupCallView> {
                 const Text('The call could not be initiated.'),
                 const SizedBox(height: 8),
                 ElevatedButton(
-                  onPressed: () => Navigator.of(context).pop(),
+                  onPressed:
+                      () => CallTerminationService.popRouteIfActive(context),
                   child: const Text('Back'),
                 ),
               ],
@@ -537,7 +606,9 @@ class _LiveKitGroupCallViewState extends State<LiveKitGroupCallView> {
           isLeaving: _leavingIds.contains(id),
           isSpeaking: _activeSpeakerIds.contains(id),
           avatarFuture: _avatarFuture(id),
-          isMe: id == widget.currentUserId,
+          isMe:
+              participant.identity == widget.currentUserId ||
+              participant.identity == widget.currentUserName,
         );
       },
     );

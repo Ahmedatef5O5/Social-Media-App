@@ -3,7 +3,9 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:social_media_app/features/profile/services/user_services.dart';
 import 'package:social_media_app/features/single_chats/services/chat_services.dart';
+import '../../../../core/bootstrap/app_bootstrap.dart';
 import '../../../../core/helpers/safe_emit_mixin.dart';
+import '../../../../core/services/current_user_name_resolver.dart';
 import '../../../../core/services/fcm_services.dart';
 import '../../../../core/supabase/supabase_provider.dart';
 import '../../../group_calls/models/group_call_model.dart';
@@ -32,6 +34,13 @@ class CallCubit extends Cubit<CallState> with SafeEmitMixin<CallState> {
   }) : _chatServices = chatServices,
        _userService = userService ?? UserService(),
        super(CallInitial()) {
+    _initAfterBootstrap();
+  }
+
+  Future<void> _initAfterBootstrap() async {
+    await waitForCoreServicesReady();
+    if (isClosed) return;
+
     _authSubscription = SupabaseProvider.authChanges.listen((data) {
       if (data.session != null) {
         _initIncomingListener();
@@ -125,9 +134,35 @@ class CallCubit extends Cubit<CallState> with SafeEmitMixin<CallState> {
   Future<void> acceptCall(CallModel call) async {
     _callAcceptedAt = DateTime.now();
     _activeCall = call;
+
+    _listenForRemoteEnd(call);
+
     await signalingService.updateCallStatus(call.callId, CallStatus.accepted);
     final currentUserName = await _fetchCurrentUserName();
     if (!isClosed) emit(CallConnectedState(call, currentUserName));
+  }
+
+  void _listenForRemoteEnd(CallModel call) {
+    _statusSubscription?.cancel();
+    _statusSubscription = signalingService
+        .callStatusStream(call.callId)
+        .listen(
+          (data) {
+            if (isClosed || data.isEmpty) return;
+            final updatedCall = CallModel.fromMap(data.first);
+
+            if (updatedCall.status == CallStatus.ended ||
+                updatedCall.status == CallStatus.rejected) {
+              _statusSubscription?.cancel();
+              _handleCallEnded(_activeCall ?? call);
+              emit(CallEndedState());
+              emit(CallInitial());
+            }
+          },
+          onError: (Object e) {
+            debugPrint('[CallCubit] receiver status stream error: $e');
+          },
+        );
   }
 
   Future<void> rejectCall(CallModel call) async {
@@ -137,8 +172,18 @@ class CallCubit extends Cubit<CallState> with SafeEmitMixin<CallState> {
 
   Future<void> endCall(String callId) async {
     _statusSubscription?.cancel();
+
+    final endingCall = _activeCall;
+    final wasNeverAnswered =
+        endingCall != null && _callAcceptedAt == null && _isCaller(endingCall);
+
     await signalingService.updateCallStatus(callId, CallStatus.ended);
-    _handleCallEnded(_activeCall);
+
+    if (wasNeverAnswered) {
+      unawaited(_sendCancelFcm(endingCall));
+    }
+
+    _handleCallEnded(endingCall);
     if (!isClosed) {
       emit(CallEndedState());
       emit(CallInitial());
@@ -146,9 +191,7 @@ class CallCubit extends Cubit<CallState> with SafeEmitMixin<CallState> {
   }
 
   Future<String> _fetchCurrentUserName() async {
-    final currentUser = SupabaseProvider.user;
-    if (currentUser == null) return 'Unknown';
-    return await _userService.fetchUserName(currentUser.id) ?? 'Unknown';
+    return CurrentUserNameResolver.resolve(userService: _userService);
   }
 
   Future<void> _sendCallFcm(CallModel call) async {
@@ -173,6 +216,27 @@ class CallCubit extends Cubit<CallState> with SafeEmitMixin<CallState> {
       );
     } catch (e) {
       debugPrint('[CallCubit] failed to show incoming call notification: $e');
+    }
+  }
+
+  Future<void> _sendCancelFcm(CallModel call) async {
+    try {
+      final data =
+          await SupabaseProvider.client
+              .from('users')
+              .select('fcm_token')
+              .eq('id', call.receiverId)
+              .maybeSingle();
+
+      final token = data?['fcm_token'] as String?;
+      if (token == null || token.isEmpty) return;
+
+      await _fcmService.sendCallCancelledNotification(
+        receiverFcmToken: token,
+        callId: call.callId,
+      );
+    } catch (e) {
+      debugPrint('[CallCubit] failed to send cancel notification: $e');
     }
   }
 

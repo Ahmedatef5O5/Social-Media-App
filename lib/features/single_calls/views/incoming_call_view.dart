@@ -2,6 +2,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:audioplayers/audioplayers.dart';
+import '../../../core/notifications/dispatchers/call_notification_dispatcher.dart';
+import '../../../core/services/permissions/app_permissions_service.dart';
 import '../../../core/widgets/calls/call_avatar_backdrop.dart';
 import '../../../core/widgets/calls/call_layout_metrics.dart';
 import '../../../core/widgets/calls/calls.dart';
@@ -25,6 +27,7 @@ class _IncomingCallViewState extends State<IncomingCallView>
   late final Animation<double> _shakeAnim;
 
   StreamSubscription? _statusSubscription;
+  bool _isAccepting = false;
 
   @override
   void initState() {
@@ -60,7 +63,29 @@ class _IncomingCallViewState extends State<IncomingCallView>
 
   void _closeScreen() {
     _audioPlayer.stop();
+    unawaited(
+      CallNotificationDispatcher.instance.cancelCallNotification(
+        widget.call.callId,
+      ),
+    );
     if (Navigator.canPop(context)) Navigator.pop(context);
+  }
+
+  Future<void> _onAcceptPressed() async {
+    if (_isAccepting) return;
+    _isAccepting = true;
+    try {
+      final granted = await AppPermissionsService.instance
+          .ensureCallPermissions(
+            isVideo: widget.call.type == CallType.video,
+            context: context,
+          );
+      if (!granted || !mounted) return;
+      _audioPlayer.stop();
+      await context.read<CallCubit>().acceptCall(widget.call);
+    } finally {
+      _isAccepting = false;
+    }
   }
 
   Future<void> _playRingtone() async {
@@ -189,10 +214,7 @@ class _IncomingCallViewState extends State<IncomingCallView>
                             color: Colors.green.shade600,
                             size: metrics.buttonSize,
                             emphasized: true,
-                            onTap:
-                                () => context.read<CallCubit>().acceptCall(
-                                  widget.call,
-                                ),
+                            onTap: _onAcceptPressed,
                           ),
                         ],
                       ),

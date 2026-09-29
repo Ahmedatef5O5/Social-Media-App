@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:livekit_client/livekit_client.dart';
+import '../../../core/services/active_call/call_control_message.dart';
 import '../../../core/services/active_call/call_termination_service.dart';
 import '../../../core/services/active_call/cubits/active_call_session_cubit.dart';
 import '../../../core/services/active_call/pip/call_pip_cubit.dart';
@@ -14,6 +15,7 @@ import '../../../core/widgets/calls/calls.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
 import '../models/call_model.dart';
 import '../cubits/single_call_cubit/call_cubit.dart';
+import '../services/call_signaling_service.dart';
 
 class LiveKitCallView extends StatefulWidget {
   final CallModel call;
@@ -34,6 +36,7 @@ class LiveKitCallView extends StatefulWidget {
 class _LiveKitCallViewState extends State<LiveKitCallView> {
   Room? _room;
   EventsListener<RoomEvent>? _listener;
+  StreamSubscription<List<Map<String, dynamic>>>? _statusSubscription;
 
   bool get _isVideo => widget.call.type == CallType.video;
 
@@ -54,7 +57,26 @@ class _LiveKitCallViewState extends State<LiveKitCallView> {
     super.initState();
     _startedAt = widget.call.startTime ?? DateTime.now();
     _startTicker();
+    _listenForRemoteEnd();
     _initRoom();
+  }
+
+  void _listenForRemoteEnd() {
+    _statusSubscription = context
+        .read<CallSignalingService>()
+        .callStatusStream(widget.call.callId)
+        .listen(
+          (data) {
+            if (!mounted || data.isEmpty) return;
+            final status = CallModel.fromMap(data.first).status;
+            if (status == CallStatus.ended || status == CallStatus.rejected) {
+              unawaited(_terminate(notifyPeer: false));
+            }
+          },
+          onError: (Object e) {
+            debugPrint('[LiveKitCallView] status stream error: $e');
+          },
+        );
   }
 
   void _startTicker() {
@@ -157,6 +179,7 @@ class _LiveKitCallViewState extends State<LiveKitCallView> {
       ..on<TrackMutedEvent>((_) => _onTracksChanged())
       ..on<TrackUnmutedEvent>((_) => _onTracksChanged())
       ..on<ParticipantDisconnectedEvent>((_) => _onRemoteParticipantLeft())
+      ..on<DataReceivedEvent>(_onDataReceived)
       ..on<RoomDisconnectedEvent>((_) => _onRoomDisconnected());
 
     if (alreadyConnected) {
@@ -177,17 +200,26 @@ class _LiveKitCallViewState extends State<LiveKitCallView> {
     if (mounted) setState(() {});
   }
 
+  void _onDataReceived(DataReceivedEvent event) {
+    if (!mounted || _isEnding) return;
+    final msg = CallControlMessage.tryDecode(event.data);
+    if (msg != null &&
+        msg.endsCall(CallControlMessage.singleCallEnded, widget.call.callId)) {
+      unawaited(_terminate(notifyPeer: false));
+    }
+  }
+
   void _onRemoteParticipantLeft() {
     final room = _room;
     if (room == null || !mounted || _isEnding) return;
     if (room.remoteParticipants.isEmpty) {
-      _handleEndCall();
+      unawaited(_terminate(notifyPeer: false));
     }
   }
 
   void _onRoomDisconnected() {
     if (!mounted || _isEnding) return;
-    _handleEndCall();
+    unawaited(_terminate(notifyPeer: false));
   }
 
   void _pushPreviewTrack() {
@@ -265,24 +297,34 @@ class _LiveKitCallViewState extends State<LiveKitCallView> {
     }
   }
 
-  void _handleMinimize() => Navigator.of(context).pop();
+  void _handleMinimize() => CallTerminationService.popRouteIfActive(context);
 
-  Future<void> _handleEndCall() async {
-    if (_isEnding) return;
+  Future<void> _handleEndCall() => _terminate(notifyPeer: true);
+
+  Future<void> _terminate({required bool notifyPeer}) async {
+    if (_isEnding || !mounted) return;
     setState(() => _isEnding = true);
 
-    await CallTerminationService.endActiveCall(
-      pipCubit: context.read<CallPipCubit>(),
-      sessionCubit: context.read<ActiveCallSessionCubit>(),
+    final pipCubit = context.read<CallPipCubit>();
+    final sessionCubit = context.read<ActiveCallSessionCubit>();
+    final callCubit = context.read<CallCubit>();
 
-      signalEnd: () => context.read<CallCubit>().endCall(widget.call.callId),
+    await CallTerminationService.endActiveCall(
+      pipCubit: pipCubit,
+      sessionCubit: sessionCubit,
+      signalEnd: () => callCubit.endCall(widget.call.callId),
+      endMessage:
+          notifyPeer
+              ? CallControlMessage.singleEnded(widget.call.callId)
+              : null,
     );
 
-    if (mounted) Navigator.of(context).pop();
+    if (mounted) CallTerminationService.popRouteIfActive(context);
   }
 
   @override
   void dispose() {
+    _statusSubscription?.cancel();
     _ticker?.cancel();
     _listener?.dispose();
     super.dispose();
@@ -310,7 +352,8 @@ class _LiveKitCallViewState extends State<LiveKitCallView> {
                 const Text('The call could not be initiated.'),
                 const SizedBox(height: 8),
                 ElevatedButton(
-                  onPressed: () => Navigator.of(context).pop(),
+                  onPressed:
+                      () => CallTerminationService.popRouteIfActive(context),
                   child: const Text('Back'),
                 ),
               ],

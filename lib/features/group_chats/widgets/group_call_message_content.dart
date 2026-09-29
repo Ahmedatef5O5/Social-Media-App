@@ -7,10 +7,9 @@ import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/themes/app_colors.dart';
 import '../../../core/utilities/supabase_constants.dart';
 import '../../../core/widgets/cached_cloudinary_image.dart';
+import '../../group_calls/helpers/group_call_join_helper.dart';
 import '../../group_calls/models/group_call_model.dart';
 import '../../group_calls/services/group_call_signaling_service.dart';
-import '../../group_calls/views/livekit_group_call_view.dart';
-import '../../profile/services/user_services.dart';
 import '../models/groupe_message_model.dart';
 
 class GroupCallMessageContent extends StatelessWidget {
@@ -96,10 +95,18 @@ class GroupCallMessageContent extends StatelessWidget {
     final groupAvatarUrl = callData['group_avatar_url'] as String?;
 
     final isAudio = callType == 'audio';
-    final isMissed = status == 'missed';
-    final isEnded = status == 'ended';
-    final isOngoing =
+
+    final isLive = status == 'accepted' || status == 'ongoing';
+
+    final isActionable =
         status == 'ringing' || status == 'accepted' || status == 'ongoing';
+
+    final isEndedConnected = status == 'ended' && duration.isNotEmpty;
+
+    final neverConnected =
+        status == 'missed' || (status == 'ended' && duration.isEmpty);
+
+    final showAsMissed = neverConnected && !isMe;
 
     final bubbleBg =
         isMe
@@ -112,19 +119,27 @@ class GroupCallMessageContent extends StatelessWidget {
         isMe ? Colors.white : (isDark ? Colors.white70 : Colors.black87);
     final subColor =
         isMe ? Colors.white70 : (isDark ? Colors.white54 : Colors.black45);
-    final iconColor = isMissed ? Colors.redAccent.shade100 : Colors.greenAccent;
+    final missedTint = Colors.redAccent.shade100;
+    final iconColor = showAsMissed ? missedTint : Colors.greenAccent;
 
     final IconData callIcon =
-        isMissed
+        showAsMissed
             ? (isAudio
                 ? Icons.call_missed_rounded
                 : Icons.missed_video_call_rounded)
             : (isAudio ? Icons.call_rounded : Icons.videocam_rounded);
 
-    final String callLabel =
-        isMissed
-            ? (isAudio ? 'Missed voice call' : 'Missed video call')
-            : (isAudio ? 'Group voice call' : 'Group video call');
+    final String callLabel;
+    if (neverConnected) {
+      callLabel =
+          showAsMissed
+              ? (isAudio ? 'Missed voice call' : 'Missed video call')
+              : 'Ended call';
+    } else if (isEndedConnected) {
+      callLabel = 'Ended call';
+    } else {
+      callLabel = isAudio ? 'Group voice call' : 'Group video call';
+    }
 
     return Container(
       constraints: const BoxConstraints(minWidth: 210, maxWidth: 270),
@@ -184,7 +199,7 @@ class GroupCallMessageContent extends StatelessWidget {
                           child: Text(
                             callLabel,
                             style: TextStyle(
-                              color: labelColor,
+                              color: showAsMissed ? missedTint : labelColor,
                               fontSize: 13.5,
                               fontWeight: FontWeight.w600,
                             ),
@@ -193,7 +208,7 @@ class GroupCallMessageContent extends StatelessWidget {
                         ),
                       ],
                     ),
-                    if (isEnded && duration.isNotEmpty) ...[
+                    if (isEndedConnected) ...[
                       const SizedBox(height: 3),
                       Row(
                         mainAxisSize: MainAxisSize.min,
@@ -206,7 +221,7 @@ class GroupCallMessageContent extends StatelessWidget {
                           ),
                         ],
                       ),
-                    ] else if (isOngoing) ...[
+                    ] else if (isLive) ...[
                       const SizedBox(height: 3),
                       Row(
                         mainAxisSize: MainAxisSize.min,
@@ -237,7 +252,7 @@ class GroupCallMessageContent extends StatelessWidget {
             ],
           ),
 
-          if (isOngoing && groupId.isNotEmpty && callId.isNotEmpty) ...[
+          if (isActionable && groupId.isNotEmpty && callId.isNotEmpty) ...[
             const SizedBox(height: 10),
             _buildJoinButton(context, callId, groupId, callType, primary),
           ],
@@ -355,26 +370,7 @@ class GroupCallMessageContent extends StatelessWidget {
         }
 
         return GestureDetector(
-          onTap: () async {
-            final signaling = context.read<GroupCallSignalingService>();
-            final joined = await signaling.acceptCall(activeCall.callId);
-            final user = SupabaseProvider.user!;
-            final fetchedName = await UserService().fetchUserName(user.id);
-            final userName = fetchedName ?? 'Me';
-            if (context.mounted) {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder:
-                      (_) => LiveKitGroupCallView(
-                        call: joined,
-                        currentUserId: user.id,
-                        currentUserName: userName,
-                      ),
-                ),
-              );
-            }
-          },
+          onTap: () => GroupCallJoinHelper.join(context, activeCall),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
             decoration: BoxDecoration(

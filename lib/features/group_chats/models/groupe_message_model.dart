@@ -3,20 +3,7 @@ import '../../../core/utilities/supabase_constants.dart';
 
 class GroupMessageModel {
   final String id;
-
-  /// Client-generated correlation id (UUID v4), set once when the message
-  /// is first created on this device and never regenerated afterwards —
-  /// including on retry. Used by [MessageReconciler] to correlate the
-  /// optimistic (temp) representation of a message with its
-  /// server-confirmed representation regardless of which arrives first
-  /// (API response vs Realtime), and as the DB idempotency key so a retry
-  /// can never create a second row for the same logical message.
-  ///
-  /// `null` for legacy rows written before this field existed; those are
-  /// correlated by [id] (server id) only — see `correlationKeyFor` in
-  /// `message_reconciler.dart`.
   final String? clientMessageId;
-
   final String groupId;
   final String senderId;
   final String senderName;
@@ -286,9 +273,6 @@ class GroupMessageModel {
     return {
       GroupMemberColumns.groupId: groupId,
       'sender_id': senderId,
-      // Omitted entirely (not sent as null) when absent, so this map is
-      // byte-for-byte identical to before until a caller actually sets
-      // clientMessageId AND the client_message_id column exists in the DB.
       if (clientMessageId != null)
         GroupMessageColumns.clientMessageId: clientMessageId,
       'message_text': text,

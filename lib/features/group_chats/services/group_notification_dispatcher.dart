@@ -124,6 +124,24 @@ class GroupNotificationDispatcher {
     );
   }
 
+  Future<void> notifyCallCancelled({
+    required String groupId,
+    required String callId,
+    required String initiatorId,
+  }) async {
+    await _dispatchToMembers(
+      groupId: groupId,
+      excludeUserId: initiatorId,
+      respectMute: false,
+      payloadBuilder:
+          (memberId, token) => _fcm.sendGroupCallCancelledNotification(
+            receiverFcmToken: token,
+            callId: callId,
+            groupId: groupId,
+          ),
+    );
+  }
+
   Future<void> _dispatchToMembers({
     required String groupId,
     required String excludeUserId,

@@ -47,6 +47,7 @@ class _GroupCallMembersSheetState extends State<GroupCallMembersSheet> {
 
   EventsListener<RoomEvent>? _roomListener;
   Set<String> _activeUserIds = {};
+  Set<String> _activeNames = {};
 
   // Optimistic "Ring" state — userId -> currently ringing.
   final Set<String> _ringingUserIds = {};
@@ -75,13 +76,16 @@ class _GroupCallMembersSheetState extends State<GroupCallMembersSheet> {
 
   void _syncActiveIds(Room? room) {
     if (room == null || !mounted) return;
-    final ids =
-        {
-          room.localParticipant?.identity,
-          ...room.remoteParticipants.values.map((p) => p.identity),
-        }.whereType<String>().toSet();
+    final participants = <Participant>[
+      if (room.localParticipant != null) room.localParticipant!,
+      ...room.remoteParticipants.values,
+    ];
+    final ids = participants.map((p) => p.identity).toSet();
+    final names =
+        participants.map((p) => p.name).where((n) => n.isNotEmpty).toSet();
     setState(() {
       _activeUserIds = ids;
+      _activeNames = names;
       for (final id in ids) {
         _ringingUserIds.remove(id);
         _ringingCooldowns.remove(id)?.cancel();
@@ -123,14 +127,22 @@ class _GroupCallMembersSheetState extends State<GroupCallMembersSheet> {
     super.dispose();
   }
 
+  /// A member is "in the call" when a participant matches by user id
+  /// (`m.userId == p.identity`) OR — for tokens whose identity is not the
+  /// user id — by display name (`m.userName == p.identity || p.name`).
+  bool _isMemberActive(GroupMemberModel m) {
+    if (_activeUserIds.contains(m.userId)) return true;
+    if (m.userName.isEmpty) return false;
+    return _activeUserIds.contains(m.userName) ||
+        _activeNames.contains(m.userName);
+  }
+
   List<GroupCallMemberEntry> _mergeAndSort(List<GroupMemberModel> members) {
     final entries =
         members
             .map(
-              (m) => GroupCallMemberEntry(
-                member: m,
-                isActive: _activeUserIds.contains(m.userId),
-              ),
+              (m) =>
+                  GroupCallMemberEntry(member: m, isActive: _isMemberActive(m)),
             )
             .toList();
 

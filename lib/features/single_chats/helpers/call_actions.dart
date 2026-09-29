@@ -1,4 +1,5 @@
 import '../../../core/connectivity/services/connectivity_banner_controller.dart';
+import '../../../core/services/current_user_name_resolver.dart';
 import '../../../core/supabase/supabase_provider.dart';
 import '../../profile/services/user_services.dart';
 import '../../single_calls/models/call_model.dart';
@@ -18,9 +19,13 @@ class CallActions {
     final currentUser = SupabaseProvider.user;
     if (currentUser == null) return null;
 
-    final userInfo = await UserService().fetchUserNameAndAvatar(currentUser.id);
+    final userService = UserService();
+    final userInfo = await userService.fetchUserNameAndAvatar(currentUser.id);
 
-    final callerName = userInfo.name ?? 'Unknown';
+    // Never 'Unknown' / a placeholder if the users row is slow or empty.
+    final callerName = await CurrentUserNameResolver.resolve(
+      userService: userService,
+    );
     final callerAvatar = userInfo.avatarUrl ?? '';
 
     return CallModel(

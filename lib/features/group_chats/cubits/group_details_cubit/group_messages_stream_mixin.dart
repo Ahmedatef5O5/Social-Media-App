@@ -200,17 +200,27 @@ mixin GroupMessagesStreamMixin on Cubit<GroupDetailsState> {
 
     if (resolved.isNotEmpty) {
       final latest = resolved.first;
-      groupListCubit.updateGroupLastMessage(
-        groupId: group.id,
-        message: latest.text,
-        messageId: latest.id,
-        messageType: latest.messageType,
-        createdAt: latest.createdAt,
-        lastMessageSenderId: latest.senderId,
-        lastMessageSenderName: latest.senderName,
-        lastMessageTargetId: latest.targetId,
-        lastMessageTargetName: latest.targetName,
-      );
+      final existingGroup =
+          groupListCubit.cached.where((g) => g.id == group.id).firstOrNull;
+      final hasNewerReactionPreview =
+          existingGroup != null &&
+          existingGroup.lastMessageType == 'message_react' &&
+          existingGroup.lastMessageAt != null &&
+          existingGroup.lastMessageAt!.isAfter(latest.createdAt);
+
+      if (!hasNewerReactionPreview) {
+        groupListCubit.updateGroupLastMessage(
+          groupId: group.id,
+          message: latest.text,
+          messageId: latest.id,
+          messageType: latest.messageType,
+          createdAt: latest.createdAt,
+          lastMessageSenderId: latest.senderId,
+          lastMessageSenderName: latest.senderName,
+          lastMessageTargetId: latest.targetId,
+          lastMessageTargetName: latest.targetName,
+        );
+      }
     }
   }
 
