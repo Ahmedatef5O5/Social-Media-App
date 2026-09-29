@@ -189,6 +189,8 @@ abstract class UserColumns {
   static const String email = 'email';
   static const String imageUrl = 'image_url';
   static const String title = 'title';
+  static const String tagline = 'tagline';
+  static const String isTaglineHidden = 'is_tagline_hidden';
   static const String lastSeen = 'last_seen';
   static const String isTypingTo = 'is_typing_to';
   static const String theme = 'theme';

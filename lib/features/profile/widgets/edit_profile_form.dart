@@ -2,18 +2,28 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import '../../../core/widgets/custom_text_form_field.dart';
+import 'tagline_form_field.dart';
 
 class EditProfileForm extends StatelessWidget {
   final TextEditingController nameController;
   final TextEditingController userNameController;
   final TextEditingController titleController;
   final TextEditingController bioController;
+  final TextEditingController taglineController;
+  final FocusNode taglineFocusNode;
+  final bool isTaglineHidden;
+  final ValueChanged<bool> onTaglineHiddenChanged;
+
   const EditProfileForm({
     super.key,
     required this.nameController,
     required this.userNameController,
     required this.titleController,
     required this.bioController,
+    required this.taglineController,
+    required this.taglineFocusNode,
+    required this.isTaglineHidden,
+    required this.onTaglineHiddenChanged,
   });
 
   @override
@@ -46,6 +56,13 @@ class EditProfileForm extends StatelessWidget {
           labelText: 'Bio',
           hintText: 'Enter New Bio',
           prefixIcon: const Icon(Icons.info_outline_rounded),
+        ),
+        Gap(16),
+        TaglineFormField(
+          controller: taglineController,
+          focusNode: taglineFocusNode,
+          isHidden: isTaglineHidden,
+          onHiddenChanged: onTaglineHiddenChanged,
         ),
       ],
     );

@@ -5,6 +5,7 @@ import 'package:social_media_app/core/router/app_routes.dart';
 import 'package:social_media_app/core/widgets/custom_user_profile_image_section.dart';
 import 'package:social_media_app/features/auth/data/models/user_data.dart';
 import 'package:social_media_app/features/profile/cubits/profile_cubit/profile_cubit.dart';
+import 'package:social_media_app/features/profile/models/edit_profile_route_args.dart';
 import '../../../core/constants/app_images.dart';
 import '../../../core/supabase/supabase_provider.dart';
 import '../../posts/cubits/posts_cubit/posts_cubit.dart';
@@ -18,6 +19,7 @@ import '../utils/profile_animated_action_button.dart';
 import '../utils/profile_header_back_btn_container.dart';
 import '../utils/profile_ui_tokens.dart';
 import 'profile_header_user_info_section.dart';
+import 'status_thought_cloud/status_thought_cloud.dart';
 
 class ProfileHeader extends StatelessWidget {
   const ProfileHeader({super.key, required this.size, required this.state});
@@ -58,6 +60,21 @@ class ProfileHeader extends StatelessWidget {
               heroTag: 'edit-profile-avatar',
               profileUserId: isMe ? currentUserId : user.id,
               showBorder: true,
+            ),
+
+            // ── Status Tagline / Thought Cloud ──
+            Positioned.fill(
+              child: StatusThoughtCloud(
+                tagline: user.tagline,
+                isMe: isMe,
+                isHidden: user.isTaglineHidden,
+                screenWidth: screenWidth,
+                backgroundHeight: bgHeight,
+                avatarSize: avatarSize,
+                onEditRequested:
+                    () =>
+                        _navigateToEditProfile(context, autofocusTagline: true),
+              ),
             ),
 
             Positioned(
@@ -143,16 +160,7 @@ class ProfileHeader extends StatelessWidget {
             label: 'Edit Profile',
             icon: Icons.edit_rounded,
             style: ProfileActionStyle.outlinePrimary,
-            onPressed: () async {
-              final profileCubit = context.read<ProfileCubit>();
-              await Navigator.of(
-                context,
-                rootNavigator: true,
-              ).pushNamed(AppRoutes.editProfileViewRoute, arguments: user);
-              if (context.mounted) {
-                profileCubit.getProfileData(user.id);
-              }
-            },
+            onPressed: () => _navigateToEditProfile(context),
           ),
         ),
         const Gap(8),
@@ -163,6 +171,23 @@ class ProfileHeader extends StatelessWidget {
         ),
       ],
     );
+  }
+
+  Future<void> _navigateToEditProfile(
+    BuildContext context, {
+    bool autofocusTagline = false,
+  }) async {
+    final profileCubit = context.read<ProfileCubit>();
+    await Navigator.of(context, rootNavigator: true).pushNamed(
+      AppRoutes.editProfileViewRoute,
+      arguments: EditProfileRouteArgs(
+        user: user,
+        autofocusTagline: autofocusTagline,
+      ),
+    );
+    if (context.mounted) {
+      profileCubit.getProfileData(user.id);
+    }
   }
 
   // ───────────────────────── Other user ─────────────────────────

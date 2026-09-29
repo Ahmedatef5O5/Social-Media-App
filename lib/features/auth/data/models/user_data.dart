@@ -8,6 +8,8 @@ class UserData {
   final String? userName;
   final String? title;
   final String? bio;
+  final String? tagline;
+  final bool isTaglineHidden;
   final String? imageUrl;
   final String? backgroundImageUrl;
   final String? imagePublicId;
@@ -24,6 +26,8 @@ class UserData {
     this.userName,
     this.title,
     this.bio,
+    this.tagline,
+    this.isTaglineHidden = false,
     this.imageUrl,
     this.backgroundImageUrl,
     this.imagePublicId,
@@ -42,6 +46,8 @@ class UserData {
       'username': userName,
       'title': title,
       'bio': bio,
+      UserColumns.tagline: tagline,
+      UserColumns.isTaglineHidden: isTaglineHidden,
       'image_url': imageUrl,
       'background_image_url': backgroundImageUrl,
       'image_public_id': imagePublicId,
@@ -62,6 +68,11 @@ class UserData {
           map['username'] != null ? map['username'] as String? ?? '' : null,
       title: map['title'] != null ? map['title'] as String? ?? '' : null,
       bio: map['bio'] != null ? map['bio'] as String? ?? '' : null,
+      tagline:
+          map[UserColumns.tagline] != null
+              ? map[UserColumns.tagline] as String? ?? ''
+              : null,
+      isTaglineHidden: map[UserColumns.isTaglineHidden] as bool? ?? false,
       imageUrl:
           map['image_url'] != null ? map['image_url'] as String? ?? '' : null,
       backgroundImageUrl:
@@ -93,6 +104,8 @@ class UserData {
     'username': userName,
     'title': title,
     'bio': bio,
+    'tagline': tagline,
+    'is_tagline_hidden': isTaglineHidden,
     'image_url': imageUrl,
     'background_image_url': backgroundImageUrl,
     'image_public_id': imagePublicId,
@@ -111,6 +124,8 @@ class UserData {
       userName: map['username'] as String?,
       title: map['title'] as String?,
       bio: map['bio'] as String?,
+      tagline: map['tagline'] as String?,
+      isTaglineHidden: map['is_tagline_hidden'] as bool? ?? false,
       imageUrl: map['image_url'] as String?,
       backgroundImageUrl: map['background_image_url'] as String?,
       imagePublicId: map['image_public_id'] as String?,
@@ -138,6 +153,8 @@ class UserData {
     String? userName,
     String? title,
     String? bio,
+    String? tagline,
+    bool? isTaglineHidden,
     String? imageUrl,
     String? backgroundImageUrl,
     String? imagePublicId,
@@ -154,6 +171,8 @@ class UserData {
       userName: userName ?? this.userName,
       title: title ?? this.title,
       bio: bio ?? this.bio,
+      tagline: tagline ?? this.tagline,
+      isTaglineHidden: isTaglineHidden ?? this.isTaglineHidden,
       imageUrl: imageUrl ?? this.imageUrl,
       backgroundImageUrl: backgroundImageUrl ?? this.backgroundImageUrl,
       imagePublicId: imagePublicId ?? this.imagePublicId,

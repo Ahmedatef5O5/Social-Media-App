@@ -15,11 +15,18 @@ import 'package:social_media_app/features/profile/widgets/edit_social_links_sect
 import 'package:social_media_app/features/profile/widgets/image_picker_bottom_sheet.dart';
 import '../../../core/toast/app_toast.dart';
 import '../../../core/widgets/custom_confirmation_dialog.dart';
+import '../../posts/cubits/posts_cubit/posts_cubit.dart';
+import '../../stories/cubits/stories_cubit/stories_cubit.dart';
 
 class EditProfileView extends StatefulWidget {
-  const EditProfileView({super.key, this.userData});
   final UserData? userData;
+  final bool autofocusTagline;
 
+  const EditProfileView({
+    super.key,
+    this.userData,
+    this.autofocusTagline = false,
+  });
   @override
   State<EditProfileView> createState() => _EditProfileViewState();
 }
@@ -29,9 +36,13 @@ class _EditProfileViewState extends State<EditProfileView> {
   late TextEditingController _userNameController;
   late TextEditingController _titleController;
   late TextEditingController _bioController;
+  late TextEditingController _taglineController;
+  late FocusNode _taglineFocusNode;
+  late bool _isTaglineHidden;
   late Map<String, TextEditingController> _socialLinkControllers;
   late ScrollController _scrollController;
-  //
+  Animation<double>? _routeAnimation;
+  bool _didRequestTaglineFocus = false;
   File? selectedProfileImage;
   File? selectedBackgroundImage;
   bool profileImageRemoved = false;
@@ -110,6 +121,9 @@ class _EditProfileViewState extends State<EditProfileView> {
     );
     _titleController = TextEditingController(text: widget.userData?.title);
     _bioController = TextEditingController(text: widget.userData?.bio);
+    _taglineController = TextEditingController(text: widget.userData?.tagline);
+    _taglineFocusNode = FocusNode();
+    _isTaglineHidden = widget.userData?.isTaglineHidden ?? false;
 
     final existingSocialLinks = widget.userData?.socialLinks ?? const {};
     _socialLinkControllers = {
@@ -118,15 +132,46 @@ class _EditProfileViewState extends State<EditProfileView> {
           text: existingSocialLinks[platform.key],
         ),
     };
+
+    if (widget.autofocusTagline) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        final animation = ModalRoute.of(context)?.animation;
+        if (animation == null || animation.isCompleted) {
+          _requestTaglineFocusSafely();
+        } else {
+          _routeAnimation = animation;
+          animation.addStatusListener(_onRouteAnimationStatusChanged);
+        }
+      });
+    }
+  }
+
+  void _onRouteAnimationStatusChanged(AnimationStatus status) {
+    if (status == AnimationStatus.completed) {
+      _routeAnimation?.removeStatusListener(_onRouteAnimationStatusChanged);
+      _routeAnimation = null;
+      _requestTaglineFocusSafely();
+    }
+  }
+
+  void _requestTaglineFocusSafely() {
+    if (!mounted || _didRequestTaglineFocus) return;
+    _didRequestTaglineFocus = true;
+    _taglineFocusNode.requestFocus();
   }
 
   @override
   void dispose() {
+    _routeAnimation?.removeStatusListener(_onRouteAnimationStatusChanged);
+    _routeAnimation = null;
     _scrollController.dispose();
     _nameController.dispose();
     _userNameController.dispose();
     _titleController.dispose();
     _bioController.dispose();
+    _taglineController.dispose();
+    _taglineFocusNode.dispose();
     for (final controller in _socialLinkControllers.values) {
       controller.dispose();
     }
@@ -139,12 +184,34 @@ class _EditProfileViewState extends State<EditProfileView> {
     const double bottomOverlap = expandedAvatarSize * 0.5;
 
     return BlocListener<EditProfileCubit, EditProfileState>(
-      listener: (context, state) {
+      listenWhen:
+          (previous, current) =>
+              (previous is! EditProfileSuccess &&
+                  current is EditProfileSuccess) ||
+              current is EditProfileError,
+      listener: (context, state) async {
         if (state is EditProfileSuccess) {
-          if (!context.mounted) return;
-          Navigator.of(context).pop();
+          final updated = state.updatedUser;
+          try {
+            context.read<PostsCubit>().setCurrentUser(updated);
+            context.read<PostsCubit>().updateAuthorInfo(
+              authorId: updated.id,
+              newName: updated.name,
+              newImageUrl: updated.imageUrl,
+            );
+          } catch (_) {}
+          try {
+            context.read<StoriesCubit>().updateAuthorInfo(
+              authorId: updated.id,
+              newName: updated.name,
+              newImageUrl: updated.imageUrl,
+            );
+          } catch (_) {}
 
           AppToast.success('Profile Updated Successfully');
+          await Future.delayed(const Duration(milliseconds: 550));
+          if (!context.mounted) return;
+          Navigator.of(context).pop(updated);
         } else if (state is EditProfileError) {
           AppToast.error(state.errMsg);
         }
@@ -190,6 +257,12 @@ class _EditProfileViewState extends State<EditProfileView> {
                           userNameController: _userNameController,
                           titleController: _titleController,
                           bioController: _bioController,
+                          taglineController: _taglineController,
+                          taglineFocusNode: _taglineFocusNode,
+                          isTaglineHidden: _isTaglineHidden,
+                          onTaglineHiddenChanged: (value) {
+                            setState(() => _isTaglineHidden = value);
+                          },
                         ),
                         const Gap(24),
                         const Divider(),
@@ -224,6 +297,8 @@ class _EditProfileViewState extends State<EditProfileView> {
     if (_userNameController.text != (user.userName ?? '')) return true;
     if (_titleController.text != (user.title ?? '')) return true;
     if (_bioController.text != (user.bio ?? '')) return true;
+    if (_taglineController.text != (user.tagline ?? '')) return true;
+    if (_isTaglineHidden != user.isTaglineHidden) return true;
 
     if (selectedProfileImage != null || profileImageRemoved) return true;
     if (selectedBackgroundImage != null || backgroundImageRemoved) return true;
@@ -240,6 +315,11 @@ class _EditProfileViewState extends State<EditProfileView> {
   }
 
   Future<void> _handleBackNavigation() async {
+    final currentState = context.read<EditProfileCubit>().state;
+    if (currentState is EditProfileLoading ||
+        currentState is EditProfileSuccess) {
+      return;
+    }
     if (!_hasUnsavedChanges) {
       Navigator.of(context).pop();
       return;
@@ -278,6 +358,8 @@ class _EditProfileViewState extends State<EditProfileView> {
       userName: _userNameController.text,
       title: _titleController.text,
       bio: _bioController.text,
+      tagline: _taglineController.text,
+      isTaglineHidden: _isTaglineHidden,
       profileImage: selectedProfileImage,
       backgroundImage: selectedBackgroundImage,
       removeProfileImage: profileImageRemoved,

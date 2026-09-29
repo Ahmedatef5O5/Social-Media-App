@@ -25,6 +25,8 @@ class EditProfileCubit extends Cubit<EditProfileState>
     required String userName,
     required String title,
     required String bio,
+    String? tagline,
+    required bool isTaglineHidden,
     File? profileImage,
     File? backgroundImage,
     bool removeProfileImage = false,
@@ -54,12 +56,18 @@ class EditProfileCubit extends Cubit<EditProfileState>
 
       final profileUploadResult = uploadResults[0];
       final backgroundUploadResult = uploadResults[1];
+      final normalizedTagline = tagline?.trim();
 
       final updates = <String, dynamic>{
         'name': name,
         'username': userName,
         'title': title,
         'bio': bio,
+        UserColumns.tagline:
+            (normalizedTagline == null || normalizedTagline.isEmpty)
+                ? null
+                : normalizedTagline,
+        UserColumns.isTaglineHidden: isTaglineHidden,
         if (socialLinks != null) UserColumns.socialLinks: socialLinks,
       };
 
@@ -100,6 +108,11 @@ class EditProfileCubit extends Cubit<EditProfileState>
           userName: userName,
           title: title,
           bio: bio,
+          tagline:
+              (normalizedTagline == null || normalizedTagline.isEmpty)
+                  ? null
+                  : normalizedTagline,
+          isTaglineHidden: isTaglineHidden,
           imageUrl: profileUploadResult?.secureUrl ?? oldUser.imageUrl,
           backgroundImageUrl:
               backgroundUploadResult?.secureUrl ?? oldUser.backgroundImageUrl,

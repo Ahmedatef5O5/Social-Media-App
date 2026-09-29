@@ -50,6 +50,7 @@ import '../../features/posts/services/posts_services.dart';
 import '../../features/posts/views/post_details_view.dart';
 import '../../features/posts/views/saved_posts_view.dart';
 import '../../features/profile/cubits/profile_posts_cubit/profile_posts_cubit.dart';
+import '../../features/profile/models/edit_profile_route_args.dart';
 import '../../features/settings/views/themes_select_view.dart';
 import '../../features/single_calls/models/call_model.dart';
 import '../../features/single_calls/views/dialing_view.dart';
@@ -295,8 +296,17 @@ class AppRouter {
       case AppRoutes.postThemesViewRoute:
         return _buildRoute(const PostThemesView(), settings: settings);
       case AppRoutes.fullScreenImageViewRoute:
+        final rawArgs = settings.arguments;
+        final PostsCubit? postsCubit =
+            rawArgs is Map ? rawArgs['postsCubit'] as PostsCubit? : null;
+
         return _buildRoute(
-          FullScreenImageViewer(),
+          postsCubit != null
+              ? BlocProvider.value(
+                value: postsCubit,
+                child: const FullScreenImageViewer(),
+              )
+              : const FullScreenImageViewer(),
           typeOfRoute: TypeOfRoute.fade,
           settings: settings,
         );
@@ -691,14 +701,26 @@ class AppRouter {
   static Route<dynamic> _profileAndSettingsRoutes(RouteSettings settings) {
     switch (settings.name) {
       case AppRoutes.editProfileViewRoute:
-        final user = _args<UserData>(settings);
-        if (user == null) {
-          return _errorRoute(settings, 'Missing UserData parameter');
+        final rawArgs = settings.arguments;
+        final EditProfileRouteArgs? editArgs =
+            rawArgs is EditProfileRouteArgs
+                ? rawArgs
+                : (rawArgs is UserData
+                    ? EditProfileRouteArgs(user: rawArgs)
+                    : _args<EditProfileRouteArgs>(settings));
+        if (editArgs == null) {
+          return _errorRoute(
+            settings,
+            'Missing EditProfileRouteArgs parameter',
+          );
         }
         return _buildRoute(
           BlocProvider(
             create: (context) => EditProfileCubit(EditProfileServices()),
-            child: EditProfileView(userData: user),
+            child: EditProfileView(
+              userData: editArgs.user,
+              autofocusTagline: editArgs.autofocusTagline,
+            ),
           ),
           settings: settings,
         );

@@ -9,6 +9,7 @@ import 'package:social_media_app/features/settings/widgets/drawer_item_widget.da
 import '../../../core/router/app_routes.dart';
 import '../../../core/toast/app_toast.dart';
 import '../../discover/views/discover_people_search_view.dart';
+import '../../profile/models/edit_profile_route_args.dart';
 import '../utils/drawer_header_shimmer.dart';
 import 'drawer_header_widget.dart';
 
@@ -55,7 +56,9 @@ class ProfileDrawer extends StatelessWidget {
                         rootNavigator: true,
                       ).pushNamed(
                         AppRoutes.editProfileViewRoute,
-                        arguments: profileState.user,
+                        arguments: EditProfileRouteArgs(
+                          user: profileState.user,
+                        ),
                       );
                       if (context.mounted) {
                         profileCubit.getProfileData(profileState.user.id);
