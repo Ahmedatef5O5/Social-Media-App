@@ -6,6 +6,7 @@ import '../../../features/single_calls/services/call_signaling_service.dart';
 import '../../../features/single_chats/helpers/call_actions.dart';
 import '../../services/active_call/active_call_session_data.dart';
 import '../../services/active_call/cubits/active_call_session_cubit.dart';
+import '../../services/permissions/app_permissions_service.dart';
 import '../../toast/app_toast.dart';
 
 class CallIconButton extends StatelessWidget {
@@ -64,6 +65,12 @@ class CallIconButton extends StatelessWidget {
 
   Future<void> _startCall(BuildContext context) async {
     final signaling = context.read<CallSignalingService>();
+    final granted = await AppPermissionsService.instance.ensureCallPermissions(
+      isVideo: type == CallType.video,
+      context: context,
+    );
+    if (!granted || !context.mounted) return;
+
     final receiverBusy = await signaling.isUserBusy(receiverId);
     if (!context.mounted) return;
 

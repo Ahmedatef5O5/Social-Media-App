@@ -5,9 +5,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../features/group_calls/services/group_call_signaling_service.dart';
 import '../../../features/single_calls/cubits/single_call_cubit/call_cubit.dart';
 import '../../services/active_call/active_call_session_data.dart';
+import '../../services/active_call/call_control_message.dart';
 import '../../services/active_call/call_navigation_helper.dart';
 import '../../services/active_call/call_termination_service.dart';
 import '../../services/active_call/cubits/active_call_session_cubit.dart';
+import '../../services/active_call/group_call_leave_or_end_resolver.dart';
 import '../../services/active_call/pip/call_pip_cubit.dart';
 import '../custom_loading_indicator.dart';
 import 'call_header_avatar_with_badge.dart';
@@ -84,22 +86,47 @@ class _ActiveCallHeaderContentState extends State<ActiveCallHeaderContent> {
 
     final session = widget.session;
     final durationText = _durationText;
+    final pipCubit = context.read<CallPipCubit>();
 
     if (session.isGroup) {
+      final room = pipCubit.state.room;
+      final remainingAfterLeave =
+          GroupCallLeaveOrEndResolver.remainingAfterLeave(
+            room: room,
+            knownParticipantCount: null,
+          );
+      final endForEveryone =
+          GroupCallLeaveOrEndResolver.shouldEndCallForEveryone(
+            room: room,
+            knownParticipantCount: null,
+          );
+      final sessionCubit = context.read<ActiveCallSessionCubit>();
+      final signaling = context.read<GroupCallSignalingService>();
+
       await CallTerminationService.endActiveCall(
-        pipCubit: context.read<CallPipCubit>(),
-        sessionCubit: context.read<ActiveCallSessionCubit>(),
+        pipCubit: pipCubit,
+        sessionCubit: sessionCubit,
         signalEnd:
-            () => context.read<GroupCallSignalingService>().endCall(
-              session.callId,
-              duration: durationText,
+            () => GroupCallLeaveOrEndResolver.signal(
+              remainingAfterLeave: remainingAfterLeave,
+              signaling: signaling,
+              callId: session.callId,
+              durationIfEnding: durationText,
             ),
+        endMessage:
+            endForEveryone
+                ? CallControlMessage.groupEnded(session.callId)
+                : null,
       );
     } else {
+      final sessionCubit = context.read<ActiveCallSessionCubit>();
+      final callCubit = context.read<CallCubit>();
+
       await CallTerminationService.endActiveCall(
-        pipCubit: context.read<CallPipCubit>(),
-        sessionCubit: context.read<ActiveCallSessionCubit>(),
-        signalEnd: () => context.read<CallCubit>().endCall(session.callId),
+        pipCubit: pipCubit,
+        sessionCubit: sessionCubit,
+        signalEnd: () => callCubit.endCall(session.callId),
+        endMessage: CallControlMessage.singleEnded(session.callId),
       );
     }
 

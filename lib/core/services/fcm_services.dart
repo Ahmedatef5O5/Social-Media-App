@@ -232,6 +232,30 @@ class FcmService {
     });
   }
 
+  Future<void> sendGroupCallCancelledNotification({
+    required String receiverFcmToken,
+    required String callId,
+    required String groupId,
+  }) async {
+    await _sendToEdgeFunction({
+      'type': 'group_call_cancelled',
+      'receiverFcmToken': receiverFcmToken,
+      'callId': callId,
+      'groupId': groupId,
+    });
+  }
+
+  Future<void> sendCallCancelledNotification({
+    required String receiverFcmToken,
+    required String callId,
+  }) async {
+    await _sendToEdgeFunction({
+      'type': 'call_cancelled',
+      'receiverFcmToken': receiverFcmToken,
+      'callId': callId,
+    });
+  }
+
   Future<void> notifyPostReact({
     required String receiverId,
     required String actorId,

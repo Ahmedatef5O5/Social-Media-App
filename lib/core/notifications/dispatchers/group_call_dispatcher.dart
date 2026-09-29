@@ -26,6 +26,7 @@ class GroupCallDispatcher {
     required String groupAvatarUrl,
     required String callerName,
     required String callType,
+    String callerId = '',
   }) async {
     Uint8List profileBitmap;
     try {
@@ -60,19 +61,25 @@ class GroupCallDispatcher {
       subtitle,
       NotificationDetails(android: androidDetails),
       payload:
-          'group_call|$callId|$groupId|$groupName|$groupAvatarUrl|$callType',
+          'group_call|$callId|$groupId|$groupName|$groupAvatarUrl|$callType|$callerId',
     );
   }
 
+  Future<void> cancelIncomingGroupCallNotification(String callId) async {
+    await _localNotifications.cancel(createNotificationId(callId));
+  }
+
   Future<void> handleIncomingGroupCallData(Map<String, dynamic> data) async {
-    final callerId =
+    var callerId =
         (data['callerId'] ??
                 data['initiatorId'] ??
                 data['initiator_id'] ??
                 data['senderId'])
             as String? ??
         '';
-    if (callerId == SupabaseProvider.idOrNull) return;
+    final currentUserId = SupabaseProvider.idOrNull;
+    if (currentUserId == null) return;
+    if (callerId.isNotEmpty && callerId == currentUserId) return;
     final callId = (data['callId'] ?? data['call_id']) as String? ?? '';
     final groupId = data['groupId'] as String? ?? '';
     final groupName = data['groupName'] as String? ?? 'Group';
@@ -80,6 +87,35 @@ class GroupCallDispatcher {
     final callerName = data['callerName'] as String? ?? 'Unknown';
     final callType = data['callType'] as String? ?? 'audio';
     final startedAt = data['startedAt'] as String?;
+
+    if (callerId.isEmpty) {
+      if (callId.isEmpty) return;
+      try {
+        final row =
+            await SupabaseProvider.client
+                .from('group_calls')
+                .select('initiator_id, status')
+                .eq('call_id', callId)
+                .maybeSingle();
+        if (row == null) return;
+        final initiatorId = row['initiator_id'] as String? ?? '';
+        final status = row['status'] as String? ?? '';
+        if (initiatorId.isEmpty || initiatorId == currentUserId) return;
+        if (status != 'ringing') return;
+        callerId = initiatorId;
+      } catch (e) {
+        debugPrint('[GroupCallDispatcher] initiator lookup failed: $e');
+        return;
+      }
+    }
+
+    if (IncomingCallNavigationGuard.shouldBlockIncomingGroupCall(
+      callId: callId,
+      initiatorId: callerId,
+      currentUserId: currentUserId,
+    )) {
+      return;
+    }
 
     if (!isAppInForeground()) {
       await showIncomingGroupCallNotification(
@@ -89,6 +125,7 @@ class GroupCallDispatcher {
         groupAvatarUrl: groupAvatarUrl ?? '',
         callerName: callerName,
         callType: callType,
+        callerId: callerId,
       );
     }
 

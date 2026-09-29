@@ -15,13 +15,20 @@ class CallPipCubit extends Cubit<CallPipState> {
   final LiveKitGroupCallSoloWatchdog _soloWatchdog =
       LiveKitGroupCallSoloWatchdog();
 
+  Timer? _heartbeatTimer;
+
   void attach({
     required Room room,
     required bool isVideo,
     bool isGroup = false,
     VoidCallback? onSoloTimeout,
+    Future<void> Function()? onHeartbeat,
+    Duration heartbeatInterval = const Duration(seconds: 15),
   }) {
     _soloWatchdog.stop();
+    _heartbeatTimer?.cancel();
+    _heartbeatTimer = null;
+
     final previous = state.room;
     if (previous != null && previous != room) {
       unawaited(previous.disconnect());
@@ -30,6 +37,14 @@ class CallPipCubit extends Cubit<CallPipState> {
 
     if (isGroup && onSoloTimeout != null) {
       _soloWatchdog.start(room: room, onSoloTimeout: onSoloTimeout);
+    }
+
+    if (isGroup && onHeartbeat != null) {
+      unawaited(onHeartbeat());
+      _heartbeatTimer = Timer.periodic(
+        heartbeatInterval,
+        (_) => unawaited(onHeartbeat()),
+      );
     }
   }
 
@@ -50,6 +65,8 @@ class CallPipCubit extends Cubit<CallPipState> {
 
   Future<void> reset() async {
     _soloWatchdog.stop();
+    _heartbeatTimer?.cancel();
+    _heartbeatTimer = null;
 
     final room = state.room;
     if (room != null) {
@@ -70,6 +87,7 @@ class CallPipCubit extends Cubit<CallPipState> {
   @override
   Future<void> close() {
     _soloWatchdog.stop();
+    _heartbeatTimer?.cancel();
     state.room?.disconnect();
     return super.close();
   }

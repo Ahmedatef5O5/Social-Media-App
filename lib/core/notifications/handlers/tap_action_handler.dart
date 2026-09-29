@@ -95,9 +95,25 @@ class TapActionHandler {
       final parts = payload.split('|');
       if (parts.length >= 6) {
         final callId = parts[1];
+        final callerId = parts.length >= 7 ? parts[6] : '';
+
+        if (IncomingCallNavigationGuard.shouldBlockIncomingGroupCall(
+          callId: callId,
+          initiatorId: callerId,
+          currentUserId: SupabaseProvider.idOrNull,
+        )) {
+          unawaited(
+            GroupCallDispatcher.instance.cancelIncomingGroupCallNotification(
+              callId,
+            ),
+          );
+          return;
+        }
         if (!IncomingCallNavigationGuard.claim(callId)) return;
         unawaited(
-          CallNotificationDispatcher.instance.cancelCallNotification(callId),
+          GroupCallDispatcher.instance.cancelIncomingGroupCallNotification(
+            callId,
+          ),
         );
 
         final call = GroupCallModel(
@@ -105,7 +121,7 @@ class TapActionHandler {
           groupId: parts[2],
           groupName: parts[3],
           groupAvatarUrl: parts[4],
-          initiatorId: '',
+          initiatorId: callerId,
           initiatorName: parts[3],
           status: GroupCallStatus.ringing,
           type: parts[5] == 'video' ? GroupCallType.video : GroupCallType.audio,

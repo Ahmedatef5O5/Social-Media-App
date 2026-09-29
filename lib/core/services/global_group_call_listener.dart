@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../features/group_calls/models/group_call_model.dart';
 import '../../features/group_calls/services/group_call_signaling_service.dart';
 import '../../features/group_calls/views/incoming_group_call_screen.dart';
 import '../bootstrap/app_bootstrap.dart';
@@ -71,27 +72,55 @@ class _GlobalGroupCallListenerState extends State<GlobalGroupCallListener> {
       calls,
     ) async {
       if (!mounted || calls.isEmpty) return;
-      final activeCall = calls.first;
-      if (activeCall.initiatorId == userId) return;
 
-      if (!IncomingCallNavigationGuard.claim(activeCall.callId)) return;
+      GroupCallModel? activeCall;
+      for (final call in calls) {
+        final blocked =
+            IncomingCallNavigationGuard.shouldBlockIncomingGroupCall(
+              callId: call.callId,
+              initiatorId: call.initiatorId,
+              currentUserId: userId,
+            );
+        if (!blocked) {
+          activeCall = call;
+          break;
+        }
+      }
+      if (activeCall == null) return;
+      final incomingCall = activeCall;
+
+      if (!IncomingCallNavigationGuard.claim(incomingCall.callId)) return;
 
       final isMember = await _signaling.isActiveGroupMember(
-        groupId: activeCall.groupId,
+        groupId: incomingCall.groupId,
         userId: userId,
       );
       if (!mounted || !isMember) {
-        IncomingCallNavigationGuard.release(activeCall.callId);
+        IncomingCallNavigationGuard.release(incomingCall.callId);
         return;
       }
 
-      navigatorKey.currentState
-          ?.push(
-            MaterialPageRoute(
-              builder: (_) => IncomingGroupCallScreen(call: activeCall),
-            ),
-          )
-          .then((_) => IncomingCallNavigationGuard.release(activeCall.callId));
+      // Re-check after the async gap: this user may have started a call of
+      // their own while membership was being verified.
+      if (IncomingCallNavigationGuard.isOutgoingGroupCallActive) {
+        IncomingCallNavigationGuard.release(incomingCall.callId);
+        return;
+      }
+
+      final pushed = navigatorKey.currentState?.push(
+        MaterialPageRoute(
+          builder: (_) => IncomingGroupCallScreen(call: incomingCall),
+        ),
+      );
+      if (pushed == null) {
+        IncomingCallNavigationGuard.release(incomingCall.callId);
+        return;
+      }
+      unawaited(
+        pushed.then(
+          (_) => IncomingCallNavigationGuard.release(incomingCall.callId),
+        ),
+      );
     });
   }
 

@@ -29,6 +29,14 @@ class ForegroundMessageHandler {
         return;
       }
 
+      // Call pushes carry the initiator as `callerId` (not `senderId`). Without
+      // this check the person who STARTED a call could receive their own
+      // "incoming call" echo.
+      final callerId = message.data['callerId'] as String?;
+      if (callerId != null && callerId == currentUserId) {
+        return;
+      }
+
       final type = message.data['notificationType'] as String? ?? 'chat';
 
       if (type == 'incoming_group_call') {
@@ -44,6 +52,25 @@ class ForegroundMessageHandler {
         await CallNotificationDispatcher.instance.handleIncomingCallData(
           message.data,
         );
+        return;
+      }
+
+      if (type == 'group_call_cancelled') {
+        final callId = message.data['callId'] as String?;
+        if (callId != null && callId.isNotEmpty) {
+          await GroupCallDispatcher.instance
+              .cancelIncomingGroupCallNotification(callId);
+        }
+        return;
+      }
+
+      if (type == 'call_cancelled') {
+        final callId = message.data['callId'] as String?;
+        if (callId != null && callId.isNotEmpty) {
+          await CallNotificationDispatcher.instance.cancelCallNotification(
+            callId,
+          );
+        }
         return;
       }
 
