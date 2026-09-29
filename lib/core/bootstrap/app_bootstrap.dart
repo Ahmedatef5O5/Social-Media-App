@@ -13,6 +13,7 @@ import 'package:social_media_app/core/firebase/firebase_background_handlers.dart
 import 'package:social_media_app/core/router/app_routes.dart';
 import 'package:social_media_app/core/secrets/app_secrets.dart';
 import 'package:social_media_app/core/services/network_status_service.dart';
+import 'package:social_media_app/core/services/permissions/app_permissions_service.dart';
 import 'package:social_media_app/core/presence/services/presence_service.dart';
 import 'package:social_media_app/features/settings/repository/settings_repository.dart';
 import 'package:social_media_app/firebase_options.dart';
@@ -123,10 +124,16 @@ Future<void> initializeCoreServices() async {
   await _safely('Presence', PresenceService.instance.init);
   _setupAuthListener();
 
-  unawaited(
-    _safely('FirebasePermissions', _requestFirebaseNotificationPermissions),
-  );
+  unawaited(_requestStartupPermissions());
   unawaited(_safely('Notifications', _initNotifications));
+}
+
+Future<void> _requestStartupPermissions() async {
+  await _safely('FirebasePermissions', _requestFirebaseNotificationPermissions);
+  await _safely(
+    'MediaPermissions',
+    AppPermissionsService.instance.requestInitialMediaPermissionsIfNeeded,
+  );
 }
 
 Future<void> _safely(String label, Future<void> Function() step) async {
@@ -193,10 +200,18 @@ void _setupAuthListener() {
         await PresenceService.instance.init();
         final context = navigatorKey.currentContext;
 
-        if (context != null) {
-          if (!context.mounted) return;
+        if (context != null && context.mounted) {
           _refetchSessionCubits(context);
         }
+
+        unawaited(
+          _safely(
+            'MediaPermissions',
+            AppPermissionsService
+                .instance
+                .requestInitialMediaPermissionsIfNeeded,
+          ),
+        );
         return;
       }
       final bool looksLikeSignOut =

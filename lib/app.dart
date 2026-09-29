@@ -2,11 +2,10 @@ import 'package:device_preview/device_preview.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:social_media_app/core/router/app_router.dart';
 import 'package:social_media_app/core/router/app_routes.dart';
 import 'package:social_media_app/core/services/active_screen_tracker.dart';
-import 'package:social_media_app/core/services/call_foreground_task_handler.dart';
+import 'package:social_media_app/core/services/call_foreground_service.dart';
 import 'package:social_media_app/core/notifications/notification_service.dart';
 import 'package:social_media_app/core/supabase/supabase_provider.dart';
 import 'package:social_media_app/core/themes/cubits/theme_cubit.dart';
@@ -130,12 +129,11 @@ class MyApp extends StatelessWidget {
                                   'userName': callState.currentUserName,
                                 },
                               );
-                              await FlutterForegroundTask.startService(
+                              await CallForegroundService.start(
                                 serviceId: 101,
-                                notificationTitle: 'Ongoing Call',
-                                notificationText: 'Tap to return to the call',
-                                callback:
-                                    startCallServiceCallback, // top-level function to be added in core/services
+                                title: 'Ongoing Call',
+                                text: 'Tap to return to the call',
+                                isVideo: callState.call.type == CallType.video,
                               );
                             } else if (callState is CallEndedState) {
                               context
@@ -143,7 +141,7 @@ class MyApp extends StatelessWidget {
                                   .endSession();
                               await context.read<CallPipCubit>().reset();
 
-                              await FlutterForegroundTask.stopService();
+                              await CallForegroundService.stop();
                               nav.popUntil((route) {
                                 return route.settings.name !=
                                         AppRoutes.callRoute &&
@@ -171,7 +169,7 @@ class MyApp extends StatelessWidget {
                               child: ConnectivityBanner(),
                             ),
                             const AppToastOverlay(),
-                            const CallPipOverlay(), // 1:1 + group calls (LiveKit)
+                            const CallPipOverlay(),
                             const ActiveCallHeaderWidget(),
                           ],
                         ),

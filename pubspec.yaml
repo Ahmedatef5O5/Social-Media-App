@@ -14,6 +14,7 @@ dependencies:
   audio_session: 0.1.25
   audioplayers: ^6.6.0
   cached_network_image: ^3.4.1
+  characters: ^1.4.1
   collection: ^1.18.0
   crypto: ^3.0.6
   cupertino_icons: ^1.0.8
@@ -55,6 +56,7 @@ dependencies:
   open_filex: ^4.7.0
   path: ^1.9.1
   path_provider: ^2.1.5
+  permission_handler: ^11.4.0
   persistent_bottom_nav_bar_v2: ^6.3.1
   receive_sharing_intent: 1.8.1
   record: ^6.2.0
