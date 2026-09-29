@@ -224,35 +224,39 @@ class PostHeaderWidget extends StatelessWidget {
           ],
         ),
       ),
-      subtitle: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            post.privacyType.icon,
-            size: 11,
-            color: Theme.of(
-              context,
-            ).colorScheme.onSurface.withValues(alpha: 0.4),
-          ),
-
-          const SizedBox(width: 2.8),
-          Text(
-            FormattedDate.getFormattedDate(
-              DateTime.parse(post.createdAt).toLocal().toIso8601String(),
-            ),
-            style: Theme.of(context).textTheme.titleSmall!.copyWith(
-              fontWeight: FontWeight.w500,
-              fontSize: 10.3,
+      subtitle: FittedBox(
+        fit: BoxFit.scaleDown,
+        alignment: AlignmentDirectional.centerStart,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              post.privacyType.icon,
+              size: 11,
               color: Theme.of(
                 context,
               ).colorScheme.onSurface.withValues(alpha: 0.4),
             ),
-          ),
-          if (showPinnedBadge) ...[
-            const SizedBox(width: 6),
-            const PinnedPostBadge(),
+
+            const SizedBox(width: 2.8),
+            Text(
+              FormattedDate.getFormattedDate(
+                DateTime.parse(post.createdAt).toLocal().toIso8601String(),
+              ),
+              style: Theme.of(context).textTheme.titleSmall!.copyWith(
+                fontWeight: FontWeight.w500,
+                fontSize: 10.3,
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withValues(alpha: 0.4),
+              ),
+            ),
+            if (showPinnedBadge) ...[
+              const SizedBox(width: 6),
+              const PinnedPostBadge(),
+            ],
           ],
-        ],
+        ),
       ),
       trailing: buildTrailingWidget(),
     );

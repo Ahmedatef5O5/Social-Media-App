@@ -224,24 +224,34 @@ class CommentsInlineSectionState extends State<CommentsInlineSection> {
                   ),
                   const SizedBox(width: 12),
                   if (post.reactions.isNotEmpty)
-                    GestureDetector(
-                      onTap: () {
-                        showModalBottomSheet(
-                          context: context,
-                          isScrollControlled: true,
-                          backgroundColor: Colors.transparent,
-                          builder:
-                              (context) =>
-                                  PostReactionsBottomSheet(postId: post.id),
-                        );
-                      },
-                      child: CommentsReactionAvatarStack(
-                        imageUrls: post.likersImages ?? [],
-                        totalReactions: post.likes?.length ?? 0,
-                        reactions: post.reactions,
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsetsDirectional.only(end: 4),
+                        child: Align(
+                          alignment: AlignmentDirectional.centerStart,
+                          child: GestureDetector(
+                            onTap: () {
+                              showModalBottomSheet(
+                                context: context,
+                                isScrollControlled: true,
+                                backgroundColor: Colors.transparent,
+                                builder:
+                                    (context) => PostReactionsBottomSheet(
+                                      postId: post.id,
+                                    ),
+                              );
+                            },
+                            child: CommentsReactionAvatarStack(
+                              imageUrls: post.likersImages ?? [],
+                              totalReactions: post.likes?.length ?? 0,
+                              reactions: post.reactions,
+                            ),
+                          ),
+                        ),
                       ),
-                    ),
-                  const Spacer(),
+                    )
+                  else
+                    const Spacer(),
                   CommentSortMenu(
                     current: cubit.currentSort,
                     onChanged: (option) => _changeSort(context, option),

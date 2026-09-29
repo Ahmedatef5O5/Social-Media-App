@@ -152,7 +152,7 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
                         });
                       },
                     )
-                    : null,
+                    : widget.suffixIcon,
             border: borderStyle,
             enabledBorder: borderStyle,
             focusedBorder: borderStyle.copyWith(

@@ -210,26 +210,30 @@ class SharedPostHeaderWidget extends StatelessWidget {
                   ),
                 ),
                 const Gap(3),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      FormattedDate.getFormattedDate(
-                        DateTime.parse(
-                          sharedPost.createdAt,
-                        ).toLocal().toIso8601String(),
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: AlignmentDirectional.centerStart,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        FormattedDate.getFormattedDate(
+                          DateTime.parse(
+                            sharedPost.createdAt,
+                          ).toLocal().toIso8601String(),
+                        ),
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w500,
+                          fontSize: 9.5,
+                          color: colorScheme.onSurface.withValues(alpha: 0.4),
+                        ),
                       ),
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w500,
-                        fontSize: 9.5,
-                        color: colorScheme.onSurface.withValues(alpha: 0.4),
-                      ),
-                    ),
-                    if (showPinnedBadge) ...[
-                      const Gap(6),
-                      const PinnedPostBadge(),
+                      if (showPinnedBadge) ...[
+                        const Gap(6),
+                        const PinnedPostBadge(),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
               ],
             ),

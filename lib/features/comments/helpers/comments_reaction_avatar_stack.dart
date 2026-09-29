@@ -23,12 +23,6 @@ class CommentsReactionAvatarStack extends StatelessWidget {
     }
 
     const int maxVisible = 6;
-    final int visibleCount =
-        imageUrls.length > maxVisible ? maxVisible : imageUrls.length;
-    final int remainingCount =
-        totalReactions > visibleCount ? totalReactions - visibleCount : 0;
-    final bool showRemaining = remainingCount > 0;
-
     const double avatarSize = 28;
     const double overlapOffset = 20;
 
@@ -43,70 +37,97 @@ class CommentsReactionAvatarStack extends StatelessWidget {
         isDark ? colorScheme.onSurface : colorScheme.onSurface;
 
     final topEmojis = reactions.map((r) => r.emoji).toList();
-    final int totalCircles = visibleCount + (showRemaining ? 1 : 0);
-    final double stackWidth = (totalCircles - 1) * overlapOffset + avatarSize;
 
-    return SizedBox(
-      height: avatarSize,
-      width: stackWidth,
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          if (showRemaining)
-            Positioned(
-              left: visibleCount * overlapOffset,
-              child: Container(
-                width: avatarSize,
-                height: avatarSize,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: remainingBgColor,
-                  border: Border.all(color: borderColor, width: 2.0),
-                ),
-                child: Center(
-                  child: Text(
-                    '+$remainingCount',
-                    style: TextStyle(
-                      fontSize: 10.5,
-                      fontWeight: FontWeight.w700,
-                      color: remainingTextColor,
-                      letterSpacing: -0.5,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          for (int i = visibleCount - 1; i >= 0; i--)
-            Positioned(
-              left: i * overlapOffset,
-              child: Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  Container(
-                    width: avatarSize,
-                    height: avatarSize,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: remainingBgColor,
-                      border: Border.all(color: borderColor, width: 2.0),
-                    ),
-                    child: ClipOval(child: _buildImage(imageUrls[i])),
-                  ),
-                  if (topEmojis.isNotEmpty)
-                    Positioned(
-                      right: -2,
-                      bottom: -2,
-                      child: _buildEmojiBadge(
-                        topEmojis[i % topEmojis.length],
-                        borderColor,
-                        isDark,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        int visibleCount =
+            imageUrls.length > maxVisible ? maxVisible : imageUrls.length;
+
+        if (constraints.maxWidth.isFinite && constraints.maxWidth > 0) {
+          final int maxCirclesByWidth =
+              ((constraints.maxWidth - avatarSize) / overlapOffset).floor() + 1;
+
+          while (visibleCount > 1 &&
+              (visibleCount + (totalReactions > visibleCount ? 1 : 0)) >
+                  maxCirclesByWidth) {
+            visibleCount--;
+          }
+        }
+
+        final int remainingCount =
+            totalReactions > visibleCount ? totalReactions - visibleCount : 0;
+        final bool showRemaining = remainingCount > 0;
+        final int totalCircles = visibleCount + (showRemaining ? 1 : 0);
+        final double stackWidth =
+            (totalCircles - 1) * overlapOffset + avatarSize;
+
+        return FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: AlignmentDirectional.centerStart,
+          child: SizedBox(
+            height: avatarSize,
+            width: stackWidth,
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                if (showRemaining)
+                  Positioned(
+                    left: visibleCount * overlapOffset,
+                    child: Container(
+                      width: avatarSize,
+                      height: avatarSize,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: remainingBgColor,
+                        border: Border.all(color: borderColor, width: 2.0),
+                      ),
+                      child: Center(
+                        child: Text(
+                          '+$remainingCount',
+                          style: TextStyle(
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.w700,
+                            color: remainingTextColor,
+                            letterSpacing: -0.5,
+                          ),
+                        ),
                       ),
                     ),
-                ],
-              ),
+                  ),
+                for (int i = visibleCount - 1; i >= 0; i--)
+                  Positioned(
+                    left: i * overlapOffset,
+                    child: Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        Container(
+                          width: avatarSize,
+                          height: avatarSize,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: remainingBgColor,
+                            border: Border.all(color: borderColor, width: 2.0),
+                          ),
+                          child: ClipOval(child: _buildImage(imageUrls[i])),
+                        ),
+                        if (topEmojis.isNotEmpty)
+                          Positioned(
+                            right: -2,
+                            bottom: -2,
+                            child: _buildEmojiBadge(
+                              topEmojis[i % topEmojis.length],
+                              borderColor,
+                              isDark,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+              ],
             ),
-        ],
-      ),
+          ),
+        );
+      },
     );
   }
 
