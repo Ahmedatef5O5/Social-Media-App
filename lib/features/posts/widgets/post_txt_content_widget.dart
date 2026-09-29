@@ -33,7 +33,8 @@ class _PostTxtContentWidgetState extends State<PostTxtContentWidget> {
         (widget.post.imageUrl?.isNotEmpty ?? false) ||
         (widget.post.videoUrl?.isNotEmpty ?? false) ||
         (widget.post.fileUrl?.isNotEmpty ?? false);
-    final int maxLines = hasMedia ? 2 : 5;
+
+    final int maxLines = hasMedia ? 3 : 5;
 
     final bool isArabic = ChatHelper.isArabic(postText);
     final TextDirection textDirection =

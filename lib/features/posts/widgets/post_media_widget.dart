@@ -28,7 +28,12 @@ class PostMediaWidget extends StatelessWidget {
             onTap:
                 () => Navigator.of(context, rootNavigator: true).pushNamed(
                   AppRoutes.fullScreenImageViewRoute,
-                  arguments: {'url': post.imageUrl},
+                  arguments: {
+                    'url': post.imageUrl,
+                    'tag': 'post-image-${post.id}',
+                    'postId': post.id,
+                    'postsCubit': postsCubit,
+                  },
                 ),
             child: AspectRatio(
               aspectRatio: post.mediaAspectRatio,
