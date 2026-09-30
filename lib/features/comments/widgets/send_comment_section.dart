@@ -123,7 +123,9 @@ class _SendCommentSectionState extends State<SendCommentSection> {
       cubit.editComment(
         commentId: widget.editingComment!.id,
         newText: textComment,
+        mentions: mentions,
       );
+      _commentController.clearMentions();
       _commentController.clear();
       widget.onEditSaved?.call();
       return;

@@ -211,14 +211,7 @@ class GroupMessagingService {
     required String groupId,
     List<MentionRef> mentions = const [],
   }) async {
-    await _supabase
-        .from(SupabaseConstants.groupMessages)
-        .update({
-          if (isCaptionEdit) 'caption': newText else 'message_text': newText,
-          'is_edited': true,
-          'updated_at': DateTime.now().toIso8601String(),
-        })
-        .eq('id', messageId);
+    final nowIso = DateTime.now().toUtc().toIso8601String();
 
     await _supabase
         .from(SupabaseConstants.groupMessageMentions)
@@ -238,11 +231,21 @@ class GroupMessagingService {
                         m.mentionedUserId,
                     GroupMessageMentionColumns.startIndex: m.startIndex,
                     GroupMessageMentionColumns.endIndex: m.endIndex,
+                    GroupMessageMentionColumns.createdAt: nowIso,
                   },
                 )
                 .toList(),
           );
     }
+
+    await _supabase
+        .from(SupabaseConstants.groupMessages)
+        .update({
+          if (isCaptionEdit) 'caption': newText else 'message_text': newText,
+          'is_edited': true,
+          'updated_at': nowIso,
+        })
+        .eq('id', messageId);
   }
 
   Future<void> deleteGroupMessage(String messageId) async {

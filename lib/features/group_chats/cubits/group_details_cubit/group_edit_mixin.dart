@@ -30,16 +30,47 @@ mixin GroupEditMixin on Cubit<GroupDetailsState> {
     final isCaptionEdit =
         target.messageType == 'image' || target.messageType == 'video';
 
+    final nowUtc = DateTime.now().toUtc();
+    final stampedMentions =
+        mentions
+            .map(
+              (r) => MentionRef(
+                mentionedUserId: r.mentionedUserId,
+                startIndex: r.startIndex,
+                endIndex: r.endIndex,
+                createdAt: nowUtc,
+              ),
+            )
+            .toList();
+
+    final selfCubit = this as GroupDetailsCubit;
+    selfCubit._localEditedMentions[messageId] = stampedMentions;
+    selfCubit._mentionsCache[messageId] = stampedMentions;
+
     cachedMessages = GroupDetailsCubit._reconciler.applyFieldUpdate(
       cachedMessages,
       (m) {
         if (m.id != messageId) return m;
         return isCaptionEdit
-            ? m.copyWith(caption: trimmed, isEdited: true)
-            : m.copyWith(text: trimmed, isEdited: true);
+            ? m.copyWith(
+              caption: trimmed,
+              mentions: stampedMentions,
+              isEdited: true,
+            )
+            : m.copyWith(
+              text: trimmed,
+              mentions: stampedMentions,
+              isEdited: true,
+            );
       },
     );
     _emitLoaded();
+    if (selfCubit._messagesSnapshotKey != null) {
+      selfCubit._persistMessagesSnapshot(
+        selfCubit._messagesSnapshotKey!,
+        cachedMessages,
+      );
+    }
 
     try {
       await _services.editGroupMessage(
@@ -47,7 +78,7 @@ mixin GroupEditMixin on Cubit<GroupDetailsState> {
         newText: trimmed,
         isCaptionEdit: isCaptionEdit,
         groupId: group.id,
-        mentions: mentions,
+        mentions: stampedMentions,
       );
     } catch (e) {
       debugPrint('Error editing group message: $e');

@@ -851,19 +851,24 @@ class CommentsCubit extends Cubit<CommentsState> {
   Future<void> editComment({
     required String commentId,
     required String newText,
+    List<MentionRef> mentions = const [],
   }) async {
     final trimmed = newText.trim();
     if (trimmed.isEmpty) return;
 
     final resolvedId = resolveId(commentId);
 
-    comments = comments.map((c) => _applyEdit(c, resolvedId, trimmed)).toList();
+    comments =
+        comments
+            .map((c) => _applyEdit(c, resolvedId, trimmed, mentions))
+            .toList();
     if (!isClosed) emit(CommentsUiChanged());
 
     try {
       await _commentsService.editComment(
-        commentId: commentId,
-        newText: newText,
+        commentId: resolvedId,
+        newText: trimmed,
+        mentions: mentions,
       );
     } catch (e) {
       debugPrint('Error editing comment: $e');
@@ -915,16 +920,21 @@ class CommentsCubit extends Cubit<CommentsState> {
     );
   }
 
-  CommentModel _applyEdit(CommentModel node, String commentId, String newText) {
+  CommentModel _applyEdit(
+    CommentModel node,
+    String commentId,
+    String newText,
+    List<MentionRef> mentions,
+  ) {
     final updated =
         node.id == commentId
-            ? node.copyWith(text: newText, isEdited: true)
+            ? node.copyWith(text: newText, mentions: mentions, isEdited: true)
             : node;
     if (updated.replies.isEmpty) return updated;
     return updated.copyWith(
       replies:
           updated.replies
-              .map(((r) => _applyEdit(r, commentId, newText)))
+              .map((r) => _applyEdit(r, commentId, newText, mentions))
               .toList(),
     );
   }

@@ -10,7 +10,7 @@ import '../models/comment_type.dart';
 class CommentsService {
   final _supabase = SupabaseProvider.client;
   static const String _selectWithRelations =
-      '*, users($_authorFields), comment_reactions(*), comment_mentions(${CommentMentionColumns.mentionedUserId},${CommentMentionColumns.startIndex},${CommentMentionColumns.endIndex})';
+      '*, users($_authorFields), comment_reactions(*), comment_mentions(${CommentMentionColumns.mentionedUserId},${CommentMentionColumns.startIndex},${CommentMentionColumns.endIndex},${CommentMentionColumns.createdAt})';
   static const String _authorFields =
       '${UserColumns.name},${UserColumns.imageUrl}';
 
@@ -117,13 +117,39 @@ class CommentsService {
   Future<void> editComment({
     required String commentId,
     required String newText,
+    List<MentionRef> mentions = const [],
   }) async {
+    final nowIso = DateTime.now().toUtc().toIso8601String();
+
+    await _supabase
+        .from('comment_mentions')
+        .delete()
+        .eq(CommentMentionColumns.commentId, commentId);
+
+    if (mentions.isNotEmpty) {
+      await _supabase
+          .from('comment_mentions')
+          .insert(
+            mentions
+                .map(
+                  (m) => {
+                    CommentMentionColumns.commentId: commentId,
+                    CommentMentionColumns.mentionedUserId: m.mentionedUserId,
+                    CommentMentionColumns.startIndex: m.startIndex,
+                    CommentMentionColumns.endIndex: m.endIndex,
+                    CommentMentionColumns.createdAt: nowIso,
+                  },
+                )
+                .toList(),
+          );
+    }
+
     await _supabase
         .from(SupabaseConstants.comments)
         .update({
           CommentColumns.text: newText,
           CommentColumns.isEdited: true,
-          CommentColumns.updatedAt: DateTime.now().toIso8601String(),
+          CommentColumns.updatedAt: nowIso,
         })
         .eq(CommentColumns.id, commentId);
   }

@@ -14,6 +14,8 @@ mixin GroupMentionsMixin on Cubit<GroupDetailsState> {
   void _emitLoaded({bool force = false});
   StreamSubscription? _mentionsSubscription;
 
+  final Map<String, List<MentionRef>> _localEditedMentions = {};
+
   void _listenMentions() {
     _mentionsSubscription?.cancel();
     _mentionsSubscription = _services.getMentionsStream(group.id).listen((
@@ -25,6 +27,16 @@ mixin GroupMentionsMixin on Cubit<GroupDetailsState> {
         if (msgId == null) continue;
         _mentionsCache[msgId] ??= [];
         _mentionsCache[msgId]!.add(MentionRef.fromMap(m));
+      }
+      for (final key in _mentionsCache.keys.toList()) {
+        _mentionsCache[key] = MentionRef.keepLatestBatch(_mentionsCache[key]!);
+      }
+      for (final entry in _localEditedMentions.entries) {
+        if (entry.value.isEmpty) {
+          _mentionsCache[entry.key] = const [];
+        } else {
+          _mentionsCache[entry.key] = entry.value;
+        }
       }
       cachedMessages = GroupDetailsCubit._reconciler.applyFieldUpdate(
         cachedMessages,

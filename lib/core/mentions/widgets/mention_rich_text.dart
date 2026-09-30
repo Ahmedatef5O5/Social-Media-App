@@ -100,15 +100,62 @@ class _MentionRichTextState extends State<MentionRichText> {
   }
 
   List<InlineSpan> _buildSpans({
+    required BuildContext context,
     required TextStyle defaultStyle,
     required TextStyle mentionStyle,
+    required Color resolvedMentionColor,
+    bool forMeasurement = false,
   }) {
     final text = widget.text;
-    final mentions = List.of(widget.mentions)
-      ..sort((a, b) => a.startIndex.compareTo(b.startIndex));
+    final mentions = MentionRef.keepLatestBatch(widget.mentions);
 
     final spans = <InlineSpan>[];
     int cursor = 0;
+
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryColor = Theme.of(context).primaryColor;
+    final bool isOnPrimaryBubble = resolvedMentionColor == Colors.white;
+    final bool isWhiteOverlayText =
+        !isOnPrimaryBubble && defaultStyle.color == Colors.white;
+
+    final double baseFontSize = defaultStyle.fontSize ?? 14.0;
+    final bool isCompact = baseFontSize <= 11.0;
+    final double pillFontSize = (baseFontSize * 0.88).clamp(5.5, 26.0);
+    final double hPad = isCompact ? 3.5 : 6.0;
+    final double vPad = isCompact ? 0.5 : 1.2;
+    final double borderRadius = isCompact ? 4.0 : 6.0;
+
+    final Color pillBgColor =
+        isOnPrimaryBubble
+            ? Colors.white.withValues(alpha: 0.22)
+            : isWhiteOverlayText
+            ? Color.alphaBlend(
+              primaryColor.withValues(alpha: 0.18),
+              Colors.white.withValues(alpha: 0.92),
+            )
+            : resolvedMentionColor.withValues(alpha: isDark ? 0.20 : 0.12);
+
+    final Color pillBorderColor =
+        isOnPrimaryBubble
+            ? Colors.white.withValues(alpha: 0.48)
+            : isWhiteOverlayText
+            ? primaryColor.withValues(alpha: 0.55)
+            : resolvedMentionColor.withValues(alpha: isDark ? 0.45 : 0.28);
+
+    final Color pillTextColor =
+        isOnPrimaryBubble
+            ? Colors.white
+            : isWhiteOverlayText
+            ? primaryColor
+            : resolvedMentionColor;
+
+    final TextStyle pillTextStyle = mentionStyle.copyWith(
+      color: pillTextColor,
+      fontSize: pillFontSize,
+      fontWeight: FontWeight.w700,
+      height: 1.15,
+      decoration: TextDecoration.none,
+    );
 
     void addLinkifiedSegment(String rawSegment) {
       final segment = EmojiHelper.normalize(rawSegment);
@@ -124,13 +171,16 @@ class _MentionRichTextState extends State<MentionRichText> {
                 decoration: TextDecoration.underline,
                 decorationColor: widget.linkColor ?? Colors.blue,
               ),
-              recognizer: _recognizerFor(() async {
-                if (widget.onLinkTap != null) {
-                  await widget.onLinkTap!(element.url);
-                } else {
-                  await _openLink(element.url);
-                }
-              }),
+              recognizer:
+                  forMeasurement
+                      ? null
+                      : _recognizerFor(() async {
+                        if (widget.onLinkTap != null) {
+                          await widget.onLinkTap!(element.url);
+                        } else {
+                          await _openLink(element.url);
+                        }
+                      }),
             ),
           );
         } else {
@@ -149,20 +199,43 @@ class _MentionRichTextState extends State<MentionRichText> {
       addLinkifiedSegment(text.substring(cursor, mention.startIndex));
 
       final mentionSlice = text.substring(mention.startIndex, mention.endIndex);
-      spans.add(
-        TextSpan(
-          text: EmojiHelper.normalize(mentionSlice),
-          style: mentionStyle,
-          recognizer: _recognizerFor(
-            () => widget.onMentionTap(
-              mention.mentionedUserId,
-              mentionSlice.startsWith('@')
-                  ? mentionSlice.substring(1)
-                  : mentionSlice,
+      final cleanName =
+          mentionSlice.startsWith('@')
+              ? mentionSlice.substring(1).trim()
+              : mentionSlice.trim();
+      final displayMentionText = '@${EmojiHelper.normalize(cleanName)}';
+
+      if (forMeasurement) {
+        spans.add(
+          TextSpan(text: ' $displayMentionText ', style: pillTextStyle),
+        );
+      } else {
+        final mentionDirection = ChatHelper.getTextDirection(cleanName);
+        spans.add(
+          WidgetSpan(
+            alignment: PlaceholderAlignment.middle,
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap:
+                  () => widget.onMentionTap(mention.mentionedUserId, cleanName),
+              child: Container(
+                margin: const EdgeInsets.symmetric(horizontal: 1.5),
+                padding: EdgeInsets.symmetric(horizontal: hPad, vertical: vPad),
+                decoration: BoxDecoration(
+                  color: pillBgColor,
+                  borderRadius: BorderRadius.circular(borderRadius),
+                  border: Border.all(color: pillBorderColor, width: 0.8),
+                ),
+                child: Text(
+                  displayMentionText,
+                  textDirection: mentionDirection,
+                  style: pillTextStyle,
+                ),
+              ),
             ),
           ),
-        ),
-      );
+        );
+      }
       cursor = mention.endIndex;
     }
     addLinkifiedSegment(text.substring(cursor));
@@ -234,14 +307,13 @@ class _MentionRichTextState extends State<MentionRichText> {
     final mentionStyle = defaultStyle.copyWith(
       color: resolvedMentionColor,
       fontWeight: FontWeight.w700,
-      decoration: TextDecoration.underline,
-      decorationColor: resolvedMentionColor.withValues(alpha: 0.5),
-      decorationThickness: 1,
     );
 
     final spans = _buildSpans(
+      context: context,
       defaultStyle: defaultStyle,
       mentionStyle: mentionStyle,
+      resolvedMentionColor: resolvedMentionColor,
     );
     final normalizedFullText = EmojiHelper.normalize(widget.text);
     final direction = ChatHelper.getTextDirection(normalizedFullText);
@@ -273,8 +345,19 @@ class _MentionRichTextState extends State<MentionRichText> {
     final effectiveMaxWidth =
         widget.maxTextWidth ?? MediaQuery.of(context).size.width * 0.75;
 
+    final measurementSpan = TextSpan(
+      style: defaultStyle,
+      children: _buildSpans(
+        context: context,
+        defaultStyle: defaultStyle,
+        mentionStyle: mentionStyle,
+        resolvedMentionColor: resolvedMentionColor,
+        forMeasurement: true,
+      ),
+    );
+
     final painter = TextPainter(
-      text: span,
+      text: measurementSpan,
       maxLines: widget.collapsedMaxLines,
       textDirection: direction,
     )..layout(maxWidth: effectiveMaxWidth);

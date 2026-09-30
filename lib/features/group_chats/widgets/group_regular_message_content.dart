@@ -8,8 +8,8 @@ import '../../../core/attachment/widgets/file_message_bubble.dart';
 import '../../../core/helpers/link_color_helper.dart';
 import '../../../core/link/widgets/message_link_preview.dart';
 import '../../../core/supabase/supabase_provider.dart';
+import '../../../core/toast/app_toast.dart';
 import '../../gifs/widgets/gif_message_bubble.dart';
-import '../../home/cubits/home_cubit/home_cubit.dart';
 import '../../single_chats/widgets/image_message_widget.dart';
 import '../../single_chats/widgets/video_message_widget.dart';
 import '../../stickers/widgets/sticker_message_bubble.dart';
@@ -344,12 +344,16 @@ class _MentionRichText extends StatelessWidget {
               query.isNotEmpty ? _uncollapsedMaxLines : collapsedMaxLines,
           onMentionTap: (userId, name) {
             final currentUserId = SupabaseProvider.idOrNull;
-            final navController = context.read<HomeCubit>().navController;
 
             if (userId == currentUserId) {
-              if (navController != null) {
-                Navigator.of(context).popUntil((route) => route.isFirst);
-                navController.jumpToTab(3);
+              if (message.senderId == currentUserId) {
+                AppToast.info('You mentioned yourself in this message');
+              } else {
+                final senderName =
+                    message.senderName.trim().isNotEmpty
+                        ? message.senderName.trim()
+                        : 'Someone';
+                AppToast.info('$senderName mentioned you in this message');
               }
             } else {
               Navigator.of(

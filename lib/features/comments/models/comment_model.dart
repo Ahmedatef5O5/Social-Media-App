@@ -106,9 +106,11 @@ class CommentModel {
 
     final List<MentionRef> mentions =
         map['comment_mentions'] != null
-            ? (map['comment_mentions'] as List<dynamic>)
-                .map((m) => MentionRef.fromMap(m as Map<String, dynamic>))
-                .toList()
+            ? MentionRef.keepLatestBatch(
+              (map['comment_mentions'] as List<dynamic>)
+                  .map((m) => MentionRef.fromMap(m as Map<String, dynamic>))
+                  .toList(),
+            )
             : [];
 
     return CommentModel(

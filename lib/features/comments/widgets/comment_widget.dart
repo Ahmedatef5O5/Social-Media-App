@@ -239,12 +239,16 @@ class _CommentWidgetState extends State<CommentWidget>
 
   void _openMentionPreview(String userId, String name) {
     final currentUserId = SupabaseProvider.id;
-    final navController = context.read<HomeCubit>().navController;
 
     if (userId == currentUserId) {
-      if (navController != null) {
-        Navigator.of(context).popUntil((route) => route.isFirst);
-        navController.jumpToTab(3);
+      if (widget.comment.authorId == currentUserId) {
+        AppToast.info('You mentioned yourself in this comment');
+      } else {
+        final authorName =
+            (widget.comment.authorName?.trim().isNotEmpty ?? false)
+                ? widget.comment.authorName!.trim()
+                : 'Someone';
+        AppToast.info('$authorName mentioned you in this comment');
       }
     } else {
       Navigator.of(

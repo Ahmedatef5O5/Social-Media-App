@@ -8,7 +8,6 @@ import '../../../core/cache/repository/media_cache_repository.dart';
 import '../../../core/mentions/widgets/mention_rich_text.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/supabase/supabase_provider.dart';
-import '../../home/cubits/home_cubit/home_cubit.dart';
 import '../cubits/stories_cubit/stories_cubit.dart';
 import '../cubits/story_reaction_cubit/story_reaction_cubit.dart';
 import '../cubits/story_reply_cubit/story_reply_cubit.dart';
@@ -374,10 +373,14 @@ class _SingleUserStoryViewState extends State<SingleUserStoryView>
     final currentUserId = SupabaseProvider.idOrNull;
 
     if (userId == currentUserId) {
-      final navController = context.read<HomeCubit>().navController;
-      Navigator.of(context).popUntil((route) => route.isFirst);
-      if (navController != null) {
-        navController.jumpToTab(3);
+      if (widget.story.authorId == currentUserId) {
+        AppToast.info('You mentioned yourself in this story');
+      } else {
+        final authorName =
+            widget.story.authorName.trim().isNotEmpty
+                ? widget.story.authorName.trim()
+                : 'Someone';
+        AppToast.info('$authorName mentioned you in this story');
       }
     } else {
       _pauseStory();

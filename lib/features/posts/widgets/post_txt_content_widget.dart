@@ -7,6 +7,7 @@ import '../../../core/link/widgets/message_link_preview.dart';
 import '../../../core/mentions/widgets/mention_rich_text.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/supabase/supabase_provider.dart';
+import '../../../core/toast/app_toast.dart';
 import '../models/post_model.dart';
 
 class PostTxtContentWidget extends StatefulWidget {
@@ -96,7 +97,23 @@ class _PostTxtContentWidgetState extends State<PostTxtContentWidget> {
                         style: textStyle,
                         onMentionTap: (userId, name) {
                           final currentUserId = SupabaseProvider.idOrNull;
-                          if (userId == currentUserId) return;
+                          if (userId == currentUserId) {
+                            if (widget.post.authorId == currentUserId) {
+                              AppToast.info(
+                                'You mentioned yourself in this post',
+                              );
+                            } else {
+                              final authorName =
+                                  (widget.post.authorName?.trim().isNotEmpty ??
+                                          false)
+                                      ? widget.post.authorName!.trim()
+                                      : 'Someone';
+                              AppToast.info(
+                                '$authorName mentioned you in this post',
+                              );
+                            }
+                            return;
+                          }
                           Navigator.of(context, rootNavigator: true).pushNamed(
                             AppRoutes.profileViewRoute,
                             arguments: userId,
