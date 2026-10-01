@@ -1,461 +1,625 @@
-<div align="center">
+﻿<!-- ═══════════════════════════════════════════════════════════════════════
+     SOCIAL MATE — README
+     Asset placeholders (replace by dropping files at these paths):
+       https://github.com/user-attachments/assets/7bc99b0a-d3a0-4a76-af2e-1485aac8200a                  → widescreen hero banner
+       https://github.com/user-attachments/assets/dc5fba14-e08b-4408-9e8b-0a24512c14b2                    → circular app logo
+       docs/assets/screenshots/*.png           → frameless, high-DPI UI captures
+     ═══════════════════════════════════════════════════════════════════════ -->
 
-<!-- ╔══════════════════════════════════════════════╗ -->
-<!--            SOCIAL MATE — HERO BANNER           -->
-<!-- ╚══════════════════════════════════════════════╝ -->
-<img src="https://github.com/user-attachments/assets/00deb226-b6fb-4572-b52b-500f54915896" alt="Social Mate Banner" width="100%" style="border-radius:16px;" />
-
-<br/><br/>
-
-<h1 style="
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  gap:12px;
-  line-height:1;
-">
-  <img 
-    src="https://github.com/user-attachments/assets/a41d174a-a845-40f0-81af-2587eaf0848d" 
-    alt="Social Mate Icon" 
-    width="25" 
-    height="25"
-    style="border-radius:10px; display:block;"
+<p align="center">
+  <img
+    src="https://github.com/user-attachments/assets/7bc99b0a-d3a0-4a76-af2e-1485aac8200a"
+    alt="Social Mate — Connect · Share · Discover · Belong"
+    width="100%"
+    style="width:100%; border-radius:16px; box-shadow:0 8px 32px rgba(0,0,0,0.25);"
   />
-  <span style="display:block;">Social Mate</span>
+</p>
+
+<h1 align="center">
+  <img
+    src="https://github.com/user-attachments/assets/dc5fba14-e08b-4408-9e8b-0a24512c14b2"
+    alt="Social Mate logo"
+    width="42"
+    height="42"
+    style="border-radius:50%; vertical-align:middle;"
+  />
+  Social Mate
 </h1>
 
-<p><strong>A production-grade, AI-powered social platform built with Flutter & Supabase</strong></p>
-<p>Feed · Reels · Stories · Real-time Chat · Group & Video Calls · AI Assistant — all in one app</p>
-
-<p>
-  <img src="https://img.shields.io/badge/Flutter-3.x-02569B?style=for-the-badge&logo=flutter&logoColor=white" />
-  <img src="https://img.shields.io/badge/Dart-3.x-0175C2?style=for-the-badge&logo=dart&logoColor=white" />
-  <img src="https://img.shields.io/badge/Supabase-Backend-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white" />
-  <img src="https://img.shields.io/badge/Firebase-FCM-FFCA28?style=for-the-badge&logo=firebase&logoColor=black" />
-  <img src="https://img.shields.io/badge/LiveKit-Realtime%20Calls-1F2937?style=for-the-badge" />
-  <img src="https://img.shields.io/badge/AI-Gemini%20%7C%20Groq%20%7C%20OpenRouter-8B5CF6?style=for-the-badge" />
+<p align="center">
+  <b>A production-grade, real-time social platform built with Flutter.</b><br/>
+  Chat · Group & WebRTC Calls · Stories · Reels · Multi-Model AI · Offline-First
 </p>
 
-<p>
-  <img src="https://img.shields.io/badge/Architecture-Feature--First%20Clean%20Arch-purple?style=flat-square" />
-  <img src="https://img.shields.io/badge/State%20Management-BLoC%20%2F%20Cubit-blueviolet?style=flat-square" />
-  <img src="https://img.shields.io/badge/Offline-Hive%20Cache-orange?style=flat-square" />
-  <img src="https://img.shields.io/badge/Platform-Android%20%7C%20iOS-lightgrey?style=flat-square" />
+<!-- Tier 1 — Core Stack -->
+<p align="center">
+  <img src="https://img.shields.io/badge/Flutter-3.x-02569B?style=for-the-badge&logo=flutter&logoColor=white" alt="Flutter" />
+  <img src="https://img.shields.io/badge/Dart-3.x-0175C2?style=for-the-badge&logo=dart&logoColor=white" alt="Dart" />
+  <img src="https://img.shields.io/badge/Supabase-Realtime%20·%20Auth%20·%20Storage%20·%20PG-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white" alt="Supabase" />
+  <img src="https://img.shields.io/badge/Firebase-FCM%20·%20Crashlytics-FFCA28?style=for-the-badge&logo=firebase&logoColor=black" alt="Firebase" />
+  <img src="https://img.shields.io/badge/LiveKit-WebRTC%20SFU-7C3AED?style=for-the-badge&logo=webrtc&logoColor=white" alt="LiveKit" />
+  <img src="https://img.shields.io/badge/BLoC-Cubit-1E88E5?style=for-the-badge" alt="BLoC / Cubit" />
+  <img src="https://img.shields.io/badge/AI%20Gateway-Gemini%20·%20Groq%20·%20OpenRouter-FF6F00?style=for-the-badge&logo=googlegemini&logoColor=white" alt="Multi-AI Gateway" />
+  <img src="https://img.shields.io/badge/Cloudinary-CDN-3448C5?style=for-the-badge&logo=cloudinary&logoColor=white" alt="Cloudinary" />
 </p>
 
-</div>
+<!-- Tier 2 — Engineering Metrics -->
+<p align="center">
+  <img src="https://img.shields.io/badge/Features-26-brightgreen?style=flat-square" alt="26 Features" />
+  <img src="https://img.shields.io/badge/Themes-12%2B-blueviolet?style=flat-square" alt="12+ Themes" />
+  <img src="https://img.shields.io/badge/Cache-Hive%20Snapshots-orange?style=flat-square" alt="Hive" />
+  <img src="https://img.shields.io/badge/Android%2014%2B-Foreground%20Service-3DDC84?style=flat-square&logo=android&logoColor=white" alt="Foreground Service" />
+  <img src="https://img.shields.io/badge/Architecture-Clean%20Layered-informational?style=flat-square" alt="Clean Architecture" />
+  <img src="https://img.shields.io/badge/Offline--First-Yes-success?style=flat-square" alt="Offline-First" />
+  <img src="https://img.shields.io/badge/Platform-Android%20%26%20iOS-lightgrey?style=flat-square" alt="Platforms" />
+</p>
+
+<!-- Quick Navigation -->
+<p align="center">
+  <a href="#-overview"><b>[ 📖 Overview ]</b></a> ·
+  <a href="#-showcase"><b>[ 📸 Showcase ]</b></a> ·
+  <a href="#-features"><b>[ ✨ Features ]</b></a> ·
+  <a href="#%EF%B8%8F-architecture"><b>[ 🏗️ Architecture ]</b></a> ·
+  <a href="#-calls-engine"><b>[ 📞 Calls Engine ]</b></a> ·
+  <a href="#-ai-gateway"><b>[ 🤖 AI Gateway ]</b></a> ·
+  <a href="#%EF%B8%8F-tech-stack"><b>[ 🛠️ Tech Stack ]</b></a> ·
+  <a href="#-getting-started"><b>[ 🚀 Getting Started ]</b></a> ·
+  <a href="#%EF%B8%8F-roadmap"><b>[ 🗺️ Roadmap ]</b></a>
+</p>
 
 ---
 
 ## 📖 Overview
 
-**Social Mate** is a comprehensive, cross-platform social networking application delivering a seamless, real-time, and increasingly **AI-augmented** user experience. Built on a clean **Feature-First Architecture** spanning **23 self-contained features**, it brings together a social feed, short-form video (Reels), Stories, 1-on-1 & group messaging, audio/video calling, custom sticker packs, and a full **on-device AI Assistant** — all under a beautifully themed, dynamically switchable UI.
+**Social Mate** is a full-featured social platform that combines the best of a social feed, a messenger, a short-video app, and an AI assistant in a single Flutter codebase. It is engineered around three principles:
 
-Whether you're a developer exploring production-grade Flutter architecture or a technical reviewer evaluating mobile engineering quality, this project demonstrates a thoughtful, scalable, and genuinely feature-complete approach to building a modern consumer social app.
-
-> **Platform:** Android (primary) · **Framework:** Flutter / Dart · **Backend:** Supabase + Firebase · **Realtime Calls:** LiveKit · **AI:** Gemini / Groq / OpenRouter
-
----
-
-## 📸 Screenshots
-
-| Authentication | Home Feed | Chat |
-|:-:|:-:|:-:|
-| <img src="https://github.com/user-attachments/assets/62f6f67d-d592-49fd-9bee-7140047bc6b3" width="220" height="440" alt="Authentication View" style="border-radius:12px;object-fit:cover;" /> | <img src="https://github.com/user-attachments/assets/4a0304d5-f5e1-49ee-a662-f8ebae34650f" width="220" height="440" alt="Home Feed" style="border-radius:12px;object-fit:cover;" /> | <img src="https://github.com/user-attachments/assets/d0076775-8eff-4832-8061-6092e86c738d" width="220" height="440" alt="Chat View" style="border-radius:12px;object-fit:cover;" /> |
-
-| Stories | Video Call | Themes |
-|:-:|:-:|:-:|
-| <img src="https://github.com/user-attachments/assets/ed7ada97-a913-4d33-bce4-cf41f3e45d7f" width="220" height="440" alt="Stories View" style="border-radius:12px;object-fit:cover;" /> | <img src="https://github.com/user-attachments/assets/56d089cd-acac-4858-ad2e-dad3e886e9fc" width="220" height="440" alt="Video Call" style="border-radius:12px;object-fit:cover;" /> | <img src="https://github.com/user-attachments/assets/c972665e-158e-4831-949b-7fd0593d1b06" width="220" height="440" alt="Themes View" style="border-radius:12px;object-fit:cover;" /> |
-
-> 📌 *Screenshot placeholders reused from the previous README — recommend refreshing with current-build captures for Reels, AI Chat, and Sticker Studio once the visual revamp (Step 2) is complete.*
+| Principle | What it means in practice |
+| --- | --- |
+| **Real-time by default** | Supabase Realtime for chat, presence, and posts; LiveKit SFU for audio/video; dual-path call signaling. |
+| **Resilient & offline-first** | Hive-backed local snapshots render chats, groups, and posts instantly, even without a connection. |
+| **Modular & maintainable** | Feature-first clean architecture: **26 self-contained modules** on top of a shared `core/` layer. |
 
 ---
 
-## ✨ Feature Highlights
+## 📸 Showcase
 
-<details open>
-<summary><strong>🤖 AI Assistant & AI Chat</strong> — the platform's newest pillar</summary>
+> All captures are **frameless, high-DPI, rounded-corner UI cards**. To replace an image, overwrite the file at the path shown in the comment above it.
 
-- **Contextual AI Assistant** embedded across the app: autocomplete captions, spell-check, smart reply suggestions, comment suggestions, and chat summarization (short / detailed / by-topic)
-- **Standalone AI Chat** — a full conversational assistant with persistent sessions, image attachments, and a typewriter-style streaming reply experience
-- **Multi-provider AI Gateway** — switch between **Gemini**, **Groq**, and **OpenRouter** on the fly, with automatic vision-support detection per provider
-- **Personalization** — configurable reply tone, reply length, and autocomplete language (Arabic / English / Auto) from a dedicated AI Settings screen
-- **Usage Quota Tracking** — transparent, real-time visibility into AI usage limits
+<!-- Shared card style used by every <img> below:
+     border-radius:14px; box-shadow:0 4px 20px rgba(0,0,0,0.12); border:1px solid rgba(255,255,255,0.1); -->
+
+### 🌱 Core Experience
+
+<table align="center">
+  <tr>
+    <td align="center" width="33%">
+
+      <!-- https://github.com/user-attachments/assets/2bb6b9fc-0bbe-42db-bde8-8c4df1c4afc0 -->
+      <img
+        src="https://github.com/user-attachments/assets/2bb6b9fc-0bbe-42db-bde8-8c4df1c4afc0"
+        alt="Authentication & Password Strength"
+        width="240"
+        style="border-radius:14px; box-shadow:0 4px 20px rgba(0,0,0,0.12); border:1px solid rgba(255,255,255,0.1);"
+      />
+      <br/>
+      <sub><b>Authentication</b><br/>Password strength meter</sub>
+
+    </td>
+    <td align="center" width="33%">
+
+      <!-- https://github.com/user-attachments/assets/f3c318ed-485d-402b-b641-d9ca9013b75f -->
+      <img
+        src="https://github.com/user-attachments/assets/f3c318ed-485d-402b-b641-d9ca9013b75f"
+        alt="Home Feed"
+        width="240"
+        style="border-radius:14px; box-shadow:0 4px 20px rgba(0,0,0,0.12); border:1px solid rgba(255,255,255,0.1);"
+      />
+      <br/>
+      <sub><b>Home Feed</b><br/>Stories carousel & posts</sub>
+
+    </td>
+    <td align="center" width="33%">
+
+      <!-- https://github.com/user-attachments/assets/1c011987-bce1-4acf-a702-28b968ce710f -->
+      <img
+        src="https://github.com/user-attachments/assets/1c011987-bce1-4acf-a702-28b968ce710f"
+        alt="Discover People"
+        width="240"
+        style="border-radius:14px; box-shadow:0 4px 20px rgba(0,0,0,0.12); border:1px solid rgba(255,255,255,0.1);"
+      />
+      <br/>
+      <sub><b>Discover People</b><br/>Mutual friends & connection cards</sub>
+
+    </td>
+  </tr>
+</table>
+
+### 💬 Real-Time Communication
+
+<table align="center">
+  <tr>
+    <td align="center" width="33%">
+
+      <!-- https://github.com/user-attachments/assets/49ed695b-c5e0-4b84-8fdc-a9c86ee8c993 -->
+      <img
+        src="https://github.com/user-attachments/assets/49ed695b-c5e0-4b84-8fdc-a9c86ee8c993"
+        alt="1-on-1 Chat"
+        width="240"
+        style="border-radius:14px; box-shadow:0 4px 20px rgba(0,0,0,0.12); border:1px solid rgba(255,255,255,0.1);"
+      />
+      <br/>
+      <sub><b>1-on-1 Chat</b><br/>Waveform voice notes & stickers</sub>
+
+    </td>
+    <td align="center" width="33%">
+
+      <!-- https://github.com/user-attachments/assets/e1e7a148-3970-44e9-b5d2-b8895b0ecc59 -->
+      <img
+        src="https://github.com/user-attachments/assets/e1e7a148-3970-44e9-b5d2-b8895b0ecc59"
+        alt="Group Chat"
+        width="240"
+        style="border-radius:14px; box-shadow:0 4px 20px rgba(0,0,0,0.12); border:1px solid rgba(255,255,255,0.1);"
+      />
+      <br/>
+      <sub><b>Group Chat</b><br/>Mentions & shared media</sub>
+
+    </td>
+    <td align="center" width="33%">
+
+      <!-- https://github.com/user-attachments/assets/71a91939-7d1f-4bd4-85f0-18e439b8b451 -->
+      <img
+        src="https://github.com/user-attachments/assets/71a91939-7d1f-4bd4-85f0-18e439b8b451"
+        alt="Dynamic Call Message Bubbles"
+        width="240"
+        style="border-radius:14px; box-shadow:0 4px 20px rgba(0,0,0,0.12); border:1px solid rgba(255,255,255,0.1);"
+      />
+      <br/>
+      <sub><b>Call Message Bubbles</b><br/>Ongoing · Ended · Missed</sub>
+
+    </td>
+  </tr>
+</table>
+
+### 📞 Calling System (WebRTC)
+
+<table align="center">
+  <tr>
+    <td align="center" width="33%">
+
+      <!-- https://github.com/user-attachments/assets/45b11108-8b6a-47ad-9d01-b19a5511bfee -->
+      <img
+        src="https://github.com/user-attachments/assets/45b11108-8b6a-47ad-9d01-b19a5511bfee"
+        alt="Incoming Call UI"
+        width="240"
+        style="border-radius:14px; box-shadow:0 4px 20px rgba(0,0,0,0.12); border:1px solid rgba(255,255,255,0.1);"
+      />
+      <br/>
+      <sub><b>Incoming Call</b><br/>Lock-screen / ambient orbit</sub>
+
+    </td>
+    <td align="center" width="33%">
+
+      <!-- https://github.com/user-attachments/assets/67fb59c4-ca57-45bd-a733-df84f4d29e5b -->
+      <img
+        src="https://github.com/user-attachments/assets/67fb59c4-ca57-45bd-a733-df84f4d29e5b"
+        alt="Live Video Call"
+        width="240"
+        style="border-radius:14px; box-shadow:0 4px 20px rgba(0,0,0,0.12); border:1px solid rgba(255,255,255,0.1);"
+      />
+      <br/>
+      <sub><b>Live Video Call</b><br/>Adaptive stage & PiP overlay</sub>
+
+    </td>
+    <td align="center" width="33%">
+
+      <!-- https://github.com/user-attachments/assets/7d640a77-53bc-4b8b-ad1d-ed8d78dfe58c -->
+      <img
+        src="https://github.com/user-attachments/assets/7d640a77-53bc-4b8b-ad1d-ed8d78dfe58c"
+        alt="Members Ringing Sheet"
+        width="240"
+        style="border-radius:14px; box-shadow:0 4px 20px rgba(0,0,0,0.12); border:1px solid rgba(255,255,255,0.1);"
+      />
+      <br/>
+      <sub><b>Members Ringing Sheet</b><br/>Ring offline members</sub>
+
+    </td>
+  </tr>
+</table>
+
+### 🎬 Multimedia & AI
+
+<table align="center">
+  <tr>
+    <td align="center" width="33%">
+
+      <!-- https://github.com/user-attachments/assets/df7fe8b6-5476-42a5-9c82-c865d7a12125 -->
+      <img
+        src="https://github.com/user-attachments/assets/df7fe8b6-5476-42a5-9c82-c865d7a12125"
+        alt="Reels Feed"
+        width="240"
+        style="border-radius:14px; box-shadow:0 4px 20px rgba(0,0,0,0.12); border:1px solid rgba(255,255,255,0.1);"
+      />
+      <br/>
+      <sub><b>Reels</b><br/>Short-form vertical video</sub>
+
+    </td>
+    <td align="center" width="33%">
+
+      <!-- https://github.com/user-attachments/assets/ac27c8d1-cb87-4906-9d0d-0bdff2f387a7 -->
+      <img
+        src="https://github.com/user-attachments/assets/ac27c8d1-cb87-4906-9d0d-0bdff2f387a7"
+        alt="Standalone AI Chat"
+        width="240"
+        style="border-radius:14px; box-shadow:0 4px 20px rgba(0,0,0,0.12); border:1px solid rgba(255,255,255,0.1);"
+      />
+      <br/>
+      <sub><b>AI Chat</b><br/>Multi-model streaming & image prompt</sub>
+
+    </td>
+    <td align="center" width="33%">
+
+      <!-- https://github.com/user-attachments/assets/52560c3d-1d96-43a7-b0af-ba2958ba6dcf -->
+      <img
+        src="https://github.com/user-attachments/assets/52560c3d-1d96-43a7-b0af-ba2958ba6dcf"
+        alt="Custom Sticker Studio"
+        width="240"
+        style="border-radius:14px; box-shadow:0 4px 20px rgba(0,0,0,0.12); border:1px solid rgba(255,255,255,0.1);"
+      />
+      <br/>
+      <sub><b>Sticker Studio</b><br/>Design & share packs</sub>
+
+    </td>
+  </tr>
+</table>
+
+### 🎨 Customization & Security
+
+<table align="center">
+  <tr>
+    <td align="center" width="33%">
+
+      <!-- https://github.com/user-attachments/assets/99c7d3cb-fd29-4a32-8ac8-47e6134d1eda -->
+      <img
+        src="https://github.com/user-attachments/assets/99c7d3cb-fd29-4a32-8ac8-47e6134d1eda"
+        alt="Themes Picker"
+        width="240"
+        style="border-radius:14px; box-shadow:0 4px 20px rgba(0,0,0,0.12); border:1px solid rgba(255,255,255,0.1);"
+      />
+      <br/>
+      <sub><b>12+ Themes</b><br/>Ocean, Sunset, Midnight, Emerald…</sub>
+
+    </td>
+    <td align="center" width="33%">
+
+      <!-- https://github.com/user-attachments/assets/7e78a654-8f90-4a65-a3e4-5f47d3115c90 -->
+      <img
+        src="https://github.com/user-attachments/assets/7e78a654-8f90-4a65-a3e4-5f47d3115c90"
+        alt="App Lock"
+        width="240"
+        style="border-radius:14px; box-shadow:0 4px 20px rgba(0,0,0,0.12); border:1px solid rgba(255,255,255,0.1);"
+      />
+      <br/>
+      <sub><b>App Lock</b><br/>Biometric gate</sub>
+
+    </td>
+    <td align="center" width="33%">
+
+      <!-- https://github.com/user-attachments/assets/f19bd8e8-bc96-4edf-93b2-2ca935be3ad0 -->
+      <img
+        src="https://github.com/user-attachments/assets/f19bd8e8-bc96-4edf-93b2-2ca935be3ad0"
+        alt="Notification Center"
+        width="240"
+        style="border-radius:14px; box-shadow:0 4px 20px rgba(0,0,0,0.12); border:1px solid rgba(255,255,255,0.1);"
+      />
+      <br/>
+      <sub><b>Notification Center</b><br/>Unified activity inbox</sub>
+
+    </td>
+  </tr>
+</table>
+
+---
+
+## ✨ Features
+
+Social Mate ships **26 modular features**, each a self-contained module under `lib/features/`.
+
+| # | Feature | Highlights |
+| :-: | --- | --- |
+| 1 | **Authentication** | Supabase Auth, live password-strength meter |
+| 2 | **Home Feed** | Real-time posts stream, post themes for text posts, full-screen media viewer |
+| 3 | **Stories** | Gradient text, image & video stories, viewer sheet, reaction fountain, direct chat replies |
+| 4 | **Reels** | Full-screen vertical player, video controller caching pool, interleaved home discovery rail |
+| 5 | **Comments** | Nested threaded comments, voice comments, sheet & inline views |
+| 6 | **Post Privacy** | Public · Friends Only · Private · Custom Audience |
+| 7 | **Profile** | Profile view, pinned post, chronological posts, media stats |
+| 8 | **Discover People** | Recommendations from mutual friends and mutual groups |
+| 9 | **Connections** | Requests, accept/reject, follow/unfollow, friendship status tracking |
+| 10 | **Blocked Users** | Dedicated management UI + server-level filtering |
+| 11 | **1-on-1 Chat** | Real-time messaging, typing & recording presence, star/pin, forwarding |
+| 12 | **Group Chat** | @mentions with live search, shared-media drawer, group management |
+| 13 | **Attachment Sheet** | One sheet for images, videos, documents, audio, GIFs, stickers |
+| 14 | **Voice Notes** | Chunked recording, compression, live waveform, slide-to-lock |
+| 15 | **Reactions** | Animated emoji reactions with fountain effects |
+| 16 | **Custom Sticker Studio** | Design and share public or private sticker packs |
+| 17 | **Link Previews & Chat Search** | Smart link previews, search history |
+| 18 | **1-on-1 Audio/Video Calls** | LiveKit-powered calls with dual signaling |
+| 19 | **Group Calls** | Adaptive 1–8+ participant stage, active-speaker glow, targeted offline ringing |
+| 20 | **Call Message Bubbles** | Durable Ongoing / Ended / Missed states via `GroupCallMessageContent` |
+| 21 | **Standalone AI Chat** | Markdown, streaming typewriter, session drawer, quota tracking |
+| 22 | **AI Writing Assistants** | Caption autocomplete (Arabic / English / Auto), comment & inline reply suggestions |
+| 23 | **AI Chat Summarization** | Short, Detailed, By-Topic |
+| 24 | **Notification Center** | Unified in-app inbox backed by FCM + Supabase |
+| 25 | **Dynamic Theming** | 12+ themes with adaptive splash and logos |
+| 26 | **Security** | Biometric app lock (`local_auth`) and two-factor authentication controls |
+
+<details>
+<summary><b>🧩 Deep dive: Real-Time Chat & Multimedia Messaging</b></summary>
+
+<br/>
+
+- **Unified Attachment Sheet:** a single bottom sheet for images, videos, documents, audio notes, GIFs, and stickers.
+- **High-fidelity voice notes:** chunked recording, audio compression, live waveform rendering, slide-to-lock UX.
+- **Rich messaging tools:** in-line @mentions with live suggestions, smart link previews, message forwarding, star/pin, search history, and a conversation shared-media drawer.
+- **Reactions & stickers:** animated emoji reactions with fountain effects; the Sticker Studio lets users design and share public or private packs.
 
 </details>
 
-<details open>
-<summary><strong>🔐 Authentication & Security</strong></summary>
+<details>
+<summary><b>🎞️ Deep dive: Stories, Reels & Feed</b></summary>
 
-| Feature | Details |
-|---|---|
-| Email / Password Sign-up | Real-time password strength evaluation |
-| Social Login | One-tap Google & Facebook OAuth integration |
-| Session Management | Automatic routing based on auth state, secure token handling |
-| **App Lock** | Biometric / device-credential lock gate for the entire app |
-| Onboarding Flow | Dedicated splash and onboarding screens for first-time users |
+<br/>
+
+- **Stories:** gradient text stories, high-res image/video stories, interactive viewer sheet, reaction fountain, direct chat replies.
+- **Reels:** full-screen swipeable player, video controller caching pool, interleaved home discovery rail, reels search tab.
+- **Home feed:** real-time posts stream, post themes for text posts, full-screen media viewer, nested threaded comments with voice support.
 
 </details>
 
-<details open>
-<summary><strong>💬 Real-time Chat & Group Messaging</strong></summary>
+<details>
+<summary><b>🛡️ Deep dive: Social Graph, Discovery & Privacy</b></summary>
 
-- **1-on-1 & Group Chats** — instant delivery powered by Supabase Realtime
-- **Unified Attachment System** — one picker sheet for images, videos, files, voice notes, GIFs, and stickers across every chat surface
-- **Professional Voice Messages** — chunked recording, audio compression, live waveform visualization, and slide-to-lock recording UX
-- **@Mentions** — rich, searchable mention suggestions with styled inline rendering
-- **Smart Link Previews** — automatic rich preview cards for links shared in chat
-- **Message Forwarding** — forward any message (text, media, voice) across chats and groups
-- **Message Reactions** — emoji reactions with a live picker bubble and reaction summaries
-- **Starred / Pinned Messages** and a dedicated **Shared Media** browser (images, videos, files, links, voice) per conversation
-- **Archived Chats** with a fully separate management view
-- **In-chat Search** across conversation history
-- **Typing Indicators** & **Delivered/Read Receipts**
-- **Presence System** — real-time online/last-seen with granular, user-configurable privacy controls
+<br/>
+
+- **Discover People:** recommendations based on mutual friends and mutual groups.
+- **Connection lifecycle:** send, accept/reject, follow, unfollow, friendship status tracking.
+- **Audience control:** per-post privacy (Public, Friends Only, Private, Custom Audience).
+- **Blocked users:** dedicated UI plus server-level filtering.
+- **Biometric security & 2FA:** app-wide biometric gate (`local_auth`) and two-factor controls.
 
 </details>
 
-<details open>
-<summary><strong>👥 Group Chats & Group Calls</strong></summary>
+<details>
+<summary><b>🎨 Deep dive: Dynamic Theming Engine</b></summary>
 
-- Full group lifecycle: creation, member management, roles, edit/settings, and system-event timeline (joins, leaves, renames)
-- Group-wide mentions, reactions, and shared-media browsing
-- **Group Audio/Video Calls** powered by LiveKit, with an incoming/outgoing group call UI and live member-presence tracking
+<br/>
 
-</details>
-
-<details open>
-<summary><strong>📞 Audio & Video Calls</strong></summary>
-
-- Powered by **LiveKit** (modern WebRTC SFU) for both 1-on-1 and group calls
-- **Full-Screen Incoming Call UI** — works even when the app is closed or backgrounded (via FCM full-screen intents)
-- **Picture-in-Picture (PiP)** call overlay so users can keep browsing the app mid-call
-- **Foreground Service** keeps calls alive and stable in the background
-- Modern calling screen with caller avatar, live duration, glass-morphism controls, and ambient visual effects
+Twelve themes: **Ocean, Sunset, Midnight, Forest, Royal Gold, Ice Glass, Lavender, Carbon, Emerald, Nordic, Cyber Grape, Sahara.**
+Each theme adapts primary colors, dark/light variants, splash animations, and the app logo.
 
 </details>
 
-<details open>
-<summary><strong>📖 Stories & Status</strong></summary>
+---
 
-- **Text Stories** with colorful gradient backgrounds and a custom text editor
-- Full **image and video story** support with tap-to-pause / release-to-resume progress bars
-- **Story Reactions** with an animated "reaction fountain" visual effect
-- **Story Replies** routed directly into chat
-- Story views tracking with a dedicated viewers bottom sheet
-- Auto-expiring stories following standard social conventions
+## 🏗️ Architecture
 
-</details>
+### 1. Feature-First Clean Architecture
 
-<details open>
-<summary><strong>📝 Posts & Home Feed</strong></summary>
+```text
+lib/
+├── core/                 # Cross-cutting: services, bootstrap, caching, routing, observability
+└── features/             # 26 self-contained business modules
+    └── <feature>/
+        ├── cubit/        # State management (BLoC / Cubit)
+        ├── service/      # Data access & business logic
+        ├── model/        # Entities & DTOs
+        ├── view/         # Screens
+        └── widgets/      # Feature-local components
+```
 
-- Publish **text, image, or video posts**, or attach files, to a scrollable, realtime home feed
-- **Post Themes** — stylized backgrounds for short text posts
-- Engage through **Likes/Reactions, Comments, Shares, and Saves**
-- **Full-Screen Immersive Viewers** for images and videos
-- **Saved Posts** collection view
+Strict separation: `core/` never depends on `features/`; features communicate via core abstractions.
 
-</details>
+### 2. Three-Phase Startup Bootstrap Pipeline
 
-<details open>
-<summary><strong>🎬 Reels (Short-Form Video)</strong></summary>
+| Phase | Entry point | Responsibilities |
+| :-: | --- | --- |
+| **1** | `initializeCriticalBeforeRunApp()` | Orientation lock, foreground-task communication port, Crashlytics buffer attachment |
+| **2** | `runApp(buildApp())` | Immediate UI mount with eager providers |
+| **3** | `startCoreServicesBootstrap()` | Parallel init of Hive cache, Supabase SDK, SharedPreferences, ColdStart intent detection |
 
-- Dedicated vertical, swipeable **Reels feed** with category browsing and channel avatars
-- Reels interleaved directly into the **Home Feed** as a horizontal discovery rail
-- Full-screen immersive player with actions column, info overlay, and pooled video-controller management for smooth playback
-- Reels onboarding flow and a dedicated Reels grid inside global Search
+The UI mounts before slow services finish, which keeps cold start fast.
 
-</details>
+### 3. Offline-First & Cache Invalidation
 
-<details open>
-<summary><strong>💭 Comments</strong></summary>
+- **`HiveCacheManager`** — in-flight future guards (no duplicate opens) and auto-recovery from corrupted boxes.
+- **`LocalSnapshotStore`** — instant offline rendering of chats, groups, and posts, with a tenant-isolation guard (`_guardAgainstCrossAccountCacheLeak`) that prevents cross-account cache leakage.
 
-- **Threaded replies** with visual thread connectors
-- **Voice comments** with an in-line recorder and player
-- Rich attachments, emoji reactions, and **AI-generated comment suggestions**
-- Inline and full-sheet comment presentations depending on context
+### 4. Observability & Health Telemetry
 
-</details>
+- Centralized **`Observability`** facade that queues early crashes until Crashlytics is connected.
+- Real-time diagnostics that detect **zombie Supabase Realtime channels** on session transitions.
 
-<details open>
-<summary><strong>🖼️ Custom Sticker Studio</strong></summary>
+---
 
-- Users can **create their own sticker packs**, with configurable **public/private** visibility
-- Upload quota handling, progress-tracked uploads, and a friend-picker for sharing private packs
-- Full sticker pack browser, detail view, and downloads management
+## 📞 Calls Engine
 
-</details>
+A production-grade audio/video engine built on **LiveKit (WebRTC SFU)**.
 
-<details open>
-<summary><strong>🎞️ GIFs</strong></summary>
+| Capability | Implementation |
+| --- | --- |
+| **Low-latency media** | LiveKit SFU with dynacast and dynamic layer subscription |
+| **Dual signaling** | Supabase Realtime broadcast for active instances (<100 ms wakeup) + Firebase FCM high-priority data push for background/terminated states |
+| **Cross-isolate collision prevention** | `IncomingCallNavigationGuard` backed by `SharedPreferences` mirrors busy state across main and background isolates; `_autoRejectWhileBusy` rejects new calls without ringing or disrupting the active one |
+| **Android foreground service** | `flutter_foreground_task` keeps socket and WebRTC audio stable in background; tapping the ongoing notification returns to the live call |
+| **Picture-in-Picture** | Floating minimized call window for in-app browsing during calls |
+| **Dynamic group grid** | Adaptive stage for 1–8+ participants (auto-scroll beyond 8), active-speaker glow (`Colors.greenAccent`) |
+| **Targeted offline ringing** | Ring specific members who haven't joined, with fail-open busy verification |
 
-- Giphy-powered GIF search and picker, fully integrated into the shared attachment system for chats
+### Durable Call Message Bubbles
 
-</details>
+Rendered through `GroupCallMessageContent` so state stays synchronized across devices:
 
-<details open>
-<summary><strong>👥 Social Graph & Discovery</strong></summary>
+| State | Behavior |
+| --- | --- |
+| 🟢 **Ongoing** | Real-time live indicator and **Tap to Join** |
+| 🔴 **Ended** | Verified, non-zero duration (`⏱ mm:ss`); immune to false `00:00` |
+| 🔴 **Missed** | Timed-out or cancelled calls show **Missed call** for recipients and **Ended call** for the initiator |
 
-- Friend requests, following, and connection management
-- **Audience Picker** — per-post privacy control (public / friends / private / custom)
-- **Discover People** — smart suggestions to grow your network
-- **Global Search** — unified search across Accounts, Groups, Posts, and Reels, plus a personalized **"For You"** tab
+### Call Signaling Flow
 
-</details>
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Caller
+    actor Callee
+    participant Supabase as Supabase Realtime
+    participant FCM as Firebase FCM
+    participant LiveKit as LiveKit SFU
 
-<details open>
-<summary><strong>🔔 Smart Push & In-App Notifications</strong></summary>
+    Caller->>Supabase: Broadcast Call Invite (Active Channel)
+    Caller->>FCM: High-Priority Data Push (Background / Terminated)
 
-- Powered by **Firebase Cloud Messaging (FCM)** + `flutter_local_notifications`
-- Instant alerts for new messages (private & group), reactions, comments, and incoming calls
-- **Actionable notifications** — reply or decline directly from the notification shade
-- Custom notification avatar rendering pipeline
-- Dedicated **in-app Notification Center** with filterable categories, separate from push alerts
+    par Active App Flow
+        Supabase->>Callee: Wake-up & Ring (<100ms)
+    and Background Flow
+        FCM->>Callee: Full-Screen Intent / System Ring
+    end
 
-</details>
+    Note over Callee: IncomingCallNavigationGuard (Busy Check)
 
-<details open>
-<summary><strong>📡 Offline-First & Performance</strong></summary>
+    alt Callee Accepts
+        Callee->>LiveKit: Join Room (Audio/Video Track)
+        Caller->>LiveKit: Join Room (Audio/Video Track)
+        LiveKit-->>Caller: Media Exchanged & Session Established
+    else Callee Busy / Declines
+        Callee-->>Caller: Auto-Reject / Decline Signal
+    end
+```
 
-- **Hive-powered local cache** for media and conversation snapshots, with intelligent **eviction policies** to manage device storage
-- **Connectivity Awareness** — a live offline/online banner keeps users informed of network state
-- **Cloudinary CDN** integration for optimized media delivery alongside Supabase Storage
-- Skeleton/shimmer loading states across nearly every screen for a polished perceived-performance feel
+---
 
-</details>
+## 🤖 AI Gateway
 
-<details open>
-<summary><strong>🎨 UI/UX & Theming</strong></summary>
+A multi-provider backend (Supabase Edge Function) with runtime provider switching.
 
-- **6+ Dynamic Themes** (Ocean, Sunset, Midnight, Emerald, Carbon, and more), each with its own splash screen and app logo variant
-- Seamless **Light / Dark mode** switching
-- Full **RTL / Bidi text support** for mixed Arabic-English content
-- Smooth, engaging animations powered by **Lottie**
-- Consistent, cohesive design language across all 23 features
+- **Providers:** Google Gemini · Groq · OpenRouter, switchable at runtime.
+- **Multimodal:** image + text input with automatic vision-capability detection per selected model.
+- **Quota tracking:** usage surfaced to the client as `AiUsageSnapshot`.
 
-</details>
+### In-App AI Experiences
+
+| Experience | Details |
+| --- | --- |
+| **Caption autocomplete** | Configurable language: Arabic, English, or Auto |
+| **Comment & inline reply suggestions** | Tone and length personalization |
+| **Chat summarization** | Short, Detailed, By-Topic |
+| **Standalone AI Chat** | Markdown rendering, streaming typewriter animation, persistent session drawer, quota tracking |
 
 ---
 
 ## 🛠️ Tech Stack
 
 | Layer | Technology |
-|---|---|
-| **Framework** | Flutter / Dart |
-| **State Management** | BLoC / Cubit Pattern |
-| **Backend & Database** | Supabase (Auth, PostgreSQL, Storage, Realtime) |
-| **Push Notifications** | Firebase Cloud Messaging (FCM) |
-| **Local Notifications** | `flutter_local_notifications` |
-| **Audio/Video & Group Calls** | LiveKit (WebRTC SFU) |
-| **AI Providers** | Gemini · Groq · OpenRouter (multi-provider gateway) |
+| --- | --- |
+| **Framework** | Flutter 3.x · Dart 3.x |
+| **State management** | BLoC / Cubit |
+| **Backend** | Supabase (Postgres, Realtime, Auth, Storage, Edge Functions) |
+| **Push & crash reporting** | Firebase Cloud Messaging · Crashlytics |
+| **Real-time media** | LiveKit (WebRTC SFU) |
+| **AI** | Gemini · Groq · OpenRouter via Edge Function gateway |
 | **Media CDN** | Cloudinary |
-| **Local Persistence / Offline Cache** | Hive |
-| **GIF Search** | Giphy API |
-| **Biometric Security** | `local_auth` |
-| **Background Call Stability** | `flutter_foreground_task` |
-| **Routing** | Custom App Router with active-screen tracking |
-| **Animations** | Lottie |
-
----
-
-## 🏗️ Architecture Overview
-
-The project follows a **Feature-First Clean Architecture**, where each feature is a self-contained module. Higher-complexity features (like the AI Assistant) follow explicit clean-architecture layering with entities, repositories, and data sources; the majority of features use a pragmatic Cubit + Service + Model structure for fast iteration without sacrificing separation of concerns.
-
-```
-Presentation Layer   →   BLoC / Cubit  →  UI Screens & Widgets
-      ↕
-Domain Layer         →   Use Cases / Repositories (Interfaces)
-      ↕
-Data Layer           →   Supabase / Firebase / LiveKit / AI Gateway / Cloudinary
-```
-
-State flows unidirectionally through Cubits — UI triggers actions, Cubits process them and emit new states, and widgets reactively rebuild only when necessary.
-
----
-
-## 📂 Project Structure
-
-```
-lib/
-├── core/
-│   ├── router/             # AppRouter + route definitions
-│   ├── services/           # Notifications, FCM, Cloudinary, LiveKit tokens, calls
-│   ├── themes/              # ThemeCubit + dynamic theme/splash/logo definitions
-│   ├── cache/               # Hive-backed media cache, eviction, snapshots
-│   ├── chat_shared/         # Shared chat primitives: conversations, archives, starred, media
-│   ├── attachment/          # Unified attachment picker & rendering pipeline
-│   ├── audio/                # Voice recorder engine & waveform UI
-│   ├── presence/             # Online/last-seen presence system
-│   ├── mentions/             # @mention parsing, search & rich text
-│   ├── link/                  # Link preview fetching & rendering
-│   ├── connectivity/          # Network state monitoring & banner
-│   ├── bootstrap/             # App startup orchestration (Firebase/Supabase/Hive)
-│   ├── constants/, helpers/, errors/, utilities/, widgets/, toast/, secrets/, supabase/, firebase/, views/
-│
-├── features/
-│   ├── auth/                # Sign up, login, password strength, OAuth, app lock
-│   ├── splash/               # Splash screen & onboarding flow
-│   ├── home/                  # Feed orchestration
-│   ├── posts/                  # Post creation, feed, reactions, comments bridge
-│   ├── reels/                   # Short-form vertical video feed
-│   ├── stories/                  # Story creation, viewer, reactions, replies
-│   ├── comments/                  # Threaded comments, voice comments, AI suggestions
-│   ├── reactions/                  # Cross-surface reaction pickers & summaries
-│   ├── single_chats/                # 1-on-1 messaging
-│   ├── group_chats/                  # Group creation, management, messaging
-│   ├── chat_forwarding/                # Cross-chat message forwarding
-│   ├── single_calls/                    # 1-on-1 audio/video calls (LiveKit)
-│   ├── group_calls/                      # Group audio/video calls (LiveKit)
-│   ├── stickers/                          # Custom sticker pack creation & browsing
-│   ├── gifs/                               # Giphy GIF search & picker
-│   ├── ai_assistant/                        # In-context AI actions (autocomplete, summaries, etc.)
-│   ├── ai_chat/                              # Standalone multi-provider AI chat
-│   ├── social_graph/                          # Friends, follow, audience/privacy
-│   ├── discover/                               # People discovery
-│   ├── search/                                  # Global unified search + For You
-│   ├── notifications/                            # In-app notification center
-│   ├── profile/                                   # User profile, media gallery, social links
-│   ├── settings/                                   # Theme, AI, notifications, account, app lock
-│   └── about_us/                                    # App/team info screen
-│
-└── main.dart               # App entry point, Firebase & Supabase init
-```
-
-Each feature follows an internal structure of:
-```
-feature/
-├── cubit/        # State management (Cubit + State classes)
-├── model/        # Data models
-├── services/     # Feature-specific service layer
-├── screens/      # Full-page UI screens
-└── widgets/      # Reusable UI components
-```
-
----
-
-## ⚙️ Requirements
-
-| Requirement | Version |
-|---|---|
-| Flutter SDK | `^3.7.2` (Dart 3.x) |
-| Android SDK | API 21+ (Android 5.0) |
-| Xcode (iOS) | 14+ |
-| Supabase Project | Active project with Auth, DB, Storage, Realtime enabled |
-| Firebase Project | Android app registered, `google-services.json` configured |
-| LiveKit Server/Cloud | Project URL + API key/secret for token generation |
-| AI Provider Keys | At least one of Gemini / Groq / OpenRouter API keys |
-| Cloudinary Account | Cloud name + upload preset for media CDN |
-| Giphy API Key | For GIF search |
+| **Local storage** | Hive · SharedPreferences |
+| **Security** | `local_auth` biometrics, 2FA |
+| **Background work** | `flutter_foreground_task` |
 
 ---
 
 ## 🚀 Getting Started
 
-### 1. Clone the Repository
+### Prerequisites
+
+| Requirement | Version / Notes |
+| --- | --- |
+| Flutter SDK | 3.x (stable) |
+| Android | SDK 21+ (foreground service features target Android 14+) |
+| iOS | 14+ |
+| Supabase project | Auth, Realtime, Storage, Edge Functions enabled |
+| Firebase project | FCM + Crashlytics |
+| LiveKit Cloud | Project URL, API key & secret |
+| Cloudinary account | Cloud name & upload preset |
+
+### Environment Reference
+
+Configure via `.env` / `app_secrets.dart` (never commit real values):
+
+| Key | Description |
+| --- | --- |
+| `SUPABASE_URL` | Your Supabase project URL |
+| `SUPABASE_ANON_KEY` | Public anon key for client access |
+| `LIVEKIT_URL` | LiveKit server WebSocket URL |
+| `LIVEKIT_API_KEY` / `LIVEKIT_API_SECRET` | Used server-side to mint call tokens (never ship the secret in the client) |
+| `CLOUDINARY_CLOUD_NAME` | Cloudinary cloud identifier |
+| `CLOUDINARY_UPLOAD_PRESET` | Unsigned upload preset for media |
+| `GEMINI_API_KEY` / `GROQ_API_KEY` / `OPENROUTER_API_KEY` | AI provider keys, set as Edge Function secrets |
+
+> 🔐 Adjust key names to match your `app_secrets.dart` exactly.
+
+### Setup Steps
+
+**1. Clone the repository**
 
 ```bash
-git clone https://github.com/your-username/social-mate.git
-cd social-mate
+git clone https://github.com/Ahmedatef5O5/Social-Media-App.git
+cd Social-Media-App
 ```
 
-### 2. Install Dependencies
+**2. Install dependencies**
 
 ```bash
 flutter pub get
 ```
 
-### 3. Configure Environment & Secrets
+**3. Configure Firebase**
 
-Update `lib/core/secrets/app_secrets.dart` (or your preferred secrets strategy) with:
+Place `google-services.json` in `android/app/` (and `GoogleService-Info.plist` in `ios/Runner/` for iOS).
 
-```env
-SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_ANON_KEY=your-supabase-anon-key
+**4. Set up Supabase**
 
-LIVEKIT_URL=wss://your-livekit-project.livekit.cloud
-LIVEKIT_API_KEY=your_livekit_api_key
-LIVEKIT_API_SECRET=your_livekit_api_secret
-
-CLOUDINARY_CLOUD_NAME=your_cloud_name
-CLOUDINARY_UPLOAD_PRESET=your_upload_preset
-
-GEMINI_API_KEY=your_gemini_key
-GROQ_API_KEY=your_groq_key
-OPENROUTER_API_KEY=your_openrouter_key
-
-GIPHY_API_KEY=your_giphy_key
-```
-
-### 4. Firebase Setup
-
-- Download `google-services.json` from your Firebase Console.
-- Place it at: `android/app/google-services.json`
-- For iOS: download `GoogleService-Info.plist` and place it at `ios/Runner/GoogleService-Info.plist`
-
-### 5. Supabase Database Setup
-
-> Run your SQL migrations (if provided) or manually create the required tables: `profiles`, `posts`, `reels`, `messages`, `group_chats`, `stories`, `comments`, `reactions`, `sticker_packs`, `notifications`, `friendships`.
-
-Enable **Realtime** on your Supabase tables for live messaging, presence, and feed updates.
-
-### 6. Run the App
+Apply the SQL migrations, then deploy the Edge Functions:
 
 ```bash
-# Debug mode
+supabase db push
+supabase functions deploy send-notification
+supabase functions deploy ai-gateway
+```
+
+**5. Add secrets**
+
+Fill in `.env` / `app_secrets.dart` using the table above.
+
+**6. Run or build**
+
+```bash
 flutter run
-
-# Release build (Android)
 flutter build apk --release
-
-# Release build (iOS)
+flutter build appbundle --release
 flutter build ios --release
 ```
 
 ---
 
-## 🔑 Key User Scenarios
-
-| Scenario | How It Works |
-|---|---|
-| **New user registers** | Enters email/password → password strength evaluated → profile created in Supabase |
-| **Sends a voice note** | Records audio in-app with live waveform → compressed → uploaded → received in real time |
-| **Gets an AI reply suggestion** | Opens a chat → taps the AI assistant icon → picks tone/length → suggestion inserted into the composer |
-| **Chats with the AI** | Opens AI Chat → picks a model (Gemini/Llama/OpenRouter) → sends text or an image → gets a streamed reply |
-| **Receives a call while offline** | FCM full-screen intent fires → ringtone plays → incoming call UI shown over lock screen |
-| **Watches Reels** | Swipes vertically through the Reels feed or taps a Reel from the Home Feed's horizontal rail |
-| **Posts a story** | Picks image/video or a text background → uploads → visible to followers for 24h |
-| **Creates a sticker pack** | Uploads stickers → sets pack name & privacy → shares with friends or publishes publicly |
-| **Switches theme** | Opens Settings → selects Ocean/Midnight/etc. → entire app repaints, including splash & logo |
-| **Locks the app** | Enables App Lock in Settings → app requires biometric/device auth on next open |
-| **Reacts to a message** | Long-press message → emoji picker → reaction stored & displayed to all participants |
-
----
-
 ## 🗺️ Roadmap
 
-- [ ] **iOS Push Notification Support** — full APNs integration for calling features
-- [ ] **End-to-End Encryption (E2EE)** — for private messages
-- [ ] **AI-Generated Story Captions** — extend the AI Assistant into Stories
-- [ ] **Read Receipts at Scale** — batch-optimized delivery status updates
-- [ ] **Web Support** — Flutter Web build with responsive layouts
-- [ ] **Full Localization (i18n)** — multi-language support via `flutter_localizations`
-- [ ] **Unit & Widget Tests** — expanding coverage across Cubits and widgets
-
-<sub>✅ Previously planned Reels support and in-chat Message Search have since shipped and are documented above.</sub>
+- [x] 26 core feature modules
+- [x] LiveKit calling engine with dual signaling and foreground service
+- [x] Multi-provider AI gateway
+- [x] Offline-first snapshot cache with tenant isolation
+- [ ] Expanded automated test coverage
+- [ ] Additional AI assistants and model options
+- [ ] More themes and sticker pack discovery
 
 ---
 
-## 📄 License
-
-This project is intended for educational and portfolio purposes.  
-See [LICENSE](LICENSE) for details.
-
----
-
-<div align="center">
-
-Built with ❤️ using **Flutter** · **Supabase** · **Firebase** · **LiveKit** · **Gemini / Groq / OpenRouter**
-
-</div>
+<p align="center">
+  Made with ❤️ using Flutter · <b>Social Mate</b> — Connect · Share · Discover · Belong
+</p>
