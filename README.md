@@ -1,4 +1,4 @@
-﻿<!-- ═══════════════════════════════════════════════════════════════════════
+<!-- ═══════════════════════════════════════════════════════════════════════
      SOCIAL MATE — README
      Asset placeholders (replace by dropping files at these paths):
        https://github.com/user-attachments/assets/7bc99b0a-d3a0-4a76-af2e-1485aac8200a                  → widescreen hero banner
@@ -83,53 +83,23 @@
 
 ## 📸 Showcase
 
-> All captures are **frameless, high-DPI, rounded-corner UI cards**. To replace an image, overwrite the file at the path shown in the comment above it.
-
-<!-- Shared card style used by every <img> below:
-     border-radius:14px; box-shadow:0 4px 20px rgba(0,0,0,0.12); border:1px solid rgba(255,255,255,0.1); -->
+> All captures are **frameless, high-DPI, rounded-corner UI cards**.
 
 ### 🌱 Core Experience
 
 <table align="center">
   <tr>
     <td align="center" width="33%">
-
-      <!-- https://github.com/user-attachments/assets/2bb6b9fc-0bbe-42db-bde8-8c4df1c4afc0 -->
-      <img
-        src="https://github.com/user-attachments/assets/2bb6b9fc-0bbe-42db-bde8-8c4df1c4afc0"
-        alt="Authentication & Password Strength"
-        width="240"
-        style="border-radius:14px; box-shadow:0 4px 20px rgba(0,0,0,0.12); border:1px solid rgba(255,255,255,0.1);"
-      />
-      <br/>
+      <img src="https://github.com/user-attachments/assets/2bb6b9fc-0bbe-42db-bde8-8c4df1c4afc0" alt="Authentication &amp; Password Strength" width="240" style="border-radius:14px; box-shadow:0 4px 20px rgba(0,0,0,0.12);" /><br/>
       <sub><b>Authentication</b><br/>Password strength meter</sub>
-
     </td>
     <td align="center" width="33%">
-
-      <!-- https://github.com/user-attachments/assets/f3c318ed-485d-402b-b641-d9ca9013b75f -->
-      <img
-        src="https://github.com/user-attachments/assets/f3c318ed-485d-402b-b641-d9ca9013b75f"
-        alt="Home Feed"
-        width="240"
-        style="border-radius:14px; box-shadow:0 4px 20px rgba(0,0,0,0.12); border:1px solid rgba(255,255,255,0.1);"
-      />
-      <br/>
-      <sub><b>Home Feed</b><br/>Stories carousel & posts</sub>
-
+      <img src="https://github.com/user-attachments/assets/f3c318ed-485d-402b-b641-d9ca9013b75f" alt="Home Feed" width="240" style="border-radius:14px; box-shadow:0 4px 20px rgba(0,0,0,0.12);" /><br/>
+      <sub><b>Home Feed</b><br/>Stories carousel &amp; posts</sub>
     </td>
     <td align="center" width="33%">
-
-      <!-- https://github.com/user-attachments/assets/1c011987-bce1-4acf-a702-28b968ce710f -->
-      <img
-        src="https://github.com/user-attachments/assets/1c011987-bce1-4acf-a702-28b968ce710f"
-        alt="Discover People"
-        width="240"
-        style="border-radius:14px; box-shadow:0 4px 20px rgba(0,0,0,0.12); border:1px solid rgba(255,255,255,0.1);"
-      />
-      <br/>
-      <sub><b>Discover People</b><br/>Mutual friends & connection cards</sub>
-
+      <img src="https://github.com/user-attachments/assets/1c011987-bce1-4acf-a702-28b968ce710f" alt="Discover People" width="240" style="border-radius:14px; box-shadow:0 4px 20px rgba(0,0,0,0.12);" /><br/>
+      <sub><b>Discover People</b><br/>Mutual friends &amp; connection cards</sub>
     </td>
   </tr>
 </table>
@@ -139,43 +109,16 @@
 <table align="center">
   <tr>
     <td align="center" width="33%">
-
-      <!-- https://github.com/user-attachments/assets/49ed695b-c5e0-4b84-8fdc-a9c86ee8c993 -->
-      <img
-        src="https://github.com/user-attachments/assets/49ed695b-c5e0-4b84-8fdc-a9c86ee8c993"
-        alt="1-on-1 Chat"
-        width="240"
-        style="border-radius:14px; box-shadow:0 4px 20px rgba(0,0,0,0.12); border:1px solid rgba(255,255,255,0.1);"
-      />
-      <br/>
-      <sub><b>1-on-1 Chat</b><br/>Waveform voice notes & stickers</sub>
-
+      <img src="https://github.com/user-attachments/assets/49ed695b-c5e0-4b84-8fdc-a9c86ee8c993" alt="1-on-1 Chat" width="240" style="border-radius:14px; box-shadow:0 4px 20px rgba(0,0,0,0.12);" /><br/>
+      <sub><b>1-on-1 Chat</b><br/>Waveform voice notes &amp; stickers</sub>
     </td>
     <td align="center" width="33%">
-
-      <!-- https://github.com/user-attachments/assets/e1e7a148-3970-44e9-b5d2-b8895b0ecc59 -->
-      <img
-        src="https://github.com/user-attachments/assets/e1e7a148-3970-44e9-b5d2-b8895b0ecc59"
-        alt="Group Chat"
-        width="240"
-        style="border-radius:14px; box-shadow:0 4px 20px rgba(0,0,0,0.12); border:1px solid rgba(255,255,255,0.1);"
-      />
-      <br/>
-      <sub><b>Group Chat</b><br/>Mentions & shared media</sub>
-
+      <img src="https://github.com/user-attachments/assets/e1e7a148-3970-44e9-b5d2-b8895b0ecc59" alt="Group Chat" width="240" style="border-radius:14px; box-shadow:0 4px 20px rgba(0,0,0,0.12);" /><br/>
+      <sub><b>Group Chat</b><br/>Mentions &amp; shared media</sub>
     </td>
     <td align="center" width="33%">
-
-      <!-- https://github.com/user-attachments/assets/71a91939-7d1f-4bd4-85f0-18e439b8b451 -->
-      <img
-        src="https://github.com/user-attachments/assets/71a91939-7d1f-4bd4-85f0-18e439b8b451"
-        alt="Dynamic Call Message Bubbles"
-        width="240"
-        style="border-radius:14px; box-shadow:0 4px 20px rgba(0,0,0,0.12); border:1px solid rgba(255,255,255,0.1);"
-      />
-      <br/>
+      <img src="https://github.com/user-attachments/assets/71a91939-7d1f-4bd4-85f0-18e439b8b451" alt="Dynamic Call Message Bubbles" width="240" style="border-radius:14px; box-shadow:0 4px 20px rgba(0,0,0,0.12);" /><br/>
       <sub><b>Call Message Bubbles</b><br/>Ongoing · Ended · Missed</sub>
-
     </td>
   </tr>
 </table>
@@ -185,43 +128,16 @@
 <table align="center">
   <tr>
     <td align="center" width="33%">
-
-      <!-- https://github.com/user-attachments/assets/45b11108-8b6a-47ad-9d01-b19a5511bfee -->
-      <img
-        src="https://github.com/user-attachments/assets/45b11108-8b6a-47ad-9d01-b19a5511bfee"
-        alt="Incoming Call UI"
-        width="240"
-        style="border-radius:14px; box-shadow:0 4px 20px rgba(0,0,0,0.12); border:1px solid rgba(255,255,255,0.1);"
-      />
-      <br/>
+      <img src="https://github.com/user-attachments/assets/45b11108-8b6a-47ad-9d01-b19a5511bfee" alt="Incoming Call UI" width="240" style="border-radius:14px; box-shadow:0 4px 20px rgba(0,0,0,0.12);" /><br/>
       <sub><b>Incoming Call</b><br/>Lock-screen / ambient orbit</sub>
-
     </td>
     <td align="center" width="33%">
-
-      <!-- https://github.com/user-attachments/assets/67fb59c4-ca57-45bd-a733-df84f4d29e5b -->
-      <img
-        src="https://github.com/user-attachments/assets/67fb59c4-ca57-45bd-a733-df84f4d29e5b"
-        alt="Live Video Call"
-        width="240"
-        style="border-radius:14px; box-shadow:0 4px 20px rgba(0,0,0,0.12); border:1px solid rgba(255,255,255,0.1);"
-      />
-      <br/>
-      <sub><b>Live Video Call</b><br/>Adaptive stage & PiP overlay</sub>
-
+      <img src="https://github.com/user-attachments/assets/67fb59c4-ca57-45bd-a733-df84f4d29e5b" alt="Live Video Call" width="240" style="border-radius:14px; box-shadow:0 4px 20px rgba(0,0,0,0.12);" /><br/>
+      <sub><b>Live Video Call</b><br/>Adaptive stage &amp; PiP overlay</sub>
     </td>
     <td align="center" width="33%">
-
-      <!-- https://github.com/user-attachments/assets/7d640a77-53bc-4b8b-ad1d-ed8d78dfe58c -->
-      <img
-        src="https://github.com/user-attachments/assets/7d640a77-53bc-4b8b-ad1d-ed8d78dfe58c"
-        alt="Members Ringing Sheet"
-        width="240"
-        style="border-radius:14px; box-shadow:0 4px 20px rgba(0,0,0,0.12); border:1px solid rgba(255,255,255,0.1);"
-      />
-      <br/>
+      <img src="https://github.com/user-attachments/assets/7d640a77-53bc-4b8b-ad1d-ed8d78dfe58c" alt="Members Ringing Sheet" width="240" style="border-radius:14px; box-shadow:0 4px 20px rgba(0,0,0,0.12);" /><br/>
       <sub><b>Members Ringing Sheet</b><br/>Ring offline members</sub>
-
     </td>
   </tr>
 </table>
@@ -231,43 +147,16 @@
 <table align="center">
   <tr>
     <td align="center" width="33%">
-
-      <!-- https://github.com/user-attachments/assets/df7fe8b6-5476-42a5-9c82-c865d7a12125 -->
-      <img
-        src="https://github.com/user-attachments/assets/df7fe8b6-5476-42a5-9c82-c865d7a12125"
-        alt="Reels Feed"
-        width="240"
-        style="border-radius:14px; box-shadow:0 4px 20px rgba(0,0,0,0.12); border:1px solid rgba(255,255,255,0.1);"
-      />
-      <br/>
+      <img src="https://github.com/user-attachments/assets/df7fe8b6-5476-42a5-9c82-c865d7a12125" alt="Reels Feed" width="240" style="border-radius:14px; box-shadow:0 4px 20px rgba(0,0,0,0.12);" /><br/>
       <sub><b>Reels</b><br/>Short-form vertical video</sub>
-
     </td>
     <td align="center" width="33%">
-
-      <!-- https://github.com/user-attachments/assets/ac27c8d1-cb87-4906-9d0d-0bdff2f387a7 -->
-      <img
-        src="https://github.com/user-attachments/assets/ac27c8d1-cb87-4906-9d0d-0bdff2f387a7"
-        alt="Standalone AI Chat"
-        width="240"
-        style="border-radius:14px; box-shadow:0 4px 20px rgba(0,0,0,0.12); border:1px solid rgba(255,255,255,0.1);"
-      />
-      <br/>
-      <sub><b>AI Chat</b><br/>Multi-model streaming & image prompt</sub>
-
+      <img src="https://github.com/user-attachments/assets/ac27c8d1-cb87-4906-9d0d-0bdff2f387a7" alt="Standalone AI Chat" width="240" style="border-radius:14px; box-shadow:0 4px 20px rgba(0,0,0,0.12);" /><br/>
+      <sub><b>AI Chat</b><br/>Multi-model streaming &amp; image prompt</sub>
     </td>
     <td align="center" width="33%">
-
-      <!-- https://github.com/user-attachments/assets/52560c3d-1d96-43a7-b0af-ba2958ba6dcf -->
-      <img
-        src="https://github.com/user-attachments/assets/52560c3d-1d96-43a7-b0af-ba2958ba6dcf"
-        alt="Custom Sticker Studio"
-        width="240"
-        style="border-radius:14px; box-shadow:0 4px 20px rgba(0,0,0,0.12); border:1px solid rgba(255,255,255,0.1);"
-      />
-      <br/>
-      <sub><b>Sticker Studio</b><br/>Design & share packs</sub>
-
+      <img src="https://github.com/user-attachments/assets/52560c3d-1d96-43a7-b0af-ba2958ba6dcf" alt="Custom Sticker Studio" width="240" style="border-radius:14px; box-shadow:0 4px 20px rgba(0,0,0,0.12);" /><br/>
+      <sub><b>Sticker Studio</b><br/>Design &amp; share packs</sub>
     </td>
   </tr>
 </table>
@@ -277,48 +166,20 @@
 <table align="center">
   <tr>
     <td align="center" width="33%">
-
-      <!-- https://github.com/user-attachments/assets/99c7d3cb-fd29-4a32-8ac8-47e6134d1eda -->
-      <img
-        src="https://github.com/user-attachments/assets/99c7d3cb-fd29-4a32-8ac8-47e6134d1eda"
-        alt="Themes Picker"
-        width="240"
-        style="border-radius:14px; box-shadow:0 4px 20px rgba(0,0,0,0.12); border:1px solid rgba(255,255,255,0.1);"
-      />
-      <br/>
+      <img src="https://github.com/user-attachments/assets/99c7d3cb-fd29-4a32-8ac8-47e6134d1eda" alt="Themes Picker" width="240" style="border-radius:14px; box-shadow:0 4px 20px rgba(0,0,0,0.12);" /><br/>
       <sub><b>12+ Themes</b><br/>Ocean, Sunset, Midnight, Emerald…</sub>
-
     </td>
     <td align="center" width="33%">
-
-      <!-- https://github.com/user-attachments/assets/7e78a654-8f90-4a65-a3e4-5f47d3115c90 -->
-      <img
-        src="https://github.com/user-attachments/assets/7e78a654-8f90-4a65-a3e4-5f47d3115c90"
-        alt="App Lock"
-        width="240"
-        style="border-radius:14px; box-shadow:0 4px 20px rgba(0,0,0,0.12); border:1px solid rgba(255,255,255,0.1);"
-      />
-      <br/>
+      <img src="https://github.com/user-attachments/assets/7e78a654-8f90-4a65-a3e4-5f47d3115c90" alt="App Lock" width="240" style="border-radius:14px; box-shadow:0 4px 20px rgba(0,0,0,0.12);" /><br/>
       <sub><b>App Lock</b><br/>Biometric gate</sub>
-
     </td>
     <td align="center" width="33%">
-
-      <!-- https://github.com/user-attachments/assets/f19bd8e8-bc96-4edf-93b2-2ca935be3ad0 -->
-      <img
-        src="https://github.com/user-attachments/assets/f19bd8e8-bc96-4edf-93b2-2ca935be3ad0"
-        alt="Notification Center"
-        width="240"
-        style="border-radius:14px; box-shadow:0 4px 20px rgba(0,0,0,0.12); border:1px solid rgba(255,255,255,0.1);"
-      />
-      <br/>
+      <img src="https://github.com/user-attachments/assets/f19bd8e8-bc96-4edf-93b2-2ca935be3ad0" alt="Notification Center" width="240" style="border-radius:14px; box-shadow:0 4px 20px rgba(0,0,0,0.12);" /><br/>
       <sub><b>Notification Center</b><br/>Unified activity inbox</sub>
-
     </td>
   </tr>
 </table>
 
----
 
 ## ✨ Features
 
