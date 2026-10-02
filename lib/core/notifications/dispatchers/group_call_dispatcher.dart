@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -10,6 +11,7 @@ import 'package:social_media_app/core/services/incoming_call_navigation_guard.da
 import 'package:social_media_app/core/supabase/supabase_provider.dart';
 import 'package:social_media_app/features/group_calls/models/group_call_model.dart';
 import 'package:social_media_app/features/group_calls/views/incoming_group_call_screen.dart';
+import 'package:social_media_app/features/settings/repository/settings_repository.dart';
 
 class GroupCallDispatcher {
   GroupCallDispatcher._();
@@ -27,6 +29,7 @@ class GroupCallDispatcher {
     required String callerName,
     required String callType,
     String callerId = '',
+    String startedAt = '',
   }) async {
     Uint8List profileBitmap;
     try {
@@ -53,6 +56,20 @@ class GroupCallDispatcher {
       ongoing: true,
       autoCancel: false,
       timeoutAfter: 60000,
+      actions: const [
+        AndroidNotificationAction(
+          'decline_group_call',
+          'Decline',
+          showsUserInterface: false,
+          cancelNotification: true,
+        ),
+        AndroidNotificationAction(
+          'accept_group_call',
+          'Accept',
+          showsUserInterface: true,
+          cancelNotification: true,
+        ),
+      ],
     );
 
     await _localNotifications.show(
@@ -61,12 +78,39 @@ class GroupCallDispatcher {
       subtitle,
       NotificationDetails(android: androidDetails),
       payload:
-          'group_call|$callId|$groupId|$groupName|$groupAvatarUrl|$callType|$callerId',
+          'group_call|${_field(callId)}|${_field(groupId)}|${_field(groupName)}'
+          '|${_field(callerName)}|${_field(callType)}|${_field(startedAt)}'
+          '|${_field(callerId)}|${_field(groupAvatarUrl)}',
     );
   }
 
   Future<void> cancelIncomingGroupCallNotification(String callId) async {
     await _localNotifications.cancel(createNotificationId(callId));
+  }
+
+  static bool isNotAddressedTo(Map<String, dynamic> data, String userId) {
+    final raw = data['target_user_ids'] ?? data['targetUserIds'];
+    if (raw == null) return false;
+
+    List<String> targets = const [];
+    if (raw is List) {
+      targets = raw.map((e) => e.toString()).toList();
+    } else if (raw is String && raw.trim().isNotEmpty) {
+      final text = raw.trim();
+      if (text.startsWith('[')) {
+        try {
+          targets =
+              (jsonDecode(text) as List).map((e) => e.toString()).toList();
+        } catch (_) {
+          targets = const [];
+        }
+      } else {
+        targets = text.split(',').map((e) => e.trim()).toList();
+      }
+    }
+
+    if (targets.isEmpty) return false;
+    return !targets.contains(userId);
   }
 
   Future<void> handleIncomingGroupCallData(Map<String, dynamic> data) async {
@@ -80,6 +124,9 @@ class GroupCallDispatcher {
     final currentUserId = SupabaseProvider.idOrNull;
     if (currentUserId == null) return;
     if (callerId.isNotEmpty && callerId == currentUserId) return;
+
+    if (isNotAddressedTo(data, currentUserId)) return;
+
     final callId = (data['callId'] ?? data['call_id']) as String? ?? '';
     final groupId = data['groupId'] as String? ?? '';
     final groupName = data['groupName'] as String? ?? 'Group';
@@ -88,8 +135,11 @@ class GroupCallDispatcher {
     final callType = data['callType'] as String? ?? 'audio';
     final startedAt = data['startedAt'] as String?;
 
-    if (callerId.isEmpty) {
-      if (callId.isEmpty) return;
+    final callerProvided = callerId.isNotEmpty;
+
+    if (callId.isEmpty && !callerProvided) return;
+
+    if (callId.isNotEmpty) {
       try {
         final row =
             await SupabaseProvider.client
@@ -97,15 +147,23 @@ class GroupCallDispatcher {
                 .select('initiator_id, status')
                 .eq('call_id', callId)
                 .maybeSingle();
-        if (row == null) return;
-        final initiatorId = row['initiator_id'] as String? ?? '';
-        final status = row['status'] as String? ?? '';
-        if (initiatorId.isEmpty || initiatorId == currentUserId) return;
-        if (status != 'ringing') return;
-        callerId = initiatorId;
+
+        if (row == null) {
+          if (!callerProvided) return;
+        } else {
+          final status = row['status'] as String? ?? '';
+          if (status == 'ended' || status == 'missed') return;
+
+          if (!callerProvided) {
+            final initiatorId = row['initiator_id'] as String? ?? '';
+            if (initiatorId.isEmpty || initiatorId == currentUserId) return;
+            callerId = initiatorId;
+          }
+        }
       } catch (e) {
-        debugPrint('[GroupCallDispatcher] initiator lookup failed: $e');
-        return;
+        debugPrint('[GroupCallDispatcher] call lookup failed: $e');
+        // Fail open only when the payload identifies the caller.
+        if (!callerProvided) return;
       }
     }
 
@@ -118,6 +176,8 @@ class GroupCallDispatcher {
     }
 
     if (!isAppInForeground()) {
+      if (!SettingsRepository.instance.callNotifications) return;
+
       await showIncomingGroupCallNotification(
         callId: callId,
         groupId: groupId,
@@ -126,6 +186,7 @@ class GroupCallDispatcher {
         callerName: callerName,
         callType: callType,
         callerId: callerId,
+        startedAt: startedAt ?? '',
       );
     }
 
@@ -156,4 +217,6 @@ class GroupCallDispatcher {
           .then((_) => IncomingCallNavigationGuard.release(callId));
     });
   }
+
+  static String _field(String value) => value.replaceAll('|', ' ');
 }

@@ -16,6 +16,10 @@ void startCallServiceCallback() {
   FlutterForegroundTask.setTaskHandler(CallForegroundTaskHandler());
 }
 
+/// Message sent from the service isolate to the UI isolate when the ongoing
+/// call notification is tapped.
+const String expandActiveCallMessage = 'expand_active_call';
+
 class CallForegroundTaskHandler extends TaskHandler {
   @override
   Future<void> onStart(DateTime timestamp, TaskStarter starter) async {
@@ -40,5 +44,17 @@ class CallForegroundTaskHandler extends TaskHandler {
   @override
   void onReceiveData(Object data) {
     debugPrint('[CallForegroundTaskHandler] onReceiveData: $data');
+  }
+
+  /// The user tapped the ongoing-call notification ("Tap to return to the
+  /// call"). Bring the app forward AND ask the UI isolate to expand the
+  /// minimized call — see `_onForegroundTaskData` in `app.dart`.
+  ///
+  /// This handler runs in the service isolate, so it can only signal the main
+  /// isolate through the communication port.
+  @override
+  void onNotificationPressed() {
+    FlutterForegroundTask.launchApp();
+    FlutterForegroundTask.sendDataToMain(expandActiveCallMessage);
   }
 }

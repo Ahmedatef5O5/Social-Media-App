@@ -40,7 +40,6 @@ class ForegroundMessageHandler {
       final type = message.data['notificationType'] as String? ?? 'chat';
 
       if (type == 'incoming_group_call') {
-        if (!SettingsRepository.instance.callNotifications) return;
         await GroupCallDispatcher.instance.handleIncomingGroupCallData(
           message.data,
         );
@@ -48,7 +47,6 @@ class ForegroundMessageHandler {
       }
 
       if (type == 'incoming_call') {
-        if (!SettingsRepository.instance.callNotifications) return;
         await CallNotificationDispatcher.instance.handleIncomingCallData(
           message.data,
         );

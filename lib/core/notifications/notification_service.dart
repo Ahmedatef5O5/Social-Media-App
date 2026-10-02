@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:social_media_app/core/notifications/dispatchers/call_notification_dispatcher.dart';
 import 'package:social_media_app/core/notifications/dispatchers/chat_notification_dispatcher.dart';
@@ -40,10 +41,10 @@ class NotificationService {
 
     if (!isBackground && !_listenersRegistered) {
       _listenersRegistered = true;
-      await NotificationPluginBootstrap.requestPermissions();
       ForegroundMessageHandler().listen();
       TapActionHandler.instance.listenToNotificationOpenedApp();
-      TapActionHandler.instance.handleTerminatedAppLaunch();
+      unawaited(TapActionHandler.instance.handleTerminatedAppLaunch());
+      await NotificationPluginBootstrap.requestPermissions();
     }
   }
 
@@ -76,6 +77,8 @@ class NotificationService {
     required String groupAvatarUrl,
     required String callerName,
     required String callType,
+    String callerId = '',
+    String startedAt = '',
   }) => GroupCallDispatcher.instance.showIncomingGroupCallNotification(
     callId: callId,
     groupId: groupId,
@@ -83,6 +86,8 @@ class NotificationService {
     groupAvatarUrl: groupAvatarUrl,
     callerName: callerName,
     callType: callType,
+    callerId: callerId,
+    startedAt: startedAt,
   );
 
   Future<void> showNotificationFromMessage(RemoteMessage message) =>

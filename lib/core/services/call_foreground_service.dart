@@ -6,6 +6,10 @@ import 'call_foreground_task_handler.dart';
 class CallForegroundService {
   const CallForegroundService._();
 
+  static bool _isRunning = false;
+
+  static bool get isRunning => _isRunning;
+
   static Future<bool> start({
     required int serviceId,
     required String title,
@@ -34,6 +38,7 @@ class CallForegroundService {
         notificationText: text,
         callback: startCallServiceCallback,
       );
+      _isRunning = true;
       return true;
     } catch (e, s) {
       debugPrint('[CallForegroundService] startService failed: $e\n$s');
@@ -42,6 +47,7 @@ class CallForegroundService {
   }
 
   static Future<void> stop() async {
+    _isRunning = false;
     try {
       await FlutterForegroundTask.stopService();
     } catch (e) {

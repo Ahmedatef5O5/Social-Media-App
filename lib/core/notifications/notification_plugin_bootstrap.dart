@@ -11,6 +11,10 @@ class NotificationPluginBootstrap {
   static final NotificationChannelSetup _channelSetup =
       NotificationChannelSetup();
 
+  /// The shared plugin instance (needed for `getNotificationAppLaunchDetails`
+  /// on a cold start that was triggered by tapping a local notification).
+  static FlutterLocalNotificationsPlugin get plugin => _plugin;
+
   static Future<void> ensureInitialized({
     required void Function(NotificationResponse) onForegroundTap,
     required void Function(NotificationResponse) onBackgroundTap,

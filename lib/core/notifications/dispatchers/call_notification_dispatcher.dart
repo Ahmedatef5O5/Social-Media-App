@@ -1,8 +1,11 @@
+import 'dart:async';
 import 'dart:typed_data';
 import 'package:dio/dio.dart' as dio_pkg;
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:social_media_app/core/notifications/channels/notification_channel_setup.dart';
+import 'package:social_media_app/core/notifications/handlers/background_message_handler.dart'
+    show ensureSupabaseReady;
 import 'package:social_media_app/core/notifications/helpers/notification_app_state_helper.dart';
 import 'package:social_media_app/core/notifications/helpers/notification_avatar_builder.dart';
 import 'package:social_media_app/core/notifications/helpers/notification_id_helper.dart';
@@ -10,6 +13,8 @@ import 'package:social_media_app/core/notifications/notification_navigator_key.d
 import 'package:social_media_app/core/router/app_routes.dart';
 import 'package:social_media_app/core/services/incoming_call_navigation_guard.dart';
 import 'package:social_media_app/core/supabase/supabase_provider.dart';
+import 'package:social_media_app/features/settings/repository/settings_repository.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class CallNotificationDispatcher {
   CallNotificationDispatcher._();
@@ -19,6 +24,27 @@ class CallNotificationDispatcher {
   final NotificationAvatarBuilder _avatarBuilder = NotificationAvatarBuilder();
   final FlutterLocalNotificationsPlugin _localNotifications =
       FlutterLocalNotificationsPlugin();
+
+  // ── Pending "Accept" from the notification button ──────────────────────
+
+  String? _pendingActionCallId;
+  String? _pendingAction;
+
+  static const String pendingActionAccept = 'accept';
+
+  void setPendingCallAction(String callId, String action) {
+    _pendingActionCallId = callId;
+    _pendingAction = action;
+  }
+
+  /// Returns (and clears) the pending action recorded for [callId], or `null`.
+  String? consumePendingCallAction(String callId) {
+    if (_pendingActionCallId != callId) return null;
+    final action = _pendingAction;
+    _pendingActionCallId = null;
+    _pendingAction = null;
+    return action;
+  }
 
   Future<void> showIncomingCallNotification({
     required String callId,
@@ -70,7 +96,9 @@ class CallNotificationDispatcher {
       callerName,
       subtitle,
       NotificationDetails(android: androidDetails),
-      payload: 'call|$callId|$callerId|$callerName|$callerAvatar|$callType',
+      payload:
+          'call|${_field(callId)}|${_field(callerId)}|${_field(callerName)}'
+          '|${_field(callerAvatar)}|${_field(callType)}',
     );
   }
 
@@ -93,7 +121,14 @@ class CallNotificationDispatcher {
 
     if (callerId.isNotEmpty && callerId == SupabaseProvider.idOrNull) return;
 
+    if (IncomingCallNavigationGuard.isUserBusyWithAnotherCall(callId)) {
+      if (callId.isNotEmpty) unawaited(_rejectWhileBusy(callId));
+      return;
+    }
+
     if (!isAppInForeground()) {
+      if (!SettingsRepository.instance.callNotifications) return;
+
       await showIncomingCallNotification(
         callId: callId,
         callerId: callerId,
@@ -121,7 +156,44 @@ class CallNotificationDispatcher {
     });
   }
 
+  Future<void> _rejectWhileBusy(String callId) async {
+    try {
+      await SupabaseProvider.client
+          .from('calls')
+          .update({'status': 'rejected'})
+          .eq('call_id', callId)
+          .eq('status', 'ringing');
+    } catch (e) {
+      debugPrint('[CallNotificationDispatcher] busy auto-reject failed: $e');
+    }
+  }
+
   Future<void> rejectCallViaRest(String callId) async {
+    if (callId.isEmpty) return;
+
+    unawaited(cancelCallNotification(callId));
+
+    try {
+      await ensureSupabaseReady();
+      final client = Supabase.instance.client;
+
+      for (var i = 0; i < 12 && client.auth.currentSession == null; i++) {
+        await Future<void>.delayed(const Duration(milliseconds: 250));
+      }
+
+      if (client.auth.currentSession != null) {
+        await client
+            .from('calls')
+            .update({'status': 'rejected'})
+            .eq('call_id', callId);
+        return;
+      }
+    } catch (e) {
+      debugPrint(
+        '[CallNotificationDispatcher] authenticated reject failed: $e',
+      );
+    }
+
     try {
       final dio = dio_pkg.Dio();
       const supabaseUrl = String.fromEnvironment(
@@ -151,4 +223,6 @@ class CallNotificationDispatcher {
       debugPrint('_rejectCallViaRest error: $e');
     }
   }
+
+  static String _field(String value) => value.replaceAll('|', ' ');
 }

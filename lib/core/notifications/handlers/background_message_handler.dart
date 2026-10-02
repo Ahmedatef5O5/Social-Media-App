@@ -7,7 +7,9 @@ import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:social_media_app/core/cache/services/hive_cache_manager.dart';
 import 'package:social_media_app/core/cache/services/local_snapshot_store.dart';
+import 'package:social_media_app/core/notifications/dispatchers/call_notification_dispatcher.dart';
 import 'package:social_media_app/core/notifications/dispatchers/chat_notification_dispatcher.dart';
+import 'package:social_media_app/core/notifications/dispatchers/group_call_dispatcher.dart';
 import 'package:social_media_app/core/notifications/handlers/tap_action_handler.dart';
 import 'package:social_media_app/core/notifications/notification_plugin_bootstrap.dart';
 import 'package:social_media_app/core/secrets/app_secrets.dart';
@@ -53,7 +55,36 @@ void onBgNotificationActionTapped(NotificationResponse response) async {
       await handleBackgroundChatAction(response);
       return;
     }
-    // For normal taps in background, we just route it.
+    if (actionId == 'decline_call') {
+      final payload = response.payload ?? '';
+      if (payload.startsWith('call|')) {
+        final parts = payload.split('|');
+        if (parts.length >= 2) {
+          final callId = parts[1];
+          await CallNotificationDispatcher.instance.cancelCallNotification(
+            callId,
+          );
+          try {
+            await ensureSupabaseReady();
+          } catch (_) {}
+          await CallNotificationDispatcher.instance.rejectCallViaRest(callId);
+        }
+      }
+      return;
+    }
+    if (actionId == 'decline_group_call') {
+      final payload = response.payload ?? '';
+      if (payload.startsWith('group_call|')) {
+        final parts = payload.split('|');
+        if (parts.length >= 2) {
+          final callId = parts[1];
+          await GroupCallDispatcher.instance
+              .cancelIncomingGroupCallNotification(callId);
+        }
+      }
+      return;
+    }
+    // For normal taps or accept actions in background, route it.
     TapActionHandler.handleTap(response);
   } catch (e, st) {
     debugPrint('[NotifTap] UNCAUGHT top-level error: $e\n$st');
