@@ -53,6 +53,10 @@ class _GroupVoiceMessageBubbleWidgetState
 
   Future<void> _preloadDuration() async {
     if (widget.isUploading || _isLocalFile || widget.voiceUrl.isEmpty) return;
+    if (widget.initialDurationSeconds != null &&
+        widget.initialDurationSeconds! > 0) {
+      return;
+    }
 
     await _voice.fetchDuration(widget.voiceUrl);
 
@@ -139,8 +143,9 @@ class _GroupVoiceMessageBubbleWidgetState
     }
 
     if (mounted) setState(() => _isLoading = true);
+    VideoPlayerController? controller;
     try {
-      final controller =
+      controller =
           _isLocalFile
               ? VideoPlayerController.file(File(widget.voiceUrl))
               : VideoPlayerController.networkUrl(Uri.parse(widget.voiceUrl));
@@ -161,7 +166,8 @@ class _GroupVoiceMessageBubbleWidgetState
         });
       }
     } catch (e) {
-      setState(() => _isLoading = false);
+      await controller?.dispose();
+      if (mounted) setState(() => _isLoading = false);
       return;
     }
   }

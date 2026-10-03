@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:livekit_client/livekit_client.dart';
 import '../../../core/notifications/notification_navigator_key.dart';
+import '../../../core/services/current_user_name_resolver.dart';
 import '../../../core/services/active_call/pip/call_pip_cubit.dart';
 import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/widgets/calls/call_avatar_image.dart';
@@ -12,8 +13,8 @@ import '../../../core/widgets/custom_loading_indicator.dart';
 import '../../group_chats/cubits/group_members_cubit/group_members_cubit.dart';
 import '../../group_chats/models/group_member_model.dart';
 import '../../group_chats/services/group_chat_services.dart';
-import '../../single_calls/cubits/single_call_cubit/call_cubit.dart';
 import '../models/group_call_model.dart';
+import '../services/group_call_signaling_service.dart';
 
 class GroupCallMemberEntry {
   final GroupMemberModel member;
@@ -44,6 +45,8 @@ class GroupCallMembersSheet extends StatefulWidget {
 class _GroupCallMembersSheetState extends State<GroupCallMembersSheet> {
   late final GroupMembersCubit _membersCubit;
   late final ScrollController _scrollController;
+  late final GroupCallSignalingService _signaling;
+  late final Future<String> _ringerNameFuture;
 
   EventsListener<RoomEvent>? _roomListener;
   Set<String> _activeUserIds = {};
@@ -63,6 +66,9 @@ class _GroupCallMembersSheetState extends State<GroupCallMembersSheet> {
     )..loadMembers();
 
     _scrollController = ScrollController()..addListener(_onScroll);
+
+    _signaling = context.read<GroupCallSignalingService>();
+    _ringerNameFuture = CurrentUserNameResolver.resolve();
 
     final room = context.read<CallPipCubit>().state.room;
     _syncActiveIds(room);
@@ -105,11 +111,22 @@ class _GroupCallMembersSheetState extends State<GroupCallMembersSheet> {
 
     setState(() => _ringingUserIds.add(member.userId));
 
-    await context.read<CallCubit>().ringOfflineMember(
-      widget.call,
-      member.userId,
-    );
+    try {
+      final ringerName = await _ringerNameFuture;
+      await _signaling.ringGroupMember(
+        call: widget.call,
+        targetMemberId: member.userId,
+        ringerUserId: SupabaseProvider.id,
+        ringerUserName: ringerName,
+      );
+    } catch (e) {
+      debugPrint('[GroupCallMembersSheet] ring failed: $e');
+      if (mounted) setState(() => _ringingUserIds.remove(member.userId));
+      return;
+    }
+    if (!mounted) return;
 
+    _ringingCooldowns[member.userId]?.cancel();
     _ringingCooldowns[member.userId] = Timer(const Duration(seconds: 25), () {
       if (!mounted) return;
       setState(() => _ringingUserIds.remove(member.userId));
@@ -127,9 +144,6 @@ class _GroupCallMembersSheetState extends State<GroupCallMembersSheet> {
     super.dispose();
   }
 
-  /// A member is "in the call" when a participant matches by user id
-  /// (`m.userId == p.identity`) OR — for tokens whose identity is not the
-  /// user id — by display name (`m.userName == p.identity || p.name`).
   bool _isMemberActive(GroupMemberModel m) {
     if (_activeUserIds.contains(m.userId)) return true;
     if (m.userName.isEmpty) return false;
@@ -141,8 +155,10 @@ class _GroupCallMembersSheetState extends State<GroupCallMembersSheet> {
     final entries =
         members
             .map(
-              (m) =>
-                  GroupCallMemberEntry(member: m, isActive: _isMemberActive(m)),
+              (m) => GroupCallMemberEntry(
+                member: m,
+                isActive: _isMemberActive(m),
+              ),
             )
             .toList();
 

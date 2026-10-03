@@ -12,6 +12,8 @@ import '../../../core/chat_shared/widgets/shared_media_preview_section.dart';
 import '../../../core/chat_shared/services/shared_media_data_source.dart';
 import '../../../core/chat_shared/widgets/starred_messages_row.dart';
 import '../../../core/errors/supabase_error_mapper.dart';
+import '../../../core/presence/cubits/presence_cubit/presence_cubit.dart';
+import '../../../core/presence/models/presence_info.dart';
 import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/toast/app_toast.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
@@ -373,50 +375,61 @@ class _GroupInfoViewState extends State<GroupInfoView> {
                     final isOwner = _membersCubit.isCurrentUserOwner(
                       _currentUserId,
                     );
-
-                    // Real-role admin only — used where "Owner" and "Admin"
-                    // must render as visually distinct badges/menus (the
-                    // members list already branches on isOwner separately).
                     final bool isAdmin = _membersCubit.isCurrentUserAdmin(
                       _currentUserId,
                     );
 
-                    // Admin OR Owner — used for "can this person manage the
-                    // group" gates (edit name/photo from the header, open
-                    // the full Group Settings management UI).
                     final bool hasAdminPrivileges = _membersCubit
                         .hasAdminPrivileges(_currentUserId);
 
                     return CustomScrollView(
                       controller: _scrollController,
                       slivers: [
-                        GroupInfoHeaderWidget(
-                          group: liveGroup,
+                        BlocBuilder<PresenceCubit, Map<String, PresenceInfo>>(
+                          bloc: context.read<PresenceCubit>(),
+                          builder: (context, presenceState) {
+                            final presenceCubit = context.read<PresenceCubit>();
+                            final onlineCount =
+                                membersList
+                                    .where(
+                                      (m) =>
+                                          m.userId != _currentUserId &&
+                                          presenceCubit.isOnline(m.userId),
+                                    )
+                                    .length;
 
-                          isAdmin: hasAdminPrivileges,
-                          isEditingName: _isEditingName,
-                          isSavingName: _isSavingName,
-                          controller: _nameController,
-                          isUploadingPhoto: _isUploadingPhoto,
-                          onEditTap: () {
-                            setState(() => _isEditingName = true);
-                            WidgetsBinding.instance.addPostFrameCallback((_) {
-                              _nameController.selection = TextSelection(
-                                baseOffset: 0,
-                                extentOffset: _nameController.text.length,
-                              );
-                            });
+                            return GroupInfoHeaderWidget(
+                              group: liveGroup,
+                              isAdmin: hasAdminPrivileges,
+                              isEditingName: _isEditingName,
+                              isSavingName: _isSavingName,
+                              controller: _nameController,
+                              isUploadingPhoto: _isUploadingPhoto,
+                              totalMembersCount: totalCount,
+                              onlineMembersCount: onlineCount,
+                              onEditTap: () {
+                                setState(() => _isEditingName = true);
+                                WidgetsBinding.instance.addPostFrameCallback((
+                                  _,
+                                ) {
+                                  _nameController.selection = TextSelection(
+                                    baseOffset: 0,
+                                    extentOffset: _nameController.text.length,
+                                  );
+                                });
+                              },
+                              onSubmit: _updateGroupName,
+                              onCancel: _cancelEditingName,
+                              onChangePhoto: _changeGroupPhoto,
+                              onSettingsTap:
+                                  () => _openGroupSettings(
+                                    hasAdminPrivileges,
+                                    isOwner,
+                                    liveGroup,
+                                  ),
+                              isMuted: _isMuted,
+                            );
                           },
-                          onSubmit: _updateGroupName,
-                          onCancel: _cancelEditingName,
-                          onChangePhoto: _changeGroupPhoto,
-                          onSettingsTap:
-                              () => _openGroupSettings(
-                                hasAdminPrivileges,
-                                isOwner,
-                                liveGroup,
-                              ),
-                          isMuted: _isMuted,
                         ),
                         SliverToBoxAdapter(
                           child: GroupInfoQuickActionsRow(

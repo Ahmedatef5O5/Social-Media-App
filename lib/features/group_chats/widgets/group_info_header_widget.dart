@@ -17,9 +17,12 @@ class GroupInfoHeaderWidget extends StatelessWidget {
   final TextEditingController controller;
   final VoidCallback onEditTap;
   final VoidCallback onSubmit;
+  final VoidCallback onCancel;
   final VoidCallback onChangePhoto;
   final VoidCallback onSettingsTap;
   final bool isMuted;
+  final int totalMembersCount;
+  final int onlineMembersCount;
 
   const GroupInfoHeaderWidget({
     super.key,
@@ -31,9 +34,12 @@ class GroupInfoHeaderWidget extends StatelessWidget {
     required this.controller,
     required this.onEditTap,
     required this.onSubmit,
+    required this.onCancel,
     required this.onChangePhoto,
     required this.onSettingsTap,
     required this.isMuted,
+    required this.totalMembersCount,
+    required this.onlineMembersCount,
   });
 
   @override
@@ -48,19 +54,23 @@ class GroupInfoHeaderWidget extends StatelessWidget {
         controller: controller,
         onEditTap: onEditTap,
         onSubmit: onSubmit,
+        onCancel: onCancel,
         onChangePhoto: onChangePhoto,
         onSettingsTap: onSettingsTap,
         isMuted: isMuted,
         topPadding: MediaQuery.paddingOf(context).top,
         primary: Theme.of(context).primaryColor,
         isSavingName: isSavingName,
+        totalMembersCount: totalMembersCount,
+        onlineMembersCount: onlineMembersCount,
       ),
     );
   }
 }
 
 class _GroupInfoHeaderDelegate extends SliverPersistentHeaderDelegate {
-  static const double _expandedContentHeight = 250;
+  static const double _badgesReservedHeight = 40;
+  static const double _expandedContentHeight = 250 + _badgesReservedHeight;
   static const double _collapsedContentHeight = kToolbarHeight;
   static const double _avatarExpandedSize = 108;
   static const double _avatarCollapsedSize = 34;
@@ -75,11 +85,14 @@ class _GroupInfoHeaderDelegate extends SliverPersistentHeaderDelegate {
   final TextEditingController controller;
   final VoidCallback onEditTap;
   final VoidCallback onSubmit;
+  final VoidCallback onCancel;
   final VoidCallback onChangePhoto;
   final VoidCallback onSettingsTap;
   final bool isMuted;
   final double topPadding;
   final Color primary;
+  final int totalMembersCount;
+  final int onlineMembersCount;
 
   _GroupInfoHeaderDelegate({
     required this.group,
@@ -90,11 +103,14 @@ class _GroupInfoHeaderDelegate extends SliverPersistentHeaderDelegate {
     required this.controller,
     required this.onEditTap,
     required this.onSubmit,
+    required this.onCancel,
     required this.onChangePhoto,
     required this.onSettingsTap,
     required this.isMuted,
     required this.topPadding,
     required this.primary,
+    required this.totalMembersCount,
+    required this.onlineMembersCount,
   });
 
   @override
@@ -139,6 +155,7 @@ class _GroupInfoHeaderDelegate extends SliverPersistentHeaderDelegate {
 
     final bigTitleOpacity = (1 - (t / 0.6)).clamp(0.0, 1.0);
     final smallTitleOpacity = ((t - 0.4) / 0.6).clamp(0.0, 1.0);
+    final badgesScrollOpacity = (1 - (t / 0.5)).clamp(0.0, 1.0);
 
     return SizedBox(
       height: currentExtent,
@@ -237,6 +254,31 @@ class _GroupInfoHeaderDelegate extends SliverPersistentHeaderDelegate {
                 ),
               ),
             ),
+
+          if (badgesScrollOpacity > 0) ...[
+            Positioned(
+              left: 16,
+              bottom: 16,
+              child: Opacity(
+                opacity: badgesScrollOpacity,
+                child: _EdgeBadgeSlot(
+                  isEditingName: isEditingName,
+                  child: _TotalMembersBadge(count: totalMembersCount),
+                ),
+              ),
+            ),
+            Positioned(
+              right: 16,
+              bottom: 16,
+              child: Opacity(
+                opacity: badgesScrollOpacity,
+                child: _EdgeBadgeSlot(
+                  isEditingName: isEditingName,
+                  child: _OnlineMembersBadge(count: onlineMembersCount),
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -351,47 +393,77 @@ class _GroupInfoHeaderDelegate extends SliverPersistentHeaderDelegate {
 
     if (isEditingName) {
       nameSection = Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 40),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-
-          children: [
-            Expanded(
-              child: DirectionalTextField(
-                controller: controller,
-                onSubmitted: (_) => onSubmit(),
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w500,
-                ),
-
-                maxLines: 1,
-                decoration: const InputDecoration(
-                  border: UnderlineInputBorder(
-                    borderSide: BorderSide(color: Colors.white54),
-                  ),
-                  isDense: true,
+        padding: const EdgeInsets.symmetric(horizontal: 28),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+            child: Container(
+              padding: const EdgeInsets.only(left: 14, right: 4),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                color: Colors.white.withValues(alpha: 0.12),
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.15),
+                  width: 1,
                 ),
               ),
-            ),
-            const SizedBox(width: 6),
-            isSavingName
-                ? const SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: Colors.white,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Expanded(
+                    child: DirectionalTextField(
+                      controller: controller,
+                      onSubmitted: (_) => onSubmit(),
+                      cursorColor: Colors.white,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 17,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      maxLines: 1,
+                      decoration: const InputDecoration(
+                        border: InputBorder.none,
+                        isDense: true,
+                        contentPadding: EdgeInsets.symmetric(vertical: 12),
+                        hintText: 'Group name',
+                        hintStyle: TextStyle(color: Colors.white38),
+                      ),
+                    ),
                   ),
-                )
-                : IconButton(
-                  icon: const Icon(Icons.check, color: Colors.white, size: 20),
-                  onPressed: onSubmit,
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                ),
-          ],
+                  const SizedBox(width: 2),
+                  if (isSavingName)
+                    const Padding(
+                      padding: EdgeInsets.all(10),
+                      child: SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      ),
+                    )
+                  else ...[
+                    _GlassIconAction(
+                      icon: Icons.close_rounded,
+                      onTap: onCancel,
+                      iconColor: Colors.white70,
+                      tooltip: 'Cancel',
+                    ),
+                    const SizedBox(width: 2),
+                    _GlassIconAction(
+                      icon: Icons.check_rounded,
+                      onTap: onSubmit,
+                      iconColor: Colors.white,
+                      emphasized: true,
+                      tooltip: 'Save',
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
         ),
       );
     } else {
@@ -467,9 +539,36 @@ class _GroupInfoHeaderDelegate extends SliverPersistentHeaderDelegate {
     return oldDelegate.group != group ||
         oldDelegate.isAdmin != isAdmin ||
         oldDelegate.isEditingName != isEditingName ||
+        oldDelegate.isSavingName != isSavingName ||
         oldDelegate.isUploadingPhoto != isUploadingPhoto ||
         oldDelegate.topPadding != topPadding ||
-        oldDelegate.primary != primary;
+        oldDelegate.primary != primary ||
+        oldDelegate.totalMembersCount != totalMembersCount ||
+        oldDelegate.onlineMembersCount != onlineMembersCount;
+  }
+}
+
+class _EdgeBadgeSlot extends StatelessWidget {
+  final bool isEditingName;
+  final Widget child;
+
+  const _EdgeBadgeSlot({required this.isEditingName, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return IgnorePointer(
+      ignoring: isEditingName,
+      child: AnimatedSlide(
+        duration: const Duration(milliseconds: 220),
+        curve: Curves.easeOutCubic,
+        offset: isEditingName ? const Offset(0, 0.6) : Offset.zero,
+        child: AnimatedOpacity(
+          duration: const Duration(milliseconds: 220),
+          opacity: isEditingName ? 0.0 : 1.0,
+          child: child,
+        ),
+      ),
+    );
   }
 }
 
@@ -507,6 +606,325 @@ class _GlassCircleButton extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _GlassIconAction extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+  final Color iconColor;
+  final bool emphasized;
+  final String? tooltip;
+
+  const _GlassIconAction({
+    required this.icon,
+    required this.onTap,
+    required this.iconColor,
+    this.emphasized = false,
+    this.tooltip,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final button = InkWell(
+      customBorder: const CircleBorder(),
+      onTap: onTap,
+      child: Container(
+        width: 30,
+        height: 30,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color:
+              emphasized
+                  ? Colors.white.withValues(alpha: 0.22)
+                  : Colors.white.withValues(alpha: 0.08),
+          border: Border.all(
+            color: Colors.white.withValues(alpha: 0.15),
+            width: 1,
+          ),
+        ),
+        child: Icon(icon, color: iconColor, size: 17),
+      ),
+    );
+
+    if (tooltip == null) return button;
+    return Tooltip(message: tooltip!, child: button);
+  }
+}
+
+class _GroupInfoGlassBadge extends StatelessWidget {
+  final Widget child;
+
+  const _GroupInfoGlassBadge({required this.child, Key? key});
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      key: key,
+      borderRadius: BorderRadius.circular(20),
+
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.14),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.18),
+              width: 1,
+            ),
+          ),
+          child: child,
+        ),
+      ),
+    );
+  }
+}
+
+/// Bottom-left "N Members" glass pill.
+class _TotalMembersBadge extends StatelessWidget {
+  final int count;
+
+  const _TotalMembersBadge({required this.count});
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 350),
+      switchInCurve: Curves.easeOutCubic,
+      switchOutCurve: Curves.easeInCubic,
+      transitionBuilder: (child, animation) {
+        return FadeTransition(
+          opacity: animation,
+          child: ScaleTransition(
+            scale: Tween<double>(begin: 0.9, end: 1.0).animate(animation),
+            child: child,
+          ),
+        );
+      },
+      child:
+          count <= 0
+              ? const SizedBox.shrink(
+                key: ValueKey('total_members_badge_hidden'),
+              )
+              : _GroupInfoGlassBadge(
+                key: const ValueKey('total_members_badge_visible'),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _RollingCountText(
+                      count: count,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(width: 5),
+                    const Icon(
+                      Icons.people_alt_rounded,
+                      size: 14,
+                      color: Colors.white,
+                    ),
+                    const SizedBox(width: 3),
+                    const Text(
+                      'Members',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+    );
+  }
+}
+
+/// Bottom-right "N online" glass pill with a breathing presence dot.
+
+class _OnlineMembersBadge extends StatelessWidget {
+  final int count;
+
+  const _OnlineMembersBadge({required this.count});
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 300),
+      transitionBuilder:
+          (child, animation) =>
+              FadeTransition(opacity: animation, child: child),
+      child:
+          count <= 0
+              ? const SizedBox.shrink(key: ValueKey('online_badge_hidden'))
+              : _GroupInfoGlassBadge(
+                key: const ValueKey('online_badge_visible'),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const _PulsingOnlineDot(size: 8),
+                    const SizedBox(width: 6),
+                    _RollingCountText(
+                      count: count,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(width: 3),
+                    const Text(
+                      'online',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+    );
+  }
+}
+
+class _PulsingOnlineDot extends StatefulWidget {
+  final double size;
+
+  const _PulsingOnlineDot({required this.size});
+
+  @override
+  State<_PulsingOnlineDot> createState() => _PulsingOnlineDotState();
+}
+
+class _PulsingOnlineDotState extends State<_PulsingOnlineDot>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1600),
+    )..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, _) {
+        final t = Curves.easeInOut.transform(_controller.value);
+        final scale = 0.85 + (0.35 * t);
+        final opacity = 0.55 + (0.45 * t);
+        return Opacity(
+          opacity: opacity,
+          child: Transform.scale(
+            scale: scale,
+            child: Container(
+              width: widget.size,
+              height: widget.size,
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                color: Color(0xFF34D399), // emerald-400
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _RollingCountText extends StatefulWidget {
+  final int count;
+  final TextStyle style;
+
+  const _RollingCountText({required this.count, required this.style});
+
+  @override
+  State<_RollingCountText> createState() => _RollingCountTextState();
+}
+
+class _RollingCountTextState extends State<_RollingCountText>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late int _oldCount;
+  late int _newCount;
+
+  int _direction = 1;
+
+  @override
+  void initState() {
+    super.initState();
+    _oldCount = widget.count;
+    _newCount = widget.count;
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 320),
+    );
+  }
+
+  @override
+  void didUpdateWidget(covariant _RollingCountText oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.count == _newCount) return;
+
+    _direction = widget.count > _newCount ? 1 : -1;
+    _oldCount = _newCount;
+    _newCount = widget.count;
+    _controller
+      ..reset()
+      ..forward();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, _) {
+        if (_controller.isDismissed) {
+          return Text('$_newCount', style: widget.style);
+        }
+
+        final t = Curves.easeOutCubic.transform(_controller.value);
+        final outgoingOffset = Offset(0, _direction * t);
+        final incomingOffset = Offset(0, -_direction * (1 - t));
+
+        return ClipRect(
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              FractionalTranslation(
+                translation: outgoingOffset,
+                child: Text('$_oldCount', style: widget.style),
+              ),
+              FractionalTranslation(
+                translation: incomingOffset,
+                child: Text('$_newCount', style: widget.style),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

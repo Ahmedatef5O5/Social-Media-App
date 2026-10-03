@@ -4,6 +4,7 @@ import '../../../core/toast/app_toast.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
 import '../../social_graph/services/connections_service.dart';
 import '../cubits/group_members_cubit/group_members_cubit.dart';
+import '../helpers/add_members_list_skeleton.dart';
 import '../helpers/group_user_list_tile.dart';
 import '../widgets/group_search_field_widget.dart';
 import '../widgets/selected_members_section_widget.dart';
@@ -142,7 +143,7 @@ class _AddGroupMembersViewState extends State<AddGroupMembersView> {
         ),
         body:
             _isLoadingUsers
-                ? const Center(child: CustomLoadingIndicator())
+                ? const AddMembersListSkeleton()
                 : _allUsers.isEmpty
                 ? Center(
                   child: Column(
