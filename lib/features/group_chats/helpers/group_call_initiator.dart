@@ -5,6 +5,7 @@ import '../../../core/services/current_user_name_resolver.dart';
 import '../../../core/services/incoming_call_navigation_guard.dart';
 import '../../../core/services/permissions/app_permissions_service.dart';
 import '../../../core/supabase/supabase_provider.dart';
+import '../../../core/toast/app_toast.dart';
 import '../../group_calls/helpers/group_call_join_helper.dart';
 import '../../group_calls/models/group_call_model.dart';
 import '../../group_calls/services/group_call_signaling_service.dart';
@@ -40,6 +41,11 @@ class GroupCallInitiator {
       if (!context.mounted) return;
       if (existingCall != null) {
         await GroupCallJoinHelper.join(context, existingCall);
+        return;
+      }
+
+      if (IncomingCallNavigationGuard.isUserBusyWithAnotherCall()) {
+        AppToast.warning(GroupCallJoinHelper.busyMessage);
         return;
       }
 

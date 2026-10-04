@@ -1,6 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../features/group_calls/models/group_call_model.dart';
 import '../../../../features/single_calls/models/call_model.dart';
+import '../../incoming_call_navigation_guard.dart';
 import '../active_call_session_data.dart';
 
 class ActiveCallSessionCubit extends Cubit<ActiveCallSessionData?> {
@@ -16,6 +17,10 @@ class ActiveCallSessionCubit extends Cubit<ActiveCallSessionData?> {
     String? currentUserId,
     String? currentUserName,
   }) {
+    // Synchronous, tree-independent "I am busy" marker (also mirrored to the
+    // FCM background isolate) — set BEFORE emitting so listeners that react to
+    // the new state already see a consistent guard.
+    IncomingCallNavigationGuard.setActiveCallSession(callId);
     emit(
       ActiveCallSessionData(
         isGroup: false,
@@ -41,6 +46,7 @@ class ActiveCallSessionCubit extends Cubit<ActiveCallSessionData?> {
     String? currentUserId,
     String? currentUserName,
   }) {
+    IncomingCallNavigationGuard.setActiveCallSession(callId);
     emit(
       ActiveCallSessionData(
         isGroup: true,
@@ -57,10 +63,17 @@ class ActiveCallSessionCubit extends Cubit<ActiveCallSessionData?> {
   }
 
   void endSession() {
+    IncomingCallNavigationGuard.setActiveCallSession(null);
     if (state != null) {
       emit(null);
     }
   }
 
   bool get hasActiveSession => state != null;
+
+  @override
+  Future<void> close() {
+    IncomingCallNavigationGuard.setActiveCallSession(null);
+    return super.close();
+  }
 }

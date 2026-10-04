@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:social_media_app/core/services/call_busy_checker.dart';
 import 'package:social_media_app/core/services/fcm_services.dart';
 import 'package:social_media_app/core/utilities/supabase_constants.dart';
 import '../../../core/supabase/supabase_provider.dart';
@@ -109,6 +110,8 @@ class GroupNotificationDispatcher {
       groupId: groupId,
       excludeUserId: callerId,
       respectMute: false,
+      skipBusyMembers: true,
+      busyExcludeCallId: callId,
       payloadBuilder:
           (memberId, token) => _fcm.sendGroupCallNotification(
             receiverFcmToken: token,
@@ -148,6 +151,8 @@ class GroupNotificationDispatcher {
     required Future<void> Function(String memberId, String token)
     payloadBuilder,
     bool respectMute = true,
+    bool skipBusyMembers = false,
+    String? busyExcludeCallId,
   }) async {
     try {
       final response = await SupabaseProvider.client.rpc(
@@ -159,12 +164,26 @@ class GroupNotificationDispatcher {
         },
       );
 
-      final futures = <Future<void>>[];
+      final recipients = <MapEntry<String, String>>[];
       for (final row in response as List) {
         final memberId = row['user_id'] as String?;
         final token = row['fcm_token'] as String?;
         if (token == null || token.isEmpty || memberId == null) continue;
-        futures.add(payloadBuilder(memberId, token));
+        recipients.add(MapEntry(memberId, token));
+      }
+
+      var busyIds = <String>{};
+      if (skipBusyMembers && recipients.isNotEmpty) {
+        busyIds = await CallBusyChecker.findBusyUserIds(
+          recipients.map((e) => e.key),
+          excludeCallId: busyExcludeCallId,
+        );
+      }
+
+      final futures = <Future<void>>[];
+      for (final recipient in recipients) {
+        if (busyIds.contains(recipient.key)) continue;
+        futures.add(payloadBuilder(recipient.key, recipient.value));
       }
       await Future.wait(futures, eagerError: false);
     } catch (e) {

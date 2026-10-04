@@ -16,8 +16,13 @@ import 'livekit_group_call_view.dart';
 
 class IncomingGroupCallScreen extends StatefulWidget {
   final GroupCallModel call;
+  final bool autoAccept;
 
-  const IncomingGroupCallScreen({super.key, required this.call});
+  const IncomingGroupCallScreen({
+    super.key,
+    required this.call,
+    this.autoAccept = false,
+  });
 
   @override
   State<IncomingGroupCallScreen> createState() =>
@@ -48,6 +53,12 @@ class _IncomingGroupCallScreenState extends State<IncomingGroupCallScreen>
     _initAnimations();
     _listenToCallStatus();
     _listenToMembership();
+
+    if (widget.autoAccept) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) unawaited(_acceptCall(context));
+      });
+    }
   }
 
   void _initAnimations() {

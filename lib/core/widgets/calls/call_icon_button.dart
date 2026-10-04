@@ -6,6 +6,7 @@ import '../../../features/single_calls/services/call_signaling_service.dart';
 import '../../../features/single_chats/helpers/call_actions.dart';
 import '../../services/active_call/active_call_session_data.dart';
 import '../../services/active_call/cubits/active_call_session_cubit.dart';
+import '../../services/incoming_call_navigation_guard.dart';
 import '../../services/permissions/app_permissions_service.dart';
 import '../../toast/app_toast.dart';
 
@@ -64,6 +65,14 @@ class CallIconButton extends StatelessWidget {
   }
 
   Future<void> _startCall(BuildContext context) async {
+    // Also covers a call that is dialing / connecting and therefore has no
+    // `ActiveCallSessionCubit` session yet (the button's disabled state only
+    // reflects an established session).
+    if (IncomingCallNavigationGuard.isUserBusyWithAnotherCall()) {
+      AppToast.warning('Please end your current call before starting another.');
+      return;
+    }
+
     final signaling = context.read<CallSignalingService>();
     final granted = await AppPermissionsService.instance.ensureCallPermissions(
       isVideo: type == CallType.video,

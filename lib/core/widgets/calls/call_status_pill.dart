@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../animated_activity_text.dart';
 
 class CallStatusPill extends StatelessWidget {
   final IconData icon;
@@ -14,6 +15,29 @@ class CallStatusPill extends StatelessWidget {
     this.showLiveDot = false,
     this.shake,
   });
+
+  static const TextStyle _labelStyle = TextStyle(
+    color: Colors.white,
+    fontSize: 13,
+    fontWeight: FontWeight.w600,
+    letterSpacing: 0.4,
+  );
+
+  bool get _isAnimatedLabel =>
+      label.endsWith('...') ||
+      label.contains('Connecting') ||
+      label.contains('Joining');
+
+  Widget _buildLabel() {
+    if (_isAnimatedLabel) {
+      return AnimatedActivityText(
+        text: label,
+        style: _labelStyle,
+        forceAnimate: true,
+      );
+    }
+    return Text(label, style: _labelStyle);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -37,15 +61,7 @@ class CallStatusPill extends StatelessWidget {
           if (showLiveDot) ...[const _LiveDot(), const SizedBox(width: 8)],
           Icon(icon, color: Colors.white, size: 15),
           const SizedBox(width: 7),
-          Text(
-            label,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 0.4,
-            ),
-          ),
+          _buildLabel(),
         ],
       ),
     );
@@ -80,3 +96,4 @@ class _LiveDot extends StatelessWidget {
     );
   }
 }
+

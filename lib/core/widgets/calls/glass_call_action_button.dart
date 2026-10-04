@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 
 class GlassCallActionButton extends StatefulWidget {
@@ -70,15 +69,15 @@ class _GlassCallActionButtonState extends State<GlassCallActionButton>
                 child: child,
               );
             },
-            child: _buildGlassCircle(),
+            child: _buildCircle(),
           ),
           const SizedBox(height: 12),
           Text(
             widget.label,
             style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.8),
+              color: Colors.white,
               fontSize: labelSize,
-              fontWeight: FontWeight.w500,
+              fontWeight: FontWeight.w600,
               letterSpacing: 0.4,
             ),
           ),
@@ -87,52 +86,19 @@ class _GlassCallActionButtonState extends State<GlassCallActionButton>
     );
   }
 
-  Widget _buildGlassCircle() {
+  Widget _buildCircle() {
     return Container(
       width: widget.size,
       height: widget.size,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        boxShadow: [
-          BoxShadow(
-            color: widget.color.withValues(alpha: 0.45),
-            blurRadius: 12,
-            spreadRadius: 2,
-          ),
-          BoxShadow(
-            color: widget.color.withValues(alpha: 0.08),
-            blurRadius: 12,
-            spreadRadius: 2,
-          ),
-        ],
-      ),
-      child: ClipOval(
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 6, sigmaY: 6),
-          child: Container(
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  widget.color.withValues(alpha: 0.95),
-                  widget.color.withValues(alpha: 0.75),
-                ],
-              ),
-              border: Border.all(
-                color: Colors.white.withValues(alpha: 0.35),
-                width: 1.2,
-              ),
-            ),
-            child: Icon(
-              widget.icon,
-              color: Colors.white,
-              size: widget.size * 0.44,
-            ),
-          ),
+        color: widget.color.withValues(alpha: 1.0),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.22),
+          width: 1.2,
         ),
       ),
+      child: Icon(widget.icon, color: Colors.white, size: widget.size * 0.44),
     );
   }
 }

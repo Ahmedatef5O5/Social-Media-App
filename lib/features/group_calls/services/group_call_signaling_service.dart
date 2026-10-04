@@ -1,6 +1,10 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart'
+    show RealtimeChannel, RealtimeSubscribeStatus;
+import '../../../core/services/call_busy_checker.dart';
+import '../../../core/services/fcm_services.dart';
 import '../../../core/services/incoming_call_navigation_guard.dart';
 import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/utilities/supabase_constants.dart';
@@ -12,6 +16,19 @@ class GroupCallSignalingService {
   final Map<String, Set<String>> _declinedBy = {};
   bool _hasDeclined(String callId, String userId) =>
       _declinedBy[callId]?.contains(userId) ?? false;
+
+  /// Forgets a previous decline so a user who is deliberately re-rung
+  /// ("Ring" in the members sheet) is not filtered out by [_declinedBy].
+  void clearDeclined(String callId, [String? userId]) {
+    if (userId == null) {
+      _declinedBy.remove(callId);
+      return;
+    }
+    final declined = _declinedBy[callId];
+    if (declined == null) return;
+    declined.remove(userId);
+    if (declined.isEmpty) _declinedBy.remove(callId);
+  }
 
   static const Duration _endedConfirmationWindow = Duration(seconds: 2);
 
@@ -41,24 +58,16 @@ class GroupCallSignalingService {
     required String currentUserName,
     required GroupCallType type,
   }) async {
-    final existing =
-        await _supabase
-            .from('group_calls')
-            .select()
-            .eq(GroupMemberColumns.groupId, groupId)
-            .inFilter('status', ['ringing', 'accepted', 'ongoing'])
-            .maybeSingle();
-
-    if (existing != null && !await _healIfStale(existing)) {
-      return GroupCallModel.fromMap(existing);
+    final existingCall = await getActiveCall(groupId);
+    if (existingCall != null) {
+      return existingCall;
     }
 
     final callId = '${groupId}_${DateTime.now().millisecondsSinceEpoch}';
 
-    // Register this call as OURS before the row exists and before any push
-    // is fired. From this instant the realtime stream / FCM echo of our own
-    // call can never open an IncomingGroupCallScreen on this device.
     IncomingCallNavigationGuard.markLocallyInitiated(callId);
+
+    final now = DateTime.now().toUtc();
 
     final model = GroupCallModel(
       callId: callId,
@@ -69,10 +78,14 @@ class GroupCallSignalingService {
       initiatorName: currentUserName,
       status: GroupCallStatus.ringing,
       type: type,
-      startedAt: DateTime.now(),
+      startedAt: now,
       participantCount: 0,
     );
-    await _supabase.from('group_calls').insert(model.toMap());
+    await _supabase.from('group_calls').insert({
+      ...model.toMap(),
+      'started_at': now.toIso8601String(),
+      'last_heartbeat_at': now.toIso8601String(),
+    });
 
     final initiatorProfile =
         await _supabase
@@ -128,12 +141,11 @@ class GroupCallSignalingService {
     final call = GroupCallModel.fromMap(existing);
     final nowIso = DateTime.now().toUtc().toIso8601String();
 
+    unawaited(
+      _updateCallMessage(callId, status: 'ongoing', onlyIfNotTerminal: true),
+    );
+
     if (call.status == GroupCallStatus.ringing) {
-      // ringing -> accepted: the initiator is already in the room (they enter
-      // LiveKit from OutgoingGroupCallScreen without touching the counter),
-      // so the first acceptor makes it TWO participants: initiator + acceptor.
-      // Writing 1 here made `leaveCall` think a 2-person call had one person
-      // and end/keep it incorrectly.
       const int initiatorPlusFirstAcceptor = 2;
       await _supabase
           .from('group_calls')
@@ -171,6 +183,157 @@ class GroupCallSignalingService {
     }
 
     return call;
+  }
+
+  /// Rings ONE member of a group call that is already running.
+
+  Future<void> ringGroupMember({
+    required GroupCallModel call,
+    required String targetMemberId,
+    required String ringerUserId,
+    required String ringerUserName,
+  }) async {
+    if (targetMemberId.isEmpty || targetMemberId == ringerUserId) return;
+
+    final busy = await CallBusyChecker.findBusyUserIds([
+      targetMemberId,
+    ], excludeCallId: call.callId);
+    if (busy.contains(targetMemberId)) {
+      debugPrint(
+        '[GroupCallSignaling] $targetMemberId is busy â€” ring skipped',
+      );
+      return;
+    }
+
+    final callType = call.type == GroupCallType.video ? 'video' : 'audio';
+    final startedAtIso = call.startedAt.toUtc().toIso8601String();
+
+    await Future.wait([
+      _sendRingBroadcast(targetMemberId, {
+        'target_user_ids': [targetMemberId],
+        'callId': call.callId,
+        'groupId': call.groupId,
+        'groupName': call.groupName,
+        'groupAvatarUrl': call.groupAvatarUrl ?? '',
+        'callerId': ringerUserId,
+        'callerName': ringerUserName,
+        'callType': callType,
+        'startedAt': startedAtIso,
+      }),
+      _sendRingPush(
+        call: call,
+        targetMemberId: targetMemberId,
+        ringerUserId: ringerUserId,
+        ringerUserName: ringerUserName,
+        callType: callType,
+        startedAtIso: startedAtIso,
+      ),
+    ]);
+  }
+
+  Future<void> _sendRingBroadcast(
+    String targetMemberId,
+    Map<String, dynamic> payload,
+  ) async {
+    RealtimeChannel? channel;
+    try {
+      channel = _supabase.channel('user_group_call_ring:$targetMemberId');
+      final ready = Completer<void>();
+      channel.subscribe((status, [error]) {
+        if (ready.isCompleted) return;
+        if (status == RealtimeSubscribeStatus.subscribed ||
+            status == RealtimeSubscribeStatus.channelError ||
+            status == RealtimeSubscribeStatus.timedOut ||
+            status == RealtimeSubscribeStatus.closed) {
+          ready.complete();
+        }
+      });
+      await ready.future.timeout(const Duration(seconds: 3), onTimeout: () {});
+
+      await channel.sendBroadcastMessage(
+        event: 'ring_group_call',
+        payload: payload,
+      );
+    } catch (e) {
+      debugPrint('[GroupCallSignaling] ring broadcast failed: $e');
+    } finally {
+      final toRemove = channel;
+      if (toRemove != null) {
+        Timer(const Duration(seconds: 1), () {
+          unawaited(_supabase.removeChannel(toRemove));
+        });
+      }
+    }
+  }
+
+  Future<void> _sendRingPush({
+    required GroupCallModel call,
+    required String targetMemberId,
+    required String ringerUserId,
+    required String ringerUserName,
+    required String callType,
+    required String startedAtIso,
+  }) async {
+    try {
+      final token = await _resolveFcmToken(
+        groupId: call.groupId,
+        targetMemberId: targetMemberId,
+        ringerUserId: ringerUserId,
+      );
+      if (token == null || token.isEmpty) return;
+
+      await FcmService.instance.sendGroupCallNotification(
+        receiverFcmToken: token,
+        callId: call.callId,
+        groupId: call.groupId,
+        groupName: call.groupName,
+        groupAvatarUrl: call.groupAvatarUrl ?? '',
+        callerId: ringerUserId,
+        callerName: ringerUserName,
+        callType: callType,
+        startedAt: startedAtIso,
+      );
+    } catch (e) {
+      debugPrint('[GroupCallSignaling] ring push failed: $e');
+    }
+  }
+
+  Future<String?> _resolveFcmToken({
+    required String groupId,
+    required String targetMemberId,
+    required String ringerUserId,
+  }) async {
+    try {
+      final response = await _supabase.rpc(
+        SupabaseConstants.groupGroupFcmTokens,
+        params: {
+          'p_group_id': groupId,
+          'p_exclude_user_id': ringerUserId,
+          'p_respect_mute': false,
+        },
+      );
+      for (final row in response as List) {
+        if (row['user_id'] == targetMemberId) {
+          final token = row['fcm_token'] as String?;
+          if (token != null && token.isNotEmpty) return token;
+        }
+      }
+    } catch (e) {
+      debugPrint('[GroupCallSignaling] get_group_fcm_tokens failed: $e');
+    }
+
+    try {
+      final data =
+          await _supabase
+              .from('users')
+              .select('fcm_token')
+              .eq('id', targetMemberId)
+              .maybeSingle();
+      return data?['fcm_token'] as String?;
+    } catch (e) {
+      debugPrint('[GroupCallSignaling] users.fcm_token lookup failed: $e');
+      return null;
+    }
   }
 
   Future<void> rejectCall(String callId) async {
@@ -231,16 +394,199 @@ class GroupCallSignalingService {
     String? duration,
     int? participantCount,
   }) async {
-    await _supabase
-        .from('group_calls')
-        .update({
-          'status': GroupCallStatus.ended.name,
-          'ended_at': DateTime.now().toIso8601String(),
-          if (duration != null) 'duration': duration,
-          if (participantCount != null) 'participant_count': participantCount,
-        })
-        .eq('call_id', callId);
+    // "00:00" / "0:00" / blank are never a real duration.
+    String? effectiveDuration = normalizeDuration(duration);
 
+    String? previousStatus;
+    try {
+      final row =
+          await _supabase
+              .from('group_calls')
+              .select('started_at, status, duration')
+              .eq('call_id', callId)
+              .maybeSingle();
+
+      if (row != null) {
+        previousStatus = row['status'] as String?;
+        final wasConnected =
+            previousStatus == GroupCallStatus.accepted.name ||
+            previousStatus == GroupCallStatus.ongoing.name;
+
+        if (effectiveDuration == null) {
+          final existingDuration = normalizeDuration(
+            row['duration'] as String?,
+          );
+          if (existingDuration != null) {
+            effectiveDuration = existingDuration;
+          } else if (wasConnected) {
+            final startedAt = DateTime.tryParse(
+              row['started_at']?.toString() ?? '',
+            );
+            if (startedAt != null) {
+              effectiveDuration = _computeDuration(
+                startedAt.toUtc(),
+                DateTime.now().toUtc(),
+              );
+            }
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('[GroupCallSignaling] endCall row lookup failed: $e');
+    }
+
+    if (previousStatus == GroupCallStatus.ringing.name &&
+        effectiveDuration == null) {
+      await markAsMissed(callId);
+      return;
+    }
+
+    try {
+      await _supabase
+          .from('group_calls')
+          .update({
+            'status': GroupCallStatus.ended.name,
+            'ended_at': DateTime.now().toUtc().toIso8601String(),
+            if (effectiveDuration != null) 'duration': effectiveDuration,
+            if (participantCount != null) 'participant_count': participantCount,
+          })
+          .eq('call_id', callId)
+          .inFilter('status', [
+            GroupCallStatus.ringing.name,
+            GroupCallStatus.accepted.name,
+            GroupCallStatus.ongoing.name,
+          ]);
+    } catch (e) {
+      debugPrint('[GroupCallSignaling] endCall update failed: $e');
+      rethrow;
+    }
+
+    await _updateCallMessage(
+      callId,
+      status: 'ended',
+      duration: effectiveDuration ?? '',
+    );
+  }
+
+  /// Returns `null` for anything that is not a real, non-zero duration
+  /// (`null`, blank, `00:00`, `0:00`, `00:00:00`).
+  static String? normalizeDuration(String? value) {
+    if (value == null) return null;
+    final trimmed = value.trim();
+    if (trimmed.isEmpty ||
+        trimmed == '00:00' ||
+        trimmed == '0:00' ||
+        trimmed == '00:00:00') {
+      return null;
+    }
+    return trimmed;
+  }
+
+  Future<void> syncCallMessageStatus(
+    String callId, {
+    String? fallbackDuration,
+  }) async {
+    try {
+      Map<String, dynamic>? row;
+      var status = '';
+      for (var attempt = 0; attempt < 5; attempt++) {
+        row =
+            await _supabase
+                .from('group_calls')
+                .select(
+                  'status, started_at, ended_at, duration, '
+                  'participant_count, last_heartbeat_at',
+                )
+                .eq('call_id', callId)
+                .maybeSingle();
+        if (row == null) return;
+        status = row['status'] as String? ?? '';
+        if (status == GroupCallStatus.ended.name ||
+            status == GroupCallStatus.missed.name) {
+          break;
+        }
+        await Future<void>.delayed(const Duration(milliseconds: 1500));
+      }
+      if (row == null) return;
+
+      if (status == GroupCallStatus.missed.name) {
+        await _updateCallMessage(callId, status: 'missed', duration: null);
+        return;
+      }
+      if (status != GroupCallStatus.ended.name) return;
+
+      var duration = normalizeDuration(row['duration'] as String?) ?? '';
+      if (duration.isEmpty) {
+        duration = computeConnectedDuration(row) ?? '';
+        final fallback = normalizeDuration(fallbackDuration);
+        if (duration.isEmpty && fallback != null) {
+          duration = fallback;
+        }
+        if (duration.isNotEmpty) {
+          // Backfill the authoritative row too (best effort).
+          try {
+            await _supabase
+                .from('group_calls')
+                .update({'duration': duration})
+                .eq('call_id', callId);
+          } catch (e) {
+            debugPrint('[GroupCallSignaling] duration backfill failed: $e');
+          }
+        }
+      }
+
+      await _updateCallMessage(callId, status: 'ended', duration: duration);
+    } catch (e) {
+      debugPrint('[GroupCallSignaling] syncCallMessageStatus failed: $e');
+    }
+  }
+
+  static String? computeConnectedDuration(Map<String, dynamic> row) {
+    final status = row['status'] as String?;
+    if (status == GroupCallStatus.ringing.name ||
+        status == GroupCallStatus.missed.name) {
+      return null;
+    }
+
+    final startedAt = DateTime.tryParse(row['started_at']?.toString() ?? '');
+    final endedAt = DateTime.tryParse(row['ended_at']?.toString() ?? '');
+    if (startedAt == null || endedAt == null) return null;
+
+    final heartbeat = DateTime.tryParse(
+      row['last_heartbeat_at']?.toString() ?? '',
+    );
+
+    final heartbeatMoved =
+        heartbeat != null &&
+        heartbeat.toUtc().difference(startedAt.toUtc()).inSeconds >= 1;
+    final participants = (row['participant_count'] as int?) ?? 0;
+    if (!heartbeatMoved && participants <= 1) return null;
+
+    final elapsed = endedAt.toUtc().difference(startedAt.toUtc());
+    if (elapsed.inSeconds < 1) return null;
+
+    return _formatDuration(elapsed);
+  }
+
+  static String _computeDuration(DateTime startedAtUtc, DateTime endedAtUtc) {
+    var diff = endedAtUtc.difference(startedAtUtc);
+    if (diff.inSeconds < 1) diff = const Duration(seconds: 1);
+    return _formatDuration(diff);
+  }
+
+  static String _formatDuration(Duration d) {
+    final h = d.inHours;
+    final m = d.inMinutes.remainder(60).toString().padLeft(2, '0');
+    final s = d.inSeconds.remainder(60).toString().padLeft(2, '0');
+    return h > 0 ? '$h:$m:$s' : '$m:$s';
+  }
+
+  Future<void> _updateCallMessage(
+    String callId, {
+    required String status,
+    String? duration,
+    bool onlyIfNotTerminal = false,
+  }) async {
     try {
       final existing =
           await _supabase
@@ -248,29 +594,40 @@ class GroupCallSignalingService {
               .select('id, message_text')
               .eq('message_type', 'call')
               .ilike('message_text', '%$callId%')
+              .limit(1)
               .maybeSingle();
+      if (existing == null) return;
 
-      if (existing != null) {
-        Map<String, dynamic> callData = {};
-        try {
-          callData =
-              jsonDecode(existing['message_text'] as String)
-                  as Map<String, dynamic>;
-        } catch (e) {
-          debugPrint(
-            '[GroupCallSignaling] failed to decode existing call payload: $e',
-          );
-        }
-        callData['status'] = 'ended';
-        callData['duration'] = duration?.isNotEmpty == true ? duration : '';
-
-        await _supabase
-            .from(SupabaseConstants.groupMessages)
-            .update({'message_text': jsonEncode(callData)})
-            .eq('id', existing['id'] as String);
+      Map<String, dynamic> callData = {};
+      try {
+        callData =
+            jsonDecode(existing['message_text'] as String)
+                as Map<String, dynamic>;
+      } catch (e) {
+        debugPrint(
+          '[GroupCallSignaling] failed to decode existing call payload: $e',
+        );
       }
+
+      final currentStatus = callData['status'] as String?;
+      if (onlyIfNotTerminal &&
+          (currentStatus == 'ended' || currentStatus == 'missed')) {
+        return;
+      }
+
+      callData['status'] = status;
+      if (status == 'ended') {
+        callData['duration'] = duration ?? '';
+      } else if (status == 'missed') {
+        callData['duration'] = null;
+      }
+
+      await _supabase
+          .from(SupabaseConstants.groupMessages)
+          .update({'message_text': jsonEncode(callData)})
+          .eq('id', existing['id'] as String);
     } catch (e) {
-      debugPrint('endCall update message error: $e');
+      debugPrint('[GroupCallSignaling] _updateCallMessage($status) error: $e');
     }
   }
 
@@ -280,7 +637,7 @@ class GroupCallSignalingService {
             .from('group_calls')
             .update({
               'status': GroupCallStatus.missed.name,
-              'ended_at': DateTime.now().toIso8601String(),
+              'ended_at': DateTime.now().toUtc().toIso8601String(),
             })
             .eq('call_id', callId)
             .eq('status', GroupCallStatus.ringing.name)
@@ -338,8 +695,17 @@ class GroupCallSignalingService {
     }
   }
 
+  static const Duration _ringingStaleAfter = Duration(seconds: 50);
+
   bool _isHeartbeatStale(Map<String, dynamic> row) {
     final status = row['status'] as String?;
+    if (status == GroupCallStatus.ringing.name) {
+      final startedRaw = row['started_at'] ?? row['last_heartbeat_at'];
+      final startedTs =
+          DateTime.tryParse(startedRaw?.toString() ?? '')?.toUtc();
+      if (startedTs == null) return true;
+      return DateTime.now().toUtc().difference(startedTs) > _ringingStaleAfter;
+    }
     if (status != GroupCallStatus.accepted.name &&
         status != GroupCallStatus.ongoing.name) {
       return false;
@@ -347,7 +713,7 @@ class GroupCallSignalingService {
 
     final raw = row['last_heartbeat_at'] ?? row['started_at'];
     final ts = DateTime.tryParse(raw?.toString() ?? '')?.toUtc();
-    if (ts == null) return false; // fail-safe: never reap on missing data
+    if (ts == null) return false;
 
     return DateTime.now().toUtc().difference(ts) > _heartbeatStaleAfter;
   }
@@ -518,17 +884,28 @@ class GroupCallSignalingService {
   }
 
   Future<GroupCallModel?> getActiveCall(String groupId) async {
-    final result =
-        await _supabase
-            .from('group_calls')
-            .select()
-            .eq(GroupMemberColumns.groupId, groupId)
-            .inFilter('status', ['ringing', 'accepted', 'ongoing'])
-            .maybeSingle();
+    final rows = await _supabase
+        .from('group_calls')
+        .select()
+        .eq(GroupMemberColumns.groupId, groupId)
+        .inFilter('status', ['ringing', 'accepted', 'ongoing'])
+        .order('started_at', ascending: false);
 
-    if (result == null) return null;
-    if (await _healIfStale(result)) return null;
-    return GroupCallModel.fromMap(result);
+    final list = (rows as List).cast<Map<String, dynamic>>();
+    if (list.isEmpty) return null;
+
+    GroupCallModel? freshCall;
+    for (final row in list) {
+      if (freshCall == null && !await _healIfStale(row)) {
+        freshCall = GroupCallModel.fromMap(row);
+      } else {
+        final staleId = row['call_id'] as String?;
+        if (staleId != null && staleId.isNotEmpty) {
+          unawaited(endCall(staleId, participantCount: 0));
+        }
+      }
+    }
+    return freshCall;
   }
 
   Future<bool> isActiveGroupMember({

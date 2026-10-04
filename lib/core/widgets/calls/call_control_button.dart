@@ -1,6 +1,4 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
-import '../../design/theme/theme_extensions.dart';
 
 enum CallControlVariant { neutral, warning, dangerSolid }
 
@@ -86,15 +84,15 @@ class _CallControlButtonState extends State<CallControlButton>
                 child: child,
               );
             },
-            child: _buildCircle(context),
+            child: _buildCircle(),
           ),
           const SizedBox(height: 12),
           Text(
             widget.label,
             style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.8),
+              color: Colors.white,
               fontSize: labelSize,
-              fontWeight: FontWeight.w500,
+              fontWeight: FontWeight.w600,
               letterSpacing: 0.4,
             ),
           ),
@@ -103,90 +101,34 @@ class _CallControlButtonState extends State<CallControlButton>
     );
   }
 
-  Widget _buildCircle(BuildContext context) {
+  Widget _buildCircle() {
+    final Color fill;
+    final double borderAlpha;
     switch (widget.variant) {
-      case CallControlVariant.dangerSolid:
-        return _buildSolidCircle();
       case CallControlVariant.neutral:
-        return _buildGlassCircle(
-          tint: Colors.white,
-          glow: context.palette.primary,
-        );
+        fill = const Color(0xFF2B303C);
+        borderAlpha = 0.18;
+        break;
       case CallControlVariant.warning:
-        return _buildGlassCircle(
-          tint: Colors.redAccent,
-          glow: Colors.redAccent,
-        );
+        fill = const Color(0xFFD92D20);
+        borderAlpha = 0.22;
+        break;
+      case CallControlVariant.dangerSolid:
+        fill = const Color(0xFFDC2626);
+        borderAlpha = 0.22;
+        break;
     }
-  }
 
-  Widget _buildGlassCircle({required Color tint, required Color glow}) {
     return Container(
       width: widget.size,
       height: widget.size,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        boxShadow: [
-          BoxShadow(
-            color: glow.withValues(alpha: 0.32),
-            blurRadius: 14,
-            spreadRadius: 1,
-          ),
-        ],
-      ),
-      child: ClipOval(
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-          child: Container(
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  tint.withValues(alpha: 0.24),
-                  tint.withValues(alpha: 0.10),
-                ],
-              ),
-              border: Border.all(
-                color: tint.withValues(alpha: 0.36),
-                width: 1.2,
-              ),
-            ),
-            child: Icon(
-              widget.icon,
-              color: Colors.white,
-              size: widget.size * 0.42,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSolidCircle() {
-    return Container(
-      width: widget.size,
-      height: widget.size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Colors.red.shade400, Colors.red.shade700],
-        ),
+        color: fill,
         border: Border.all(
-          color: Colors.white.withValues(alpha: 0.22),
-          width: 1,
+          color: Colors.white.withValues(alpha: borderAlpha),
+          width: 1.2,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.red.withValues(alpha: 0.45),
-            blurRadius: 16,
-            spreadRadius: 1,
-            offset: const Offset(0, 4),
-          ),
-        ],
       ),
       child: Icon(widget.icon, color: Colors.white, size: widget.size * 0.42),
     );

@@ -7,12 +7,16 @@ class AnimatedActivityText extends StatefulWidget {
   final int maxLines;
   final TextOverflow overflow;
 
+  /// Forces the ping-pong dot animation regardless of the text content.
+  final bool forceAnimate;
+
   const AnimatedActivityText({
     super.key,
     required this.text,
     this.style,
     this.maxLines = 1,
     this.overflow = TextOverflow.ellipsis,
+    this.forceAnimate = false,
   });
 
   @override
@@ -53,8 +57,13 @@ class _AnimatedActivityTextState extends State<AnimatedActivityText> {
     String baseText = widget.text;
     bool isAnimated = false;
 
-    if (baseText.toLowerCase().contains('typing') ||
-        baseText.toLowerCase().contains('recording')) {
+    final lower = baseText.toLowerCase();
+    if (widget.forceAnimate ||
+        lower.contains('typing') ||
+        lower.contains('recording') ||
+        lower.contains('connecting') ||
+        lower.contains('joining') ||
+        lower.contains('calling')) {
       isAnimated = true;
       baseText = baseText.replaceAll(RegExp(r'\.+$'), '');
     }
@@ -99,3 +108,4 @@ class _AnimatedActivityTextState extends State<AnimatedActivityText> {
     );
   }
 }
+

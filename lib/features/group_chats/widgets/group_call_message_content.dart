@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
@@ -12,7 +13,7 @@ import '../../group_calls/models/group_call_model.dart';
 import '../../group_calls/services/group_call_signaling_service.dart';
 import '../models/groupe_message_model.dart';
 
-class GroupCallMessageContent extends StatelessWidget {
+class GroupCallMessageContent extends StatefulWidget {
   final GroupMessageModel message;
   final bool isMe;
   final Color primary;
@@ -25,57 +26,184 @@ class GroupCallMessageContent extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+  State<GroupCallMessageContent> createState() =>
+      _GroupCallMessageContentState();
+}
 
-    Map<String, dynamic> initialData = {};
+class _GroupCallMessageContentState extends State<GroupCallMessageContent> {
+  GroupMessageModel get message => widget.message;
+  bool get isMe => widget.isMe;
+  Color get primary => widget.primary;
+
+  late Map<String, dynamic> _initialData;
+  Stream<Map<String, dynamic>?>? _callDataStream;
+
+  @override
+  void initState() {
+    super.initState();
+    _initialData = _parseInitialData();
+    _callDataStream = _createStream();
+  }
+
+  @override
+  void didUpdateWidget(covariant GroupCallMessageContent oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.message.id != widget.message.id ||
+        oldWidget.message.text != widget.message.text) {
+      _initialData = _parseInitialData();
+      _callDataStream = _createStream();
+    }
+  }
+
+  Map<String, dynamic> _parseInitialData() {
     try {
       final txt = message.text.trim();
       if (txt.startsWith('{')) {
-        initialData = jsonDecode(txt) as Map<String, dynamic>;
+        return jsonDecode(txt) as Map<String, dynamic>;
       }
     } catch (e) {
       debugPrint(
         '[GroupCallMessageContent] failed to parse call message data: $e',
       );
     }
+    return {};
+  }
 
-    final isTemp = message.id.startsWith('temp_');
-    if (isTemp) {
-      return _buildCallBubbleContent(context, initialData, isDark);
+  Stream<Map<String, dynamic>?>? _createStream() {
+    if (message.id.startsWith('temp_')) return null;
+    return _watchCallData(_initialData);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final stream = _callDataStream;
+    if (stream == null) {
+      return _buildCallBubbleContent(context, _initialData, isDark);
     }
 
     return StreamBuilder<Map<String, dynamic>?>(
-      stream: _watchCallData(),
-      initialData: initialData.isNotEmpty ? initialData : null,
+      stream: stream,
+      initialData: _initialData.isNotEmpty ? _initialData : null,
       builder: (context, snapshot) {
         final callData =
-            snapshot.data ?? (initialData.isNotEmpty ? initialData : {});
+            snapshot.data ?? (_initialData.isNotEmpty ? _initialData : {});
 
         return _buildCallBubbleContent(context, callData, isDark);
       },
     );
   }
 
-  Stream<Map<String, dynamic>?> _watchCallData() {
-    return SupabaseProvider.client
-        .from(SupabaseConstants.groupMessages)
-        .stream(primaryKey: ['id'])
-        .eq('id', message.id)
-        .map((list) {
-          if (list.isEmpty) return null;
-          try {
-            final msgText = list.first['message_text'] as String? ?? '';
-            if (msgText.trim().startsWith('{')) {
-              return jsonDecode(msgText) as Map<String, dynamic>;
-            }
-          } catch (e) {
-            debugPrint(
-              '[GroupCallMessageContent] failed to parse latest call message: $e',
+  Stream<Map<String, dynamic>?> _watchCallData(
+    Map<String, dynamic> initialData,
+  ) {
+    final callId = initialData['call_id'] as String? ?? '';
+
+    late StreamController<Map<String, dynamic>?> controller;
+    StreamSubscription<List<Map<String, dynamic>>>? messageSub;
+    StreamSubscription<List<Map<String, dynamic>>>? callSub;
+
+    Map<String, dynamic>? messageData =
+        initialData.isNotEmpty ? initialData : null;
+    Map<String, dynamic>? callRow;
+
+    void emit() {
+      if (controller.isClosed) return;
+      final base = messageData;
+      if (base == null) {
+        controller.add(null);
+        return;
+      }
+      controller.add(_overlayCallRow(base, callRow));
+    }
+
+    controller = StreamController<Map<String, dynamic>?>(
+      onListen: () {
+        messageSub = SupabaseProvider.client
+            .from(SupabaseConstants.groupMessages)
+            .stream(primaryKey: ['id'])
+            .eq('id', message.id)
+            .listen(
+              (list) {
+                if (list.isEmpty) return;
+                try {
+                  final msgText = list.first['message_text'] as String? ?? '';
+                  if (msgText.trim().startsWith('{')) {
+                    messageData = jsonDecode(msgText) as Map<String, dynamic>;
+                    emit();
+                  }
+                } catch (e) {
+                  debugPrint(
+                    '[GroupCallMessageContent] failed to parse latest call message: $e',
+                  );
+                }
+              },
+              onError: (Object e) {
+                debugPrint(
+                  '[GroupCallMessageContent] message stream error: $e',
+                );
+              },
             );
-          }
-          return null;
-        });
+
+        if (callId.isNotEmpty) {
+          callSub = SupabaseProvider.client
+              .from('group_calls')
+              .stream(primaryKey: ['call_id'])
+              .eq('call_id', callId)
+              .listen(
+                (rows) {
+                  callRow = rows.isEmpty ? null : rows.first;
+                  emit();
+                },
+                onError: (Object e) {
+                  debugPrint('[GroupCallMessageContent] call stream error: $e');
+                },
+              );
+        }
+      },
+      onCancel: () async {
+        await messageSub?.cancel();
+        await callSub?.cancel();
+      },
+    );
+
+    return controller.stream;
+  }
+
+  Map<String, dynamic> _overlayCallRow(
+    Map<String, dynamic> base,
+    Map<String, dynamic>? row,
+  ) {
+    if (row == null) return base;
+
+    final merged = Map<String, dynamic>.from(base);
+    final rowStatus = row['status'] as String?;
+    if (rowStatus != null && rowStatus.isNotEmpty) {
+      merged['status'] = rowStatus;
+    }
+
+    final rowDuration = row['duration'] as String?;
+    if (_isValidNonZeroDuration(rowDuration)) {
+      merged['duration'] = rowDuration!.trim();
+    } else if (rowStatus == 'ended') {
+      final existing = merged['duration'];
+      final hasExisting =
+          existing is String && _isValidNonZeroDuration(existing);
+      if (!hasExisting) {
+        final computed = GroupCallSignalingService.computeConnectedDuration(
+          row,
+        );
+        if (computed != null) merged['duration'] = computed;
+      }
+    }
+    return merged;
+  }
+
+  bool _isValidNonZeroDuration(String? d) {
+    if (d == null) return false;
+    final t = d.trim();
+    return t.isNotEmpty && t != '00:00' && t != '0:00' && t != '00:00:00';
   }
 
   Widget _buildCallBubbleContent(
@@ -88,7 +216,9 @@ class GroupCallMessageContent extends StatelessWidget {
 
     final rawDuration = callData['duration'];
     final duration =
-        (rawDuration is String && rawDuration.isNotEmpty) ? rawDuration : '';
+        (rawDuration is String && _isValidNonZeroDuration(rawDuration))
+            ? rawDuration.trim()
+            : '';
 
     final callId = callData['call_id'] as String? ?? '';
     final groupId = callData[GroupMemberColumns.groupId] as String? ?? '';
@@ -101,7 +231,10 @@ class GroupCallMessageContent extends StatelessWidget {
     final isActionable =
         status == 'ringing' || status == 'accepted' || status == 'ongoing';
 
-    final isEndedConnected = status == 'ended' && duration.isNotEmpty;
+    final isOngoing = isActionable;
+
+    final isEndedConnected =
+        status == 'ended' && _isValidNonZeroDuration(duration);
 
     final neverConnected =
         status == 'missed' || (status == 'ended' && duration.isEmpty);
@@ -120,14 +253,12 @@ class GroupCallMessageContent extends StatelessWidget {
     final subColor =
         isMe ? Colors.white70 : (isDark ? Colors.white54 : Colors.black45);
     final missedTint = Colors.redAccent.shade100;
-    final iconColor = showAsMissed ? missedTint : Colors.greenAccent;
 
-    final IconData callIcon =
-        showAsMissed
-            ? (isAudio
-                ? Icons.call_missed_rounded
-                : Icons.missed_video_call_rounded)
-            : (isAudio ? Icons.call_rounded : Icons.videocam_rounded);
+    final badge = _resolveBadgeStyle(
+      isOngoing: isOngoing,
+      showAsMissed: showAsMissed,
+      isAudio: isAudio,
+    );
 
     final String callLabel;
     if (neverConnected) {
@@ -186,17 +317,20 @@ class GroupCallMessageContent extends StatelessWidget {
               const SizedBox(width: 10),
 
               Flexible(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                child: Row(
                   mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(callIcon, color: iconColor, size: 17),
-                        const SizedBox(width: 5),
-                        Flexible(
-                          child: Text(
+                    _buildStateBadge(badge),
+
+                    const SizedBox(width: 8),
+
+                    Flexible(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
                             callLabel,
                             style: TextStyle(
                               color: showAsMissed ? missedTint : labelColor,
@@ -205,47 +339,54 @@ class GroupCallMessageContent extends StatelessWidget {
                             ),
                             overflow: TextOverflow.ellipsis,
                           ),
-                        ),
-                      ],
+                          if (isEndedConnected) ...[
+                            const SizedBox(height: 3),
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.timer_outlined,
+                                  size: 11,
+                                  color: subColor,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  duration,
+                                  style: TextStyle(
+                                    color: subColor,
+                                    fontSize: 11.5,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ] else if (isLive) ...[
+                            const SizedBox(height: 3),
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Container(
+                                  width: 6,
+                                  height: 6,
+                                  decoration: const BoxDecoration(
+                                    color: Colors.green,
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                const Text(
+                                  'Ongoing',
+                                  style: TextStyle(
+                                    color: Colors.green,
+                                    fontSize: 11.5,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ],
+                      ),
                     ),
-                    if (isEndedConnected) ...[
-                      const SizedBox(height: 3),
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.timer_outlined, size: 11, color: subColor),
-                          const SizedBox(width: 4),
-                          Text(
-                            duration,
-                            style: TextStyle(color: subColor, fontSize: 11.5),
-                          ),
-                        ],
-                      ),
-                    ] else if (isLive) ...[
-                      const SizedBox(height: 3),
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Container(
-                            width: 6,
-                            height: 6,
-                            decoration: const BoxDecoration(
-                              color: Colors.green,
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            'Ongoing',
-                            style: TextStyle(
-                              color: Colors.green,
-                              fontSize: 11.5,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
                   ],
                 ),
               ),
@@ -264,6 +405,54 @@ class GroupCallMessageContent extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  _CallBadgeStyle _resolveBadgeStyle({
+    required bool isOngoing,
+    required bool showAsMissed,
+    required bool isAudio,
+  }) {
+    if (isOngoing) {
+      return _CallBadgeStyle(
+        background: const Color(0xFF16A34A).withValues(alpha: 0.22),
+        border: const Color(0xFF22C55E).withValues(alpha: 0.45),
+        iconColor: const Color(0xFF4ADE80),
+        icon: isAudio ? Icons.call_rounded : Icons.videocam_rounded,
+      );
+    }
+
+    if (showAsMissed) {
+      return _CallBadgeStyle(
+        background: const Color(0xFFEF4444).withValues(alpha: 0.22),
+        border: const Color(0xFFEF4444).withValues(alpha: 0.50),
+        iconColor: const Color(0xFFF87171),
+        icon:
+            isAudio
+                ? Icons.call_missed_rounded
+                : Icons.missed_video_call_rounded,
+      );
+    }
+
+    // Ended.
+    return _CallBadgeStyle(
+      background: const Color(0xFFEF4444).withValues(alpha: 0.20),
+      border: const Color(0xFFEF4444).withValues(alpha: 0.45),
+      iconColor: const Color(0xFFF87171),
+      icon: isAudio ? Icons.call_end_rounded : Icons.videocam_off_rounded,
+    );
+  }
+
+  Widget _buildStateBadge(_CallBadgeStyle style) {
+    return Container(
+      width: 34,
+      height: 34,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: style.background,
+        border: Border.all(color: style.border, width: 1),
+      ),
+      child: Icon(style.icon, color: style.iconColor, size: 18),
     );
   }
 
@@ -410,4 +599,18 @@ class GroupCallMessageContent extends StatelessWidget {
       },
     );
   }
+}
+
+class _CallBadgeStyle {
+  final Color background;
+  final Color border;
+  final Color iconColor;
+  final IconData icon;
+
+  const _CallBadgeStyle({
+    required this.background,
+    required this.border,
+    required this.iconColor,
+    required this.icon,
+  });
 }

@@ -35,6 +35,11 @@ class CubitProviders {
                 ..checkAuthStatus(),
     ),
     BlocProvider(create: (_) => CallPipCubit()),
+    // Global + eager: incoming-call guards read this from
+    // `navigatorKey.currentContext` at any moment (FCM, Realtime, tap
+    // handlers), so it must exist above the navigator from the first frame
+    // and must never be created lazily in the middle of a call.
+    BlocProvider(create: (_) => ActiveCallSessionCubit(), lazy: false),
     BlocProvider(create: (_) => AiPreferencesCubit()..init(), lazy: false),
     BlocProvider(
       create:
@@ -79,7 +84,6 @@ class CubitProviders {
               ConnectivityCubit(networkStatus: NetworkStatusService.instance),
     ),
     BlocProvider(create: (_) => PresenceCubit(), lazy: false),
-    BlocProvider(create: (_) => ActiveCallSessionCubit()),
   ];
 
   static ThemeCubit Function(BuildContext) themeCubitCreate(String savedTheme) {

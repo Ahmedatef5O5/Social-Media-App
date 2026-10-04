@@ -491,10 +491,13 @@ class GroupMembershipService {
     return controller.stream;
   }
 
+  static const Duration _presenceCoalesceWindow = Duration(milliseconds: 1200);
+
   Stream<GroupHeaderStats> watchGroupHeaderStats(String groupId) {
     final controller = StreamController<GroupHeaderStats>.broadcast();
     Set<String> memberIds = {};
     final Map<String, bool> onlineMap = {};
+    Timer? presenceCoalesceTimer;
 
     void emitStats() {
       if (controller.isClosed) return;
@@ -502,6 +505,11 @@ class GroupMembershipService {
       controller.add(
         GroupHeaderStats(totalMembers: memberIds.length, onlineCount: online),
       );
+    }
+
+    void schedulePresenceEmit() {
+      presenceCoalesceTimer?.cancel();
+      presenceCoalesceTimer = Timer(_presenceCoalesceWindow, emitStats);
     }
 
     Future<void> refreshMembers() async {
@@ -557,12 +565,13 @@ class GroupMembershipService {
                           ? DateTime.parse(updatedAtRaw.toString())
                           : null,
                 );
-                emitStats();
+                schedulePresenceEmit();
               },
             )
             .subscribe();
 
     controller.onCancel = () {
+      presenceCoalesceTimer?.cancel();
       _supabase.removeChannel(membersChannel);
       _supabase.removeChannel(presenceChannel);
       controller.close();
