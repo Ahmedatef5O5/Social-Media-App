@@ -1,6 +1,7 @@
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../core/widgets/animated_activity_text.dart';
 import '../../../core/widgets/calls/call_avatar_backdrop.dart';
 import '../../../core/widgets/calls/call_layout_metrics.dart';
 import '../../../core/widgets/calls/calls.dart';
@@ -16,23 +17,13 @@ class DialingView extends StatefulWidget {
   State<DialingView> createState() => _DialingViewState();
 }
 
-class _DialingViewState extends State<DialingView>
-    with TickerProviderStateMixin {
+class _DialingViewState extends State<DialingView> {
   final AudioPlayer _audioPlayer = AudioPlayer();
-
-  late final AnimationController _dotController;
-  late final Animation<double> _dotAnim;
 
   @override
   void initState() {
     super.initState();
     _playRingtone();
-
-    _dotController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 900),
-    )..repeat();
-    _dotAnim = Tween<double>(begin: 0, end: 3).animate(_dotController);
   }
 
   Future<void> _playRingtone() async {
@@ -48,7 +39,6 @@ class _DialingViewState extends State<DialingView>
   void dispose() {
     _audioPlayer.stop();
     _audioPlayer.dispose();
-    _dotController.dispose();
     super.dispose();
   }
 
@@ -146,30 +136,21 @@ class _DialingViewState extends State<DialingView>
   }
 
   Widget _buildCallingDots(bool isVideo) {
-    return AnimatedBuilder(
-      animation: _dotAnim,
-      builder: (_, __) {
-        final dots = '.' * (_dotAnim.value.toInt() + 1);
-        return Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(
-              Icons.phone_forwarded_rounded,
-              color: Colors.white60,
-              size: 15,
-            ),
-            const SizedBox(width: 6),
-            Text(
-              isVideo ? 'Calling (Video)$dots' : 'Calling (Audio)$dots',
-              style: const TextStyle(
-                color: Colors.white70,
-                fontSize: 16,
-                letterSpacing: 0.3,
-              ),
-            ),
-          ],
-        );
-      },
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        const Icon(Icons.phone_forwarded_rounded, color: Colors.white60, size: 15),
+        const SizedBox(width: 6),
+        AnimatedActivityText(
+          text: isVideo ? 'Calling (Video)...' : 'Calling (Audio)...',
+          forceAnimate: true,
+          style: const TextStyle(
+            color: Colors.white70,
+            fontSize: 16,
+            letterSpacing: 0.3,
+          ),
+        ),
+      ],
     );
   }
 }

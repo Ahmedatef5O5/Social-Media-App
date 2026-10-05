@@ -6,6 +6,7 @@ import '../../../core/services/call_identity.dart';
 import '../../../core/services/current_user_name_resolver.dart';
 import '../../../core/services/incoming_call_navigation_guard.dart';
 import '../../../core/supabase/supabase_provider.dart';
+import '../../../core/widgets/animated_activity_text.dart';
 import '../../../core/widgets/calls/call_avatar_backdrop.dart';
 import '../../../core/widgets/calls/call_layout_metrics.dart';
 import '../../../core/widgets/calls/calls.dart';
@@ -47,8 +48,6 @@ class _OutgoingGroupCallScreenState extends State<OutgoingGroupCallScreen>
   late final Future<String> _nameFuture;
 
   late final GroupCallSignalingService _signaling;
-  late final AnimationController _dotController;
-  late final Animation<int> _dotAnim;
   late final AnimationController _fadeController;
   late final Animation<double> _fadeAnim;
 
@@ -69,12 +68,6 @@ class _OutgoingGroupCallScreenState extends State<OutgoingGroupCallScreen>
   }
 
   void _initAnimations() {
-    _dotController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1000),
-    )..repeat();
-    _dotAnim = IntTween(begin: 0, end: 3).animate(_dotController);
-
     _fadeController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 700),
@@ -152,7 +145,6 @@ class _OutgoingGroupCallScreenState extends State<OutgoingGroupCallScreen>
     IncomingCallNavigationGuard.setOutgoingGroupCallActive(false);
     _cleanup();
     _audioPlayer.dispose();
-    _dotController.dispose();
     _fadeController.dispose();
     super.dispose();
   }
@@ -267,32 +259,24 @@ class _OutgoingGroupCallScreenState extends State<OutgoingGroupCallScreen>
   }
 
   Widget _buildCallingStatus(bool isVideo) {
-    return AnimatedBuilder(
-      animation: _dotAnim,
-      builder: (_, __) {
-        final dots = '.' * (_dotAnim.value + 1);
-        return Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(
-              Icons.phone_forwarded_rounded,
-              color: Colors.white60,
-              size: 15,
-            ),
-            const SizedBox(width: 6),
-            Text(
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        const Icon(Icons.phone_forwarded_rounded, color: Colors.white60, size: 15),
+        const SizedBox(width: 6),
+        AnimatedActivityText(
+          text:
               isVideo
-                  ? 'Calling group (Video)$dots'
-                  : 'Calling group (Audio)$dots',
-              style: const TextStyle(
-                color: Colors.white70,
-                fontSize: 16,
-                letterSpacing: 0.3,
-              ),
-            ),
-          ],
-        );
-      },
+                  ? 'Calling group (Video)...'
+                  : 'Calling group (Audio)...',
+          forceAnimate: true,
+          style: const TextStyle(
+            color: Colors.white70,
+            fontSize: 16,
+            letterSpacing: 0.3,
+          ),
+        ),
+      ],
     );
   }
 }

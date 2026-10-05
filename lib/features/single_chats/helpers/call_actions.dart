@@ -38,6 +38,7 @@ class CallActions {
       receiverAvatar: receiverAvatar,
       status: CallStatus.ringing,
       type: type,
+      startTime: DateTime.now().toUtc(),
     );
   }
 }

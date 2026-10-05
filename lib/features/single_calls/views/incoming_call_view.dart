@@ -43,6 +43,14 @@ class _IncomingCallViewState extends State<IncomingCallView>
     );
 
     _listenToCallStatus();
+
+    final pendingAction = CallNotificationDispatcher.instance
+        .consumePendingCallAction(widget.call.callId);
+    if (pendingAction == CallNotificationDispatcher.pendingActionAccept) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) unawaited(_onAcceptPressed());
+      });
+    }
   }
 
   void _listenToCallStatus() {

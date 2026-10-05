@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -10,13 +11,13 @@ import '../../../core/services/active_call/group_call_leave_or_end_resolver.dart
 import '../../../core/services/active_call/pip/call_pip_cubit.dart';
 import '../../../core/services/call_foreground_service.dart';
 import '../../../core/services/call_identity.dart';
+import '../../../core/services/incoming_call_navigation_guard.dart';
 import '../../../core/services/livekit_token_service.dart';
 import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/widgets/calls/call_control_button.dart';
 import '../../../core/widgets/calls/call_layout_metrics.dart';
 import '../../../core/widgets/calls/calls.dart';
 import '../../../core/widgets/calls/call_avatar_backdrop.dart';
-import '../../../core/widgets/custom_loading_indicator.dart';
 import '../models/group_call_model.dart';
 import '../services/group_call_signaling_service.dart';
 import '../widgets/group_call_members_sheet.dart';
@@ -25,12 +26,14 @@ class LiveKitGroupCallView extends StatefulWidget {
   final GroupCallModel call;
   final String currentUserId;
   final String currentUserName;
+  final bool isJoining;
 
   const LiveKitGroupCallView({
     super.key,
     required this.call,
     required this.currentUserId,
     required this.currentUserName,
+    this.isJoining = false,
   });
 
   @override
@@ -53,12 +56,14 @@ class _LiveKitGroupCallViewState extends State<LiveKitGroupCallView> {
   bool _micEnabled = true;
   bool _cameraEnabled = true;
   bool _isFrontCamera = true;
+  bool _hasRemoteJoined = false;
+  int get _connectedParticipantCount => _participantsByIdentity.length;
 
   final List<String> _participantIds = [];
   final Set<String> _leavingIds = {};
   Set<String> _activeSpeakerIds = {};
   Map<String, Participant> _participantsByIdentity = {};
-  final Map<String, Future<String?>> _avatarCache = {};
+  final Map<String, Future<_ParticipantProfile>> _profileCache = {};
 
   Timer? _ticker;
   Duration _elapsed = Duration.zero;
@@ -72,7 +77,8 @@ class _LiveKitGroupCallViewState extends State<LiveKitGroupCallView> {
     _pipCubit = context.read<CallPipCubit>();
     _sessionCubit = context.read<ActiveCallSessionCubit>();
     _pipCubit.restore();
-    _startedAt = DateTime.now();
+    _startedAt = widget.call.startedAt.toLocal();
+    _elapsed = _computeElapsed();
     _startTicker();
     _initRoom();
     _watchCallEndedByOthers();
@@ -81,8 +87,13 @@ class _LiveKitGroupCallViewState extends State<LiveKitGroupCallView> {
   void _startTicker() {
     _ticker = Timer.periodic(const Duration(seconds: 1), (_) {
       if (!mounted) return;
-      setState(() => _elapsed = DateTime.now().difference(_startedAt));
+      setState(() => _elapsed = _computeElapsed());
     });
+  }
+
+  Duration _computeElapsed() {
+    final diff = DateTime.now().difference(_startedAt);
+    return diff.isNegative ? Duration.zero : diff;
   }
 
   Future<void> _initRoom() async {
@@ -90,11 +101,12 @@ class _LiveKitGroupCallViewState extends State<LiveKitGroupCallView> {
 
     if (_pipCubit.state.room != null &&
         activeSession?.callId == widget.call.callId) {
-      _startedAt = activeSession!.startedAt;
-      _elapsed = DateTime.now().difference(_startedAt);
+      _startedAt = widget.call.startedAt.toLocal();
+      _elapsed = _computeElapsed();
       _attachTo(_pipCubit.state.room!);
       return;
     }
+    _startedAt = widget.call.startedAt.toLocal();
     await _connectNewRoom();
   }
 
@@ -103,6 +115,15 @@ class _LiveKitGroupCallViewState extends State<LiveKitGroupCallView> {
       call,
     ) {
       if (!mounted || _isEnding) return;
+
+      // Keep every device on the exact same canonical start time.
+      if (call != null && call.callId == widget.call.callId) {
+        final canonical = call.startedAt.toLocal();
+        if (canonical != _startedAt) {
+          _startedAt = canonical;
+          _elapsed = _computeElapsed();
+        }
+      }
 
       // The row says the call is over: close NOW, no confirmation window.
       if (call != null &&
@@ -170,7 +191,8 @@ class _LiveKitGroupCallViewState extends State<LiveKitGroupCallView> {
         await room.localParticipant?.setCameraEnabled(true);
       }
 
-      if (!mounted) {
+      // Also bail out when the user pressed End while still connecting.
+      if (!mounted || _isEnding) {
         await room.disconnect();
         return;
       }
@@ -306,6 +328,7 @@ class _LiveKitGroupCallViewState extends State<LiveKitGroupCallView> {
     }
 
     _participantsByIdentity = combined;
+    if (room.remoteParticipants.isNotEmpty) _hasRemoteJoined = true;
     if (mounted) setState(() {});
   }
 
@@ -314,21 +337,24 @@ class _LiveKitGroupCallViewState extends State<LiveKitGroupCallView> {
     _terminateCall();
   }
 
-  Future<String?> _avatarFuture(String identity) {
-    return _avatarCache.putIfAbsent(identity, () async {
+  /// Name + avatar for [identity], resolved once and cached.
+
+  Future<_ParticipantProfile> _profileFuture(String identity) {
+    return _profileCache.putIfAbsent(identity, () async {
       try {
-        // identity == Supabase user id per the token function's contract,
-        // but tolerate tokens minted with the display name as identity.
         final column = CallIdentity.looksLikeUserId(identity) ? 'id' : 'name';
         final data =
             await SupabaseProvider.client
                 .from('users')
-                .select('image_url')
+                .select('name, image_url')
                 .eq(column, identity)
                 .maybeSingle();
-        return data?['image_url'] as String?;
+        return _ParticipantProfile(
+          name: (data?['name'] as String?)?.trim() ?? '',
+          imageUrl: data?['image_url'] as String?,
+        );
       } catch (_) {
-        return null;
+        return const _ParticipantProfile();
       }
     });
   }
@@ -380,7 +406,10 @@ class _LiveKitGroupCallViewState extends State<LiveKitGroupCallView> {
     }
   }
 
-  void _handleMinimize() => CallTerminationService.popRouteIfActive(context);
+  void _handleMinimize() {
+    if (_room == null) return;
+    CallTerminationService.popRouteIfActive(context);
+  }
 
   /// Someone else already ended the call (data packet / DB row): tear down
   /// locally without signalling or broadcasting again.
@@ -388,6 +417,18 @@ class _LiveKitGroupCallViewState extends State<LiveKitGroupCallView> {
     if (_isEnding) return;
     _isEnding = true;
     if (mounted) setState(() {});
+
+    IncomingCallNavigationGuard.clearLocalInitiation(widget.call.callId);
+
+    if (widget.currentUserId == widget.call.initiatorId) {
+      unawaited(
+        _signaling.syncCallMessageStatus(
+          widget.call.callId,
+          fallbackDuration: _durationForEnd(),
+        ),
+      );
+    }
+
     await CallTerminationService.endActiveCall(
       pipCubit: _pipCubit,
       sessionCubit: _sessionCubit,
@@ -401,11 +442,10 @@ class _LiveKitGroupCallViewState extends State<LiveKitGroupCallView> {
     _isEnding = true;
     if (mounted) setState(() {});
 
-    final duration = _formatDuration(DateTime.now().difference(_startedAt));
+    IncomingCallNavigationGuard.clearLocalInitiation(widget.call.callId);
 
-    // Captured BEFORE teardown: `CallTerminationService.endActiveCall`
-    // disconnects the room before `signalEnd` actually runs, at which point
-    // `_room.remoteParticipants` would already read as empty.
+    final String? duration = _durationForEnd();
+
     final room = _room;
     final knownCount = widget.call.participantCount;
     final endForEveryone = GroupCallLeaveOrEndResolver.shouldEndCallForEveryone(
@@ -427,8 +467,6 @@ class _LiveKitGroupCallViewState extends State<LiveKitGroupCallView> {
             callId: widget.call.callId,
             durationIfEnding: duration,
           ),
-      // Instant hang-up for whoever is left. Only when the call really ends:
-      // leaving a 3+ person call must not close the others' screens.
       endMessage:
           endForEveryone
               ? CallControlMessage.groupEnded(widget.call.callId)
@@ -437,10 +475,18 @@ class _LiveKitGroupCallViewState extends State<LiveKitGroupCallView> {
     if (mounted) CallTerminationService.popRouteIfActive(context);
   }
 
+  String? _durationForEnd() {
+    final connected = _connectedParticipantCount >= 2 || _hasRemoteJoined;
+    final elapsed = _computeElapsed();
+    if (!connected || elapsed.inSeconds < 1) return null;
+    return _formatDuration(elapsed);
+  }
+
   String _formatDuration(Duration d) {
+    final h = d.inHours;
     final m = d.inMinutes.remainder(60).toString().padLeft(2, '0');
     final s = d.inSeconds.remainder(60).toString().padLeft(2, '0');
-    return '$m:$s';
+    return h > 0 ? '$h:$m:$s' : '$m:$s';
   }
 
   @override
@@ -477,16 +523,15 @@ class _LiveKitGroupCallViewState extends State<LiveKitGroupCallView> {
       );
     }
 
-    if (_connecting || _room == null) {
-      return const Scaffold(body: Center(child: CustomLoadingIndicator()));
-    }
-
+    final isConnectingUi = _connecting || _room == null;
     final primary = Theme.of(context).primaryColor;
 
     return PopScope(
-      canPop: true,
+      canPop: !isConnectingUi,
       onPopInvokedWithResult: (didPop, _) {
-        if (didPop) context.read<CallPipCubit>().minimize();
+        if (didPop && !isConnectingUi) {
+          context.read<CallPipCubit>().minimize();
+        }
       },
       child: Scaffold(
         body: Stack(
@@ -504,10 +549,10 @@ class _LiveKitGroupCallViewState extends State<LiveKitGroupCallView> {
                   );
                   return Column(
                     children: [
-                      _buildTopBar(),
-                      Expanded(child: _buildGrid()),
+                      _buildTopBar(isConnectingUi),
+                      Expanded(child: _buildGrid(isConnectingUi)),
                       const SizedBox(height: 8),
-                      _buildControls(metrics.buttonSize),
+                      _buildControls(metrics.buttonSize, isConnectingUi),
                       const SizedBox(height: 24),
                     ],
                   );
@@ -520,9 +565,13 @@ class _LiveKitGroupCallViewState extends State<LiveKitGroupCallView> {
     );
   }
 
-  Widget _buildTopBar() {
-    final m = _elapsed.inMinutes.remainder(60).toString().padLeft(2, '0');
-    final s = _elapsed.inSeconds.remainder(60).toString().padLeft(2, '0');
+  String get _durationText => _formatDuration(_elapsed);
+
+  Widget _buildTopBar(bool isConnectingUi) {
+    final label =
+        isConnectingUi
+            ? (widget.isJoining ? 'Joining...' : 'Connecting...')
+            : _durationText;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
@@ -561,8 +610,8 @@ class _LiveKitGroupCallViewState extends State<LiveKitGroupCallView> {
                       const SizedBox(height: 2),
                       CallStatusPill(
                         icon: Icons.circle,
-                        label: '$m:$s',
-                        showLiveDot: true,
+                        label: label,
+                        showLiveDot: !isConnectingUi,
                       ),
                     ],
                   ),
@@ -580,74 +629,196 @@ class _LiveKitGroupCallViewState extends State<LiveKitGroupCallView> {
     );
   }
 
-  Widget _buildGrid() {
-    final count = _participantIds.length;
-    if (count == 0) return const SizedBox.shrink();
+  // ---------------------------------------------------------------------
+  // Adaptive stage
+  // ---------------------------------------------------------------------
 
-    final columns = count <= 1 ? 1 : (count <= 4 ? 2 : (count <= 9 ? 3 : 4));
+  static const double _stagePadding = 8;
+  static const double _stageGap = 8;
 
-    return GridView.builder(
-      padding: const EdgeInsets.all(8),
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: columns,
-        mainAxisSpacing: 8,
-        crossAxisSpacing: 8,
-        childAspectRatio: 3 / 4,
-      ),
-      itemCount: count,
-      itemBuilder: (context, index) {
-        final id = _participantIds[index];
-        final participant = _participantsByIdentity[id];
-        if (participant == null) return const SizedBox.shrink();
+  List<int> _rowPlan(int count, {required bool portrait}) {
+    switch (count) {
+      case 1:
+        return const [1];
+      case 2:
+        return portrait ? const [1, 1] : const [2];
+      case 3:
+        return const [2, 1];
+      case 4:
+        return const [2, 2];
+      case 5:
+        return const [3, 2];
+      case 6:
+        return const [3, 3];
+      case 7:
+        return const [3, 2, 2];
+      default:
+        return const [3, 3, 2];
+    }
+  }
 
-        return _ParticipantTile(
-          key: ValueKey(id),
+  List<_StageEntry> _stageEntries(bool isConnectingUi) {
+    if (isConnectingUi || _participantIds.isEmpty) {
+      return [
+        _StageEntry(
+          id: widget.currentUserId,
+          participant: _room?.localParticipant,
+          isMe: true,
+        ),
+      ];
+    }
+
+    final entries = <_StageEntry>[];
+    for (final id in _participantIds) {
+      final participant = _participantsByIdentity[id];
+      if (participant == null) continue;
+      entries.add(
+        _StageEntry(
+          id: id,
           participant: participant,
-          isLeaving: _leavingIds.contains(id),
-          isSpeaking: _activeSpeakerIds.contains(id),
-          avatarFuture: _avatarFuture(id),
           isMe:
               participant.identity == widget.currentUserId ||
               participant.identity == widget.currentUserName,
+        ),
+      );
+    }
+    return entries;
+  }
+
+  Widget _buildTile(_StageEntry entry) {
+    return _ParticipantTile(
+      key: ValueKey(entry.id),
+      participant: entry.participant,
+      identity: entry.id,
+      isLeaving: _leavingIds.contains(entry.id),
+      isSpeaking: _activeSpeakerIds.contains(entry.id),
+      profileFuture: _profileFuture(entry.id),
+      isMe: entry.isMe,
+    );
+  }
+
+  Widget _buildRow(
+    List<_StageEntry> rowEntries,
+    double tileWidth,
+    double tileHeight,
+  ) {
+    final children = <Widget>[];
+    for (var i = 0; i < rowEntries.length; i++) {
+      if (i > 0) children.add(const SizedBox(width: _stageGap));
+      children.add(
+        SizedBox(
+          width: tileWidth,
+          height: tileHeight,
+          child: _buildTile(rowEntries[i]),
+        ),
+      );
+    }
+    return Row(mainAxisAlignment: MainAxisAlignment.center, children: children);
+  }
+
+  Widget _buildGrid(bool isConnectingUi) {
+    final entries = _stageEntries(isConnectingUi);
+    final count = entries.length;
+    if (count == 0) return const SizedBox.shrink();
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final availW = constraints.maxWidth - _stagePadding * 2;
+        final availH = constraints.maxHeight - _stagePadding * 2;
+        if (availW <= 0 || availH <= 0) return const SizedBox.shrink();
+
+        if (count >= 9) {
+          const maxCols = 4;
+          final tileW = (availW - _stageGap * (maxCols - 1)) / maxCols;
+          final tileH = math.max(80.0, (constraints.maxHeight - 24) / 3);
+
+          final rows = <Widget>[];
+          for (var i = 0; i < count; i += maxCols) {
+            final end = math.min(i + maxCols, count);
+            if (rows.isNotEmpty) rows.add(const SizedBox(height: _stageGap));
+            rows.add(_buildRow(entries.sublist(i, end), tileW, tileH));
+          }
+
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(_stagePadding),
+            child: Column(children: rows),
+          );
+        }
+
+        final portrait = availH > availW * 1.15;
+        final plan = _rowPlan(count, portrait: portrait);
+        final maxCols = plan.reduce(math.max);
+        final tileW = (availW - _stageGap * (maxCols - 1)) / maxCols;
+        final tileH = (availH - _stageGap * (plan.length - 1)) / plan.length;
+
+        final rows = <Widget>[];
+        var cursor = 0;
+        for (final rowCount in plan) {
+          if (rows.isNotEmpty) rows.add(const SizedBox(height: _stageGap));
+          final end = math.min(cursor + rowCount, count);
+          rows.add(_buildRow(entries.sublist(cursor, end), tileW, tileH));
+          cursor = end;
+        }
+
+        return Padding(
+          padding: const EdgeInsets.all(_stagePadding),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: rows,
+          ),
         );
       },
     );
   }
 
-  Widget _buildControls(double buttonSize) {
+  Widget _gated(bool isConnectingUi, Widget child) {
+    if (!isConnectingUi) return child;
+    return Opacity(opacity: 0.45, child: IgnorePointer(child: child));
+  }
+
+  Widget _buildControls(double buttonSize, bool isConnectingUi) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
-        CallControlButton(
-          icon: _micEnabled ? Icons.mic_rounded : Icons.mic_off_rounded,
-          label: _micEnabled ? 'Mute' : 'Unmute',
-          variant:
-              _micEnabled
-                  ? CallControlVariant.neutral
-                  : CallControlVariant.warning,
-          size: buttonSize,
-          onTap: _toggleMic,
-        ),
-        if (_isVideo)
+        _gated(
+          isConnectingUi,
           CallControlButton(
-            icon:
-                _cameraEnabled
-                    ? Icons.videocam_rounded
-                    : Icons.videocam_off_rounded,
-            label: _cameraEnabled ? 'Camera' : 'Off',
+            icon: _micEnabled ? Icons.mic_rounded : Icons.mic_off_rounded,
+            label: _micEnabled ? 'Mute' : 'Unmute',
             variant:
-                _cameraEnabled
+                _micEnabled
                     ? CallControlVariant.neutral
                     : CallControlVariant.warning,
             size: buttonSize,
-            onTap: _toggleCamera,
+            onTap: _toggleMic,
+          ),
+        ),
+        if (_isVideo)
+          _gated(
+            isConnectingUi,
+            CallControlButton(
+              icon:
+                  _cameraEnabled
+                      ? Icons.videocam_rounded
+                      : Icons.videocam_off_rounded,
+              label: _cameraEnabled ? 'Camera' : 'Off',
+              variant:
+                  _cameraEnabled
+                      ? CallControlVariant.neutral
+                      : CallControlVariant.warning,
+              size: buttonSize,
+              onTap: _toggleCamera,
+            ),
           ),
         if (_isVideo)
-          CallControlButton(
-            icon: Icons.cameraswitch_rounded,
-            label: 'Flip',
-            size: buttonSize,
-            onTap: _switchCamera,
+          _gated(
+            isConnectingUi,
+            CallControlButton(
+              icon: Icons.cameraswitch_rounded,
+              label: 'Flip',
+              size: buttonSize,
+              onTap: _switchCamera,
+            ),
           ),
         CallControlButton(
           icon: Icons.call_end_rounded,
@@ -662,32 +833,66 @@ class _LiveKitGroupCallViewState extends State<LiveKitGroupCallView> {
   }
 }
 
+class _StageEntry {
+  final String id;
+  final Participant? participant;
+  final bool isMe;
+
+  const _StageEntry({
+    required this.id,
+    required this.participant,
+    required this.isMe,
+  });
+}
+
+class _ParticipantProfile {
+  final String name;
+  final String? imageUrl;
+
+  const _ParticipantProfile({this.name = '', this.imageUrl});
+}
+
 class _ParticipantTile extends StatelessWidget {
-  final Participant participant;
+  final Participant? participant;
+  final String identity;
   final bool isMe;
   final bool isLeaving;
   final bool isSpeaking;
-  final Future<String?> avatarFuture;
+  final Future<_ParticipantProfile> profileFuture;
 
   const _ParticipantTile({
     super.key,
     required this.participant,
+    required this.identity,
     required this.isMe,
     required this.isLeaving,
     required this.isSpeaking,
-    required this.avatarFuture,
+    required this.profileFuture,
   });
 
   VideoTrack? get _videoTrack {
-    for (final pub in participant.videoTrackPublications) {
+    final p = participant;
+    if (p == null) return null;
+    for (final pub in p.videoTrackPublications) {
       if (!pub.muted && pub.track != null) return pub.track as VideoTrack;
     }
     return null;
   }
 
   bool get _isMuted {
-    final pubs = participant.audioTrackPublications;
+    final p = participant;
+    if (p == null) return false;
+    final pubs = p.audioTrackPublications;
     return pubs.isEmpty || pubs.first.muted;
+  }
+
+  String _label(_ParticipantProfile? profile) {
+    if (isMe) return 'You';
+    final liveKitName = participant?.name ?? '';
+    if (liveKitName.isNotEmpty) return liveKitName;
+    final resolved = profile?.name ?? '';
+    if (resolved.isNotEmpty) return resolved;
+    return 'Member';
   }
 
   @override
@@ -719,71 +924,80 @@ class _ParticipantTile extends StatelessWidget {
               width: isSpeaking ? 2.4 : 1,
             ),
           ),
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              _videoTrack != null
-                  ? VideoTrackRenderer(_videoTrack!)
-                  : Center(
-                    child: FutureBuilder<String?>(
-                      future: avatarFuture,
-                      builder: (context, snapshot) {
-                        return CallAvatarImage(
-                          imageUrl: snapshot.data,
-                          fallbackLabel:
-                              participant.name.isNotEmpty
-                                  ? participant.name
-                                  : participant.identity,
-                          diameter: 64,
-                        );
-                      },
-                    ),
-                  ),
-              Positioned(
-                left: 8,
-                bottom: 6,
-                right: 8,
-                child: Row(
-                  children: [
-                    if (_isMuted)
-                      const Padding(
-                        padding: EdgeInsets.only(right: 4),
-                        child: Icon(
-                          Icons.mic_off_rounded,
-                          color: Colors.white,
-                          size: 13,
-                        ),
-                      ),
-                    Flexible(
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.black38,
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text(
-                          isMe
-                              ? 'You'
-                              : (participant.name.isNotEmpty
-                                  ? participant.name
-                                  : participant.identity),
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
+          child: LayoutBuilder(
+            builder: (context, tileConstraints) {
+              final avatarDiameter = (math.min(
+                        tileConstraints.maxWidth,
+                        tileConstraints.maxHeight,
+                      ) *
+                      0.42)
+                  .clamp(36.0, 82.0);
+              final videoTrack = _videoTrack;
+
+              return FutureBuilder<_ParticipantProfile>(
+                future: profileFuture,
+                builder: (context, snapshot) {
+                  final profile = snapshot.data;
+                  final label = _label(profile);
+
+                  return Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      if (videoTrack != null)
+                        VideoTrackRenderer(videoTrack)
+                      else
+                        Center(
+                          child: CallAvatarImage(
+                            imageUrl: profile?.imageUrl,
+                            fallbackLabel: label,
+                            diameter: avatarDiameter,
                           ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                        ),
+                      Positioned(
+                        left: 8,
+                        bottom: 6,
+                        right: 8,
+                        child: Row(
+                          children: [
+                            if (_isMuted)
+                              const Padding(
+                                padding: EdgeInsets.only(right: 4),
+                                child: Icon(
+                                  Icons.mic_off_rounded,
+                                  color: Colors.white,
+                                  size: 13,
+                                ),
+                              ),
+                            Flexible(
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.black38,
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Text(
+                                  label,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+                    ],
+                  );
+                },
+              );
+            },
           ),
         ),
       ),

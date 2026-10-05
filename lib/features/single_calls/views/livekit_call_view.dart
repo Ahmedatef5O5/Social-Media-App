@@ -12,7 +12,6 @@ import '../../../core/widgets/calls/call_avatar_backdrop.dart';
 import '../../../core/widgets/calls/call_control_button.dart';
 import '../../../core/widgets/calls/call_layout_metrics.dart';
 import '../../../core/widgets/calls/calls.dart';
-import '../../../core/widgets/custom_loading_indicator.dart';
 import '../models/call_model.dart';
 import '../cubits/single_call_cubit/call_cubit.dart';
 import '../services/call_signaling_service.dart';
@@ -55,7 +54,7 @@ class _LiveKitCallViewState extends State<LiveKitCallView> {
   @override
   void initState() {
     super.initState();
-    _startedAt = widget.call.startTime ?? DateTime.now();
+    _startedAt = widget.call.startTime?.toLocal() ?? DateTime.now();
     _startTicker();
     _listenForRemoteEnd();
     _initRoom();
@@ -127,7 +126,7 @@ class _LiveKitCallViewState extends State<LiveKitCallView> {
         await room.localParticipant?.setCameraEnabled(true);
       }
 
-      if (!mounted) {
+      if (!mounted || _isEnding) {
         await room.disconnect();
         return;
       }
@@ -200,6 +199,8 @@ class _LiveKitCallViewState extends State<LiveKitCallView> {
     if (mounted) setState(() {});
   }
 
+  /// Reliable data packet published by the peer right before it hung up —
+  /// arrives in well under a second.
   void _onDataReceived(DataReceivedEvent event) {
     if (!mounted || _isEnding) return;
     final msg = CallControlMessage.tryDecode(event.data);
@@ -297,14 +298,21 @@ class _LiveKitCallViewState extends State<LiveKitCallView> {
     }
   }
 
-  void _handleMinimize() => CallTerminationService.popRouteIfActive(context);
+  /// There is nothing to minimize until the room exists; while connecting
+  /// the user can only wait or press End.
+  void _handleMinimize() {
+    if (_room == null) return;
+    CallTerminationService.popRouteIfActive(context);
+  }
 
+  /// The local user pressed End: tell the peer over the data channel first.
   Future<void> _handleEndCall() => _terminate(notifyPeer: true);
 
   Future<void> _terminate({required bool notifyPeer}) async {
     if (_isEnding || !mounted) return;
     setState(() => _isEnding = true);
 
+    // Capture everything from context BEFORE the first await.
     final pipCubit = context.read<CallPipCubit>();
     final sessionCubit = context.read<ActiveCallSessionCubit>();
     final callCubit = context.read<CallCubit>();
@@ -363,12 +371,13 @@ class _LiveKitCallViewState extends State<LiveKitCallView> {
       );
     }
 
-    if (_connecting || _room == null) {
-      return const Scaffold(body: Center(child: CustomLoadingIndicator()));
-    }
+    // The real call screen is shown immediately; only the status pill and
+    // the media controls reflect that the room is still connecting.
+    final room = _room;
+    final isConnectingUi = _connecting || room == null;
 
     final primary = Theme.of(context).primaryColor;
-    final remoteTrack = _resolveRemoteTrack(_room!);
+    final remoteTrack = room == null ? null : _resolveRemoteTrack(room);
     final isCaller = widget.currentUserId == widget.call.callerId;
     final otherPersonName =
         isCaller ? widget.call.receiverName : widget.call.callerName;
@@ -377,9 +386,9 @@ class _LiveKitCallViewState extends State<LiveKitCallView> {
     final showRemoteVideo = _isVideo && remoteTrack != null;
 
     return PopScope(
-      canPop: true,
+      canPop: !isConnectingUi,
       onPopInvokedWithResult: (didPop, _) {
-        if (didPop) context.read<CallPipCubit>().minimize();
+        if (didPop && !isConnectingUi) context.read<CallPipCubit>().minimize();
       },
       child: Scaffold(
         body: LayoutBuilder(
@@ -433,11 +442,11 @@ class _LiveKitCallViewState extends State<LiveKitCallView> {
                 SafeArea(
                   child: Column(
                     children: [
-                      _buildTopBar(otherPersonName),
+                      _buildTopBar(otherPersonName, isConnectingUi),
                       const Spacer(),
                       if (_isVideo) _buildLocalPreview(metrics.isCompact),
                       SizedBox(height: metrics.midGap),
-                      _buildControls(metrics.buttonSize),
+                      _buildControls(metrics.buttonSize, isConnectingUi),
                       SizedBox(height: metrics.bottomGap),
                     ],
                   ),
@@ -450,7 +459,7 @@ class _LiveKitCallViewState extends State<LiveKitCallView> {
     );
   }
 
-  Widget _buildTopBar(String otherPersonName) {
+  Widget _buildTopBar(String otherPersonName, bool isConnectingUi) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
       child: ClipRRect(
@@ -487,8 +496,8 @@ class _LiveKitCallViewState extends State<LiveKitCallView> {
                       const SizedBox(height: 2),
                       CallStatusPill(
                         icon: Icons.circle,
-                        label: _durationText,
-                        showLiveDot: true,
+                        label: isConnectingUi ? 'Connecting...' : _durationText,
+                        showLiveDot: !isConnectingUi,
                       ),
                     ],
                   ),
@@ -535,40 +544,57 @@ class _LiveKitCallViewState extends State<LiveKitCallView> {
     );
   }
 
-  Widget _buildControls(double buttonSize) {
+  /// Mic / camera / flip do nothing without a room, so they are dimmed and
+  /// inert while connecting. End always stays active: the user can abort at
+  /// any moment.
+  Widget _gated(bool isConnectingUi, Widget child) {
+    if (!isConnectingUi) return child;
+    return Opacity(opacity: 0.45, child: IgnorePointer(child: child));
+  }
+
+  Widget _buildControls(double buttonSize, bool isConnectingUi) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
-        CallControlButton(
-          icon: _micEnabled ? Icons.mic_rounded : Icons.mic_off_rounded,
-          label: _micEnabled ? 'Mute' : 'Unmute',
-          variant:
-              _micEnabled
-                  ? CallControlVariant.neutral
-                  : CallControlVariant.warning,
-          size: buttonSize,
-          onTap: _toggleMic,
-        ),
-        if (_isVideo)
+        _gated(
+          isConnectingUi,
           CallControlButton(
-            icon:
-                _cameraEnabled
-                    ? Icons.videocam_rounded
-                    : Icons.videocam_off_rounded,
-            label: _cameraEnabled ? 'Camera' : 'Off',
+            icon: _micEnabled ? Icons.mic_rounded : Icons.mic_off_rounded,
+            label: _micEnabled ? 'Mute' : 'Unmute',
             variant:
-                _cameraEnabled
+                _micEnabled
                     ? CallControlVariant.neutral
                     : CallControlVariant.warning,
             size: buttonSize,
-            onTap: _toggleCamera,
+            onTap: _toggleMic,
+          ),
+        ),
+        if (_isVideo)
+          _gated(
+            isConnectingUi,
+            CallControlButton(
+              icon:
+                  _cameraEnabled
+                      ? Icons.videocam_rounded
+                      : Icons.videocam_off_rounded,
+              label: _cameraEnabled ? 'Camera' : 'Off',
+              variant:
+                  _cameraEnabled
+                      ? CallControlVariant.neutral
+                      : CallControlVariant.warning,
+              size: buttonSize,
+              onTap: _toggleCamera,
+            ),
           ),
         if (_isVideo)
-          CallControlButton(
-            icon: Icons.cameraswitch_rounded,
-            label: 'Flip',
-            size: buttonSize,
-            onTap: _switchCamera,
+          _gated(
+            isConnectingUi,
+            CallControlButton(
+              icon: Icons.cameraswitch_rounded,
+              label: 'Flip',
+              size: buttonSize,
+              onTap: _switchCamera,
+            ),
           ),
         CallControlButton(
           icon: Icons.call_end_rounded,

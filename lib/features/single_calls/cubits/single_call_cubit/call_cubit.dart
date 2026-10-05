@@ -1,4 +1,4 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:social_media_app/features/profile/services/user_services.dart';
@@ -6,9 +6,14 @@ import 'package:social_media_app/features/single_chats/services/chat_services.da
 import '../../../../core/bootstrap/app_bootstrap.dart';
 import '../../../../core/helpers/safe_emit_mixin.dart';
 import '../../../../core/services/current_user_name_resolver.dart';
+import '../../../../core/notifications/helpers/notification_app_state_helper.dart';
 import '../../../../core/services/fcm_services.dart';
+import '../../../../core/services/incoming_call_navigation_guard.dart';
 import '../../../../core/supabase/supabase_provider.dart';
+import '../../../../core/toast/app_toast.dart';
+import '../../../settings/repository/settings_repository.dart';
 import '../../../group_calls/models/group_call_model.dart';
+import '../../../group_calls/services/group_call_signaling_service.dart';
 import '../../../notifications/repository/notifications_repository.dart';
 import '../../models/call_model.dart';
 import '../../services/call_signaling_service.dart';
@@ -20,12 +25,39 @@ class CallCubit extends Cubit<CallState> with SafeEmitMixin<CallState> {
   final UserService _userService;
   final _fcmService = FcmService.instance;
 
+  late final GroupCallSignalingService _groupSignaling =
+      GroupCallSignalingService();
+
   StreamSubscription? _callSubscription;
   StreamSubscription? _authSubscription;
   StreamSubscription? _statusSubscription;
 
   DateTime? _callAcceptedAt;
   CallModel? _activeCall;
+
+  final Set<String> _autoRejectedCallIds = <String>{};
+
+  bool get isBusy => state is CallDialingState || state is CallConnectedState;
+
+  String? get activeCallId {
+    final s = state;
+    if (s is CallDialingState) return s.call.callId;
+    if (s is CallConnectedState) return s.call.callId;
+    return null;
+  }
+
+  @override
+  void onChange(Change<CallState> change) {
+    super.onChange(change);
+    final next = change.nextState;
+    if (next is CallDialingState) {
+      IncomingCallNavigationGuard.setSingleCallInProgress(next.call.callId);
+    } else if (next is CallConnectedState) {
+      IncomingCallNavigationGuard.setSingleCallInProgress(next.call.callId);
+    } else if (next is CallEndedState || next is CallInitial) {
+      IncomingCallNavigationGuard.setSingleCallInProgress(null);
+    }
+  }
 
   CallCubit({
     required this.signalingService,
@@ -50,6 +82,9 @@ class CallCubit extends Cubit<CallState> with SafeEmitMixin<CallState> {
     });
 
     if (SupabaseProvider.user != null) {
+      unawaited(
+        signalingService.cleanupStaleCallsForUser(SupabaseProvider.user!.id),
+      );
       _initIncomingListener();
     }
   }
@@ -61,12 +96,44 @@ class CallCubit extends Cubit<CallState> with SafeEmitMixin<CallState> {
       if (data.isNotEmpty) {
         final call = CallModel.fromMap(data.first);
         if (call.callerId == SupabaseProvider.idOrNull) return;
+
+        if (isBusy ||
+            IncomingCallNavigationGuard.isUserBusyWithAnotherCall(
+              call.callId,
+            )) {
+          _autoRejectWhileBusy(call);
+          return;
+        }
+
+        if (!isAppInForeground() &&
+            !SettingsRepository.instance.callNotifications) {
+          return;
+        }
+
         emit(CallIncomingState(call));
       }
     });
   }
 
+  void _autoRejectWhileBusy(CallModel call) {
+    if (!_autoRejectedCallIds.add(call.callId)) return;
+    unawaited(
+      signalingService
+          .updateCallStatus(call.callId, CallStatus.rejected)
+          .catchError((Object e) {
+            debugPrint('[CallCubit] busy auto-reject failed: $e');
+          }),
+    );
+  }
+
   Future<void> makeAudioCall(CallModel call) async {
+    // One call at a time: starting a second call would overwrite `_activeCall`
+    // and tear down the one in progress.
+    if (isBusy || IncomingCallNavigationGuard.isUserBusyWithAnotherCall()) {
+      AppToast.warning('Please end your current call before starting another.');
+      return;
+    }
+
     _activeCall = call;
     _callAcceptedAt = null;
 
@@ -110,6 +177,10 @@ class CallCubit extends Cubit<CallState> with SafeEmitMixin<CallState> {
           emit(CallConnectedState(updatedCall, currentUserName));
         } else if (updatedCall.status == CallStatus.rejected) {
           _statusSubscription?.cancel();
+          // Never answered: clear the per-call bookkeeping so the caller is
+          // not left with a stale `_activeCall`.
+          _activeCall = null;
+          _callAcceptedAt = null;
           unawaited(
             _chatServices.upsertCallMessage(
               callId: call.callId,
@@ -135,6 +206,9 @@ class CallCubit extends Cubit<CallState> with SafeEmitMixin<CallState> {
     _callAcceptedAt = DateTime.now();
     _activeCall = call;
 
+    // The RECEIVER must watch the call row too. Previously only the caller
+    // (makeAudioCall) subscribed, so when the caller hung up the receiver
+    // only found out via LiveKit's slow disconnect detection (10â€“15 s).
     _listenForRemoteEnd(call);
 
     await signalingService.updateCallStatus(call.callId, CallStatus.accepted);
@@ -240,31 +314,26 @@ class CallCubit extends Cubit<CallState> with SafeEmitMixin<CallState> {
     }
   }
 
+  /// Rings [memberId] into a group call that is already running.
+  ///
+  /// The ring is attributed to the CURRENT user (the member who tapped
+  /// "Ring"), never to `call.initiatorId`: the original initiator may have
+  /// left, and a ring whose caller equals the receiver is dropped by every
+  /// incoming-call guard.
   Future<void> ringOfflineMember(GroupCallModel call, String memberId) async {
     try {
-      final data =
-          await SupabaseProvider.client
-              .from('users')
-              .select('fcm_token')
-              .eq('id', memberId)
-              .maybeSingle();
+      final ringerId = SupabaseProvider.idOrNull;
+      if (ringerId == null || ringerId.isEmpty) return;
+      final ringerName = await CurrentUserNameResolver.resolve();
 
-      final token = data?['fcm_token'] as String?;
-      if (token == null || token.isEmpty) return;
-
-      await FcmService.instance.sendGroupCallNotification(
-        receiverFcmToken: token,
-        callId: call.callId,
-        groupId: call.groupId,
-        groupName: call.groupName,
-        groupAvatarUrl: call.groupAvatarUrl ?? '',
-        callerId: call.initiatorId,
-        callerName: call.initiatorName,
-        callType: call.type == GroupCallType.video ? 'video' : 'audio',
-        startedAt: call.startedAt.toIso8601String(),
+      await _groupSignaling.ringGroupMember(
+        call: call,
+        targetMemberId: memberId,
+        ringerUserId: ringerId,
+        ringerUserName: ringerName,
       );
     } catch (e) {
-      debugPrint('[GroupCallSignalingService] ringOfflineMember error: $e');
+      debugPrint('[CallCubit] ringOfflineMember error: $e');
     }
   }
 
