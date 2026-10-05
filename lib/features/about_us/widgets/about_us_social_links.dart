@@ -17,13 +17,15 @@ class AboutUsSocialLinks extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final links = [
-      // _SocialLink(
-      //   icon: Icons.language,
-      //   label: 'Website',
-      //   value: 'www.social-media-app.com',
-      //   url: 'https://github.com/Ahmedatef5O5/Social-Media-App',
-      //   color: Colors.blue,
-      // ),
+      _SocialLink(
+        iconBuilder:
+            (color, size) =>
+                FaIcon(FontAwesomeIcons.globe, color: color, size: size),
+        label: 'Website',
+        value: 'www.social-media-app.com',
+        url: 'https://www.ahmedatef.tech/projects/social-mate',
+        color: Colors.blue,
+      ),
       _SocialLink(
         iconBuilder:
             (color, size) =>
@@ -31,8 +33,9 @@ class AboutUsSocialLinks extends StatelessWidget {
 
         label: 'Portfolio',
         value: 'ahmed-portfolio.web.app',
-        url: 'https://ahmed-portfolio-cd0a3.web.app',
-        color: Colors.blue,
+        url: 'https://www.ahmedatef.tech',
+        // old portfolio url: 'https://ahmed-portfolio-cd0a3.web.app',
+        color: Colors.deepPurpleAccent,
       ),
       _SocialLink(
         iconBuilder:

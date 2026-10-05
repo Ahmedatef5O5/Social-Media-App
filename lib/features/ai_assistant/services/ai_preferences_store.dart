@@ -1,5 +1,6 @@
-import 'package:hive_flutter/adapters.dart';
+﻿import 'package:hive_flutter/adapters.dart';
 import '../../../core/cache/constants/hive_box_names.dart';
+import '../../../core/cache/services/hive_cache_manager.dart';
 import '../entities/ai_autocomplete_language.dart';
 import '../entities/ai_reply_length.dart';
 import '../entities/ai_reply_tone.dart';
@@ -20,7 +21,9 @@ class AiPreferencesStore {
   Box<dynamic>? _box;
 
   Future<Box<dynamic>> _openBox() async {
-    return _box ??= await Hive.openBox<dynamic>(HiveBoxNames.aiPreferences);
+    if (_box != null && _box!.isOpen) return _box!;
+    await HiveCacheManager.instance.init();
+    return _box = await Hive.openBox<dynamic>(HiveBoxNames.aiPreferences);
   }
 
   Future<bool> getAutoCompleteEnabled() async {

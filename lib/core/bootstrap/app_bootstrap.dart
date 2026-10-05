@@ -1,4 +1,4 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
@@ -10,6 +10,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:social_media_app/core/cache/services/hive_cache_manager.dart';
 import 'package:social_media_app/core/cache/services/local_snapshot_store.dart';
 import 'package:social_media_app/core/firebase/firebase_background_handlers.dart';
+import 'package:social_media_app/core/notifications/handlers/tap_action_handler.dart';
+import 'package:social_media_app/core/services/incoming_call_navigation_guard.dart';
 import 'package:social_media_app/core/router/app_routes.dart';
 import 'package:social_media_app/core/secrets/app_secrets.dart';
 import 'package:social_media_app/core/services/network_status_service.dart';
@@ -35,12 +37,22 @@ import '../toast/app_toast.dart';
 Future<void> initializeCriticalBeforeRunApp() async {
   await _lockOrientation();
 
+  // Opens the main-isolate end of the foreground-service communication port.
+  // Must run before `runApp` â€” it is how the "Ongoing Call" notification tells
+  // the UI isolate to expand the minimized call (see `CallForegroundTaskHandler`
+  // and `app.dart`). Synchronous and cheap; never allowed to block startup.
+  try {
+    FlutterForegroundTask.initCommunicationPort();
+  } catch (e, s) {
+    debugPrint('âš ï¸ initCommunicationPort failed: $e\n$s');
+  }
+
   // Firebase Core moved UP from `initializeCoreServices()`.
   //
   // `main.dart` installs FlutterError.onError / PlatformDispatcher.onError
   // on its very first lines, long before this runs. `Observability` buffers
   // everything until the line below attaches the real reporter, so nothing
-  // is lost — but the window must stay as short as possible, which is why
+  // is lost â€” but the window must stay as short as possible, which is why
   // Firebase now initialises here instead of after runApp().
   //
   // Wrapped in `_safely`: a Firebase outage must never prevent the app from
@@ -70,8 +82,8 @@ Future<void> startCoreServicesBootstrap() {
   _coreServicesCompleter = completer;
 
   initializeCoreServices().then((_) => completer.complete()).catchError((e, s) {
-    debugPrint('❌ Critical bootstrap failure: $e\n$s');
-    // Never leave SplashView waiting forever on a bootstrap bug —
+    debugPrint('âŒ Critical bootstrap failure: $e\n$s');
+    // Never leave SplashView waiting forever on a bootstrap bug â€”
     // individual steps already fail safely on their own via
     // `_safely`, so completing here just unblocks navigation.
     completer.complete();
@@ -87,7 +99,21 @@ Future<void> waitForCoreServicesReady() {
 Future<void> initializeCoreServices() async {
   AppSecrets.assertSecretsLoaded();
 
-  // Group A — fully independent: each touches a different
+  // A brand-new UI isolate cannot be in a call, so a mirrored "busy" flag from
+  // a previous process is stale by definition.
+  unawaited(
+    _safely(
+      'ClearCallBusyState',
+      IncomingCallNavigationGuard.clearPersistedBusyState,
+    ),
+  );
+
+  // Was this process started by tapping a call notification? Answered BEFORE
+  // core services complete so `SplashView` can skip its animation delay and
+  // the tap can be queued for HomeView instead of being wiped by the splash.
+  await _safely('ColdStartLaunch', TapActionHandler.instance.detectColdStartLaunch);
+
+  // Group A â€” fully independent: each touches a different
   // storage/plugin (Hive, Supabase SDK, SharedPreferences). Safe to
   // run in parallel.
   final coreReady = Future.wait([
@@ -96,7 +122,7 @@ Future<void> initializeCoreServices() async {
     SettingsRepository.instance.init(),
   ]);
 
-  // Group C — Firebase CORE has MOVED to initializeCriticalBeforeRunApp()
+  // Group C â€” Firebase CORE has MOVED to initializeCriticalBeforeRunApp()
   // so Crashlytics exists before the first frame. Do not re-add it here:
   // Firebase.initializeApp() throws on a duplicate [DEFAULT] app.
 
@@ -140,8 +166,8 @@ Future<void> _safely(String label, Future<void> Function() step) async {
   try {
     await step();
   } catch (e, s) {
-    debugPrint('⚠️ Non-critical bootstrap step "$label" failed: $e\n$s');
-    // Previously this was a debugPrint and nothing else — a bootstrap step
+    debugPrint('âš ï¸ Non-critical bootstrap step "$label" failed: $e\n$s');
+    // Previously this was a debugPrint and nothing else â€” a bootstrap step
     // could fail on every device in production and never be noticed.
     unawaited(
       obs.recordError(
@@ -164,8 +190,8 @@ Future<void> _guardAgainstCrossAccountCacheLeak() async {
 
   if (cachedOwnerId != currentUserId) {
     debugPrint(
-      '🧹 LocalSnapshotStore owner mismatch ("$cachedOwnerId" -> '
-      '"$currentUserId") — clearing cached chats/groups/posts/etc. so '
+      'ðŸ§¹ LocalSnapshotStore owner mismatch ("$cachedOwnerId" -> '
+      '"$currentUserId") â€” clearing cached chats/groups/posts/etc. so '
       "one account's data never leaks into another's session.",
     );
     await LocalSnapshotStore.instance.clearAll();
@@ -184,7 +210,7 @@ void _setupAuthListener() {
       final session = data.session;
 
       if (event == AuthChangeEvent.signedIn && session != null) {
-        debugPrint('✅ Logged in: ${session.user.email}');
+        debugPrint('âœ… Logged in: ${session.user.email}');
 
         // C-02 instrumentation. Two things happen on every sign-in:
         //  1. crash reports get re-scoped to the new (hashed) account, so a
@@ -224,12 +250,12 @@ void _setupAuthListener() {
       final bool isOnline = await NetworkStatusService.instance.isConnected();
       if (!isOnline) {
         debugPrint(
-          '⚠️ Auth event ($event) received while OFFLINE — ignoring, keeping cached session.',
+          'âš ï¸ Auth event ($event) received while OFFLINE â€” ignoring, keeping cached session.',
         );
         return;
       }
 
-      debugPrint('⚠️ Session expired or signed out. Redirecting to Login...');
+      debugPrint('âš ï¸ Session expired or signed out. Redirecting to Login...');
       await obs.breadcrumb('signed out ($event)', feature: 'auth');
       await obs.setSessionUser(null);
       await PresenceService.instance.dispose();
@@ -246,7 +272,7 @@ void _setupAuthListener() {
       );
     },
     onError: (e, s) {
-      debugPrint('⚠️ Auth stream error: $e\n$s');
+      debugPrint('âš ï¸ Auth stream error: $e\n$s');
       AppToast.error(SupabaseErrorMapper.toUserMessage(e));
     },
   );
@@ -258,7 +284,7 @@ void _resetSessionCubits(BuildContext context) {
     context.read<PostsCubit>().resetSession();
     context.read<StoriesCubit>().resetSession();
   } catch (e) {
-    debugPrint('⚠️ Failed to reset session cubits on sign-out: $e');
+    debugPrint('âš ï¸ Failed to reset session cubits on sign-out: $e');
   }
   unawaited(LocalSnapshotStore.instance.clearAll());
 }
@@ -269,7 +295,7 @@ void _refetchSessionCubits(BuildContext context) {
     context.read<PostsCubit>().fetchPosts();
     context.read<StoriesCubit>().fetchStories();
   } catch (e) {
-    debugPrint('⚠️ Failed to refetch session cubits after sign-in: $e');
+    debugPrint('âš ï¸ Failed to refetch session cubits after sign-in: $e');
   }
 }
 
@@ -354,3 +380,4 @@ void _initForegroundTask() {
     ),
   );
 }
+

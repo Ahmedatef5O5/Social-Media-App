@@ -2,6 +2,7 @@ import 'package:device_preview/device_preview.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:social_media_app/core/router/app_router.dart';
 import 'package:social_media_app/core/router/app_routes.dart';
 import 'package:social_media_app/core/services/active_screen_tracker.dart';
@@ -19,7 +20,9 @@ import 'core/connectivity/cubits/connectivity_cubit.dart';
 import 'core/connectivity/cubits/connectivity_state.dart';
 import 'core/connectivity/widgets/connectivity_banner.dart';
 import 'core/presence/services/presence_service.dart';
+import 'core/services/active_call/call_navigation_helper.dart';
 import 'core/services/active_call/cubits/active_call_session_cubit.dart';
+import 'core/services/call_foreground_task_handler.dart';
 import 'core/services/active_call/pip/call_pip_cubit.dart';
 import 'core/services/global_group_call_listener.dart';
 import 'core/services/incoming_call_navigation_guard.dart';
@@ -40,16 +43,60 @@ Widget buildApp(String savedTheme) {
   );
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key, required this.savedTheme});
 
   final String savedTheme;
 
   @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  @override
+  void initState() {
+    super.initState();
+    FlutterForegroundTask.addTaskDataCallback(_onForegroundTaskData);
+  }
+
+  @override
+  void dispose() {
+    FlutterForegroundTask.removeTaskDataCallback(_onForegroundTaskData);
+    super.dispose();
+  }
+
+  /// Messages from `CallForegroundTaskHandler` (service isolate).
+  ///
+  /// `expand_active_call` == the user tapped "Tap to return to the call" in the
+  /// system notification: if the call is currently minimized (PiP / header),
+  /// bring the full-screen call view back.
+  void _onForegroundTaskData(Object data) {
+    final isExpandRequest =
+        data == expandActiveCallMessage ||
+        (data is Map && data['action'] == expandActiveCallMessage);
+    if (!isExpandRequest) return;
+
+    final context = navigatorKey.currentContext;
+    if (context == null) return;
+
+    try {
+      final session = context.read<ActiveCallSessionCubit>().state;
+      if (session == null) return;
+
+      final pipCubit = context.read<CallPipCubit>();
+      if (pipCubit.state.isMinimized) {
+        CallNavigationHelper.expandActiveCall(pipCubit, session);
+      }
+    } catch (e) {
+      debugPrint('[App] expand_active_call failed: $e');
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return BlocProvider(
       lazy: false,
-      create: CubitProviders.themeCubitCreate(savedTheme),
+      create: CubitProviders.themeCubitCreate(widget.savedTheme),
       child: BlocBuilder<ThemeCubit, ThemeState>(
         builder: (context, state) {
           return MultiBlocProvider(
@@ -118,7 +165,15 @@ class MyApp extends StatelessWidget {
                                             : callState.call.callerAvatar,
                                     isVideo:
                                         callState.call.type == CallType.video,
-                                    startedAt: DateTime.now(),
+                                    startedAt:
+                                        callState.call.startTime?.toLocal() ??
+                                        DateTime.now(),
+                                    // Populated immediately so the ongoing-call
+                                    // notification / header can expand the call
+                                    // (CallNavigationHelper needs all three).
+                                    call: callState.call,
+                                    currentUserId: currentUser.id,
+                                    currentUserName: callState.currentUserName,
                                   );
 
                               nav.pushReplacementNamed(
@@ -169,7 +224,7 @@ class MyApp extends StatelessWidget {
                               child: ConnectivityBanner(),
                             ),
                             const AppToastOverlay(),
-                            const CallPipOverlay(),
+                            const CallPipOverlay(), // 1:1 + group calls (LiveKit)
                             const ActiveCallHeaderWidget(),
                           ],
                         ),
@@ -216,3 +271,4 @@ class _RouteObserver extends NavigatorObserver {
     }
   }
 }
+

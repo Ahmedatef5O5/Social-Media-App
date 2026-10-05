@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart';
+﻿import 'package:flutter/foundation.dart';
 import 'package:hive_flutter/adapters.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:social_media_app/core/cache/constants/hive_box_names.dart';
@@ -12,36 +12,45 @@ class HiveCacheManager {
 
   static const String cacheSubDirectory = 'social_media_cache';
   bool _isInitialized = false;
+  Future<void>? _initFuture;
 
   late final Box<CachedMediaModel> mediaCacheBox;
   late final Box<dynamic> cacheMetaBox;
   late final Box<String> storyReactionsBox;
 
-  Future<void> init() async {
-    if (_isInitialized) return;
+  Future<void> init() {
+    if (_isInitialized) return Future.value();
+    return _initFuture ??= _doInit();
+  }
 
-    final cacheDirectory = await getApplicationDocumentsDirectory();
-    Hive.init('${cacheDirectory.path}/$cacheSubDirectory');
+  Future<void> _doInit() async {
+    try {
+      final cacheDirectory = await getApplicationDocumentsDirectory();
+      Hive.init('${cacheDirectory.path}/$cacheSubDirectory');
 
-    _registerAdapters();
+      _registerAdapters();
 
-    mediaCacheBox = await _openBoxSafely<CachedMediaModel>(
-      HiveBoxNames.mediaCache,
-    );
+      mediaCacheBox = await _openBoxSafely<CachedMediaModel>(
+        HiveBoxNames.mediaCache,
+      );
 
-    cacheMetaBox = await _openBoxSafely<dynamic>(HiveBoxNames.cacheMeta);
+      cacheMetaBox = await _openBoxSafely<dynamic>(HiveBoxNames.cacheMeta);
 
-    storyReactionsBox = await _openBoxSafely<String>(
-      HiveBoxNames.storyReactions,
-    );
+      storyReactionsBox = await _openBoxSafely<String>(
+        HiveBoxNames.storyReactions,
+      );
 
-    _isInitialized = true;
+      _isInitialized = true;
 
-    debugPrint(
-      '[HiveCacheManager] Initialized — '
-      '${mediaCacheBox.length} cached media entries, '
-      '${storyReactionsBox.length} cached story reactions.',
-    );
+      debugPrint(
+        '[HiveCacheManager] Initialized — '
+        '${mediaCacheBox.length} cached media entries, '
+        '${storyReactionsBox.length} cached story reactions.',
+      );
+    } catch (e) {
+      _initFuture = null;
+      rethrow;
+    }
   }
 
   void _registerAdapters() {
@@ -70,5 +79,6 @@ class HiveCacheManager {
   Future<void> closeAll() async {
     await Hive.close();
     _isInitialized = false;
+    _initFuture = null;
   }
 }

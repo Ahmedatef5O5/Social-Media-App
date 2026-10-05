@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -7,6 +8,7 @@ import 'package:social_media_app/core/themes/background_theme_widget.dart';
 import 'package:social_media_app/core/themes/dynamic_splash_app.dart';
 import '../../../core/bootstrap/app_bootstrap.dart';
 import '../../../core/deep_link/services/deep_link_service.dart';
+import '../../../core/notifications/handlers/tap_action_handler.dart';
 import '../../../core/share_intent/services/share_intent_service.dart';
 import '../../../core/supabase/supabase_provider.dart';
 
@@ -24,8 +26,19 @@ class _SplashViewState extends State<SplashView>
   late Animation<Offset> _topLogoAnimation;
   late Animation<Offset> _bottomLogoAnimation;
 
+  bool _hasNavigated = false;
+
+  Future<void> _skipSplashForCallLaunch() async {
+    await waitForCoreServicesReady();
+    if (!mounted || _hasNavigated) return;
+    if (!TapActionHandler.instance.hasPendingCallLaunch) return;
+    _controller.stop();
+    _navigateToNext();
+  }
+
   void _navigateToNext() async {
-    if (!mounted) return;
+    if (!mounted || _hasNavigated) return;
+    _hasNavigated = true;
     await waitForCoreServicesReady();
 
     final session = SupabaseProvider.currentSession;
@@ -46,10 +59,13 @@ class _SplashViewState extends State<SplashView>
           DeepLinkService.instance.markAppReady();
 
           ShareIntentService.instance.flushPendingColdStartShareIfAny();
+
+          TapActionHandler.instance.markAppReadyAndFlush();
         });
       } else {
         ShareIntentService.instance.discardPendingColdStartShare();
         DeepLinkService.instance.discardPendingLink();
+        TapActionHandler.instance.discardPendingLaunch();
       }
     }
   }
@@ -89,6 +105,8 @@ class _SplashViewState extends State<SplashView>
     });
 
     _controller.forward();
+
+    unawaited(_skipSplashForCallLaunch());
   }
 
   @override
