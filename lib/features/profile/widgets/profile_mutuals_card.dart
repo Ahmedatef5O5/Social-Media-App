@@ -1,12 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../core/router/app_routes.dart';
+import '../../group_chats/cubits/group_list_cubit/group_list_cubit.dart';
+import '../../group_chats/models/group_model.dart';
+import '../../group_chats/services/group_chat_services.dart';
 import '../models/profile_mutuals_model.dart';
 import '../utils/profile_ui_tokens.dart';
 import 'profile_avatar_stack.dart';
 
 class ProfileMutualsCard extends StatelessWidget {
+  final String userId;
   final ProfileMutualsModel mutuals;
 
-  const ProfileMutualsCard({super.key, required this.mutuals});
+  const ProfileMutualsCard({
+    super.key,
+    required this.userId,
+    required this.mutuals,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -30,7 +40,8 @@ class ProfileMutualsCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (hasFriends) _MutualFriendsRow(mutuals: mutuals, tokens: tokens),
+          if (hasFriends)
+            _MutualFriendsRow(userId: userId, mutuals: mutuals, tokens: tokens),
           if (hasFriends && hasGroups)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 12),
@@ -44,56 +55,70 @@ class ProfileMutualsCard extends StatelessWidget {
 }
 
 class _MutualFriendsRow extends StatelessWidget {
+  final String userId;
   final ProfileMutualsModel mutuals;
   final ProfileUiTokens tokens;
 
-  const _MutualFriendsRow({required this.mutuals, required this.tokens});
+  const _MutualFriendsRow({
+    required this.userId,
+    required this.mutuals,
+    required this.tokens,
+  });
 
   @override
   Widget build(BuildContext context) {
     final total = mutuals.friendsCount;
     final subtitle = _buildSentence(mutuals.friends, total);
 
-    return Row(
-      children: [
-        ProfileAvatarStack(
-          imageUrls: mutuals.friends.map((f) => f.imageUrl).toList(),
-          size: 28,
-          overlap: 10,
-          ringWidth: 2,
-          ringColor: tokens.surface,
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                '$total mutual ${total == 1 ? 'friend' : 'friends'}',
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: tokens.onSurface,
-                  height: 1.25,
-                ),
-              ),
-              if (subtitle.isNotEmpty) ...[
-                const SizedBox(height: 2),
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () {
+        Navigator.of(
+          context,
+          rootNavigator: true,
+        ).pushNamed(AppRoutes.friendsListViewRoute, arguments: userId);
+      },
+      child: Row(
+        children: [
+          ProfileAvatarStack(
+            imageUrls: mutuals.friends.map((f) => f.imageUrl).toList(),
+            size: 28,
+            overlap: 10,
+            ringWidth: 2,
+            ringColor: tokens.surface,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
                 Text(
-                  subtitle,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
+                  '$total mutual ${total == 1 ? 'friend' : 'friends'}',
                   style: TextStyle(
-                    fontSize: 12,
-                    color: tokens.onSurfaceVariant,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: tokens.onSurface,
                     height: 1.25,
                   ),
                 ),
+                if (subtitle.isNotEmpty) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: tokens.onSurfaceVariant,
+                      height: 1.25,
+                    ),
+                  ),
+                ],
               ],
-            ],
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -125,6 +150,45 @@ class _MutualGroupsSection extends StatelessWidget {
 
   const _MutualGroupsSection({required this.mutuals, required this.tokens});
 
+  Future<void> _openGroupInfo(
+    BuildContext context,
+    ProfileMutualGroup mutualGroup,
+  ) async {
+    final nav = Navigator.of(context, rootNavigator: true);
+    GroupModel? targetGroup;
+
+    try {
+      final groupListCubit = context.read<GroupListCubit>();
+      for (final g in groupListCubit.cachedGroupsChats) {
+        if (g.id == mutualGroup.id) {
+          targetGroup = g;
+          break;
+        }
+      }
+    } catch (_) {}
+
+    if (targetGroup == null) {
+      try {
+        final groups = await GroupChatServices().getMyGroups();
+        for (final g in groups) {
+          if (g.id == mutualGroup.id) {
+            targetGroup = g;
+            break;
+          }
+        }
+      } catch (_) {}
+    }
+
+    targetGroup ??= GroupModel(
+      id: mutualGroup.id,
+      name: mutualGroup.name,
+      createdBy: '',
+      createdAt: DateTime.now(),
+    );
+
+    nav.pushNamed(AppRoutes.groupInfoViewRoute, arguments: targetGroup);
+  }
+
   @override
   Widget build(BuildContext context) {
     final total = mutuals.groupsCount;
@@ -153,6 +217,7 @@ class _MutualGroupsSection extends StatelessWidget {
                 icon: Icons.groups_rounded,
                 background: tokens.primaryTonal,
                 foreground: tokens.iconAccent,
+                onTap: () => _openGroupInfo(context, group),
               ),
             if (hiddenCount > 0)
               _GroupChip(
@@ -172,17 +237,19 @@ class _GroupChip extends StatelessWidget {
   final IconData? icon;
   final Color background;
   final Color foreground;
+  final VoidCallback? onTap;
 
   const _GroupChip({
     required this.label,
     required this.background,
     required this.foreground,
     this.icon,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return ConstrainedBox(
+    final chip = ConstrainedBox(
       constraints: const BoxConstraints(maxWidth: 180),
       child: Container(
         height: 28,
@@ -213,6 +280,14 @@ class _GroupChip extends StatelessWidget {
           ],
         ),
       ),
+    );
+
+    if (onTap == null) return chip;
+
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: chip,
     );
   }
 }

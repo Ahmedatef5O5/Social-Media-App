@@ -51,7 +51,10 @@ class ProfileBodyContent extends StatelessWidget {
                     ProfileStatsWidget(stats: state.stats),
                     if (!isCurrentUser && !state.mutuals.isEmpty) ...[
                       Gap(12),
-                      ProfileMutualsCard(mutuals: state.mutuals),
+                      ProfileMutualsCard(
+                        userId: state.user.id,
+                        mutuals: state.mutuals,
+                      ),
                     ],
                     Gap(20),
                   ],
