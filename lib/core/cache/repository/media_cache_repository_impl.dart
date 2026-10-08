@@ -1,8 +1,10 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import '../../services/network_status_service.dart';
 import '../datasources/media_local_data_source.dart';
+import '../eviction/cache_eviction_policy.dart';
 import '../eviction/cache_eviction_service.dart';
 import '../exceptions/media_cache_exception.dart';
 import 'media_cache_repository.dart';
@@ -61,11 +63,27 @@ class MediaCacheRepositoryImpl implements MediaCacheRepository {
         onProgress: onProgress,
         cancelToken: cancelToken,
       );
+      _sweepIfOverCap();
       return entry.localFilePath;
     } on MediaCacheDownloadException catch (e) {
       debugPrint('[MediaCacheRepository] $e');
       return null;
     }
+  }
+
+  /// Cheap trigger: the running counter may drift, but the sweep itself
+  /// recomputes the exact total from the entries and re-anchors the counter.
+  void _sweepIfOverCap() {
+    if (_localDataSource.getTotalCacheSizeBytes() <=
+        CacheEvictionPolicy.maxTotalCacheSizeBytes) {
+      return;
+    }
+    unawaited(
+      _evictionService.runSweep().catchError((Object e) {
+        debugPrint('[MediaCacheRepository] over-cap sweep failed: $e');
+        return 0;
+      }),
+    );
   }
 
   @override
@@ -75,6 +93,7 @@ class MediaCacheRepositoryImpl implements MediaCacheRepository {
   Future<void> adoptUploadedFile(String secureUrl, File localFile) async {
     try {
       await _localDataSource.adoptLocalFile(secureUrl, localFile);
+      _sweepIfOverCap();
     } catch (e) {
       debugPrint(
         '[MediaCacheRepository] adoptUploadedFile failed for $secureUrl: $e',

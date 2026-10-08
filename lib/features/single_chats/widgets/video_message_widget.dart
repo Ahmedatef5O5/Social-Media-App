@@ -1,11 +1,12 @@
 import 'dart:io';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:social_media_app/core/attachment/widgets/media_download_gate.dart';
 import 'package:social_media_app/core/cache/utils/cloudinary_url_extensions.dart';
 import 'package:social_media_app/features/single_chats/widgets/full_screen_media_view.dart';
 import '../../../core/attachment/utils/video_attachment_meta.dart';
 import '../../../core/themes/app_colors.dart';
+import '../../../core/widgets/app_file_image.dart';
+import '../../../core/widgets/app_network_image.dart';
 
 class VideoMessageWidget extends StatefulWidget {
   final String videoUrl;
@@ -85,9 +86,9 @@ class _VideoMessageWidgetState extends State<VideoMessageWidget> {
           fit: StackFit.expand,
           children: [
             if (_isLocal && _localThumbnail != null)
-              Image.file(_localThumbnail!, fit: BoxFit.cover)
+              AppFileImage(file: _localThumbnail!, fit: BoxFit.cover)
             else if (!_isLocal && thumbnailUrl != null)
-              CachedNetworkImage(
+              AppNetworkImage(
                 imageUrl: thumbnailUrl,
                 fit: BoxFit.cover,
                 errorListener: (_) {},

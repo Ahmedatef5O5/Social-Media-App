@@ -35,6 +35,7 @@ import '../supabase/supabase_provider.dart';
 import '../toast/app_toast.dart';
 
 Future<void> initializeCriticalBeforeRunApp() async {
+  _configureImageCache();
   await _lockOrientation();
 
   // Opens the main-isolate end of the foreground-service communication port.
@@ -44,7 +45,7 @@ Future<void> initializeCriticalBeforeRunApp() async {
   try {
     FlutterForegroundTask.initCommunicationPort();
   } catch (e, s) {
-    debugPrint('âš ï¸ initCommunicationPort failed: $e\n$s');
+    debugPrint('⚠️ initCommunicationPort failed: $e\n$s');
   }
 
   // Firebase Core moved UP from `initializeCoreServices()`.
@@ -59,6 +60,18 @@ Future<void> initializeCriticalBeforeRunApp() async {
   // starting. Losing telemetry is acceptable; losing the app is not.
   await _safely('FirebaseCore', _initFirebaseCore);
   await _safely('Observability', _initObservability);
+}
+
+/// Bounds Flutter's in-memory cache of DECODED images (bitmaps).
+///
+/// Baseline values, not measured ones: with images now decoded at the painted
+/// size (see `ImageSizing`) a smaller budget is enough. Tune both numbers with
+/// DevTools -> Memory on a low-end device. Flutter also clears this cache by
+/// itself on OS memory-pressure callbacks.
+void _configureImageCache() {
+  final cache = PaintingBinding.instance.imageCache;
+  cache.maximumSizeBytes = 64 << 20; // 64 MiB (default 100 MiB)
+  cache.maximumSize = 300; // entries (default 1000)
 }
 
 Future<void> _initObservability() async {
@@ -82,7 +95,7 @@ Future<void> startCoreServicesBootstrap() {
   _coreServicesCompleter = completer;
 
   initializeCoreServices().then((_) => completer.complete()).catchError((e, s) {
-    debugPrint('âŒ Critical bootstrap failure: $e\n$s');
+    debugPrint('⚠️ Critical bootstrap failure: $e\n$s');
     // Never leave SplashView waiting forever on a bootstrap bug â€”
     // individual steps already fail safely on their own via
     // `_safely`, so completing here just unblocks navigation.
@@ -94,6 +107,20 @@ Future<void> startCoreServicesBootstrap() {
 
 Future<void> waitForCoreServicesReady() {
   return _coreServicesCompleter?.future ?? startCoreServicesBootstrap();
+}
+
+/// True once `Supabase.initialize` has completed in this isolate.
+///
+/// Same probe `ensureSupabaseReady()` uses for the background isolate:
+/// `Supabase.instance.client` throws until initialisation has finished.
+
+bool _isSupabaseReady() {
+  try {
+    Supabase.instance.client;
+    return true;
+  } catch (_) {
+    return false;
+  }
 }
 
 Future<void> initializeCoreServices() async {
@@ -111,18 +138,23 @@ Future<void> initializeCoreServices() async {
   // Was this process started by tapping a call notification? Answered BEFORE
   // core services complete so `SplashView` can skip its animation delay and
   // the tap can be queued for HomeView instead of being wiped by the splash.
-  await _safely('ColdStartLaunch', TapActionHandler.instance.detectColdStartLaunch);
+  await _safely(
+    'ColdStartLaunch',
+    TapActionHandler.instance.detectColdStartLaunch,
+  );
 
-  // Group A â€” fully independent: each touches a different
-  // storage/plugin (Hive, Supabase SDK, SharedPreferences). Safe to
-  // run in parallel.
+  // Group A - fully independent: each touches a different storage/plugin
+  // (Hive, Supabase SDK, SharedPreferences). Safe to run in parallel.
+  //
+  // Every step is wrapped in `_safely` so ONE failure can no longer abort the
+  // whole bootstrap through `Future.wait`'s first-error rethrow.
   final coreReady = Future.wait([
-    _initHiveCache(),
-    _initSupabase(),
-    SettingsRepository.instance.init(),
+    _safely('HiveCache', _initHiveCache),
+    _safely('Supabase', _initSupabase),
+    _safely('Settings', SettingsRepository.instance.init),
   ]);
 
-  // Group C â€” Firebase CORE has MOVED to initializeCriticalBeforeRunApp()
+  // Group C - Firebase CORE has MOVED to initializeCriticalBeforeRunApp()
   // so Crashlytics exists before the first frame. Do not re-add it here:
   // Firebase.initializeApp() throws on a duplicate [DEFAULT] app.
 
@@ -134,12 +166,25 @@ Future<void> initializeCoreServices() async {
 
   await Future.wait([coreReady, shareIntentReady, deepLinkReady]);
 
-  await _safely(
-    'ObservabilitySessionUser',
-    () => obs.setSessionUser(SupabaseProvider.idOrNull),
-  );
+  // Everything below that reads `SupabaseProvider.*` is session-bound. If
+  // Supabase failed to initialise, touching it would only add a second,
+  // misleading "must be initialized" error on top of the real one already
+  // reported by `_safely('Supabase')`.
+  final supabaseReady = _isSupabaseReady();
+  await obs.setContext('supabase_ready', supabaseReady);
 
-  await _guardAgainstCrossAccountCacheLeak();
+  if (supabaseReady) {
+    await _safely(
+      'ObservabilitySessionUser',
+      () => obs.setSessionUser(SupabaseProvider.idOrNull),
+    );
+    await _safely('CrossAccountCacheGuard', _guardAgainstCrossAccountCacheLeak);
+  } else {
+    await obs.breadcrumb(
+      'supabase unavailable - session-bound bootstrap skipped',
+      feature: 'bootstrap',
+    );
+  }
 
   await _safely(
     'ConsumeShare',
@@ -147,8 +192,10 @@ Future<void> initializeCoreServices() async {
   );
   _initForegroundTask();
 
-  await _safely('Presence', PresenceService.instance.init);
-  _setupAuthListener();
+  if (supabaseReady) {
+    await _safely('Presence', PresenceService.instance.init);
+    _setupAuthListener();
+  }
 
   unawaited(_requestStartupPermissions());
   unawaited(_safely('Notifications', _initNotifications));
@@ -166,8 +213,8 @@ Future<void> _safely(String label, Future<void> Function() step) async {
   try {
     await step();
   } catch (e, s) {
-    debugPrint('âš ï¸ Non-critical bootstrap step "$label" failed: $e\n$s');
-    // Previously this was a debugPrint and nothing else â€” a bootstrap step
+    debugPrint('⚠️ Non-critical bootstrap step "$label" failed: $e\n$s');
+    // Previously this was a debugPrint and nothing else — a bootstrap step
     // could fail on every device in production and never be noticed.
     unawaited(
       obs.recordError(
@@ -190,7 +237,7 @@ Future<void> _guardAgainstCrossAccountCacheLeak() async {
 
   if (cachedOwnerId != currentUserId) {
     debugPrint(
-      'ðŸ§¹ LocalSnapshotStore owner mismatch ("$cachedOwnerId" -> '
+      '⚠️ LocalSnapshotStore owner mismatch ("$cachedOwnerId" -> '
       '"$currentUserId") â€” clearing cached chats/groups/posts/etc. so '
       "one account's data never leaks into another's session.",
     );
@@ -210,7 +257,7 @@ void _setupAuthListener() {
       final session = data.session;
 
       if (event == AuthChangeEvent.signedIn && session != null) {
-        debugPrint('âœ… Logged in: ${session.user.email}');
+        debugPrint('⚠️ Logged in: ${session.user.email}');
 
         // C-02 instrumentation. Two things happen on every sign-in:
         //  1. crash reports get re-scoped to the new (hashed) account, so a
@@ -250,12 +297,12 @@ void _setupAuthListener() {
       final bool isOnline = await NetworkStatusService.instance.isConnected();
       if (!isOnline) {
         debugPrint(
-          'âš ï¸ Auth event ($event) received while OFFLINE â€” ignoring, keeping cached session.',
+          '⚠️ Auth event ($event) received while OFFLINE â€” ignoring, keeping cached session.',
         );
         return;
       }
 
-      debugPrint('âš ï¸ Session expired or signed out. Redirecting to Login...');
+      debugPrint('⚠️ Session expired or signed out. Redirecting to Login...');
       await obs.breadcrumb('signed out ($event)', feature: 'auth');
       await obs.setSessionUser(null);
       await PresenceService.instance.dispose();
@@ -272,7 +319,7 @@ void _setupAuthListener() {
       );
     },
     onError: (e, s) {
-      debugPrint('âš ï¸ Auth stream error: $e\n$s');
+      debugPrint('⚠️ Auth stream error: $e\n$s');
       AppToast.error(SupabaseErrorMapper.toUserMessage(e));
     },
   );
@@ -284,7 +331,7 @@ void _resetSessionCubits(BuildContext context) {
     context.read<PostsCubit>().resetSession();
     context.read<StoriesCubit>().resetSession();
   } catch (e) {
-    debugPrint('âš ï¸ Failed to reset session cubits on sign-out: $e');
+    debugPrint('⚠️ Failed to reset session cubits on sign-out: $e');
   }
   unawaited(LocalSnapshotStore.instance.clearAll());
 }
@@ -295,7 +342,7 @@ void _refetchSessionCubits(BuildContext context) {
     context.read<PostsCubit>().fetchPosts();
     context.read<StoriesCubit>().fetchStories();
   } catch (e) {
-    debugPrint('âš ï¸ Failed to refetch session cubits after sign-in: $e');
+    debugPrint('⚠️ Failed to refetch session cubits after sign-in: $e');
   }
 }
 
@@ -380,4 +427,3 @@ void _initForegroundTask() {
     ),
   );
 }
-

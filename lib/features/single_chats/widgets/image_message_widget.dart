@@ -6,6 +6,7 @@ import 'package:social_media_app/core/attachment/widgets/media_loading_placehold
 import 'package:social_media_app/core/cache/utils/cloudinary_url_extensions.dart';
 import 'package:social_media_app/core/widgets/cached_cloudinary_image.dart';
 import 'package:social_media_app/features/single_chats/widgets/full_screen_media_view.dart';
+import '../../../core/widgets/app_file_image.dart';
 
 class ImageMessageWidget extends StatelessWidget {
   final String imageUrl;
@@ -36,8 +37,8 @@ class ImageMessageWidget extends StatelessWidget {
     if (isLocalFile) {
       return ClipRRect(
         borderRadius: borderRadius,
-        child: Image.file(
-          File(imageUrl),
+        child: AppFileImage(
+          file: File(imageUrl),
           width: preferredWidth,
           height: preferredHeight,
           fit: BoxFit.cover,

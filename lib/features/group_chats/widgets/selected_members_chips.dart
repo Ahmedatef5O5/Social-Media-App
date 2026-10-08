@@ -1,6 +1,6 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
+import '../../../core/widgets/app_image_provider.dart';
 
 class SelectedMembersChips extends StatelessWidget {
   final Set<String> selectedUserIds;
@@ -43,8 +43,9 @@ class SelectedMembersChips extends StatelessWidget {
                           backgroundColor: primary.withValues(alpha: 0.15),
                           backgroundImage:
                               (user['image_url'] as String?)?.isNotEmpty == true
-                                  ? CachedNetworkImageProvider(
+                                  ? AppImageProvider.avatar(
                                     user['image_url'],
+                                    radius: 24,
                                   )
                                   : null,
                           child:

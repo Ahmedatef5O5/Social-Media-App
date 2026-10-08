@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:video_thumbnail/video_thumbnail.dart';
+import '../../../core/widgets/image_sizing.dart';
 
 class LocalVideoThumbnail extends StatefulWidget {
   final String localPath;
@@ -61,6 +62,7 @@ class _LocalVideoThumbnailState extends State<LocalVideoThumbnail> {
         height: 60,
         fit: BoxFit.cover,
         gaplessPlayback: true,
+        cacheWidth: ImageSizing.targetPixelWidth(width: 60, height: 60),
       );
     }
     if (_failed) return Container(color: Colors.grey.shade800);

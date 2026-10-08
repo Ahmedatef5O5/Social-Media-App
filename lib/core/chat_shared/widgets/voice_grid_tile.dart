@@ -1,7 +1,7 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import '../../supabase/supabase_provider.dart';
+import '../../widgets/app_image_provider.dart';
 import '../models/shared_media_item.dart';
 
 class VoiceGridTile extends StatelessWidget {
@@ -34,7 +34,9 @@ class VoiceGridTile extends StatelessWidget {
                 radius: 20,
                 backgroundColor: primary.withValues(alpha: 0.15),
                 backgroundImage:
-                    hasAvatar ? CachedNetworkImageProvider(avatarUrl!) : null,
+                    hasAvatar
+                        ? AppImageProvider.avatar(avatarUrl!, radius: 20)
+                        : null,
                 child:
                     !hasAvatar
                         ? Text(

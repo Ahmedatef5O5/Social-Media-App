@@ -1,9 +1,9 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import '../../../core/audio/helpers/pulsing_mic_dot.dart';
 import '../../../core/presence/models/chat_action_type.dart';
 import '../../../core/presence/widgets/presence_avatar_widget.dart';
 import '../../../core/widgets/animated_activity_text.dart';
+import '../../../core/widgets/app_image_provider.dart';
 import '../../../core/widgets/overlapping_avatar_stack.dart';
 import '../../single_chats/widgets/typing_indicator_widget.dart';
 import '../models/group_presence_entry.dart';
@@ -67,7 +67,9 @@ class _ActionBubble extends StatelessWidget {
           radius: 16,
           backgroundColor: primary.withValues(alpha: 0.12),
           backgroundImage:
-              hasAvatar ? CachedNetworkImageProvider(user.userAvatar!) : null,
+              hasAvatar
+                  ? AppImageProvider.avatar(user.userAvatar!, radius: 16)
+                  : null,
           child:
               !hasAvatar
                   ? Text(

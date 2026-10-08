@@ -14,6 +14,8 @@ import '../../../core/attachment/widgets/transfer_ring.dart';
 import '../../../core/helpers/file_icon_helper.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/utilities/file_size_formatter.dart';
+import '../../../core/widgets/app_file_image.dart';
+import '../../../core/widgets/app_network_image.dart';
 import '../../single_chats/widgets/full_screen_media_view.dart';
 
 class CommentAttachmentPreview extends StatelessWidget {
@@ -111,8 +113,8 @@ class _PreviewThumbnail extends StatelessWidget {
             tag: heroTag,
             child: ClipRRect(
               borderRadius: BorderRadius.circular(10),
-              child: Image.file(
-                attachment.localFile!,
+              child: AppFileImage(
+                file: attachment.localFile!,
                 width: size,
                 height: size,
                 fit: BoxFit.cover,
@@ -154,8 +156,8 @@ class _PreviewThumbnail extends StatelessWidget {
       case CommentType.sticker:
         return ClipRRect(
           borderRadius: BorderRadius.circular(10),
-          child: Image.network(
-            attachment.remoteUrl!,
+          child: AppNetworkImage(
+            imageUrl: attachment.remoteUrl!,
             width: size,
             height: size,
             fit: BoxFit.cover,

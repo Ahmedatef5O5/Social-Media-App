@@ -1,7 +1,7 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import '../../../core/constants/app_images.dart';
 import '../../../core/presence/widgets/presence_avatar_widget.dart';
+import '../../../core/widgets/app_image_provider.dart';
 import '../../profile/widgets/user_preview_dialog.dart';
 import '../../single_chats/models/chat_user_model.dart';
 import '../models/groupe_message_model.dart';
@@ -43,7 +43,7 @@ class GroupMessageAvatar extends StatelessWidget {
           backgroundColor: primary.withValues(alpha: 0.12),
           backgroundImage:
               hasAvatar
-                  ? CachedNetworkImageProvider(message.senderAvatar!)
+                  ? AppImageProvider.avatar(message.senderAvatar!, radius: 16)
                   : null,
           child:
               !hasAvatar

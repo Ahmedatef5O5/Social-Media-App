@@ -1,5 +1,6 @@
 class AppImages {
-  // logo app for splash
+  // logo app for splash & launcher
+  static const String launcherApp = 'assets/images/launcher.png';
   static const String logoApp = 'assets/images/logo_app.png';
   static const String secondaryLogoApp = 'assets/images/logo.png';
 

@@ -20,13 +20,16 @@ void main() {
     required String url,
     required String featureFolder,
     required DateTime cachedAt,
+    DateTime? lastAccessedAt,
+    int? sizeInBytes,
   }) {
     return MediaCacheEntry(
       secureUrl: url,
       mediaType: CachedMediaType.image,
       featureFolder: featureFolder,
       cachedAt: cachedAt,
-      lastAccessedAt: cachedAt,
+      lastAccessedAt: lastAccessedAt ?? cachedAt,
+      sizeInBytes: sizeInBytes,
     );
   }
 
@@ -137,6 +140,92 @@ void main() {
         // getAllCachedEntries must only ever have been called once — by
         // the first sweep. The second call returned before reaching it.
         verify(() => dataSource.getAllCachedEntries()).called(1);
+      },
+    );
+  });
+
+  group('size cap', () {
+    const mb = 1024 * 1024;
+
+    MediaCacheEntry sized(
+      String url, {
+      required Duration age,
+      required Duration idle,
+    }) {
+      final now = DateTime.now();
+      return entry(
+        url: url,
+        featureFolder: 'posts',
+        cachedAt: now.subtract(age),
+        lastAccessedAt: now.subtract(idle),
+        sizeInBytes: 150 * mb,
+      );
+    }
+
+    test('evicts least-recently-used entries until under the target', () async {
+      when(() => dataSource.getAllCachedEntries()).thenReturn([
+        sized(
+          'newest',
+          age: const Duration(hours: 1),
+          idle: const Duration(minutes: 5),
+        ),
+        sized(
+          'oldest',
+          age: const Duration(hours: 9),
+          idle: const Duration(hours: 5),
+        ),
+        sized(
+          'middle',
+          age: const Duration(hours: 4),
+          idle: const Duration(hours: 2),
+        ),
+      ]); // 450 MB > 300 MB cap; target is 240 MB
+
+      final removed = await service.runSweep();
+
+      expect(removed, 2);
+      verify(() => dataSource.removeCachedMedia('oldest')).called(1);
+      verify(() => dataSource.removeCachedMedia('middle')).called(1);
+      verifyNever(() => dataSource.removeCachedMedia('newest'));
+      verify(() => metaBox.put('total_cache_size_bytes', 150 * mb)).called(1);
+    });
+
+    test('never size-evicts entries younger than the grace period', () async {
+      when(() => dataSource.getAllCachedEntries()).thenReturn([
+        sized(
+          'a',
+          age: const Duration(minutes: 1),
+          idle: const Duration(minutes: 1),
+        ),
+        sized(
+          'b',
+          age: const Duration(minutes: 2),
+          idle: const Duration(minutes: 2),
+        ),
+        sized(
+          'c',
+          age: const Duration(minutes: 3),
+          idle: const Duration(minutes: 3),
+        ),
+      ]);
+
+      expect(await service.runSweep(), 0);
+      verifyNever(() => dataSource.removeCachedMedia(any()));
+    });
+
+    test(
+      'under the cap nothing is evicted and the counter is re-anchored',
+      () async {
+        when(() => dataSource.getAllCachedEntries()).thenReturn([
+          sized(
+            'a',
+            age: const Duration(hours: 3),
+            idle: const Duration(hours: 3),
+          ),
+        ]);
+
+        expect(await service.runSweep(), 0);
+        verify(() => metaBox.put('total_cache_size_bytes', 150 * mb)).called(1);
       },
     );
   });

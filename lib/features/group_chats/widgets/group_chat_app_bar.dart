@@ -1,4 +1,3 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
@@ -10,6 +9,7 @@ import '../../../core/services/active_call/active_call_session_data.dart';
 import '../../../core/services/active_call/cubits/active_call_session_cubit.dart';
 import '../../../core/services/incoming_call_navigation_guard.dart';
 import '../../../core/toast/app_toast.dart';
+import '../../../core/widgets/app_image_provider.dart';
 import '../../group_calls/helpers/group_call_join_helper.dart';
 import '../../group_calls/models/group_call_model.dart';
 import '../../group_calls/services/group_call_signaling_service.dart';
@@ -78,7 +78,7 @@ class GroupChatAppBar extends StatelessWidget implements PreferredSizeWidget {
                       backgroundColor: primary.withValues(alpha: 0.12),
                       backgroundImage:
                           hasAvatar
-                              ? CachedNetworkImageProvider(avatarUrl!)
+                              ? AppImageProvider.avatar(avatarUrl!, radius: 20)
                               : null,
                       child:
                           !hasAvatar

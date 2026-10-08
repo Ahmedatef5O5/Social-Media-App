@@ -1,6 +1,6 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
+import '../../../core/widgets/app_image_provider.dart';
 
 class GroupUserListTile extends StatelessWidget {
   final Map<String, dynamic> user;
@@ -35,7 +35,7 @@ class GroupUserListTile extends StatelessWidget {
               backgroundColor: primary.withValues(alpha: 0.1),
               backgroundImage:
                   (imageUrl != null && imageUrl.isNotEmpty)
-                      ? CachedNetworkImageProvider(imageUrl)
+                      ? AppImageProvider.avatar(imageUrl, radius: 24)
                       : null,
               child:
                   (imageUrl == null || imageUrl.isEmpty)

@@ -9,6 +9,7 @@ import '../../../core/helpers/emoji_helper.dart';
 import '../../../core/helpers/formatted_date.dart';
 import '../../../core/mentions/widgets/mention_rich_text.dart';
 import '../../../core/themes/app_colors.dart';
+import '../../../core/widgets/app_file_image.dart';
 import '../../../core/widgets/cached_cloudinary_image.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
 import '../helpers/local_video_thumbnail.dart';
@@ -275,8 +276,8 @@ class MyStoryTile extends StatelessWidget {
     switch (story.storyType) {
       case StoryType.image:
         if (story.isPendingUpload) {
-          return Image.file(
-            File(story.imageUrl!),
+          return AppFileImage(
+            file: File(story.imageUrl!),
             width: 60,
             height: 60,
             fit: BoxFit.cover,

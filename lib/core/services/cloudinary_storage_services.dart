@@ -191,10 +191,12 @@ class CloudinaryStorageServices {
     final idx = secureUrl.indexOf(marker);
     if (idx == -1) return secureUrl;
 
-    final transformation =
-        isVideo
-            ? 'c_limit,w_1280,h_1280,q_auto,f_auto'
-            : 'c_limit,w_1280,h_1280,q_auto,f_auto';
+    // Images and videos intentionally share one upload-time chain. [isVideo]
+    // is kept so call sites stay unchanged; a video-specific chain needs
+    // on-device validation first (`f_auto` changes the delivered container).
+    // Display-time sizing for images lives in
+    // `CloudinaryUrlX.cloudinarySizedImageUrl`.
+    const transformation = 'c_limit,w_1280,h_1280,q_auto,f_auto';
     final insertAt = idx + marker.length;
     return '${secureUrl.substring(0, insertAt)}$transformation/${secureUrl.substring(insertAt)}';
   }

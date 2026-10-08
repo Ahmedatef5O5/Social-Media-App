@@ -1,9 +1,9 @@
 import 'dart:io';
 import 'dart:ui';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:social_media_app/core/router/app_routes.dart';
 import '../../../core/constants/app_images.dart';
+import '../../../core/widgets/app_image_provider.dart';
 
 class EditProfileSliverAppBar extends StatelessWidget {
   final double coverHeight;
@@ -116,21 +116,33 @@ class _ProfileHeaderDelegate extends SliverPersistentHeaderDelegate {
   bool shouldRebuild(covariant _ProfileHeaderDelegate oldDelegate) => true;
 
   ImageProvider _resolveCoverImage() {
-    if (selectedCoverFile != null) return FileImage(selectedCoverFile!);
+    if (selectedCoverFile != null) {
+      return AppImageProvider.file(selectedCoverFile!, width: double.infinity);
+    }
     if (coverUrl != null && coverUrl!.startsWith('http')) {
       final safeUrl = coverUrl!.replaceAll(
         RegExp(r'\.heic$', caseSensitive: false),
         '.jpg',
       );
-      return CachedNetworkImageProvider(safeUrl);
+      return AppImageProvider.network(safeUrl, width: double.infinity);
     }
     return const AssetImage(AppImages.defaultBackgroundImg);
   }
 
   ImageProvider _resolveAvatarImage() {
-    if (selectedAvatarFile != null) return FileImage(selectedAvatarFile!);
+    if (selectedAvatarFile != null) {
+      return AppImageProvider.file(
+        selectedAvatarFile!,
+        width: expandedAvatarSize,
+        height: expandedAvatarSize,
+      );
+    }
     if (avatarUrl != null && avatarUrl!.startsWith('http')) {
-      return CachedNetworkImageProvider(avatarUrl!);
+      return AppImageProvider.network(
+        avatarUrl!,
+        width: expandedAvatarSize,
+        height: expandedAvatarSize,
+      );
     }
     return const AssetImage(AppImages.defaultUserImg);
   }

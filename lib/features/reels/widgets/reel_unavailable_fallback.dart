@@ -1,7 +1,7 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../../core/widgets/app_network_image.dart';
 import '../models/reel_model.dart';
 
 class ReelUnavailableFallback extends StatelessWidget {
@@ -13,7 +13,7 @@ class ReelUnavailableFallback extends StatelessWidget {
     return Stack(
       fit: StackFit.expand,
       children: [
-        CachedNetworkImage(imageUrl: reel.thumbnailUrl, fit: BoxFit.cover),
+        AppNetworkImage(imageUrl: reel.thumbnailUrl, fit: BoxFit.cover),
         Container(color: Colors.black54),
         Center(
           child: Column(

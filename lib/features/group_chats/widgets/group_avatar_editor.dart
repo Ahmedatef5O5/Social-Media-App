@@ -1,9 +1,9 @@
 import 'dart:ui';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:social_media_app/core/widgets/full_screen_image_viewer.dart';
 import '../../../core/constants/app_images.dart';
 import '../../../core/themes/app_colors.dart';
+import '../../../core/widgets/app_image_provider.dart';
 
 class GroupAvatarEditor extends StatelessWidget {
   final String groupId;
@@ -73,7 +73,10 @@ class GroupAvatarEditor extends StatelessWidget {
                       backgroundColor: AppColors.black12,
                       backgroundImage:
                           currentAvatarUrl != null
-                              ? CachedNetworkImageProvider(currentAvatarUrl!)
+                              ? AppImageProvider.avatar(
+                                currentAvatarUrl!,
+                                radius: 72,
+                              )
                               : null,
                       child:
                           currentAvatarUrl == null

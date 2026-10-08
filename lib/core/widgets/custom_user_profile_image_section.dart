@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:social_media_app/core/router/app_routes.dart';
@@ -7,6 +6,7 @@ import '../constants/app_images.dart';
 import 'app_avatar.dart';
 import '../presence/cubits/presence_cubit/presence_cubit.dart';
 import '../presence/widgets/presence_avatar_widget.dart';
+import 'app_image_provider.dart';
 
 class CustomUserProfileImagesSection extends StatelessWidget {
   final double aspectRatio;
@@ -198,7 +198,10 @@ class CustomUserProfileImagesSection extends StatelessWidget {
 
   ImageProvider _getBackgroundImage() {
     if (selectedBackgroundFile != null) {
-      return FileImage(selectedBackgroundFile!);
+      return AppImageProvider.file(
+        selectedBackgroundFile!,
+        width: double.infinity,
+      );
     }
     if (backgroundUrl != null && backgroundUrl!.startsWith('http')) {
       String safeUrl = backgroundUrl!;
@@ -206,7 +209,7 @@ class CustomUserProfileImagesSection extends StatelessWidget {
         RegExp(r'\.heic$', caseSensitive: false),
         '.jpg',
       );
-      return CachedNetworkImageProvider(safeUrl);
+      return AppImageProvider.network(safeUrl, width: double.infinity);
     }
     return const AssetImage(AppImages.defaultBackgroundImg);
   }

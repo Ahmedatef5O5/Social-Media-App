@@ -1,8 +1,8 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:social_media_app/core/cache/utils/cloudinary_url_extensions.dart';
 import '../../../features/home/cubits/home_cubit/home_cubit.dart';
+import '../../widgets/app_network_image.dart';
 import '../models/shared_media_item.dart';
 import '../views/full_screen_media_pager.dart';
 import 'voice_grid_tile.dart';
@@ -22,7 +22,7 @@ class MediaPreviewTile extends StatelessWidget {
       child: ClipRRect(
         borderRadius: BorderRadius.circular(10),
         child: switch (item.messageType) {
-          'image' => CachedNetworkImage(
+          'image' => AppNetworkImage(
             imageUrl: item.imageUrl ?? '',
             fit: BoxFit.cover,
             errorWidget:
@@ -38,7 +38,7 @@ class MediaPreviewTile extends StatelessWidget {
           'video' => Stack(
             fit: StackFit.expand,
             children: [
-              CachedNetworkImage(
+              AppNetworkImage(
                 imageUrl:
                     item.videoUrl?.cloudinaryVideoThumbnailUrl ??
                     item.videoUrl ??

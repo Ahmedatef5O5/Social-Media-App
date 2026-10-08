@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import '../../../core/themes/app_colors.dart';
+import '../../../core/widgets/app_file_image.dart';
 import '../../../core/widgets/full_screen_image_viewer.dart';
 import '../helpers/media_size_badge.dart';
 
@@ -91,8 +92,8 @@ class CreatePostImagePreview extends StatelessWidget {
                   borderRadius: BorderRadius.circular(18),
                   child: Hero(
                     tag: heroTag,
-                    child: Image.file(
-                      File(imagePath),
+                    child: AppFileImage(
+                      file: File(imagePath),
                       fit: BoxFit.contain,
                       errorBuilder:
                           (context, error, stackTrace) => const Center(

@@ -1,7 +1,7 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import '../../cache/utils/cloudinary_url_extensions.dart';
 import '../../supabase/supabase_provider.dart';
+import '../../widgets/app_network_image.dart';
 import '../helpers/media_action_helper.dart' hide ShowInChatCallback;
 import '../models/shared_media_item.dart';
 import '../views/shared_media_view.dart';
@@ -52,7 +52,7 @@ class VideoThumbnailGrid extends StatelessWidget {
           child: Stack(
             fit: StackFit.expand,
             children: [
-              CachedNetworkImage(
+              AppNetworkImage(
                 imageUrl:
                     item.videoUrl?.cloudinaryVideoThumbnailUrl ??
                     item.videoUrl ??

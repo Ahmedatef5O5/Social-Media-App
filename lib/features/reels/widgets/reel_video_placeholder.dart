@@ -1,6 +1,6 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:youtube_player_iframe/youtube_player_iframe.dart';
+import '../../../core/widgets/app_network_image.dart';
 import '../models/reel_model.dart';
 
 class ReelVideoPlaceholder extends StatelessWidget {
@@ -33,7 +33,7 @@ class ReelVideoPlaceholder extends StatelessWidget {
           curve: Curves.easeOut,
           child: ColoredBox(
             color: Colors.black,
-            child: CachedNetworkImage(
+            child: AppNetworkImage(
               imageUrl: reel.thumbnailUrl,
               fit: BoxFit.cover,
               errorWidget: (_, __, ___) => const SizedBox.shrink(),

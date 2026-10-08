@@ -1,4 +1,3 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -7,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../core/link/models/link_preview_data.dart';
 import '../../../core/link/services/link_preview_service.dart';
 import '../../../core/toast/app_toast.dart';
+import '../../../core/widgets/app_network_image.dart';
 import '../models/social_platform_info.dart';
 
 class SocialMediaPreviewCard extends StatefulWidget {
@@ -161,7 +161,7 @@ class _RichPreview extends StatelessWidget {
       child: Stack(
         fit: StackFit.expand,
         children: [
-          CachedNetworkImage(
+          AppNetworkImage(
             imageUrl: preview.imageUrl!,
             fit: BoxFit.cover,
             httpHeaders: imageHeaders,

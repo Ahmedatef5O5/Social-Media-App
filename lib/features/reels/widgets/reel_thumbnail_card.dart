@@ -1,6 +1,6 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import '../../../core/helpers/chat_helper.dart';
+import '../../../core/widgets/app_network_image.dart';
 import '../models/reel_model.dart';
 
 class ReelThumbnailCard extends StatelessWidget {
@@ -20,7 +20,7 @@ class ReelThumbnailCard extends StatelessWidget {
           child: Stack(
             fit: StackFit.expand,
             children: [
-              CachedNetworkImage(
+              AppNetworkImage(
                 imageUrl: reel.thumbnailUrl,
                 fit: BoxFit.cover,
                 errorWidget:

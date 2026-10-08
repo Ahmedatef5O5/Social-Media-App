@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import '../../../core/widgets/app_avatar.dart';
+import '../../../core/widgets/app_file_image.dart';
 
 class EditProfileAvatarCircle extends StatelessWidget {
   final double avatarSize;
@@ -46,8 +47,8 @@ class EditProfileAvatarCircle extends StatelessWidget {
               ClipOval(
                 child:
                     selectedAvatarFile != null
-                        ? Image.file(
-                          selectedAvatarFile!,
+                        ? AppFileImage(
+                          file: selectedAvatarFile!,
                           width: avatarSize,
                           height: avatarSize,
                           fit: BoxFit.cover,

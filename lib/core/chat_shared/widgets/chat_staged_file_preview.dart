@@ -4,6 +4,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:gap/gap.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:social_media_app/core/helpers/chat_helper.dart';
+import 'package:social_media_app/core/widgets/app_file_image.dart';
 import '../../helpers/file_icon_helper.dart';
 import '../../toast/app_toast.dart';
 import '../../router/app_routes.dart';
@@ -104,8 +105,8 @@ class ChatStagedFilePreview extends StatelessWidget {
                                   'WEBP',
                                   'GIF',
                                 ].contains(ext)))
-                        ? Image.file(
-                          (imageFile ?? file)!,
+                        ? AppFileImage(
+                          file: (imageFile ?? file)!,
                           width: 36,
                           height: 36,
                           fit: BoxFit.cover,

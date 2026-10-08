@@ -1,5 +1,6 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import '../../../core/widgets/app_image_provider.dart';
+import '../../../core/widgets/app_network_image.dart';
 import '../models/reel_model.dart';
 import '../views/reels_full_screen_view.dart';
 
@@ -27,7 +28,7 @@ class SharedReelPreviewCard extends StatelessWidget {
           child: Stack(
             fit: StackFit.expand,
             children: [
-              CachedNetworkImage(
+              AppNetworkImage(
                 imageUrl: reel.thumbnailUrl,
                 fit: BoxFit.cover,
                 errorWidget: (_, __, error) => Container(color: Colors.black26),
@@ -64,8 +65,9 @@ class SharedReelPreviewCard extends StatelessWidget {
                           backgroundColor: Colors.white24,
                           backgroundImage:
                               reel.channel.channelAvatarUrl != null
-                                  ? CachedNetworkImageProvider(
+                                  ? AppImageProvider.avatar(
                                     reel.channel.channelAvatarUrl!,
+                                    radius: 10,
                                   )
                                   : null,
                           child:

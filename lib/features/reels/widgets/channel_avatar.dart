@@ -1,5 +1,5 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import '../../../core/widgets/app_network_image.dart';
 
 class ChannelAvatar extends StatelessWidget {
   final String? avatarUrl;
@@ -14,7 +14,7 @@ class ChannelAvatar extends StatelessWidget {
         height: size,
         child:
             avatarUrl != null
-                ? CachedNetworkImage(
+                ? AppNetworkImage(
                   imageUrl: avatarUrl!,
                   fit: BoxFit.cover,
                   placeholder: (_, __) => const _ChannelAvatarFallback(),

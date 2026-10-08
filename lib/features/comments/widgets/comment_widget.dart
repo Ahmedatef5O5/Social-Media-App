@@ -18,6 +18,8 @@ import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/toast/app_toast.dart';
 import '../../../core/widgets/custom_confirmation_dialog.dart';
 import '../../home/cubits/home_cubit/home_cubit.dart';
+import '../../reports/models/report_target.dart';
+import '../../reports/widgets/report_bottom_sheet.dart';
 import '../models/comment_type.dart';
 import 'comment_constants.dart';
 import 'comment_avatar.dart';
@@ -151,6 +153,23 @@ class _CommentWidgetState extends State<CommentWidget>
           onTap: () {
             _dismissPicker();
             _confirmDelete(context);
+          },
+        ),
+
+      // report to comment
+      if (!isMyComment)
+        CommentMenuAction(
+          icon: Icons.report_gmailerrorred,
+          label: 'Report',
+          onTap: () {
+            _dismissPicker();
+            ReportBottomSheet.show(
+              context,
+              target: ReportTarget(
+                type: ReportTargetType.comment,
+                id: widget.comment.id,
+              ),
+            );
           },
         ),
     ];

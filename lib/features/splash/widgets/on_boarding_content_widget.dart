@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:gap/gap.dart';
+import '../../../core/constants/app_images.dart';
 import '../../../core/themes/app_colors.dart';
 import '../models/on_boarding_model.dart';
 
@@ -9,11 +10,21 @@ class OnBoardingContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isLogoApp = model.image == AppImages.logoApp;
+
     return Padding(
       padding: const EdgeInsets.all(40.0),
       child: Column(
         children: [
-          Expanded(child: Image.asset(model.image, fit: BoxFit.contain)),
+          Expanded(
+            child:
+                isLogoApp
+                    ? Transform.scale(
+                      scale: 1.20,
+                      child: Image.asset(model.image, fit: BoxFit.contain),
+                    )
+                    : Image.asset(model.image, fit: BoxFit.contain),
+          ),
           const Gap(20),
           (model.subTitle != null && model.subTitle!.isNotEmpty)
               ? Text(

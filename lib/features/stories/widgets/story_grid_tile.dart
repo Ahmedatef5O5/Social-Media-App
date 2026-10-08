@@ -4,6 +4,7 @@ import '../../../core/cache/utils/cloudinary_url_extensions.dart';
 import '../../../core/helpers/chat_helper.dart';
 import '../../../core/mentions/widgets/mention_rich_text.dart';
 import '../../../core/themes/app_colors.dart';
+import '../../../core/widgets/app_file_image.dart';
 import '../../../core/widgets/cached_cloudinary_image.dart';
 import '../helpers/local_video_thumbnail.dart';
 import '../models/story_model.dart';
@@ -89,7 +90,7 @@ class StoryGridTile extends StatelessWidget {
     switch (story.storyType) {
       case StoryType.image:
         if (story.isPendingUpload) {
-          return Image.file(File(story.imageUrl!), fit: BoxFit.cover);
+          return AppFileImage(file: File(story.imageUrl!), fit: BoxFit.cover);
         }
         return CachedCloudinaryImage(
           secureUrl: story.imageUrl!,

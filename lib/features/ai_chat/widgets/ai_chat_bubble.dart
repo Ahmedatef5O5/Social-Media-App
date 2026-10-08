@@ -7,6 +7,7 @@ import '../../../core/design/tokens/typography.dart';
 import '../../../core/helpers/bidi_text_helper.dart';
 import '../../../core/helpers/chat_helper.dart';
 import '../../../core/helpers/formatted_date.dart';
+import '../../../core/widgets/app_network_image.dart';
 import '../../../core/widgets/custom_linkify_text.dart';
 import '../../single_chats/widgets/image_message_widget.dart';
 import '../../single_chats/widgets/video_message_widget.dart';
@@ -607,12 +608,12 @@ class _AiChatBubbleState extends State<AiChatBubble> {
                     padding: const EdgeInsets.all(4),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(6),
-                      child: Image.network(
-                        message.replyToMediaUrl!,
+                      child: AppNetworkImage(
+                        imageUrl: message.replyToMediaUrl!,
                         width: 36,
                         height: 36,
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                        errorWidget: (_, __, ___) => const SizedBox.shrink(),
                       ),
                     ),
                   ),

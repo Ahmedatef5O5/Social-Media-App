@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import '../../../core/widgets/app_file_image.dart';
 
 class StickerGridItem extends StatelessWidget {
   final List<XFile> images;
@@ -65,7 +66,10 @@ class StickerGridItem extends StatelessWidget {
                         onImageTap != null
                             ? () => onImageTap!(index, image.path)
                             : null,
-                    child: Image.file(File(image.path), fit: BoxFit.cover),
+                    child: AppFileImage(
+                      file: File(image.path),
+                      fit: BoxFit.cover,
+                    ),
                   ),
                 ),
               ),

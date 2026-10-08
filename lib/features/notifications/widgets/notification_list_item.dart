@@ -1,4 +1,3 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -9,6 +8,7 @@ import '../../../core/helpers/bidi_text_helper.dart';
 import '../../../core/helpers/content_deep_link_navigator.dart';
 import '../../../core/services/active_screen_tracker.dart';
 import '../../../core/toast/app_toast.dart';
+import '../../../core/widgets/app_image_provider.dart';
 import '../../group_chats/cubits/group_list_cubit/group_list_cubit.dart';
 import '../../group_chats/helpers/group_navigation.dart';
 import '../../group_chats/models/group_model.dart';
@@ -378,7 +378,7 @@ class NotificationListItem extends StatelessWidget {
           backgroundColor: primary.withValues(alpha: 0.1),
           backgroundImage:
               hasImage
-                  ? CachedNetworkImageProvider(imageUrl)
+                  ? AppImageProvider.avatar(imageUrl, radius: 24)
                   : const AssetImage(AppImages.defaultUserImg) as ImageProvider,
         ),
         Positioned(

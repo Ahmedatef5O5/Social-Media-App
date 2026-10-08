@@ -44,6 +44,14 @@ extension CloudinaryUrlX on String {
     'a_',
   };
 
+  /// The only transformation tokens this app ever bakes into stored URLs
+  /// (upload-time `c_limit,w_1280,h_1280,q_auto,f_auto` and the display-time
+  /// `q_auto,f_auto`). A chain made of anything else is a deliberate crop or
+  /// effect and must never be rewritten.
+  static final RegExp _resizableChainPart = RegExp(
+    r'^(c_limit|w_\d+|h_\d+|q_auto|f_auto)$',
+  );
+
   bool get isCloudinaryDeliveryUrl => contains('/upload/');
 
   CachedMediaType get cachedMediaType {
@@ -113,6 +121,51 @@ extension CloudinaryUrlX on String {
   String get cloudinaryLowResPreviewUrl {
     if (!contains('/upload/') || contains('w_60')) return this;
     return replaceFirst('/upload/', '/upload/w_60,q_30,f_auto/');
+  }
+
+  /// Rewrites a Cloudinary *image* delivery URL so the CDN returns an asset no
+  /// wider than [widthPx] (`c_limit` never upscales).
+  ///
+  /// Returns the URL unchanged when it is not an `/image/upload/` URL, is a
+  /// signed URL (rewriting would invalidate the signature), or already carries
+  /// a transformation chain that is not one of ours (crop, face gravity, ...).
+  String cloudinarySizedImageUrl(int widthPx) {
+    const marker = '/image/upload/';
+    final idx = indexOf(marker);
+    if (idx == -1) return this;
+
+    final head = substring(0, idx + marker.length);
+    final segments = substring(idx + marker.length).split('/');
+    if (segments.length < 2) return this;
+    if (segments.first.startsWith('s--')) return this;
+
+    // Leading transformation segments (the last segment is the file name).
+    var firstKept = 0;
+    while (firstKept < segments.length - 1 &&
+        _isTransformationSegment(segments[firstKept])) {
+      firstKept++;
+    }
+
+    for (var i = 0; i < firstKept; i++) {
+      final parts = segments[i].split(',');
+      if (!parts.every(_resizableChainPart.hasMatch)) return this;
+    }
+
+    final rest = segments.sublist(firstKept).join('/');
+    return '${head}c_limit,w_$widthPx,q_auto,f_auto/$rest';
+  }
+
+  /// Sizes the JPEG poster frame produced by [cloudinaryVideoThumbnailUrl].
+  ///
+  /// Only matches the exact chain that getter generates
+  /// (`so_0,f_jpg,q_auto`); any other video URL is returned unchanged.
+  String cloudinarySizedVideoThumbnailUrl(int widthPx) {
+    const generated = '/video/upload/so_0,f_jpg,q_auto/';
+    if (!contains(generated)) return this;
+    return replaceFirst(
+      generated,
+      '/video/upload/so_0,c_limit,w_$widthPx,f_jpg,q_auto/',
+    );
   }
 
   // ── internal helpers ──────────────────────────────────────────────

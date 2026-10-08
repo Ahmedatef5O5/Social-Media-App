@@ -1,6 +1,6 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../core/widgets/app_image_provider.dart';
 import '../cubits/group_members_cubit/group_members_cubit.dart';
 import '../models/group_member_model.dart';
 
@@ -73,7 +73,10 @@ class GroupOwnerAdminsSection extends StatelessWidget {
                   backgroundColor: Colors.grey.shade200,
                   backgroundImage:
                       owner.userAvatar != null
-                          ? CachedNetworkImageProvider(owner.userAvatar!)
+                          ? AppImageProvider.avatar(
+                            owner.userAvatar!,
+                            radius: 22,
+                          )
                           : null,
                   child:
                       owner.userAvatar == null
@@ -181,7 +184,10 @@ class GroupOwnerAdminsSection extends StatelessWidget {
                       backgroundColor: Colors.grey.shade200,
                       backgroundImage:
                           admin.userAvatar != null
-                              ? CachedNetworkImageProvider(admin.userAvatar!)
+                              ? AppImageProvider.avatar(
+                                admin.userAvatar!,
+                                radius: 22,
+                              )
                               : null,
                       child:
                           admin.userAvatar == null

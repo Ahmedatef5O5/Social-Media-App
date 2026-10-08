@@ -8,6 +8,8 @@ import '../../../core/attachment/attachment_sheet/attachment_kind.dart';
 import '../../../core/attachment/attachment_sheet/attachment_picker_sheet.dart';
 import '../../../core/attachment/attachment_sheet/picked_attachment.dart';
 import '../../../core/toast/app_toast.dart';
+import '../../../core/widgets/app_file_image.dart';
+import '../../../core/widgets/app_network_image.dart';
 import '../../ai_assistant/entities/ai_action_type.dart';
 import '../../ai_assistant/entities/ai_request_context.dart';
 import '../../ai_assistant/helpers/remote_media_fetcher.dart';
@@ -440,10 +442,10 @@ class _StoryReplyInputBarState extends State<StoryReplyInputBar> {
                 height: 40,
                 child:
                     isRemote
-                        ? Image.network(
-                          _remoteMediaUrl!,
+                        ? AppNetworkImage(
+                          imageUrl: _remoteMediaUrl!,
                           fit: BoxFit.cover,
-                          errorBuilder:
+                          errorWidget:
                               (_, __, ___) => Container(
                                 color: Colors.grey.shade800,
                                 child: const Icon(
@@ -462,7 +464,10 @@ class _StoryReplyInputBarState extends State<StoryReplyInputBar> {
                                 size: 22,
                               ),
                             )
-                            : Image.file(_pickedFile!, fit: BoxFit.cover)),
+                            : AppFileImage(
+                              file: _pickedFile!,
+                              fit: BoxFit.cover,
+                            )),
               ),
             ),
           ),

@@ -41,7 +41,15 @@ class _SplashViewState extends State<SplashView>
     _hasNavigated = true;
     await waitForCoreServicesReady();
 
-    final session = SupabaseProvider.currentSession;
+    // `currentSession` throws when Supabase failed to initialise. Treat that as
+    // "no session" so the splash can still route instead of leaking an
+    // exception out of an `async void` method.
+    Object? session;
+    try {
+      session = SupabaseProvider.currentSession;
+    } catch (e) {
+      debugPrint('[Splash] session unavailable, routing as signed out: $e');
+    }
     final prefs = await SharedPreferences.getInstance();
     final bool hasSeenOnboarding = prefs.getBool('onboarding_seen') ?? false;
     if (mounted) {

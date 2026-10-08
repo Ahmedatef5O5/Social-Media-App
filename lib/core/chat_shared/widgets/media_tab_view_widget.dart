@@ -1,9 +1,9 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../features/home/cubits/home_cubit/home_cubit.dart';
 import '../../cache/utils/cloudinary_url_extensions.dart';
 import '../../supabase/supabase_provider.dart';
+import '../../widgets/app_network_image.dart';
 import '../cubits/shared_media_cubit/shared_media_cubit.dart';
 import '../helpers/media_action_helper.dart' hide ShowInChatCallback;
 import '../helpers/shared_media_tabs_skeleton.dart';
@@ -169,7 +169,7 @@ class _AllMediaGrid extends StatelessWidget {
             );
           }),
           child: switch (item.messageType) {
-            'image' => CachedNetworkImage(
+            'image' => AppNetworkImage(
               imageUrl: item.imageUrl ?? '',
               fit: BoxFit.cover,
               errorWidget:
@@ -186,7 +186,7 @@ class _AllMediaGrid extends StatelessWidget {
             'video' => Stack(
               fit: StackFit.expand,
               children: [
-                CachedNetworkImage(
+                AppNetworkImage(
                   imageUrl:
                       item.videoUrl?.cloudinaryVideoThumbnailUrl ??
                       item.videoUrl ??

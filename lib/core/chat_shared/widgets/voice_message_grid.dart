@@ -1,8 +1,8 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import '../../../features/single_chats/widgets/voice_message_bubble_widget.dart';
 import '../../supabase/supabase_provider.dart';
+import '../../widgets/app_image_provider.dart';
 import '../helpers/media_action_helper.dart' hide ShowInChatCallback;
 import '../models/shared_media_item.dart';
 import '../views/shared_media_view.dart';
@@ -77,7 +77,7 @@ class VoiceMessageGrid extends StatelessWidget {
                     ).primaryColor.withValues(alpha: 0.12),
                     backgroundImage:
                         hasAvatar
-                            ? CachedNetworkImageProvider(avatarUrl!)
+                            ? AppImageProvider.avatar(avatarUrl!, radius: 18)
                             : null,
                     child:
                         !hasAvatar

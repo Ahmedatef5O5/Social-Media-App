@@ -1,6 +1,6 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import '../../supabase/supabase_provider.dart';
+import '../../widgets/app_network_image.dart';
 import '../helpers/media_action_helper.dart' hide ShowInChatCallback;
 import '../models/shared_media_item.dart';
 import '../views/shared_media_view.dart';
@@ -49,7 +49,7 @@ class SharedImagesGrid extends StatelessWidget {
                 openLabel: 'View photo',
                 openIcon: Icons.image_outlined,
               ),
-          child: CachedNetworkImage(
+          child: AppNetworkImage(
             imageUrl: item.imageUrl ?? '',
             fit: BoxFit.cover,
             errorWidget:

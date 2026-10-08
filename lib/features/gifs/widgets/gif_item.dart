@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/widgets/app_network_image.dart';
 import '../models/gif_result_model.dart';
 
 class GifItem extends StatelessWidget {
@@ -12,7 +13,7 @@ class GifItem extends StatelessWidget {
       borderRadius: BorderRadius.circular(14),
       child: InkWell(
         onTap: () => Navigator.of(context).pop(gif),
-        child: Image.network(gif.previewUrl, fit: BoxFit.cover),
+        child: AppNetworkImage(imageUrl: gif.previewUrl, fit: BoxFit.cover),
       ),
     );
   }

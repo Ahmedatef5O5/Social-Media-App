@@ -1,5 +1,5 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import '../../../core/widgets/app_network_image.dart';
 import '../../reels/models/reel_model.dart';
 
 class ReelGridTile extends StatelessWidget {
@@ -15,7 +15,7 @@ class ReelGridTile extends StatelessWidget {
       child: Stack(
         fit: StackFit.expand,
         children: [
-          CachedNetworkImage(
+          AppNetworkImage(
             imageUrl: reel.thumbnailUrl,
             fit: BoxFit.cover,
             placeholder:

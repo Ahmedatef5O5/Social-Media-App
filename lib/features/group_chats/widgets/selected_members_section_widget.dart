@@ -1,5 +1,5 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import '../../../core/widgets/app_image_provider.dart';
 
 class SelectedMembersSection extends StatelessWidget {
   final Set<String> selectedUserIds;
@@ -50,7 +50,7 @@ class SelectedMembersSection extends StatelessWidget {
                         backgroundColor: primary.withValues(alpha: 0.12),
                         backgroundImage:
                             (imageUrl != null && imageUrl.isNotEmpty)
-                                ? CachedNetworkImageProvider(imageUrl)
+                                ? AppImageProvider.avatar(imageUrl, radius: 28)
                                 : null,
                         child:
                             (imageUrl == null || imageUrl.isEmpty)

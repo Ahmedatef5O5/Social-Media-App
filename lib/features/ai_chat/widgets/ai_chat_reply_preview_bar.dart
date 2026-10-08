@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../core/helpers/bidi_text_helper.dart';
+import '../../../core/widgets/app_network_image.dart';
 import '../models/ai_chat_message.dart';
 
 class AiChatReplyPreviewBar extends StatelessWidget {
@@ -157,12 +158,12 @@ class AiChatReplyPreviewBar extends StatelessWidget {
                     ),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(8),
-                      child: Image.network(
-                        message.mediaUrl!,
+                      child: AppNetworkImage(
+                        imageUrl: message.mediaUrl!,
                         width: 34,
                         height: 34,
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                        errorWidget: (_, __, ___) => const SizedBox.shrink(),
                       ),
                     ),
                   ),

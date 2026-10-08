@@ -5,6 +5,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shimmer/shimmer.dart';
 import '../attachment/widgets/media_loading_placeholder.dart';
 import '../cache/repository/media_cache_repository.dart';
+import '../cache/utils/cloudinary_url_extensions.dart';
+import 'image_sizing.dart';
 
 class CachedCloudinaryImage extends StatefulWidget {
   final String secureUrl;
@@ -36,6 +38,15 @@ class _CachedCloudinaryImageState extends State<CachedCloudinaryImage> {
   late Future<String?> _localPathFuture;
   String? _syncLocalPath;
 
+  /// Physical-pixel width this image needs; drives both the CDN rendition
+  /// (`_sizedUrl`) and the decoded bitmap size (`cacheWidth`/`memCacheWidth`).
+  late int _decodePx;
+
+  /// `_optimizedUrl` resized by the CDN to `_decodePx`. `_optimizedUrl` itself
+  /// is kept as the "legacy" cache key: files adopted after an upload, or
+  /// cached by an older app version, are stored under it.
+  late String _sizedUrl;
+
   String get _optimizedUrl {
     if (widget.secureUrl.isEmpty ||
         !widget.secureUrl.contains('cloudinary.com')) {
@@ -62,27 +73,33 @@ class _CachedCloudinaryImageState extends State<CachedCloudinaryImage> {
 
   @override
   void initState() {
-    if (!widget.secureUrl.startsWith('assets/')) {
-      _localPathFuture = context.read<MediaCacheRepository>().resolveLocalPath(
-        _optimizedUrl,
-      );
-    }
     super.initState();
+    // `_resolve()` always assigns `_localPathFuture`; the previous extra
+    // `resolveLocalPath` call here started a second, redundant download.
     _resolve();
   }
 
   @override
   void didUpdateWidget(covariant CachedCloudinaryImage oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.secureUrl != widget.secureUrl) {
+    if (oldWidget.secureUrl != widget.secureUrl ||
+        oldWidget.width != widget.width ||
+        oldWidget.height != widget.height) {
       setState(_resolve);
     }
   }
 
   void _resolve() {
-    final targetUrl = _optimizedUrl;
+    final legacyUrl = _optimizedUrl;
+    _decodePx = ImageSizing.targetPixelWidth(
+      width: widget.width,
+      height: widget.height,
+    );
+    _sizedUrl = legacyUrl
+        .cloudinarySizedImageUrl(_decodePx)
+        .cloudinarySizedVideoThumbnailUrl(_decodePx);
 
-    if (targetUrl.isEmpty || targetUrl.startsWith('assets/')) {
+    if (legacyUrl.isEmpty || legacyUrl.startsWith('assets/')) {
       _syncLocalPath = null;
       _localPathFuture = Future.value(null);
       return;
@@ -90,7 +107,11 @@ class _CachedCloudinaryImageState extends State<CachedCloudinaryImage> {
 
     final repo = context.read<MediaCacheRepository>();
 
-    final syncPath = repo.resolveLocalPathSync(targetUrl);
+    // Smaller rendition first; fall back to a file cached under the full-size
+    // key (e.g. one adopted right after the user uploaded it).
+    final syncPath =
+        repo.resolveLocalPathSync(_sizedUrl) ??
+        (_sizedUrl == legacyUrl ? null : repo.resolveLocalPathSync(legacyUrl));
 
     if (syncPath != null) {
       _syncLocalPath = syncPath;
@@ -98,7 +119,7 @@ class _CachedCloudinaryImageState extends State<CachedCloudinaryImage> {
       return;
     }
     _syncLocalPath = null;
-    _localPathFuture = repo.resolveLocalPath(targetUrl);
+    _localPathFuture = repo.resolveLocalPath(_sizedUrl);
   }
 
   @override
@@ -156,6 +177,7 @@ class _CachedCloudinaryImageState extends State<CachedCloudinaryImage> {
           width: widget.width,
           height: widget.height,
           fit: widget.fit,
+          cacheWidth: _decodePx,
           errorBuilder: (_, __, ___) => _buildNetworkFallback(context),
         );
       },
@@ -168,6 +190,7 @@ class _CachedCloudinaryImageState extends State<CachedCloudinaryImage> {
       width: widget.width,
       height: widget.height,
       fit: widget.fit,
+      cacheWidth: _decodePx,
       frameBuilder:
           widget.onReady == null
               ? null
@@ -185,7 +208,8 @@ class _CachedCloudinaryImageState extends State<CachedCloudinaryImage> {
 
   Widget _buildNetworkFallback(BuildContext context) {
     return CachedNetworkImage(
-      imageUrl: _optimizedUrl,
+      imageUrl: _sizedUrl,
+      memCacheWidth: _decodePx,
       width: widget.width,
       height: widget.height,
       fit: widget.fit,

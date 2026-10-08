@@ -4,6 +4,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:gap/gap.dart';
 import '../../../core/helpers/chat_helper.dart';
 import '../../../core/helpers/file_icon_helper.dart';
+import '../../../core/widgets/app_file_image.dart';
 
 class AiChatStagedFilePreview extends StatelessWidget {
   final String fileName;
@@ -55,8 +56,8 @@ class AiChatStagedFilePreview extends StatelessWidget {
               borderRadius: BorderRadius.circular(10),
               child:
                   imageFile != null
-                      ? Image.file(
-                        imageFile!,
+                      ? AppFileImage(
+                        file: imageFile!,
                         width: 36,
                         height: 36,
                         fit: BoxFit.cover,

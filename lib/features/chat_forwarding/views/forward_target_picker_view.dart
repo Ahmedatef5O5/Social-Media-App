@@ -4,6 +4,7 @@ import 'package:social_media_app/features/search/utils/chat_tile_skeleton_list.d
 import '../../../core/constants/app_images.dart';
 import '../../../core/presence/widgets/presence_avatar_widget.dart';
 import '../../../core/widgets/app_avatar.dart';
+import '../../../core/widgets/app_image_provider.dart';
 import '../../group_chats/models/group_model.dart';
 import '../../group_chats/services/group_chat_services.dart';
 import '../../social_graph/services/connections_service.dart';
@@ -532,7 +533,9 @@ class _ForwardTargetPickerViewState extends State<ForwardTargetPickerView> {
                 radius: 23,
                 backgroundColor: theme.primaryColor.withValues(alpha: 0.12),
                 backgroundImage:
-                    hasAvatar ? NetworkImage(group.avatarUrl!) : null,
+                    hasAvatar
+                        ? AppImageProvider.avatar(group.avatarUrl!, radius: 23)
+                        : null,
                 child:
                     !hasAvatar
                         ? Container(

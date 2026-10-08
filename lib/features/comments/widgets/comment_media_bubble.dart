@@ -16,6 +16,7 @@ import '../../../core/attachment/widgets/file_message_bubble.dart';
 import '../../../core/attachment/widgets/media_download_gate.dart';
 import '../../../core/attachment/widgets/media_loading_placeholder.dart';
 import '../../../core/attachment/widgets/media_state_overlay.dart';
+import '../../../core/widgets/app_file_image.dart';
 import '../../../core/widgets/video_progress_slider.dart';
 import '../../gifs/utils/loop_limited_gif.dart';
 import '../../single_chats/helpers/glass_icon_btn.dart';
@@ -76,8 +77,8 @@ class _ImageBubble extends StatelessWidget {
             borderRadius: BorderRadius.circular(14),
             fileSizeBytes: comment.fileSizeBytes,
             onCancelTap: () => context.read<CommentsCubit>().cancelUpload(),
-            child: Image.file(
-              File(comment.imageUrl!),
+            child: AppFileImage(
+              file: File(comment.imageUrl!),
               width: size,
               height: size,
               fit: BoxFit.cover,
@@ -233,7 +234,7 @@ class _VideoBubbleState extends State<_VideoBubble> {
               height: height,
               child:
                   _localThumbnail != null
-                      ? Image.file(_localThumbnail!, fit: BoxFit.cover)
+                      ? AppFileImage(file: _localThumbnail!, fit: BoxFit.cover)
                       : Container(color: Colors.grey.shade800),
             ),
           );
