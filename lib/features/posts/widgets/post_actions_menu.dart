@@ -6,6 +6,8 @@ import 'package:social_media_app/features/posts/models/post_model.dart';
 import '../../../core/constants/app_images.dart';
 import '../../../core/toast/app_toast.dart';
 import '../../../core/widgets/custom_confirmation_dialog.dart';
+import '../../reports/models/report_target.dart';
+import '../../reports/widgets/report_bottom_sheet.dart';
 import '../cubits/posts_cubit/posts_cubit.dart';
 
 class PostActionsMenu extends StatelessWidget {
@@ -143,9 +145,11 @@ class PostActionsMenu extends StatelessWidget {
             ),
       );
     } else if (value == 'report') {
-      if (context.mounted) {
-        AppToast.info('Post Reported successfully');
-      }
+      if (!context.mounted) return;
+      await ReportBottomSheet.show(
+        context,
+        target: ReportTarget(type: ReportTargetType.post, id: post.id),
+      );
     }
   }
 }
