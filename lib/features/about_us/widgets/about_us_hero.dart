@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
+import '../../../core/constants/app_images.dart';
 
 class AboutUsHero extends StatelessWidget {
   final Animation<double> heroScale;
@@ -85,15 +86,15 @@ class AboutUsHero extends StatelessWidget {
                                     width: 1.5,
                                   ),
                                 ),
-                                child: const Icon(
-                                  Icons.people_alt_rounded,
-                                  color: Colors.white,
-                                  size: 44,
+                                child: Image.asset(
+                                  AppImages.launcherApp,
+                                  width: 78,
+                                  height: 78,
                                 ),
                               ),
                               const Gap(18),
                               const Text(
-                                'Social App',
+                                'Social Mate',
                                 style: TextStyle(
                                   fontSize: 32,
                                   fontWeight: FontWeight.w800,

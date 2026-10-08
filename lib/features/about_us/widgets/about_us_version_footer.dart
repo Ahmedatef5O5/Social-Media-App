@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
+import '../../../core/constants/app_images.dart';
 
 class AboutUsVersionFooter extends StatelessWidget {
   final bool isDark;
@@ -32,11 +33,11 @@ class AboutUsVersionFooter extends StatelessWidget {
                 color: primary.withValues(alpha: 0.10),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Icon(Icons.people_alt_rounded, color: primary, size: 14),
+              child: Image.asset(AppImages.launcherApp, width: 22, height: 22),
             ),
             const Gap(8),
             Text(
-              'Social App',
+              'Social Mate',
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w700,

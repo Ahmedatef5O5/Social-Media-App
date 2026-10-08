@@ -32,9 +32,8 @@ class AboutUsSocialLinks extends StatelessWidget {
                 FaIcon(FontAwesomeIcons.briefcase, color: color, size: size),
 
         label: 'Portfolio',
-        value: 'ahmed-portfolio.web.app',
+        value: 'ahmedatef.tech',
         url: 'https://www.ahmedatef.tech',
-        // old portfolio url: 'https://ahmed-portfolio-cd0a3.web.app',
         color: Colors.deepPurpleAccent,
       ),
       _SocialLink(
