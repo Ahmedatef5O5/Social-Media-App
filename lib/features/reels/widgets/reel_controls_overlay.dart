@@ -7,7 +7,7 @@ import 'reel_video_placeholder.dart';
 
 class ReelControlsOverlay extends StatelessWidget {
   final ReelModel reel;
-  final YoutubePlayerController controller;
+  final YoutubePlayerController? controller;
   final bool isPaused;
   final VoidCallback onTogglePlayback;
   final ValueChanged<double> onVerticalDragUpdate;

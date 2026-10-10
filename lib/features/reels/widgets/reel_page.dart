@@ -7,22 +7,16 @@ import 'reel_controls_overlay.dart';
 
 class ReelPage extends StatefulWidget {
   final ReelModel reel;
-  final YoutubePlayerController controller;
-  final bool keepAlive;
+  final YoutubePlayerController? controller;
   final ValueChanged<double> onVerticalDragUpdate;
   final ValueChanged<double> onVerticalDragEnd;
-  final ValueChanged<YoutubePlayerController> onControllerMounted;
-  final ValueChanged<YoutubePlayerController> onControllerUnmounted;
 
   const ReelPage({
     super.key,
     required this.reel,
     required this.controller,
-    required this.keepAlive,
     required this.onVerticalDragUpdate,
     required this.onVerticalDragEnd,
-    required this.onControllerMounted,
-    required this.onControllerUnmounted,
   });
 
   @override
@@ -37,8 +31,22 @@ class _ReelPageState extends State<ReelPage> {
   @override
   void initState() {
     super.initState();
-    widget.onControllerMounted(widget.controller);
-    _sub = widget.controller.listen((value) {
+    _attach(widget.controller);
+  }
+
+  @override
+  void didUpdateWidget(covariant ReelPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.controller != widget.controller) {
+      _sub?.cancel();
+      _sub = null;
+      _isPaused = false;
+      _attach(widget.controller);
+    }
+  }
+
+  void _attach(YoutubePlayerController? controller) {
+    _sub = controller?.listen((value) {
       if (value.error != YoutubeError.none && mounted) {
         debugPrint('YT ERROR [${widget.reel.youtubeVideoId}]: ${value.error}');
       }
@@ -46,33 +54,27 @@ class _ReelPageState extends State<ReelPage> {
   }
 
   @override
-  void didUpdateWidget(covariant ReelPage oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.controller != widget.controller) {
-      oldWidget.onControllerUnmounted(oldWidget.controller);
-      widget.onControllerMounted(widget.controller);
-
-      _sub?.cancel();
-      _sub = widget.controller.listen((value) {
-        if (value.error != YoutubeError.none && mounted) {
-          debugPrint(
-            'YT ERROR [${widget.reel.youtubeVideoId}]: ${value.error}',
-          );
-        }
-      });
-    }
-  }
-
-  @override
   void dispose() {
-    widget.onControllerUnmounted(widget.controller);
     _sub?.cancel();
     super.dispose();
   }
 
   void _togglePlayback() {
+    final controller = widget.controller;
+    if (controller == null) return;
     setState(() => _isPaused = !_isPaused);
-    _isPaused ? widget.controller.pauseVideo() : widget.controller.playVideo();
+    _isPaused ? controller.pauseVideo() : controller.playVideo();
+  }
+
+  Widget _overlay(YoutubePlayerController? controller) {
+    return ReelControlsOverlay(
+      reel: widget.reel,
+      controller: controller,
+      isPaused: _isPaused,
+      onTogglePlayback: _togglePlayback,
+      onVerticalDragUpdate: widget.onVerticalDragUpdate,
+      onVerticalDragEnd: widget.onVerticalDragEnd,
+    );
   }
 
   @override
@@ -81,28 +83,24 @@ class _ReelPageState extends State<ReelPage> {
       return ReelUnavailableFallback(reel: widget.reel);
     }
 
+    final controller = widget.controller;
+    if (controller == null) {
+      return ColoredBox(color: Colors.black, child: _overlay(null));
+    }
+
     return ColoredBox(
       color: Colors.black,
       child: LayoutBuilder(
         builder: (context, constraints) {
           final aspectRatio = constraints.maxWidth / constraints.maxHeight;
           return YoutubePlayer(
-            controller: widget.controller,
+            controller: controller,
             aspectRatio: aspectRatio,
             gestureRecognizers: const {},
             enableFullScreenOnVerticalDrag: false,
             autoFullScreen: false,
-            keepAlive: widget.keepAlive,
-            controlsBuilder: (context, isFullscreen) {
-              return ReelControlsOverlay(
-                reel: widget.reel,
-                controller: widget.controller,
-                isPaused: _isPaused,
-                onTogglePlayback: _togglePlayback,
-                onVerticalDragUpdate: widget.onVerticalDragUpdate,
-                onVerticalDragEnd: widget.onVerticalDragEnd,
-              );
-            },
+            backgroundColor: Colors.black,
+            controlsBuilder: (context, isFullscreen) => _overlay(controller),
           );
         },
       ),

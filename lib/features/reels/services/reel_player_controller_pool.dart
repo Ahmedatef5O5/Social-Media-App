@@ -1,96 +1,93 @@
 import 'dart:async';
 import 'package:youtube_player_iframe/youtube_player_iframe.dart';
-import '../models/reel_model.dart';
-
-class _PooledSlot {
-  _PooledSlot(this.controller);
-
-  final YoutubePlayerController controller;
-  int? assignedIndex;
-  bool isMounted = false;
-}
+import '../../../core/observability/observability.dart';
 
 class ReelPlayerControllerPool {
-  static const int _windowBefore = 1;
-  static const int _windowAfter = 1;
-  static const int _poolSize = _windowBefore + _windowAfter + 2; // = 4
-  static const Duration _preloadDelay = Duration(milliseconds: 400);
+  ReelPlayerControllerPool({
+    YoutubePlayerController Function()? controllerFactory,
+  }) : _controllerFactory = controllerFactory ?? _defaultControllerFactory;
 
-  final List<_PooledSlot> _slots = [];
-  Timer? _preloadDelayTimer;
+  static final RegExp _videoIdPattern = RegExp(r'^[A-Za-z0-9_-]{11}$');
+  static bool isValidVideoId(String id) => _videoIdPattern.hasMatch(id);
 
-  YoutubePlayerController controllerFor(
-    int index,
-    String youtubeVideoId, {
-    required bool isActive,
-  }) {
-    final existing = _slotForIndex(index);
-    if (existing != null) return existing.controller;
+  final YoutubePlayerController Function() _controllerFactory;
 
-    final slot = _acquireSlot(index);
-    slot.assignedIndex = index;
+  YoutubePlayerController? _controller;
+  final List<YoutubePlayerController> _retired = [];
+  String? _loadedVideoId;
+  int? _activeIndex;
+  bool _isDisposed = false;
 
-    if (isActive) {
-      slot.controller.loadVideoById(videoId: youtubeVideoId);
-    } else {
-      slot.controller.cueVideoById(videoId: youtubeVideoId);
+  YoutubePlayerController? get controller => _controller;
+
+  int? get activeIndex => _activeIndex;
+
+  int get retiredCount => _retired.length;
+
+  bool isActive(int index) => _activeIndex == index;
+
+  YoutubePlayerController activate(int index, String youtubeVideoId) {
+    _ensureAlive();
+    if (!isValidVideoId(youtubeVideoId)) {
+      throw ArgumentError.value(
+        youtubeVideoId,
+        'youtubeVideoId',
+        'not a valid YouTube video id',
+      );
     }
 
-    return slot.controller;
-  }
-
-  void markMounted(YoutubePlayerController controller) {
-    _slotForController(controller)?.isMounted = true;
-  }
-
-  void markUnmounted(YoutubePlayerController controller) {
-    _slotForController(controller)?.isMounted = false;
-  }
-
-  _PooledSlot? _slotForController(YoutubePlayerController controller) {
-    for (final slot in _slots) {
-      if (slot.controller == controller) return slot;
-    }
-    return null;
-  }
-
-  _PooledSlot? _slotForIndex(int index) {
-    for (final slot in _slots) {
-      if (slot.assignedIndex == index) return slot;
-    }
-    return null;
-  }
-
-  _PooledSlot _acquireSlot(int index) {
-    for (final slot in _slots) {
-      if (slot.assignedIndex == null && !slot.isMounted) return slot;
+    final current = _controller;
+    if (current != null &&
+        _activeIndex == index &&
+        _loadedVideoId == youtubeVideoId) {
+      _run(current.playVideo, operation: 'play');
+      return current;
     }
 
-    if (_slots.length < _poolSize) {
-      final slot = _PooledSlot(_createController());
-      _slots.add(slot);
-      return slot;
+    if (current != null) {
+      _retired.add(current);
     }
 
-    final stealCandidates =
-        _slots.where((s) => !s.isMounted).toList()..sort((a, b) {
-          final distanceA =
-              a.assignedIndex == null ? -1 : (a.assignedIndex! - index).abs();
-          final distanceB =
-              b.assignedIndex == null ? -1 : (b.assignedIndex! - index).abs();
-          return distanceB.compareTo(distanceA); // farthest first
-        });
+    final controller = _controllerFactory();
+    _controller = controller;
+    _activeIndex = index;
+    _loadedVideoId = youtubeVideoId;
 
-    if (stealCandidates.isNotEmpty) {
-      return stealCandidates.first;
-    }
-
-    final slot = _PooledSlot(_createController());
-    _slots.add(slot);
-    return slot;
+    _run(
+      () => controller.loadVideoById(videoId: youtubeVideoId),
+      operation: 'load',
+    );
+    return controller;
   }
 
-  YoutubePlayerController _createController() {
+  void pause() {
+    if (_isDisposed) return;
+    final controller = _controller;
+    if (controller == null || _loadedVideoId == null) return;
+    _run(controller.pauseVideo, operation: 'pause');
+  }
+
+  void play() {
+    if (_isDisposed) return;
+    final controller = _controller;
+    if (controller == null || _loadedVideoId == null) return;
+    _run(controller.playVideo, operation: 'play');
+  }
+
+  Future<void> disposeRetired() async {
+    if (_retired.isEmpty) return;
+    final toClose = List<YoutubePlayerController>.of(_retired);
+    _retired.clear();
+    await Future.wait(toClose.map(_close));
+  }
+
+  void _ensureAlive() {
+    if (_isDisposed) {
+      throw StateError('ReelPlayerControllerPool used after disposeAll()');
+    }
+  }
+
+  static YoutubePlayerController _defaultControllerFactory() {
     return YoutubePlayerController(
       params: const YoutubePlayerParams(
         showControls: false,
@@ -103,59 +100,56 @@ class ReelPlayerControllerPool {
     );
   }
 
-  void updateActiveIndex(int current, List<ReelModel> reels) {
-    _preloadDelayTimer?.cancel();
-    if (reels.isEmpty) return;
-
-    final validRange = <int>{
-      for (var i = current - _windowBefore; i <= current + _windowAfter; i++)
-        if (i >= 0 && i < reels.length) i,
-    };
-
-    for (final slot in _slots) {
-      if (slot.assignedIndex != null &&
-          !validRange.contains(slot.assignedIndex)) {
-        slot.assignedIndex = null;
-      }
-    }
-
-    controllerFor(current, reels[current].youtubeVideoId, isActive: true);
-
-    _preloadDelayTimer = Timer(_preloadDelay, () {
-      final nextIndex = current + 1;
-      if (nextIndex < reels.length) {
-        controllerFor(
-          nextIndex,
-          reels[nextIndex].youtubeVideoId,
-          isActive: false,
+  /// Player commands are fire-and-forget, but a failure must be reported
+  /// instead of escaping as an unhandled error.
+  void _run(Future<void> Function() action, {required String operation}) {
+    unawaited(
+      Future<void>.sync(action).catchError((Object e, StackTrace s) {
+        unawaited(
+          obs.recordError(
+            e,
+            s,
+            feature: 'reels',
+            operation: operation,
+            reason: 'player command failed',
+            fatal: false,
+          ),
         );
-      }
-    });
+      }),
+    );
   }
 
-  void setActivelyPlaying(int index) {
-    for (final slot in _slots) {
-      if (slot.assignedIndex == null) continue;
-      if (slot.assignedIndex == index) {
-        slot.controller.playVideo();
-      } else {
-        slot.controller.pauseVideo();
-      }
+  Future<void> _close(YoutubePlayerController controller) async {
+    try {
+      await controller.close();
+    } catch (e, s) {
+      unawaited(
+        obs.recordError(
+          e,
+          s,
+          feature: 'reels',
+          operation: 'close',
+          reason: 'player controller close failed',
+          fatal: false,
+        ),
+      );
     }
   }
 
-  bool isWithinWindow(int index, int currentIndex) {
-    return index >= currentIndex - _windowBefore &&
-        index <= currentIndex + _windowAfter;
-  }
+  /// Closes everything and waits. Safe to call more than once.
+  Future<void> disposeAll() async {
+    if (_isDisposed) return;
+    _isDisposed = true;
 
-  bool get isEmpty => _slots.every((slot) => slot.assignedIndex == null);
+    final all = <YoutubePlayerController>[
+      ..._retired,
+      if (_controller != null) _controller!,
+    ];
+    _retired.clear();
+    _controller = null;
+    _loadedVideoId = null;
+    _activeIndex = null;
 
-  void disposeAll() {
-    _preloadDelayTimer?.cancel();
-    for (final slot in _slots) {
-      slot.controller.close();
-    }
-    _slots.clear();
+    await Future.wait(all.map(_close));
   }
 }

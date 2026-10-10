@@ -1,9 +1,11 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../cubits/reels_feed_cubit/reels_feed_cubit.dart';
 import '../models/reel_model.dart';
 import '../services/reel_player_controller_pool.dart';
 import '../widgets/reel_page.dart';
+import '../widgets/reel_unavailable_fallback.dart';
 
 class ReelsFullScreenView extends StatefulWidget {
   final List<ReelModel>? reels;
@@ -26,8 +28,10 @@ class ReelsFullScreenView extends StatefulWidget {
 
 class _ReelsFullScreenViewState extends State<ReelsFullScreenView> {
   late final PageController _pageController;
-  final ReelPlayerControllerPool _controllerPool = ReelPlayerControllerPool();
+  final ReelPlayerControllerPool _playerPool = ReelPlayerControllerPool();
   late int _currentIndex;
+  int? _activeIndex;
+
   double _accumulatedDragDistance = 0;
   static const int _loadMoreThreshold = 3;
 
@@ -39,6 +43,7 @@ class _ReelsFullScreenViewState extends State<ReelsFullScreenView> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       _activateIndex(widget.initialIndex);
+      _maybeLoadMore(widget.initialIndex, _currentReels().length);
     });
   }
 
@@ -57,12 +62,25 @@ class _ReelsFullScreenViewState extends State<ReelsFullScreenView> {
 
   void _activateIndex(int index) {
     final reels = _currentReels();
-    if (reels.isEmpty) return;
+    if (reels.isEmpty || index < 0 || index >= reels.length) return;
 
+    final id = reels[index].youtubeVideoId;
+    if (ReelPlayerControllerPool.isValidVideoId(id)) {
+      _playerPool.activate(index, id);
+    } else {
+      _playerPool.pause();
+    }
+
+    setState(() => _activeIndex = index);
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(_playerPool.disposeRetired());
+    });
+  }
+
+  void _handlePageChanged(int index) {
     _currentIndex = index;
-    _controllerPool.updateActiveIndex(index, reels);
-    _controllerPool.setActivelyPlaying(index);
-    _maybeLoadMore(index, reels.length);
+    _maybeLoadMore(index, _currentReels().length);
   }
 
   void _maybeLoadMore(int index, int totalCount) {
@@ -117,7 +135,10 @@ class _ReelsFullScreenViewState extends State<ReelsFullScreenView> {
           curve: Curves.easeOutCubic,
         )
         .then((_) {
-          if (mounted && target != _currentIndex) {
+          if (!mounted || !_pageController.hasClients) return;
+          final settledAt = _pageController.page;
+          if (settledAt == null || (settledAt - target).abs() > 0.01) return;
+          if (target != _activeIndex) {
             _activateIndex(target);
           }
         });
@@ -125,7 +146,7 @@ class _ReelsFullScreenViewState extends State<ReelsFullScreenView> {
 
   @override
   void dispose() {
-    _controllerPool.disposeAll();
+    unawaited(_playerPool.disposeAll());
     _pageController.dispose();
     super.dispose();
   }
@@ -173,25 +194,22 @@ class _ReelsFullScreenViewState extends State<ReelsFullScreenView> {
       controller: _pageController,
       scrollDirection: Axis.vertical,
       physics: const NeverScrollableScrollPhysics(),
-      allowImplicitScrolling: true,
       itemCount: reels.length,
-      onPageChanged: _activateIndex,
+      onPageChanged: _handlePageChanged,
       itemBuilder: (context, index) {
         final reel = reels[index];
-        final controller = _controllerPool.controllerFor(
-          index,
-          reel.youtubeVideoId,
-          isActive: index == _currentIndex,
-        );
+        if (!ReelPlayerControllerPool.isValidVideoId(reel.youtubeVideoId)) {
+          return ReelUnavailableFallback(reel: reel);
+        }
+        // Side-effect free: only the active page receives the controller.
+        // Every other page looks exactly like a page whose video has not
+        // started yet (black + thumbnail + the same overlay).
         return ReelPage(
           key: ValueKey('reel_page_${reel.id}'),
           reel: reel,
-          controller: controller,
-          keepAlive: _controllerPool.isWithinWindow(index, _currentIndex),
+          controller: index == _activeIndex ? _playerPool.controller : null,
           onVerticalDragUpdate: _handleDragUpdate,
           onVerticalDragEnd: _handleDragEnd,
-          onControllerMounted: _controllerPool.markMounted,
-          onControllerUnmounted: _controllerPool.markUnmounted,
         );
       },
     );
