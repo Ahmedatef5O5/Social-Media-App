@@ -31,5 +31,50 @@
         "*.local"
       ]
     }
-  ]
+  ],
+  "hosting": {
+    "public": "public",
+    "ignore": [
+      "firebase.json",
+      "**/node_modules/**"
+    ],
+    "headers": [
+      {
+        "source": "/.well-known/assetlinks.json",
+        "headers": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Cache-Control",
+            "value": "public, max-age=300"
+          }
+        ]
+      },
+      {
+        "source": "/auth/**",
+        "headers": [
+          {
+            "key": "Referrer-Policy",
+            "value": "no-referrer"
+          },
+          {
+            "key": "Cache-Control",
+            "value": "no-store"
+          },
+          {
+            "key": "X-Robots-Tag",
+            "value": "noindex"
+          }
+        ]
+      }
+    ],
+    "rewrites": [
+      {
+        "source": "/auth/**",
+        "destination": "/auth/index.html"
+      }
+    ]
+  }
 }

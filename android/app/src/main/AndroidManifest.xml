@@ -105,9 +105,12 @@
                     android:scheme="https"
                     android:host="social-media-app-98f58.web.app"
                     android:pathPrefix="/join" />
+                <data
+                    android:scheme="https"
+                    android:host="social-media-app-98f58.web.app"
+                    android:pathPrefix="/auth" />
             </intent-filter>
 
-            <!-- Share Intent: Text / Link -->
             <intent-filter>
                 <action android:name="android.intent.action.SEND" />
                 <category android:name="android.intent.category.DEFAULT" />

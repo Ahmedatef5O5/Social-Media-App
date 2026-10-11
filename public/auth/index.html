@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="referrer" content="no-referrer" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Social Mate</title>
+  <style>
+    :root { color-scheme: light dark; }
+    body { margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center;
+           font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: #0f1115; color: #e8eaed; }
+    main { max-width: 420px; padding: 32px 24px; text-align: center; }
+    h1 { font-size: 22px; margin: 0 0 12px; }
+    p  { color: #9aa0a6; line-height: 1.5; margin: 0 0 24px; }
+    a.btn { display: inline-block; padding: 14px 28px; border-radius: 12px; background: #2563eb; color: #fff;
+            text-decoration: none; font-weight: 600; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Open Social Mate</h1>
+    <p>Tap the button to continue in the app. If it does not open, make sure Social Mate is installed and up to date on this device.</p>
+    <!-- Same URL again: a user tap on a verified App Link opens the app. The page never reads or sends the token. -->
+    <a class="btn" id="open" href="#">Open in app</a>
+  </main>
+  <script>
+    document.getElementById('open').setAttribute('href', window.location.href);
+  </script>
+</body>
+</html>

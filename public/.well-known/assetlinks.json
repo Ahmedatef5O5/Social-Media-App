@@ -1,0 +1,15 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "dev.ahmedatef.social_media_app",
+      "sha256_cert_fingerprints": [
+        "22:9E:8F:C4:55:04:06:10:E8:B0:11:04:1C:20:2A:6A:7C:34:E9:AA:1A:17:C3:16:A8:03:B5:49:49:A1:BC:5E",
+        "CB:3E:C9:09:9C:E6:C3:83:A2:F3:68:A6:9A:C0:54:DD:34:66:5E:A1:1B:BA:26:50:30:67:5D:DD:9A:1A:6C:19"
+      ]
+    }
+  }
+]
