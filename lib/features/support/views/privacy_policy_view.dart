@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart' show rootBundle;
+import 'package:flutter/services.dart' show HapticFeedback, rootBundle;
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import '../../settings/widgets/settings_detail_sliver_app_bar.dart';
 import '../models/policy_section.dart';
@@ -26,11 +26,12 @@ class _PrivacyPolicyViewState extends State<PrivacyPolicyView> {
   void _scrollToSection(int index) {
     final ctx = _sectionKeys[index]?.currentContext;
     if (ctx != null) {
+      HapticFeedback.selectionClick();
       Scrollable.ensureVisible(
         ctx,
-        duration: const Duration(milliseconds: 400),
-        curve: Curves.easeOutCubic,
-        alignment: 0.05,
+        duration: const Duration(milliseconds: 650),
+        curve: Curves.easeInOutCubic,
+        alignment: 0.10,
       );
     }
   }
@@ -96,61 +97,82 @@ class _PrivacyPolicyViewState extends State<PrivacyPolicyView> {
               ),
               SliverPadding(
                 padding: const EdgeInsets.fromLTRB(20, 12, 20, 60),
-                sliver: SliverList.list(
-                  children: [
-                    if (tocEntries.isNotEmpty)
-                      AccordionTile(
-                        initiallyExpanded: true,
-                        title: Row(
-                          children: [
-                            Icon(
-                              Icons.list_alt_rounded,
-                              size: 18,
-                              color: theme.primaryColor,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              'Table of Contents',
-                              style: theme.textTheme.titleSmall?.copyWith(
-                                fontWeight: FontWeight.w800,
+                sliver: SliverToBoxAdapter(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (tocEntries.isNotEmpty)
+                        AccordionTile(
+                          initiallyExpanded: true,
+                          title: Row(
+                            children: [
+                              Icon(
+                                Icons.list_alt_rounded,
+                                size: 18,
+                                color: theme.primaryColor,
                               ),
-                            ),
-                          ],
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            for (final i in tocEntries)
-                              InkWell(
-                                onTap: () => _scrollToSection(i),
-                                borderRadius: BorderRadius.circular(8),
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 6,
-                                  ),
-                                  child: Text(
-                                    sections[i].title,
-                                    style: theme.textTheme.bodyMedium?.copyWith(
-                                      color: theme.primaryColor,
-                                      fontWeight: FontWeight.w600,
+                              const SizedBox(width: 8),
+                              Text(
+                                'Table of Contents',
+                                style: theme.textTheme.titleSmall?.copyWith(
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                            ],
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              for (final i in tocEntries)
+                                InkWell(
+                                  onTap: () => _scrollToSection(i),
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 6,
+                                      horizontal: 2,
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Expanded(
+                                          child: Text(
+                                            sections[i].title,
+                                            style: theme.textTheme.bodyMedium
+                                                ?.copyWith(
+                                                  color: theme.primaryColor,
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                          ),
+                                        ),
+                                        Icon(
+                                          Icons.arrow_forward_ios_rounded,
+                                          size: 12,
+                                          color: theme.primaryColor.withValues(
+                                            alpha: 0.5,
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ),
                                 ),
-                              ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
-                    for (var i = 0; i < sections.length; i++)
-                      Padding(
-                        key: _sectionKeys[i],
-                        padding: const EdgeInsets.only(top: 18),
-                        child: MarkdownBody(
-                          data: sections[i].body,
-                          selectable: true,
-                          styleSheet: styleSheet,
+                      for (var i = 0; i < sections.length; i++)
+                        Padding(
+                          key: _sectionKeys[i],
+                          padding: const EdgeInsets.only(top: 20),
+                          child: MarkdownBody(
+                            data:
+                                sections[i].title.isEmpty
+                                    ? sections[i].body
+                                    : '## ${sections[i].title}\n\n${sections[i].body}',
+                            selectable: true,
+                            styleSheet: styleSheet,
+                          ),
                         ),
-                      ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ],
