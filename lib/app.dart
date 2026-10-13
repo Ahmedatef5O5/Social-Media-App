@@ -26,6 +26,7 @@ import 'core/services/call_foreground_task_handler.dart';
 import 'core/services/active_call/pip/call_pip_cubit.dart';
 import 'core/services/global_group_call_listener.dart';
 import 'core/services/incoming_call_navigation_guard.dart';
+import 'core/session/session_scope.dart';
 import 'core/toast/app_toast_overlay.dart';
 import 'core/widgets/calls/call_pip_overlay.dart';
 
@@ -34,10 +35,11 @@ Widget buildApp(String savedTheme) {
     providers: ServiceProviders.all,
     child: MultiBlocProvider(
       providers: CubitProviders.primary,
-
-      child: DevicePreview(
-        enabled: kDebugMode,
-        builder: (_) => MyApp(savedTheme: savedTheme),
+      child: SessionScope(
+        child: DevicePreview(
+          enabled: kDebugMode,
+          builder: (_) => MyApp(savedTheme: savedTheme),
+        ),
       ),
     ),
   );
@@ -271,4 +273,3 @@ class _RouteObserver extends NavigatorObserver {
     }
   }
 }
-

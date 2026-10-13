@@ -7,19 +7,22 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:social_media_app/core/bootstrap/session_data_cleaner.dart';
 import 'package:social_media_app/core/cache/services/hive_cache_manager.dart';
 import 'package:social_media_app/core/cache/services/local_snapshot_store.dart';
 import 'package:social_media_app/core/firebase/firebase_background_handlers.dart';
 import 'package:social_media_app/core/notifications/handlers/tap_action_handler.dart';
-import 'package:social_media_app/core/services/incoming_call_navigation_guard.dart';
+import 'package:social_media_app/core/presence/services/presence_service.dart';
 import 'package:social_media_app/core/router/app_routes.dart';
 import 'package:social_media_app/core/secrets/app_secrets.dart';
+import 'package:social_media_app/core/services/incoming_call_navigation_guard.dart';
 import 'package:social_media_app/core/services/network_status_service.dart';
 import 'package:social_media_app/core/services/permissions/app_permissions_service.dart';
-import 'package:social_media_app/core/presence/services/presence_service.dart';
 import 'package:social_media_app/features/settings/repository/settings_repository.dart';
 import 'package:social_media_app/firebase_options.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../features/auth/services/auth_link_handler.dart';
+import '../../features/auth/services/auth_recovery_coordinator.dart';
 import '../../features/home/cubits/home_cubit/home_cubit.dart';
 import '../../features/posts/cubits/posts_cubit/posts_cubit.dart';
 import '../../features/stories/cubits/stories_cubit/stories_cubit.dart';
@@ -29,7 +32,10 @@ import '../notifications/notification_service.dart';
 import '../observability/build_info.dart';
 import '../observability/crashlytics_reporter.dart';
 import '../observability/observability.dart';
+import '../observability/realtime_channel_sampler.dart';
 import '../observability/realtime_diagnostics.dart';
+import '../services/active_screen_tracker.dart';
+import '../session/session_scope.dart';
 import '../share_intent/services/share_intent_service.dart';
 import '../supabase/supabase_provider.dart';
 import '../toast/app_toast.dart';
@@ -39,7 +45,7 @@ Future<void> initializeCriticalBeforeRunApp() async {
   await _lockOrientation();
 
   // Opens the main-isolate end of the foreground-service communication port.
-  // Must run before `runApp` â€” it is how the "Ongoing Call" notification tells
+  // Must run before `runApp` — it is how the "Ongoing Call" notification tells
   // the UI isolate to expand the minimized call (see `CallForegroundTaskHandler`
   // and `app.dart`). Synchronous and cheap; never allowed to block startup.
   try {
@@ -53,21 +59,20 @@ Future<void> initializeCriticalBeforeRunApp() async {
   // `main.dart` installs FlutterError.onError / PlatformDispatcher.onError
   // on its very first lines, long before this runs. `Observability` buffers
   // everything until the line below attaches the real reporter, so nothing
-  // is lost â€” but the window must stay as short as possible, which is why
+  // is lost — but the window must stay as short as possible, which is why
   // Firebase now initialises here instead of after runApp().
   //
   // Wrapped in `_safely`: a Firebase outage must never prevent the app from
   // starting. Losing telemetry is acceptable; losing the app is not.
   await _safely('FirebaseCore', _initFirebaseCore);
   await _safely('Observability', _initObservability);
+  await Future.wait([
+    _safely('Supabase', _initSupabase),
+    _safely('HiveCache', _initHiveCache),
+  ]);
 }
 
 /// Bounds Flutter's in-memory cache of DECODED images (bitmaps).
-///
-/// Baseline values, not measured ones: with images now decoded at the painted
-/// size (see `ImageSizing`) a smaller budget is enough. Tune both numbers with
-/// DevTools -> Memory on a low-end device. Flutter also clears this cache by
-/// itself on OS memory-pressure callbacks.
 void _configureImageCache() {
   final cache = PaintingBinding.instance.imageCache;
   cache.maximumSizeBytes = 64 << 20; // 64 MiB (default 100 MiB)
@@ -96,7 +101,7 @@ Future<void> startCoreServicesBootstrap() {
 
   initializeCoreServices().then((_) => completer.complete()).catchError((e, s) {
     debugPrint('⚠️ Critical bootstrap failure: $e\n$s');
-    // Never leave SplashView waiting forever on a bootstrap bug â€”
+    // Never leave SplashView waiting forever on a bootstrap bug —
     // individual steps already fail safely on their own via
     // `_safely`, so completing here just unblocks navigation.
     completer.complete();
@@ -110,10 +115,6 @@ Future<void> waitForCoreServicesReady() {
 }
 
 /// True once `Supabase.initialize` has completed in this isolate.
-///
-/// Same probe `ensureSupabaseReady()` uses for the background isolate:
-/// `Supabase.instance.client` throws until initialisation has finished.
-
 bool _isSupabaseReady() {
   try {
     Supabase.instance.client;
@@ -145,9 +146,6 @@ Future<void> initializeCoreServices() async {
 
   // Group A - fully independent: each touches a different storage/plugin
   // (Hive, Supabase SDK, SharedPreferences). Safe to run in parallel.
-  //
-  // Every step is wrapped in `_safely` so ONE failure can no longer abort the
-  // whole bootstrap through `Future.wait`'s first-error rethrow.
   final coreReady = Future.wait([
     _safely('HiveCache', _initHiveCache),
     _safely('Supabase', _initSupabase),
@@ -166,14 +164,12 @@ Future<void> initializeCoreServices() async {
 
   await Future.wait([coreReady, shareIntentReady, deepLinkReady]);
 
-  // Everything below that reads `SupabaseProvider.*` is session-bound. If
-  // Supabase failed to initialise, touching it would only add a second,
-  // misleading "must be initialized" error on top of the real one already
-  // reported by `_safely('Supabase')`.
   final supabaseReady = _isSupabaseReady();
   await obs.setContext('supabase_ready', supabaseReady);
 
   if (supabaseReady) {
+    await _safely('AuthRecoveryRestore', AuthRecoveryCoordinator.restore);
+    await _safely('AuthLinkHandler', AuthLinkHandler.instance.init);
     await _safely(
       'ObservabilitySessionUser',
       () => obs.setSessionUser(SupabaseProvider.idOrNull),
@@ -194,6 +190,7 @@ Future<void> initializeCoreServices() async {
 
   if (supabaseReady) {
     await _safely('Presence', PresenceService.instance.init);
+    RealtimeChannelSampler.instance.start();
     _setupAuthListener();
   }
 
@@ -214,8 +211,6 @@ Future<void> _safely(String label, Future<void> Function() step) async {
     await step();
   } catch (e, s) {
     debugPrint('⚠️ Non-critical bootstrap step "$label" failed: $e\n$s');
-    // Previously this was a debugPrint and nothing else — a bootstrap step
-    // could fail on every device in production and never be noticed.
     unawaited(
       obs.recordError(
         e,
@@ -237,8 +232,8 @@ Future<void> _guardAgainstCrossAccountCacheLeak() async {
 
   if (cachedOwnerId != currentUserId) {
     debugPrint(
-      '⚠️ LocalSnapshotStore owner mismatch ("$cachedOwnerId" -> '
-      '"$currentUserId") â€” clearing cached chats/groups/posts/etc. so '
+      '🧹 LocalSnapshotStore owner mismatch ("$cachedOwnerId" -> '
+      '"$currentUserId") — clearing cached chats/groups/posts/etc. so '
       "one account's data never leaks into another's session.",
     );
     await LocalSnapshotStore.instance.clearAll();
@@ -256,23 +251,39 @@ void _setupAuthListener() {
       final event = data.event;
       final session = data.session;
 
-      if (event == AuthChangeEvent.signedIn && session != null) {
-        debugPrint('⚠️ Logged in: ${session.user.email}');
+      // Snapshot BEFORE the owner changes, so channels opened by the
+      // previous account are attributed to it and can be flagged as zombies.
+      RealtimeChannelSampler.instance.sample();
 
-        // C-02 instrumentation. Two things happen on every sign-in:
-        //  1. crash reports get re-scoped to the new (hashed) account, so a
-        //     post-switch crash is not attributed to the previous user;
-        //  2. any Realtime channel still owned by the previous account is
-        //     reported as a zombie. This is the mechanism that makes
-        //     "old account's messages appeared in the new account" a
-        //     diagnosable Crashlytics issue instead of a mystery.
+      if (event == AuthChangeEvent.passwordRecovery) {
+        debugPrint('ℹ️ AuthListener: Password recovery event received.');
+        AuthRecoveryCoordinator.markRecoveryPending();
+        AuthLinkHandler.instance.onAuthEvent();
+
+        final nav = navigatorKey.currentState;
+        if (nav != null &&
+            ActiveScreenTracker.currentRoute != AppRoutes.splashViewRoute &&
+            ActiveScreenTracker.currentRoute != AppRoutes.resetPasswordRoute) {
+          nav.pushNamedAndRemoveUntil(
+            AppRoutes.resetPasswordRoute,
+            (route) => false,
+          );
+        }
+        return;
+      }
+
+      if (event == AuthChangeEvent.signedIn && session != null) {
+        AuthLinkHandler.instance.onAuthEvent();
+        debugPrint('✅ Logged in: ${session.user.email}');
+
         await obs.setSessionUser(session.user.id);
         await obs.breadcrumb('signed in', feature: 'auth');
         RealtimeDiagnostics.instance.detectZombies(session.user.id);
+        RealtimeChannelSampler.instance.setOwner(session.user.id);
 
         await PresenceService.instance.init();
-        final context = navigatorKey.currentContext;
 
+        final context = navigatorKey.currentContext;
         if (context != null && context.mounted) {
           _refetchSessionCubits(context);
         }
@@ -287,6 +298,7 @@ void _setupAuthListener() {
         );
         return;
       }
+
       final bool looksLikeSignOut =
           event == AuthChangeEvent.signedOut ||
           (event == AuthChangeEvent.tokenRefreshed && session == null);
@@ -297,7 +309,7 @@ void _setupAuthListener() {
       final bool isOnline = await NetworkStatusService.instance.isConnected();
       if (!isOnline) {
         debugPrint(
-          '⚠️ Auth event ($event) received while OFFLINE â€” ignoring, keeping cached session.',
+          '⚠️ Auth event ($event) received while OFFLINE — ignoring, keeping cached session.',
         );
         return;
       }
@@ -305,11 +317,19 @@ void _setupAuthListener() {
       debugPrint('⚠️ Session expired or signed out. Redirecting to Login...');
       await obs.breadcrumb('signed out ($event)', feature: 'auth');
       await obs.setSessionUser(null);
+      RealtimeChannelSampler.instance.setOwner(null);
       await PresenceService.instance.dispose();
+
+      try {
+        await SupabaseProvider.client.removeAllChannels();
+      } catch (e) {
+        debugPrint('⚠️ removeAllChannels on sign out: $e');
+      }
+      RealtimeDiagnostics.instance.reset();
+
       final context = navigatorKey.currentContext;
 
-      if (context != null) {
-        if (!context.mounted) return;
+      if (context != null && context.mounted) {
         _resetSessionCubits(context);
       }
 
@@ -320,12 +340,19 @@ void _setupAuthListener() {
     },
     onError: (e, s) {
       debugPrint('⚠️ Auth stream error: $e\n$s');
+      if (AuthLinkHandler.instance.shouldSuppressAuthErrors) return;
       AppToast.error(SupabaseErrorMapper.toUserMessage(e));
     },
   );
 }
 
+/// Closes every account-scoped Cubit and wipes the local snapshots & session data.
 void _resetSessionCubits(BuildContext context) {
+  try {
+    SessionScope.endSession(context);
+  } catch (e) {
+    debugPrint('⚠️ SessionScope.endSession failed: $e');
+  }
   try {
     context.read<HomeCubit>().resetSession();
     context.read<PostsCubit>().resetSession();
@@ -333,7 +360,7 @@ void _resetSessionCubits(BuildContext context) {
   } catch (e) {
     debugPrint('⚠️ Failed to reset session cubits on sign-out: $e');
   }
-  unawaited(LocalSnapshotStore.instance.clearAll());
+  unawaited(SessionDataCleaner.clearOnSessionEnd());
 }
 
 void _refetchSessionCubits(BuildContext context) {
@@ -367,8 +394,6 @@ Future<void> requestBatteryOptimizationExemptionIfNeeded() async {
 }
 
 Future<void> _initFirebaseCore() async {
-  // Idempotent: initializeApp throws if [DEFAULT] already exists, and this
-  // function moved call sites in this change.
   if (Firebase.apps.isEmpty) {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
@@ -393,6 +418,8 @@ Future<void> _requestFirebaseNotificationPermissions() async {
 }
 
 Future<void> _initSupabase() async {
+  if (_isSupabaseReady()) return;
+  AppSecrets.assertSecretsLoaded();
   await Supabase.initialize(
     url: AppSecrets.supabaseUrl,
     anonKey: AppSecrets.supabaseAnonKey,
