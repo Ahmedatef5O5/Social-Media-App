@@ -7,12 +7,14 @@ class MainUserAvatar extends StatelessWidget {
   final String? imageUrl;
   final double? size;
   final bool showBorder;
+  final bool isDeleted;
   const MainUserAvatar({
     super.key,
     this.userId,
     this.imageUrl,
     this.size = 36,
     this.showBorder = false,
+    this.isDeleted = false,
   });
 
   @override
@@ -20,11 +22,11 @@ class MainUserAvatar extends StatelessWidget {
     return PresenceAvatarWidget(
       userId: userId ?? '',
       avatarSize: size ?? 31,
-      showDot: true,
+      showDot: !isDeleted,
       showBorder: false,
 
       child: AppAvatar(
-        imageUrl: imageUrl,
+        imageUrl: isDeleted ? null : imageUrl,
         size: size ?? 31,
         borderColor:
             showBorder

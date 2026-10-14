@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:hive/hive.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/cache/constants/hive_box_names.dart';
@@ -36,6 +37,18 @@ class AiChatDependencies {
   }
 
   static void resetForTesting() => _cached = null;
+
+  static Future<void> resetSession() async {
+    final pending = _cached;
+    if (pending == null) return;
+    try {
+      final deps = await pending;
+      deps.usageCubit.reset();
+      deps.lastActiveSessionId = null;
+    } catch (error) {
+      debugPrint('⚠️ AiChatDependencies.resetSession failed: $error');
+    }
+  }
 
   static Future<AiChatDependencies> _create() async {
     _registerAdapters();

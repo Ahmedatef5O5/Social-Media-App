@@ -12,7 +12,7 @@ class CommentsService {
   static const String _selectWithRelations =
       '*, users($_authorFields), comment_reactions(*), comment_mentions(${CommentMentionColumns.mentionedUserId},${CommentMentionColumns.startIndex},${CommentMentionColumns.endIndex},${CommentMentionColumns.createdAt})';
   static const String _authorFields =
-      '${UserColumns.name},${UserColumns.imageUrl}';
+      '${UserColumns.name},${UserColumns.imageUrl},${UserColumns.isDeleted}';
 
   Future<List<CommentModel>> getComments({
     required String postId,

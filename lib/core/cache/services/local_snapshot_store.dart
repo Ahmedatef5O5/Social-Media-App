@@ -17,7 +17,17 @@ class LocalSnapshotStore {
 
   Future<void> init() async {
     if (_isInitialized) return;
-    _box = await Hive.openBox<String>(HiveBoxNames.dataSnapshots);
+    try {
+      _box = await Hive.openBox<String>(HiveBoxNames.dataSnapshots);
+    } catch (error, stackTrace) {
+      debugPrint(
+        '[LocalSnapshotStore] Box "${HiveBoxNames.dataSnapshots}" failed to open, resetting it. '
+        'Error: $error',
+      );
+      debugPrintStack(stackTrace: stackTrace);
+      await Hive.deleteBoxFromDisk(HiveBoxNames.dataSnapshots);
+      _box = await Hive.openBox<String>(HiveBoxNames.dataSnapshots);
+    }
     _isInitialized = true;
   }
 

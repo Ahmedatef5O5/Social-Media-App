@@ -4,6 +4,9 @@ part 'ai_usage_state.dart';
 class AiUsageCubit extends Cubit<AiUsageState> {
   AiUsageCubit() : super(const AiUsageState());
 
+  /// Back to the unknown state (used when the account session ends).
+  void reset() => emit(const AiUsageState());
+
   void updateFromQuotaMap(
     Map<String, dynamic> quota, {
     String? provider,

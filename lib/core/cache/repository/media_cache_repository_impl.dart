@@ -71,8 +71,6 @@ class MediaCacheRepositoryImpl implements MediaCacheRepository {
     }
   }
 
-  /// Cheap trigger: the running counter may drift, but the sweep itself
-  /// recomputes the exact total from the entries and re-anchors the counter.
   void _sweepIfOverCap() {
     if (_localDataSource.getTotalCacheSizeBytes() <=
         CacheEvictionPolicy.maxTotalCacheSizeBytes) {

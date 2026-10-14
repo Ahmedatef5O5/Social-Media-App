@@ -16,3 +16,9 @@ final class AuthFailure extends AuthState {
 }
 
 final class AuthSignedOut extends AuthState {}
+
+final class PasswordResetEmailSent extends AuthState {}
+
+final class PasswordUpdateSuccess extends AuthState {}
+
+final class AuthAccountDeleted extends AuthState {}

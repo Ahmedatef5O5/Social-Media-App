@@ -33,7 +33,12 @@ class CommentAvatar extends StatelessWidget {
         imageUrl: imageUrl,
         size: radius * 2,
         heroTag: 'comment_${comment.id}_author',
-        onTap: () => isMe ? _openMyAvatar(context) : _showUserPreview(context),
+        // Ghost accounts have nothing to open.
+        onTap:
+            comment.authorIsDeleted
+                ? null
+                : () =>
+                    isMe ? _openMyAvatar(context) : _showUserPreview(context),
       ),
     );
   }

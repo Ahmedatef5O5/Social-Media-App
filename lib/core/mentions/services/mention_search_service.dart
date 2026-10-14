@@ -26,7 +26,9 @@ class MentionSearchService {
       if (trimmed.isNotEmpty) {
         builder = builder.ilike(UserColumns.name, '%$trimmed%');
       }
-      builder = builder.neq(UserColumns.id, currentUserId);
+      builder = builder
+          .neq(UserColumns.id, currentUserId)
+          .eq(UserColumns.isDeleted, false);
 
       if (restrictToUserIds != null) {
         builder = builder.inFilter(UserColumns.id, restrictToUserIds);
@@ -34,15 +36,28 @@ class MentionSearchService {
 
       final rows = await builder.order(UserColumns.name).limit(limit);
 
-      return (rows as List<dynamic>)
-          .map(
-            (row) => MentionSuggestion(
-              userId: row[UserColumns.id] as String,
-              name: row[UserColumns.name] as String? ?? 'User',
-              imageUrl: row[UserColumns.imageUrl] as String?,
-            ),
-          )
-          .toList();
+      final List<MentionSuggestion> list = [];
+
+      if (restrictToUserIds != null &&
+          (trimmed.isEmpty ||
+              'all'.toLowerCase().contains(trimmed.toLowerCase()) ||
+              'الكل'.contains(trimmed))) {
+        list.add(
+          const MentionSuggestion(userId: 'all', name: 'all', imageUrl: null),
+        );
+      }
+
+      list.addAll(
+        (rows as List<dynamic>).map(
+          (row) => MentionSuggestion(
+            userId: row[UserColumns.id] as String,
+            name: row[UserColumns.name] as String? ?? 'User',
+            imageUrl: row[UserColumns.imageUrl] as String?,
+          ),
+        ),
+      );
+
+      return list;
     } catch (e) {
       debugPrint('❌ Mention search failed: $e');
       return [];

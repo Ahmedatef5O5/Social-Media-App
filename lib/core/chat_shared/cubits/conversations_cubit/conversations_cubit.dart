@@ -58,7 +58,8 @@ class ConversationsCubit extends Cubit<ConversationsState>
   }
 
   void _subscribeSingleChatMutes() {
-    final currentUserId = SupabaseProvider.id;
+    final currentUserId = SupabaseProvider.idOrNull;
+    if (currentUserId == null) return;
     final supabase = SupabaseProvider.client;
 
     final channelName = 'conversations_chat_mutes_$currentUserId';
@@ -97,6 +98,9 @@ class ConversationsCubit extends Cubit<ConversationsState>
   }
 
   Future<void> _loadInitialSingleChatMutes() async {
+    final ownerId = SupabaseProvider.idOrNull;
+    if (ownerId == null) return;
+
     try {
       final rows = await SupabaseProvider.client
           .from('chat_mutes')

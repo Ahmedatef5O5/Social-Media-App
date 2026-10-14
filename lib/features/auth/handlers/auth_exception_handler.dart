@@ -64,6 +64,10 @@ class AuthExceptionHandler {
     }
 
     // ── Password ───────────────────────────────────────────────
+    if (code == 'invalid_password') {
+      return 'Incorrect password. Please try again.';
+    }
+
     if (msg.contains('invalid login credentials') ||
         msg.contains('invalid credentials') ||
         code == 'invalid_credentials') {
@@ -86,6 +90,10 @@ class AuthExceptionHandler {
     }
 
     // ── Account / session ──────────────────────────────────────
+    if (code == 'user_banned' || msg.contains('user is banned')) {
+      return 'This account has been deleted or disabled.';
+    }
+
     if (msg.contains('user not found') || code == 'user_not_found') {
       return 'No account found with this email.';
     }
@@ -107,7 +115,8 @@ class AuthExceptionHandler {
 
     if (msg.contains('session expired') ||
         msg.contains('jwt expired') ||
-        code == 'session_expired') {
+        code == 'session_expired' ||
+        code == 'not_authenticated') {
       return 'Your session has expired. Please sign in again.';
     }
 

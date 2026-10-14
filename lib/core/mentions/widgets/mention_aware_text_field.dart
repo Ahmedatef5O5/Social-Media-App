@@ -456,19 +456,43 @@ class _MentionSuggestionsCard extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                  AppAvatar(
-                    imageUrl: suggestion.imageUrl,
-                    size: 34,
-                    heroTag: 'mention_${suggestion.userId}',
-                  ),
+                  suggestion.userId == 'all'
+                      ? Container(
+                        width: 34,
+                        height: 34,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: theme.primaryColor.withValues(alpha: 0.15),
+                          border: Border.all(
+                            color: theme.primaryColor.withValues(alpha: 0.4),
+                            width: 1.2,
+                          ),
+                        ),
+                        child: Icon(
+                          Icons.groups_rounded,
+                          size: 20,
+                          color: theme.primaryColor,
+                        ),
+                      )
+                      : AppAvatar(
+                        imageUrl: suggestion.imageUrl,
+                        size: 34,
+                        heroTag: 'mention_${suggestion.userId}',
+                      ),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
-                      suggestion.name,
+                      suggestion.userId == 'all'
+                          ? 'all (@all members)'
+                          : suggestion.name,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: theme.textTheme.bodyMedium?.copyWith(
                         fontWeight: FontWeight.w600,
+                        color:
+                            suggestion.userId == 'all'
+                                ? theme.primaryColor
+                                : null,
                       ),
                     ),
                   ),

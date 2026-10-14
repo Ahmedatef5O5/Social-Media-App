@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/helpers/safe_emit_mixin.dart';
+import '../../../../core/observability/observability.dart';
 import '../../entities/ai_autocomplete_language.dart';
 import '../../entities/ai_reply_length.dart';
 import '../../entities/ai_reply_tone.dart';
@@ -17,26 +19,41 @@ class AiPreferencesCubit extends Cubit<AiPreferencesState>
       super(AiPreferencesState.initial());
 
   Future<void> init() async {
-    final autoComplete = await _store.getAutoCompleteEnabled();
-    final autoDetect = await _store.getAutoDetectEnabled();
-    final commentSuggestions = await _store.getCommentSuggestionsEnabled();
-    final language = await _store.getLanguage();
-    final replyTone = await _store.getReplyTone();
-    final replyLength = await _store.getReplyLength();
-    final usage = await _store.getCachedUsage();
+    try {
+      final autoComplete = await _store.getAutoCompleteEnabled();
+      final autoDetect = await _store.getAutoDetectEnabled();
+      final commentSuggestions = await _store.getCommentSuggestionsEnabled();
+      final language = await _store.getLanguage();
+      final replyTone = await _store.getReplyTone();
+      final replyLength = await _store.getReplyLength();
+      final usage = await _store.getCachedUsage();
 
-    emit(
-      state.copyWith(
-        isLoaded: true,
-        autoCompleteEnabled: autoComplete,
-        autoDetectEnabled: autoDetect,
-        commentSuggestionsEnabled: commentSuggestions,
-        language: language,
-        replyTone: replyTone,
-        replyLength: replyLength,
-        usage: usage,
-      ),
-    );
+      if (isClosed) return;
+      emit(
+        state.copyWith(
+          isLoaded: true,
+          autoCompleteEnabled: autoComplete,
+          autoDetectEnabled: autoDetect,
+          commentSuggestionsEnabled: commentSuggestions,
+          language: language,
+          replyTone: replyTone,
+          replyLength: replyLength,
+          usage: usage,
+        ),
+      );
+    } catch (e, s) {
+      unawaited(
+        obs.recordError(
+          e,
+          s,
+          feature: 'ai_preferences',
+          operation: 'init',
+          reason: 'failed to load AI preferences, falling back to defaults',
+        ),
+      );
+      if (isClosed) return;
+      emit(state.copyWith(isLoaded: true));
+    }
   }
 
   Future<void> toggleAutoComplete(bool value) async {

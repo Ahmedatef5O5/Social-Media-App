@@ -9,6 +9,7 @@ class CommentModel {
   final String text;
   final String? authorName;
   final String? authorImageUrl;
+  final bool authorIsDeleted;
   final String postId;
   final CommentType commentType;
   final String? imageUrl;
@@ -37,6 +38,7 @@ class CommentModel {
     required this.text,
     this.authorName,
     this.authorImageUrl,
+    this.authorIsDeleted = false,
     required this.postId,
     this.commentType = CommentType.text,
     this.imageUrl,
@@ -89,6 +91,7 @@ class CommentModel {
   factory CommentModel.fromMap(Map<String, dynamic> map) {
     final authorName = map['users']?['name'] as String?;
     final authorImageUrl = map['users']?['image_url'] as String?;
+    final authorIsDeleted = map['users']?['is_deleted'] as bool? ?? false;
 
     final List<CommentModel> replies =
         map['replies'] != null
@@ -120,6 +123,7 @@ class CommentModel {
       text: map['text'] as String? ?? '',
       authorName: authorName,
       authorImageUrl: authorImageUrl,
+      authorIsDeleted: authorIsDeleted,
       postId: map['post_id'] as String,
       commentType: commentTypeFromString(map['comment_type'] as String?),
       imageUrl: map['image_url'] as String?,
@@ -150,6 +154,7 @@ class CommentModel {
     String? text,
     String? authorName,
     String? authorImageUrl,
+    bool? authorIsDeleted,
     String? postId,
     CommentType? commentType,
     String? imageUrl,
@@ -178,6 +183,7 @@ class CommentModel {
       text: text ?? this.text,
       authorName: authorName ?? this.authorName,
       authorImageUrl: authorImageUrl ?? this.authorImageUrl,
+      authorIsDeleted: authorIsDeleted ?? this.authorIsDeleted,
       postId: postId ?? this.postId,
       commentType: commentType ?? this.commentType,
       imageUrl: imageUrl ?? this.imageUrl,
@@ -208,6 +214,7 @@ class CommentModel {
     'text': text,
     'author_name': authorName,
     'author_image_url': authorImageUrl,
+    'author_is_deleted': authorIsDeleted,
     'post_id': postId,
     'comment_type': commentType.value,
     'image_url': imageUrl,
@@ -238,6 +245,7 @@ class CommentModel {
       text: map['text'] as String? ?? '',
       authorName: map['author_name'] as String?,
       authorImageUrl: map['author_image_url'] as String?,
+      authorIsDeleted: map['author_is_deleted'] as bool? ?? false,
       postId: map['post_id'] as String,
       commentType: commentTypeFromString(map['comment_type'] as String?),
       imageUrl: map['image_url'] as String?,

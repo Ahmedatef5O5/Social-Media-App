@@ -76,6 +76,19 @@ class HiveCacheManager {
     }
   }
 
+  /// Clears cached data that belongs to the signed-in ACCOUNT (as opposed to
+  /// shared content). Called on every session end (logout, expired session,
+  /// account deletion) so the next account on this device never inherits it.
+
+  Future<void> clearUserScopedData() async {
+    if (!_isInitialized) return;
+    try {
+      await storyReactionsBox.clear();
+    } catch (error) {
+      debugPrint('[HiveCacheManager] clearUserScopedData failed: $error');
+    }
+  }
+
   Future<void> closeAll() async {
     await Hive.close();
     _isInitialized = false;

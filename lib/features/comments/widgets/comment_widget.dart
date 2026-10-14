@@ -421,20 +421,27 @@ class _CommentWidgetState extends State<CommentWidget>
                                             CrossAxisAlignment.start,
                                         children: [
                                           GestureDetector(
-                                            onTap: () {
-                                              if (isMe) {
-                                                navController?.jumpToTab(3);
-                                              } else {
-                                                Navigator.of(
-                                                  context,
-                                                  rootNavigator: true,
-                                                ).pushNamed(
-                                                  AppRoutes.profileViewRoute,
-                                                  arguments:
-                                                      widget.comment.authorId,
-                                                );
-                                              }
-                                            },
+                                            onTap:
+                                                widget.comment.authorIsDeleted
+                                                    ? null
+                                                    : () {
+                                                      if (isMe) {
+                                                        navController
+                                                            ?.jumpToTab(3);
+                                                      } else {
+                                                        Navigator.of(
+                                                          context,
+                                                          rootNavigator: true,
+                                                        ).pushNamed(
+                                                          AppRoutes
+                                                              .profileViewRoute,
+                                                          arguments:
+                                                              widget
+                                                                  .comment
+                                                                  .authorId,
+                                                        );
+                                                      }
+                                                    },
                                             child: Text(
                                               widget.comment.authorName ??
                                                   'User',

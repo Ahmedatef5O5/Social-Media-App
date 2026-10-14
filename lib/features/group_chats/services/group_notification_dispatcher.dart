@@ -55,7 +55,9 @@ class GroupNotificationDispatcher {
             senderImageUrl: senderAvatar,
             groupImageUrl: groupImageUrl,
             attachmentUrl: attachmentUrl,
-            isMention: mentionedUserIds.contains(memberId),
+            isMention:
+                mentionedUserIds.contains('all') ||
+                mentionedUserIds.contains(memberId),
             caption: caption,
             durationSeconds: durationSeconds,
             fileName: fileName,

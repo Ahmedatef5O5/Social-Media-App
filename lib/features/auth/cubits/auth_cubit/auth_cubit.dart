@@ -6,9 +6,11 @@ import 'package:social_media_app/core/services/network_status_service.dart';
 import 'package:social_media_app/features/auth/handlers/auth_exception_handler.dart';
 import 'package:social_media_app/features/auth/services/supabase_auth_services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../../core/bootstrap/session_data_cleaner.dart';
 import '../../../../core/helpers/safe_emit_mixin.dart';
 import '../../../../core/presence/services/presence_service.dart';
 import '../../../../core/supabase/supabase_provider.dart';
+import '../../../../core/toast/app_toast.dart';
 import '../../../../core/utilities/supabase_constants.dart';
 part 'auth_state.dart';
 
@@ -16,6 +18,7 @@ class AuthCubit extends Cubit<AuthState> with SafeEmitMixin<AuthState> {
   final SupabaseAuthServices _authServices;
   final NetworkStatusService _networkStatus;
   StreamSubscription? _authSubscription;
+  bool _suppressSignedOutEmit = false;
 
   AuthCubit(
     this._authServices, {
@@ -34,6 +37,7 @@ class AuthCubit extends Cubit<AuthState> with SafeEmitMixin<AuthState> {
           (event == AuthChangeEvent.signedIn ||
               event == AuthChangeEvent.initialSession)) {
         final user = session.user;
+        _suppressSignedOutEmit = false;
         emit(AuthSuccess());
 
         unawaited(
@@ -44,7 +48,7 @@ class AuthCubit extends Cubit<AuthState> with SafeEmitMixin<AuthState> {
           }),
         );
       } else if (event == AuthChangeEvent.signedOut) {
-        emit(AuthSignedOut());
+        if (!_suppressSignedOutEmit) emit(AuthSignedOut());
       }
     });
   }
@@ -178,11 +182,78 @@ class AuthCubit extends Cubit<AuthState> with SafeEmitMixin<AuthState> {
     }
   }
 
+  Future<void> deleteAccount({String? password}) async {
+    emit(AuthLoading());
+    final String? deletedUserId = SupabaseProvider.user?.id;
+
+    try {
+      if (password != null) {
+        await _authServices.verifyCurrentPassword(password);
+      }
+    } catch (e) {
+      _handleError(e);
+      return;
+    }
+
+    await _bestEffort(
+      'presence offline',
+      () => PresenceService.instance.setVisibility(false),
+    );
+
+    _suppressSignedOutEmit = true;
+    try {
+      await _authServices.softDeleteAccount();
+    } catch (e) {
+      _suppressSignedOutEmit = false;
+      await _bestEffort(
+        'presence restore',
+        () => PresenceService.instance.setVisibility(true),
+      );
+      _handleError(e);
+      return;
+    }
+
+    await _bestEffort(
+      'FCM deleteToken',
+      () => FirebaseMessaging.instance.deleteToken(),
+    );
+    await _bestEffort(
+      'local data cleanup',
+      () => SessionDataCleaner.clearOnAccountDeletion(deletedUserId),
+    );
+
+    emit(AuthAccountDeleted());
+
+    await _bestEffort(
+      'local sign-out',
+      _authServices.signOutLocallyAfterDeletion,
+    );
+    AppToast.success('Your account has been deleted successfully.');
+  }
+
+  Future<void> _bestEffort(String label, Future<void> Function() action) async {
+    try {
+      await action();
+    } catch (e) {
+      debugPrint('⚠️ deleteAccount step "$label" failed: $e');
+    }
+  }
+
   Future<void> resetPassword(String email) async {
     emit(AuthLoading());
     try {
       await _authServices.resetPassword(email);
-      emit(AuthSuccess());
+      emit(PasswordResetEmailSent());
+    } catch (e) {
+      _handleError(e);
+    }
+  }
+
+  Future<void> updatePassword(String newPassword) async {
+    emit(AuthLoading());
+    try {
+      await _authServices.updatePassword(newPassword);
+      emit(PasswordUpdateSuccess());
     } catch (e) {
       _handleError(e);
     }

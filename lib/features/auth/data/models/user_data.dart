@@ -18,6 +18,8 @@ class UserData {
   final PresencePrivacy presencePrivacy;
   final List<String> presenceVisibleTo;
   final Map<String, String> socialLinks;
+  final bool isDeleted;
+  final DateTime? deletedAt;
 
   const UserData({
     required this.id,
@@ -36,6 +38,8 @@ class UserData {
     this.presencePrivacy = PresencePrivacy.friends,
     this.presenceVisibleTo = const [],
     this.socialLinks = const {},
+    this.isDeleted = false,
+    this.deletedAt,
   });
 
   Map<String, dynamic> toMap() {
@@ -56,6 +60,8 @@ class UserData {
       UserColumns.presencePrivacy: presencePrivacy.value,
       UserColumns.presenceVisibleTo: presenceVisibleTo,
       UserColumns.socialLinks: socialLinks,
+      UserColumns.isDeleted: isDeleted,
+      UserColumns.deletedAt: deletedAt?.toIso8601String(),
     };
   }
 
@@ -94,6 +100,11 @@ class UserData {
       socialLinks: Map<String, String>.from(
         (map[UserColumns.socialLinks] as Map?) ?? const {},
       ),
+      isDeleted: map[UserColumns.isDeleted] as bool? ?? false,
+      deletedAt:
+          map[UserColumns.deletedAt] != null
+              ? DateTime.tryParse(map[UserColumns.deletedAt].toString())
+              : null,
     );
   }
 
@@ -114,6 +125,8 @@ class UserData {
     'presence_privacy': presencePrivacy.value,
     'presence_visible_to': presenceVisibleTo,
     'social_links': socialLinks,
+    'is_deleted': isDeleted,
+    'deleted_at': deletedAt?.toIso8601String(),
   };
 
   factory UserData.fromCacheJson(Map<String, dynamic> map) {
@@ -143,6 +156,11 @@ class UserData {
       socialLinks: Map<String, String>.from(
         (map['social_links'] as Map?) ?? const {},
       ),
+      isDeleted: map['is_deleted'] as bool? ?? false,
+      deletedAt:
+          map['deleted_at'] != null
+              ? DateTime.tryParse(map['deleted_at'] as String)
+              : null,
     );
   }
 
@@ -163,6 +181,8 @@ class UserData {
     PresencePrivacy? presencePrivacy,
     List<String>? presenceVisibleTo,
     Map<String, String>? socialLinks,
+    bool? isDeleted,
+    DateTime? deletedAt,
   }) {
     return UserData(
       id: id ?? this.id,
@@ -182,6 +202,8 @@ class UserData {
       presencePrivacy: presencePrivacy ?? this.presencePrivacy,
       presenceVisibleTo: presenceVisibleTo ?? this.presenceVisibleTo,
       socialLinks: socialLinks ?? this.socialLinks,
+      isDeleted: isDeleted ?? this.isDeleted,
+      deletedAt: deletedAt ?? this.deletedAt,
     );
   }
 }

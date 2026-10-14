@@ -97,4 +97,9 @@ class AiPreferencesStore {
     final box = await _openBox();
     await box.put(_kUsageCache, snapshot.toJson());
   }
+
+  Future<void> clearCachedUsage() async {
+    final box = await _openBox();
+    await box.delete(_kUsageCache);
+  }
 }
