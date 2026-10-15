@@ -111,3 +111,56 @@ class DiscoverPeopleSkeleton extends StatelessWidget {
     );
   }
 }
+
+/// A single person card skeleton matching [DiscoverPersonGridCardWidget]
+/// used for pagination loading in grids.
+class DiscoverPersonGridCardSkeleton extends StatelessWidget {
+  final double height;
+  const DiscoverPersonGridCardSkeleton({super.key, this.height = 245.0});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    final baseColor = isDark ? Colors.grey.shade800 : Colors.grey.shade300;
+    final highlightColor = isDark ? Colors.grey.shade700 : Colors.grey.shade100;
+
+    final cardColor = theme.colorScheme.surface;
+    final borderColor = theme.colorScheme.outlineVariant.withValues(
+      alpha: 0.12,
+    );
+
+    return SizedBox(
+      height: height,
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(14, 16, 14, 14),
+        decoration: BoxDecoration(
+          color: cardColor,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: borderColor),
+        ),
+        child: Shimmer.fromColors(
+          baseColor: baseColor,
+          highlightColor: highlightColor,
+          period: const Duration(milliseconds: 1200),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              const SkeletonCircle(size: 64),
+              const Gap(10),
+              const SkeletonBox(height: 13, width: 90),
+              const Gap(6),
+              const SkeletonBox(height: 10, width: 60),
+              const Spacer(),
+              const SkeletonBox(height: 36, width: double.infinity, radius: 10),
+              const Gap(6),
+              const SkeletonBox(height: 36, width: double.infinity, radius: 10),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}

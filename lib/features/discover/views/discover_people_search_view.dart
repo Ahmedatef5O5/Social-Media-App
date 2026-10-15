@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import '../../../core/constants/app_images.dart';
-import '../../../core/widgets/custom_loading_indicator.dart';
 import '../../../core/widgets/empty_findings_animation_widget.dart';
 import '../../search/utils/accounts_skeleton_list.dart';
 import '../../social_graph/models/discover_person_model.dart';
 import '../cubits/discover_people_cubit.dart';
 import '../utils/discover_grid_metrics.dart';
 import '../widgets/discover_person_grid_card_widget.dart';
+import 'discover_skeleton_view.dart';
 
 class DiscoverPeopleSearchView extends StatefulWidget {
   const DiscoverPeopleSearchView({super.key});
@@ -111,8 +111,13 @@ class _DiscoverPeopleSearchViewState extends State<DiscoverPeopleSearchView> {
                                 DiscoverGridMetrics.mainAxisSpacing,
                             crossAxisSpacing:
                                 DiscoverGridMetrics.crossAxisSpacing,
-                            childCount: users.length,
+                            childCount: users.length + (hasReachedMax ? 0 : 2),
                             itemBuilder: (context, i) {
+                              if (i >= users.length) {
+                                return DiscoverPersonGridCardSkeleton(
+                                  height: i.isEven ? 260.0 : 230.0,
+                                );
+                              }
                               final person = users[i];
                               return DiscoverPersonGridCardWidget(
                                 key: ValueKey(person.user.id),
@@ -128,15 +133,6 @@ class _DiscoverPeopleSearchViewState extends State<DiscoverPeopleSearchView> {
                             },
                           ),
                         ),
-                        if (!hasReachedMax)
-                          const SliverToBoxAdapter(
-                            child: Padding(
-                              padding: EdgeInsets.symmetric(vertical: 20),
-                              child: Center(
-                                child: CustomLoadingIndicator(radius: 12),
-                              ),
-                            ),
-                          ),
                         const SliverToBoxAdapter(child: SizedBox(height: 24)),
                       ],
                     ),

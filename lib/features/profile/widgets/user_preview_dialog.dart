@@ -30,8 +30,8 @@ class _UserPreviewDialogState extends State<UserPreviewDialog> {
   @override
   void initState() {
     super.initState();
-    if (!widget.showContactOptions) {
-      _isBlocked = false;
+    if (!widget.showContactOptions || widget.user.isDeleted) {
+      _isBlocked = widget.user.isDeleted;
       return;
     }
     final cached = ChatBlockStatusCache.instance.read(widget.user.id);
@@ -51,6 +51,7 @@ class _UserPreviewDialogState extends State<UserPreviewDialog> {
   @override
   Widget build(BuildContext context) {
     final user = widget.user;
+    final isDeleted = user.isDeleted;
     final iconColor = Theme.of(context).primaryColor;
     final screenSize = MediaQuery.sizeOf(context);
 
@@ -70,19 +71,24 @@ class _UserPreviewDialogState extends State<UserPreviewDialog> {
           Hero(
             tag: 'preview_dialog_${user.id}',
             child: GestureDetector(
-              onTap: () {
-                Navigator.of(context, rootNavigator: true).pushNamed(
-                  AppRoutes.fullScreenImageViewRoute,
-                  arguments: {
-                    'url':
-                        (user.imageUrl != null && user.imageUrl!.isNotEmpty)
-                            ? user.imageUrl!
-                            : AppImages.defaultUserImg,
-                    'tag': 'preview_dialog_${user.id}',
-                    'isAsset': user.imageUrl == null || user.imageUrl!.isEmpty,
-                  },
-                );
-              },
+              onTap:
+                  isDeleted
+                      ? null
+                      : () {
+                        Navigator.of(context, rootNavigator: true).pushNamed(
+                          AppRoutes.fullScreenImageViewRoute,
+                          arguments: {
+                            'url':
+                                (user.imageUrl != null &&
+                                        user.imageUrl!.isNotEmpty)
+                                    ? user.imageUrl!
+                                    : AppImages.defaultUserImg,
+                            'tag': 'preview_dialog_${user.id}',
+                            'isAsset':
+                                user.imageUrl == null || user.imageUrl!.isEmpty,
+                          },
+                        );
+                      },
               child: ClipRRect(
                 borderRadius: const BorderRadius.vertical(
                   top: Radius.circular(20),
@@ -159,47 +165,86 @@ class _UserPreviewDialogState extends State<UserPreviewDialog> {
                 bottom: Radius.circular(20),
               ),
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                IconButton(
-                  icon: Icon(Icons.message_outlined, color: iconColor),
-                  onPressed: () {
-                    Navigator.pop(context);
+            child:
+                isDeleted
+                    ? Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 14,
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.block_rounded,
+                            size: 16,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurface.withValues(alpha: 0.55),
+                          ),
+                          const SizedBox(width: 8),
+                          Flexible(
+                            child: Text(
+                              'This account has been deleted',
+                              style: Theme.of(
+                                context,
+                              ).textTheme.bodyMedium?.copyWith(
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurface.withValues(alpha: 0.65),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                    : Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        IconButton(
+                          icon: Icon(Icons.message_outlined, color: iconColor),
+                          onPressed: () {
+                            Navigator.pop(context);
 
-                    Navigator.of(context, rootNavigator: true).pushNamed(
-                      AppRoutes.chatDetailsViewRoute,
-                      arguments: user,
-                    );
-                  },
-                ),
-                if (widget.showContactOptions) ...[
-                  CallIconButton(
-                    type: CallType.audio,
-                    receiverId: user.id,
-                    receiverName: user.name,
-                    receiverAvatar: user.imageUrl ?? '',
-                    isBlocked: _isBlocked,
-                  ),
-                  CallIconButton(
-                    type: CallType.video,
-                    receiverId: user.id,
-                    receiverName: user.name,
-                    receiverAvatar: user.imageUrl ?? '',
-                    isBlocked: _isBlocked,
-                  ),
-                ],
-                IconButton(
-                  icon: Icon(Icons.info_outline, color: iconColor),
-                  onPressed: () {
-                    Navigator.of(
-                      context,
-                      rootNavigator: true,
-                    ).pushNamed(AppRoutes.profileViewRoute, arguments: user.id);
-                  },
-                ),
-              ],
-            ),
+                            Navigator.of(
+                              context,
+                              rootNavigator: true,
+                            ).pushNamed(
+                              AppRoutes.chatDetailsViewRoute,
+                              arguments: user,
+                            );
+                          },
+                        ),
+                        if (widget.showContactOptions) ...[
+                          CallIconButton(
+                            type: CallType.audio,
+                            receiverId: user.id,
+                            receiverName: user.name,
+                            receiverAvatar: user.imageUrl ?? '',
+                            isBlocked: _isBlocked,
+                          ),
+                          CallIconButton(
+                            type: CallType.video,
+                            receiverId: user.id,
+                            receiverName: user.name,
+                            receiverAvatar: user.imageUrl ?? '',
+                            isBlocked: _isBlocked,
+                          ),
+                        ],
+                        IconButton(
+                          icon: Icon(Icons.info_outline, color: iconColor),
+                          onPressed: () {
+                            Navigator.of(
+                              context,
+                              rootNavigator: true,
+                            ).pushNamed(
+                              AppRoutes.profileViewRoute,
+                              arguments: user.id,
+                            );
+                          },
+                        ),
+                      ],
+                    ),
           ),
         ],
       ),

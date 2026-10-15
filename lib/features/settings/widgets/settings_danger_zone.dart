@@ -3,10 +3,22 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 import 'package:social_media_app/features/auth/cubits/auth_cubit/auth_cubit.dart';
+import '../../../core/constants/app_images.dart';
 import '../../../core/toast/app_toast.dart';
+import '../../../core/widgets/custom_confirmation_dialog.dart';
+import 'delete_account_verification_sheet.dart';
 
-class SettingsDangerZone extends StatelessWidget {
+enum _DangerAction { logout, delete }
+
+class SettingsDangerZone extends StatefulWidget {
   const SettingsDangerZone({super.key});
+
+  @override
+  State<SettingsDangerZone> createState() => _SettingsDangerZoneState();
+}
+
+class _SettingsDangerZoneState extends State<SettingsDangerZone> {
+  _DangerAction? _pendingAction;
 
   @override
   Widget build(BuildContext context) {
@@ -65,58 +77,63 @@ class SettingsDangerZone extends StatelessWidget {
                 width: 0.8,
               ),
             ),
-            child: Column(
-              children: [
-                BlocConsumer<AuthCubit, AuthState>(
-                  listener: (context, state) {
-                    if (state is AuthSignedOut) {
-                      AppToast.error('Logged out successfully');
-                    } else if (state is AuthFailure) {
-                      AppToast.error(state.errMsg);
-                    }
-                  },
-                  buildWhen:
-                      (p, c) =>
-                          c is AuthSignedOut ||
-                          c is AuthFailure ||
-                          c is AuthLoading,
-                  builder: (context, state) {
-                    final isLoading = state is AuthLoading;
-                    return _buildDangerItem(
+            child: BlocConsumer<AuthCubit, AuthState>(
+              listener: (context, state) {
+                if (state is AuthSignedOut &&
+                    _pendingAction != _DangerAction.delete) {
+                  AppToast.error('Logged out successfully');
+                } else if (state is AuthFailure) {
+                  AppToast.error(state.errMsg);
+                }
+
+                if (state is! AuthLoading && _pendingAction != null) {
+                  setState(() => _pendingAction = null);
+                }
+              },
+              buildWhen:
+                  (p, c) =>
+                      c is AuthSignedOut ||
+                      c is AuthFailure ||
+                      c is AuthLoading,
+              builder: (context, state) {
+                final isLoading = state is AuthLoading;
+                return Column(
+                  children: [
+                    _buildDangerItem(
                       context,
                       isDark,
                       icon: Icons.logout_rounded,
                       label: 'Log Out',
                       subtitle: 'Sign out of your account',
                       color: Colors.orange.shade600,
-                      isLoading: isLoading,
+                      isLoading:
+                          isLoading && _pendingAction == _DangerAction.logout,
                       isLast: false,
-                      onTap:
-                          isLoading
-                              ? null
-                              : () => context.read<AuthCubit>().signOut(),
-                    );
-                  },
-                ),
-                Divider(
-                  height: 1,
-                  indent: 68,
-                  color:
-                      isDark
-                          ? Colors.red.withValues(alpha: 0.10)
-                          : Colors.red.shade100,
-                ),
-                _buildDangerItem(
-                  context,
-                  isDark,
-                  icon: Icons.delete_forever_rounded,
-                  label: 'Delete Account',
-                  subtitle: 'Permanently remove your account',
-                  color: Colors.red.shade500,
-                  isLast: true,
-                  onTap: () => _showDeleteConfirmation(context),
-                ),
-              ],
+                      onTap: isLoading ? null : _onLogoutPressed,
+                    ),
+                    Divider(
+                      height: 1,
+                      indent: 68,
+                      color:
+                          isDark
+                              ? Colors.red.withValues(alpha: 0.10)
+                              : Colors.red.shade100,
+                    ),
+                    _buildDangerItem(
+                      context,
+                      isDark,
+                      icon: Icons.delete_forever_rounded,
+                      label: 'Delete Account',
+                      subtitle: 'Permanently remove your account',
+                      color: Colors.red.shade500,
+                      isLoading:
+                          isLoading && _pendingAction == _DangerAction.delete,
+                      isLast: true,
+                      onTap: isLoading ? null : _onDeletePressed,
+                    ),
+                  ],
+                );
+              },
             ),
           ),
         ],
@@ -205,34 +222,36 @@ class SettingsDangerZone extends StatelessWidget {
     );
   }
 
-  void _showDeleteConfirmation(BuildContext context) {
-    showDialog(
+  void _onLogoutPressed() {
+    setState(() => _pendingAction = _DangerAction.logout);
+    context.read<AuthCubit>().signOut();
+  }
+
+  Future<void> _onDeletePressed() async {
+    final confirmed = await showDialog<bool>(
       context: context,
       builder:
-          (ctx) => AlertDialog(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
-            ),
-            title: const Text(
-              'Feature Under Construction',
-              style: TextStyle(fontWeight: FontWeight.w700),
-            ),
-            content: const Text(
-              "Account deletion isn't available yet. Please contact support if you need your account removed.",
-            ),
-            actions: [
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-                onPressed: () => Navigator.pop(ctx),
-                child: const Text('OK', style: TextStyle(color: Colors.white)),
-              ),
-            ],
+          (dialogContext) => CustomConfirmationDialog(
+            title:
+                'Are you sure you want to delete your account? '
+                'This action is permanent and cannot be undone.',
+            textAlign: TextAlign.center,
+            img: AppImages.alertAnimationLot,
+            confirmBtnText: 'Delete Account',
+            cancelBtnText: 'Cancel',
+            confirmTxtColor: Colors.red.shade600,
+            onConfirm: () {
+              Navigator.of(dialogContext, rootNavigator: true).pop(true);
+            },
           ),
     );
+
+    if (confirmed != true || !mounted) return;
+
+    final verification = await DeleteAccountVerificationSheet.show(context);
+    if (verification == null || !mounted) return;
+
+    setState(() => _pendingAction = _DangerAction.delete);
+    context.read<AuthCubit>().deleteAccount(password: verification.password);
   }
 }

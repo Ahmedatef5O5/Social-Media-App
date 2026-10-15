@@ -9,6 +9,8 @@ import 'package:social_media_app/features/profile/models/edit_profile_route_args
 import '../../../core/constants/app_images.dart';
 import '../../../core/supabase/supabase_provider.dart';
 import '../../posts/cubits/posts_cubit/posts_cubit.dart';
+import '../../reports/models/report_target.dart';
+import '../../reports/widgets/report_bottom_sheet.dart';
 import '../../single_chats/models/chat_user_model.dart';
 import '../../social_graph/models/friendship_status.dart';
 import '../../social_graph/widgets/unfriend_confirmation_dialog.dart';
@@ -29,8 +31,8 @@ class ProfileHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final currentUserId = SupabaseProvider.id;
-    final isMe = user.id == currentUserId;
+    final currentUserId = SupabaseProvider.idOrNull;
+    final isMe = currentUserId != null && user.id == currentUserId;
     final theme = Theme.of(context);
     final double screenWidth = MediaQuery.of(context).size.width;
     final double bgHeight = screenWidth / 1.7;
@@ -237,6 +239,17 @@ class ProfileHeader extends StatelessWidget {
               rootNavigator: true,
             ).pushNamed(AppRoutes.chatDetailsViewRoute, arguments: chatUser);
           },
+        ),
+        const Gap(8),
+        ProfileSquareIconButton(
+          icon: Icons.report_gmailerrorred,
+          tooltip: 'Report profile',
+          iconColor: ProfileUiTokens.of(context).onSurfaceVariant,
+          onPressed:
+              () => ReportBottomSheet.show(
+                context,
+                target: ReportTarget(type: ReportTargetType.user, id: user.id),
+              ),
         ),
       ],
     );

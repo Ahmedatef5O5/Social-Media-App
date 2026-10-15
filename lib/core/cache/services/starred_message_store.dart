@@ -36,6 +36,16 @@ class StarredMessagesStore {
     return next;
   }
 
+  /// Removes every star of [userId] (account deletion).
+  Future<void> clearForUser(String userId) async {
+    final box = await _openBox();
+    final prefix = '${userId}_';
+    final keys =
+        box.keys.cast<String>().where((k) => k.startsWith(prefix)).toList();
+    await box.deleteAll(keys);
+    changes.value++;
+  }
+
   Future<List<String>> getStarredMessageIds(String currentUserId) async {
     final box = await _openBox();
     final prefix = '${currentUserId}_';

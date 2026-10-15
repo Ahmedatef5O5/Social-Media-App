@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import '../utils/search_view_metrics.dart';
 import 'accounts_tab_view.dart';
@@ -92,9 +93,10 @@ class _SearchViewBodyWidgetState extends State<SearchViewBodyWidget>
                   title: Row(
                     children: [
                       IconButton(
-                        icon: const Icon(
+                        icon: Icon(
                           Icons.arrow_back_ios_new_rounded,
                           size: 20,
+                          color: Theme.of(context).primaryColor,
                         ),
                         onPressed: () => Navigator.of(context).maybePop(),
                       ),
@@ -185,16 +187,29 @@ class _SearchViewBodyWidgetState extends State<SearchViewBodyWidget>
             body: TabBarView(
               controller: _tabController,
               children: [
-                ForYouTabView(searchQuery: _query),
-                AccountsTabView(searchQuery: _query),
-                GroupsTabView(searchQuery: _query),
-                ReelsTabView(searchQuery: _query),
-                FriendsTabView(searchQuery: _query),
+                _withVerticalPriority(ForYouTabView(searchQuery: _query)),
+                _withVerticalPriority(AccountsTabView(searchQuery: _query)),
+                _withVerticalPriority(GroupsTabView(searchQuery: _query)),
+                _withVerticalPriority(ReelsTabView(searchQuery: _query)),
+                _withVerticalPriority(FriendsTabView(searchQuery: _query)),
               ],
             ),
           ),
         ),
       ),
+    );
+  }
+
+  Widget _withVerticalPriority(Widget child) {
+    return Builder(
+      builder: (context) {
+        return MediaQuery(
+          data: MediaQuery.of(context).copyWith(
+            gestureSettings: const DeviceGestureSettings(touchSlop: 8.0),
+          ),
+          child: child,
+        );
+      },
     );
   }
 }

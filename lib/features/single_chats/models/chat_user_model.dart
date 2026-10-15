@@ -17,6 +17,7 @@ class ChatUserModel {
   final DateTime? lastSeen;
   final bool isOnline;
   final PresencePrivacy presencePrivacy;
+  final bool isDeleted;
 
   const ChatUserModel({
     required this.id,
@@ -33,6 +34,7 @@ class ChatUserModel {
     this.lastSeen,
     this.isOnline = false,
     this.presencePrivacy = PresencePrivacy.friends,
+    this.isDeleted = false,
   });
 
   factory ChatUserModel.fromUserData(
@@ -62,6 +64,7 @@ class ChatUserModel {
       presencePrivacy: PresencePrivacy.fromValue(
         map['presence_privacy'] as String?,
       ),
+      isDeleted: map[UserColumns.isDeleted] as bool? ?? false,
     );
   }
 
@@ -80,6 +83,7 @@ class ChatUserModel {
     bool? isRecording,
     bool? isOnline,
     PresencePrivacy? presencePrivacy,
+    bool? isDeleted,
   }) {
     return ChatUserModel(
       id: id ?? this.id,
@@ -96,6 +100,7 @@ class ChatUserModel {
       isRecording: isRecording ?? this.isRecording,
       isOnline: isOnline ?? this.isOnline,
       presencePrivacy: presencePrivacy ?? this.presencePrivacy,
+      isDeleted: isDeleted ?? this.isDeleted,
     );
   }
 
@@ -110,6 +115,7 @@ class ChatUserModel {
       lastMessageIsRead: false,
       isOnline: false,
       presencePrivacy: userData.presencePrivacy,
+      isDeleted: userData.isDeleted,
     );
   }
 
@@ -124,6 +130,7 @@ class ChatUserModel {
     'last_message_is_read': lastMessageIsRead,
     'unread_count': unreadCount,
     'last_seen': lastSeen?.toIso8601String(),
+    'is_deleted': isDeleted,
   };
 
   factory ChatUserModel.fromCacheJson(Map<String, dynamic> map) {
@@ -147,6 +154,7 @@ class ChatUserModel {
       isTyping: false,
       isRecording: false,
       isOnline: false,
+      isDeleted: map['is_deleted'] as bool? ?? false,
     );
   }
 }

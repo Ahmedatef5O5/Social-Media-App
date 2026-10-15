@@ -20,7 +20,7 @@ const int kMaxCachedChatsSnapshot = 50;
 class ChatsCubit extends Cubit<ChatsState>
     with WidgetsBindingObserver, SafeEmitMixin<ChatsState> {
   final ChatServices _chatServices;
-  final _currentUserId = SupabaseProvider.id;
+  String get _currentUserId => SupabaseProvider.idOrNull ?? '';
   StreamSubscription? _chatsSubscription;
   StreamSubscription? _actionsSubscription;
   RealtimeChannel? _reactionsChannel;
@@ -49,6 +49,7 @@ class ChatsCubit extends Cubit<ChatsState>
       _actionsByUserId[otherUserId] ?? ChatActionType.none;
 
   void monitorChats() {
+    if (SupabaseProvider.idOrNull == null) return;
     getChats();
     _chatsSubscription?.cancel();
 
@@ -186,6 +187,7 @@ class ChatsCubit extends Cubit<ChatsState>
   }
 
   Future<void> getChats({bool isRefresh = false, bool silent = false}) async {
+    if (SupabaseProvider.idOrNull == null) return;
     if (isClosed) return;
     if (!isRefresh && !silent) {
       _showSkeleton = true;

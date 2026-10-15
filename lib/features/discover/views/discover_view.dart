@@ -10,7 +10,6 @@ import 'package:social_media_app/features/discover/cubits/discover_people_cubit.
 import 'package:social_media_app/features/discover/views/discover_skeleton_view.dart';
 import '../../../core/connectivity/cubits/connectivity_cubit.dart';
 import '../../../core/connectivity/cubits/connectivity_state.dart';
-import '../../../core/widgets/custom_loading_indicator.dart';
 import '../utils/discover_grid_metrics.dart';
 import '../widgets/discover_people_header_section.dart';
 import '../widgets/discover_person_grid_card_widget.dart';
@@ -104,6 +103,8 @@ class _DiscoverViewState extends State<DiscoverView> {
                     Builder(
                       builder: (context) {
                         if (state is DiscoverPeopleSuccess) {
+                          final count =
+                              state.users.length + (hasReachedMax ? 0 : 2);
                           return SliverPadding(
                             padding: const EdgeInsets.only(
                               top: 4,
@@ -117,8 +118,13 @@ class _DiscoverViewState extends State<DiscoverView> {
                                   DiscoverGridMetrics.mainAxisSpacing,
                               crossAxisSpacing:
                                   DiscoverGridMetrics.crossAxisSpacing,
-                              childCount: state.users.length,
+                              childCount: count,
                               itemBuilder: (BuildContext context, int index) {
+                                if (index >= state.users.length) {
+                                  return DiscoverPersonGridCardSkeleton(
+                                    height: index.isEven ? 260.0 : 230.0,
+                                  );
+                                }
                                 final person = state.users[index];
                                 return DiscoverPersonGridCardWidget(
                                   key: ValueKey(person.user.id),
@@ -138,16 +144,6 @@ class _DiscoverViewState extends State<DiscoverView> {
                         }
                       },
                     ),
-
-                    if (state is DiscoverPeopleSuccess && !hasReachedMax)
-                      const SliverToBoxAdapter(
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(vertical: 24),
-                          child: Center(
-                            child: CustomLoadingIndicator(radius: 12),
-                          ),
-                        ),
-                      ),
 
                     const SliverToBoxAdapter(child: SizedBox(height: 100)),
                   ],

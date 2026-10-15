@@ -1,6 +1,8 @@
 import '../../../core/connectivity/services/connectivity_banner_controller.dart';
 import '../../../core/services/current_user_name_resolver.dart';
 import '../../../core/supabase/supabase_provider.dart';
+import '../../../core/toast/app_toast.dart';
+import '../../../core/utilities/supabase_constants.dart';
 import '../../profile/services/user_services.dart';
 import '../../single_calls/models/call_model.dart';
 
@@ -18,6 +20,19 @@ class CallActions {
 
     final currentUser = SupabaseProvider.user;
     if (currentUser == null) return null;
+
+    try {
+      final row =
+          await SupabaseProvider.client
+              .from(SupabaseConstants.users)
+              .select(UserColumns.isDeleted)
+              .eq(UserColumns.id, receiverId)
+              .maybeSingle();
+      if (row != null && row[UserColumns.isDeleted] == true) {
+        AppToast.error('This account has been deleted.');
+        return null;
+      }
+    } catch (_) {}
 
     final userService = UserService();
     final userInfo = await userService.fetchUserNameAndAvatar(currentUser.id);

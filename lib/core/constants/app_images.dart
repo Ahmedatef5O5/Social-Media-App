@@ -3,6 +3,7 @@ class AppImages {
   static const String launcherApp = 'assets/images/launcher.png';
   static const String logoApp = 'assets/images/logo_app.png';
   static const String secondaryLogoApp = 'assets/images/logo.png';
+  static const String splashLogo = 'assets/images/splash_logo.png';
 
   // logo for OnBoarding
   static const String onBoardingOne = 'assets/images/onBoarding_one.png';
@@ -10,6 +11,8 @@ class AppImages {
   static const String onBoardingThree = 'assets/images/onBoarding_three.png';
 
   // Lottie animations
+  static const String forgotPasswordAnimation =
+      'assets/lotties/forgotPasswordAnimation.json';
   static const String smileFaceLot = 'assets/lotties/smile.json';
   static const String blueSmileFaceLot = 'assets/lotties/blueSmile.json';
   static const String trailLoadingLot = 'assets/lotties/Trailloading.json';
@@ -27,6 +30,9 @@ class AppImages {
   static const String defaultBackgroundImg =
       'assets/images/default_background_user_image.png';
   static const String defaultGroupImg = 'assets/images/no_group_picture.png';
+
+  static const String deletedUserAccountIcon =
+      'assets/icons/deleted_account_icon.png';
 
   // home view
   static const String searchIcon = 'assets/icons/MagnifyingGlass.png';
@@ -53,4 +59,6 @@ class AppImages {
   static const String chatBotIcon = 'assets/icons/chat-bot.png';
   static const String addStickerPackIcon = 'assets/icons/add_sticker_pack.png';
   static const String newCommentIcon = 'assets/icons/new_comment.png';
+  static const String noStarredMsgsIcon =
+      'assets/icons/no_starred_messages.png';
 }

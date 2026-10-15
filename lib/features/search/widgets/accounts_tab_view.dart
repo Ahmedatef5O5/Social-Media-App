@@ -8,6 +8,7 @@ import '../../../core/widgets/custom_pull_to_refresh.dart';
 import '../../../core/widgets/empty_findings_animation_widget.dart';
 import '../../discover/cubits/discover_people_cubit.dart';
 import '../../discover/utils/discover_grid_metrics.dart';
+import '../../discover/views/discover_skeleton_view.dart';
 import '../../discover/widgets/discover_person_grid_card_widget.dart';
 import '../../social_graph/models/discover_person_model.dart';
 import '../utils/accounts_skeleton_list.dart';
@@ -107,8 +108,13 @@ class _AccountsTabViewState extends State<AccountsTabView>
                         crossAxisCount: DiscoverGridMetrics.crossAxisCount,
                         mainAxisSpacing: DiscoverGridMetrics.mainAxisSpacing,
                         crossAxisSpacing: DiscoverGridMetrics.crossAxisSpacing,
-                        childCount: users.length,
+                        childCount: users.length + (hasReachedMax ? 0 : 2),
                         itemBuilder: (context, i) {
+                          if (i >= users.length) {
+                            return DiscoverPersonGridCardSkeleton(
+                              height: i.isEven ? 260.0 : 230.0,
+                            );
+                          }
                           final person = users[i];
                           return DiscoverPersonGridCardWidget(
                             key: ValueKey(person.user.id),
@@ -124,15 +130,6 @@ class _AccountsTabViewState extends State<AccountsTabView>
                         },
                       ),
                     ),
-                    if (!hasReachedMax)
-                      const SliverToBoxAdapter(
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(vertical: 16),
-                          child: Center(
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          ),
-                        ),
-                      ),
                     SliverToBoxAdapter(
                       child: SizedBox(height: SearchViewMetrics.bottomGap),
                     ),
