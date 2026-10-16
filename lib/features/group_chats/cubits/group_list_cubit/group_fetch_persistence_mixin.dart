@@ -77,6 +77,7 @@ mixin GroupFetchPersistenceMixin on GroupListBase {
 
       emit(GroupListLoaded(cached));
       persistGroupsSnapshot(cached);
+      syncMessageChannels();
     } catch (e) {
       if (requestId != loadGroupsRequestId) return;
 

@@ -1,5 +1,6 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
-
+import '../supabase/supabase_provider.dart';
 import 'error_category.dart';
 import 'observability.dart';
 
@@ -7,6 +8,15 @@ import 'observability.dart';
 /// it. Deliberately not tied to `RealtimeSubscribeStatus` so the registry
 /// stays unit-testable without the Supabase SDK.
 enum ChannelPhase { creating, subscribed, errored, closed }
+
+/// A channel as seen by the SDK, decoupled from `RealtimeChannel` so the
+/// registry stays unit-testable without the Supabase SDK.
+class ObservedChannel {
+  const ObservedChannel(this.topic, this.phase);
+
+  final String topic;
+  final ChannelPhase phase;
+}
 
 class ChannelRecord {
   ChannelRecord({
@@ -57,10 +67,27 @@ class RealtimeDiagnostics {
 
   static final RealtimeDiagnostics instance = RealtimeDiagnostics._();
 
+  /// Clears the registry completely upon sign-out so no channels are leaked
+  /// to the next account.
+  void reset() {
+    _channels.clear();
+    _reportedDuplicates.clear();
+    _pressureLatched = false;
+    obs.setContext('realtime_active_channels', 0);
+  }
+
   @visibleForTesting
-  static void resetForTest() => instance._channels.clear();
+  static void resetForTest() => instance.reset();
 
   final Map<String, ChannelRecord> _channels = {};
+
+  /// Topics whose duplication has already been reported. Cleared per topic
+  /// once the duplicate disappears, so a later recurrence is reported again.
+  final Set<String> _reportedDuplicates = {};
+
+  /// True while the pressure error has been sent and the count has not yet
+  /// dropped back under [suspiciousChannelCount].
+  bool _pressureLatched = false;
 
   /// Above this, something is leaking. Sized generously: a busy session
   /// legitimately holds feed + conversations + presence + mute + block +
@@ -157,9 +184,115 @@ class RealtimeDiagnostics {
         operation: 'account_switch',
         reason: '${zombies.length} channel(s) survived an account switch',
       );
+
+      // Self-Healing: close zombie channels and remove it
+      for (final z in zombies) {
+        try {
+          final c = SupabaseProvider.client.channel(z.topic);
+          unawaited(SupabaseProvider.client.removeChannel(c));
+        } catch (_) {}
+        _channels.remove(z.topic);
+      }
+      obs.setContext('realtime_active_channels', activeCount);
     }
 
     return zombies;
+  }
+
+  /// The SDK prefixes every topic with `realtime:`; explicit registrations
+  /// use either form. Compare on the bare name.
+  static String _normalize(String topic) =>
+      topic.startsWith('realtime:') ? topic.substring(9) : topic;
+
+  static bool _isLivePhase(ChannelPhase p) =>
+      p == ChannelPhase.creating || p == ChannelPhase.subscribed;
+
+  /// Reconciles the registry with what the SDK actually holds.
+  ///
+  /// [owner] is the account to attribute *newly discovered* channels to.
+  /// Channels already registered keep their original owner, which is what
+  /// makes a channel opened by account A and still alive after the switch
+  /// to account B detectable as a zombie. With a null [owner] (signed out)
+  /// unknown channels are not registered.
+  void observe(Iterable<ObservedChannel> channels, {required String? owner}) {
+    final livePerTopic = <String, int>{};
+    final phaseOf = <String, ChannelPhase>{};
+    final originalTopic = <String, String>{};
+
+    for (final c in channels) {
+      final key = _normalize(c.topic);
+      originalTopic.putIfAbsent(key, () => c.topic);
+      if (_isLivePhase(c.phase)) {
+        livePerTopic[key] = (livePerTopic[key] ?? 0) + 1;
+      }
+      final prev = phaseOf[key];
+      if (prev == null || !_isLivePhase(prev)) phaseOf[key] = c.phase;
+    }
+
+    // 1) Drop records whose channel no longer exists in the SDK.
+    _channels.removeWhere(
+      (topic, _) => !phaseOf.containsKey(_normalize(topic)),
+    );
+
+    // 2) Register unknown live channels and refresh known ones.
+    for (final entry in phaseOf.entries) {
+      final key = entry.key;
+      final sdkPhase = entry.value;
+
+      ChannelRecord? record;
+      for (final e in _channels.entries) {
+        if (_normalize(e.key) == key) {
+          record = e.value;
+          break;
+        }
+      }
+
+      if (record == null) {
+        if (owner == null || !_isLivePhase(sdkPhase)) continue;
+        record = ChannelRecord(
+          topic: originalTopic[key]!,
+          ownerUserId: owner,
+          createdAt: DateTime.now(),
+          phase: sdkPhase,
+        );
+        _channels[record.topic] = record;
+        continue;
+      }
+
+      // The SDK reporting "creating" says nothing new; keep our own phase.
+      if (sdkPhase == ChannelPhase.creating) continue;
+      if (record.phase == ChannelPhase.errored &&
+          sdkPhase == ChannelPhase.subscribed) {
+        record.reconnectCount++;
+      }
+      record.phase = sdkPhase;
+    }
+
+    // 3) Duplicate live topics: report once per topic.
+    _reportedDuplicates.removeWhere((t) => (livePerTopic[t] ?? 0) < 2);
+    for (final e in livePerTopic.entries) {
+      if (e.value < 2 || !_reportedDuplicates.add(e.key)) continue;
+      obs.recordError(
+        DuplicateRealtimeSubscription(e.key),
+        StackTrace.current,
+        category: ErrorCategory.realtime,
+        feature: 'realtime',
+        operation: 'sample',
+        reason: '${e.value} live channels share topic ${e.key}',
+      );
+    }
+
+    // 4) Pressure: report once per excursion above the threshold.
+    if (activeCount > suspiciousChannelCount) {
+      if (!_pressureLatched) {
+        _pressureLatched = true;
+        _checkPressure();
+      }
+    } else {
+      _pressureLatched = false;
+    }
+
+    obs.setContext('realtime_active_channels', activeCount);
   }
 
   void _checkPressure() {

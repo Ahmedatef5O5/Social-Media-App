@@ -12,8 +12,7 @@ import '../../../core/chat_shared/widgets/shared_media_preview_section.dart';
 import '../../../core/chat_shared/services/shared_media_data_source.dart';
 import '../../../core/chat_shared/widgets/starred_messages_row.dart';
 import '../../../core/errors/supabase_error_mapper.dart';
-import '../../../core/presence/cubits/presence_cubit/presence_cubit.dart';
-import '../../../core/presence/models/presence_info.dart';
+import '../models/group_header_stats.dart';
 import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/toast/app_toast.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
@@ -60,6 +59,7 @@ class _GroupInfoViewState extends State<GroupInfoView> {
   late final GroupMembersCubit _membersCubit;
   late final ScrollController _scrollController;
   late final SharedMediaCubit _mediaCubit;
+  late final Stream<GroupHeaderStats> _headerStats;
   String get _currentUserId => SupabaseProvider.id;
 
   bool get _canShowStarredMessages => widget.detailsCubit != null;
@@ -68,6 +68,7 @@ class _GroupInfoViewState extends State<GroupInfoView> {
   void initState() {
     super.initState();
     _services = context.read<GroupChatServices>();
+    _headerStats = _services.watchGroupHeaderStats(widget.group.id);
     _membersCubit = GroupMembersCubit(_services, groupId: widget.group.id)
       ..loadMembers();
     _scrollController = ScrollController()..addListener(_onScroll);
@@ -385,18 +386,10 @@ class _GroupInfoViewState extends State<GroupInfoView> {
                     return CustomScrollView(
                       controller: _scrollController,
                       slivers: [
-                        BlocBuilder<PresenceCubit, Map<String, PresenceInfo>>(
-                          bloc: context.read<PresenceCubit>(),
-                          builder: (context, presenceState) {
-                            final presenceCubit = context.read<PresenceCubit>();
-                            final onlineCount =
-                                membersList
-                                    .where(
-                                      (m) =>
-                                          m.userId != _currentUserId &&
-                                          presenceCubit.isOnline(m.userId),
-                                    )
-                                    .length;
+                        StreamBuilder<GroupHeaderStats>(
+                          stream: _headerStats,
+                          builder: (context, snapshot) {
+                            final onlineCount = snapshot.data?.onlineCount ?? 0;
 
                             return GroupInfoHeaderWidget(
                               group: liveGroup,

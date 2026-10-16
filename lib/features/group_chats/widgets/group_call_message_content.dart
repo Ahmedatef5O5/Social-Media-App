@@ -544,14 +544,60 @@ class _GroupCallMessageContentState extends State<GroupCallMessageContent> {
     String callType,
     Color primary,
   ) {
+    return _GroupCallJoinButton(
+      key: ValueKey('group_call_join_$callId'),
+      callId: callId,
+      groupId: groupId,
+      callType: callType,
+    );
+  }
+}
+
+class _GroupCallJoinButton extends StatefulWidget {
+  const _GroupCallJoinButton({
+    super.key,
+    required this.callId,
+    required this.groupId,
+    required this.callType,
+  });
+
+  final String callId;
+  final String groupId;
+  final String callType;
+
+  @override
+  State<_GroupCallJoinButton> createState() => _GroupCallJoinButtonState();
+}
+
+class _GroupCallJoinButtonState extends State<_GroupCallJoinButton> {
+  late Stream<GroupCallModel?> _activeCallStream;
+
+  @override
+  void initState() {
+    super.initState();
+    _activeCallStream = _createStream();
+  }
+
+  @override
+  void didUpdateWidget(covariant _GroupCallJoinButton oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.groupId != widget.groupId) {
+      _activeCallStream = _createStream();
+    }
+  }
+
+  Stream<GroupCallModel?> _createStream() => context
+      .read<GroupCallSignalingService>()
+      .activeCallStream(widget.groupId);
+
+  @override
+  Widget build(BuildContext context) {
     return StreamBuilder<GroupCallModel?>(
-      stream: context.read<GroupCallSignalingService>().activeCallStream(
-        groupId,
-      ),
+      stream: _activeCallStream,
       builder: (context, snapshot) {
         final activeCall = snapshot.data;
         if (activeCall == null) return const SizedBox.shrink();
-        if (activeCall.callId != callId) return const SizedBox.shrink();
+        if (activeCall.callId != widget.callId) return const SizedBox.shrink();
 
         final currentUserId = SupabaseProvider.id;
         if (activeCall.initiatorId == currentUserId) {
@@ -577,7 +623,7 @@ class _GroupCallMessageContentState extends State<GroupCallMessageContent> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
-                  callType == 'video'
+                  widget.callType == 'video'
                       ? Icons.videocam_rounded
                       : Icons.call_rounded,
                   color: Colors.white,

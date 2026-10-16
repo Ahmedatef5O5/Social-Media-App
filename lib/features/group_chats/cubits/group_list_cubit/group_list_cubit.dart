@@ -7,6 +7,7 @@ import '../../../../core/cache/constants/snapshot_keys.dart';
 import '../../../../core/cache/services/local_snapshot_store.dart';
 import '../../../../core/chat_shared/helpers/message_reaction_preview_helper.dart';
 import '../../../../core/helpers/safe_emit_mixin.dart';
+import '../../../../core/observability/realtime_diagnostics.dart';
 import '../../../../core/supabase/supabase_provider.dart';
 import '../../../../core/utilities/supabase_constants.dart';
 import '../../../auth/handlers/auth_exception_handler.dart';
@@ -38,7 +39,6 @@ class GroupListCubit extends GroupListBase
   Future<void> close() {
     WidgetsBinding.instance.removeObserver(this);
     channel?.unsubscribe();
-    messagesStreamSub?.cancel();
     presenceSub?.cancel();
     activeGroupTimer?.cancel();
     reconcileDebounce?.cancel();

@@ -4,6 +4,7 @@ import '../../helpers/formatted_date.dart';
 import '../cubits/presence_cubit/presence_cubit.dart';
 import '../models/presence_info.dart';
 import '../models/presence_privacy.dart';
+import 'presence_interest.dart';
 
 class PresenceStatusText extends StatelessWidget {
   final String userId;
@@ -25,6 +26,16 @@ class PresenceStatusText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (presencePrivacy == PresencePrivacy.nobody) {
+      return _buildContent(context);
+    }
+    return PresenceInterest.single(
+      userId: userId,
+      child: _buildContent(context),
+    );
+  }
+
+  Widget _buildContent(BuildContext context) {
     final defaultOnlineStyle = const TextStyle(
       color: Colors.green,
       fontSize: 12,

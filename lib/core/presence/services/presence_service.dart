@@ -18,6 +18,9 @@ class PresenceService with WidgetsBindingObserver {
   Timer? _heartbeatTimer;
   static const Duration _heartbeatInterval = Duration(seconds: 30);
 
+  static const int _lastSeenEveryNHeartbeats = 10;
+  int _heartbeatCount = 0;
+
   StreamSubscription<AuthState>? _authSub;
 
   Future<void> init() async {
@@ -85,7 +88,7 @@ class PresenceService with WidgetsBindingObserver {
 
     _writing = true;
     try {
-      await _setOnline(true);
+      await _setOnline(true, heartbeat: true);
     } catch (e) {
       debugPrint('[PresenceService] heartbeat error: $e');
     } finally {
@@ -126,7 +129,7 @@ class PresenceService with WidgetsBindingObserver {
     }
   }
 
-  Future<void> _setOnline(bool isOnline) async {
+  Future<void> _setOnline(bool isOnline, {bool heartbeat = false}) async {
     final user = SupabaseProvider.user;
     if (user == null) return;
 
@@ -135,16 +138,26 @@ class PresenceService with WidgetsBindingObserver {
     final bool effectiveOnline =
         isOnline && SettingsRepository.instance.onlineStatus;
 
+    if (heartbeat && !effectiveOnline) return;
+
+    _heartbeatCount = heartbeat ? _heartbeatCount + 1 : 0;
+    final bool touchLastSeen =
+        !heartbeat || _heartbeatCount % _lastSeenEveryNHeartbeats == 0;
+
     try {
       final now = DateTime.now().toUtc().toIso8601String();
       await SupabaseProvider.client
           .from(SupabaseConstants.userPresence)
-          .upsert({
-            PresenceColumns.userId: uid,
-            PresenceColumns.isOnline: effectiveOnline,
-            PresenceColumns.lastSeen: now,
-            PresenceColumns.updatedAt: now,
-          }, onConflict: PresenceColumns.userId);
+          .upsert(
+            {
+              PresenceColumns.userId: uid,
+              PresenceColumns.isOnline: effectiveOnline,
+              if (touchLastSeen) PresenceColumns.lastSeen: now,
+              PresenceColumns.updatedAt: now,
+            },
+            onConflict: PresenceColumns.userId,
+            defaultToNull: false,
+          );
     } catch (e) {
       debugPrint('[PresenceService] _setOnline($isOnline) error: $e');
     }

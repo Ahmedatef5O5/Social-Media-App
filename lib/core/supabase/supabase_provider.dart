@@ -33,45 +33,56 @@ class SupabaseProvider {
   static GoTrueClient get auth => client.auth;
 
   /// Current signed-in user
-  static User? get user => auth.currentUser;
+  static User? get user {
+    try {
+      return auth.currentUser;
+    } catch (_) {
+      return null;
+    }
+  }
 
   /// Quick check for authentication status
   static bool get isAuthenticated => user != null;
 
-  /// Current user id.
-  ///
-  /// Returns `''` when signed out. The empty string is NOT harmless: it
-  /// flows into `ChatHelper.buildConversationId`, into Hive snapshot keys
-  /// and into `.eq(user_id, '')` filters, where it silently produces empty
-  /// results and mis-keyed caches instead of an error. The behaviour is
-  /// preserved on purpose (changing it to a throw would break screens that
-  /// work today) — but it is now REPORTED, so C-02 regressions surface in
-  /// Crashlytics instead of in a user complaint.
+  static DateTime? _lastSignedOutReportAt;
+  static const Duration _signedOutReportInterval = Duration(seconds: 60);
+
   static String get id {
     final currentUser = user;
     if (currentUser == null) {
-      debugPrint(
-        '⚠️ Warning: SupabaseProvider.id was accessed while user is logged out.',
-      );
-      unawaited(
-        obs.recordError(
-          UnauthenticatedException(
-            'SupabaseProvider.id accessed while signed out',
+      final now = DateTime.now();
+      final last = _lastSignedOutReportAt;
+      if (last == null || now.difference(last) >= _signedOutReportInterval) {
+        _lastSignedOutReportAt = now;
+        debugPrint(
+          '⚠️ Warning: SupabaseProvider.id was accessed while user is logged out.',
+        );
+        unawaited(
+          obs.recordError(
+            UnauthenticatedException(
+              'SupabaseProvider.id accessed while signed out',
+            ),
+            StackTrace.current,
+            category: ErrorCategory.authentication,
+            feature: 'session',
+            operation: 'resolve_user_id',
+            reason: 'empty user id returned to caller',
           ),
-          StackTrace.current,
-          category: ErrorCategory.authentication,
-          feature: 'session',
-          operation: 'resolve_user_id',
-          reason: 'empty user id returned to caller',
-        ),
-      );
+        );
+      }
       return '';
     }
     return currentUser.id;
   }
 
   /// Current user id or null
-  static String? get idOrNull => user?.id;
+  static String? get idOrNull {
+    try {
+      return user?.id;
+    } catch (_) {
+      return null;
+    }
+  }
 
   /// Current session
   static Session? get currentSession => auth.currentSession;

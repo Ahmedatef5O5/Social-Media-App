@@ -4,7 +4,9 @@ abstract class GroupListBase extends Cubit<GroupListState> {
   final GroupChatServices services;
 
   RealtimeChannel? channel;
-  StreamSubscription? messagesStreamSub;
+  final List<RealtimeChannel> messageChannels = [];
+  Set<String> messageChannelGroupIds = <String>{};
+  int messageChannelEpoch = 0;
   StreamSubscription? presenceSub;
   List<GroupModel> cached = [];
   final Map<String, List<GroupMemberModel>> membersByGroupId = {};
@@ -14,7 +16,7 @@ abstract class GroupListBase extends Cubit<GroupListState> {
   Timer? reconcileDebounce;
   final Set<String> locallyDeletedGroupIds = {};
 
-  String get currentUserId => SupabaseProvider.id;
+  String get currentUserId => SupabaseProvider.idOrNull ?? '';
 
   GroupListBase(this.services) : super(GroupListInitial());
 
@@ -31,6 +33,8 @@ abstract class GroupListBase extends Cubit<GroupListState> {
   Future<void> loadGroups({bool isRefresh = false});
   void persistGroupsSnapshot(List<GroupModel> groups);
   void scheduleReconcile();
+  void syncMessageChannels();
+  Future<void> disposeMessageChannels();
   void markGroupAsActive(String groupId);
   void markGroupAsLeft(String groupId);
   void removeGroupFromState(String groupId);
@@ -53,7 +57,7 @@ abstract class GroupListBase extends Cubit<GroupListState> {
 
   @override
   Future<void> close() {
-    messagesStreamSub?.cancel();
+    unawaited(disposeMessageChannels());
     presenceSub?.cancel();
     return super.close();
   }

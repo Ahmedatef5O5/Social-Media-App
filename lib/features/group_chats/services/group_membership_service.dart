@@ -2,9 +2,9 @@ import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../../core/presence/services/presence_service.dart';
 import '../../../core/services/cloudinary_storage_services.dart';
 import '../../../core/services/cloudinary_upload_result.dart';
+import '../../../core/observability/realtime_diagnostics.dart';
 import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/utilities/supabase_constants.dart';
 import '../models/group_add_members_result.dart';
@@ -16,7 +16,7 @@ import '../models/groupe_message_model.dart';
 class GroupMembershipService {
   final _supabase = SupabaseProvider.client;
 
-  String get currentUserId => SupabaseProvider.id;
+  String get currentUserId => SupabaseProvider.idOrNull ?? '';
 
   CloudinaryStorageServices get storage => CloudinaryStorageServices.instance;
 
@@ -50,6 +50,8 @@ class GroupMembershipService {
   }
 
   Future<List<GroupModel>> getMyGroups() async {
+    final userId = SupabaseProvider.idOrNull;
+    if (userId == null) return [];
     final response = await _supabase.rpc(
       'get_my_groups',
       params: {'p_user_id': currentUserId},
@@ -491,45 +493,72 @@ class GroupMembershipService {
     return controller.stream;
   }
 
-  static const Duration _presenceCoalesceWindow = Duration(milliseconds: 1200);
+  static const Duration _headerStatsPollInterval = Duration(seconds: 30);
+  static const Duration _headerStatsDebounce = Duration(milliseconds: 500);
+  static int _headerStatsSeq = 0;
 
   Stream<GroupHeaderStats> watchGroupHeaderStats(String groupId) {
-    final controller = StreamController<GroupHeaderStats>.broadcast();
-    Set<String> memberIds = {};
-    final Map<String, bool> onlineMap = {};
-    Timer? presenceCoalesceTimer;
+    late final StreamController<GroupHeaderStats> controller;
+    RealtimeChannel? membersChannel;
+    Timer? pollTimer;
+    Timer? debounceTimer;
+    var fetching = false;
+    var refetchQueued = false;
 
-    void emitStats() {
-      if (controller.isClosed) return;
-      final online = memberIds.where((id) => onlineMap[id] == true).length;
-      controller.add(
-        GroupHeaderStats(totalMembers: memberIds.length, onlineCount: online),
-      );
+    Future<void> fetch() async {
+      if (fetching) {
+        refetchQueued = true;
+        return;
+      }
+      fetching = true;
+      try {
+        do {
+          refetchQueued = false;
+          final raw = await _supabase.rpc(
+            'get_group_header_stats',
+            params: {'p_group_id': groupId},
+          );
+          if (controller.isClosed || !controller.hasListener) return;
+
+          final row = raw is List ? (raw.isEmpty ? null : raw.first) : raw;
+          if (row is Map) {
+            controller.add(
+              GroupHeaderStats(
+                totalMembers: (row['total_members'] as num?)?.toInt() ?? 0,
+                onlineCount: (row['online_count'] as num?)?.toInt() ?? 0,
+              ),
+            );
+          }
+        } while (refetchQueued);
+      } catch (e) {
+        debugPrint('[GroupHeaderStats] fetch error: $e');
+      } finally {
+        fetching = false;
+      }
     }
 
-    void schedulePresenceEmit() {
-      presenceCoalesceTimer?.cancel();
-      presenceCoalesceTimer = Timer(_presenceCoalesceWindow, emitStats);
+    void scheduleFetch() {
+      debounceTimer?.cancel();
+      debounceTimer = Timer(_headerStatsDebounce, () => unawaited(fetch()));
     }
 
-    Future<void> refreshMembers() async {
-      final rows = await _supabase
-          .from(SupabaseConstants.groupMembers)
-          .select(GroupMemberColumns.userId)
-          .eq(GroupMemberColumns.groupId, groupId)
-          .eq(GroupMemberColumns.membershipStatus, 'active');
-      memberIds =
-          (rows as List)
-              .map((r) => r[GroupMemberColumns.userId] as String)
-              .toSet();
-      emitStats();
-    }
+    controller = StreamController<GroupHeaderStats>.broadcast(
+      onListen: () {
+        unawaited(fetch());
+        pollTimer = Timer.periodic(
+          _headerStatsPollInterval,
+          (_) => unawaited(fetch()),
+        );
 
-    refreshMembers();
-
-    final membersChannel =
-        _supabase
-            .channel('group_header_members_$groupId')
+        final channel = _supabase.channel(
+          'group_header_members_${groupId}_${_headerStatsSeq++}',
+        );
+        final topic = channel.topic;
+        RealtimeDiagnostics.instance.onChannelCreated(
+          topic,
+          ownerUserId: currentUserId,
+        );
+        channel
             .onPostgresChanges(
               event: PostgresChangeEvent.all,
               schema: 'public',
@@ -539,43 +568,37 @@ class GroupMembershipService {
                 column: GroupMemberColumns.groupId,
                 value: groupId,
               ),
-              callback: (_) => refreshMembers(),
+              callback: (_) => scheduleFetch(),
             )
-            .subscribe();
+            .subscribe((status, [error]) {
+              switch (status) {
+                case RealtimeSubscribeStatus.subscribed:
+                  RealtimeDiagnostics.instance.onChannelSubscribed(topic);
+                case RealtimeSubscribeStatus.channelError:
+                case RealtimeSubscribeStatus.timedOut:
+                  RealtimeDiagnostics.instance.onChannelError(
+                    topic,
+                    error ?? status,
+                    StackTrace.current,
+                  );
+                case RealtimeSubscribeStatus.closed:
+                  break;
+              }
+            });
+        membersChannel = channel;
+      },
+      onCancel: () {
+        pollTimer?.cancel();
+        debounceTimer?.cancel();
+        final channel = membersChannel;
+        membersChannel = null;
+        if (channel != null) {
+          RealtimeDiagnostics.instance.onChannelClosed(channel.topic);
+          unawaited(_supabase.removeChannel(channel));
+        }
+      },
+    );
 
-    final presenceChannel =
-        _supabase
-            .channel('group_header_presence_$groupId')
-            .onPostgresChanges(
-              event: PostgresChangeEvent.all,
-              schema: 'public',
-              table: SupabaseConstants.userPresence,
-              callback: (payload) {
-                final record =
-                    payload.eventType == PostgresChangeEvent.delete
-                        ? payload.oldRecord
-                        : payload.newRecord;
-                final userId = record[PresenceColumns.userId] as String?;
-                if (userId == null || !memberIds.contains(userId)) return;
-                final updatedAtRaw = record[PresenceColumns.updatedAt];
-                onlineMap[userId] = PresenceService.isConsideredOnline(
-                  isOnline: record[PresenceColumns.isOnline] as bool? ?? false,
-                  updatedAt:
-                      updatedAtRaw != null
-                          ? DateTime.parse(updatedAtRaw.toString())
-                          : null,
-                );
-                schedulePresenceEmit();
-              },
-            )
-            .subscribe();
-
-    controller.onCancel = () {
-      presenceCoalesceTimer?.cancel();
-      _supabase.removeChannel(membersChannel);
-      _supabase.removeChannel(presenceChannel);
-      controller.close();
-    };
     return controller.stream;
   }
 
@@ -593,8 +616,6 @@ class GroupMembershipService {
     };
   }
 
-  /// Batched user-name lookup shared by every membership/audit action
-  /// (and reused by [GroupInviteService] for the "joined via invite" event).
   Future<Map<String, String>> fetchUserNames(List<String> userIds) async {
     final ids = userIds.toSet().toList();
     if (ids.isEmpty) return {};

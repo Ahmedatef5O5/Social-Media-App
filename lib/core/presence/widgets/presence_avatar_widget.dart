@@ -1,8 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../cubits/presence_cubit/presence_cubit.dart';
+import 'presence_interest.dart';
 
 class PresenceAvatarWidget extends StatelessWidget {
+  final String userId;
+  final Widget child;
+  final double avatarSize;
+  final bool showDot;
+  final bool showBorder;
+
   const PresenceAvatarWidget({
     super.key,
     required this.userId,
@@ -12,16 +19,17 @@ class PresenceAvatarWidget extends StatelessWidget {
     this.showBorder = true,
   });
 
-  final String userId;
-  final Widget child;
-  final double avatarSize;
-  final bool showDot;
-  final bool showBorder;
-
   @override
   Widget build(BuildContext context) {
     if (!showDot && !showBorder) return child;
 
+    return PresenceInterest.single(
+      userId: userId,
+      child: _buildAvatar(context),
+    );
+  }
+
+  Widget _buildAvatar(BuildContext context) {
     final isOnline = context.select<PresenceCubit, bool>(
       (cubit) => cubit.isOnline(userId),
     );

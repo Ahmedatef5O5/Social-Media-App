@@ -1,5 +1,8 @@
 part of 'group_list_cubit.dart';
 
+const int _kMessageChannelIdLimit = 100;
+const int _kMaxMessageChannels = 3;
+
 mixin GroupRealtimeSyncMixin on GroupListBase {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
@@ -10,68 +13,193 @@ mixin GroupRealtimeSyncMixin on GroupListBase {
   Future<void> monitorGroups() async {
     await loadGroups();
     _subscribeRealtime();
-    _subscribeMessagesStream();
+    syncMessageChannels();
     _subscribeGroupsPresence();
   }
 
-  void _subscribeMessagesStream() {
-    messagesStreamSub?.cancel();
+  @override
+  void syncMessageChannels() {
+    if (isClosed) return;
 
-    messagesStreamSub = SupabaseProvider.client
-        .from(SupabaseConstants.groupMessages)
-        .stream(primaryKey: ['id'])
-        .order('created_at', ascending: false)
-        .limit(100)
-        .listen((data) {
-          if (isClosed) return;
-          if (data.isEmpty) return;
-          if (state is! GroupListLoaded) return;
+    final ids =
+        <String>[
+          for (final g in cached)
+            if (g.isMember) g.id,
+        ].take(_kMessageChannelIdLimit * _kMaxMessageChannels).toList();
+    final idSet = ids.toSet();
 
-          final Map<String, Map<String, dynamic>> latestPerGroup = {};
-          final Map<String, int> unreadPerGroup = {};
+    final unchanged =
+        idSet.length == messageChannelGroupIds.length &&
+        idSet.containsAll(messageChannelGroupIds) &&
+        (ids.isEmpty || messageChannels.isNotEmpty);
+    if (unchanged) return;
 
-          for (final row in data) {
-            final deletedFor =
-                (row['deleted_for'] as List?)?.cast<String>() ?? [];
-            if (deletedFor.contains(currentUserId)) continue;
-            final gId = row[GroupMemberColumns.groupId] as String?;
-            if (gId == null) continue;
+    final old = List<RealtimeChannel>.of(messageChannels);
+    messageChannels.clear();
+    messageChannelGroupIds = idSet;
+    for (final channel in old) {
+      RealtimeDiagnostics.instance.onChannelClosed(channel.topic);
+      unawaited(SupabaseProvider.client.removeChannel(channel));
+    }
+    if (ids.isEmpty) return;
 
-            if (!latestPerGroup.containsKey(gId)) {
-              latestPerGroup[gId] = row;
+    messageChannelEpoch++;
+    for (var i = 0, n = 0; i < ids.length; i += _kMessageChannelIdLimit, n++) {
+      final end =
+          i + _kMessageChannelIdLimit > ids.length
+              ? ids.length
+              : i + _kMessageChannelIdLimit;
+      final chunk = ids.sublist(i, end);
+
+      final channel = SupabaseProvider.client.channel(
+        'group_msgs_${currentUserId}_${messageChannelEpoch}_$n',
+      );
+      final topic = channel.topic;
+      var hadError = false;
+
+      RealtimeDiagnostics.instance.onChannelCreated(
+        topic,
+        ownerUserId: currentUserId,
+      );
+
+      channel
+          .onPostgresChanges(
+            event: PostgresChangeEvent.insert,
+            schema: 'public',
+            table: SupabaseConstants.groupMessages,
+            filter: PostgresChangeFilter(
+              type: PostgresChangeFilterType.inFilter,
+              column: GroupMemberColumns.groupId,
+              value: chunk,
+            ),
+            callback: _onGroupMessageInserted,
+          )
+          .onPostgresChanges(
+            event: PostgresChangeEvent.update,
+            schema: 'public',
+            table: SupabaseConstants.groupMessages,
+            filter: PostgresChangeFilter(
+              type: PostgresChangeFilterType.inFilter,
+              column: GroupMemberColumns.groupId,
+              value: chunk,
+            ),
+            callback: _onGroupMessageUpdated,
+          )
+          .subscribe((status, [error]) {
+            switch (status) {
+              case RealtimeSubscribeStatus.subscribed:
+                RealtimeDiagnostics.instance.onChannelSubscribed(topic);
+                if (hadError) {
+                  hadError = false;
+                  scheduleReconcile();
+                }
+              case RealtimeSubscribeStatus.channelError:
+              case RealtimeSubscribeStatus.timedOut:
+                hadError = true;
+                // If the error is a normal disconnect (e.g. session refresh / token rotation),
+                // do not report as a fatal crash to Firebase Crashlytics.
+                final isTokenOrNormalClose =
+                    error is RealtimeCloseEvent && error.code == 1000;
+                if (!isTokenOrNormalClose) {
+                  RealtimeDiagnostics.instance.onChannelError(
+                    topic,
+                    error ?? status,
+                    StackTrace.current,
+                  );
+                }
+              case RealtimeSubscribeStatus.closed:
+                break;
             }
+          });
 
-            final senderId = row['sender_id'] as String?;
-            if (senderId == currentUserId) continue;
-            if (_isReadByMe(row['read_by'])) continue;
-            unreadPerGroup[gId] = (unreadPerGroup[gId] ?? 0) + 1;
-          }
-
-          for (final entry in latestPerGroup.entries) {
-            final groupId = entry.key;
-            final row = entry.value;
-
-            final cachedGroup = cached.firstWhere(
-              (g) => g.id == groupId,
-              orElse:
-                  () => GroupModel(
-                    id: groupId,
-                    name: '',
-                    createdBy: '',
-                    createdAt: DateTime.now(),
-                    isMember: true,
-                  ),
-            );
-            if (!cachedGroup.isMember) continue;
-
-            final isActiveGroup = activeGroupId == groupId;
-            final computedUnread =
-                isActiveGroup ? 0 : (unreadPerGroup[groupId] ?? 0);
-
-            _processMessageRow(groupId, row, computedUnread);
-          }
-        });
+      messageChannels.add(channel);
+    }
   }
+
+  @override
+  Future<void> disposeMessageChannels() async {
+    final old = List<RealtimeChannel>.of(messageChannels);
+    messageChannels.clear();
+    messageChannelGroupIds = <String>{};
+    for (final channel in old) {
+      RealtimeDiagnostics.instance.onChannelClosed(channel.topic);
+      try {
+        await SupabaseProvider.client.removeChannel(channel);
+      } catch (e) {
+        debugPrint('[GroupListCubit] failed to remove ${channel.topic}: $e');
+      }
+    }
+  }
+
+  void _onGroupMessageInserted(PostgresChangePayload payload) {
+    if (isClosed || state is! GroupListLoaded) return;
+
+    final row = payload.newRecord;
+    final groupId = row[GroupMemberColumns.groupId] as String?;
+    if (groupId == null) return;
+    if (_containsMe(row['deleted_for'])) return;
+
+    final idx = cached.indexWhere((g) => g.id == groupId);
+    if (idx == -1) {
+      // A group we have not loaded yet (e.g. just joined): let the
+      // authoritative RPC decide instead of guessing from one row.
+      scheduleReconcile();
+      return;
+    }
+
+    final group = cached[idx];
+    if (!group.isMember) return;
+
+    final isMine = row['sender_id'] == currentUserId;
+    final isActiveGroup = activeGroupId == groupId;
+    final unread =
+        isActiveGroup
+            ? 0
+            : (isMine ? group.unreadCount : group.unreadCount + 1);
+
+    _processMessageRow(groupId, row, unread);
+  }
+
+  void _onGroupMessageUpdated(PostgresChangePayload payload) {
+    if (isClosed || state is! GroupListLoaded) return;
+
+    final row = payload.newRecord;
+    final old = payload.oldRecord;
+    final groupId = row[GroupMemberColumns.groupId] as String?;
+    if (groupId == null) return;
+
+    // I deleted a message for myself: previews/unread may change.
+    if (_containsMe(row['deleted_for']) && !_containsMe(old['deleted_for'])) {
+      scheduleReconcile();
+      return;
+    }
+
+    // I read a message (possibly from another device): refresh unread counts.
+    // Other members' reads also fire UPDATE events and are ignored on purpose.
+    if (old.isNotEmpty &&
+        row['sender_id'] != currentUserId &&
+        _isReadByMe(row['read_by']) &&
+        !_isReadByMe(old['read_by'])) {
+      scheduleReconcile();
+      return;
+    }
+
+    // The message currently shown as the group's preview was edited.
+    final idx = cached.indexWhere((g) => g.id == groupId);
+    if (idx == -1) return;
+    final group = cached[idx];
+    final createdAt = DateTime.tryParse(row['created_at']?.toString() ?? '');
+    final previewAt = group.lastMessageAt;
+    if (createdAt != null &&
+        previewAt != null &&
+        createdAt.isAtSameMomentAs(previewAt) &&
+        old['message_text'] != row['message_text']) {
+      _processMessageRow(groupId, row, group.unreadCount);
+    }
+  }
+
+  bool _containsMe(dynamic raw) =>
+      raw is List && raw.any((e) => e.toString() == currentUserId);
 
   void _processMessageRow(
     String groupId,
