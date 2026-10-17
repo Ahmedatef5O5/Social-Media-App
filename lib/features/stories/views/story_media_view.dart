@@ -50,9 +50,10 @@ class _StoryMediaViewState extends State<StoryMediaView> {
 
   Future<void> _initVideo() async {
     try {
-      final localPath = await context
-          .read<MediaCacheRepository>()
-          .resolveLocalPath(widget.story.videoUrl!);
+      final repo = context.read<MediaCacheRepository>();
+      final localPath =
+          repo.resolveLocalPathSync(widget.story.videoUrl!) ??
+          await repo.resolveLocalPath(widget.story.videoUrl!);
 
       if (localPath != null) {
         _videoController = VideoPlayerController.file(File(localPath));
@@ -164,6 +165,23 @@ class _StoryMediaViewState extends State<StoryMediaView> {
         );
 
       case StoryType.image:
+        final repo = context.read<MediaCacheRepository>();
+        final syncPath = repo.resolveLocalPathSync(widget.story.imageUrl!);
+        if (syncPath != null) {
+          return Image.file(
+            File(syncPath),
+            fit: BoxFit.contain,
+            frameBuilder: (context, child, frame, wasSync) {
+              if (frame != null) {
+                WidgetsBinding.instance.addPostFrameCallback(
+                  (_) => widget.onMediaReady(null),
+                );
+              }
+              return child;
+            },
+          );
+        }
+
         return CachedCloudinaryImage(
           secureUrl: widget.story.imageUrl!,
           fit: BoxFit.contain,

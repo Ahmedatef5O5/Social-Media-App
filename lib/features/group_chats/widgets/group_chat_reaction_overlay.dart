@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:social_media_app/features/group_chats/widgets/group_reaction_picker_bubble.dart';
+import '../../reports/models/report_target.dart';
+import '../../reports/widgets/report_bottom_sheet.dart';
 import '../cubits/group_details_cubit/group_details_cubit.dart';
 import '../models/groupe_message_model.dart';
 
@@ -47,6 +49,10 @@ class GroupChatReactionOverlay {
         spaceBelow > 120 ? anchorRect.bottom + 6 : anchorRect.top - 130;
 
     final cubit = context.read<GroupDetailsCubit>();
+    // Captured NOW, while `context` is still alive. The long-pressed bubble's
+    // own context can be gone by the time the user taps "Report"; the overlay
+    // (owned by the Navigator) outlives it.
+    final overlayContext = Overlay.of(context).context;
 
     _currentEntry = OverlayEntry(
       builder:
@@ -87,6 +93,24 @@ class GroupChatReactionOverlay {
                           ? () {
                             dismiss();
                             cubit.deleteMessage(message.id);
+                          }
+                          : null,
+
+                  onReport:
+                      message.senderId != currentUserId &&
+                              message.messageType != 'call'
+                          ? () {
+                            dismiss();
+                            // showModalBottomSheet pushes its route synchronously,
+                            // so it is safe to clear the selection right after.
+                            ReportBottomSheet.show(
+                              overlayContext,
+                              target: ReportTarget(
+                                type: ReportTargetType.groupMessage,
+                                id: message.id,
+                              ),
+                            );
+                            cubit.clearSelection();
                           }
                           : null,
                 ),

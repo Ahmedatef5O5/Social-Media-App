@@ -142,22 +142,25 @@ class GroupMessagingService {
     final newMessageId = result['id'] as String;
 
     if (isNewInsert && mentions.isNotEmpty) {
-      await _supabase
-          .from(SupabaseConstants.groupMessageMentions)
-          .insert(
-            mentions
-                .map(
-                  (m) => {
-                    GroupMessageMentionColumns.groupMessageId: newMessageId,
-                    GroupMessageMentionColumns.groupId: groupId,
-                    GroupMessageMentionColumns.mentionedUserId:
-                        m.mentionedUserId,
-                    GroupMessageMentionColumns.startIndex: m.startIndex,
-                    GroupMessageMentionColumns.endIndex: m.endIndex,
-                  },
-                )
-                .toList(),
-          );
+      final validDbMentions =
+          mentions
+              .where((m) => m.mentionedUserId != 'all')
+              .map(
+                (m) => {
+                  GroupMessageMentionColumns.groupMessageId: newMessageId,
+                  GroupMessageMentionColumns.groupId: groupId,
+                  GroupMessageMentionColumns.mentionedUserId: m.mentionedUserId,
+                  GroupMessageMentionColumns.startIndex: m.startIndex,
+                  GroupMessageMentionColumns.endIndex: m.endIndex,
+                },
+              )
+              .toList();
+
+      if (validDbMentions.isNotEmpty) {
+        await _supabase
+            .from(SupabaseConstants.groupMessageMentions)
+            .insert(validDbMentions);
+      }
     }
 
     if (isNewInsert) {

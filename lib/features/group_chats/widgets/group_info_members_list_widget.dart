@@ -1,9 +1,9 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import '../../../core/constants/app_images.dart';
 import '../../../core/presence/widgets/presence_avatar_widget.dart';
 import '../../../core/router/app_routes.dart';
+import '../../../core/widgets/app_image_provider.dart';
 import '../../single_chats/models/chat_user_model.dart';
 import '../../profile/widgets/user_preview_dialog.dart';
 import '../models/group_member_model.dart';
@@ -92,7 +92,10 @@ class GroupInfoMembersList extends StatelessWidget {
                   backgroundColor: primary.withValues(alpha: 0.12),
                   backgroundImage:
                       member.userAvatar?.isNotEmpty == true
-                          ? CachedNetworkImageProvider(member.userAvatar!)
+                          ? AppImageProvider.avatar(
+                            member.userAvatar!,
+                            radius: 24,
+                          )
                           : null,
                   child:
                       member.userAvatar?.isEmpty != false

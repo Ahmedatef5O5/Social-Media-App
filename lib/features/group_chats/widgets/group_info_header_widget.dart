@@ -1,10 +1,10 @@
 import 'dart:math' as math;
 import 'dart:ui';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:social_media_app/core/widgets/directional_text_field.dart';
 import '../../../core/chat_shared/helpers/muted_badge_icon.dart';
 import '../../../core/constants/app_images.dart';
+import '../../../core/widgets/app_image_provider.dart';
 import '../../../core/widgets/full_screen_image_viewer.dart';
 import '../models/group_model.dart';
 
@@ -318,7 +318,10 @@ class _GroupInfoHeaderDelegate extends SliverPersistentHeaderDelegate {
                 backgroundColor: primary,
                 backgroundImage:
                     hasAvatar
-                        ? CachedNetworkImageProvider(group.avatarUrl!)
+                        ? AppImageProvider.avatar(
+                          group.avatarUrl!,
+                          radius: size / 2 - 3,
+                        )
                         : null,
                 child:
                     !hasAvatar

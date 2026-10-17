@@ -12,6 +12,7 @@ class GroupReactionPickerBubble extends StatefulWidget {
   final VoidCallback onReply;
   final VoidCallback? onEdit;
   final VoidCallback? onDelete;
+  final VoidCallback? onReport;
 
   const GroupReactionPickerBubble({
     super.key,
@@ -23,6 +24,7 @@ class GroupReactionPickerBubble extends StatefulWidget {
     required this.onReply,
     this.onEdit,
     this.onDelete,
+    this.onReport,
   });
 
   @override
@@ -192,6 +194,13 @@ class _GroupReactionPickerBubbleState extends State<GroupReactionPickerBubble>
                     label: 'Delete',
                     color: Colors.red,
                     onTap: widget.onDelete!,
+                  ),
+
+                if (widget.onReport != null)
+                  _ActionTile(
+                    icon: Icons.report_gmailerrorred,
+                    label: 'Report',
+                    onTap: widget.onReport!,
                   ),
               ],
             ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shimmer/shimmer.dart';
 import 'package:social_media_app/core/design/tokens/typography.dart';
 import 'package:social_media_app/core/helpers/emoji_helper.dart';
 import 'package:social_media_app/core/presence/widgets/presence_avatar_widget.dart';
@@ -154,13 +155,24 @@ class StoryCardWidget extends StatelessWidget {
   }
 
   Widget _buildCover(ThemeData theme) {
+    final isDark = theme.brightness == Brightness.dark;
+    final storyShimmer = Shimmer.fromColors(
+      baseColor: isDark ? Colors.grey[850]! : Colors.grey[300]!,
+      highlightColor: isDark ? Colors.grey[700]! : Colors.grey[100]!,
+      child: Container(
+        width: cardWidth,
+        height: cardHeight,
+        color: Colors.white,
+      ),
+    );
+
     if (story.imageUrl != null) {
       return CachedCloudinaryImage(
         secureUrl: story.imageUrl!,
         fit: BoxFit.cover,
         width: cardWidth,
         height: cardHeight,
-        placeholder: (_) => Container(color: theme.dividerColor),
+        placeholder: (_) => storyShimmer,
         errorWidget: (_, __) => Container(color: Colors.black87),
       );
     }
@@ -173,7 +185,7 @@ class StoryCardWidget extends StatelessWidget {
           fit: BoxFit.cover,
           width: cardWidth,
           height: cardHeight,
-          placeholder: (_) => Container(color: theme.dividerColor),
+          placeholder: (_) => storyShimmer,
           errorWidget: (_, __) => Container(color: Colors.black87),
         );
       }

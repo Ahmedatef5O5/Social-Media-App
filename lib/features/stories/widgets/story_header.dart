@@ -1,4 +1,3 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
@@ -10,6 +9,9 @@ import '../../../core/presence/widgets/presence_avatar_widget.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/share_intent/widgets/share_content_bottom_sheet.dart';
 import '../../../core/supabase/supabase_provider.dart';
+import '../../../core/widgets/app_image_provider.dart';
+import '../../reports/models/report_target.dart';
+import '../../reports/widgets/report_bottom_sheet.dart';
 import '../cubits/stories_cubit/stories_cubit.dart';
 import '../models/story_model.dart';
 import 'story_delete_dialog.dart';
@@ -67,7 +69,10 @@ class StoryHeader extends StatelessWidget {
                 child: CircleAvatar(
                   backgroundImage:
                       story.authorImageUrl?.isNotEmpty == true
-                          ? CachedNetworkImageProvider(story.authorImageUrl!)
+                          ? AppImageProvider.avatar(
+                            story.authorImageUrl!,
+                            radius: 20,
+                          )
                           : const AssetImage(AppImages.defaultUserImg)
                               as ImageProvider,
                 ),
@@ -149,6 +154,31 @@ class StoryHeader extends StatelessWidget {
                       style: TextStyle(color: Colors.red),
                     ),
                   ),
+                ],
+          ),
+
+        if (!isMyStory)
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert, color: Colors.white),
+            onOpened: onPause,
+            onCanceled: onResume,
+            onSelected: (value) async {
+              if (value != 'report') {
+                onResume();
+                return;
+              }
+              await ReportBottomSheet.show(
+                context,
+                target: ReportTarget(
+                  type: ReportTargetType.story,
+                  id: story.id,
+                ),
+              );
+              onResume();
+            },
+            itemBuilder:
+                (_) => const [
+                  PopupMenuItem(value: 'report', child: Text('Report Story')),
                 ],
           ),
       ],

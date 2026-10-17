@@ -2,7 +2,7 @@ import 'package:social_media_app/core/widgets/cached_cloudinary_image.dart';
 import 'package:flutter/material.dart';
 import '../../../core/constants/app_images.dart';
 import '../../../core/router/app_routes.dart';
-import '../../../core/widgets/custom_loading_indicator.dart';
+import '../../../core/widgets/shimmer_low_res_image_placeholder.dart';
 import 'group_navigation.dart';
 import '../models/group_model.dart';
 
@@ -58,10 +58,12 @@ class GroupPreviewDialog extends StatelessWidget {
                           width: double.infinity,
                           isAvatar: true,
                           placeholder:
-                              (context) => SizedBox(
+                              (context) => ShimmerLowResImagePlaceholder(
+                                secureUrl: group.avatarUrl!,
                                 height: imageHeight,
-                                child: const Center(
-                                  child: CustomLoadingIndicator(),
+                                width: double.infinity,
+                                borderRadius: const BorderRadius.vertical(
+                                  top: Radius.circular(20),
                                 ),
                               ),
                           errorWidget:

@@ -345,6 +345,20 @@ class _MentionRichText extends StatelessWidget {
           onMentionTap: (userId, name) {
             final currentUserId = SupabaseProvider.idOrNull;
 
+            if (userId == 'all') {
+              final isMe = message.senderId == currentUserId;
+              if (isMe) {
+                AppToast.info('You mentioned all group members');
+              } else {
+                final senderName =
+                    message.senderName.trim().isNotEmpty
+                        ? message.senderName.trim()
+                        : 'Someone';
+                AppToast.info('$senderName mentioned all group members');
+              }
+              return;
+            }
+
             if (userId == currentUserId) {
               if (message.senderId == currentUserId) {
                 AppToast.info('You mentioned yourself in this message');
