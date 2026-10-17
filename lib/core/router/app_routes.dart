@@ -27,6 +27,7 @@ class AppRoutes {
   static const String blockedUsersViewRoute = '/blocked-users-view';
   static const String helpFaqViewRoute = '/help-faq-view';
   static const String privacyPolicyViewRoute = '/privacy-policy-view';
+  static const String termsOfServiceRoute = '/terms-of-service-view';
 
   // Group chat
   static const String groupChatRoute = '/group-chat';
@@ -52,7 +53,19 @@ class AppRoutes {
   static const String savedPostsViewRoute = '/saved-posts-view';
   static const String editProfileViewRoute = '/edit-profile-view';
   static const String settingsViewRoute = '/settings-view';
+  static const String changePasswordRoute = '/change-password-view';
+  static const String emailSettingsRoute = '/email-settings-view';
+
+  // Feedback & Support
+  static const String feedbackRoute = '/feedback-view';
+  static const String feedbackHistoryRoute = '/feedback-history-view';
+  static const String feedbackDetailsRoute = '/feedback-details-view';
 
   // Supabase callback
   static const String loginCallback = 'callback';
+
+  // Password Reset routes
+  static const String forgotPasswordRoute = '/forgot-password-view';
+  static const String authLinkExpiredRoute = '/auth-link-expired-view';
+  static const String resetPasswordRoute = '/reset-password-view';
 }

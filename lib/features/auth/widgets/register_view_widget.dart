@@ -187,9 +187,14 @@ class _RegisterViewWidgetState extends State<RegisterViewWidget> {
               const Gap(18),
               const SocialSignSection(label: 'Or Sign up with'),
               const Gap(22),
-              const SignTextSection(
+              SignTextSection(
                 staticText: 'By Using this app you agree with the\n',
                 clickableText: 'Terms of Service',
+                onTap: () {
+                  Navigator.of(
+                    context,
+                  ).pushNamed(AppRoutes.termsOfServiceRoute);
+                },
               ),
               Gap(bottomInset > 0 ? bottomInset : 18),
               const Gap(18),

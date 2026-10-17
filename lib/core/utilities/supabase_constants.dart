@@ -6,6 +6,9 @@ abstract class SupabaseConstants {
   static const String friendships = 'friendships';
   static const String follows = 'follows';
   static const String getDiscoverPeopleRpc = 'get_discover_people';
+  static const String softDeleteUserAccountRpc = 'soft_delete_user_account';
+  static const String verifyCurrentUserPasswordRpc =
+      'verify_current_user_password';
   static const String postAllowedViewers = 'post_allowed_viewers';
   static const String storyAllowedViewers = 'story_allowed_viewers';
 
@@ -72,6 +75,9 @@ abstract class SupabaseConstants {
   static const String reelsCache = 'reels_cache';
   // ── RPC ──
   static const String getBalancedReelsFeedRpc = 'get_balanced_reels_feed';
+
+  // ── Reports (migration 005) ──
+  static const String submitReportRpc = 'submit_report';
 }
 
 // Friendship Columns
@@ -195,6 +201,10 @@ abstract class UserColumns {
   static const String isTypingTo = 'is_typing_to';
   static const String theme = 'theme';
   static const String fcmToken = 'fcm_token';
+
+  // ── Soft delete / ghost account ──
+  static const String isDeleted = 'is_deleted';
+  static const String deletedAt = 'deleted_at';
 
   static const String imagePublicId = 'image_public_id';
   static const String backgroundImagePublicId = 'background_image_public_id';

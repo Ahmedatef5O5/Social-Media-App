@@ -1,22 +1,22 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:receive_sharing_intent/receive_sharing_intent.dart';
+import '../../../features/auth/services/auth_link_handler.dart';
+import '../../deep_link/services/incoming_link_classifier.dart';
 import '../../notifications/notification_navigator_key.dart';
 import '../../router/app_routes.dart';
+import '../../session/session_guard.dart';
 import '../models/incoming_share_payload.dart';
 
 class ShareIntentService {
   ShareIntentService._();
   static final ShareIntentService instance = ShareIntentService._();
 
-  static const String _appHost = 'social-media-app-98f58.web.app';
-
   StreamSubscription<List<SharedMediaFile>>? _mediaSub;
   final _payloadController = StreamController<IncomingSharePayload>.broadcast();
   Stream<IncomingSharePayload> get payloadStream => _payloadController.stream;
 
   bool _initialized = false;
-  bool _isShareTargetOpen = false;
   IncomingSharePayload? _pendingColdStartPayload;
 
   Future<void> init() async {
@@ -30,14 +30,37 @@ class ShareIntentService {
   }
 
   bool _isAppDeepLink(IncomingSharePayload payload) {
-    if (payload.isText || payload.kind == IncomingShareKind.text) {
-      final text = payload.text?.trim() ?? '';
-      if (text.startsWith('https://$_appHost') ||
-          text.startsWith('http://$_appHost')) {
-        return true;
-      }
+    if (AuthLinkHandler.instance.isBusy) return true;
+    if (payload.kind != IncomingShareKind.text) return false;
+    final text = payload.text?.trim() ?? '';
+    if (text.isEmpty) return false;
+    return IncomingLinkClassifier.classify(text) != IncomingLinkKind.other;
+  }
+
+  void _handleIncoming(List<SharedMediaFile> raw) {
+    final payload = IncomingSharePayload.fromSharedFiles(raw);
+    if (payload == null) return;
+    if (_isAppDeepLink(payload)) {
+      ReceiveSharingIntent.instance.reset();
+      return;
     }
-    return false;
+    _payloadController.add(payload);
+    _routeSafely(payload);
+  }
+
+  Future<void> _routeSafely(IncomingSharePayload payload) async {
+    if (!SessionGuard.isFullySignedIn) {
+      debugPrint('ℹ️ ShareIntentService: no usable session, share dropped.');
+      return;
+    }
+    try {
+      final nav = navigatorKey.currentState;
+      if (nav == null) return;
+
+      nav.pushNamed(AppRoutes.incomingShareTargetViewRoute, arguments: payload);
+    } catch (e) {
+      debugPrint('⚠️ ShareIntentService routing failed: $e');
+    }
   }
 
   Future<void> consumeInitialShareIfAny() async {
@@ -64,42 +87,6 @@ class ShareIntentService {
 
   void discardPendingColdStartShare() {
     _pendingColdStartPayload = null;
-  }
-
-  void _handleIncoming(List<SharedMediaFile> raw) {
-    final payload = IncomingSharePayload.fromSharedFiles(raw);
-    if (payload == null || _isAppDeepLink(payload)) return;
-    _payloadController.add(payload);
-    _routeSafely(payload);
-  }
-
-  Future<void> _routeSafely(IncomingSharePayload payload) async {
-    try {
-      final nav = navigatorKey.currentState;
-      if (nav == null) return;
-
-      // Avoid stacking a second share-target screen on rapid repeated shares.
-      if (_isShareTargetOpen) {
-        nav.popUntil(
-          (route) =>
-              route.settings.name != AppRoutes.incomingShareTargetViewRoute,
-        );
-      }
-
-      _isShareTargetOpen = true;
-      await nav.pushNamed(
-        AppRoutes.incomingShareTargetViewRoute,
-        arguments: payload,
-      );
-      _isShareTargetOpen = false;
-    } catch (e) {
-      debugPrint('⚠️ ShareIntentService routing failed, falling back home: $e');
-      _isShareTargetOpen = false;
-      navigatorKey.currentState?.pushNamedAndRemoveUntil(
-        AppRoutes.homeRoute,
-        (route) => false,
-      );
-    }
   }
 
   Future<void> dispose() async {

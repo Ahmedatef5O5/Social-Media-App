@@ -8,11 +8,18 @@ class CustomTextFormField extends StatefulWidget {
   final TextEditingController? controller;
   final String? Function(String?)? validator;
   final bool isPassword;
+  final bool readOnly;
   final TextInputType? keyboardType;
   final List<TextInputFormatter>? inputFormatters;
   final Widget? suffixIcon;
   final Widget? prefixIcon;
   final FocusNode? focusNode;
+  final int? minLines;
+  final int? maxLines;
+  final int? maxLength;
+  final ValueChanged<String>? onChanged;
+  final TextInputAction? textInputAction;
+  final TextCapitalization textCapitalization;
 
   const CustomTextFormField({
     super.key,
@@ -21,12 +28,19 @@ class CustomTextFormField extends StatefulWidget {
     this.controller,
     this.validator,
     this.isPassword = false,
+    this.readOnly = false,
     this.keyboardType,
     this.inputFormatters,
     this.suffixIcon,
     this.prefixIcon,
     this.labelText,
     this.focusNode,
+    this.minLines,
+    this.maxLines,
+    this.maxLength,
+    this.onChanged,
+    this.textInputAction,
+    this.textCapitalization = TextCapitalization.none,
   });
   @override
   State<CustomTextFormField> createState() => _CustomTextFormFieldState();
@@ -81,8 +95,17 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
           focusNode: _effectiveFocusNode,
           controller: widget.controller,
           validator: widget.validator,
+          readOnly: widget.readOnly,
           obscureText: _obscureText,
-          keyboardType: widget.keyboardType,
+          minLines: _obscureText ? 1 : widget.minLines,
+          maxLines: _obscureText ? 1 : (widget.maxLines ?? 1),
+          maxLength: widget.maxLength,
+          onChanged: widget.onChanged,
+          textInputAction: widget.textInputAction,
+          textCapitalization: widget.textCapitalization,
+          keyboardType:
+              widget.keyboardType ??
+              ((widget.maxLines ?? 1) > 1 ? TextInputType.multiline : null),
           inputFormatters: widget.inputFormatters,
           cursorColor: Theme.of(context).primaryColor,
           cursorHeight: 18.5,

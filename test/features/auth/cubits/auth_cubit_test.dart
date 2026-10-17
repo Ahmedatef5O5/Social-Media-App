@@ -335,4 +335,37 @@ void main() {
     // that would only be exercising the PresenceService failure path
     // instead of the sign-out logic it's meant to test.
   });
+
+  group('deleteAccount', () {
+    blocTest<AuthCubit, AuthState>(
+      'a wrong password fails fast with a clear message and never calls the '
+      'server-side delete',
+      build: buildCubit,
+      setUp:
+          () => when(() => authServices.verifyCurrentPassword(any())).thenThrow(
+            const supabase_pkg.AuthException(
+              'Incorrect password',
+              code: 'invalid_password',
+            ),
+          ),
+      act: (cubit) => cubit.deleteAccount(password: 'wrong'),
+      expect:
+          () => [
+            isA<AuthLoading>(),
+            isA<AuthFailure>().having(
+              (s) => s.errMsg,
+              'errMsg',
+              'Incorrect password. Please try again.',
+            ),
+          ],
+      verify: (_) {
+        verify(() => authServices.verifyCurrentPassword('wrong')).called(1);
+        verifyNever(() => authServices.softDeleteAccount());
+      },
+    );
+
+    // NOT COVERED: the success / server-failure paths. They call
+    // PresenceService, FirebaseMessaging and LocalSnapshotStore singletons
+    // (same limitation documented for checkAuthStatus above).
+  });
 }

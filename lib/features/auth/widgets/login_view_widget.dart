@@ -93,7 +93,8 @@ class _LoginViewWidgetState extends State<LoginViewWidget> {
                         current is AuthSuccess ||
                         current is AuthFailure ||
                         current is AuthInitial ||
-                        current is AuthSignedOut,
+                        current is AuthSignedOut ||
+                        current is AuthAccountDeleted,
                 builder: (context, state) {
                   return CustomElevatedButton(
                     txtBtn: 'Login',

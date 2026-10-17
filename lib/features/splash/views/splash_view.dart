@@ -11,6 +11,8 @@ import '../../../core/deep_link/services/deep_link_service.dart';
 import '../../../core/notifications/handlers/tap_action_handler.dart';
 import '../../../core/share_intent/services/share_intent_service.dart';
 import '../../../core/supabase/supabase_provider.dart';
+import '../../auth/services/auth_link_handler.dart';
+import '../../auth/services/auth_recovery_coordinator.dart';
 
 class SplashView extends StatefulWidget {
   const SplashView({super.key});
@@ -40,6 +42,7 @@ class _SplashViewState extends State<SplashView>
     if (!mounted || _hasNavigated) return;
     _hasNavigated = true;
     await waitForCoreServicesReady();
+    await AuthLinkHandler.instance.waitUntilSettled();
 
     // `currentSession` throws when Supabase failed to initialise. Treat that as
     // "no session" so the splash can still route instead of leaking an
@@ -54,7 +57,12 @@ class _SplashViewState extends State<SplashView>
     final bool hasSeenOnboarding = prefs.getBool('onboarding_seen') ?? false;
     if (mounted) {
       String route = AppRoutes.onBoardingViewRoute;
-      if (session != null) {
+      final linkProblem = AuthLinkHandler.instance.takePendingProblem();
+      if (linkProblem != null) {
+        route = AppRoutes.authLinkExpiredRoute;
+      } else if (AuthRecoveryCoordinator.isRecoveryPending) {
+        route = AppRoutes.resetPasswordRoute;
+      } else if (session != null) {
         route = AppRoutes.homeRoute;
       } else if (hasSeenOnboarding) {
         route = AppRoutes.authRoute;

@@ -13,6 +13,9 @@ class CustomConfirmationDialog extends StatelessWidget {
   final String confirmBtnText;
   final String cancelBtnText;
   final VoidCallback onConfirm;
+  final Color? confirmBtnColor;
+  final Color? confirmTxtColor;
+
   const CustomConfirmationDialog({
     super.key,
     required this.title,
@@ -22,11 +25,15 @@ class CustomConfirmationDialog extends StatelessWidget {
     this.confirmBtnText = 'Yes',
     this.cancelBtnText = 'No',
     required this.onConfirm,
+    this.confirmBtnColor,
+    this.confirmTxtColor,
   });
 
   @override
   Widget build(BuildContext context) {
     double screenWidth = MediaQuery.of(context).size.width;
+    final Color effectiveConfirmTxtColor =
+        confirmTxtColor ?? Theme.of(context).primaryColor;
     return AlertDialog(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor.withValues(),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
@@ -86,11 +93,11 @@ class CustomConfirmationDialog extends StatelessWidget {
                       minimumSize: Size(80, 40),
                       txtBtn: confirmBtnText,
                       txtBtnStyle: Theme.of(context).textTheme.titleMedium!
-                          .copyWith(color: Theme.of(context).primaryColor),
-                      txtColor: Theme.of(context).primaryColor,
+                          .copyWith(color: effectiveConfirmTxtColor),
+                      txtColor: effectiveConfirmTxtColor,
                       onPressed: onConfirm,
                       elevation: 1.5,
-                      bgColor: AppColors.white,
+                      bgColor: confirmBtnColor ?? AppColors.white,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(18),
                       ),

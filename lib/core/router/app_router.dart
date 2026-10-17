@@ -35,11 +35,22 @@ import 'package:social_media_app/features/profile/cubits/edit_profile_cubit/edit
 import 'package:social_media_app/features/profile/services/edit_profile_services.dart';
 import 'package:social_media_app/features/profile/views/edit_profile_view.dart';
 import 'package:social_media_app/features/settings/views/ai_settings_view.dart';
+import 'package:social_media_app/features/feedback/cubits/feedback_cubit.dart';
+import 'package:social_media_app/features/feedback/services/feedback_service.dart';
+import 'package:social_media_app/features/feedback/views/feedback_details_view.dart';
+import 'package:social_media_app/features/feedback/views/my_feedbacks_view.dart';
+import 'package:social_media_app/features/feedback/views/submit_feedback_view.dart';
 import 'package:social_media_app/features/settings/views/settings_view.dart';
+import 'package:social_media_app/features/settings/cubits/account_security_cubit.dart';
+import 'package:social_media_app/features/settings/views/change_password_view.dart';
+import 'package:social_media_app/features/settings/views/email_settings_view.dart';
+import 'package:social_media_app/features/auth/services/supabase_auth_services.dart';
 import 'package:social_media_app/features/splash/views/on_boarding_view.dart';
 import 'package:social_media_app/features/splash/views/splash_view.dart';
 import '../../features/ai_chat/views/ai_chat_view.dart';
 import '../../features/auth/data/models/user_data.dart';
+import '../../features/auth/views/forgot_password_view.dart';
+import '../../features/auth/views/reset_password_view.dart';
 import '../../features/blocked_users/cubits/blocked_users_cubit/blocked_users_cubit.dart';
 import '../../features/blocked_users/views/blocked_users_view.dart';
 import '../../features/posts/cubits/posts_cubit/posts_cubit.dart';
@@ -73,6 +84,7 @@ import '../../features/stories/views/pending_story_resolver_view.dart';
 import '../../features/stories/views/user_stories_grid_view.dart';
 import '../../features/support/views/help_faq_view.dart';
 import '../../features/support/views/privacy_policy_view.dart';
+import '../../features/support/views/terms_of_service_view.dart';
 import '../cache/repository/media_cache_repository.dart';
 import '../chat_shared/cubits/conversations_cubit/conversations_cubit.dart';
 import '../chat_shared/cubits/new_chat_cubit/new_chat_cubit.dart';
@@ -82,6 +94,8 @@ import '../connectivity/cubits/connectivity_cubit.dart';
 import '../share_intent/models/incoming_share_payload.dart';
 import '../share_intent/views/incoming_share_target_view.dart';
 import '../supabase/supabase_provider.dart';
+import '../../features/auth/views/auth_link_expired_view.dart';
+import '../session/session_guard.dart';
 
 enum TypeOfRoute { material, cupertino, fade }
 
@@ -89,6 +103,15 @@ final RouteObserver<ModalRoute<void>> routeObserver =
     RouteObserver<ModalRoute<void>>();
 
 class AppRouter {
+  static const Set<String> _publicRoutes = {
+    AppRoutes.splashViewRoute,
+    AppRoutes.onBoardingViewRoute,
+    AppRoutes.authRoute,
+    AppRoutes.forgotPasswordRoute,
+    AppRoutes.resetPasswordRoute,
+    AppRoutes.authLinkExpiredRoute,
+  };
+
   static bool _isAuthCallback(String? routeName) {
     if (routeName == null) return false;
     return routeName.startsWith('/?') ||
@@ -178,11 +201,23 @@ class AppRouter {
       return _buildRoute(const LoadingScreen());
     }
 
+    // Defensive session guard
+    if (!_publicRoutes.contains(name) && !SessionGuard.isFullySignedIn) {
+      debugPrint('[AppRouter] blocked "$name": no usable session');
+      return _buildRoute(
+        const AuthView(),
+        settings: const RouteSettings(name: AppRoutes.authRoute),
+      );
+    }
+
     // Routing mapped to modular helper functions
     switch (name) {
       case AppRoutes.splashViewRoute:
       case AppRoutes.onBoardingViewRoute:
       case AppRoutes.authRoute:
+      case AppRoutes.forgotPasswordRoute:
+      case AppRoutes.resetPasswordRoute:
+      case AppRoutes.authLinkExpiredRoute:
         return _authRoutes(settings);
 
       case AppRoutes.homeRoute:
@@ -229,6 +264,12 @@ class AppRouter {
       case AppRoutes.blockedUsersViewRoute:
       case AppRoutes.helpFaqViewRoute:
       case AppRoutes.privacyPolicyViewRoute:
+      case AppRoutes.termsOfServiceRoute:
+      case AppRoutes.changePasswordRoute:
+      case AppRoutes.emailSettingsRoute:
+      case AppRoutes.feedbackRoute:
+      case AppRoutes.feedbackHistoryRoute:
+      case AppRoutes.feedbackDetailsRoute:
         return _profileAndSettingsRoutes(settings);
 
       default:
@@ -246,6 +287,12 @@ class AppRouter {
         return _buildRoute(const OnBoardingView(), settings: settings);
       case AppRoutes.authRoute:
         return _buildRoute(const AuthView(), settings: settings);
+      case AppRoutes.forgotPasswordRoute:
+        return _buildRoute(const ForgotPasswordView(), settings: settings);
+      case AppRoutes.resetPasswordRoute:
+        return _buildRoute(const ResetPasswordView(), settings: settings);
+      case AppRoutes.authLinkExpiredRoute:
+        return _buildRoute(const AuthLinkExpiredView(), settings: settings);
       default:
         return _errorRoute(settings, 'Auth route not found');
     }
@@ -795,6 +842,8 @@ class AppRouter {
         return _buildRoute(const HelpFaqView(), settings: settings);
       case AppRoutes.privacyPolicyViewRoute:
         return _buildRoute(const PrivacyPolicyView(), settings: settings);
+      case AppRoutes.termsOfServiceRoute:
+        return _buildRoute(const TermsOfServiceView(), settings: settings);
       case AppRoutes.aiSettingsViewRoute:
         return _buildRoute(const AiSettingsView(), settings: settings);
 
@@ -814,6 +863,56 @@ class AppRouter {
         }
         return _buildRoute(
           BlocProvider.value(value: cubit, child: SettingsView()),
+          settings: settings,
+        );
+      case AppRoutes.changePasswordRoute:
+        return _buildRoute(
+          BlocProvider(
+            create:
+                (context) =>
+                    AccountSecurityCubit(context.read<SupabaseAuthServices>()),
+            child: const ChangePasswordView(),
+          ),
+          settings: settings,
+        );
+      case AppRoutes.emailSettingsRoute:
+        return _buildRoute(
+          BlocProvider(
+            create:
+                (context) =>
+                    AccountSecurityCubit(context.read<SupabaseAuthServices>()),
+            child: const EmailSettingsView(),
+          ),
+          settings: settings,
+        );
+      case AppRoutes.feedbackRoute:
+        return _buildRoute(
+          BlocProvider(
+            create: (_) => FeedbackCubit(FeedbackService())..init(),
+            child: const SubmitFeedbackView(),
+          ),
+          settings: settings,
+        );
+      case AppRoutes.feedbackHistoryRoute:
+        // Reuses the submit screen's cubit when pushed from it, otherwise
+        // (e.g. a notification fallback) owns a fresh one.
+        final existing = _args<FeedbackCubit>(settings);
+        return _buildRoute(
+          existing != null
+              ? BlocProvider.value(value: existing, child: const MyFeedbacksView())
+              : BlocProvider(
+                create: (_) => FeedbackCubit(FeedbackService())..init(),
+                child: const MyFeedbacksView(),
+              ),
+          settings: settings,
+        );
+      case AppRoutes.feedbackDetailsRoute:
+        final feedbackId = _args<String>(settings);
+        if (feedbackId == null || feedbackId.isEmpty) {
+          return _errorRoute(settings, 'Missing feedback id');
+        }
+        return _buildRoute(
+          FeedbackDetailsView(feedbackId: feedbackId),
           settings: settings,
         );
       default:
