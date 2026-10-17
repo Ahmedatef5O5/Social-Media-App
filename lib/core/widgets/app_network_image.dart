@@ -33,6 +33,27 @@ class AppNetworkImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // If explicit dimensions are already provided, bypass LayoutBuilder completely
+    // to avoid breaking ancestor widgets calculating intrinsic dimensions.
+    if (width != null && height != null) {
+      final px = ImageSizing.targetPixelWidth(width: width, height: height);
+      final url = imageUrl
+          .cloudinarySizedImageUrl(px)
+          .cloudinarySizedVideoThumbnailUrl(px);
+
+      return CachedNetworkImage(
+        imageUrl: url,
+        memCacheWidth: px,
+        width: width,
+        height: height,
+        fit: fit,
+        placeholder: placeholder,
+        errorWidget: errorWidget,
+        httpHeaders: httpHeaders,
+        errorListener: errorListener,
+      );
+    }
+
     return LayoutBuilder(
       builder: (context, constraints) {
         final px = ImageSizing.targetPixelWidth(

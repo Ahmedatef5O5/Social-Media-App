@@ -46,22 +46,28 @@ class ReceiverDetailsHeaderSection extends StatelessWidget {
                 PresenceAvatarWidget(
                   userId: receiverUser.id,
                   avatarSize: 42,
-                  showDot: true,
+                  showDot: !receiverUser.isDeleted,
                   showBorder: true,
                   child: AppAvatar(
                     imageUrl: receiverUser.imageUrl,
                     size: 42,
                     heroTag: receiverUser.id,
-                    onTap: () {
-                      Navigator.of(context, rootNavigator: true).pushNamed(
-                        AppRoutes.receiverProfileViewRoute,
-                        arguments: {
-                          'user': receiverUser,
-                          'cubit': context.read<ChatDetailsCubit>(),
-                          'itemScrollController': itemScrollController,
-                        },
-                      );
-                    },
+                    onTap:
+                        receiverUser.isDeleted
+                            ? null
+                            : () {
+                              Navigator.of(
+                                context,
+                                rootNavigator: true,
+                              ).pushNamed(
+                                AppRoutes.receiverProfileViewRoute,
+                                arguments: {
+                                  'user': receiverUser,
+                                  'cubit': context.read<ChatDetailsCubit>(),
+                                  'itemScrollController': itemScrollController,
+                                },
+                              );
+                            },
                   ),
                 ),
               ],
@@ -71,16 +77,19 @@ class ReceiverDetailsHeaderSection extends StatelessWidget {
           const Gap(12),
           Expanded(
             child: InkWell(
-              onTap: () {
-                Navigator.of(context, rootNavigator: true).pushNamed(
-                  AppRoutes.receiverProfileViewRoute,
-                  arguments: {
-                    'user': receiverUser,
-                    'cubit': context.read<ChatDetailsCubit>(),
-                    'itemScrollController': itemScrollController,
-                  },
-                );
-              },
+              onTap:
+                  receiverUser.isDeleted
+                      ? null
+                      : () {
+                        Navigator.of(context, rootNavigator: true).pushNamed(
+                          AppRoutes.receiverProfileViewRoute,
+                          arguments: {
+                            'user': receiverUser,
+                            'cubit': context.read<ChatDetailsCubit>(),
+                            'itemScrollController': itemScrollController,
+                          },
+                        );
+                      },
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
@@ -136,6 +145,9 @@ class ReceiverDetailsHeaderSection extends StatelessWidget {
                             ),
                           );
                         }
+                        if (receiverUser.isDeleted) {
+                          return const SizedBox.shrink();
+                        }
                         return PresenceStatusText(
                           userId: receiverUser.id,
                           fallbackIsOnline: receiverUser.isOnline,
@@ -163,7 +175,8 @@ class ReceiverDetailsHeaderSection extends StatelessWidget {
                         receiverId: receiverUser.id,
                         receiverName: receiverUser.name,
                         receiverAvatar: receiverUser.imageUrl ?? '',
-                        isBlocked: blockStatus.isBlocked,
+                        isBlocked:
+                            blockStatus.isBlocked || receiverUser.isDeleted,
                         padding: const EdgeInsets.symmetric(horizontal: 6),
                         style: IconButton.styleFrom(
                           minimumSize: Size.zero,
@@ -176,7 +189,8 @@ class ReceiverDetailsHeaderSection extends StatelessWidget {
                         receiverId: receiverUser.id,
                         receiverName: receiverUser.name,
                         receiverAvatar: receiverUser.imageUrl ?? '',
-                        isBlocked: blockStatus.isBlocked,
+                        isBlocked:
+                            blockStatus.isBlocked || receiverUser.isDeleted,
                         padding: const EdgeInsets.symmetric(horizontal: 6),
                         style: IconButton.styleFrom(
                           minimumSize: Size.zero,

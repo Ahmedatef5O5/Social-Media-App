@@ -32,6 +32,7 @@ class PostModel {
   final String createdAt;
   final String? authorName;
   final String? authorImageUrl;
+  final bool authorIsDeleted;
   final String? videoUrl;
   final String? fileUrl;
   final String? imageUrl;
@@ -76,6 +77,7 @@ class PostModel {
     required this.createdAt,
     this.authorName,
     this.authorImageUrl,
+    this.authorIsDeleted = false,
     this.videoUrl,
     this.fileUrl,
     this.imageUrl,
@@ -132,6 +134,7 @@ class PostModel {
       imageUrl: authorImageUrl,
       lastSeen: lastSeen,
       isOnline: isOnline,
+      isDeleted: authorIsDeleted,
     );
   }
 
@@ -175,6 +178,9 @@ class PostModel {
               : null,
       authorImageUrl:
           userData != null ? userData[UserColumns.imageUrl] as String? : null,
+      authorIsDeleted:
+          userData != null &&
+          (userData[UserColumns.isDeleted] as bool? ?? false),
       videoUrl:
           map['video_url'] != null ? map['video_url'] as String? ?? '' : null,
       imageUrl: map['image_url'] != null ? map['image_url'] as String : null,
@@ -220,6 +226,7 @@ class PostModel {
     String? createdAt,
     String? authorName,
     String? authorImageUrl,
+    bool? authorIsDeleted,
     String? videoUrl,
     String? fileUrl,
     String? imageUrl,
@@ -252,6 +259,7 @@ class PostModel {
       createdAt: createdAt ?? this.createdAt,
       authorName: authorName ?? this.authorName,
       authorImageUrl: authorImageUrl ?? this.authorImageUrl,
+      authorIsDeleted: authorIsDeleted ?? this.authorIsDeleted,
       videoUrl: videoUrl ?? this.videoUrl,
       fileUrl: fileUrl ?? this.fileUrl,
       imageUrl: imageUrl ?? this.imageUrl,
@@ -286,6 +294,7 @@ class PostModel {
     'created_at': createdAt,
     'author_name': authorName,
     'author_image_url': authorImageUrl,
+    'author_is_deleted': authorIsDeleted,
     'video_url': videoUrl,
     'file_url': fileUrl,
     'image_url': imageUrl,
@@ -320,6 +329,7 @@ class PostModel {
       createdAt: map['created_at'] as String,
       authorName: map['author_name'] as String?,
       authorImageUrl: map['author_image_url'] as String?,
+      authorIsDeleted: map['author_is_deleted'] as bool? ?? false,
       videoUrl: map['video_url'] as String?,
       fileUrl: map['file_url'] as String?,
       imageUrl: map['image_url'] as String?,

@@ -270,23 +270,13 @@ class _LoadingMoreFooter extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
         FriendTileSkeleton(isMe: isMe),
         const Gap(10),
         FriendTileSkeleton(isMe: isMe),
-        const Gap(14),
-        Text(
-          'Loading more...',
-          style: TextStyle(
-            fontSize: 12.5,
-            fontWeight: FontWeight.w500,
-            color: theme.colorScheme.onSurfaceVariant,
-          ),
-        ),
-        const Gap(8),
+        const Gap(10),
       ],
     );
   }

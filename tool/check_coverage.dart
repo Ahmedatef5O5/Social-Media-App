@@ -35,7 +35,7 @@ const Map<String, double> criticalPaths = {
   'lib/core/errors/supabase_error_mapper.dart': 85.0,
 
   // P1 — reel player lifecycle (V6 H-05).
-  // 'lib/features/reels/services/reel_player_controller_pool.dart': 70.0,
+  'lib/features/reels/services/reel_player_controller_pool.dart': 70.0,
 };
 
 void main() {

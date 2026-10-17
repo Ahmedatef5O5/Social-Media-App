@@ -54,8 +54,7 @@ class PostInteractionsRow extends StatelessWidget {
             oldPost.sharesCount != newPost.sharesCount ||
             oldPost.isSharedByMe != newPost.isSharedByMe ||
             oldPost.savedCount != newPost.savedCount ||
-            oldPost.isSavedByMe != newPost.isSavedByMe ||
-            oldPost.isOnline != newPost.isOnline;
+            oldPost.isSavedByMe != newPost.isSavedByMe;
       },
       builder: (context, state) {
         if (state is! PostsLoaded) {

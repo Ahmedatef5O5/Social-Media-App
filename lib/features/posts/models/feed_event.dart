@@ -30,10 +30,3 @@ final class ShareChangedEvent extends FeedEvent {
   final PostgresChangeEvent changeType;
   const ShareChangedEvent(this.postId, this.changeType);
 }
-
-final class PresenceChangedEvent extends FeedEvent {
-  final String userId;
-  final bool isOnline;
-  final DateTime? updatedAt;
-  const PresenceChangedEvent(this.userId, this.isOnline, this.updatedAt);
-}

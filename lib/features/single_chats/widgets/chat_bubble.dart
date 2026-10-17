@@ -9,6 +9,8 @@ import 'package:social_media_app/features/single_chats/cubits/chat_details_cubit
 import 'package:social_media_app/features/single_chats/models/message_model.dart';
 import 'package:social_media_app/features/single_chats/widgets/message_content_container_widget.dart';
 import 'package:social_media_app/features/single_chats/widgets/user_chat_avatar_widget.dart';
+import '../../reports/models/report_target.dart';
+import '../../reports/widgets/report_bottom_sheet.dart';
 import '../models/chat_user_model.dart';
 
 const double _kAvatarSlotWidth = 28;
@@ -179,6 +181,26 @@ class ChatBubbleState extends State<ChatBubble>
                         context.read<ChatDetailsCubit>().deleteMessage(
                           messageId: widget.message.id,
                           receiverId: receiverId,
+                        );
+                      },
+                    ),
+
+                  //  report msg at single chat
+                  if (!widget.isMe &&
+                      !isCall &&
+                      widget.message.messageType != 'block_event' &&
+                      widget.message.messageType != 'unblock_event')
+                    ListTile(
+                      leading: const Icon(Icons.report_gmailerrorred),
+                      title: const Text('Report message'),
+                      onTap: () {
+                        Navigator.pop(ctx);
+                        ReportBottomSheet.show(
+                          context,
+                          target: ReportTarget(
+                            type: ReportTargetType.message,
+                            id: widget.message.id,
+                          ),
                         );
                       },
                     ),

@@ -406,12 +406,15 @@ class _ReceiverProfileViewState extends State<ReceiverProfileView> {
         receiverId: widget.receiverUser.id,
         receiverName: widget.receiverUser.name,
         receiverAvatar: widget.receiverUser.imageUrl ?? '',
-        isBlocked: isBlocked,
+        isBlocked: isBlocked || widget.receiverUser.isDeleted,
         style: buttonStyle,
       );
       labelWidget = BlocBuilder<ActiveCallSessionCubit, ActiveCallSessionData?>(
         builder: (context, activeSession) {
-          final isDisabled = isBlocked || activeSession != null;
+          final isDisabled =
+              isBlocked ||
+              widget.receiverUser.isDeleted ||
+              activeSession != null;
           return Text(
             label,
             style: TextStyle(

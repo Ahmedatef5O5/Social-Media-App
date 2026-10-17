@@ -1,8 +1,10 @@
+import 'dart:async';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 import 'package:persistent_bottom_nav_bar_v2/persistent_bottom_nav_bar_v2.dart';
+import 'package:social_media_app/core/notifications/services/notification_prefs_sync_service.dart';
 import 'package:social_media_app/core/utilities/supabase_constants.dart';
 import 'package:social_media_app/core/widgets/custom_back_to_top_btn.dart';
 import 'package:social_media_app/core/widgets/custom_pull_to_refresh.dart';
@@ -14,6 +16,7 @@ import '../../posts/cubits/posts_cubit/posts_cubit.dart';
 import '../../posts/helpers/global_video_pause_gate.dart';
 import '../../reels/widgets/home_feed_with_reels.dart';
 import '../../stories/cubits/stories_cubit/stories_cubit.dart';
+import '../widgets/feed_load_more_footer.dart';
 import '../widgets/new_posts_pill.dart';
 import '../widgets/home_view_header_section.dart';
 import '../../posts/widgets/post_writing_card.dart';
@@ -49,24 +52,36 @@ class _HomeViewState extends State<HomeView> {
     updateMyFcmToken();
     context.read<HomeCubit>().navController = widget.navController;
 
-    widget.scrollController.addListener(() {
-      if (_isScrollingToTop) return;
+    widget.scrollController.addListener(_onScroll);
+  }
 
-      final currentOffset = widget.scrollController.offset;
-      final isScrollingUp = currentOffset < _lastOffset;
+  static const double _loadMoreExtentThreshold = 900;
 
-      if (currentOffset > 450 && isScrollingUp) {
-        if (!_showBackToTop) {
-          setState(() => _showBackToTop = true);
-        }
-      } else {
-        if (_showBackToTop) {
-          setState(() => _showBackToTop = false);
-        }
+  void _onScroll() {
+    final controller = widget.scrollController;
+    if (!controller.hasClients) return;
+
+    if (controller.position.extentAfter < _loadMoreExtentThreshold) {
+      // Cheap no-op unless a request is actually needed.
+      context.read<PostsCubit>().loadMorePosts();
+    }
+
+    if (_isScrollingToTop) return;
+
+    final currentOffset = controller.offset;
+    final isScrollingUp = currentOffset < _lastOffset;
+
+    if (currentOffset > 450 && isScrollingUp) {
+      if (!_showBackToTop) {
+        setState(() => _showBackToTop = true);
       }
+    } else {
+      if (_showBackToTop) {
+        setState(() => _showBackToTop = false);
+      }
+    }
 
-      _lastOffset = currentOffset;
-    });
+    _lastOffset = currentOffset;
   }
 
   Future<void> updateMyFcmToken() async {
@@ -83,6 +98,9 @@ class _HomeViewState extends State<HomeView> {
               .eq(UserColumns.id, user.id);
 
           debugPrint("✅ My FCM Token updated in Supabase: $token");
+
+          // Re-send notification toggles if a previous sync failed offline.
+          unawaited(NotificationPrefsSyncService.instance.syncIfNeeded());
         }
       }
     } catch (e) {
@@ -92,6 +110,7 @@ class _HomeViewState extends State<HomeView> {
 
   @override
   void dispose() {
+    widget.scrollController.removeListener(_onScroll);
     super.dispose();
   }
 
@@ -212,6 +231,9 @@ class _HomeViewState extends State<HomeView> {
                                     ),
                                     const SliverGap(10),
                                     const HomeFeedWithReels(),
+                                    const SliverToBoxAdapter(
+                                      child: FeedLoadMoreFooter(),
+                                    ),
                                     SliverGap(
                                       MediaQuery.of(context).padding.bottom +
                                           100,

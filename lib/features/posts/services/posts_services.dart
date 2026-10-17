@@ -4,7 +4,6 @@ import 'package:social_media_app/features/posts/models/feed_event.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/services/media_cleanup_service.dart';
 import '../../../core/services/network_status_service.dart';
-import '../../../core/presence/services/presence_service.dart';
 import '../../../core/services/supabase_database_services.dart';
 import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/utilities/supabase_constants.dart';
@@ -31,7 +30,7 @@ class PostsServices {
   shares_count,
   is_post_shared,
   post_mentions(${PostMentionColumns.mentionedUserId},${PostMentionColumns.startIndex},${PostMentionColumns.endIndex}),
-  ${SupabaseConstants.users}!posts_author_id_fkey (${UserColumns.name}, ${UserColumns.imageUrl}, ${UserColumns.lastSeen}),
+  ${SupabaseConstants.users}!posts_author_id_fkey (${UserColumns.name}, ${UserColumns.imageUrl}, ${UserColumns.lastSeen}, ${UserColumns.isDeleted}),
   ${SupabaseConstants.reelsCache}!posts_shared_reel_id_fkey (
     ${ReelColumns.id},
     ${ReelColumns.youtubeVideoId},
@@ -49,7 +48,7 @@ class PostsServices {
   ),
   ${SupabaseConstants.comments} (
   *,
-  ${SupabaseConstants.users} (${UserColumns.name}, ${UserColumns.imageUrl}), 
+  ${SupabaseConstants.users} (${UserColumns.name}, ${UserColumns.imageUrl}, ${UserColumns.isDeleted}),
   comment_reactions (*)
   ),
   ${SupabaseConstants.likes} (
@@ -120,39 +119,6 @@ class PostsServices {
       }
       return _hydratePost(mutableData);
     }).toList();
-  }
-
-  Future<Map<String, bool>> _fetchOnlineMap(List<String> authorIds) async {
-    if (authorIds.isEmpty) return {};
-    final presenceRows = await _supabase
-        .from(SupabaseConstants.userPresence)
-        .select('user_id, is_online, updated_at')
-        .inFilter(GroupMemberColumns.userId, authorIds);
-
-    final onlineSet = <String>{
-      for (final row in presenceRows as List)
-        if (PresenceService.isConsideredOnline(
-          isOnline: row[PresenceColumns.isOnline] as bool? ?? false,
-          updatedAt:
-              row[PresenceColumns.updatedAt] != null
-                  ? DateTime.parse(row[PresenceColumns.updatedAt].toString())
-                  : null,
-        ))
-          row[GroupMemberColumns.userId] as String,
-    };
-    return {for (final id in authorIds) id: onlineSet.contains(id)};
-  }
-
-  PostModel _applyOnline(PostModel post, Map<String, bool> onlineMap) {
-    final withOnline = post.copyWith(
-      isOnline: onlineMap[post.authorId] ?? false,
-    );
-    if (withOnline.originalPost == null) return withOnline;
-    return withOnline.copyWith(
-      originalPost: withOnline.originalPost!.copyWith(
-        isOnline: onlineMap[withOnline.originalPost!.authorId] ?? false,
-      ),
-    );
   }
 
   Future<ProfilePostsPage> fetchUserProfilePosts(
@@ -227,16 +193,7 @@ class PostsServices {
       );
       if (hydratedList.isEmpty) return null;
 
-      final postWithComments = hydratedList.first;
-      final authorIds =
-          <String>{
-            postWithComments.authorId,
-            if (postWithComments.originalPost != null)
-              postWithComments.originalPost!.authorId,
-          }.toList();
-
-      final onlineMap = await _fetchOnlineMap(authorIds);
-      return _applyOnline(postWithComments, onlineMap);
+      return hydratedList.first;
     } catch (e) {
       debugPrint('fetchPostById error: $e');
       return null;
@@ -267,17 +224,7 @@ class PostsServices {
       final posts = await _resolveSharedPostsAndHydrate(rawPosts);
       if (posts.isEmpty) return posts;
 
-      final authorIds =
-          <String>{
-            for (final p in posts) ...[
-              p.authorId,
-              if (p.originalPost != null) p.originalPost!.authorId,
-            ],
-          }.toList();
-      final onlineMap = await _fetchOnlineMap(authorIds);
-      final hydrated = posts.map((p) => _applyOnline(p, onlineMap)).toList();
-
-      final byId = {for (final p in hydrated) p.id: p};
+      final byId = {for (final p in posts) p.id: p};
       return ids.map((id) => byId[id]).whereType<PostModel>().toList();
     } catch (e) {
       debugPrint('fetchPostsByIds error: $e');
@@ -302,41 +249,85 @@ class PostsServices {
     return (rows as List).map((r) => r['id'] as String).toList();
   }
 
-  Future<List<PostModel>> fetchRankedHomeFeed({int limit = 50}) async {
+  Future<List<PostModel>> fetchRankedHomeFeed({int limit = 50}) async =>
+      (await fetchRankedHomeFeedPage(limit: limit)).posts;
+
+  /// Asks the ranking RPC for its top [limit] ids, then hydrates ONLY those
+  /// not in [excludeIds]. `rankedCount` is how many ids the RPC returned
+  /// (before exclusion); callers compare it with [limit] to detect the end.
+  Future<({List<PostModel> posts, int rankedCount, DateTime? asOf})>
+  fetchRankedHomeFeedPage({
+    required int limit,
+    int offset = 0,
+    DateTime? asOf,
+    Set<String> excludeIds = const {},
+  }) async {
     if (!(await _networkStatus.isConnected())) {
       throw Exception('no-internet');
     }
-    try {
-      final currentUserId = SupabaseProvider.id;
 
-      final rankedRows = await _supabase.rpc(
-        SupabaseConstants.getRankedHomeFeedRpc,
-        params: {'p_user_id': currentUserId, 'p_limit': limit},
-      );
+    final currentUserId = SupabaseProvider.id;
 
-      final ranked = (rankedRows as List).cast<Map<String, dynamic>>();
-      if (ranked.isEmpty) return [];
+    // `p_offset` / `p_as_of` are sent only when needed, so the first page
+    // also works against the pre-migration RPC signature. (The server
+    // ignores `p_user_id` and uses auth.uid(); it stays for compatibility.)
+    final rankedRows = await _supabase.rpc(
+      SupabaseConstants.getRankedHomeFeedRpc,
+      params: {
+        'p_user_id': currentUserId,
+        'p_limit': limit,
+        if (offset > 0) 'p_offset': offset,
+        if (asOf != null) 'p_as_of': asOf.toUtc().toIso8601String(),
+      },
+    );
 
-      final orderedIds = ranked.map((r) => r['post_id'] as String).toList();
-      final suggestedById = {
-        for (final r in ranked)
-          r['post_id'] as String: r['is_suggested_for_you'] as bool? ?? false,
-      };
-
-      final hydrated = await fetchPostsByIds(orderedIds);
-
-      final flagged =
-          hydrated
-              .map(
-                (p) =>
-                    p.copyWith(isSuggestedForYou: suggestedById[p.id] ?? false),
-              )
-              .toList();
-
-      return _spreadOutByAuthor(flagged);
-    } catch (e) {
-      rethrow;
+    final ranked = (rankedRows as List).cast<Map<String, dynamic>>();
+    final serverAsOf = _parseAsOf(ranked);
+    if (ranked.isEmpty) {
+      return (posts: <PostModel>[], rankedCount: 0, asOf: serverAsOf);
     }
+
+    final fresh =
+        ranked
+            .where((r) => !excludeIds.contains(r['post_id'] as String))
+            .toList();
+    if (fresh.isEmpty) {
+      return (
+        posts: <PostModel>[],
+        rankedCount: ranked.length,
+        asOf: serverAsOf,
+      );
+    }
+
+    final orderedIds = fresh.map((r) => r['post_id'] as String).toList();
+    final suggestedById = {
+      for (final r in fresh)
+        r['post_id'] as String: r['is_suggested_for_you'] as bool? ?? false,
+    };
+
+    final hydrated = await fetchPostsByIds(orderedIds);
+
+    final flagged =
+        hydrated
+            .map(
+              (p) =>
+                  p.copyWith(isSuggestedForYou: suggestedById[p.id] ?? false),
+            )
+            .toList();
+
+    return (
+      posts: _spreadOutByAuthor(flagged),
+      rankedCount: ranked.length,
+      asOf: serverAsOf,
+    );
+  }
+
+  /// The server freezes its clock and returns it on every row; the first row
+  /// is enough. Null against the pre-migration RPC (no `as_of` column).
+  DateTime? _parseAsOf(List<Map<String, dynamic>> rows) {
+    if (rows.isEmpty) return null;
+    final raw = rows.first['as_of'];
+    return raw is String ? DateTime.tryParse(raw) : null;
   }
 
   List<PostModel> _spreadOutByAuthor(
@@ -475,23 +466,6 @@ class PostsServices {
             final postId = record[PostShareColumns.postId] as String?;
             if (postId != null && !controller.isClosed) {
               controller.add(ShareChangedEvent(postId, payload.eventType));
-            }
-          },
-        )
-        .onPostgresChanges(
-          event: PostgresChangeEvent.all,
-          schema: 'public',
-          table: SupabaseConstants.userPresence,
-          callback: (payload) {
-            final record = payload.newRecord;
-            final userId = record[GroupMemberColumns.userId] as String?;
-            if (userId != null && !controller.isClosed) {
-              final isOnline =
-                  record[PresenceColumns.isOnline] as bool? ?? false;
-              final updatedAtRaw = record[PresenceColumns.updatedAt] as String?;
-              final updatedAt =
-                  updatedAtRaw != null ? DateTime.tryParse(updatedAtRaw) : null;
-              controller.add(PresenceChangedEvent(userId, isOnline, updatedAt));
             }
           },
         )

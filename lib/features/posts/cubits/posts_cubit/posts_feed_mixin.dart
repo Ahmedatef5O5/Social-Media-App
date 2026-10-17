@@ -9,6 +9,64 @@ mixin PostsFeedMixin on Cubit<PostsState> {
 
   int feedEpoch = 0;
 
+  FeedWindow _feedWindow = const FeedWindow.initial();
+  bool _isLoadingMoreFeed = false;
+  bool _feedNotifierDisposed = false;
+
+  /// Drives the small spinner under the last post.
+  final ValueNotifier<bool> feedLoadingMore = ValueNotifier<bool>(false);
+
+  bool get canLoadMorePosts =>
+      _feedWindow.canLoadMore && !_isLoadingMoreFeed && cachedPosts.isNotEmpty;
+
+  void _setLoadingMore(bool value) {
+    _isLoadingMoreFeed = value;
+    if (!_feedNotifierDisposed) feedLoadingMore.value = value;
+  }
+
+  /// Appends the next slice of the ranked feed. Safe to call from a scroll
+  /// listener: it returns immediately unless a request is actually needed.
+  Future<void> loadMorePosts() async {
+    if (isClosed || !canLoadMorePosts) return;
+
+    final epoch = feedEpoch;
+    final nextLimit = _feedWindow.nextLimit;
+    _setLoadingMore(true);
+    try {
+      final page = await _postsServices.fetchRankedHomeFeedPage(
+        limit: nextLimit,
+        offset: _feedWindow.offset,
+        asOf: _feedWindow.asOf,
+        excludeIds: {for (final p in cachedPosts) p.id},
+      );
+
+      // A refresh started while we were loading: its feed replaced ours, so
+      // this page belongs to a stale ranking. Drop it.
+      if (isClosed || epoch != feedEpoch) return;
+
+      _feedWindow = _feedWindow.afterFetch(
+        requested: nextLimit,
+        rankedCount: page.rankedCount,
+        asOf: page.asOf,
+      );
+      if (page.posts.isNotEmpty) {
+        mergePostsIntoCache(page.posts, appendNew: true);
+      }
+    } catch (e) {
+      // Keep the window unchanged so the next scroll retries.
+      debugPrint('Error loading more posts: $e');
+    } finally {
+      _setLoadingMore(false);
+    }
+  }
+
+  @override
+  Future<void> close() {
+    _feedNotifierDisposed = true;
+    feedLoadingMore.dispose();
+    return super.close();
+  }
+
   Future<void> refreshPosts({bool isRefresh = false}) async {
     try {
       final start = DateTime.now();
@@ -45,8 +103,17 @@ mixin PostsFeedMixin on Cubit<PostsState> {
   Future<void> fetchPosts({bool isRefresh = false}) async {
     if (!isRefresh) emit(PostsLoading());
     try {
-      cachedPosts = await _postsServices.fetchRankedHomeFeed();
-      cachedPosts = _fixLikersImages(cachedPosts);
+      const firstWindow = FeedWindow.initial();
+      final page = await _postsServices.fetchRankedHomeFeedPage(
+        limit: firstWindow.nextLimit,
+      );
+      _feedWindow = firstWindow.afterFetch(
+        requested: firstWindow.nextLimit,
+        rankedCount: page.rankedCount,
+        asOf: page.asOf,
+      );
+
+      cachedPosts = _fixLikersImages(page.posts);
 
       feedEpoch++;
 
@@ -68,6 +135,7 @@ mixin PostsFeedMixin on Cubit<PostsState> {
         );
 
         cachedPosts = diskPosts;
+        _feedWindow = const FeedWindow.initial();
 
         feedEpoch++;
 

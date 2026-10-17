@@ -270,18 +270,6 @@ class ChatListService {
           table: SupabaseConstants.messages,
           callback: notify,
         )
-        .onPostgresChanges(
-          schema: 'public',
-          table: SupabaseConstants.typingStatus,
-          event: PostgresChangeEvent.all,
-          callback: notify,
-        )
-        .onPostgresChanges(
-          schema: 'public',
-          table: SupabaseConstants.userPresence,
-          event: PostgresChangeEvent.all,
-          callback: notify,
-        )
         .subscribe();
 
     controller.onCancel = () {

@@ -5,6 +5,7 @@ import 'package:social_media_app/core/widgets/custom_back_to_top_btn.dart';
 import 'package:social_media_app/core/widgets/custom_tab_wrapper.dart';
 import 'package:social_media_app/features/profile/cubits/profile_cubit/profile_cubit.dart';
 import 'package:social_media_app/features/profile/views/profile_shimmer_view.dart';
+import 'package:social_media_app/features/profile/widgets/deleted_profile_placeholder.dart';
 import 'package:social_media_app/features/profile/widgets/profile_body_content.dart';
 import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/widgets/global_refresh_indicator.dart';
@@ -163,6 +164,12 @@ class _ProfileViewState extends State<ProfileView> {
                     state is ProfileRefreshFeedback;
                 String? errorMessage =
                     state is ProfileError ? state.message : null;
+
+                if (!isCurrentUser &&
+                    state is ProfileLoaded &&
+                    state.user.isDeleted) {
+                  return const DeletedProfilePlaceholder();
+                }
 
                 return CustomTabWrapper(
                   isLoading: isLoading,

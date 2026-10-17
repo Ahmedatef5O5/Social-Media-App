@@ -17,6 +17,13 @@ class ReportBottomSheet extends StatelessWidget {
     BuildContext context, {
     required ReportTarget target,
   }) {
+    if (!context.mounted) {
+      debugPrint(
+        'ReportBottomSheet.show skipped: context is no longer mounted',
+      );
+      return Future<void>.value();
+    }
+
     return showModalBottomSheet<void>(
       context: context,
       useRootNavigator: true,

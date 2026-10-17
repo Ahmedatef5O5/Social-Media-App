@@ -3,7 +3,6 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shimmer/shimmer.dart';
-import '../attachment/widgets/media_loading_placeholder.dart';
 import '../cache/repository/media_cache_repository.dart';
 import '../cache/utils/cloudinary_url_extensions.dart';
 import 'image_sizing.dart';
@@ -237,8 +236,8 @@ class _CachedCloudinaryImageState extends State<CachedCloudinaryImage> {
   }
 
   Widget _buildDefaultPlaceholder(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     if (widget.isAvatar) {
-      final isDark = Theme.of(context).brightness == Brightness.dark;
       return Shimmer.fromColors(
         baseColor: isDark ? Colors.grey[800]! : Colors.grey[300]!,
         highlightColor: isDark ? Colors.grey[700]! : Colors.grey[100]!,
@@ -252,7 +251,15 @@ class _CachedCloudinaryImageState extends State<CachedCloudinaryImage> {
         ),
       );
     }
-    return MediaLoadingPlaceholder(width: widget.width, height: widget.height);
+    return Shimmer.fromColors(
+      baseColor: isDark ? Colors.grey[850]! : Colors.grey[300]!,
+      highlightColor: isDark ? Colors.grey[700]! : Colors.grey[100]!,
+      child: Container(
+        width: widget.width ?? double.infinity,
+        height: widget.height ?? double.infinity,
+        color: Colors.white,
+      ),
+    );
   }
 
   Widget _buildError(BuildContext context, Object error) {

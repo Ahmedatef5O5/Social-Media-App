@@ -36,13 +36,6 @@ mixin PostsRealtimeMixin on Cubit<PostsState> {
 
         case ShareChangedEvent(:final postId, :final changeType):
           await _handleShareChanged(postId, changeType);
-
-        case PresenceChangedEvent(
-          :final userId,
-          :final isOnline,
-          :final updatedAt,
-        ):
-          _handlePresenceChanged(userId, isOnline, updatedAt);
       }
     });
   }
@@ -159,29 +152,6 @@ mixin PostsRealtimeMixin on Cubit<PostsState> {
       }
       return p;
     }).toList();
-  }
-
-  void _handlePresenceChanged(
-    String userId,
-    bool isOnline,
-    DateTime? updatedAt,
-  ) {
-    final isConsideredOnline = PresenceService.isConsideredOnline(
-      isOnline: isOnline,
-      updatedAt: updatedAt,
-    );
-
-    final affectsCurrentFeed = cachedPosts.any((p) => p.authorId == userId);
-    if (!affectsCurrentFeed || isClosed) return;
-
-    cachedPosts =
-        cachedPosts.map((p) {
-          return p.authorId == userId
-              ? p.copyWith(isOnline: isConsideredOnline)
-              : p;
-        }).toList();
-
-    emit(PostsLoaded(cachedPosts, DateTime.now()));
   }
 
   bool isPostGhost(String postId) {

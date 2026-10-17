@@ -101,7 +101,8 @@ class PostHeaderWidget extends StatelessWidget {
       }
     }
 
-    bool shouldDisableTap = isAlreadyOnSameProfile;
+    // Ghost accounts have nothing to open (no preview dialog, no profile).
+    bool shouldDisableTap = isAlreadyOnSameProfile || post.authorIsDeleted;
 
     Widget? buildTrailingWidget() {
       final colorScheme = Theme.of(context).colorScheme;

@@ -1,4 +1,3 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import '../../../core/constants/app_images.dart';
 import '../../../core/design/components/app_bottom_sheet.dart';
@@ -10,6 +9,7 @@ import '../../../core/errors/supabase_error_mapper.dart';
 import '../../../core/notifications/notification_navigator_key.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/toast/app_toast.dart';
+import '../../../core/widgets/app_network_image.dart';
 import '../helpers/group_navigation.dart';
 import '../models/group_invite_preview.dart';
 import '../services/group_chat_services.dart';
@@ -204,7 +204,7 @@ class _ValidInviteContent extends StatelessWidget {
             child:
                 (preview.groupAvatarUrl != null &&
                         preview.groupAvatarUrl!.isNotEmpty)
-                    ? CachedNetworkImage(
+                    ? AppNetworkImage(
                       imageUrl: preview.groupAvatarUrl!,
                       fit: BoxFit.cover,
                       placeholder:

@@ -139,7 +139,21 @@ class CallCubit extends Cubit<CallState> with SafeEmitMixin<CallState> {
 
     emit(CallDialingState(call));
 
-    await signalingService.sendCallRequest(call);
+    try {
+      await signalingService.sendCallRequest(call);
+    } catch (e) {
+      debugPrint('❌ sendCallRequest failed: $e');
+      _activeCall = null;
+      _callAcceptedAt = null;
+      emit(CallEndedState());
+      emit(CallInitial());
+      AppToast.error(
+        e.toString().contains('target_user_deleted')
+            ? 'This account has been deleted.'
+            : 'Could not start the call. Please try again.',
+      );
+      return;
+    }
 
     unawaited(
       _chatServices.upsertCallMessage(
