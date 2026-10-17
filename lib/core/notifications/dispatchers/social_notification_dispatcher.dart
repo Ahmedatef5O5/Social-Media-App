@@ -28,12 +28,15 @@ class SocialNotificationDispatcher {
     'comment_react',
     'story_react',
     'message_react',
+    'feedback_reply',
   };
 
   static bool isSocialType(String type) =>
       _socialNotificationTypes.contains(type);
 
   static String resolveSocialReferenceId(Map<String, dynamic> data) {
+    final feedbackId = data['feedbackId'] as String?;
+    if (feedbackId != null && feedbackId.isNotEmpty) return feedbackId;
     final postId = data['postId'] as String?;
     if (postId != null && postId.isNotEmpty) return postId;
     final storyId = data['storyId'] as String?;
@@ -59,7 +62,7 @@ class SocialNotificationDispatcher {
         '';
     final String referenceId = resolveSocialReferenceId(data);
 
-    final String title =
+    String title =
         (data['title'] as String?)?.isNotEmpty == true
             ? data['title']!
             : actorName;
@@ -68,9 +71,19 @@ class SocialNotificationDispatcher {
             ? data['body']!
             : 'New notification';
 
+    if (type == 'feedback_reply' &&
+        !title.contains('☑️') &&
+        !title.contains('✓')) {
+      title = '☑️ $title';
+    }
+
     Uint8List avatarBitmap;
     try {
-      avatarBitmap = await _avatarBuilder.getAvatarBitmap(actorImageUrl);
+      if (type == 'feedback_reply') {
+        avatarBitmap = await _avatarBuilder.appIconBitmap();
+      } else {
+        avatarBitmap = await _avatarBuilder.getAvatarBitmap(actorImageUrl);
+      }
     } catch (_) {
       avatarBitmap = await _avatarBuilder.defaultBitmap();
     }

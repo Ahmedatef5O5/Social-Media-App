@@ -567,6 +567,11 @@ class TapActionHandler {
       'comment_react',
     };
 
+    if (type == 'feedback_reply') {
+      _openFeedbackDetails(referenceId);
+      return;
+    }
+
     if (type == 'mention') {
       if (commentContext == 'story' && referenceId.isNotEmpty) {
         _openMentionedStory(referenceId);
@@ -620,6 +625,23 @@ class TapActionHandler {
     PostDetailsActiveMode initialActiveMode = PostDetailsActiveMode.none,
   ]) {
     return ContentDeepLinkNavigator.openPost(postId, initialActiveMode);
+  }
+
+  /// Deep link for the "Support Team Replied" push. Falls back to the history
+  /// list when the id is missing so the tap is never a dead end.
+  static void _openFeedbackDetails(String feedbackId) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final navigator = navigatorKey.currentState;
+      if (navigator == null) return;
+      if (feedbackId.isEmpty) {
+        navigator.pushNamed(AppRoutes.feedbackHistoryRoute);
+        return;
+      }
+      navigator.pushNamed(
+        AppRoutes.feedbackDetailsRoute,
+        arguments: feedbackId,
+      );
+    });
   }
 
   static void _openNotificationsView([NotificationType? initialFilter]) {

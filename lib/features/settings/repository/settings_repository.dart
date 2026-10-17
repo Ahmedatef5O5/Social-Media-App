@@ -39,6 +39,17 @@ class SettingsRepository {
     }
   }
 
+  /// Setters must persist even if [init] has not completed yet (or failed once).
+  /// Previously they used a null-aware call on `_prefs`, which silently dropped the write when
+  /// `_prefs` was still null.
+  Future<SharedPreferences> _ensurePrefs() async {
+    final existing = _prefs;
+    if (existing != null) return existing;
+    final prefs = await SharedPreferences.getInstance();
+    _prefs = prefs;
+    return prefs;
+  }
+
   Future<void> reload() async {
     try {
       final prefs = _prefs ?? await SharedPreferences.getInstance();
@@ -66,42 +77,42 @@ class SettingsRepository {
 
   Future<void> setPushNotifications(bool value) async {
     pushNotifications = value;
-    await _prefs?.setBool(_kPushNotifications, value);
+    await (await _ensurePrefs()).setBool(_kPushNotifications, value);
   }
 
   Future<void> setMessagePreviews(bool value) async {
     messagePreviews = value;
-    await _prefs?.setBool(_kMessagePreviews, value);
+    await (await _ensurePrefs()).setBool(_kMessagePreviews, value);
   }
 
   Future<void> setCallNotifications(bool value) async {
     callNotifications = value;
-    await _prefs?.setBool(_kCallNotifications, value);
+    await (await _ensurePrefs()).setBool(_kCallNotifications, value);
   }
 
   Future<void> setReadReceipts(bool value) async {
     readReceipts = value;
-    await _prefs?.setBool(_kReadReceipts, value);
+    await (await _ensurePrefs()).setBool(_kReadReceipts, value);
   }
 
   Future<void> setOnlineStatus(bool value) async {
     onlineStatus = value;
-    await _prefs?.setBool(_kOnlineStatus, value);
+    await (await _ensurePrefs()).setBool(_kOnlineStatus, value);
   }
 
   Future<void> setBiometricLock(bool value) async {
     biometricLock = value;
-    await _prefs?.setBool(_kBiometricLock, value);
+    await (await _ensurePrefs()).setBool(_kBiometricLock, value);
   }
 
   Future<void> setTwoFactor(bool value) async {
     twoFactor = value;
-    await _prefs?.setBool(_kTwoFactor, value);
+    await (await _ensurePrefs()).setBool(_kTwoFactor, value);
   }
 
   Future<void> setDefaultStoryPrivacy(ContentPrivacy value) async {
     defaultStoryPrivacy = value;
-    await _prefs?.setString(
+    await (await _ensurePrefs()).setString(
       _kDefaultStoryPrivacy,
       contentPrivacyToString(value),
     );

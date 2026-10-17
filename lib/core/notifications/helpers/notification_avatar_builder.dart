@@ -30,6 +30,21 @@ class NotificationAvatarBuilder {
     return defFallback;
   }
 
+  Future<Uint8List> appIconBitmap() async {
+    const key = '__app_icon__';
+    if (_avatarCache.containsKey(key)) {
+      return _avatarCache[key]!;
+    }
+    try {
+      final data = await rootBundle.load('assets/images/app_icon.png');
+      final bytes = await _cropToCircle(data.buffer.asUint8List());
+      _avatarCache[key] = bytes;
+      return bytes;
+    } catch (_) {
+      return defaultBitmap();
+    }
+  }
+
   Future<Uint8List> buildLetterAvatar(String name) async {
     final initial = name.isNotEmpty ? name[0].toUpperCase() : '?';
 

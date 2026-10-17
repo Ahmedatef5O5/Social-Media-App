@@ -20,14 +20,26 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   final isIncomingCall = type == 'incoming_call' || type == 'call';
   final isIncomingGroupCall =
       type == 'incoming_group_call' || type == 'group_call';
+  final isCancelSignal =
+      type == 'call_cancelled' || type == 'group_call_cancelled';
 
-  // ── "Call Notifications" setting ─────────────────────────────────────────
+  // ── Notification settings (this isolate has its OWN memory) ──────────────
+  await SettingsRepository.instance.init();
+  await SettingsRepository.instance.reload();
+  final settings = SettingsRepository.instance;
+
+  if (!isCancelSignal) {
+    // "Push Notifications" is the master switch: chats, social AND calls.
+    if (!settings.pushNotifications) return;
+
+    // "Call Notifications" additionally gates ringing.
+    if ((isIncomingCall || isIncomingGroupCall) &&
+        !settings.callNotifications) {
+      return;
+    }
+  }
 
   if (isIncomingCall || isIncomingGroupCall) {
-    await SettingsRepository.instance.init();
-    await SettingsRepository.instance.reload();
-    if (!SettingsRepository.instance.callNotifications) return;
-
     // Already in another call: never ring on top of it. The main isolate
     // mirrors its busy state to disk for exactly this check.
     final incomingCallId =

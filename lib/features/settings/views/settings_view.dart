@@ -11,7 +11,6 @@ import '../../../core/toast/app_toast.dart';
 import '../../home/cubits/home_cubit/home_cubit.dart';
 import '../../profile/services/user_services.dart';
 import '../../social_graph/views/audience_picker_view.dart';
-import '../../support/utils/support_actions.dart';
 import '../cubits/settings_state.dart';
 import '../cubits/setttings_cubit.dart';
 import '../widgets/settings_danger_zone.dart';
@@ -72,9 +71,9 @@ class _SettingsViewState extends State<SettingsView>
     AppToast.info('$feature is coming soon');
   }
 
-  Future<void> _sendFeedback(BuildContext context) async {
+  void _sendFeedback(BuildContext context) {
     HapticFeedback.selectionClick();
-    await SupportActions.sendFeedback(context);
+    Navigator.of(context).pushNamed(AppRoutes.feedbackRoute);
   }
 
   Widget _buildScaffold(BuildContext context, SettingsState settingsState) {
@@ -123,13 +122,18 @@ class _SettingsViewState extends State<SettingsView>
                         label: 'Change Password',
                         subtitle: 'Update your account password',
                         onTap:
-                            () => _showComingSoon(context, 'Change Password'),
+                            () => Navigator.of(
+                              context,
+                            ).pushNamed(AppRoutes.changePasswordRoute),
                       ),
                       SettingsItemData(
                         icon: CupertinoIcons.mail_solid,
                         label: 'Email Address',
                         subtitle: 'Manage linked email',
-                        onTap: () => _showComingSoon(context, 'Email Address'),
+                        onTap:
+                            () => Navigator.of(
+                              context,
+                            ).pushNamed(AppRoutes.emailSettingsRoute),
                       ),
                     ],
                   ),
@@ -323,6 +327,16 @@ class _SettingsViewState extends State<SettingsView>
                             () => Navigator.pushNamed(
                               context,
                               AppRoutes.privacyPolicyViewRoute,
+                            ),
+                      ),
+                      SettingsItemData(
+                        icon: Icons.gavel_rounded,
+                        label: 'Terms of Service',
+                        subtitle: 'Platform rules & community guidelines',
+                        onTap:
+                            () => Navigator.pushNamed(
+                              context,
+                              AppRoutes.termsOfServiceRoute,
                             ),
                       ),
                     ],

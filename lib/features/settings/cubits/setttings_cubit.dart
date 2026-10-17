@@ -1,6 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:social_media_app/features/settings/cubits/settings_state.dart';
 import '../../../core/helpers/safe_emit_mixin.dart';
+import '../../../core/notifications/services/notification_prefs_sync_service.dart';
 import '../../../core/presence/services/presence_service.dart';
 import '../../auth/data/models/user_data.dart';
 import '../../home/cubits/home_cubit/home_cubit.dart';
@@ -31,16 +32,19 @@ class SettingsCubit extends Cubit<SettingsState>
   Future<void> setPushNotifications(bool value) async {
     await SettingsRepository.instance.setPushNotifications(value);
     emit(state.copyWith(pushNotifications: value));
+    await NotificationPrefsSyncService.instance.markDirtyAndSync();
   }
 
   Future<void> setMessagePreviews(bool value) async {
     await SettingsRepository.instance.setMessagePreviews(value);
     emit(state.copyWith(messagePreviews: value));
+    await NotificationPrefsSyncService.instance.markDirtyAndSync();
   }
 
   Future<void> setCallNotifications(bool value) async {
     await SettingsRepository.instance.setCallNotifications(value);
     emit(state.copyWith(callNotifications: value));
+    await NotificationPrefsSyncService.instance.markDirtyAndSync();
   }
 
   Future<void> setReadReceipts(bool value) async {

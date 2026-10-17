@@ -38,9 +38,26 @@ class ChatNotificationDispatcher {
   final FlutterLocalNotificationsPlugin _localNotifications =
       FlutterLocalNotificationsPlugin();
 
+  Future<bool> _previewsEnabled({bool refresh = false}) async {
+    final repo = SettingsRepository.instance;
+    if (refresh) {
+      await repo.reload();
+    } else {
+      await repo.init();
+    }
+    return repo.messagePreviews;
+  }
+
+  String _previewText(_StoredMessage m, bool previews) =>
+      (previews || m.senderName == 'You') ? m.text : 'New message';
+
   Future<void> showNotificationFromMessage(RemoteMessage message) async {
     final data = message.data;
     final notification = message.notification;
+
+    await SettingsRepository.instance.init();
+    if (!SettingsRepository.instance.pushNotifications) return;
+    final bool previews = await _previewsEnabled();
 
     final String type = data['notificationType'] ?? 'chat';
     final bool isGroup = type == 'group_message';
@@ -58,7 +75,7 @@ class ChatNotificationDispatcher {
     final bool isForwarded = data['is_forwarded'] == 'true';
 
     final String rawBody =
-        SettingsRepository.instance.messagePreviews
+        previews
             ? _buildStyleBody(
               data['messageType'] ?? 'text',
               data['messageBody'] ?? notification?.body ?? '',
@@ -115,7 +132,9 @@ class ChatNotificationDispatcher {
         stored
             .map(
               (m) => Message(
-                isGroup ? '${m.senderName}: ${m.text}' : m.text,
+                isGroup
+                    ? '${m.senderName}: ${_previewText(m, previews)}'
+                    : _previewText(m, previews),
                 DateTime.fromMillisecondsSinceEpoch(m.timestamp),
                 remotePerson,
               ),
@@ -360,6 +379,8 @@ class ChatNotificationDispatcher {
     required String newMessageId,
     String? myAvatarUrl,
   }) async {
+    final bool previews = await _previewsEnabled(refresh: true);
+
     final stored = await _appendToMessageHistory(
       conversationId,
       _StoredMessage(
@@ -399,8 +420,8 @@ class ChatNotificationDispatcher {
     final List<Message> styleMessages =
         stored.map((m) {
           final isMine = m.senderName == 'You';
-          final text =
-              (isGroup && !isMine) ? '${m.senderName}: ${m.text}' : m.text;
+          final shown = _previewText(m, previews);
+          final text = (isGroup && !isMine) ? '${m.senderName}: $shown' : shown;
           return Message(
             text,
             DateTime.fromMillisecondsSinceEpoch(m.timestamp),
