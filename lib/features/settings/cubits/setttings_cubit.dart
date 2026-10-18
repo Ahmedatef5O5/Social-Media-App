@@ -7,6 +7,8 @@ import '../../auth/data/models/user_data.dart';
 import '../../home/cubits/home_cubit/home_cubit.dart';
 import '../../profile/services/user_services.dart';
 import '../../../core/presence/models/presence_privacy.dart';
+import '../../two_factor/models/two_factor_status.dart';
+import '../../two_factor/services/two_factor_service.dart';
 import '../repository/settings_repository.dart';
 import '../services/app_lock_service.dart';
 
@@ -27,7 +29,9 @@ class SettingsCubit extends Cubit<SettingsState>
                currentUser?.presencePrivacy ?? PresencePrivacy.friends,
            presenceVisibleTo: currentUser?.presenceVisibleTo ?? const [],
          ),
-       );
+       ) {
+    refreshTwoFactorStatus();
+  }
 
   Future<void> setPushNotifications(bool value) async {
     await SettingsRepository.instance.setPushNotifications(value);
@@ -120,6 +124,21 @@ class SettingsCubit extends Cubit<SettingsState>
   Future<void> setTwoFactor(bool value) async {
     await SettingsRepository.instance.setTwoFactor(value);
     emit(state.copyWith(twoFactor: value));
+  }
+
+  Future<void> refreshTwoFactorStatus() async {
+    try {
+      const service = TwoFactorService();
+      final status = await service.status();
+      final isEnabled = status == TwoFactorStatus.enabled;
+      int? count;
+      if (isEnabled) {
+        try {
+          count = await service.recoveryCodesRemaining();
+        } catch (_) {}
+      }
+      emit(state.copyWith(twoFactor: isEnabled, recoveryCodesCount: count));
+    } catch (_) {}
   }
 
   Future<void> toggleBiometricLock(bool value) async {

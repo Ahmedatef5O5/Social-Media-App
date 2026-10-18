@@ -1,10 +1,12 @@
 import 'dart:io';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:social_media_app/core/media_editor/media_editor_service.dart';
 import 'package:social_media_app/core/router/app_routes.dart';
 import 'package:social_media_app/core/supabase/supabase_provider.dart';
 import 'package:social_media_app/core/toast/app_toast.dart';
@@ -12,6 +14,7 @@ import 'package:social_media_app/core/widgets/custom_elevated_button.dart';
 import 'package:social_media_app/core/widgets/custom_text_form_field.dart';
 import 'package:social_media_app/features/settings/widgets/settings_detail_sliver_app_bar.dart';
 import 'package:social_media_app/features/settings/widgets/settings_surface_card.dart';
+
 import '../cubits/feedback_cubit.dart';
 import '../cubits/feedback_state.dart';
 import '../models/feedback_models.dart';
@@ -67,6 +70,22 @@ class _SubmitFeedbackViewState extends State<SubmitFeedbackView> {
     } catch (_) {
       AppToast.error('Could not open your gallery.');
     }
+  }
+
+  /// Optional: draw arrows, highlight the bug, or blur personal info on the
+  /// attached screenshot. Cancelling keeps the original image.
+  Future<void> _editImage(FeedbackCubit cubit, File file) async {
+    final edited = await MediaEditorService.editImage(
+      context,
+      file,
+      preset: MediaEditorPreset.feedback,
+    );
+    if (edited == null) return;
+    if (await edited.length() > _maxImageBytes) {
+      AppToast.warning('Edited image is too large (max 10 MB).');
+      return;
+    }
+    cubit.setImage(edited);
   }
 
   String? _validateMessage(String? v) {
@@ -253,6 +272,11 @@ class _SubmitFeedbackViewState extends State<SubmitFeedbackView> {
                               enabled: !busy,
                               onPick: () => _pickImage(cubit),
                               onRemove: () => cubit.setImage(null),
+                              onEdit:
+                                  state.imageFile == null
+                                      ? null
+                                      : () =>
+                                          _editImage(cubit, state.imageFile!),
                             ),
                             const Gap(12),
                             FeedbackVoiceRecorder(
@@ -374,12 +398,14 @@ class _ImageAttachment extends StatelessWidget {
   final bool enabled;
   final VoidCallback onPick;
   final VoidCallback onRemove;
+  final VoidCallback? onEdit;
 
   const _ImageAttachment({
     required this.file,
     required this.enabled,
     required this.onPick,
     required this.onRemove,
+    this.onEdit,
   });
 
   @override
@@ -425,6 +451,26 @@ class _ImageAttachment extends StatelessWidget {
           borderRadius: BorderRadius.circular(14),
           child: Image.file(file!, height: 150, width: 150, fit: BoxFit.cover),
         ),
+        if (onEdit != null)
+          Positioned(
+            top: 6,
+            left: 6,
+            child: InkWell(
+              onTap: enabled ? onEdit : null,
+              child: Container(
+                padding: const EdgeInsets.all(4),
+                decoration: const BoxDecoration(
+                  color: Colors.black54,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.edit_rounded,
+                  size: 18,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ),
         Positioned(
           top: 6,
           right: 6,

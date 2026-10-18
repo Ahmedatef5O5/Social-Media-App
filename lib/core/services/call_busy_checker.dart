@@ -1,4 +1,4 @@
-﻿import 'package:flutter/foundation.dart';
+import 'package:flutter/foundation.dart';
 import '../supabase/supabase_provider.dart';
 
 /// Server-side "is this user already on a call?" lookup, used by the SENDER of
@@ -59,7 +59,9 @@ class CallBusyChecker {
     try {
       final rows = await SupabaseProvider.client
           .from('group_calls')
-          .select('call_id, initiator_id, status, started_at, last_heartbeat_at')
+          .select(
+            'call_id, initiator_id, status, started_at, last_heartbeat_at',
+          )
           .inFilter('initiator_id', ids)
           .inFilter('status', ['ringing', 'accepted', 'ongoing'])
           .limit(200);
@@ -69,7 +71,9 @@ class CallBusyChecker {
         if (excludeCallId != null && callId == excludeCallId) continue;
 
         final status = row['status'] as String? ?? '';
-        final startedAt = DateTime.tryParse(row['started_at']?.toString() ?? '');
+        final startedAt = DateTime.tryParse(
+          row['started_at']?.toString() ?? '',
+        );
         final heartbeat = DateTime.tryParse(
           row['last_heartbeat_at']?.toString() ?? '',
         );

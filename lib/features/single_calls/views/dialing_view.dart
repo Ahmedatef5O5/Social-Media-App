@@ -139,7 +139,11 @@ class _DialingViewState extends State<DialingView> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        const Icon(Icons.phone_forwarded_rounded, color: Colors.white60, size: 15),
+        const Icon(
+          Icons.phone_forwarded_rounded,
+          color: Colors.white60,
+          size: 15,
+        ),
         const SizedBox(width: 6),
         AnimatedActivityText(
           text: isVideo ? 'Calling (Video)...' : 'Calling (Audio)...',

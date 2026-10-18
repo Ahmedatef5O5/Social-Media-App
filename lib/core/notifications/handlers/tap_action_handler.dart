@@ -70,7 +70,9 @@ class TapActionHandler {
 
     unawaited(
       action().catchError((Object e, StackTrace s) {
-        debugPrint('[TapActionHandler] queued cold-start action failed: $e\n$s');
+        debugPrint(
+          '[TapActionHandler] queued cold-start action failed: $e\n$s',
+        );
       }),
     );
   }
@@ -260,7 +262,10 @@ class TapActionHandler {
 
   // ─────────────────────────── 1:1 incoming call ───────────────────────────
 
-  static void _handleSingleCallTap(NotificationResponse response, String payload) {
+  static void _handleSingleCallTap(
+    NotificationResponse response,
+    String payload,
+  ) {
     final parts = payload.split('|');
     if (parts.length < 6) return;
 
@@ -377,7 +382,10 @@ class TapActionHandler {
 
   // ───────────────────────────── group call ────────────────────────────────
 
-  static void _handleGroupCallTap(NotificationResponse response, String payload) {
+  static void _handleGroupCallTap(
+    NotificationResponse response,
+    String payload,
+  ) {
     final data = _GroupCallPayload.parse(payload);
     if (data == null) return;
 

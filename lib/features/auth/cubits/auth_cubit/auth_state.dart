@@ -17,6 +17,10 @@ final class AuthFailure extends AuthState {
 
 final class AuthSignedOut extends AuthState {}
 
+final class AuthMfaRequired extends AuthState {
+  const AuthMfaRequired();
+}
+
 final class PasswordResetEmailSent extends AuthState {}
 
 final class PasswordUpdateSuccess extends AuthState {}

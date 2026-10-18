@@ -35,6 +35,7 @@ import '../observability/observability.dart';
 import '../observability/realtime_channel_sampler.dart';
 import '../observability/realtime_diagnostics.dart';
 import '../services/active_screen_tracker.dart';
+import '../session/session_guard.dart';
 import '../session/session_scope.dart';
 import '../share_intent/services/share_intent_service.dart';
 import '../supabase/supabase_provider.dart';
@@ -245,6 +246,25 @@ Future<void> _guardAgainstCrossAccountCacheLeak() async {
   }
 }
 
+Future<void> completeSignInBootstrap() async {
+  final session = SupabaseProvider.currentSession;
+  final userId = session?.user.id;
+  if (userId != null) {
+    await obs.setSessionUser(userId);
+    await obs.breadcrumb(
+      'mfa challenge completed - signed in',
+      feature: 'auth',
+    );
+    RealtimeDiagnostics.instance.detectZombies(userId);
+    RealtimeChannelSampler.instance.setOwner(userId);
+    await PresenceService.instance.init();
+    final context = navigatorKey.currentContext;
+    if (context != null && context.mounted) {
+      _refetchSessionCubits(context);
+    }
+  }
+}
+
 void _setupAuthListener() {
   SupabaseProvider.authChanges.listen(
     (data) async {
@@ -275,6 +295,13 @@ void _setupAuthListener() {
       if (event == AuthChangeEvent.signedIn && session != null) {
         AuthLinkHandler.instance.onAuthEvent();
         debugPrint('✅ Logged in: ${session.user.email}');
+
+        if (SessionGuard.isMfaChallengePending) {
+          debugPrint(
+            '⏳ 2FA challenge pending; skipping session bootstrap until AAL2',
+          );
+          return;
+        }
 
         await obs.setSessionUser(session.user.id);
         await obs.breadcrumb('signed in', feature: 'auth');

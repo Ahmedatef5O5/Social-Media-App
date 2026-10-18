@@ -9,6 +9,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/bootstrap/session_data_cleaner.dart';
 import '../../../../core/helpers/safe_emit_mixin.dart';
 import '../../../../core/presence/services/presence_service.dart';
+import '../../../../core/session/session_guard.dart';
 import '../../../../core/supabase/supabase_provider.dart';
 import '../../../../core/toast/app_toast.dart';
 import '../../../../core/utilities/supabase_constants.dart';
@@ -38,6 +39,12 @@ class AuthCubit extends Cubit<AuthState> with SafeEmitMixin<AuthState> {
               event == AuthChangeEvent.initialSession)) {
         final user = session.user;
         _suppressSignedOutEmit = false;
+
+        if (SessionGuard.isMfaChallengePending) {
+          emit(const AuthMfaRequired());
+          return;
+        }
+
         emit(AuthSuccess());
 
         unawaited(
@@ -300,6 +307,22 @@ class AuthCubit extends Cubit<AuthState> with SafeEmitMixin<AuthState> {
       debugPrint('⚠️ Session refresh failed: $e — Forcing Sign Out...');
       await signOut();
     }
+  }
+
+  void completeMfa() {
+    emit(AuthSuccess());
+    final user = SupabaseProvider.user;
+    if (user != null) {
+      unawaited(
+        _authServices.ensureUserExistsInDb(user).catchError((e) {
+          debugPrint('⚠️ ensureUserExistsInDb failed after MFA: $e');
+        }),
+      );
+    }
+  }
+
+  Future<void> signOutFromMfaChallenge() async {
+    await signOut();
   }
 
   @override

@@ -11,7 +11,7 @@ class SettingsState {
   final bool twoFactor;
   final PresencePrivacy presencePrivacy;
   final List<String> presenceVisibleTo;
-
+  final int? recoveryCodesCount;
   final String? errorMessage;
 
   const SettingsState({
@@ -24,6 +24,7 @@ class SettingsState {
     required this.twoFactor,
     required this.presencePrivacy,
     required this.presenceVisibleTo,
+    this.recoveryCodesCount,
     this.errorMessage,
   });
 
@@ -55,6 +56,7 @@ class SettingsState {
     bool? twoFactor,
     PresencePrivacy? presencePrivacy,
     List<String>? presenceVisibleTo,
+    int? recoveryCodesCount,
     String? errorMessage,
   }) {
     return SettingsState(
@@ -67,6 +69,7 @@ class SettingsState {
       twoFactor: twoFactor ?? this.twoFactor,
       presencePrivacy: presencePrivacy ?? this.presencePrivacy,
       presenceVisibleTo: presenceVisibleTo ?? this.presenceVisibleTo,
+      recoveryCodesCount: recoveryCodesCount ?? this.recoveryCodesCount,
       errorMessage: errorMessage,
     );
   }

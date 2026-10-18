@@ -34,6 +34,8 @@ class AppRoutes {
   static const String groupInfoViewRoute = '/group-info/View';
   static const String createGroupRoute = '/group-chat/create';
 
+  static const String messageInfoViewRoute = '/message-info-view';
+
   // Calls
   static const String incomingCallRoute = '/incoming-call';
   static const dialingRoute = '/dialing';
@@ -68,4 +70,8 @@ class AppRoutes {
   static const String forgotPasswordRoute = '/forgot-password-view';
   static const String authLinkExpiredRoute = '/auth-link-expired-view';
   static const String resetPasswordRoute = '/reset-password-view';
+
+  // Two-Factor Authentication
+  static const String twoFactorSetupRoute = '/two-factor-setup-view';
+  static const String twoFactorChallengeRoute = '/two-factor-challenge-view';
 }

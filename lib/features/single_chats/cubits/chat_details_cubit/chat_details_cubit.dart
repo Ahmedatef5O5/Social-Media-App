@@ -71,7 +71,7 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
   //
   // Merge precedence: the incoming representation (Realtime row / API ack)
   // is treated as the source of truth for content, EXCEPT `reactions` /
-    static final _reconciler = MessageReconciler<MessageModel>(
+  static final _reconciler = MessageReconciler<MessageModel>(
     idOf: (m) => m.id,
     clientMessageIdOf: (m) => m.clientMessageId,
     createdAtOf: (m) => m.createdAt,

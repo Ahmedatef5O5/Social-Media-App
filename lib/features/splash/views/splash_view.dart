@@ -9,6 +9,7 @@ import 'package:social_media_app/core/themes/dynamic_splash_app.dart';
 import '../../../core/bootstrap/app_bootstrap.dart';
 import '../../../core/deep_link/services/deep_link_service.dart';
 import '../../../core/notifications/handlers/tap_action_handler.dart';
+import '../../../core/session/session_guard.dart';
 import '../../../core/share_intent/services/share_intent_service.dart';
 import '../../../core/supabase/supabase_provider.dart';
 import '../../auth/services/auth_link_handler.dart';
@@ -62,6 +63,8 @@ class _SplashViewState extends State<SplashView>
         route = AppRoutes.authLinkExpiredRoute;
       } else if (AuthRecoveryCoordinator.isRecoveryPending) {
         route = AppRoutes.resetPasswordRoute;
+      } else if (SessionGuard.isMfaChallengePending) {
+        route = AppRoutes.twoFactorChallengeRoute;
       } else if (session != null) {
         route = AppRoutes.homeRoute;
       } else if (hasSeenOnboarding) {

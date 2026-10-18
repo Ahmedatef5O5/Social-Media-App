@@ -262,13 +262,15 @@ class _OutgoingGroupCallScreenState extends State<OutgoingGroupCallScreen>
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        const Icon(Icons.phone_forwarded_rounded, color: Colors.white60, size: 15),
+        const Icon(
+          Icons.phone_forwarded_rounded,
+          color: Colors.white60,
+          size: 15,
+        ),
         const SizedBox(width: 6),
         AnimatedActivityText(
           text:
-              isVideo
-                  ? 'Calling group (Video)...'
-                  : 'Calling group (Audio)...',
+              isVideo ? 'Calling group (Video)...' : 'Calling group (Audio)...',
           forceAnimate: true,
           style: const TextStyle(
             color: Colors.white70,

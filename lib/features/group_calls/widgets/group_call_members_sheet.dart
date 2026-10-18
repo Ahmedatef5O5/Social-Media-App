@@ -155,10 +155,8 @@ class _GroupCallMembersSheetState extends State<GroupCallMembersSheet> {
     final entries =
         members
             .map(
-              (m) => GroupCallMemberEntry(
-                member: m,
-                isActive: _isMemberActive(m),
-              ),
+              (m) =>
+                  GroupCallMemberEntry(member: m, isActive: _isMemberActive(m)),
             )
             .toList();
 

@@ -96,4 +96,3 @@ class _LiveDot extends StatelessWidget {
     );
   }
 }
-

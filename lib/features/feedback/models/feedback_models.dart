@@ -92,10 +92,7 @@ class FeedbackQuota {
 
   const FeedbackQuota({required this.used, required this.limit, this.resetsAt});
 
-  const FeedbackQuota.unknown()
-    : used = 0,
-      limit = maxPer24h,
-      resetsAt = null;
+  const FeedbackQuota.unknown() : used = 0, limit = maxPer24h, resetsAt = null;
 
   bool get isExhausted => used >= limit;
   int get remaining => (limit - used).clamp(0, limit);

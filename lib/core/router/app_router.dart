@@ -85,10 +85,13 @@ import '../../features/stories/views/user_stories_grid_view.dart';
 import '../../features/support/views/help_faq_view.dart';
 import '../../features/support/views/privacy_policy_view.dart';
 import '../../features/support/views/terms_of_service_view.dart';
+import '../../features/two_factor/views/two_factor_challenge_view.dart';
+import '../../features/two_factor/views/two_factor_setup_view.dart';
 import '../cache/repository/media_cache_repository.dart';
 import '../chat_shared/cubits/conversations_cubit/conversations_cubit.dart';
 import '../chat_shared/cubits/new_chat_cubit/new_chat_cubit.dart';
 import '../chat_shared/views/archived_chats_view.dart';
+import '../chat_shared/views/message_info_view.dart';
 import '../chat_shared/views/new_chat_view.dart';
 import '../connectivity/cubits/connectivity_cubit.dart';
 import '../share_intent/models/incoming_share_payload.dart';
@@ -110,6 +113,7 @@ class AppRouter {
     AppRoutes.forgotPasswordRoute,
     AppRoutes.resetPasswordRoute,
     AppRoutes.authLinkExpiredRoute,
+    AppRoutes.twoFactorChallengeRoute,
   };
 
   static bool _isAuthCallback(String? routeName) {
@@ -218,6 +222,7 @@ class AppRouter {
       case AppRoutes.forgotPasswordRoute:
       case AppRoutes.resetPasswordRoute:
       case AppRoutes.authLinkExpiredRoute:
+      case AppRoutes.twoFactorChallengeRoute:
         return _authRoutes(settings);
 
       case AppRoutes.homeRoute:
@@ -270,6 +275,7 @@ class AppRouter {
       case AppRoutes.feedbackRoute:
       case AppRoutes.feedbackHistoryRoute:
       case AppRoutes.feedbackDetailsRoute:
+      case AppRoutes.twoFactorSetupRoute:
         return _profileAndSettingsRoutes(settings);
 
       default:
@@ -293,6 +299,8 @@ class AppRouter {
         return _buildRoute(const ResetPasswordView(), settings: settings);
       case AppRoutes.authLinkExpiredRoute:
         return _buildRoute(const AuthLinkExpiredView(), settings: settings);
+      case AppRoutes.twoFactorChallengeRoute:
+        return _buildRoute(const TwoFactorChallengeView(), settings: settings);
       default:
         return _errorRoute(settings, 'Auth route not found');
     }
@@ -627,6 +635,12 @@ class AppRouter {
           settings: settings,
           typeOfRoute: TypeOfRoute.fade,
         );
+      case AppRoutes.messageInfoViewRoute:
+        final args = settings.arguments as MessageInfoArgs?;
+        if (args == null) {
+          return _errorRoute(settings, 'Missing MessageInfoArgs');
+        }
+        return _buildRoute(MessageInfoView(args: args), settings: settings);
       default:
         return _errorRoute(settings, 'Chat route not found');
     }
@@ -846,7 +860,6 @@ class AppRouter {
         return _buildRoute(const TermsOfServiceView(), settings: settings);
       case AppRoutes.aiSettingsViewRoute:
         return _buildRoute(const AiSettingsView(), settings: settings);
-
       case AppRoutes.themesSelectViewRoute:
         final userId = _args<String>(settings);
         if (userId == null) {
@@ -899,7 +912,10 @@ class AppRouter {
         final existing = _args<FeedbackCubit>(settings);
         return _buildRoute(
           existing != null
-              ? BlocProvider.value(value: existing, child: const MyFeedbacksView())
+              ? BlocProvider.value(
+                value: existing,
+                child: const MyFeedbacksView(),
+              )
               : BlocProvider(
                 create: (_) => FeedbackCubit(FeedbackService())..init(),
                 child: const MyFeedbacksView(),
@@ -915,6 +931,8 @@ class AppRouter {
           FeedbackDetailsView(feedbackId: feedbackId),
           settings: settings,
         );
+      case AppRoutes.twoFactorSetupRoute:
+        return _buildRoute(const TwoFactorSetupView(), settings: settings);
       default:
         return _errorRoute(settings, 'Profile/Settings route not found');
     }

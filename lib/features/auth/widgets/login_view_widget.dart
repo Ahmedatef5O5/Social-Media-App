@@ -69,8 +69,16 @@ class _LoginViewWidgetState extends State<LoginViewWidget> {
                 listenWhen:
                     (previous, current) =>
                         (previous is! AuthSuccess && current is AuthSuccess) ||
-                        current is AuthFailure,
+                        current is AuthFailure ||
+                        current is AuthMfaRequired,
                 listener: (context, state) async {
+                  if (state is AuthMfaRequired) {
+                    Navigator.of(
+                      context,
+                      rootNavigator: true,
+                    ).pushNamed(AppRoutes.twoFactorChallengeRoute);
+                    return;
+                  }
                   if (state is AuthSuccess) {
                     AppToast.success('Login Successfully');
                     await Future.delayed(const Duration(milliseconds: 550));

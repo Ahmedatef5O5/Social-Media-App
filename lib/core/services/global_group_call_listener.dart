@@ -88,17 +88,16 @@ class _GlobalGroupCallListenerState extends State<GlobalGroupCallListener> {
     _ringChannel = channel;
   }
 
-  Future<void> _onRingBroadcast(
-    String userId,
-    Map<String, dynamic> raw,
-  ) async {
+  Future<void> _onRingBroadcast(String userId, Map<String, dynamic> raw) async {
     if (!mounted) return;
 
     // Depending on the realtime client version the callback receives either
     // the inner payload or the whole broadcast envelope.
     final inner = raw['payload'];
     final data =
-        inner is Map ? Map<String, dynamic>.from(inner) : Map<String, dynamic>.from(raw);
+        inner is Map
+            ? Map<String, dynamic>.from(inner)
+            : Map<String, dynamic>.from(raw);
 
     final callId = (data['callId'] ?? data['call_id']) as String? ?? '';
     if (callId.isEmpty) return;
@@ -109,7 +108,9 @@ class _GlobalGroupCallListenerState extends State<GlobalGroupCallListener> {
     try {
       await GroupCallDispatcher.instance.handleIncomingGroupCallData(data);
     } catch (e) {
-      debugPrint('[GlobalGroupCallListener] ring broadcast handling failed: $e');
+      debugPrint(
+        '[GlobalGroupCallListener] ring broadcast handling failed: $e',
+      );
     }
   }
 
@@ -144,11 +145,12 @@ class _GlobalGroupCallListenerState extends State<GlobalGroupCallListener> {
       // the guard does not block.
       GroupCallModel? activeCall;
       for (final call in calls) {
-        final blocked = IncomingCallNavigationGuard.shouldBlockIncomingGroupCall(
-          callId: call.callId,
-          initiatorId: call.initiatorId,
-          currentUserId: userId,
-        );
+        final blocked =
+            IncomingCallNavigationGuard.shouldBlockIncomingGroupCall(
+              callId: call.callId,
+              initiatorId: call.initiatorId,
+              currentUserId: userId,
+            );
         if (!blocked) {
           activeCall = call;
           break;
@@ -185,7 +187,9 @@ class _GlobalGroupCallListenerState extends State<GlobalGroupCallListener> {
         return;
       }
       unawaited(
-        pushed.then((_) => IncomingCallNavigationGuard.release(incomingCall.callId)),
+        pushed.then(
+          (_) => IncomingCallNavigationGuard.release(incomingCall.callId),
+        ),
       );
     });
   }
@@ -209,4 +213,3 @@ class _GlobalGroupCallListenerState extends State<GlobalGroupCallListener> {
     return widget.child;
   }
 }
-

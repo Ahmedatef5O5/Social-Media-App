@@ -11,6 +11,7 @@ import '../../../core/toast/app_toast.dart';
 import '../../home/cubits/home_cubit/home_cubit.dart';
 import '../../profile/services/user_services.dart';
 import '../../social_graph/views/audience_picker_view.dart';
+import '../../two_factor/widgets/two_factor_disable_sheet.dart';
 import '../cubits/settings_state.dart';
 import '../cubits/setttings_cubit.dart';
 import '../widgets/settings_danger_zone.dart';
@@ -229,11 +230,33 @@ class _SettingsViewState extends State<SettingsView>
                       SettingsItemData(
                         icon: CupertinoIcons.lock_shield_fill,
                         label: 'Two-Factor Auth',
-                        subtitle: 'Extra layer of security',
+                        subtitle:
+                            settingsState.twoFactor
+                                ? (settingsState.recoveryCodesCount != null
+                                    ? 'On • ${settingsState.recoveryCodesCount} recovery codes remaining'
+                                    : 'On • Authenticator app')
+                                : 'Extra layer of security',
                         toggle: settingsState.twoFactor,
-                        onToggle: (v) {
-                          context.read<SettingsCubit>().setTwoFactor(v);
-                          _showComingSoon(context, 'Two-Factor Auth');
+                        onToggle: (v) async {
+                          if (v) {
+                            final success = await Navigator.of(
+                              context,
+                            ).pushNamed(AppRoutes.twoFactorSetupRoute);
+                            if (success == true && context.mounted) {
+                              context
+                                  .read<SettingsCubit>()
+                                  .refreshTwoFactorStatus();
+                            }
+                          } else {
+                            final disabled = await showTwoFactorDisableSheet(
+                              context,
+                            );
+                            if (disabled == true && context.mounted) {
+                              context
+                                  .read<SettingsCubit>()
+                                  .refreshTwoFactorStatus();
+                            }
+                          }
                         },
                       ),
                       SettingsItemData(
