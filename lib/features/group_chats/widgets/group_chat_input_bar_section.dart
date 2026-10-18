@@ -174,11 +174,11 @@ class _GroupChatInputBarSectionState extends State<GroupChatInputBarSection> {
                     file: picked.localFile!,
                     type: 'image',
                     onSend:
-                        (caption) => cubit.sendMessage(
+                        (caption, sendFile, _) => cubit.sendMessage(
                           text: '',
                           messageType: 'image',
-                          imageFile: picked.localFile,
-                          fileSizeBytes: picked.fileSizeBytes,
+                          imageFile: sendFile,
+                          fileSizeBytes: sendFile.lengthSync(),
                           caption: caption,
                         ),
                   ),
@@ -199,14 +199,16 @@ class _GroupChatInputBarSectionState extends State<GroupChatInputBarSection> {
                     file: picked.localFile!,
                     type: 'video',
                     onSend:
-                        (caption) => cubit.sendMessage(
-                          text: '',
-                          messageType: 'video',
-                          videoFile: picked.localFile,
-                          fileSizeBytes: picked.fileSizeBytes,
-                          durationSeconds: picked.durationSeconds,
-                          caption: caption,
-                        ),
+                        (caption, sendFile, durationSeconds) =>
+                            cubit.sendMessage(
+                              text: '',
+                              messageType: 'video',
+                              videoFile: sendFile,
+                              fileSizeBytes: sendFile.lengthSync(),
+                              durationSeconds:
+                                  durationSeconds ?? picked.durationSeconds,
+                              caption: caption,
+                            ),
                   ),
                 ),
           ),

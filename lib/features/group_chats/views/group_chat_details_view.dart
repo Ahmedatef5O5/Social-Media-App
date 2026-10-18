@@ -116,14 +116,17 @@ class _GroupChatDetailsBodyState extends State<_GroupChatDetailsBody> {
                     file: file,
                     type: type,
                     onSend:
-                        (caption) => _groupDetailsCubit.sendMessage(
-                          text: '',
-                          messageType: type,
-                          imageFile: type == 'image' ? file : null,
-                          videoFile: type == 'video' ? file : null,
-                          fileSizeBytes: file.lengthSync(),
-                          caption: caption,
-                        ),
+                        (caption, sendFile, durationSeconds) =>
+                            _groupDetailsCubit.sendMessage(
+                              text: '',
+                              messageType: type,
+                              imageFile: type == 'image' ? sendFile : null,
+                              videoFile: type == 'video' ? sendFile : null,
+                              fileSizeBytes: sendFile.lengthSync(),
+                              durationSeconds:
+                                  type == 'video' ? durationSeconds : null,
+                              caption: caption,
+                            ),
                   ),
                 ),
           ),

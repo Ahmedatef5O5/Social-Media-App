@@ -12,6 +12,7 @@ import '../../../core/chat_shared/widgets/shared_media_preview_section.dart';
 import '../../../core/chat_shared/services/shared_media_data_source.dart';
 import '../../../core/chat_shared/widgets/starred_messages_row.dart';
 import '../../../core/errors/supabase_error_mapper.dart';
+import '../../../core/media_editor/media_editor_service.dart';
 import '../models/group_header_stats.dart';
 import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/toast/app_toast.dart';
@@ -125,15 +126,24 @@ class _GroupInfoViewState extends State<GroupInfoView> {
   Future<void> _changeGroupPhoto() async {
     final picked = await ImagePicker().pickImage(
       source: ImageSource.gallery,
-      imageQuality: 80,
-      maxWidth: 800,
+      imageQuality: 85,
+      maxWidth: 1200,
     );
     if (picked == null || !mounted) return;
+
+    final edited = await MediaEditorService.editImage(
+      context,
+      File(picked.path),
+      preset: MediaEditorPreset.avatar,
+    );
+
+    final fileToUpload = edited ?? File(picked.path);
+    if (!mounted) return;
 
     setState(() => _isUploadingPhoto = true);
 
     try {
-      final result = await _services.uploadGroupAvatar(File(picked.path));
+      final result = await _services.uploadGroupAvatar(fileToUpload);
       await _services.updateGroupAvatarUrl(
         widget.group.id,
         result.secureUrl,
@@ -153,12 +163,10 @@ class _GroupInfoViewState extends State<GroupInfoView> {
       }
     } catch (e) {
       if (mounted) {
-        AppToast.error(SupabaseErrorMapper.toUserMessage(e));
+        AppToast.error('Failed to update group photo');
       }
     } finally {
-      if (mounted) {
-        setState(() => _isUploadingPhoto = false);
-      }
+      if (mounted) setState(() => _isUploadingPhoto = false);
     }
   }
 

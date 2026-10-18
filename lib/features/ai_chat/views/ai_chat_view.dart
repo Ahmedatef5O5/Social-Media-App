@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
@@ -8,6 +9,8 @@ import 'package:open_filex/open_filex.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../../core/attachment/attachment_sheet/attachment_picker_sheet.dart';
 import '../../../core/cache/repository/media_cache_repository.dart';
+import '../../../core/chat_shared/views/message_info_view.dart';
+import '../../../core/media_editor/media_editor_service.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/toast/app_toast.dart';
@@ -568,6 +571,39 @@ class _AiChatViewState extends State<AiChatView> with TickerProviderStateMixin {
     if (mounted) _selection.clearSelection();
   }
 
+  void _openMessageInfo(BuildContext context) {
+    final selectedIds = _selection.selectedMessageIds.value;
+    if (selectedIds.length != 1) return;
+    final state = _chatCubit?.state;
+    if (state is! AiChatMessagesLoaded) {
+      debugPrint('[AiChatView] info ignored, state=${state.runtimeType}');
+      return;
+    }
+    final message = state.messages.firstWhereOrNull(
+      (m) => m.id == selectedIds.first,
+    );
+    if (message == null) {
+      debugPrint('[AiChatView] info ignored, message not found');
+      return;
+    }
+
+    final currentUser = context.read<HomeCubit>().currentUserData;
+    final args = MessageInfoArgs.fromAiChat(
+      message: message,
+      currentUserId: SupabaseProvider.id,
+      currentUserName: currentUser?.name,
+      currentUserAvatar: currentUser?.imageUrl,
+    );
+
+    FocusManager.instance.primaryFocus?.unfocus();
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => MessageInfoView(args: args)));
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _selection.clearSelection();
+    });
+  }
+
   // ---------------------------------------------------------------------
   // Suggestion taps
   // ---------------------------------------------------------------------
@@ -817,6 +853,23 @@ class _AiChatViewState extends State<AiChatView> with TickerProviderStateMixin {
     }
 
     await _attachments.stageFile(File(localPath), fileName);
+  }
+
+  Future<void> _editStagedImage() async {
+    final file = _attachments.stagedMediaFile;
+    if (file == null || _attachments.stagedMediaType != AiChatMediaType.image) {
+      return;
+    }
+    final edited = await MediaEditorService.editImage(
+      context,
+      file,
+      preset: MediaEditorPreset.aiChat,
+    );
+    if (edited == null || !mounted) return;
+    await _attachments.stageImage(
+      edited,
+      fileName: edited.path.split(Platform.pathSeparator).last,
+    );
   }
 
   Future<void> _openStagedMediaPreview() async {
@@ -1081,6 +1134,11 @@ class _AiChatViewState extends State<AiChatView> with TickerProviderStateMixin {
                                 onRemoveStagedFile:
                                     _attachments.removeStagedMedia,
                                 onTapStagedFile: _openStagedMediaPreview,
+                                onEditStagedFile:
+                                    _attachments.stagedMediaType ==
+                                            AiChatMediaType.image
+                                        ? _editStagedImage
+                                        : null,
                                 replyingTo: replyingTo,
                                 onCancelReply: _handleCancelReply,
                                 onTapReplyPreview: _handleTapReplyPreview,
@@ -1154,7 +1212,7 @@ class _AiChatViewState extends State<AiChatView> with TickerProviderStateMixin {
           onShareTap: _shareSelectedMessages,
           onForwardTap: _forwardSelectedMessages,
           onCopyTap: _copySelectedMessages,
-          onInfoTap: () => AppToast.info('Info is coming soon'),
+          onInfoTap: () => _openMessageInfo(context),
         );
       },
     );

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../core/errors/supabase_error_mapper.dart';
+import '../../../core/media_editor/media_editor_service.dart';
 import '../../../core/toast/app_toast.dart';
 import '../cubits/group_details_cubit/group_details_cubit.dart';
 import '../cubits/group_list_cubit/group_list_cubit.dart';
@@ -118,15 +119,24 @@ class _GroupSettingsViewState extends State<GroupSettingsView> {
   Future<void> _changePhoto() async {
     final picked = await ImagePicker().pickImage(
       source: ImageSource.gallery,
-      imageQuality: 80,
-      maxWidth: 800,
+      imageQuality: 85,
+      maxWidth: 1200,
     );
     if (picked == null || !mounted) return;
+
+    final edited = await MediaEditorService.editImage(
+      context,
+      File(picked.path),
+      preset: MediaEditorPreset.avatar,
+    );
+
+    final fileToUpload = edited ?? File(picked.path);
+    if (!mounted) return;
 
     setState(() => _isUploadingPhoto = true);
 
     try {
-      final result = await _services.uploadGroupAvatar(File(picked.path));
+      final result = await _services.uploadGroupAvatar(fileToUpload);
       await _services.updateGroupAvatarUrl(
         widget.group.id,
         result.secureUrl,
@@ -145,7 +155,7 @@ class _GroupSettingsViewState extends State<GroupSettingsView> {
       }
     } catch (e) {
       if (mounted) {
-        AppToast.error(SupabaseErrorMapper.toUserMessage(e));
+        AppToast.error('Failed to update group photo');
       }
     } finally {
       if (mounted) setState(() => _isUploadingPhoto = false);

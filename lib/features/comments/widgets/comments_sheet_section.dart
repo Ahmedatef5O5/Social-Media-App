@@ -23,8 +23,9 @@ import 'package:social_media_app/core/mentions/mentions.dart';
 
 class CommentsSheetSection extends StatefulWidget {
   final String postId;
+  final PostModel? post;
 
-  const CommentsSheetSection({super.key, required this.postId});
+  const CommentsSheetSection({super.key, required this.postId, this.post});
 
   @override
   State<CommentsSheetSection> createState() => _CommentsSheetSectionState();
@@ -244,17 +245,19 @@ class _CommentsSheetSectionState extends State<CommentsSheetSection> {
 
   @override
   Widget build(BuildContext context) {
-    final post = context.select<PostsCubit, PostModel?>((cubit) {
-      final state = cubit.state;
-      if (state is PostsLoaded) {
-        try {
-          return state.posts.findById(widget.postId);
-        } catch (_) {
+    final post =
+        context.select<PostsCubit, PostModel?>((cubit) {
+          final state = cubit.state;
+          if (state is PostsLoaded) {
+            try {
+              return state.posts.findById(widget.postId);
+            } catch (_) {
+              return null;
+            }
+          }
           return null;
-        }
-      }
-      return null;
-    });
+        }) ??
+        widget.post;
 
     if (post == null) {
       return const SizedBox(height: 300, child: CustomLoadingIndicator());

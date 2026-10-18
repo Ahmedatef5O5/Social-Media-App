@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:gap/gap.dart';
 import '../../../core/errors/supabase_error_mapper.dart';
+import '../../../core/media_editor/media_editor_service.dart';
 import '../../../core/toast/app_toast.dart';
 import 'package:social_media_app/core/widgets/custom_loading_indicator.dart';
 import 'package:social_media_app/features/social_graph/services/connections_service.dart';
@@ -69,9 +70,14 @@ class _CreateGroupViewState extends State<CreateGroupView> {
 
   Future<void> _pickImage() async {
     final picked = await ImagePicker().pickImage(source: ImageSource.gallery);
-    if (!mounted) return;
-    if (picked != null) {
-      setState(() => _groupImage = File(picked.path));
+    if (picked == null || !mounted) return;
+    final edited = await MediaEditorService.editImage(
+      context,
+      File(picked.path),
+      preset: MediaEditorPreset.avatar,
+    );
+    if (mounted) {
+      setState(() => _groupImage = edited ?? File(picked.path));
     }
   }
 

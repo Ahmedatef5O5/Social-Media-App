@@ -8,6 +8,7 @@ import 'package:social_media_app/features/chat_forwarding/models/forward_target_
 import 'package:social_media_app/features/chat_forwarding/models/forwardable_message.dart';
 import 'package:social_media_app/features/chat_forwarding/services/forward_service.dart';
 import 'package:social_media_app/features/chat_forwarding/views/forward_target_picker_view.dart';
+import '../../../core/chat_shared/views/message_info_view.dart';
 import '../../../core/chat_shared/widgets/message_selection_header_bar.dart';
 import '../../ai_chat/views/ai_chat_view.dart';
 import '../../single_chats/cubits/chats_cubit/chats_cubit.dart';
@@ -36,10 +37,6 @@ class GroupChatAppBarSwitcher extends StatelessWidget
 
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
-
-  void _showComingSoon(BuildContext context, String feature) {
-    AppToast.info('$feature is coming soon');
-  }
 
   Future<void> _openForwardPicker(
     BuildContext context, {
@@ -142,6 +139,25 @@ class GroupChatAppBarSwitcher extends StatelessWidget
     }
   }
 
+  void _openMessageInfo(BuildContext context, GroupDetailsCubit cubit) {
+    final selected = cubit.selectedMessages;
+    if (selected.length != 1) return;
+
+    final args = MessageInfoArgs.fromGroupChat(
+      message: selected.first,
+      group: group,
+      currentUserId: cubit.currentUserId,
+    );
+
+    FocusManager.instance.primaryFocus?.unfocus();
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => MessageInfoView(args: args)));
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!cubit.isClosed) cubit.clearSelection();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final cubit = context.read<GroupDetailsCubit>();
@@ -186,7 +202,7 @@ class GroupChatAppBarSwitcher extends StatelessWidget
                   showStar: selectedIds.length == 1,
                   isStarred: isStarred,
                   onStarToggle: cubit.toggleStarSelected,
-                  onInfoTap: () => _showComingSoon(context, 'Info'),
+                  onInfoTap: () => _openMessageInfo(context, cubit),
                   onForwardTap:
                       () => _openForwardPicker(
                         context,

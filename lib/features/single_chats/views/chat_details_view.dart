@@ -16,6 +16,7 @@ import 'package:social_media_app/features/single_chats/models/message_model.dart
 import 'package:social_media_app/features/single_chats/services/chat_services.dart';
 import 'package:social_media_app/features/single_chats/widgets/messages_list_view.dart';
 import 'package:social_media_app/features/single_chats/widgets/receiver_details_header_section.dart';
+import '../../../core/chat_shared/views/message_info_view.dart';
 import '../../../core/chat_shared/widgets/message_selection_header_bar.dart';
 import '../../../core/notifications/notification_service.dart';
 import '../../../core/router/app_router.dart';
@@ -114,15 +115,18 @@ class _ChatDetailsViewState extends State<ChatDetailsView>
                     file: file,
                     type: type,
                     onSend:
-                        (caption) => _chatCubit.sendMessage(
-                          receiverId: _receiverId,
-                          messageText: '',
-                          messageType: type,
-                          imageFile: type == 'image' ? file : null,
-                          videoFile: type == 'video' ? file : null,
-                          fileSizeBytes: file.lengthSync(),
-                          caption: caption,
-                        ),
+                        (caption, sendFile, durationSeconds) =>
+                            _chatCubit.sendMessage(
+                              receiverId: _receiverId,
+                              messageText: '',
+                              messageType: type,
+                              imageFile: type == 'image' ? sendFile : null,
+                              videoFile: type == 'video' ? sendFile : null,
+                              fileSizeBytes: sendFile.lengthSync(),
+                              durationSeconds:
+                                  type == 'video' ? durationSeconds : null,
+                              caption: caption,
+                            ),
                   ),
                 ),
           ),
@@ -386,8 +390,25 @@ class _ChatDetailsViewState extends State<ChatDetailsView>
     );
   }
 
-  void _showComingSoon(BuildContext context, String feature) {
-    AppToast.info('$feature is coming soon');
+  void _openMessageInfo(BuildContext context) {
+    final selected = _chatCubit.selectedMessages;
+    if (selected.length != 1) return;
+
+    final args = MessageInfoArgs.fromSingleChat(
+      message: selected.first,
+      receiverUser: widget.receiverUser,
+      currentUserId: _chatCubit.currentUserId,
+      currentUserName: _chatCubit.currentUserName,
+      currentUserAvatar: _chatCubit.senderImageUrl,
+    );
+
+    FocusManager.instance.primaryFocus?.unfocus();
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => MessageInfoView(args: args)));
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _chatCubit.clearSelection();
+    });
   }
 
   Future<void> _openForwardPicker(
@@ -563,7 +584,7 @@ class _ChatDetailsViewState extends State<ChatDetailsView>
                             showStar: selectedIds.length == 1,
                             isStarred: isStarred,
                             onStarToggle: _chatCubit.toggleStarSelected,
-                            onInfoTap: () => _showComingSoon(context, 'Info'),
+                            onInfoTap: () => _openMessageInfo(context),
                             onForwardTap:
                                 () => _openForwardPicker(
                                   context,

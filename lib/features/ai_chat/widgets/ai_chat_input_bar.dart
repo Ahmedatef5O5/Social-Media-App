@@ -26,6 +26,7 @@ class AiChatInputBar extends StatefulWidget {
   final File? stagedImageFile;
   final VoidCallback? onRemoveStagedFile;
   final VoidCallback? onTapStagedFile;
+  final VoidCallback? onEditStagedFile;
   final AiChatMessage? replyingTo;
   final VoidCallback? onCancelReply;
   final VoidCallback? onTapReplyPreview;
@@ -44,6 +45,7 @@ class AiChatInputBar extends StatefulWidget {
     this.onRemoveStagedFile,
     this.stagedImageFile,
     this.onTapStagedFile,
+    this.onEditStagedFile,
     this.replyingTo,
     this.onCancelReply,
     this.onTapReplyPreview,
@@ -179,6 +181,7 @@ class _AiChatInputBarState extends State<AiChatInputBar> {
               fileSizeBytes: widget.stagedFileSizeBytes ?? 0,
               imageFile: widget.stagedImageFile,
               onTapLeading: widget.onTapStagedFile,
+              onEdit: widget.onEditStagedFile,
               onRemove: widget.onRemoveStagedFile ?? () {},
             ),
           Stack(

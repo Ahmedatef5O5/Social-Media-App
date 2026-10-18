@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:path/path.dart' as p;
 import 'package:video_player/video_player.dart';
 import 'package:social_media_app/core/helpers/chat_helper.dart';
 import 'package:social_media_app/core/helpers/media_duration_badge.dart';
@@ -12,6 +13,7 @@ import 'package:social_media_app/features/comments/models/comment_type.dart';
 import 'package:social_media_app/features/comments/widgets/comment_voice_player.dart';
 import '../../../core/attachment/widgets/transfer_ring.dart';
 import '../../../core/helpers/file_icon_helper.dart';
+import '../../../core/media_editor/media_editor_service.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/utilities/file_size_formatter.dart';
 import '../../../core/widgets/app_file_image.dart';
@@ -20,6 +22,42 @@ import '../../single_chats/widgets/full_screen_media_view.dart';
 
 class CommentAttachmentPreview extends StatelessWidget {
   const CommentAttachmentPreview({super.key});
+
+  bool _canEdit(CommentAttachmentDraft a) =>
+      a.localFile != null &&
+      (a.type == CommentType.image || a.type == CommentType.video);
+
+  Future<void> _edit(BuildContext context, CommentAttachmentDraft a) async {
+    final cubit = context.read<CommentsCubit>();
+    final file = a.localFile!;
+
+    if (a.type == CommentType.image) {
+      final edited = await MediaEditorService.editImage(
+        context,
+        file,
+        preset: MediaEditorPreset.comment,
+      );
+      if (edited == null) return;
+      cubit.stageAttachment(
+        a.copyWith(
+          localFile: edited,
+          fileName: p.basename(edited.path),
+          fileSizeBytes: edited.lengthSync(),
+        ),
+      );
+    } else if (a.type == CommentType.video) {
+      final trimmed = await MediaEditorService.trimVideo(context, file);
+      if (trimmed == null) return;
+      cubit.stageAttachment(
+        a.copyWith(
+          localFile: trimmed.file,
+          fileName: p.basename(trimmed.file.path),
+          fileSizeBytes: trimmed.file.lengthSync(),
+          durationSeconds: trimmed.durationSeconds,
+        ),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -61,7 +99,24 @@ class CommentAttachmentPreview extends StatelessWidget {
               isVideo: attachment.type == CommentType.video,
               onCancel: () => context.read<CommentsCubit>().cancelUpload(),
             )
-          else
+          else ...[
+            if (_canEdit(attachment)) ...[
+              InkWell(
+                borderRadius: BorderRadius.circular(20),
+                onTap: () => _edit(context, attachment),
+                child: CircleAvatar(
+                  radius: 13,
+                  backgroundColor: AppColors.grey5.withValues(alpha: 0.3),
+                  child: Icon(
+                    attachment.type == CommentType.video
+                        ? Icons.content_cut_rounded
+                        : Icons.edit_rounded,
+                    size: 14,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 6),
+            ],
             InkWell(
               borderRadius: BorderRadius.circular(20),
               onTap: () => context.read<CommentsCubit>().clearAttachment(),
@@ -71,6 +126,7 @@ class CommentAttachmentPreview extends StatelessWidget {
                 child: const Icon(Icons.close_rounded, size: 15),
               ),
             ),
+          ],
         ],
       ),
     );
@@ -149,7 +205,11 @@ class _PreviewThumbnail extends StatelessWidget {
               );
             }
           },
-          child: _VideoThumbnail(file: attachment.localFile!, size: size),
+          child: _VideoThumbnail(
+            key: ValueKey(attachment.localFile!.path),
+            file: attachment.localFile!,
+            size: size,
+          ),
         );
 
       case CommentType.gif:
@@ -208,7 +268,7 @@ class _PreviewThumbnail extends StatelessWidget {
 class _VideoThumbnail extends StatefulWidget {
   final File file;
   final double size;
-  const _VideoThumbnail({required this.file, required this.size});
+  const _VideoThumbnail({super.key, required this.file, required this.size});
 
   @override
   State<_VideoThumbnail> createState() => _VideoThumbnailState();

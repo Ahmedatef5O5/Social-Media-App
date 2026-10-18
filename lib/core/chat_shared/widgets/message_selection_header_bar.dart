@@ -100,14 +100,15 @@ class MessageSelectionHeaderBar extends StatelessWidget
                 onTap: onCopyTap,
               ),
 
-            PremiumSelectionActionIcon(
-              state: PremiumActionVisualState.off,
-              onIcon: Icons.info_outline,
-              offIcon: Icons.info_outline,
-              onLabel: 'Info',
-              offLabel: 'Info',
-              onTap: onInfoTap,
-            ),
+            if (selectedCount == 1)
+              PremiumSelectionActionIcon(
+                state: PremiumActionVisualState.off,
+                onIcon: Icons.info_outline,
+                offIcon: Icons.info_outline,
+                onLabel: 'Info',
+                offLabel: 'Info',
+                onTap: onInfoTap,
+              ),
 
             PremiumSelectionActionIcon(
               state: PremiumActionVisualState.on,

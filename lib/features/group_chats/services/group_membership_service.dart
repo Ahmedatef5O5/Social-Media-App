@@ -493,113 +493,18 @@ class GroupMembershipService {
     return controller.stream;
   }
 
-  static const Duration _headerStatsPollInterval = Duration(seconds: 30);
-  static const Duration _headerStatsDebounce = Duration(milliseconds: 500);
-  static int _headerStatsSeq = 0;
+  static final Map<String, _GroupHeaderStatsHub> _headerHubs = {};
 
   Stream<GroupHeaderStats> watchGroupHeaderStats(String groupId) {
-    late final StreamController<GroupHeaderStats> controller;
-    RealtimeChannel? membersChannel;
-    Timer? pollTimer;
-    Timer? debounceTimer;
-    var fetching = false;
-    var refetchQueued = false;
-
-    Future<void> fetch() async {
-      if (fetching) {
-        refetchQueued = true;
-        return;
-      }
-      fetching = true;
-      try {
-        do {
-          refetchQueued = false;
-          final raw = await _supabase.rpc(
-            'get_group_header_stats',
-            params: {'p_group_id': groupId},
-          );
-          if (controller.isClosed || !controller.hasListener) return;
-
-          final row = raw is List ? (raw.isEmpty ? null : raw.first) : raw;
-          if (row is Map) {
-            controller.add(
-              GroupHeaderStats(
-                totalMembers: (row['total_members'] as num?)?.toInt() ?? 0,
-                onlineCount: (row['online_count'] as num?)?.toInt() ?? 0,
-              ),
-            );
-          }
-        } while (refetchQueued);
-      } catch (e) {
-        debugPrint('[GroupHeaderStats] fetch error: $e');
-      } finally {
-        fetching = false;
-      }
-    }
-
-    void scheduleFetch() {
-      debounceTimer?.cancel();
-      debounceTimer = Timer(_headerStatsDebounce, () => unawaited(fetch()));
-    }
-
-    controller = StreamController<GroupHeaderStats>.broadcast(
-      onListen: () {
-        unawaited(fetch());
-        pollTimer = Timer.periodic(
-          _headerStatsPollInterval,
-          (_) => unawaited(fetch()),
-        );
-
-        final channel = _supabase.channel(
-          'group_header_members_${groupId}_${_headerStatsSeq++}',
-        );
-        final topic = channel.topic;
-        RealtimeDiagnostics.instance.onChannelCreated(
-          topic,
-          ownerUserId: currentUserId,
-        );
-        channel
-            .onPostgresChanges(
-              event: PostgresChangeEvent.all,
-              schema: 'public',
-              table: SupabaseConstants.groupMembers,
-              filter: PostgresChangeFilter(
-                type: PostgresChangeFilterType.eq,
-                column: GroupMemberColumns.groupId,
-                value: groupId,
-              ),
-              callback: (_) => scheduleFetch(),
-            )
-            .subscribe((status, [error]) {
-              switch (status) {
-                case RealtimeSubscribeStatus.subscribed:
-                  RealtimeDiagnostics.instance.onChannelSubscribed(topic);
-                case RealtimeSubscribeStatus.channelError:
-                case RealtimeSubscribeStatus.timedOut:
-                  RealtimeDiagnostics.instance.onChannelError(
-                    topic,
-                    error ?? status,
-                    StackTrace.current,
-                  );
-                case RealtimeSubscribeStatus.closed:
-                  break;
-              }
-            });
-        membersChannel = channel;
-      },
-      onCancel: () {
-        pollTimer?.cancel();
-        debounceTimer?.cancel();
-        final channel = membersChannel;
-        membersChannel = null;
-        if (channel != null) {
-          RealtimeDiagnostics.instance.onChannelClosed(channel.topic);
-          unawaited(_supabase.removeChannel(channel));
-        }
-      },
+    final hub = _headerHubs.putIfAbsent(
+      groupId,
+      () => _GroupHeaderStatsHub(
+        supabase: _supabase,
+        groupId: groupId,
+        currentUserId: currentUserId,
+      ),
     );
-
-    return controller.stream;
+    return hub.stream;
   }
 
   Future<Map<String, String?>> getUserInfo(String userId) async {
@@ -679,6 +584,155 @@ class GroupMembershipService {
         return '$actorName joined via invite link';
       default:
         return '$actorName updated the group';
+    }
+  }
+}
+
+class _GroupHeaderStatsHub {
+  _GroupHeaderStatsHub({
+    required SupabaseClient supabase,
+    required this.groupId,
+    required this.currentUserId,
+  }) : _supabase = supabase {
+    _controller = StreamController<GroupHeaderStats>.broadcast(
+      onListen: _onListen,
+      onCancel: _onCancel,
+    );
+  }
+
+  static const Duration _pollInterval = Duration(seconds: 30);
+  static const Duration _debounce = Duration(milliseconds: 500);
+  static const Duration _closeGrace = Duration(seconds: 5);
+  static int _seq = 0;
+
+  final SupabaseClient _supabase;
+  final String groupId;
+  final String currentUserId;
+
+  late final StreamController<GroupHeaderStats> _controller;
+  RealtimeChannel? _channel;
+  Timer? _pollTimer;
+  Timer? _debounceTimer;
+  Timer? _closeTimer;
+  GroupHeaderStats? _last;
+  bool _fetching = false;
+  bool _refetchQueued = false;
+
+  Stream<GroupHeaderStats> get stream async* {
+    final last = _last;
+    if (last != null) yield last;
+    yield* _controller.stream;
+  }
+
+  void _onListen() {
+    _closeTimer?.cancel();
+    _closeTimer = null;
+    if (_channel == null) {
+      _start();
+    } else {
+      final last = _last;
+      if (last != null) _controller.add(last);
+    }
+  }
+
+  void _onCancel() {
+    _closeTimer?.cancel();
+    _closeTimer = Timer(_closeGrace, _stop);
+  }
+
+  void _start() {
+    unawaited(_fetch());
+    _pollTimer = Timer.periodic(_pollInterval, (_) => unawaited(_fetch()));
+
+    final channel = _supabase.channel(
+      'group_header_members_${groupId}_${_seq++}',
+    );
+    final topic = channel.topic;
+    RealtimeDiagnostics.instance.onChannelCreated(
+      topic,
+      ownerUserId: currentUserId,
+    );
+    channel
+        .onPostgresChanges(
+          event: PostgresChangeEvent.all,
+          schema: 'public',
+          table: SupabaseConstants.groupMembers,
+          filter: PostgresChangeFilter(
+            type: PostgresChangeFilterType.eq,
+            column: GroupMemberColumns.groupId,
+            value: groupId,
+          ),
+          callback: (_) => _scheduleFetch(),
+        )
+        .subscribe((status, [error]) {
+          switch (status) {
+            case RealtimeSubscribeStatus.subscribed:
+              RealtimeDiagnostics.instance.onChannelSubscribed(topic);
+            case RealtimeSubscribeStatus.channelError:
+            case RealtimeSubscribeStatus.timedOut:
+              RealtimeDiagnostics.instance.onChannelError(
+                topic,
+                error ?? status,
+                StackTrace.current,
+              );
+            case RealtimeSubscribeStatus.closed:
+              break;
+          }
+        });
+    _channel = channel;
+  }
+
+  void _stop() {
+    _closeTimer = null;
+    if (_controller.hasListener) return; // someone came back in time
+
+    _pollTimer?.cancel();
+    _pollTimer = null;
+    _debounceTimer?.cancel();
+    _debounceTimer = null;
+
+    final channel = _channel;
+    _channel = null;
+    if (channel != null) {
+      RealtimeDiagnostics.instance.onChannelClosed(channel.topic);
+      unawaited(_supabase.removeChannel(channel));
+    }
+  }
+
+  void _scheduleFetch() {
+    _debounceTimer?.cancel();
+    _debounceTimer = Timer(_debounce, () => unawaited(_fetch()));
+  }
+
+  Future<void> _fetch() async {
+    if (_fetching) {
+      _refetchQueued = true;
+      return;
+    }
+    _fetching = true;
+    try {
+      do {
+        _refetchQueued = false;
+        final raw = await _supabase.rpc(
+          'get_group_header_stats',
+          params: {'p_group_id': groupId},
+        );
+        if (_controller.isClosed || !_controller.hasListener) return;
+
+        final row = raw is List ? (raw.isEmpty ? null : raw.first) : raw;
+        if (row is Map) {
+          final stats = GroupHeaderStats(
+            totalMembers: (row['total_members'] as num?)?.toInt() ?? 0,
+            onlineCount: (row['online_count'] as num?)?.toInt() ?? 0,
+          );
+          _last = stats;
+          _controller.add(stats);
+        }
+      } while (_refetchQueued);
+    } catch (e) {
+      debugPrint('[GroupHeaderStats] fetch error: $e');
+    } finally {
+      _fetching = false;
     }
   }
 }

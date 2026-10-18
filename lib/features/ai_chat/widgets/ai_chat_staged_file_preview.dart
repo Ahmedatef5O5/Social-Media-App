@@ -12,6 +12,7 @@ class AiChatStagedFilePreview extends StatelessWidget {
   final VoidCallback onRemove;
   final File? imageFile;
   final VoidCallback? onTapLeading;
+  final VoidCallback? onEdit;
 
   const AiChatStagedFilePreview({
     super.key,
@@ -20,6 +21,7 @@ class AiChatStagedFilePreview extends StatelessWidget {
     required this.onRemove,
     this.imageFile,
     this.onTapLeading,
+    this.onEdit,
   });
 
   String get _extension {
@@ -104,6 +106,19 @@ class AiChatStagedFilePreview extends StatelessWidget {
               ],
             ),
           ),
+          if (imageFile != null && onEdit != null)
+            InkWell(
+              borderRadius: BorderRadius.circular(20),
+              onTap: onEdit,
+              child: const Padding(
+                padding: EdgeInsets.all(6),
+                child: Icon(
+                  Icons.edit_rounded,
+                  size: 18,
+                  color: Colors.white70,
+                ),
+              ),
+            ),
           InkWell(
             borderRadius: BorderRadius.circular(20),
             onTap: onRemove,

@@ -212,7 +212,10 @@ class PostItemWidget extends StatelessWidget {
 
               Padding(
                 padding: const EdgeInsets.fromLTRB(12.0, 0, 12.0, 6.0),
-                child: PostInteractionsRow(postId: displayPost.id),
+                child: PostInteractionsRow(
+                  postId: displayPost.id,
+                  initialPost: displayPost,
+                ),
               ),
             ],
           ),

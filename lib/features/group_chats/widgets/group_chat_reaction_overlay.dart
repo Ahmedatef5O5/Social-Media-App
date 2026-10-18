@@ -49,9 +49,6 @@ class GroupChatReactionOverlay {
         spaceBelow > 120 ? anchorRect.bottom + 6 : anchorRect.top - 130;
 
     final cubit = context.read<GroupDetailsCubit>();
-    // Captured NOW, while `context` is still alive. The long-pressed bubble's
-    // own context can be gone by the time the user taps "Report"; the overlay
-    // (owned by the Navigator) outlives it.
     final overlayContext = Overlay.of(context).context;
 
     _currentEntry = OverlayEntry(
@@ -59,9 +56,9 @@ class GroupChatReactionOverlay {
           (_) => Stack(
             children: [
               Positioned.fill(
-                child: GestureDetector(
-                  onTap: dismiss,
+                child: Listener(
                   behavior: HitTestBehavior.translucent,
+                  onPointerDown: (_) => dismiss(),
                   child: const SizedBox.expand(),
                 ),
               ),
@@ -101,8 +98,6 @@ class GroupChatReactionOverlay {
                               message.messageType != 'call'
                           ? () {
                             dismiss();
-                            // showModalBottomSheet pushes its route synchronously,
-                            // so it is safe to clear the selection right after.
                             ReportBottomSheet.show(
                               overlayContext,
                               target: ReportTarget(

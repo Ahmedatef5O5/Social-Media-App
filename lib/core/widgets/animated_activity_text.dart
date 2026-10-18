@@ -108,4 +108,3 @@ class _AnimatedActivityTextState extends State<AnimatedActivityText> {
     );
   }
 }
-

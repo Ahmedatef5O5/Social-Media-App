@@ -24,12 +24,14 @@ import 'post_reactions_summary.dart';
 
 class PostInteractionsRow extends StatelessWidget {
   final String postId;
+  final PostModel? initialPost;
   final VoidCallback? onCommentsTap;
   final VoidCallback? onReactionsTap;
 
   const PostInteractionsRow({
     super.key,
     required this.postId,
+    this.initialPost,
     this.onCommentsTap,
     this.onReactionsTap,
   });
@@ -57,11 +59,9 @@ class PostInteractionsRow extends StatelessWidget {
             oldPost.isSavedByMe != newPost.isSavedByMe;
       },
       builder: (context, state) {
-        if (state is! PostsLoaded) {
-          return const SizedBox.shrink();
-        }
-
-        final post = state.posts.findById(postId);
+        final post =
+            (state is PostsLoaded ? state.posts.findById(postId) : null) ??
+            initialPost;
         if (post == null) return const SizedBox.shrink();
 
         final totalComments = countAllComments(post.comments);
@@ -376,7 +376,7 @@ class _CommentButtonWidget extends StatelessWidget {
                   BlocProvider.value(value: postsCubit),
                   BlocProvider.value(value: commentsCubit),
                 ],
-                child: CommentsSheetSection(postId: post.id),
+                child: CommentsSheetSection(postId: post.id, post: post),
               ),
         ).whenComplete(() {
           commentsCubit.resetExpandedComments();
