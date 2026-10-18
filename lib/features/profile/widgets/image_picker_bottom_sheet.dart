@@ -7,6 +7,7 @@ class ImagePickerBottomSheet extends StatelessWidget {
   final Function(ImageSource source) onImageSelected;
   final bool showRemoveOption;
   final VoidCallback? onRemoveImage;
+  final VoidCallback? onEditImage;
 
   const ImagePickerBottomSheet({
     super.key,
@@ -14,6 +15,7 @@ class ImagePickerBottomSheet extends StatelessWidget {
     required this.onImageSelected,
     this.showRemoveOption = false,
     this.onRemoveImage,
+    this.onEditImage,
   });
 
   @override
@@ -48,6 +50,15 @@ class ImagePickerBottomSheet extends StatelessWidget {
               title: const Text('Take a Photo'),
               onTap: () => onImageSelected(ImageSource.camera),
             ),
+            if (onEditImage != null)
+              ListTile(
+                leading: Icon(
+                  Icons.crop_rounded,
+                  color: Theme.of(context).primaryColor,
+                ),
+                title: const Text('Crop & edit'),
+                onTap: onEditImage,
+              ),
             if (showRemoveOption) ...[
               ListTile(
                 leading: const Icon(

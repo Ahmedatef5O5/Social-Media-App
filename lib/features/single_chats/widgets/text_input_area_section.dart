@@ -374,12 +374,12 @@ class _TextInputAreaSectionState extends State<TextInputAreaSection> {
                     file: picked.localFile!,
                     type: 'image',
                     onSend:
-                        (caption) => chatCubit.sendMessage(
+                        (caption, sendFile, _) => chatCubit.sendMessage(
                           receiverId: widget.receiverUser.id,
                           messageText: '',
                           messageType: 'image',
-                          imageFile: picked.localFile,
-                          fileSizeBytes: picked.fileSizeBytes,
+                          imageFile: sendFile,
+                          fileSizeBytes: sendFile.lengthSync(),
                           caption: caption,
                           replyTo: widget.replyTo,
                         ),
@@ -403,16 +403,18 @@ class _TextInputAreaSectionState extends State<TextInputAreaSection> {
                     file: picked.localFile!,
                     type: 'video',
                     onSend:
-                        (caption) => chatCubit.sendMessage(
-                          receiverId: widget.receiverUser.id,
-                          messageText: '',
-                          messageType: 'video',
-                          videoFile: picked.localFile,
-                          fileSizeBytes: picked.fileSizeBytes,
-                          durationSeconds: picked.durationSeconds,
-                          caption: caption,
-                          replyTo: widget.replyTo,
-                        ),
+                        (caption, sendFile, durationSeconds) =>
+                            chatCubit.sendMessage(
+                              receiverId: widget.receiverUser.id,
+                              messageText: '',
+                              messageType: 'video',
+                              videoFile: sendFile,
+                              fileSizeBytes: sendFile.lengthSync(),
+                              durationSeconds:
+                                  durationSeconds ?? picked.durationSeconds,
+                              caption: caption,
+                              replyTo: widget.replyTo,
+                            ),
                   ),
                 ),
           ),

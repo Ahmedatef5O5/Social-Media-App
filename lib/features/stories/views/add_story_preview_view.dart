@@ -5,6 +5,7 @@ import 'package:social_media_app/features/social_graph/views/audience_picker_vie
 import 'package:video_player/video_player.dart';
 import 'package:social_media_app/features/auth/data/models/user_data.dart';
 import '../../../core/helpers/safe_navigator.dart';
+import '../../../core/media_editor/media_editor_service.dart';
 import '../../../core/mentions/widgets/mention_aware_text_field.dart';
 import '../../../core/mentions/widgets/mention_text_editing_controller.dart';
 import '../../../core/themes/app_colors.dart';
@@ -39,6 +40,9 @@ class AddStoryPreviewView extends StatefulWidget {
 
 class _AddStoryPreviewViewState extends State<AddStoryPreviewView> {
   final _shareGuard = SingleFireGuard();
+
+  late File _file = widget.file;
+  late Duration? _videoDuration = widget.videoDuration;
   final MentionTextEditingController _captionController =
       MentionTextEditingController();
   final FocusNode _captionFocusNode = FocusNode();
@@ -68,7 +72,7 @@ class _AddStoryPreviewViewState extends State<AddStoryPreviewView> {
 
   Future<void> _initVideoController() async {
     try {
-      final controller = VideoPlayerController.file(widget.file);
+      final controller = VideoPlayerController.file(_file);
       await controller.initialize();
       if (!mounted) {
         controller.dispose();
@@ -109,6 +113,37 @@ class _AddStoryPreviewViewState extends State<AddStoryPreviewView> {
     _pauseVideoIfPlaying();
     widget.storiesCubit.discardStoryPreview();
     Navigator.of(context, rootNavigator: true).pop();
+  }
+
+  Future<void> _editMedia() async {
+    FocusScope.of(context).unfocus();
+    if (widget.isVideo) {
+      _pauseVideoIfPlaying();
+      final trimmed = await MediaEditorService.trimVideo(
+        context,
+        _file,
+        maxDuration: MediaEditorLimits.storyMaxVideoDuration,
+      );
+      if (trimmed == null || !mounted) return;
+      final old = _videoController;
+      setState(() {
+        _videoController = null;
+        _videoInitialised = false;
+        _videoError = false;
+        _file = trimmed.file;
+        _videoDuration = trimmed.duration;
+      });
+      await old?.dispose();
+      await _initVideoController();
+    } else {
+      final edited = await MediaEditorService.editImage(
+        context,
+        _file,
+        preset: MediaEditorPreset.story,
+      );
+      if (edited == null || !mounted) return;
+      setState(() => _file = edited);
+    }
   }
 
   Future<void> _pickPrivacy() async {
@@ -159,17 +194,17 @@ class _AddStoryPreviewViewState extends State<AddStoryPreviewView> {
 
     if (widget.isVideo) {
       cubit.addVideoStoryWithCaption(
-        file: widget.file,
+        file: _file,
         user: widget.currentUser,
         caption: caption,
         mentions: mentions,
-        videoDuration: widget.videoDuration,
+        videoDuration: _videoDuration,
         privacy: _selectedPrivacy,
         allowedViewerIds: _selectedViewerIds.toList(),
       );
     } else {
       cubit.addStoryWithCaption(
-        file: widget.file,
+        file: _file,
         user: widget.currentUser,
         caption: caption,
         mentions: mentions,
@@ -200,13 +235,13 @@ class _AddStoryPreviewViewState extends State<AddStoryPreviewView> {
                 Positioned(
                   top: 12,
                   left: 12,
-                  child: _FileSizeBadge(file: widget.file),
+                  child: _FileSizeBadge(file: _file),
                 ),
-                if (widget.videoDuration != null)
+                if (_videoDuration != null)
                   Positioned(
                     top: 12,
                     right: 12,
-                    child: _DurationBadge(duration: widget.videoDuration!),
+                    child: _DurationBadge(duration: _videoDuration!),
                   ),
               ],
 
@@ -251,75 +286,98 @@ class _AddStoryPreviewViewState extends State<AddStoryPreviewView> {
   AppBar _buildAppBar(BuildContext context) {
     return AppBar(
       backgroundColor: Colors.black,
+      titleSpacing: 0,
       leading: IconButton(
         icon: const Icon(Icons.close, color: AppColors.white),
         onPressed: _handleClose,
       ),
-      title: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            widget.isVideo ? 'Video Preview' : 'Photo Preview',
-            style: const TextStyle(
-              color: AppColors.white,
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
+      title: FittedBox(
+        fit: BoxFit.scaleDown,
+        alignment: Alignment.centerLeft,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              widget.isVideo ? 'Video Preview' : 'Photo Preview',
+              style: const TextStyle(
+                color: AppColors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
             ),
-          ),
-          const SizedBox(width: 8),
-          Material(
-            color: Colors.transparent,
-            child: InkWell(
-              borderRadius: BorderRadius.circular(16),
-              onTap: _pickPrivacy,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.25),
-                    width: 0.8,
+            const SizedBox(width: 8),
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(16),
+                onTap: _pickPrivacy,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 7,
+                    vertical: 3,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.25),
+                      width: 0.8,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        _selectedPrivacy.icon,
+                        size: 13,
+                        color: Colors.white.withValues(alpha: 0.95),
+                      ),
+                      const SizedBox(width: 3),
+                      Icon(
+                        Icons.keyboard_arrow_down_rounded,
+                        size: 14,
+                        color: Colors.white.withValues(alpha: 0.8),
+                      ),
+                    ],
                   ),
                 ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      _selectedPrivacy.icon,
-                      size: 12,
-                      color: Colors.white.withValues(alpha: 0.95),
-                    ),
-                    const SizedBox(width: 2),
-                    Icon(
-                      Icons.keyboard_arrow_down_rounded,
-                      size: 13,
-                      color: Colors.white.withValues(alpha: 0.8),
-                    ),
-                  ],
-                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
       actions: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-          child: ElevatedButton(
-            onPressed: () => _shareStory(context, widget.storiesCubit),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Theme.of(context).primaryColor,
-              foregroundColor: Colors.white,
-              elevation: 0,
-              padding: const EdgeInsets.symmetric(horizontal: 4),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(18),
+        IconButton(
+          visualDensity: VisualDensity.compact,
+          tooltip: widget.isVideo ? 'Trim' : 'Edit',
+          icon: Icon(
+            widget.isVideo ? Icons.content_cut_rounded : Icons.edit_rounded,
+            color: AppColors.white,
+            size: 22,
+          ),
+          onPressed: _editMedia,
+        ),
+        Center(
+          child: Padding(
+            padding: const EdgeInsets.only(right: 12, left: 4),
+            child: SizedBox(
+              height: 34,
+              child: ElevatedButton(
+                onPressed: () => _shareStory(context, widget.storiesCubit),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Theme.of(context).primaryColor,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(17),
+                  ),
+                ),
+                child: const Text(
+                  'Share',
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                ),
               ),
-            ),
-            child: const Text(
-              'Share',
-              style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
             ),
           ),
         ),
@@ -331,7 +389,7 @@ class _AddStoryPreviewViewState extends State<AddStoryPreviewView> {
     if (!widget.isVideo) {
       return ClipRRect(
         borderRadius: BorderRadius.circular(12),
-        child: Image.file(widget.file, fit: BoxFit.contain),
+        child: Image.file(_file, fit: BoxFit.contain),
       );
     }
 
@@ -374,7 +432,7 @@ class _AddStoryPreviewViewState extends State<AddStoryPreviewView> {
       builder: (context, value, child) {
         final int length = value.text.length;
         final bool hasText = length > 0;
-
+        final hintColor = Colors.white.withValues(alpha: 0.45);
         return Stack(
           children: [
             MentionAwareTextField(
@@ -388,7 +446,7 @@ class _AddStoryPreviewViewState extends State<AddStoryPreviewView> {
               maxLength: 150,
               decoration: InputDecoration(
                 hintText: 'Add an optional caption...',
-                hintStyle: const TextStyle(color: Colors.white70),
+                hintStyle: TextStyle(color: hintColor),
                 filled: true,
                 fillColor: Colors.black54,
                 counterText: '',
@@ -400,7 +458,18 @@ class _AddStoryPreviewViewState extends State<AddStoryPreviewView> {
                 ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(24),
-                  borderSide: BorderSide.none,
+                  borderSide: BorderSide(color: hintColor, width: 1.0),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(24),
+                  borderSide: BorderSide(color: hintColor, width: 1.0),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(24),
+                  borderSide: BorderSide(
+                    color: Colors.white.withValues(alpha: 0.85),
+                    width: 1.2,
+                  ),
                 ),
                 suffixIcon:
                     widget.isVideo
@@ -412,7 +481,7 @@ class _AddStoryPreviewViewState extends State<AddStoryPreviewView> {
                           actionContext: AiActionContext.storyCreation,
                           hasMediaAttached: true,
                           targetMediaType: AiTargetMediaType.image,
-                          imageBytesProvider: () => widget.file.readAsBytes(),
+                          imageBytesProvider: () => _file.readAsBytes(),
                         ),
               ),
             ),

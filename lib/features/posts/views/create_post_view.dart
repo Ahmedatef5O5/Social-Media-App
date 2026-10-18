@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
+import 'package:image_picker/image_picker.dart' show XFile;
 import 'package:social_media_app/core/mentions/mentions.dart';
 import 'package:social_media_app/core/themes/background_theme_widget.dart';
 import 'package:social_media_app/core/widgets/custom_loading_indicator.dart';
@@ -10,6 +11,7 @@ import 'package:social_media_app/features/home/cubits/home_cubit/home_cubit.dart
 import 'package:social_media_app/features/social_graph/views/audience_picker_view.dart';
 import 'package:social_media_app/features/social_graph/widgets/privacy_selector_sheet.dart';
 import '../../../core/helpers/modern_circle_progress.dart';
+import '../../../core/media_editor/media_editor_service.dart';
 import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/toast/app_toast.dart';
 import '../../../core/utilities/file_size_formatter.dart';
@@ -40,6 +42,8 @@ class _CreatePostViewState extends State<CreatePostView> {
 
   final FocusNode _focusNode = FocusNode();
   bool _hasText = false;
+
+  late PostsCubit _postsCubit;
 
   void _minimizeSheet() {
     if (_sheetController.isAttached) {
@@ -109,9 +113,15 @@ class _CreatePostViewState extends State<CreatePostView> {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _postsCubit = context.read<PostsCubit>();
+  }
+
+  @override
   void dispose() {
     try {
-      context.read<PostsCubit>().clearMediaSelection();
+      _postsCubit.clearMediaSelection();
     } catch (e) {
       debugPrint(
         '[CreatePostView] failed to clear media selection on dispose: $e',
@@ -263,9 +273,29 @@ class _CreatePostViewState extends State<CreatePostView> {
                                       postsCubit.selectedImageSizeBytes = null;
                                     });
                                   },
+                                  onEdit: () async {
+                                    final current = postsCubit.selectedImage;
+                                    if (current == null) return null;
+                                    final edited =
+                                        await MediaEditorService.editImage(
+                                          context,
+                                          File(current.path),
+                                          preset: MediaEditorPreset.post,
+                                        );
+                                    if (edited == null || !mounted) return null;
+                                    setState(() {
+                                      postsCubit.selectedImage = XFile(
+                                        edited.path,
+                                      );
+                                      postsCubit.selectedImageSizeBytes =
+                                          edited.lengthSync();
+                                    });
+                                    return edited.path;
+                                  },
                                 );
                               } else if (postsCubit.selectedVideo != null) {
                                 return CreatePostVideoPreview(
+                                  key: ValueKey(postsCubit.selectedVideo!.path),
                                   videoPath: postsCubit.selectedVideo!.path,
                                   fileSizeBytes:
                                       postsCubit.selectedVideoSizeBytes,
@@ -273,6 +303,23 @@ class _CreatePostViewState extends State<CreatePostView> {
                                     setState(() {
                                       postsCubit.selectedVideo = null;
                                       postsCubit.selectedVideoSizeBytes = null;
+                                    });
+                                  },
+                                  onEdit: () async {
+                                    final current = postsCubit.selectedVideo;
+                                    if (current == null) return;
+                                    final trimmed =
+                                        await MediaEditorService.trimVideo(
+                                          context,
+                                          File(current.path),
+                                        );
+                                    if (trimmed == null || !mounted) return;
+                                    setState(() {
+                                      postsCubit.selectedVideo = XFile(
+                                        trimmed.file.path,
+                                      );
+                                      postsCubit.selectedVideoSizeBytes =
+                                          trimmed.file.lengthSync();
                                     });
                                   },
                                 );

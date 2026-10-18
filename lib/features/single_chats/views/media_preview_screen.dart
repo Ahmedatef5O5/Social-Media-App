@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:social_media_app/core/widgets/custom_loading_indicator.dart';
 import 'package:video_player/video_player.dart';
+import '../../../core/media_editor/media_editor_service.dart';
 import '../../../core/themes/app_colors.dart';
 import '../../../core/widgets/directional_text_field.dart';
 import '../../ai_assistant/entities/ai_action_type.dart';
@@ -12,7 +13,7 @@ import '../../ai_assistant/widgets/ai_action_icon.dart';
 class MediaPreviewScreen extends StatefulWidget {
   final File file;
   final String type;
-  final Function(String? caption) onSend;
+  final Function(String? caption, File file, int? durationSeconds) onSend;
 
   const MediaPreviewScreen({
     super.key,
@@ -29,20 +30,51 @@ class _MediaPreviewScreenState extends State<MediaPreviewScreen> {
   final TextEditingController _captionController = TextEditingController();
   VideoPlayerController? _videoPlayerController;
 
+  late File _file = widget.file;
+
   bool _showControls = true;
   Timer? _hideTimer;
 
   @override
   void initState() {
     super.initState();
+    if (widget.type == 'video') _initVideo();
+  }
+
+  void _initVideo() {
+    final controller = VideoPlayerController.file(_file);
+    _videoPlayerController = controller;
+    controller.initialize().then((_) {
+      if (!mounted || _videoPlayerController != controller) return;
+      setState(() {});
+      controller.play();
+      controller.setLooping(true);
+      _startHideTimer();
+    });
+  }
+
+  Future<void> _editMedia() async {
+    FocusManager.instance.primaryFocus?.unfocus();
     if (widget.type == 'video') {
-      _videoPlayerController = VideoPlayerController.file(widget.file)
-        ..initialize().then((_) {
-          setState(() {});
-          _videoPlayerController!.play();
-          _videoPlayerController!.setLooping(true);
-          _startHideTimer();
-        });
+      await _videoPlayerController?.pause();
+      if (!mounted) return;
+      final trimmed = await MediaEditorService.trimVideo(context, _file);
+      if (trimmed == null || !mounted) return;
+      final old = _videoPlayerController;
+      setState(() {
+        _videoPlayerController = null;
+        _file = trimmed.file;
+      });
+      await old?.dispose();
+      _initVideo();
+    } else {
+      final edited = await MediaEditorService.editImage(
+        context,
+        _file,
+        preset: MediaEditorPreset.chat,
+      );
+      if (edited == null || !mounted) return;
+      setState(() => _file = edited);
     }
   }
 
@@ -149,6 +181,16 @@ class _MediaPreviewScreenState extends State<MediaPreviewScreen> {
           backgroundColor: AppColors.black,
           iconTheme: const IconThemeData(color: AppColors.white),
           actions: [
+            IconButton(
+              tooltip: widget.type == 'video' ? 'Trim' : 'Edit',
+              icon: Icon(
+                widget.type == 'video'
+                    ? Icons.content_cut_rounded
+                    : Icons.edit_rounded,
+                color: AppColors.white,
+              ),
+              onPressed: _editMedia,
+            ),
             if (widget.type == 'video' &&
                 _videoPlayerController != null &&
                 _videoPlayerController!.value.isInitialized)
@@ -196,7 +238,7 @@ class _MediaPreviewScreenState extends State<MediaPreviewScreen> {
               child: Center(
                 child:
                     widget.type == 'image'
-                        ? Image.file(widget.file, fit: BoxFit.contain)
+                        ? Image.file(_file, fit: BoxFit.contain)
                         : _videoPlayerController != null &&
                             _videoPlayerController!.value.isInitialized
                         ? AspectRatio(
@@ -249,7 +291,7 @@ class _MediaPreviewScreenState extends State<MediaPreviewScreen> {
                                     : AiTargetMediaType.video,
                             imageBytesProvider:
                                 widget.type == 'image'
-                                    ? () => widget.file.readAsBytes()
+                                    ? () => _file.readAsBytes()
                                     : null,
                           ),
                         ),
@@ -262,8 +304,19 @@ class _MediaPreviewScreenState extends State<MediaPreviewScreen> {
                         icon: const Icon(Icons.send, color: AppColors.white),
                         onPressed: () {
                           final caption = _captionController.text.trim();
+                          final controller = _videoPlayerController;
+                          final int? durationSeconds =
+                              widget.type == 'video' &&
+                                      controller != null &&
+                                      controller.value.isInitialized
+                                  ? controller.value.duration.inSeconds
+                                  : null;
                           Navigator.pop(context);
-                          widget.onSend(caption.isEmpty ? null : caption);
+                          widget.onSend(
+                            caption.isEmpty ? null : caption,
+                            _file,
+                            durationSeconds,
+                          );
                         },
                       ),
                     ),

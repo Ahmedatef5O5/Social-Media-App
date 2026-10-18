@@ -13,6 +13,7 @@ import 'package:social_media_app/features/profile/widgets/edit_profile_form.dart
 import 'package:social_media_app/features/profile/widgets/edit_profile_sliver_app_bar.dart';
 import 'package:social_media_app/features/profile/widgets/edit_social_links_section.dart';
 import 'package:social_media_app/features/profile/widgets/image_picker_bottom_sheet.dart';
+import '../../../core/media_editor/media_editor_service.dart';
 import '../../../core/toast/app_toast.dart';
 import '../../../core/widgets/custom_confirmation_dialog.dart';
 import '../../posts/cubits/posts_cubit/posts_cubit.dart';
@@ -57,19 +58,50 @@ class _EditProfileViewState extends State<EditProfileView> {
     final File? image = await context.read<EditProfileCubit>().pickImage(
       source,
     );
+    if (!mounted || image == null) return;
+
+    // Open image editor immediately so user can crop/adjust avatar or cover
+    final File? edited = await MediaEditorService.editImage(
+      context,
+      image,
+      preset: isProfile ? MediaEditorPreset.avatar : MediaEditorPreset.cover,
+    );
+
+    final finalImage = edited ?? image;
     if (!mounted) return;
 
-    if (image != null) {
-      setState(() {
-        if (isProfile) {
-          selectedProfileImage = image;
-          profileImageRemoved = false;
-        } else {
-          selectedBackgroundImage = image;
-          backgroundImageRemoved = false;
-        }
-      });
-    }
+    setState(() {
+      if (isProfile) {
+        selectedProfileImage = finalImage;
+        profileImageRemoved = false;
+      } else {
+        selectedBackgroundImage = finalImage;
+        backgroundImageRemoved = false;
+      }
+    });
+  }
+
+  /// Optional crop/edit of the photo picked in this session. Avatars get a
+  /// circular 1:1 guide, covers get wide (16:9 / 2:1 / 3:1) presets.
+  Future<void> _handleImageEdit(bool isProfile) async {
+    final File? current =
+        isProfile ? selectedProfileImage : selectedBackgroundImage;
+    if (current == null) return;
+
+    final File? edited = await MediaEditorService.editImage(
+      context,
+      current,
+      preset: isProfile ? MediaEditorPreset.avatar : MediaEditorPreset.cover,
+    );
+    if (edited == null || !mounted) return;
+
+    setState(() {
+      if (isProfile) {
+        selectedProfileImage = edited;
+      } else {
+        selectedBackgroundImage = edited;
+      }
+    });
   }
 
   void _handleImageRemoval(bool isProfile) {
@@ -99,6 +131,14 @@ class _EditProfileViewState extends State<EditProfileView> {
           (context) => ImagePickerBottomSheet(
             title: isProfile ? 'Edit Profile Picture' : 'Edit Cover Photo',
             showRemoveOption: hasCustomPhoto,
+            onEditImage:
+                (isProfile ? selectedProfileImage : selectedBackgroundImage) !=
+                        null
+                    ? () {
+                      Navigator.pop(context);
+                      _handleImageEdit(isProfile);
+                    }
+                    : null,
             onImageSelected: (source) {
               Navigator.pop(context);
               _handleImageSelection(isProfile, source);

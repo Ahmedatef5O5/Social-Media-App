@@ -13,12 +13,14 @@ class CreatePostVideoPreview extends StatefulWidget {
   final String videoPath;
   final int? fileSizeBytes;
   final VoidCallback onRemove;
+  final VoidCallback? onEdit;
 
   const CreatePostVideoPreview({
     super.key,
     required this.videoPath,
     this.fileSizeBytes,
     required this.onRemove,
+    this.onEdit,
   });
 
   @override
@@ -69,6 +71,11 @@ class _CreatePostVideoPreviewState extends State<CreatePostVideoPreview>
 
   void _togglePlayPause() {
     _controller.value.isPlaying ? _controller.pause() : _controller.play();
+  }
+
+  void _handleEdit() {
+    _controller.pause();
+    widget.onEdit?.call();
   }
 
   void _toggleMute() {
@@ -242,6 +249,15 @@ class _CreatePostVideoPreviewState extends State<CreatePostVideoPreview>
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
+                      if (widget.onEdit != null) ...[
+                        GlassIconButton(
+                          size: 32,
+                          iconSize: 15,
+                          icon: Icons.content_cut_rounded,
+                          onTap: _isInitialized ? _handleEdit : null,
+                        ),
+                        const SizedBox(width: 8),
+                      ],
                       GlassIconButton(
                         size: 32,
                         iconSize: 15,

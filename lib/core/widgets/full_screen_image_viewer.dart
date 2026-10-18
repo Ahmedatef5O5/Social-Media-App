@@ -28,10 +28,8 @@ class _FullScreenImageViewerState extends State<FullScreenImageViewer> {
   double _dragOffset = 0;
   bool _isSaving = false;
   bool _isZoomed = false;
+  String? _editedPath;
 
-  /// Toggled by a single tap on the image (only wired when the viewer is
-  /// showing a Post's image, i.e. `postId != null`). Hides/shows the header,
-  /// caption and PostInteractionsRow together, leaving just the image.
   bool _overlaysHidden = false;
 
   final _closeGuard = SingleFireGuard();
@@ -59,11 +57,6 @@ class _FullScreenImageViewerState extends State<FullScreenImageViewer> {
     setState(() {});
   }
 
-  /// Single-tap toggle for all chrome (header / caption / interactions row).
-  /// Only ever wired to `onTap` alongside `onDoubleTap` on the SAME
-  /// GestureDetector, so Flutter's own tap-vs-double-tap disambiguation
-  /// (~300ms `kDoubleTapTimeout`) keeps this from ever firing on a double
-  /// tap meant for zoom — no manual debouncing needed.
   void _toggleAllOverlays() {
     setState(() => _overlaysHidden = !_overlaysHidden);
   }
@@ -92,6 +85,12 @@ class _FullScreenImageViewerState extends State<FullScreenImageViewer> {
     final bool isLocalFile = args['isLocalFile'] ?? false;
     final String? staticCaption = args['caption'];
     final String? postId = args['postId'] as String?;
+
+    final Future<String?> Function()? onEdit =
+        args['onEdit'] as Future<String?> Function()?;
+    final bool isEditable =
+        (args['isEditable'] as bool? ?? false) && onEdit != null && isLocalFile;
+    final String displayUrl = _editedPath ?? imageUrl;
 
     final bool headerVisible = _dragOffset == 0 && !_overlaysHidden;
     final bool showBottomOverlays =
@@ -148,6 +147,24 @@ class _FullScreenImageViewerState extends State<FullScreenImageViewer> {
                                 size: 28,
                               ),
                             ),
+
+                            if (isEditable)
+                              IconButton(
+                                tooltip: 'Edit',
+                                onPressed: () async {
+                                  final newPath = await onEdit!();
+                                  if (newPath != null && mounted) {
+                                    _transformationController.value =
+                                        Matrix4.identity();
+                                    setState(() => _editedPath = newPath);
+                                  }
+                                },
+                                icon: const Icon(
+                                  Icons.edit_rounded,
+                                  color: AppColors.white,
+                                  size: 26,
+                                ),
+                              ),
 
                             if (!isAsset && !isLocalFile)
                               _isSaving
@@ -238,7 +255,7 @@ class _FullScreenImageViewerState extends State<FullScreenImageViewer> {
                                       )
                                       : isLocalFile
                                       ? Image.file(
-                                        File(imageUrl),
+                                        File(displayUrl),
                                         fit: BoxFit.contain,
                                         width: double.infinity,
                                       )

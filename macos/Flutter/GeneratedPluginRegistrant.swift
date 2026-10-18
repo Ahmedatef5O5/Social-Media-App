@@ -24,6 +24,8 @@ import gal
 import google_sign_in_ios
 import livekit_client
 import local_auth_darwin
+import pro_image_editor
+import pro_video_editor
 import record_macos
 import share_plus
 import shared_preferences_foundation
@@ -53,6 +55,8 @@ func RegisterGeneratedPlugins(registry: FlutterPluginRegistry) {
   FLTGoogleSignInPlugin.register(with: registry.registrar(forPlugin: "FLTGoogleSignInPlugin"))
   LiveKitPlugin.register(with: registry.registrar(forPlugin: "LiveKitPlugin"))
   LocalAuthPlugin.register(with: registry.registrar(forPlugin: "LocalAuthPlugin"))
+  ProImageEditorPlugin.register(with: registry.registrar(forPlugin: "ProImageEditorPlugin"))
+  ProVideoEditorPlugin.register(with: registry.registrar(forPlugin: "ProVideoEditorPlugin"))
   RecordMacOsPlugin.register(with: registry.registrar(forPlugin: "RecordMacOsPlugin"))
   SharePlusMacosPlugin.register(with: registry.registrar(forPlugin: "SharePlusMacosPlugin"))
   SharedPreferencesPlugin.register(with: registry.registrar(forPlugin: "SharedPreferencesPlugin"))

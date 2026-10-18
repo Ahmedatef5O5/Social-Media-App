@@ -15,6 +15,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
   livekit_client
   local_auth_windows
   permission_handler_windows
+  pro_video_editor
   record_windows
   share_plus
   speech_to_text_windows

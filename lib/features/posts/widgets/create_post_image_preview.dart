@@ -9,12 +9,14 @@ class CreatePostImagePreview extends StatelessWidget {
   final String imagePath;
   final int? fileSizeBytes;
   final VoidCallback onRemove;
+  final Future<String?> Function()? onEdit;
 
   const CreatePostImagePreview({
     super.key,
     required this.imagePath,
     this.fileSizeBytes,
     required this.onRemove,
+    this.onEdit,
   });
 
   @override
@@ -75,6 +77,8 @@ class CreatePostImagePreview extends StatelessWidget {
                         'url': imagePath,
                         'tag': heroTag,
                         'isLocalFile': true,
+                        'isEditable': onEdit != null,
+                        'onEdit': onEdit,
                       },
                     ),
                     builder: (context) => const FullScreenImageViewer(),
@@ -108,6 +112,29 @@ class CreatePostImagePreview extends StatelessWidget {
                 ),
               ),
             ),
+            if (onEdit != null)
+              Positioned(
+                right: 5,
+                top: 15,
+                child: IconButton(
+                  tooltip: 'Edit',
+                  onPressed: () => onEdit!(),
+                  icon: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.5),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Padding(
+                      padding: EdgeInsets.all(4.0),
+                      child: Icon(
+                        Icons.edit_rounded,
+                        color: Colors.white,
+                        size: 18,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
             Positioned(
               left: 5,
               top: 15,

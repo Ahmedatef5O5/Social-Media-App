@@ -2,9 +2,7 @@ import 'dart:math' as math;
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 
-
 class ThoughtCloudPath {
-
   final double crown;
   final double belly;
   final double inset;
@@ -14,7 +12,6 @@ class ThoughtCloudPath {
     this.belly = 2.5,
     this.inset = 1.0,
   });
-
 
   static const List<(double, double, double)> _crownPuffs = [
     (0.25, 0.15, 0.72),

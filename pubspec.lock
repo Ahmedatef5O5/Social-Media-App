@@ -1644,6 +1644,22 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.8.0"
+  pro_image_editor:
+    dependency: "direct main"
+    description:
+      name: pro_image_editor
+      sha256: "37a2c56d1ada4895e3750c5d0d3b8acbd031c46a9c75d5b99882a510b3aa92e4"
+      url: "https://pub.dev"
+    source: hosted
+    version: "12.5.2"
+  pro_video_editor:
+    dependency: "direct main"
+    description:
+      name: pro_video_editor
+      sha256: "70f4da909c98025b68f83926db87fec697c35b700bf14926d91df013185ef285"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.39.0"
   process:
     dependency: transitive
     description:
@@ -1824,10 +1840,10 @@ packages:
     dependency: "direct main"
     description:
       name: shared_preferences
-      sha256: "6e8bf70b7fef813df4e9a36f658ac46d107db4b4cfe1048b477d4e453a8159f5"
+      sha256: "1e85e0dccf5b4a016077fea7dfbb4a7cb39c759ac1596fcf60c06deadb7da91f"
       url: "https://pub.dev"
     source: hosted
-    version: "2.5.3"
+    version: "2.5.6"
   shared_preferences_android:
     dependency: transitive
     description:
