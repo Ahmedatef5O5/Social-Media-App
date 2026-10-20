@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
 import '../services/app_lock_service.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class AppLockScreen extends StatefulWidget {
   const AppLockScreen({super.key});
@@ -56,7 +57,7 @@ class _AppLockScreenState extends State<AppLockScreen> {
                   ),
                   const SizedBox(height: 24),
                   Text(
-                    'The app is locked.',
+                    context.l10n.theAppIsLocked,
                     style: theme.textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.w700,
                       color: isDark ? Colors.white : Colors.black87,
@@ -64,7 +65,7 @@ class _AppLockScreenState extends State<AppLockScreen> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Use your fingerprint or Face ID to open the app.',
+                    context.l10n.useYourFingerprintOr,
                     textAlign: TextAlign.center,
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: isDark ? Colors.white60 : Colors.grey.shade600,
@@ -93,7 +94,7 @@ class _AppLockScreenState extends State<AppLockScreen> {
                           ),
                         ),
                         icon: const Icon(Icons.fingerprint_rounded),
-                        label: const Text('Open the app'),
+                        label: Text(context.l10n.openTheApp),
                       ),
                   const Spacer(flex: 4),
                 ],

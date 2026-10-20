@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class AboutUsFeatureGrid extends StatelessWidget {
   final bool isDark;
@@ -90,7 +91,7 @@ class AboutUsFeatureGrid extends StatelessWidget {
                           fontSize: 13,
                           fontWeight: FontWeight.w700,
                           color: isDark ? Colors.white : Colors.black87,
-                          letterSpacing: -0.2,
+                          letterSpacing: context.ls(-0.2),
                         ),
                       ),
                       const Gap(3),

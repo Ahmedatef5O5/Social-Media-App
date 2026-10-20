@@ -3,6 +3,7 @@ import 'package:gap/gap.dart';
 import '../../../core/chat_shared/widgets/reply_preview_thumbnail.dart';
 import '../../../core/mentions/widgets/mention_rich_text.dart';
 import '../models/groupe_message_model.dart';
+import 'package:social_media_app/core/localization/app_l10n.dart';
 
 class GroupReplyPreviewBar extends StatelessWidget {
   final GroupMessageModel reply;
@@ -32,17 +33,21 @@ class GroupReplyPreviewBar extends StatelessWidget {
   String _fallbackLabel() {
     switch (reply.messageType) {
       case 'image':
-        return reply.caption?.isNotEmpty == true ? reply.caption! : '📷 Photo';
+        return reply.caption?.isNotEmpty == true
+            ? reply.caption!
+            : AppL10n.current.photo2;
       case 'video':
-        return reply.caption?.isNotEmpty == true ? reply.caption! : '🎥 Video';
+        return reply.caption?.isNotEmpty == true
+            ? reply.caption!
+            : AppL10n.current.video2;
       case 'gif':
-        return '🖼️ GIF';
+        return AppL10n.current.gif;
       case 'sticker':
-        return '🏷️ Sticker';
+        return AppL10n.current.sticker2;
       case 'voice':
-        return '🎤 Voice message';
+        return AppL10n.current.voiceMessage;
       case 'file':
-        return '📄 ${reply.fileName ?? 'File'}';
+        return '📄 ${reply.fileName ?? AppL10n.current.file}';
       default:
         return reply.text.isNotEmpty ? reply.text : (reply.caption ?? '');
     }

@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../../../core/themes/app_colors.dart';
 import '../../../core/widgets/custom_elevated_button.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class TwoFactorIntroStep extends StatelessWidget {
   final VoidCallback onContinue;
@@ -16,13 +17,13 @@ class TwoFactorIntroStep extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            width: 44,
-            height: 44,
+            width: 40,
+            height: 40,
             decoration: BoxDecoration(
               color: AppColors.primaryColor.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(icon, color: AppColors.primaryColor, size: 22),
+            child: Icon(icon, color: AppColors.primaryColor, size: 20),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -35,12 +36,11 @@ class TwoFactorIntroStep extends StatelessWidget {
                     fontWeight: FontWeight.w700,
                   ),
                 ),
-                const SizedBox(height: 3),
+                const SizedBox(height: 2),
                 Text(
                   body,
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: theme.hintColor,
-                    height: 1.35,
                   ),
                 ),
               ],
@@ -51,44 +51,36 @@ class TwoFactorIntroStep extends StatelessWidget {
     );
 
     return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      crossAxisAlignment: CrossAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SizedBox(height: 12),
         Center(
           child: Container(
-            width: 96,
-            height: 96,
+            width: 84,
+            height: 84,
             decoration: BoxDecoration(
               color: AppColors.primaryColor.withValues(alpha: 0.12),
               shape: BoxShape.circle,
             ),
             child: const Icon(
               CupertinoIcons.lock_shield_fill,
-              size: 48,
+              size: 42,
               color: AppColors.primaryColor,
             ),
           ),
         ),
         const SizedBox(height: 22),
         Text(
-          'Protect your account',
-          textAlign: TextAlign.center,
+          context.l10n.protectYourAccount,
           style: theme.textTheme.headlineSmall?.copyWith(
             fontWeight: FontWeight.w800,
           ),
         ),
         const SizedBox(height: 8),
         Text(
-          'Even if someone learns your password, they cannot sign in without '
-          'a code from your phone.',
-          textAlign: TextAlign.center,
-          style: theme.textTheme.bodyMedium?.copyWith(
-            color: theme.hintColor,
-            height: 1.4,
-          ),
+          context.l10n.evenIfSomeoneLearns,
+          style: theme.textTheme.bodyMedium?.copyWith(color: theme.hintColor),
         ),
-        const SizedBox(height: 28),
+        const SizedBox(height: 26),
         point(
           CupertinoIcons.device_phone_portrait,
           'Open your authenticator app',
@@ -105,9 +97,8 @@ class TwoFactorIntroStep extends StatelessWidget {
           'Save your recovery codes',
           'They are the only way back in if you lose your phone.',
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 10),
         CustomElevatedButton(txtBtn: 'Continue', onPressed: onContinue),
-        const SizedBox(height: 12),
       ],
     );
   }

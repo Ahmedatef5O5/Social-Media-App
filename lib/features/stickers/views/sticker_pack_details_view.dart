@@ -9,6 +9,7 @@ import '../models/sticker_pack_model.dart';
 import '../utils/byte_size_utils.dart';
 import '../widgets/create_pack_bottom_action_bar.dart';
 import '../widgets/sticker_pack_detail_grid.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class StickerPackDetailView extends StatelessWidget {
   final StickerPackModel pack;
@@ -55,8 +56,11 @@ class _StickerPackDetailSheetBody extends StatelessWidget {
             const SizedBox(height: 2),
             Text(
               pack.totalSizeBytes > 0
-                  ? '${pack.stickerCount} Stickers  •  ${pack.totalSizeBytes.asReadableSize}'
-                  : '${pack.stickerCount} Stickers',
+                  ? context.l10n.stickers3(
+                    pack.stickerCount,
+                    pack.totalSizeBytes.asReadableSize,
+                  )
+                  : context.l10n.stickers4(pack.stickerCount),
               style: theme.textTheme.labelSmall?.copyWith(
                 color: AppColors.grey6,
                 fontWeight: FontWeight.w500,

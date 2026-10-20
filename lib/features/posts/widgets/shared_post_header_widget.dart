@@ -12,6 +12,7 @@ import '../helpers/header_trailing_action.dart';
 import '../models/post_model.dart';
 import 'pinned_post_badge.dart';
 import 'post_actions_menu.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class SharedPostHeaderWidget extends StatelessWidget {
   final PostModel sharedPost;
@@ -40,10 +41,10 @@ class SharedPostHeaderWidget extends StatelessWidget {
         color: Theme.of(context).primaryColor.withValues(alpha: 0.75),
         size: 19,
       ),
-      tooltip: 'Open post details',
+      tooltip: context.l10n.openPostDetails,
       onPressed: () {
         if (postsCubit.isPostGhost(sharedPost.id)) {
-          AppToast.info('This post is no longer available.');
+          AppToast.info(context.l10n.thisPostIsNo);
           return;
         }
         Navigator.of(
@@ -114,7 +115,7 @@ class SharedPostHeaderWidget extends StatelessWidget {
               color: colorScheme.onSurface.withValues(alpha: 0.8),
               size: 26,
             ),
-            tooltip: 'Close',
+            tooltip: context.l10n.close,
             onPressed: () => Navigator.of(context).pop(),
           );
 
@@ -192,7 +193,7 @@ class SharedPostHeaderWidget extends StatelessWidget {
                     ),
                     children: [
                       TextSpan(
-                        text: sharedPost.authorName ?? 'Unknown',
+                        text: sharedPost.authorName ?? context.l10n.unknown,
                         style: theme.textTheme.titleSmall?.copyWith(
                           fontWeight: FontWeight.bold,
                           color: colorScheme.onSurface,
@@ -200,7 +201,7 @@ class SharedPostHeaderWidget extends StatelessWidget {
                         ),
                       ),
                       TextSpan(
-                        text: '  shared $contentLabel',
+                        text: context.l10n.shared(contentLabel),
                         style: const TextStyle(
                           fontWeight: FontWeight.w400,
                           fontSize: 12.5,

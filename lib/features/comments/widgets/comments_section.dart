@@ -3,6 +3,7 @@ import 'package:social_media_app/features/comments/models/comment_model.dart';
 import 'package:social_media_app/features/comments/widgets/comment_widget.dart';
 import '../../../core/constants/app_images.dart';
 import '../../single_chats/widgets/empty_placeholder_state.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class CommentsSection extends StatelessWidget {
   final String postId;
@@ -33,7 +34,7 @@ class CommentsSection extends StatelessWidget {
           child: EmptyPlaceholderState(
             img: AppImages.smileFaceLot,
             imgHeight: MediaQuery.of(context).size.height * 0.2,
-            title: 'No comments yet.',
+            title: context.l10n.noCommentsYet,
             style: Theme.of(context).textTheme.titleMedium!.copyWith(
               color: Theme.of(context).primaryColor,
               fontWeight: FontWeight.w600,

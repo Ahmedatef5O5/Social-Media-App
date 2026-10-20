@@ -3,6 +3,8 @@ import 'package:gap/gap.dart';
 import '../../../core/chat_shared/widgets/reply_preview_thumbnail.dart';
 import '../../../core/themes/app_colors.dart';
 import '../models/message_model.dart';
+import 'package:social_media_app/core/localization/app_l10n.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class ReplyPreviewBar extends StatelessWidget {
   final MessageModel replyTo;
@@ -62,7 +64,7 @@ class ReplyPreviewBar extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  isMe ? 'You' : senderName,
+                  isMe ? context.l10n.you : senderName,
                   style: TextStyle(
                     color: Theme.of(context).primaryColor,
                     fontWeight: FontWeight.bold,
@@ -96,17 +98,17 @@ class ReplyPreviewBar extends StatelessWidget {
   String _previewText() {
     switch (replyTo.messageType) {
       case 'image':
-        return '📷 Photo';
+        return AppL10n.current.photo2;
       case 'video':
-        return '🎥 Video';
+        return AppL10n.current.video2;
       case 'gif':
-        return '🖼️ GIF';
+        return AppL10n.current.gif;
       case 'sticker':
-        return '🏷️ Sticker';
+        return AppL10n.current.sticker2;
       case 'voice':
-        return '🎤 Voice message';
+        return AppL10n.current.voiceMessage;
       case 'file':
-        return '📄 ${replyTo.fileName ?? 'File'}';
+        return '📄 ${replyTo.fileName ?? AppL10n.current.file}';
       default:
         final t = replyTo.caption ?? replyTo.text;
         return t.length > 60 ? '${t.substring(0, 60)}...' : t;

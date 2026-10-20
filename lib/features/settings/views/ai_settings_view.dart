@@ -12,6 +12,7 @@ import '../widgets/ai_reply_tone_picker_sheet.dart';
 import '../widgets/settings_detail_sliver_app_bar.dart';
 import '../widgets/settings_item_data.dart';
 import '../widgets/settings_section.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class AiSettingsView extends StatelessWidget {
   const AiSettingsView({super.key});
@@ -49,10 +50,10 @@ class AiSettingsView extends StatelessWidget {
           return CustomScrollView(
             physics: const ClampingScrollPhysics(),
             slivers: [
-              const SettingsDetailSliverAppBar(
+              SettingsDetailSliverAppBar(
                 icon: Icons.auto_awesome_rounded,
-                title: 'AI Settings',
-                subtitle: 'Features, language & usage',
+                title: context.l10n.settingsAiSettings,
+                subtitle: context.l10n.featuresLanguageUsage,
               ),
               SliverToBoxAdapter(
                 child: Padding(
@@ -61,15 +62,14 @@ class AiSettingsView extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       SettingsSection(
-                        title: 'AI Features',
+                        title: context.l10n.aiFeatures,
                         icon: Icons.tune_rounded,
                         delay: 0,
                         items: [
                           SettingsItemData(
                             icon: Icons.auto_fix_high_rounded,
-                            label: 'AI Auto Complete',
-                            subtitle:
-                                'Tap the AI icon to generate captions & replies',
+                            label: context.l10n.aiAutoComplete,
+                            subtitle: context.l10n.tapTheAiIcon,
                             toggle: aiState.autoCompleteEnabled,
                             onToggle:
                                 (v) => context
@@ -78,9 +78,9 @@ class AiSettingsView extends StatelessWidget {
                           ),
                           SettingsItemData(
                             icon: Icons.spellcheck_rounded,
-                            label: 'AI Auto Detect',
+                            label: context.l10n.aiAutoDetect,
                             subtitle:
-                                'Automatic spelling suggestions while you type',
+                                context.l10n.automaticSpellingSuggestionsWhile,
                             toggle: aiState.autoDetectEnabled,
                             onToggle:
                                 (v) => context
@@ -93,8 +93,8 @@ class AiSettingsView extends StatelessWidget {
                           ),
                           SettingsItemData(
                             icon: Icons.mode_comment_outlined,
-                            label: 'AI Comment Suggestions',
-                            subtitle: 'Quick AI-suggested replies under posts',
+                            label: context.l10n.aiCommentSuggestions,
+                            subtitle: context.l10n.quickAiSuggestedReplies,
                             toggle: aiState.commentSuggestionsEnabled,
                             onToggle:
                                 (v) => context
@@ -103,7 +103,7 @@ class AiSettingsView extends StatelessWidget {
                           ),
                           SettingsItemData(
                             icon: Icons.translate_rounded,
-                            label: 'Auto Complete Language',
+                            label: context.l10n.autoCompleteLanguage,
                             subtitle: aiState.language.displayLabel,
                             onTap:
                                 () =>
@@ -112,7 +112,7 @@ class AiSettingsView extends StatelessWidget {
                           // [NEW]
                           SettingsItemData(
                             icon: Icons.record_voice_over_rounded,
-                            label: 'Reply Tone',
+                            label: context.l10n.replyTone,
                             subtitle: aiState.replyTone.displayLabel,
                             onTap:
                                 () =>
@@ -121,7 +121,7 @@ class AiSettingsView extends StatelessWidget {
                           // [NEW]
                           SettingsItemData(
                             icon: Icons.straighten_rounded,
-                            label: 'Reply Length',
+                            label: context.l10n.replyLength,
                             subtitle: aiState.replyLength.displayLabel,
                             onTap:
                                 () => _pickReplyLength(
@@ -168,8 +168,7 @@ class _AutoDetectQuotaWarning extends StatelessWidget {
             const Gap(6),
             Expanded(
               child: Text(
-                'This feature checks your typing continuously, so it may '
-                'use up your daily AI quota faster.',
+                context.l10n.thisFeatureChecksYour,
                 style: TextStyle(
                   fontSize: 11.5,
                   fontWeight: FontWeight.w500,

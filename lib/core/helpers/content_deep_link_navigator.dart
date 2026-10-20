@@ -5,6 +5,7 @@ import '../../features/posts/views/post_details_view.dart';
 import '../notifications/notification_navigator_key.dart';
 import '../router/app_routes.dart';
 import '../toast/app_toast.dart';
+import 'package:social_media_app/core/localization/app_l10n.dart';
 
 class ContentDeepLinkNavigator {
   ContentDeepLinkNavigator._();
@@ -16,7 +17,7 @@ class ContentDeepLinkNavigator {
   ]) async {
     final post = await PostsServices().fetchPostById(postId);
     if (post == null) {
-      AppToast.info('This post is no longer available.');
+      AppToast.info(AppL10n.current.thisPostIsNo);
       return;
     }
 

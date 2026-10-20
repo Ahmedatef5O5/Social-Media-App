@@ -16,6 +16,7 @@ import '../helpers/local_video_thumbnail.dart';
 import '../helpers/uploading_indicator_story.dart';
 import '../models/story_model.dart';
 import '../models/story_stat_model.dart';
+import 'package:social_media_app/core/localization/app_l10n.dart';
 
 class MyStoryTile extends StatelessWidget {
   final StoryModel story;
@@ -222,10 +223,12 @@ class MyStoryTile extends StatelessWidget {
     if (s.storyType == StoryType.text) {
       return s.contentText?.trim().isNotEmpty == true
           ? s.contentText!
-          : 'Text story';
+          : AppL10n.current.textStory2;
     }
     if (s.caption?.trim().isNotEmpty == true) return s.caption!;
-    return s.storyType == StoryType.video ? 'Video story' : 'Photo story';
+    return s.storyType == StoryType.video
+        ? AppL10n.current.videoStory
+        : AppL10n.current.photoStory;
   }
 
   Widget _buildCircularCheckbox(ThemeData theme) {

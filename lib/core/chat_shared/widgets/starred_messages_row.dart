@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../cache/services/starred_message_store.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class StarredMessagesRow extends StatelessWidget {
   final Color primary;
@@ -57,7 +58,7 @@ class StarredMessagesRow extends StatelessWidget {
             const SizedBox(width: 12),
             Expanded(
               child: Text(
-                'Starred Messages',
+                context.l10n.starredMessages,
                 style: Theme.of(
                   context,
                 ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),

@@ -6,6 +6,7 @@ import '../models/policy_section.dart';
 import '../utils/markdown_section_parser.dart';
 import '../widgets/accordion_tile.dart';
 import '../widgets/support_contact_bar.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class PrivacyPolicyView extends StatefulWidget {
   const PrivacyPolicyView({super.key});
@@ -53,7 +54,7 @@ class _PrivacyPolicyViewState extends State<PrivacyPolicyView> {
           if (snapshot.hasError || !snapshot.hasData) {
             return Center(
               child: Text(
-                "We couldn't load this content. Please try again later.",
+                context.l10n.weCouldntLoadThis,
                 style: theme.textTheme.bodyMedium,
               ),
             );
@@ -90,10 +91,10 @@ class _PrivacyPolicyViewState extends State<PrivacyPolicyView> {
           return CustomScrollView(
             physics: const ClampingScrollPhysics(),
             slivers: [
-              const SettingsDetailSliverAppBar(
+              SettingsDetailSliverAppBar(
                 icon: Icons.policy_outlined,
-                title: 'Privacy Policy',
-                subtitle: 'How we handle your data',
+                title: context.l10n.settingsPrivacyPolicy,
+                subtitle: context.l10n.settingsPrivacyPolicySubtitle,
               ),
               SliverPadding(
                 padding: const EdgeInsets.fromLTRB(20, 12, 20, 60),
@@ -113,7 +114,7 @@ class _PrivacyPolicyViewState extends State<PrivacyPolicyView> {
                               ),
                               const SizedBox(width: 8),
                               Text(
-                                'Table of Contents',
+                                context.l10n.tableOfContents,
                                 style: theme.textTheme.titleSmall?.copyWith(
                                   fontWeight: FontWeight.w800,
                                 ),

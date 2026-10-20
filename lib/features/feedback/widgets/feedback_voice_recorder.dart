@@ -6,6 +6,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
 import 'package:social_media_app/core/toast/app_toast.dart';
 import 'package:social_media_app/features/comments/widgets/comment_voice_player.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class FeedbackVoiceRecorder extends StatefulWidget {
   final File? file;
@@ -51,7 +52,7 @@ class _FeedbackVoiceRecorderState extends State<FeedbackVoiceRecorder> {
     setState(() => _starting = true);
     try {
       if (!await _recorder.hasPermission()) {
-        AppToast.warning('Microphone permission is required to record.');
+        AppToast.warning(context.l10n.microphonePermissionIsRequired);
         return;
       }
       final dir = await getTemporaryDirectory();
@@ -70,7 +71,7 @@ class _FeedbackVoiceRecorderState extends State<FeedbackVoiceRecorder> {
       });
       if (mounted) setState(() => _recording = true);
     } catch (e) {
-      AppToast.error('Could not start recording.');
+      AppToast.error(context.l10n.couldNotStartRecording);
     } finally {
       if (mounted) setState(() => _starting = false);
     }
@@ -87,7 +88,7 @@ class _FeedbackVoiceRecorderState extends State<FeedbackVoiceRecorder> {
     setState(() => _recording = false);
 
     if (path == null || seconds < 1) {
-      AppToast.info('Recording was too short.');
+      AppToast.info(context.l10n.recordingWasTooShort);
       return;
     }
     widget.onChanged(File(path), seconds);
@@ -129,7 +130,7 @@ class _FeedbackVoiceRecorderState extends State<FeedbackVoiceRecorder> {
               ),
             ),
             IconButton(
-              tooltip: 'Delete voice note',
+              tooltip: context.l10n.deleteVoiceNote,
               onPressed: widget.enabled ? _delete : null,
               icon: const Icon(
                 Icons.delete_outline_rounded,
@@ -173,7 +174,7 @@ class _FeedbackVoiceRecorderState extends State<FeedbackVoiceRecorder> {
               style: FilledButton.styleFrom(backgroundColor: Colors.redAccent),
               onPressed: _stop,
               icon: const Icon(Icons.stop_rounded, size: 20),
-              label: const Text('Stop'),
+              label: Text(context.l10n.stop),
             ),
           ],
         ),
@@ -195,7 +196,9 @@ class _FeedbackVoiceRecorderState extends State<FeedbackVoiceRecorder> {
             const SizedBox(width: 10),
             Expanded(
               child: Text(
-                'Record a voice note (up to ${FeedbackVoiceRecorder.maxSeconds ~/ 60} min)',
+                context.l10n.recordAVoiceNote(
+                  FeedbackVoiceRecorder.maxSeconds ~/ 60,
+                ),
                 style: const TextStyle(fontWeight: FontWeight.w600),
               ),
             ),

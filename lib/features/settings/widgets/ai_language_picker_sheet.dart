@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../ai_assistant/entities/ai_autocomplete_language.dart';
 import 'ai_setting_option_card.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class AiLanguagePickerSheet extends StatelessWidget {
   const AiLanguagePickerSheet({super.key, required this.selected});
@@ -74,11 +75,11 @@ class AiLanguagePickerSheet extends StatelessWidget {
 
               // Title
               Text(
-                'Auto Complete Language',
+                context.l10n.autoCompleteLanguage,
                 textAlign: TextAlign.center,
                 style: theme.textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.w800,
-                  letterSpacing: 0.2,
+                  letterSpacing: context.ls(0.2),
                 ),
               ),
               const SizedBox(height: 6),
@@ -87,7 +88,7 @@ class AiLanguagePickerSheet extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: Text(
-                  'Which language should AI captions, replies, and corrections use?',
+                  context.l10n.whichLanguageShouldAi,
                   textAlign: TextAlign.center,
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,

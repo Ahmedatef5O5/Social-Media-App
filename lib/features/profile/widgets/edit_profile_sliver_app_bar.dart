@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:social_media_app/core/router/app_routes.dart';
 import '../../../core/constants/app_images.dart';
 import '../../../core/widgets/app_image_provider.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class EditProfileSliverAppBar extends StatelessWidget {
   final double coverHeight;
@@ -277,7 +278,7 @@ class _ProfileHeaderDelegate extends SliverPersistentHeaderDelegate {
                 child: Opacity(
                   opacity: progress,
                   child: Text(
-                    'Edit Profile',
+                    context.l10n.settingsEditProfile,
                     style: Theme.of(context).textTheme.titleMedium!.copyWith(
                       fontWeight: FontWeight.w500,
                       fontSize: 18,

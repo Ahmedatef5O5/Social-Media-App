@@ -3,6 +3,7 @@ import 'package:gap/gap.dart';
 import '../../reels/models/reel_model.dart';
 import '../../reels/views/reels_full_screen_view.dart';
 import 'reel_grid_tile.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class ForYouReelsGridSection extends StatelessWidget {
   final List<ReelModel> reelsPool;
@@ -43,7 +44,7 @@ class ForYouReelsGridSection extends StatelessWidget {
             ),
             const Gap(6),
             Text(
-              'Reels for you',
+              context.l10n.reelsForYou,
               style: theme.textTheme.titleSmall!.copyWith(
                 fontWeight: FontWeight.w700,
               ),

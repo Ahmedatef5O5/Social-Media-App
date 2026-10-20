@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../core/helpers/bidi_text_helper.dart';
 import '../../../core/widgets/app_network_image.dart';
 import '../models/ai_chat_message.dart';
+import 'package:social_media_app/core/localization/app_l10n.dart';
 
 class AiChatReplyPreviewBar extends StatelessWidget {
   final AiChatMessage message;
@@ -36,18 +37,18 @@ class AiChatReplyPreviewBar extends StatelessWidget {
   String get _mediaLabel {
     switch (message.mediaType) {
       case AiChatMediaType.image:
-        return 'Photo';
+        return AppL10n.current.photo;
       case AiChatMediaType.video:
-        return 'Video';
+        return AppL10n.current.video;
       case AiChatMediaType.voice:
         final seconds = message.durationSeconds;
         return seconds == null
-            ? 'Voice message'
-            : 'Voice message · ${_formatDuration(seconds)}';
+            ? AppL10n.current.voiceMessage2
+            : AppL10n.current.voiceMessage3(_formatDuration(seconds));
       case AiChatMediaType.file:
-        return message.fileName ?? 'File';
+        return message.fileName ?? AppL10n.current.file;
       case AiChatMediaType.none:
-        return 'Message';
+        return AppL10n.current.message;
     }
   }
 

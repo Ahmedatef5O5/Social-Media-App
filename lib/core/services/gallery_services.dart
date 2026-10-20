@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:gal/gal.dart';
 import 'package:path_provider/path_provider.dart';
 import '../toast/app_toast.dart';
+import 'package:social_media_app/core/localization/app_l10n.dart';
 
 class GalleryServices {
   static Future<void> saveMediaToGallery({
@@ -29,14 +30,14 @@ class GalleryServices {
       }
 
       if (context.mounted) {
-        AppToast.success('Saved to gallery successfully! ✅');
+        AppToast.success(AppL10n.current.savedToGallerySuccessfully);
       }
     } catch (e) {
       if (context.mounted) {
         if (e is GalException && e.type == GalExceptionType.accessDenied) {
-          AppToast.warning('Please allow storage access from settings ⚙️');
+          AppToast.warning(AppL10n.current.pleaseAllowStorageAccess);
         } else {
-          AppToast.error('Failed to save: $e ❌');
+          AppToast.error(AppL10n.current.failedToSave(e));
         }
       }
     }

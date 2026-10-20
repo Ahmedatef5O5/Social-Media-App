@@ -6,6 +6,7 @@ import '../cubits/stories_cubit/stories_cubit.dart';
 import '../models/story_model.dart';
 import '../widgets/story_shimmer_widget.dart';
 import 'story_display_view.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class PendingStoryResolverView extends StatefulWidget {
   final String storyId;
@@ -123,7 +124,7 @@ class _PendingStoryResolverViewState extends State<PendingStoryResolverView> {
   }
 
   void _closeWithToast() {
-    AppToast.warning('This story is no longer available');
+    AppToast.warning(context.l10n.thisStoryIsNo);
     if (!mounted) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) Navigator.of(context).maybePop();

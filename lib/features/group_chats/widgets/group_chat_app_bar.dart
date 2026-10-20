@@ -19,6 +19,7 @@ import '../helpers/group_call_initiator.dart';
 import '../helpers/group_members_online_label.dart';
 import '../models/group_model.dart';
 import 'presence_animated_subtitle.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class GroupChatAppBar extends StatelessWidget implements PreferredSizeWidget {
   final GroupModel group;
@@ -164,7 +165,7 @@ class GroupChatAppBar extends StatelessWidget implements PreferredSizeWidget {
                   },
                   itemBuilder:
                       (_) => [
-                        const PopupMenuItem(
+                        PopupMenuItem(
                           value: 'search',
                           child: Row(
                             children: [
@@ -175,13 +176,13 @@ class GroupChatAppBar extends StatelessWidget implements PreferredSizeWidget {
                               ),
                               SizedBox(width: 8),
                               Text(
-                                'Search',
+                                context.l10n.search,
                                 style: TextStyle(color: Colors.black45),
                               ),
                             ],
                           ),
                         ),
-                        const PopupMenuItem(
+                        PopupMenuItem(
                           value: 'info',
                           child: Row(
                             children: [
@@ -192,7 +193,7 @@ class GroupChatAppBar extends StatelessWidget implements PreferredSizeWidget {
                               ),
                               SizedBox(width: 8),
                               Text(
-                                'group info',
+                                context.l10n.groupInfo,
                                 style: TextStyle(color: Colors.black45),
                               ),
                             ],
@@ -279,14 +280,12 @@ class _GroupCallActionsSectionState extends State<_GroupCallActionsSection> {
                     borderRadius: BorderRadius.circular(16),
                     onTap: () {
                       if (isBusyWithOtherCall) {
-                        AppToast.warning(
-                          'Please end your current call before joining another call.',
-                        );
+                        AppToast.warning(context.l10n.pleaseEndYourCurrent2);
                         return;
                       }
                       GroupCallJoinHelper.join(context, activeCall);
                     },
-                    child: const Padding(
+                    child: Padding(
                       padding: EdgeInsets.symmetric(
                         horizontal: 10,
                         vertical: 5,
@@ -297,7 +296,7 @@ class _GroupCallActionsSectionState extends State<_GroupCallActionsSection> {
                           Icon(Icons.call, size: 13, color: Colors.white),
                           SizedBox(width: 4),
                           Text(
-                            'Join',
+                            context.l10n.join,
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 12,
@@ -319,7 +318,7 @@ class _GroupCallActionsSectionState extends State<_GroupCallActionsSection> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 IconButton(
-                  tooltip: 'Voice call',
+                  tooltip: context.l10n.voiceCall,
                   icon: Icon(
                     Icons.phone_outlined,
                     color: isLocalUserBusy ? Colors.grey : primary,
@@ -335,7 +334,7 @@ class _GroupCallActionsSectionState extends State<_GroupCallActionsSection> {
                           ),
                 ),
                 IconButton(
-                  tooltip: 'Video call',
+                  tooltip: context.l10n.videoCall,
                   icon: Icon(
                     Icons.videocam_outlined,
                     color: isLocalUserBusy ? Colors.grey : primary,

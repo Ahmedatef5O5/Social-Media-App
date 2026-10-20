@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class GroupSearchField extends StatelessWidget {
   final TextEditingController controller;
@@ -18,7 +19,7 @@ class GroupSearchField extends StatelessWidget {
       child: TextField(
         controller: controller,
         decoration: InputDecoration(
-          hintText: 'Search people...',
+          hintText: context.l10n.searchPeople,
           hintStyle: TextStyle(
             color: isDark ? Colors.white54 : Colors.grey.shade600,
             fontSize: 15,

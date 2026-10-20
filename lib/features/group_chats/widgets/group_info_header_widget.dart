@@ -7,6 +7,8 @@ import '../../../core/constants/app_images.dart';
 import '../../../core/widgets/app_image_provider.dart';
 import '../../../core/widgets/full_screen_image_viewer.dart';
 import '../models/group_model.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
+import 'package:social_media_app/core/localization/app_l10n.dart';
 
 class GroupInfoHeaderWidget extends StatelessWidget {
   final GroupModel group;
@@ -425,11 +427,11 @@ class _GroupInfoHeaderDelegate extends SliverPersistentHeaderDelegate {
                         fontWeight: FontWeight.w600,
                       ),
                       maxLines: 1,
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         border: InputBorder.none,
                         isDense: true,
                         contentPadding: EdgeInsets.symmetric(vertical: 12),
-                        hintText: 'Group name',
+                        hintText: AppL10n.current.groupName2,
                         hintStyle: TextStyle(color: Colors.white38),
                       ),
                     ),
@@ -452,7 +454,7 @@ class _GroupInfoHeaderDelegate extends SliverPersistentHeaderDelegate {
                       icon: Icons.close_rounded,
                       onTap: onCancel,
                       iconColor: Colors.white70,
-                      tooltip: 'Cancel',
+                      tooltip: AppL10n.current.cancel,
                     ),
                     const SizedBox(width: 2),
                     _GlassIconAction(
@@ -460,7 +462,7 @@ class _GroupInfoHeaderDelegate extends SliverPersistentHeaderDelegate {
                       onTap: onSubmit,
                       iconColor: Colors.white,
                       emphasized: true,
-                      tooltip: 'Save',
+                      tooltip: AppL10n.current.save,
                     ),
                   ],
                 ],
@@ -733,8 +735,8 @@ class _TotalMembersBadge extends StatelessWidget {
                       color: Colors.white,
                     ),
                     const SizedBox(width: 3),
-                    const Text(
-                      'Members',
+                    Text(
+                      context.l10n.members,
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 12.5,
@@ -781,8 +783,8 @@ class _OnlineMembersBadge extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 3),
-                    const Text(
-                      'online',
+                    Text(
+                      context.l10n.online2,
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 12.5,

@@ -5,6 +5,7 @@ import 'package:social_media_app/core/mentions/mentions.dart';
 import '../../ai_assistant/entities/ai_action_type.dart';
 import '../../ai_assistant/entities/ai_request_context.dart';
 import '../../ai_assistant/widgets/ai_action_icon.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class CreatePostInputField extends StatelessWidget {
   final MentionTextEditingController _textEditingController;
@@ -34,7 +35,7 @@ class CreatePostInputField extends StatelessWidget {
       controller: _textEditingController,
       focusNode: focusNode,
       enabled: true,
-      hintText: "What's on your head?",
+      hintText: context.l10n.whatsOnYourHead,
       style: (theme.textTheme.bodyLarge ?? const TextStyle()).copyWith(
         fontSize: 18,
         textBaseline: TextBaseline.alphabetic,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class GroupsSelectionHeaderBar extends StatelessWidget {
   final int selectedCount;
@@ -24,7 +25,7 @@ class GroupsSelectionHeaderBar extends StatelessWidget {
           ),
           Expanded(
             child: Text(
-              '$selectedCount selected',
+              context.l10n.selected5(selectedCount),
               style: Theme.of(context).textTheme.titleLarge!.copyWith(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,

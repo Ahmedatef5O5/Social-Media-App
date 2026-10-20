@@ -14,6 +14,7 @@ import '../helpers/global_video_pause_gate.dart';
 import '../helpers/shared_video_controller_handle.dart';
 import '../models/post_model.dart';
 import 'full_screen_video_post_view.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 enum _VideoLoadStatus { loading, ready, unavailableOffline, processing, error }
 
@@ -223,20 +224,20 @@ class _PostVideoPlayerState extends State<PostVideoPlayer> with RouteAware {
       case _VideoLoadStatus.unavailableOffline:
         return _buildMessageBox(
           icon: Icons.wifi_off_rounded,
-          message: 'Video unavailable offline',
+          message: context.l10n.videoUnavailableOffline,
           showRetry: true,
         );
       case _VideoLoadStatus.processing:
         return _buildMessageBox(
           icon: Icons.hourglass_top_rounded,
-          message: 'Video is still processing…',
+          message: context.l10n.videoIsStillProcessing,
           showRetry: true,
         );
 
       case _VideoLoadStatus.error:
         return _buildMessageBox(
           icon: Icons.error_outline_rounded,
-          message: "Couldn't load video",
+          message: context.l10n.couldntLoadVideo,
           showRetry: true,
         );
       case _VideoLoadStatus.ready:
@@ -498,7 +499,7 @@ class _PostVideoPlayerState extends State<PostVideoPlayer> with RouteAware {
                         ),
                         const SizedBox(width: 6),
                         Text(
-                          'Retry',
+                          context.l10n.retry,
                           style: TextStyle(
                             color: theme.primaryColor,
                             fontWeight: FontWeight.w600,

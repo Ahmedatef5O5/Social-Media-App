@@ -8,6 +8,7 @@ import '../models/live_reaction.dart';
 import '../models/reaction_entry.dart';
 import '../services/reaction_profile_resolver.dart';
 import 'reactions_bottom_sheet_skeleton.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class MessageReactionsBottomSheet {
   static Future<void> show({
@@ -260,7 +261,7 @@ class _MessageReactionsSheetBodyState
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    'Reactions',
+                    context.l10n.reactions,
                     style: theme.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                       fontSize: 18,
@@ -297,7 +298,7 @@ class _MessageReactionsSheetBodyState
                         _isResolvingInitial
                             ? const ReactionsBottomSheetSkeleton()
                             : displayed.isEmpty
-                            ? const Center(child: Text('No reactions yet.'))
+                            ? Center(child: Text(context.l10n.noReactionsYet))
                             : ListView.builder(
                               physics: const ClampingScrollPhysics(),
                               controller: scrollController,
@@ -364,7 +365,7 @@ class _MessageReactionsSheetBodyState
                                     ],
                                   ),
                                   title: Text(
-                                    isMe ? 'You' : r.userName,
+                                    isMe ? context.l10n.you : r.userName,
                                     style: const TextStyle(
                                       fontWeight: FontWeight.w600,
                                     ),
@@ -372,7 +373,7 @@ class _MessageReactionsSheetBodyState
                                   subtitle:
                                       isMe
                                           ? Text(
-                                            'Tap to remove',
+                                            context.l10n.tapToRemove,
                                             style: theme.textTheme.bodySmall
                                                 ?.copyWith(color: Colors.grey),
                                           )

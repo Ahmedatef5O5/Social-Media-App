@@ -5,6 +5,7 @@ import '../cubits/presence_cubit/presence_cubit.dart';
 import '../models/presence_info.dart';
 import '../models/presence_privacy.dart';
 import 'presence_interest.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class PresenceStatusText extends StatelessWidget {
   final String userId;
@@ -48,7 +49,7 @@ class PresenceStatusText extends StatelessWidget {
 
     if (presencePrivacy == PresencePrivacy.nobody) {
       return Text(
-        'Last seen recently',
+        context.l10n.lastSeenRecently,
         style: offlineStyle ?? defaultOfflineStyle,
       );
     }
@@ -61,16 +62,22 @@ class PresenceStatusText extends StatelessWidget {
     final lastSeen = presenceInfo?.lastSeen ?? fallbackLastSeen;
 
     if (isOnline) {
-      return Text('Online', style: onlineStyle ?? defaultOnlineStyle);
+      return Text(
+        context.l10n.online,
+        style: onlineStyle ?? defaultOnlineStyle,
+      );
     }
 
     if (lastSeen != null) {
       final lastSeenStr = FormattedDate.getLastSeen(lastSeen);
       if (lastSeenStr == 'Online' || lastSeenStr == 'just now') {
-        return Text('Online', style: onlineStyle ?? defaultOnlineStyle);
+        return Text(
+          context.l10n.online,
+          style: onlineStyle ?? defaultOnlineStyle,
+        );
       }
       return Text(
-        'Last seen $lastSeenStr',
+        context.l10n.lastSeen(lastSeenStr),
         style: offlineStyle ?? defaultOfflineStyle,
       );
     }

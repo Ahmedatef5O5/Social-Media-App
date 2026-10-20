@@ -12,6 +12,7 @@ import '../../group_calls/helpers/group_call_join_helper.dart';
 import '../../group_calls/models/group_call_model.dart';
 import '../../group_calls/services/group_call_signaling_service.dart';
 import '../models/groupe_message_model.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class GroupCallMessageContent extends StatefulWidget {
   final GroupMessageModel message;
@@ -264,12 +265,15 @@ class _GroupCallMessageContentState extends State<GroupCallMessageContent> {
     if (neverConnected) {
       callLabel =
           showAsMissed
-              ? (isAudio ? 'Missed voice call' : 'Missed video call')
-              : 'Ended call';
+              ? (isAudio
+                  ? context.l10n.missedVoiceCall
+                  : context.l10n.missedVideoCall)
+              : context.l10n.endedCall;
     } else if (isEndedConnected) {
-      callLabel = 'Ended call';
+      callLabel = context.l10n.endedCall;
     } else {
-      callLabel = isAudio ? 'Group voice call' : 'Group video call';
+      callLabel =
+          isAudio ? context.l10n.groupVoiceCall2 : context.l10n.groupVideoCall2;
     }
 
     return Container(
@@ -373,8 +377,8 @@ class _GroupCallMessageContentState extends State<GroupCallMessageContent> {
                                   ),
                                 ),
                                 const SizedBox(width: 4),
-                                const Text(
-                                  'Ongoing',
+                                Text(
+                                  context.l10n.ongoing,
                                   style: TextStyle(
                                     color: Colors.green,
                                     fontSize: 11.5,
@@ -630,8 +634,8 @@ class _GroupCallJoinButtonState extends State<_GroupCallJoinButton> {
                   size: 15,
                 ),
                 const SizedBox(width: 5),
-                const Text(
-                  'Tap to Join',
+                Text(
+                  context.l10n.tapToJoin,
                   style: TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.w700,

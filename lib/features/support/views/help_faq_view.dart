@@ -5,6 +5,7 @@ import '../../settings/widgets/settings_detail_sliver_app_bar.dart';
 import '../models/faq_category.dart';
 import '../widgets/accordion_tile.dart';
 import '../widgets/support_contact_bar.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class HelpFaqView extends StatefulWidget {
   const HelpFaqView({super.key});
@@ -62,7 +63,7 @@ class _HelpFaqViewState extends State<HelpFaqView> {
           if (snapshot.hasError || !snapshot.hasData) {
             return Center(
               child: Text(
-                "We couldn't load this content. Please try again later.",
+                context.l10n.weCouldntLoadThis,
                 style: theme.textTheme.bodyMedium,
               ),
             );
@@ -78,10 +79,10 @@ class _HelpFaqViewState extends State<HelpFaqView> {
           return CustomScrollView(
             physics: const ClampingScrollPhysics(),
             slivers: [
-              const SettingsDetailSliverAppBar(
+              SettingsDetailSliverAppBar(
                 icon: Icons.help_outline_rounded,
-                title: 'Help & FAQ',
-                subtitle: 'Get answers to common questions',
+                title: context.l10n.settingsHelpFaq,
+                subtitle: context.l10n.settingsHelpFaqSubtitle,
               ),
               SliverPersistentHeader(
                 pinned: true,
@@ -93,7 +94,7 @@ class _HelpFaqViewState extends State<HelpFaqView> {
                       controller: _searchController,
                       onChanged: (v) => setState(() => _query = v),
                       decoration: InputDecoration(
-                        hintText: 'Search for a question…',
+                        hintText: context.l10n.searchForAQuestion,
                         prefixIcon: const Icon(Icons.search_rounded),
                         suffixIcon:
                             isSearching
@@ -128,7 +129,7 @@ class _HelpFaqViewState extends State<HelpFaqView> {
                         padding: const EdgeInsets.only(top: 40),
                         child: Center(
                           child: Text(
-                            'No results for "$_query"',
+                            context.l10n.noResultsFor(_query),
                             style: theme.textTheme.bodyMedium,
                           ),
                         ),

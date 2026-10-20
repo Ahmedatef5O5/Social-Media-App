@@ -5,6 +5,7 @@ import '../../../core/themes/app_colors.dart';
 import '../../ai_assistant/entities/ai_action_type.dart';
 import '../../ai_assistant/entities/ai_request_context.dart';
 import '../../ai_assistant/widgets/ai_action_icon.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class StoryTextEditor extends StatelessWidget {
   final MentionTextEditingController controller;
@@ -33,7 +34,7 @@ class StoryTextEditor extends StatelessWidget {
                   controller: controller,
                   focusNode: focusNode,
                   enabled: true,
-                  hintText: 'Write your thought with others',
+                  hintText: context.l10n.writeYourThoughtWith,
                   textAlign: TextAlign.center,
                   minLines: 1,
                   maxLines: null,

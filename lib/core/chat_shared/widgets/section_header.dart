@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class SectionHeader extends StatelessWidget {
   final String label;
@@ -13,7 +14,7 @@ class SectionHeader extends StatelessWidget {
         style: TextStyle(
           fontSize: 13,
           fontWeight: FontWeight.w700,
-          letterSpacing: 0.5,
+          letterSpacing: context.ls(0.5),
           color: Theme.of(context).colorScheme.onSurfaceVariant,
         ),
       ),

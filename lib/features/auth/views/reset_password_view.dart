@@ -15,6 +15,7 @@ import '../../../core/widgets/custom_text_form_field.dart';
 import '../cubits/auth_cubit/auth_cubit.dart';
 import '../services/auth_recovery_coordinator.dart';
 import '../widgets/password_strength_bar.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class ResetPasswordView extends StatefulWidget {
   const ResetPasswordView({super.key});
@@ -37,9 +38,7 @@ class _ResetPasswordViewCustomState extends State<ResetPasswordView> {
   void _verifyActiveRecoverySession() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!SupabaseProvider.isAuthenticated) {
-        AppToast.error(
-          'The recovery session is invalid or has expired. Please request a new link.',
-        );
+        AppToast.error(context.l10n.theRecoverySessionIs);
         AuthRecoveryCoordinator.consumeRecovery();
         Navigator.of(
           context,
@@ -98,7 +97,7 @@ class _ResetPasswordViewCustomState extends State<ResetPasswordView> {
                     ),
                     const Gap(24),
                     Text(
-                      'Create New Password',
+                      context.l10n.createNewPassword,
                       style: Theme.of(
                         context,
                       ).textTheme.headlineSmall?.copyWith(
@@ -108,7 +107,7 @@ class _ResetPasswordViewCustomState extends State<ResetPasswordView> {
                     ),
                     const Gap(8),
                     Text(
-                      'Your new password must be at least 6 characters long.',
+                      context.l10n.yourNewPasswordMust,
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: AppColors.grey,
@@ -119,8 +118,8 @@ class _ResetPasswordViewCustomState extends State<ResetPasswordView> {
                     CustomTextFormField(
                       controller: _newPwdController,
                       prefixIcon: const Icon(Icons.lock_outline_rounded),
-                      labelText: 'New Password',
-                      hintText: 'Enter new password',
+                      labelText: context.l10n.newPassword,
+                      hintText: context.l10n.enterNewPassword,
                       isPassword: true,
                       inputFormatters: AppFormatters.noSpaces,
                       validator: AppValidators.validatePassword,
@@ -142,8 +141,8 @@ class _ResetPasswordViewCustomState extends State<ResetPasswordView> {
                     CustomTextFormField(
                       controller: _confirmPwdController,
                       prefixIcon: const Icon(Icons.lock_reset_rounded),
-                      labelText: 'Confirm Password',
-                      hintText: 'Re-enter your password',
+                      labelText: context.l10n.confirmPassword,
+                      hintText: context.l10n.reEnterYourPassword,
                       isPassword: true,
                       inputFormatters: AppFormatters.noSpaces,
                       validator:
@@ -160,7 +159,9 @@ class _ResetPasswordViewCustomState extends State<ResetPasswordView> {
                               curr is AuthFailure,
                       listener: (context, state) {
                         if (state is PasswordUpdateSuccess) {
-                          AppToast.success('Password updated successfully');
+                          AppToast.success(
+                            context.l10n.passwordUpdatedSuccessfully,
+                          );
                           AuthRecoveryCoordinator.consumeRecovery();
                           Navigator.of(
                             context,

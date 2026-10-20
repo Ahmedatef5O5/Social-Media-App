@@ -23,6 +23,7 @@ import 'package:social_media_app/features/single_chats/models/chat_user_model.da
 import 'package:social_media_app/features/stories/cubits/stories_cubit/stories_cubit.dart';
 import 'package:social_media_app/features/stories/models/story_model.dart';
 import '../../../features/group_chats/helpers/group_navigation.dart';
+import 'package:social_media_app/core/localization/app_l10n.dart';
 
 class TapActionHandler {
   TapActionHandler._();
@@ -316,7 +317,7 @@ class TapActionHandler {
     final verdict = await _verifySingleCall(callId);
     if (verdict == _CallVerdict.gone) {
       unawaited(dispatcher.cancelCallNotification(callId));
-      AppToast.info('This call has already ended');
+      AppToast.info(AppL10n.current.thisCallHasAlready);
       return;
     }
 
@@ -440,13 +441,13 @@ class TapActionHandler {
       const alive = {'ringing', 'accepted', 'ongoing'};
       if (!alive.contains(status)) {
         unawaited(dispatcher.cancelIncomingGroupCallNotification(data.callId));
-        AppToast.info('This call has already ended');
+        AppToast.info(AppL10n.current.thisCallHasAlready);
         return;
       }
     } else if (data.callId.isNotEmpty) {
       // No row at all: the call was deleted / never existed.
       unawaited(dispatcher.cancelIncomingGroupCallNotification(data.callId));
-      AppToast.info('This call has already ended');
+      AppToast.info(AppL10n.current.thisCallHasAlready);
       return;
     }
 
@@ -688,7 +689,7 @@ class TapActionHandler {
         );
 
         if (storyIndex == -1) {
-          AppToast.warning('This story is no longer available');
+          AppToast.warning(AppL10n.current.thisStoryIsNo);
         } else {
           navigatorKey.currentState?.pushNamed(
             AppRoutes.storyDisplayViewRoute,
@@ -703,7 +704,7 @@ class TapActionHandler {
       });
     } catch (e) {
       debugPrint('Error opening story from notification: $e');
-      AppToast.error('Failed to open story');
+      AppToast.error(AppL10n.current.failedToOpenStory);
     }
   }
 
@@ -731,7 +732,7 @@ class TapActionHandler {
         );
 
         if (storyIndex == -1) {
-          AppToast.warning('This story is no longer available');
+          AppToast.warning(AppL10n.current.thisStoryIsNo);
           return;
         }
 
@@ -747,7 +748,7 @@ class TapActionHandler {
       });
     } catch (e) {
       debugPrint('Error opening mentioned story from notification: $e');
-      AppToast.error('Failed to open story');
+      AppToast.error(AppL10n.current.failedToOpenStory);
     }
   }
 
@@ -763,7 +764,7 @@ class TapActionHandler {
 
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (group == null) {
-          AppToast.warning('This group is no longer available');
+          AppToast.warning(AppL10n.current.thisGroupIsNo);
           return;
         }
 
@@ -777,7 +778,7 @@ class TapActionHandler {
       });
     } catch (e) {
       debugPrint('Error opening group chat from notification: $e');
-      AppToast.error('Failed to open group chat');
+      AppToast.error(AppL10n.current.failedToOpenGroup);
     }
   }
 }

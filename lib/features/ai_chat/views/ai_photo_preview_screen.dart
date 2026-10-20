@@ -5,6 +5,7 @@ import '../../../core/widgets/directional_text_field.dart';
 import '../../ai_assistant/entities/ai_action_type.dart';
 import '../../ai_assistant/entities/ai_request_context.dart';
 import '../../ai_assistant/widgets/ai_action_icon.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class AiPhotoPreviewScreen extends StatelessWidget {
   final File file;
@@ -59,7 +60,7 @@ class AiPhotoPreviewScreen extends StatelessWidget {
                         textInputAction: TextInputAction.done,
                         onSubmitted: (_) => Navigator.of(context).pop(),
                         decoration: InputDecoration(
-                          hintText: 'Add a caption...',
+                          hintText: context.l10n.addACaption,
                           hintStyle: const TextStyle(color: Colors.white60),
                           filled: true,
                           fillColor: Colors.white24,

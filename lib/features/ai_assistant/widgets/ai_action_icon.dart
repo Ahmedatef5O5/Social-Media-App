@@ -11,6 +11,7 @@ import '../helpers/ai_image_encoder.dart';
 import '../repository/ai_repository.dart';
 import 'dart:typed_data';
 import 'animated_ai_stars_icon.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class AiActionIcon extends StatefulWidget {
   final TextEditingController controller;
@@ -149,16 +150,12 @@ class _AiActionIconState extends State<AiActionIcon> {
 
   void _showQuotaToast(bool isGlobal) {
     AppToast.warning(
-      isGlobal
-          ? 'You have reached the daily limit for free AI usage. Please try again tomorrow.'
-          : 'You have used up your daily quota of AI suggestions. It will reset tomorrow.',
+      isGlobal ? context.l10n.youHaveReachedThe : context.l10n.youHaveUsedUp,
     );
   }
 
   void _showVisionUnavailableToast() {
-    AppToast.warning(
-      'The smart reply to images service is currently busy. Please try again later or write your reply manually.',
-    );
+    AppToast.warning(context.l10n.theSmartReplyTo);
   }
 
   @override
@@ -197,9 +194,7 @@ class _AiActionIconState extends State<AiActionIcon> {
               widget.controller.addListener(_onTextChanged);
               _cubit.acknowledgeResult();
             } else if (state is AiFieldError) {
-              AppToast.error(
-                'An error occurred with the AI suggestion. Please try again.',
-              );
+              AppToast.error(context.l10n.anErrorOccurredWith);
               _cubit.acknowledgeResult();
             }
           },
@@ -243,10 +238,10 @@ class _AiActionIconState extends State<AiActionIcon> {
                 visualDensity: VisualDensity.compact,
                 tooltip:
                     isSpellingError
-                        ? 'Spelling Correction'
+                        ? context.l10n.spellingCorrection
                         : (isVisionUnavailable
-                            ? 'Smart reply to images is currently unavailable'
-                            : 'AI Suggestion'),
+                            ? context.l10n.smartReplyToImages
+                            : context.l10n.aiSuggestion),
                 icon: Icon(
                   isSpellingError
                       ? Icons.spellcheck_rounded

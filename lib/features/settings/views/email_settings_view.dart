@@ -19,6 +19,7 @@ import '../cubits/account_security_cubit.dart';
 import '../utils/resend_cooldown.dart';
 import '../widgets/settings_detail_sliver_app_bar.dart';
 import '../widgets/settings_surface_card.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class EmailSettingsView extends StatefulWidget {
   const EmailSettingsView({super.key});
@@ -109,13 +110,13 @@ class _EmailSettingsViewState extends State<EmailSettingsView>
     if (hadPending && !_hasPending(fresh)) {
       _changeCooldown.clear();
       if (emailChanged) {
-        AppToast.success('Your email address was updated');
+        AppToast.success(context.l10n.yourEmailAddressWas);
         unawaited(_services.syncProfileEmail(fresh.email));
       }
     }
     if (before?.emailConfirmedAt == null && fresh.emailConfirmedAt != null) {
       _verifyCooldown.clear();
-      AppToast.success('Email verified');
+      AppToast.success(context.l10n.emailVerified);
     }
   }
 
@@ -130,17 +131,17 @@ class _EmailSettingsViewState extends State<EmailSettingsView>
           final user = state.user;
           if (user != null) _applyUser(user);
           _changeCooldown.start();
-          AppToast.success('Confirmation link sent');
+          AppToast.success(context.l10n.confirmationLinkSent);
         case AccountAction.resendEmailChange:
           _changeCooldown.start();
-          AppToast.success('Confirmation link sent again');
+          AppToast.success(context.l10n.confirmationLinkSentAgain);
         case AccountAction.cancelEmailChange:
           _changeCooldown.clear();
-          AppToast.info('Email change cancelled');
+          AppToast.info(context.l10n.emailChangeCancelled);
           _refreshUser();
         case AccountAction.resendVerification:
           _verifyCooldown.start();
-          AppToast.success('Verification email sent');
+          AppToast.success(context.l10n.verificationEmailSent);
         default:
           break;
       }
@@ -176,7 +177,7 @@ class _EmailSettingsViewState extends State<EmailSettingsView>
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(ctx).pop(false),
-                child: const Text('Keep'),
+                child: Text(context.l10n.keep),
               ),
               TextButton(
                 onPressed: () => Navigator.of(ctx).pop(true),
@@ -194,10 +195,8 @@ class _EmailSettingsViewState extends State<EmailSettingsView>
 
   Future<void> _cancelPending(String currentEmail, String pendingEmail) async {
     final ok = await _confirm(
-      title: 'Cancel email change?',
-      message:
-          'Your email stays $currentEmail. The link sent to $pendingEmail '
-          'will no longer work.',
+      title: context.l10n.cancelEmailChange,
+      message: context.l10n.yourEmailStaysThe(currentEmail, pendingEmail),
       confirmLabel: 'Cancel request',
       destructive: true,
     );
@@ -256,20 +255,20 @@ class _EmailSettingsViewState extends State<EmailSettingsView>
               parent: ClampingScrollPhysics(),
             ),
             slivers: [
-              const SettingsDetailSliverAppBar(
+              SettingsDetailSliverAppBar(
                 icon: CupertinoIcons.mail_solid,
-                title: 'Email Address',
-                subtitle: 'Manage and update your linked email address',
+                title: context.l10n.settingsEmailAddress,
+                subtitle: context.l10n.manageAndUpdateYour,
               ),
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 40),
                   child:
                       user == null
-                          ? const Padding(
+                          ? Padding(
                             padding: EdgeInsets.only(top: 40),
                             child: Center(
-                              child: Text('Please sign in again to continue.'),
+                              child: Text(context.l10n.pleaseSignInAgain),
                             ),
                           )
                           : _buildBody(context, user),
@@ -310,8 +309,7 @@ class _EmailSettingsViewState extends State<EmailSettingsView>
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 4),
             child: Text(
-              'For your security, we will ask for your password before '
-              'changing your email.',
+              context.l10n.forYourSecurityWe,
               style: TextStyle(
                 fontSize: 12,
                 height: 1.4,
@@ -323,12 +321,10 @@ class _EmailSettingsViewState extends State<EmailSettingsView>
             ),
           ),
         ] else ...[
-          const SettingsInfoBanner(
+          SettingsInfoBanner(
             icon: Icons.lock_outline_rounded,
-            title: 'Set a password first',
-            message:
-                'To change your email address you first need a password on '
-                'this account, so we can confirm it is really you.',
+            title: context.l10n.setAPasswordFirst,
+            message: context.l10n.toChangeYourEmail,
           ),
           const Gap(14),
           CustomElevatedButton(
@@ -372,23 +368,23 @@ class _EmailSettingsViewState extends State<EmailSettingsView>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'CURRENT EMAIL',
+                      context.l10n.currentEmail,
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
-                        letterSpacing: 1.1,
+                        letterSpacing: context.ls(1.1),
                         color: muted,
                       ),
                     ),
                     const Gap(3),
                     Text(
-                      user.email ?? 'No email on file',
+                      user.email ?? context.l10n.noEmailOnFile,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
-                        letterSpacing: -0.2,
+                        letterSpacing: context.ls(-0.2),
                         color: isDark ? Colors.white : Colors.black87,
                       ),
                     ),
@@ -401,19 +397,18 @@ class _EmailSettingsViewState extends State<EmailSettingsView>
           verified
               ? _StatusChip(
                 icon: Icons.verified_rounded,
-                label: 'Verified',
+                label: context.l10n.verified,
                 color: isDark ? Colors.green.shade300 : Colors.green.shade700,
               )
               : _StatusChip(
                 icon: Icons.warning_amber_rounded,
-                label: 'Unverified',
+                label: context.l10n.unverified,
                 color: isDark ? Colors.amber.shade300 : Colors.amber.shade800,
               ),
           if (!verified) ...[
             const Gap(12),
             Text(
-              'Verify this address so you can recover your account and '
-              'receive important notices.',
+              context.l10n.verifyThisAddressSo,
               style: TextStyle(fontSize: 12.5, height: 1.45, color: muted),
             ),
             const Gap(10),
@@ -433,7 +428,7 @@ class _EmailSettingsViewState extends State<EmailSettingsView>
               Icon(Icons.login_rounded, size: 18, color: muted),
               const Gap(10),
               Text(
-                'Sign-in method',
+                context.l10n.signInMethod,
                 style: TextStyle(fontSize: 13, color: muted),
               ),
               const Spacer(),
@@ -456,11 +451,11 @@ class _EmailSettingsViewState extends State<EmailSettingsView>
               icon: Icons.link_rounded,
               message:
                   info.hasPassword
-                      ? '${info.oauthLabel} is also linked to this account. '
-                          'Changing your email here does not change your '
-                          '${info.oauthLabel} account.'
-                      : 'Your primary sign-in is managed by ${info.oauthLabel}. '
-                          'Your email is tied to that provider.',
+                      ? context.l10n.isAlsoLinkedTo(
+                        info.oauthLabel,
+                        info.oauthLabel,
+                      )
+                      : context.l10n.yourPrimarySignIn(info.oauthLabel),
             ),
           ],
         ],
@@ -497,7 +492,9 @@ class _EmailSettingsViewState extends State<EmailSettingsView>
                       )
                       : const Icon(Icons.mark_email_read_outlined, size: 18),
               label: Text(
-                secs > 0 ? 'Resend in ${secs}s' : 'Resend Verification',
+                secs > 0
+                    ? context.l10n.resendInS2(secs)
+                    : context.l10n.resendVerification,
               ),
             );
           },
@@ -534,7 +531,7 @@ class _EmailSettingsViewState extends State<EmailSettingsView>
               const Gap(12),
               Expanded(
                 child: Text(
-                  'Confirm your new email',
+                  context.l10n.confirmYourNewEmail,
                   style: TextStyle(
                     fontSize: 15.5,
                     fontWeight: FontWeight.w700,
@@ -546,9 +543,7 @@ class _EmailSettingsViewState extends State<EmailSettingsView>
           ),
           const Gap(12),
           Text(
-            'Confirmation link sent to $pendingEmail. Please click the link '
-            'to confirm your new address. Your current email remains active '
-            'until confirmed.',
+            context.l10n.confirmationLinkSentTo(pendingEmail),
             style: TextStyle(
               fontSize: 13,
               height: 1.5,
@@ -557,8 +552,7 @@ class _EmailSettingsViewState extends State<EmailSettingsView>
           ),
           const Gap(8),
           Text(
-            'Cannot find it? Check your spam folder. You may also be asked '
-            'to approve the change from your current inbox.',
+            context.l10n.cannotFindItCheck,
             style: TextStyle(
               fontSize: 12,
               height: 1.45,
@@ -603,7 +597,9 @@ class _EmailSettingsViewState extends State<EmailSettingsView>
                                   )
                                   : const Icon(Icons.refresh_rounded, size: 18),
                           label: Text(
-                            secs > 0 ? 'Resend in ${secs}s' : 'Resend Link',
+                            secs > 0
+                                ? context.l10n.resendInS2(secs)
+                                : context.l10n.resendLink,
                           ),
                         ),
                       ),
@@ -627,7 +623,7 @@ class _EmailSettingsViewState extends State<EmailSettingsView>
                                     ),
                                   )
                                   : const Icon(Icons.close_rounded, size: 18),
-                          label: const Text('Cancel Request'),
+                          label: Text(context.l10n.cancelRequest),
                           style: TextButton.styleFrom(
                             foregroundColor: Colors.red,
                           ),
@@ -778,19 +774,17 @@ class _ChangeEmailSheetState extends State<_ChangeEmailSheet> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Change email address',
+                      context.l10n.changeEmailAddress,
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.w800,
-                        letterSpacing: -0.4,
+                        letterSpacing: context.ls(-0.4),
                         color: isDark ? Colors.white : Colors.black87,
                       ),
                     ),
                     const Gap(6),
                     Text(
-                      "Enter your password and the new address. We'll email a "
-                      'confirmation link, and your current email stays active '
-                      'until you confirm.',
+                      context.l10n.enterYourPasswordAnd,
                       style: TextStyle(
                         fontSize: 13,
                         height: 1.45,
@@ -801,12 +795,12 @@ class _ChangeEmailSheetState extends State<_ChangeEmailSheet> {
                     CustomTextFormField(
                       controller: _passwordCtrl,
                       prefixIcon: const Icon(Icons.lock_outline_rounded),
-                      labelText: 'Current Password',
-                      hintText: 'Enter your password',
+                      labelText: context.l10n.currentPassword,
+                      hintText: context.l10n.enterYourPassword,
                       isPassword: true,
                       validator: (value) {
                         if (value == null || value.isEmpty) {
-                          return 'Password is required';
+                          return context.l10n.passwordIsRequired;
                         }
                         return _passwordServerError;
                       },
@@ -815,8 +809,8 @@ class _ChangeEmailSheetState extends State<_ChangeEmailSheet> {
                     CustomTextFormField(
                       controller: _emailCtrl,
                       prefixIcon: const Icon(Icons.email_outlined),
-                      labelText: 'New Email Address',
-                      hintText: 'Enter your new email',
+                      labelText: context.l10n.newEmailAddress,
+                      hintText: context.l10n.enterYourNewEmail,
                       keyboardType: TextInputType.emailAddress,
                       inputFormatters: AppFormatters.noSpaces,
                       validator: (value) {
@@ -824,7 +818,7 @@ class _ChangeEmailSheetState extends State<_ChangeEmailSheet> {
                         if (base != null) return base;
                         if (value!.trim().toLowerCase() ==
                             widget.currentEmail.trim().toLowerCase()) {
-                          return 'New email must be different from your current email';
+                          return context.l10n.newEmailMustBe;
                         }
                         return _emailServerError;
                       },

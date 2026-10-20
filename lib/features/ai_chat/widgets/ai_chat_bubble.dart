@@ -19,6 +19,7 @@ import '../models/ai_chat_message.dart';
 import 'ai_chat_selection_header_bar.dart' show kAiChatStarGold;
 import 'ai_swipe_to_reply_wrapper.dart';
 import 'ai_typewriter_text.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 const _kEntranceDuration = Duration(milliseconds: 380);
 const _kMultiSelectLongPressDuration = Duration(milliseconds: 400);
@@ -449,18 +450,18 @@ class _AiChatBubbleState extends State<AiChatBubble> {
   String _repliedMediaLabel() {
     switch (_repliedMediaType) {
       case 'image':
-        return 'Photo';
+        return context.l10n.photo;
       case 'video':
-        return 'Video';
+        return context.l10n.video;
       case 'voice':
         final seconds = widget.replyOrigin?.durationSeconds;
         return seconds == null
-            ? 'Voice message'
-            : 'Voice message · ${_formatReplyDuration(seconds)}';
+            ? context.l10n.voiceMessage2
+            : context.l10n.voiceMessage3(_formatReplyDuration(seconds));
       case 'file':
-        return widget.replyOrigin?.fileName ?? 'File';
+        return widget.replyOrigin?.fileName ?? context.l10n.file;
       default:
-        return 'Message';
+        return context.l10n.message;
     }
   }
 
@@ -492,7 +493,7 @@ class _AiChatBubbleState extends State<AiChatBubble> {
 
     final senderTitle =
         message.replyToSenderRole == 'user'
-            ? 'You'
+            ? context.l10n.you
             : (origin?.model?.fullLabel ??
                 message.model?.fullLabel ??
                 'Syncra');

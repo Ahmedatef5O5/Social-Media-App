@@ -3,6 +3,7 @@ import 'package:gap/gap.dart';
 import '../../../core/helpers/formatted_date.dart';
 import '../../../core/themes/app_colors.dart';
 import '../models/message_model.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class MessageTimeAndStatus extends StatelessWidget {
   final MessageModel message;
@@ -24,7 +25,7 @@ class MessageTimeAndStatus extends StatelessWidget {
       children: [
         if (message.isEdited) ...[
           Text(
-            'Edited',
+            context.l10n.edited2,
             style: Theme.of(context).textTheme.titleMedium!.copyWith(
               color:
                   isMe

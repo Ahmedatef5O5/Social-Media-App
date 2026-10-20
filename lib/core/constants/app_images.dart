@@ -30,7 +30,7 @@ class AppImages {
   static const String defaultBackgroundImg =
       'assets/images/default_background_user_image.png';
   static const String defaultGroupImg = 'assets/images/no_group_picture.png';
-
+  static const String blckedUserIcon = 'assets/images/blocked_user.png';
   static const String deletedUserAccountIcon =
       'assets/icons/deleted_account_icon.png';
 
@@ -61,4 +61,7 @@ class AppImages {
   static const String newCommentIcon = 'assets/icons/new_comment.png';
   static const String noStarredMsgsIcon =
       'assets/icons/no_starred_messages.png';
+  static const String sharedMediaIcon = 'assets/images/shared_media.png';
+  static const String imageGalleryIcon = 'assets/images/image_gallery.png';
+  static const String linkIcon = 'assets/images/link.png';
 }

@@ -9,6 +9,7 @@ import '../../services/active_call/cubits/active_call_session_cubit.dart';
 import '../../services/incoming_call_navigation_guard.dart';
 import '../../services/permissions/app_permissions_service.dart';
 import '../../toast/app_toast.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class CallIconButton extends StatelessWidget {
   final CallType type;
@@ -46,8 +47,10 @@ class CallIconButton extends StatelessWidget {
           padding: padding ?? EdgeInsets.zero,
           tooltip:
               isBlocked
-                  ? 'Unavailable'
-                  : (type == CallType.video ? 'Video call' : 'Voice call'),
+                  ? context.l10n.unavailable
+                  : (type == CallType.video
+                      ? context.l10n.videoCall
+                      : context.l10n.voiceCall),
           icon: Icon(
             size: size ?? 25,
             type == CallType.video
@@ -69,7 +72,7 @@ class CallIconButton extends StatelessWidget {
     // `ActiveCallSessionCubit` session yet (the button's disabled state only
     // reflects an established session).
     if (IncomingCallNavigationGuard.isUserBusyWithAnotherCall()) {
-      AppToast.warning('Please end your current call before starting another.');
+      AppToast.warning(context.l10n.pleaseEndYourCurrent);
       return;
     }
 
@@ -84,7 +87,7 @@ class CallIconButton extends StatelessWidget {
     if (!context.mounted) return;
 
     if (receiverBusy) {
-      AppToast.info('$receiverName is busy on another call');
+      AppToast.info(context.l10n.isBusyOnAnother(receiverName));
       return;
     }
 

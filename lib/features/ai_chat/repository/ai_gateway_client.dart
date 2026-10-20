@@ -1,5 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../settings/repository/settings_repository.dart';
+
 class AiGatewayResult {
   AiGatewayResult({
     required this.success,
@@ -56,7 +58,12 @@ class AiGatewayClient {
       },
     };
 
-    final response = await _supabase.functions.invoke('ai-gateway', body: body);
+    final response = await _supabase.functions.invoke(
+      'ai-gateway',
+      body: body,
+      // Lets the assistant default to the user's chosen UI language.
+      headers: {'x-user-language': SettingsRepository.instance.languageCode},
+    );
     final data = response.data as Map<String, dynamic>;
     return AiGatewayResult.fromJson(data);
   }

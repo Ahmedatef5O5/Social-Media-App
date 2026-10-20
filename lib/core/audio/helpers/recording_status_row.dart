@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'pulsing_red_dot.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class RecordingStatusRow extends StatelessWidget {
   final int seconds;
@@ -40,7 +41,7 @@ class RecordingStatusRow extends StatelessWidget {
             offset: Offset(visualOffset, 0),
             child: Opacity(
               opacity: 1 - cancelProgress,
-              child: const Row(
+              child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(
@@ -50,7 +51,7 @@ class RecordingStatusRow extends StatelessWidget {
                   ),
                   Flexible(
                     child: Text(
-                      'Slide to cancel',
+                      context.l10n.slideToCancel,
                       style: TextStyle(color: Colors.grey, fontSize: 13),
                       overflow: TextOverflow.ellipsis,
                     ),

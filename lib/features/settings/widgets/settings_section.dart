@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:gap/gap.dart';
+import '../../../core/localization/l10n_extension.dart';
 import 'settings_item_data.dart';
 
 class SettingsSection extends StatelessWidget {
@@ -40,7 +41,11 @@ class SettingsSection extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.only(left: 4, bottom: 8, top: 6),
+            padding: const EdgeInsetsDirectional.only(
+              start: 4,
+              bottom: 8,
+              top: 6,
+            ),
             child: Row(
               children: [
                 Icon(icon, size: 14, color: primary),
@@ -50,7 +55,7 @@ class SettingsSection extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
-                    letterSpacing: 1.2,
+                    letterSpacing: context.ls(1.2),
                     color: primary,
                   ),
                 ),
@@ -78,7 +83,13 @@ class SettingsSection extends StatelessWidget {
                     final idx = entry.key;
                     final item = entry.value;
                     final isLast = idx == items.length - 1;
-                    return _buildSettingsItem(item, isDark, primary, isLast);
+                    return _buildSettingsItem(
+                      context,
+                      item,
+                      isDark,
+                      primary,
+                      isLast,
+                    );
                   }).toList(),
             ),
           ),
@@ -88,6 +99,7 @@ class SettingsSection extends StatelessWidget {
   }
 
   Widget _buildSettingsItem(
+    BuildContext context,
     SettingsItemData item,
     bool isDark,
     Color primary,
@@ -130,7 +142,7 @@ class SettingsSection extends StatelessWidget {
                             fontSize: 14.5,
                             fontWeight: FontWeight.w600,
                             color: isDark ? Colors.white : Colors.black87,
-                            letterSpacing: -0.2,
+                            letterSpacing: context.ls(-0.2),
                           ),
                         ),
                         if (item.subtitle != null) ...[

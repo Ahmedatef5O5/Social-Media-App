@@ -15,6 +15,7 @@ import '../models/chat_user_model.dart';
 import '../models/message_model.dart';
 import 'call_message_content.dart';
 import 'regular_message_content.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class MessageContentContainer extends StatefulWidget {
   final MessageModel message;
@@ -209,7 +210,7 @@ class _MessageContentContainerState extends State<MessageContentContainer> {
                           ForwardedHeader(
                             name:
                                 widget.message.forwardedFromUserName ??
-                                'Unknown',
+                                context.l10n.unknown,
                             avatarUrl: widget.message.forwardedFromUserAvatar,
                             originalSenderId:
                                 widget.message.forwardedFromUserId ?? '',

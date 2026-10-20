@@ -7,6 +7,7 @@ import '../../../core/chat_shared/cubits/conversations_cubit/conversations_cubit
 import '../../../core/widgets/custom_badge.dart';
 import '../../group_chats/cubits/group_list_cubit/group_list_cubit.dart';
 import '../cubits/chats_cubit/chats_cubit.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class MessagesHeaderSection extends StatelessWidget {
   final bool isDark;
@@ -52,7 +53,7 @@ class MessagesHeaderSection extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Text(
-                'Messages',
+                context.l10n.messages,
                 style: Theme.of(context).textTheme.titleLarge!.copyWith(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
@@ -87,7 +88,7 @@ class MessagesHeaderSection extends StatelessWidget {
                                   color: Theme.of(context).primaryColor,
                                   size: 24,
                                 ),
-                                tooltip: 'Archived chats',
+                                tooltip: context.l10n.archivedChats2,
                                 onPressed: () => _openArchivedChats(context),
                               ),
                             )
@@ -162,7 +163,7 @@ class MessagesHeaderSection extends StatelessWidget {
                                         color: Theme.of(context).primaryColor,
                                       ),
                                       const SizedBox(width: 8),
-                                      const Text('New Chat'),
+                                      Text(context.l10n.newChat),
                                     ],
                                   ),
                                 ),
@@ -176,7 +177,7 @@ class MessagesHeaderSection extends StatelessWidget {
                                         color: Theme.of(context).primaryColor,
                                       ),
                                       const SizedBox(width: 8),
-                                      const Text('Create Group'),
+                                      Text(context.l10n.createGroup),
                                     ],
                                   ),
                                 ),

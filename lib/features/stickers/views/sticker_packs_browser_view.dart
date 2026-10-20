@@ -9,6 +9,7 @@ import '../cubits/sticker_packs_cubit/sticker_packs_state.dart';
 import '../widgets/sticker_pack_card.dart';
 import 'create_sticker_pack_view.dart';
 import 'sticker_pack_details_view.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class StickerPacksBrowserView extends StatelessWidget {
   const StickerPacksBrowserView({super.key});
@@ -42,8 +43,8 @@ class _StickerPacksBrowserSheetBody extends StatelessWidget {
               icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
               onPressed: () => Navigator.pop(context),
             ),
-            title: const Text(
-              'Sticker Library',
+            title: Text(
+              context.l10n.stickerLibrary,
               style: TextStyle(fontWeight: FontWeight.w500, fontSize: 20),
             ),
             titleSpacing: 0,
@@ -58,7 +59,7 @@ class _StickerPacksBrowserSheetBody extends StatelessWidget {
             surfaceTintColor: Colors.transparent,
             actions: [
               IconButton(
-                tooltip: 'Create Pack',
+                tooltip: context.l10n.createPack,
                 icon: Image.asset(
                   AppImages.addStickerPackIcon,
                   height: 28,
@@ -270,7 +271,7 @@ class _CreateStickerPackCard extends StatelessWidget {
             ),
             const Gap(16),
             Text(
-              'Create Your Own\nSticker Pack',
+              context.l10n.createYourOwnSticker,
               textAlign: TextAlign.center,
               style: theme.textTheme.titleSmall?.copyWith(
                 fontWeight: FontWeight.bold,

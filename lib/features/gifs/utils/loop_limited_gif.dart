@@ -5,6 +5,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:shimmer/shimmer.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 final StreamController<String> _globalGifPlayController =
     StreamController<String>.broadcast();
@@ -244,7 +245,7 @@ class _ElegantGifOverlayState extends State<ElegantGifOverlay>
             return CustomPaint(
               size: const Size(48, 48),
               painter: _GlassCutoutPainter(progress: _controller.value),
-              child: const SizedBox(
+              child: SizedBox(
                 width: 48,
                 height: 48,
                 child: Center(
@@ -254,7 +255,7 @@ class _ElegantGifOverlayState extends State<ElegantGifOverlay>
                       color: Colors.white,
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
-                      letterSpacing: 1.0,
+                      letterSpacing: context.ls(1.0),
                     ),
                   ),
                 ),

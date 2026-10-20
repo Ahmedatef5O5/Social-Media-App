@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../router/app_routes.dart';
 import '../toast/app_toast.dart';
+import 'package:social_media_app/core/localization/app_l10n.dart';
 
 class StoryReplyNavigator {
   static void openOriginalStory(
@@ -9,7 +10,7 @@ class StoryReplyNavigator {
     required String? authorId,
   }) {
     if (storyId == null) {
-      AppToast.warning('This story is no longer available');
+      AppToast.warning(AppL10n.current.thisStoryIsNo);
       return;
     }
 

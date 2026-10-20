@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../localization/l10n_extension.dart';
 import '../../router/app_routes.dart';
 import '../../services/active_screen_tracker.dart';
 import '../cubits/connectivity_cubit.dart';
@@ -188,7 +189,9 @@ class _FloatingStatusCard extends StatelessWidget {
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    isOffline ? 'No internet connection' : 'Back to internet',
+                    isOffline
+                        ? context.l10n.connectivityOffline
+                        : context.l10n.connectivityRestored,
                     style: TextStyle(
                       color: onBackground,
                       fontSize: 13.5,

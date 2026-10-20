@@ -8,6 +8,7 @@ import '../../../core/widgets/empty_findings_animation_widget.dart';
 import '../cubits/friend_lists_cubit/friends_list_cubit.dart';
 import '../widgets/friend_tile_widget.dart';
 import '../widgets/friends_list_skeleton.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class FriendsListView extends StatefulWidget {
   final String userId;
@@ -66,11 +67,11 @@ class _FriendsListViewState extends State<FriendsListView> {
           ),
         ),
         title: Text(
-          'Friends',
+          context.l10n.friends,
           style: theme.textTheme.titleMedium!.copyWith(
             color: theme.primaryColor,
             fontWeight: FontWeight.bold,
-            letterSpacing: 0.5,
+            letterSpacing: context.ls(0.5),
             fontSize: 20,
           ),
         ),
@@ -174,14 +175,14 @@ class _FriendsListViewState extends State<FriendsListView> {
             ),
             const Gap(12),
             Text(
-              'No friends yet',
+              context.l10n.noFriendsYet,
               style: theme.textTheme.titleMedium!.copyWith(
                 fontWeight: FontWeight.w700,
               ),
             ),
             const Gap(6),
             Text(
-              'People you add as friends will show up here.',
+              context.l10n.peopleYouAddAs,
               textAlign: TextAlign.center,
               style: theme.textTheme.bodySmall!.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
@@ -218,7 +219,7 @@ class _FriendsListViewState extends State<FriendsListView> {
             const Gap(14),
             TextButton(
               onPressed: () => context.read<FriendsListCubit>().loadFriends(),
-              child: const Text('Retry'),
+              child: Text(context.l10n.retry),
             ),
           ],
         ),
@@ -253,7 +254,7 @@ class _TotalFriendsPill extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
       ),
       child: Text(
-        '${_format(total)} ${total == 1 ? 'Friend' : 'Friends'}',
+        '${_format(total)} ${total == 1 ? 'Friend' : context.l10n.friends}',
         style: TextStyle(
           color: isDark ? Colors.white : theme.primaryColor,
           fontSize: 13,
@@ -302,7 +303,7 @@ class _LoadMoreRetry extends StatelessWidget {
             color: theme.primaryColor,
           ),
           label: Text(
-            "Couldn't load more · Tap to retry",
+            context.l10n.couldntLoadMoreTap,
             style: TextStyle(
               color: theme.primaryColor,
               fontSize: 13,

@@ -21,6 +21,7 @@ import '../models/post_model.dart';
 import '../../comments/widgets/comments_sheet_section.dart';
 import 'post_reaction_overlay.dart';
 import 'post_reactions_summary.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class PostInteractionsRow extends StatelessWidget {
   final String postId;
@@ -348,7 +349,7 @@ class _CommentButtonWidget extends StatelessWidget {
         final postsCubit = context.read<PostsCubit>();
 
         if (postsCubit.isPostGhost(post.id)) {
-          AppToast.info('This post is no longer available.');
+          AppToast.info(context.l10n.thisPostIsNo);
           return;
         }
 
@@ -459,7 +460,9 @@ class _ReshareButtonWidgetState extends State<_ReshareButtonWidget>
 
     if (success) {
       AppToast.save(
-        wasShared ? 'Reshare removed' : 'Reshared successfully',
+        wasShared
+            ? context.l10n.reshareRemoved
+            : context.l10n.resharedSuccessfully,
         icon: Icons.repeat_rounded,
         iconColor: wasShared ? AppColors.grey5 : primaryColor,
       );
@@ -625,7 +628,9 @@ class _SaveButtonWidgetState extends State<_SaveButtonWidget>
     if (success) {
       AppToast.save(
         icon: wasSaved ? Icons.bookmark_remove_rounded : Icons.bookmark_rounded,
-        wasSaved ? 'Post removed from saves' : 'Post saved successfully',
+        wasSaved
+            ? context.l10n.postRemovedFromSaves
+            : context.l10n.postSavedSuccessfully,
         iconColor: wasSaved ? AppColors.grey5 : AppColors.goldenYellow,
       );
     }

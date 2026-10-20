@@ -3,6 +3,7 @@ import 'package:gap/gap.dart';
 import 'package:linkify/linkify.dart' as linkify_pkg;
 import 'package:shimmer/shimmer.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../constants/app_images.dart';
 import '../../helpers/formatted_date.dart';
 import '../../link/models/link_preview_data.dart';
 import '../../link/services/link_preview_service.dart';
@@ -14,6 +15,7 @@ import '../helpers/media_action_helper.dart';
 import '../models/shared_media_item.dart';
 import 'sectioned_media_list.dart';
 import 'shared_media_action_menu.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class MediaLinksList extends StatelessWidget {
   final List<SharedMediaItem> items;
@@ -33,7 +35,20 @@ class MediaLinksList extends StatelessWidget {
             .toList();
 
     if (confirmed.isEmpty) {
-      return const Center(child: Text('No links shared yet'));
+      return Center(
+        child: Column(
+          children: [
+            Image.asset(
+              AppImages.linkIcon,
+              width: 120,
+              height: 120,
+              color: Theme.of(context).primaryColor.withValues(alpha: 0.85),
+            ),
+            const Gap(20),
+            Text(context.l10n.noLinksSharedYet),
+          ],
+        ),
+      );
     }
 
     return SectionedMediaList(

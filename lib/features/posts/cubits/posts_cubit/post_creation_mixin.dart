@@ -297,7 +297,7 @@ mixin PostCreationMixin on Cubit<PostsState> {
       debugPrint('Error toggling share: $e');
       if (e.toString().contains('23503') ||
           e.toString().contains('not present in table')) {
-        AppToast.info('This post is no longer available.');
+        AppToast.info(AppL10n.current.thisPostIsNo);
       }
       return false;
     }

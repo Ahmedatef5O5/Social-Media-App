@@ -4,6 +4,7 @@ import '../../../core/utilities/supabase_constants.dart';
 import '../../reactions/models/reaction_entry.dart';
 import '../../reactions/widgets/reactions_bottom_sheet.dart';
 import '../models/post_reaction_model.dart';
+import 'package:social_media_app/core/localization/app_l10n.dart';
 
 class PostReactionsBottomSheet extends StatelessWidget {
   final String postId;
@@ -30,7 +31,7 @@ class PostReactionsBottomSheet extends StatelessWidget {
       final lastSeenStr = user?[UserColumns.lastSeen] as String?;
       return ReactionEntry(
         userId: user?[UserColumns.id] ?? '',
-        userName: user?[UserColumns.name] ?? 'Unknown User',
+        userName: user?[UserColumns.name] ?? AppL10n.current.unknownUser,
         userImageUrl: user?[UserColumns.imageUrl],
         lastSeen: lastSeenStr != null ? DateTime.tryParse(lastSeenStr) : null,
         emoji: reactionGlyph(r[LikeColumns.reaction] as String? ?? 'like'),

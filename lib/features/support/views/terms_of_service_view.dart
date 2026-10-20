@@ -6,6 +6,7 @@ import '../models/policy_section.dart';
 import '../utils/markdown_section_parser.dart';
 import '../widgets/accordion_tile.dart';
 import '../widgets/support_contact_bar.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class TermsOfServiceView extends StatefulWidget {
   const TermsOfServiceView({super.key});
@@ -55,7 +56,7 @@ class _TermsOfServiceViewState extends State<TermsOfServiceView> {
               snapshot.data!.isEmpty) {
             return Center(
               child: Text(
-                "We couldn't load this content. Please try again later.",
+                context.l10n.weCouldntLoadThis,
                 style: theme.textTheme.bodyMedium,
               ),
             );
@@ -89,10 +90,10 @@ class _TermsOfServiceViewState extends State<TermsOfServiceView> {
           return CustomScrollView(
             physics: const ClampingScrollPhysics(),
             slivers: [
-              const SettingsDetailSliverAppBar(
+              SettingsDetailSliverAppBar(
                 icon: Icons.gavel_rounded,
-                title: 'Terms of Service',
-                subtitle: 'Platform rules & community guidelines',
+                title: context.l10n.settingsTermsOfService,
+                subtitle: context.l10n.settingsTermsOfServiceSubtitle,
               ),
               SliverPadding(
                 padding: const EdgeInsets.fromLTRB(20, 12, 20, 60),
@@ -112,7 +113,7 @@ class _TermsOfServiceViewState extends State<TermsOfServiceView> {
                               ),
                               const SizedBox(width: 8),
                               Text(
-                                'Table of Contents',
+                                context.l10n.tableOfContents,
                                 style: theme.textTheme.titleSmall?.copyWith(
                                   fontWeight: FontWeight.w800,
                                 ),

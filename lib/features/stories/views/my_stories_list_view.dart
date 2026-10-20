@@ -13,6 +13,7 @@ import '../helpers/story_creation_launcher.dart';
 import '../models/story_model.dart';
 import '../widgets/my_story_tile.dart';
 import '../widgets/story_delete_dialog.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class MyStoriesListView extends StatefulWidget {
   final StoriesCubit storiesCubit;
@@ -42,7 +43,7 @@ class _MyStoriesListViewState extends State<MyStoriesListView> {
     if (result == null) return;
     await SettingsRepository.instance.setDefaultStoryPrivacy(result);
     if (context.mounted) {
-      AppToast.success('Default story privacy set to ${result.label}');
+      AppToast.success(context.l10n.defaultStoryPrivacySet(result.label));
     }
   }
 
@@ -154,13 +155,15 @@ class _MyStoriesListViewState extends State<MyStoriesListView> {
                               duration: const Duration(milliseconds: 220),
                               child: Text(
                                 loaded.isSelectionMode
-                                    ? '${loaded.selectedStoryIds.length} selected'
-                                    : 'My Stories',
+                                    ? context.l10n.selected4(
+                                      loaded.selectedStoryIds.length,
+                                    )
+                                    : context.l10n.myStories,
                                 key: ValueKey(loaded.isSelectionMode),
                                 style: theme.textTheme.titleMedium!.copyWith(
                                   color: theme.primaryColor,
                                   fontWeight: FontWeight.w500,
-                                  letterSpacing: 0.5,
+                                  letterSpacing: context.ls(0.5),
                                   fontSize: 18,
                                 ),
                               ),

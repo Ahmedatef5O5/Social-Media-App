@@ -7,6 +7,7 @@ import 'package:record/record.dart';
 import 'package:social_media_app/core/themes/app_colors.dart';
 import 'package:social_media_app/features/comments/models/comment_attachment_draft.dart';
 import 'package:social_media_app/features/comments/models/comment_type.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class CommentVoiceRecorderSheet extends StatefulWidget {
   const CommentVoiceRecorderSheet({super.key});
@@ -38,7 +39,7 @@ class _CommentVoiceRecorderSheetState extends State<CommentVoiceRecorderSheet> {
 
         setState(() {
           _isInitializing = false;
-          _errorMessage = 'Microphone permission denied';
+          _errorMessage = context.l10n.microphonePermissionDenied;
         });
         return;
       }
@@ -66,7 +67,7 @@ class _CommentVoiceRecorderSheetState extends State<CommentVoiceRecorderSheet> {
       if (mounted) {
         setState(() {
           _isInitializing = false;
-          _errorMessage = 'Could not start recording';
+          _errorMessage = context.l10n.couldNotStartRecording2;
         });
       }
     }
@@ -143,7 +144,7 @@ class _CommentVoiceRecorderSheetState extends State<CommentVoiceRecorderSheet> {
                     const Gap(16),
                     TextButton(
                       onPressed: () => Navigator.of(context).pop(),
-                      child: const Text('Close'),
+                      child: Text(context.l10n.close),
                     ),
                   ]
                   : [
@@ -170,7 +171,7 @@ class _CommentVoiceRecorderSheetState extends State<CommentVoiceRecorderSheet> {
                     ),
                     const Gap(16),
                     Text(
-                      _isInitializing ? 'Preparing...' : _formattedTime,
+                      _isInitializing ? context.l10n.preparing : _formattedTime,
                       style: theme.textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.bold,
                         fontFeatures: const [FontFeature.tabularFigures()],
@@ -178,7 +179,7 @@ class _CommentVoiceRecorderSheetState extends State<CommentVoiceRecorderSheet> {
                     ),
                     const Gap(4),
                     Text(
-                      'Recording voice message',
+                      context.l10n.recordingVoiceMessage,
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: AppColors.grey6,
                       ),

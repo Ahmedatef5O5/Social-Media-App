@@ -8,6 +8,7 @@ import '../models/sticker_pack_privacy.dart';
 import '../widgets/cancel_progress_bubble.dart';
 import '../widgets/create_sticker_pack_action_button.dart';
 import '../widgets/sticker_grid_item.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class CreateStickerPackUploadingView extends StatelessWidget {
   final CreateStickerPackUploading state;
@@ -31,14 +32,14 @@ class CreateStickerPackUploadingView extends StatelessWidget {
               TextField(
                 enabled: false,
                 controller: TextEditingController(text: state.title),
-                decoration: const InputDecoration(
-                  labelText: 'Pack Name',
+                decoration: InputDecoration(
+                  labelText: context.l10n.packName,
                   border: OutlineInputBorder(),
                 ),
               ),
               const Gap(20),
               Text(
-                'Uploading  •  $label',
+                context.l10n.uploading(label),
                 style: theme.textTheme.labelMedium?.copyWith(
                   color: AppColors.grey6,
                 ),
@@ -50,7 +51,7 @@ class CreateStickerPackUploadingView extends StatelessWidget {
               ),
               const Gap(24),
               Text(
-                'Privacy',
+                context.l10n.settingsSectionPrivacy,
                 style: theme.textTheme.titleSmall?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),

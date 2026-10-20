@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../../core/localization/app_locale.dart';
 import '../../social_graph/models/content_privacy.dart';
 
 class SettingsRepository {
@@ -16,6 +17,11 @@ class SettingsRepository {
   static const String _kTwoFactor = 'settings_two_factor';
   static const String _kDefaultStoryPrivacy = 'settings_default_story_privacy';
 
+  /// Device-level (not account-level) UI language. Deliberately NOT namespaced
+  /// by user id and never cleared by `SessionDataCleaner`, so it survives
+  /// logout/login and process death.
+  static const String _kLanguageCode = 'settings_language_code';
+
   SharedPreferences? _prefs;
   bool _initialised = false;
 
@@ -27,6 +33,7 @@ class SettingsRepository {
   bool biometricLock = false;
   bool twoFactor = false;
   ContentPrivacy defaultStoryPrivacy = ContentPrivacy.public;
+  String languageCode = AppLocale.defaultCode;
 
   Future<void> init() async {
     if (_initialised) return;
@@ -73,6 +80,7 @@ class SettingsRepository {
     defaultStoryPrivacy = contentPrivacyFromString(
       prefs.getString(_kDefaultStoryPrivacy),
     );
+    languageCode = AppLocale.normalize(prefs.getString(_kLanguageCode));
   }
 
   Future<void> setPushNotifications(bool value) async {
@@ -116,5 +124,11 @@ class SettingsRepository {
       _kDefaultStoryPrivacy,
       contentPrivacyToString(value),
     );
+  }
+
+  Future<void> setLanguageCode(String code) async {
+    final normalized = AppLocale.normalize(code);
+    languageCode = normalized;
+    await (await _ensurePrefs()).setString(_kLanguageCode, normalized);
   }
 }

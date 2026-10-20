@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../models/feedback_models.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class FeedbackQuotaBadge extends StatefulWidget {
   final FeedbackQuota quota;
@@ -76,8 +77,8 @@ class _FeedbackQuotaBadgeState extends State<FeedbackQuotaBadge> {
         exhausted ? const Color(0xFFE5484D) : Theme.of(context).primaryColor;
     final text =
         exhausted
-            ? 'Daily limit reached · next feedback in ${_fmt(_left)}'
-            : '${q.remaining} of ${q.limit} feedbacks left today';
+            ? context.l10n.dailyLimitReachedNext(_fmt(_left))
+            : context.l10n.ofFeedbacksLeftToday(q.remaining, q.limit);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),

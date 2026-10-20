@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 import 'package:persistent_bottom_nav_bar_v2/persistent_bottom_nav_bar_v2.dart';
 import 'package:social_media_app/core/notifications/services/notification_prefs_sync_service.dart';
+import 'package:social_media_app/features/settings/services/language_sync_service.dart';
 import 'package:social_media_app/core/utilities/supabase_constants.dart';
 import 'package:social_media_app/core/widgets/custom_back_to_top_btn.dart';
 import 'package:social_media_app/core/widgets/custom_pull_to_refresh.dart';
@@ -101,6 +102,7 @@ class _HomeViewState extends State<HomeView> {
 
           // Re-send notification toggles if a previous sync failed offline.
           unawaited(NotificationPrefsSyncService.instance.syncIfNeeded());
+          unawaited(LanguageSyncService.instance.syncIfNeeded());
         }
       }
     } catch (e) {

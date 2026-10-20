@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class GroupMembersHeaderWidget extends StatelessWidget {
   final int count;
@@ -23,7 +24,7 @@ class GroupMembersHeaderWidget extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(20, 24, 20, 8),
         child: Row(
           children: [
-            Text('$count Members'),
+            Text(context.l10n.members2(count)),
             const Spacer(),
             if (isAdmin || isOwner)
               TextButton.icon(
@@ -33,7 +34,7 @@ class GroupMembersHeaderWidget extends StatelessWidget {
                   color: Theme.of(context).primaryColor.withValues(alpha: 0.85),
                 ),
                 label: Text(
-                  'Add',
+                  context.l10n.add,
 
                   style: Theme.of(context).textTheme.titleSmall!.copyWith(
                     color: Theme.of(

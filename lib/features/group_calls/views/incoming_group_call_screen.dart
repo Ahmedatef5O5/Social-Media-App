@@ -13,6 +13,7 @@ import '../../../core/widgets/calls/calls.dart';
 import '../models/group_call_model.dart';
 import '../services/group_call_signaling_service.dart';
 import 'livekit_group_call_view.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class IncomingGroupCallScreen extends StatefulWidget {
   final GroupCallModel call;
@@ -201,8 +202,8 @@ class _IncomingGroupCallScreenState extends State<IncomingGroupCallScreen>
                               : Icons.phone_callback_rounded,
                       label:
                           isVideo
-                              ? 'Incoming Group Video'
-                              : 'Incoming Group Voice',
+                              ? context.l10n.incomingGroupVideo
+                              : context.l10n.incomingGroupVoice,
                       shake: _shakeAnim,
                     ),
 
@@ -224,11 +225,11 @@ class _IncomingGroupCallScreenState extends State<IncomingGroupCallScreen>
 
                     Text(
                       widget.call.groupName,
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: Colors.white,
                         fontSize: 30,
                         fontWeight: FontWeight.bold,
-                        letterSpacing: 0.5,
+                        letterSpacing: context.ls(0.5),
                         shadows: [
                           Shadow(
                             color: Colors.black45,
@@ -245,11 +246,11 @@ class _IncomingGroupCallScreenState extends State<IncomingGroupCallScreen>
                     const SizedBox(height: 8),
 
                     Text(
-                      '${widget.call.initiatorName} is calling...',
-                      style: const TextStyle(
+                      context.l10n.isCalling(widget.call.initiatorName),
+                      style: TextStyle(
                         color: Colors.white60,
                         fontSize: 15,
-                        letterSpacing: 0.3,
+                        letterSpacing: context.ls(0.3),
                       ),
                     ),
 
@@ -262,7 +263,7 @@ class _IncomingGroupCallScreenState extends State<IncomingGroupCallScreen>
                         children: [
                           GlassCallActionButton(
                             icon: Icons.call_end_rounded,
-                            label: 'Decline',
+                            label: context.l10n.decline,
                             color: Colors.redAccent.shade700,
                             size: metrics.buttonSize,
                             onTap: () {
@@ -276,7 +277,7 @@ class _IncomingGroupCallScreenState extends State<IncomingGroupCallScreen>
                                 isVideo
                                     ? Icons.videocam_rounded
                                     : Icons.call_rounded,
-                            label: 'Accept',
+                            label: context.l10n.accept,
                             color: Colors.green.shade600,
                             size: metrics.buttonSize,
                             emphasized: true,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 enum StoryPickType { text, image, video }
 
@@ -19,7 +20,7 @@ class StoryImagePickerSheet extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'Add to Story',
+                context.l10n.addToStory,
                 style: Theme.of(context).textTheme.titleLarge!.copyWith(
                   // fontSize: 22,
                   fontWeight: FontWeight.w500,
@@ -30,14 +31,14 @@ class StoryImagePickerSheet extends StatelessWidget {
                 context,
                 icon: Icons.text_fields,
                 color: Theme.of(context).primaryColor,
-                title: 'Text Story',
+                title: context.l10n.textStory,
                 onTap: () => onSelected(null, StoryPickType.text),
               ),
               _buildOption(
                 context,
                 icon: Icons.photo_library,
                 color: Theme.of(context).primaryColor,
-                title: 'Photo from Gallery',
+                title: context.l10n.photoFromGallery,
                 onTap:
                     () => onSelected(ImageSource.gallery, StoryPickType.image),
               ),
@@ -45,7 +46,7 @@ class StoryImagePickerSheet extends StatelessWidget {
                 context,
                 icon: Icons.camera_alt,
                 color: Colors.green,
-                title: 'Take a Photo',
+                title: context.l10n.takeAPhoto,
                 onTap:
                     () => onSelected(ImageSource.camera, StoryPickType.image),
               ),
@@ -53,8 +54,8 @@ class StoryImagePickerSheet extends StatelessWidget {
                 context,
                 icon: Icons.video_library_outlined,
                 color: Colors.deepOrange,
-                title: 'Video from Gallery',
-                subtitle: 'Max 60 seconds',
+                title: context.l10n.videoFromGallery,
+                subtitle: context.l10n.max60Seconds,
                 onTap:
                     () => onSelected(ImageSource.gallery, StoryPickType.video),
               ),
@@ -62,8 +63,8 @@ class StoryImagePickerSheet extends StatelessWidget {
                 context,
                 icon: Icons.videocam_outlined,
                 color: Colors.red,
-                title: 'Record a Video',
-                subtitle: 'Max 60 seconds',
+                title: context.l10n.recordAVideo,
+                subtitle: context.l10n.max60Seconds,
                 onTap:
                     () => onSelected(ImageSource.camera, StoryPickType.video),
               ),

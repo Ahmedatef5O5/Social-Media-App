@@ -15,6 +15,7 @@ import '../../../core/utilities/app_validators.dart';
 import '../../../core/widgets/custom_elevated_button.dart';
 import '../../../core/widgets/custom_text_form_field.dart';
 import '../cubits/auth_cubit/auth_cubit.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class ForgotPasswordView extends StatefulWidget {
   const ForgotPasswordView({super.key});
@@ -146,7 +147,7 @@ class _ForgotPasswordViewCustomState extends State<ForgotPasswordView> {
       if (elapsed < _kCooldownPeriodSeconds) {
         setState(() => _isEmailLocked = true);
         _beginTimerCountdown(_kCooldownPeriodSeconds - elapsed);
-        AppToast.info('A link was just sent to this address. Please wait.');
+        AppToast.info(context.l10n.aLinkWasJust);
         return;
       }
     }
@@ -191,7 +192,7 @@ class _ForgotPasswordViewCustomState extends State<ForgotPasswordView> {
                     ),
                     const Gap(24),
                     Text(
-                      'Forgot Password?',
+                      context.l10n.forgotPassword,
                       style: Theme.of(
                         context,
                       ).textTheme.headlineSmall?.copyWith(
@@ -201,7 +202,7 @@ class _ForgotPasswordViewCustomState extends State<ForgotPasswordView> {
                     ),
                     const Gap(8),
                     Text(
-                      'Enter your registered email address and we will send you a recovery link.',
+                      context.l10n.enterYourRegisteredEmail,
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: AppColors.grey,
@@ -216,14 +217,14 @@ class _ForgotPasswordViewCustomState extends State<ForgotPasswordView> {
                       suffixIcon:
                           _isEmailLocked
                               ? IconButton(
-                                tooltip: 'Change email',
+                                tooltip: context.l10n.changeEmail,
                                 icon: const Icon(Icons.edit_outlined),
                                 onPressed: _editEmail,
                               )
                               : null,
                       prefixIcon: const Icon(Icons.email_outlined),
-                      labelText: 'Email Address',
-                      hintText: 'Enter your email',
+                      labelText: context.l10n.settingsEmailAddress,
+                      hintText: context.l10n.enterYourEmail,
                       keyboardType: TextInputType.emailAddress,
                       inputFormatters: AppFormatters.noSpaces,
                       validator: AppValidators.validateEmail,
@@ -236,9 +237,7 @@ class _ForgotPasswordViewCustomState extends State<ForgotPasswordView> {
                               curr is AuthFailure,
                       listener: (context, state) {
                         if (state is PasswordResetEmailSent) {
-                          AppToast.success(
-                            "If an account exists for this email, we've sent you a password reset link.",
-                          );
+                          AppToast.success(context.l10n.ifAnAccountExists);
                           _recordDispatchTimestamp();
                         } else if (state is AuthFailure) {
                           AppToast.error(state.errMsg);
@@ -249,8 +248,8 @@ class _ForgotPasswordViewCustomState extends State<ForgotPasswordView> {
                         final isCooldownActive = _secondsRemaining > 0;
                         final buttonLabel =
                             isCooldownActive
-                                ? 'Resend in ${_secondsRemaining}s'
-                                : 'Send Reset Link';
+                                ? context.l10n.resendInS(_secondsRemaining)
+                                : context.l10n.sendResetLink2;
 
                         return CustomElevatedButton(
                           txtBtn: buttonLabel,
@@ -266,7 +265,7 @@ class _ForgotPasswordViewCustomState extends State<ForgotPasswordView> {
                     TextButton(
                       onPressed: () => Navigator.of(context).maybePop(),
                       child: Text(
-                        'Return to Login',
+                        context.l10n.returnToLogin,
                         style: TextStyle(
                           color: primaryColor,
                           fontWeight: FontWeight.bold,

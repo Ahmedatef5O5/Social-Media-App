@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../cubits/create_sticker_pack_cubit/create_sticker_pack_cubit.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class CreateStickerPackTitleField extends StatelessWidget {
   final CreateStickerPackCubit cubit;
@@ -16,8 +17,8 @@ class CreateStickerPackTitleField extends StatelessWidget {
     return TextField(
       onChanged: cubit.setTitle,
       decoration: InputDecoration(
-        labelText: 'Pack Name',
-        hintText: 'Name your pack...',
+        labelText: context.l10n.packName,
+        hintText: context.l10n.nameYourPack,
         hintStyle: TextStyle(
           color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
           fontWeight: FontWeight.w400,

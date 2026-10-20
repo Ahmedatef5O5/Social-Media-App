@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import '../../../core/supabase/supabase_provider.dart';
 import '../../group_calls/models/group_call_model.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class GroupCallStatusTile extends StatefulWidget {
   const GroupCallStatusTile({super.key, required this.callId});
@@ -126,20 +127,20 @@ class _GroupCallStatusTileState extends State<GroupCallStatusTile> {
             children: [
               Text(
                 call.type == GroupCallType.video
-                    ? 'Group Video Call'
-                    : 'Group Voice Call',
+                    ? context.l10n.groupVideoCall
+                    : context.l10n.groupVoiceCall,
                 style: const TextStyle(fontWeight: FontWeight.bold),
               ),
               Text(
                 isMissed
-                    ? 'Missed Call'
+                    ? context.l10n.missedCall
                     : isRinging
-                    ? 'Ringing...'
+                    ? context.l10n.ringing2
                     : isOngoing
-                    ? 'Ongoing • Tap to Join'
+                    ? context.l10n.ongoingTapToJoin
                     : (call.duration != null && call.duration!.isNotEmpty)
-                    ? 'Ended • ${call.duration}'
-                    : 'Ended',
+                    ? context.l10n.ended(call.duration ?? '')
+                    : context.l10n.ended2,
                 style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
               ),
             ],

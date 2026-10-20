@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class GroupHeaderSection extends StatelessWidget {
   final File? groupImage;
@@ -81,7 +82,7 @@ class GroupHeaderSection extends StatelessWidget {
               controller: controller,
               style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
               decoration: InputDecoration(
-                hintText: 'Enter group name',
+                hintText: context.l10n.enterGroupName,
                 hintStyle: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.w500,

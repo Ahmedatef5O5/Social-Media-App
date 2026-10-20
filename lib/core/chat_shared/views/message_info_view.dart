@@ -6,6 +6,8 @@ import 'package:social_media_app/core/attachment/widgets/file_message_bubble.dar
 import 'package:social_media_app/core/chat_shared/widgets/highlighted_linkify_text.dart';
 import 'package:social_media_app/core/design/tokens/typography.dart';
 import 'package:social_media_app/core/helpers/formatted_date.dart';
+import 'package:social_media_app/core/localization/app_l10n.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 import 'package:social_media_app/core/supabase/supabase_provider.dart';
 import 'package:social_media_app/core/themes/app_colors.dart';
 import 'package:social_media_app/core/utilities/supabase_constants.dart';
@@ -135,7 +137,7 @@ class MessageInfoArgs {
       createdAt: message.createdAt,
       isMe: isMe,
       senderId: message.senderId,
-      senderName: isMe ? 'You' : receiverUser.name,
+      senderName: isMe ? AppL10n.current.you : receiverUser.name,
       senderAvatar: isMe ? currentUserAvatar : receiverUser.imageUrl,
       imageUrl: message.imageUrl,
       videoUrl: message.videoUrl,
@@ -190,7 +192,7 @@ class MessageInfoArgs {
       createdAt: message.createdAt,
       isMe: isMe,
       senderId: message.senderId,
-      senderName: isMe ? 'You' : message.senderName,
+      senderName: isMe ? AppL10n.current.you : message.senderName,
       senderAvatar: resolvedAvatar,
       imageUrl: message.imageUrl,
       videoUrl: message.videoUrl,
@@ -232,7 +234,7 @@ class MessageInfoArgs {
       createdAt: message.createdAt,
       isMe: isMe,
       senderId: isMe ? currentUserId : 'ai_assistant',
-      senderName: isMe ? 'You' : 'Syncra AI',
+      senderName: isMe ? AppL10n.current.you : 'Syncra AI',
       senderAvatar: isMe ? currentUserAvatar : null,
       imageUrl: message.mediaType.name == 'image' ? message.mediaUrl : null,
       videoUrl: message.mediaType.name == 'video' ? message.mediaUrl : null,
@@ -280,7 +282,6 @@ class _MessageInfoViewState extends State<MessageInfoView> {
 
   MessageInfoArgs get args => widget.args;
 
-  // Same `users` lookup (with cache) the reactions bottom sheet uses.
   final ReactionProfileResolver _resolver = GroupChatReactionProfileResolver();
 
   Timer? _timer;
@@ -383,7 +384,6 @@ class _MessageInfoViewState extends State<MessageInfoView> {
                 .eq(MessagesColumns.id, args.messageId)
                 .maybeSingle();
       } on PostgrestException catch (e) {
-        // 42703 = columns not migrated yet -> degrade gracefully.
         if (e.code != '42703') rethrow;
         row =
             await client
@@ -424,7 +424,6 @@ class _MessageInfoViewState extends State<MessageInfoView> {
 
     final readers = <String, DateTime?>{};
     if (args.isMe) {
-      // 1) Per-member timestamps (new table). Missing table -> ignore.
       try {
         final rows = await client
             .from('group_message_reads')
@@ -439,7 +438,6 @@ class _MessageInfoViewState extends State<MessageInfoView> {
         debugPrint('[MessageInfoView] group_message_reads unavailable: $e');
       }
 
-      // 2) Legacy `read_by` array: keeps old messages working (no time).
       try {
         final row =
             await client
@@ -509,7 +507,7 @@ class _MessageInfoViewState extends State<MessageInfoView> {
 
     final name =
         isMe
-            ? 'You'
+            ? AppL10n.current.you
             : (profile?.userName ??
                 member?.userName ??
                 (args.chatType == MessageInfoChatType.single
@@ -553,9 +551,9 @@ class _MessageInfoViewState extends State<MessageInfoView> {
           icon: const Icon(Icons.arrow_back_ios_new_rounded),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: const Text(
-          'Message info',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        title: Text(
+          context.l10n.messageInfo,
+          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
       ),
@@ -859,7 +857,7 @@ class _MessageInfoViewState extends State<MessageInfoView> {
                     isUploading: false,
                   ),
                 )
-                : const Text('Voice note');
+                : Text(context.l10n.voiceNote);
         break;
 
       case 'file':
@@ -908,7 +906,7 @@ class _MessageInfoViewState extends State<MessageInfoView> {
             Icon(Icons.call_rounded, color: textColor, size: 20),
             const Gap(8),
             Text(
-              args.text.isNotEmpty ? args.text : 'Call',
+              args.text.isNotEmpty ? args.text : context.l10n.call,
               style: TextStyle(color: textColor, fontWeight: FontWeight.w500),
             ),
           ],
@@ -1038,26 +1036,26 @@ class _MessageInfoViewState extends State<MessageInfoView> {
     if (userId == 'all') {
       final isMe = args.senderId == currentUserId;
       if (isMe) {
-        AppToast.info('You mentioned all group members');
+        AppToast.info(context.l10n.youMentionedAllGroup);
       } else {
         final senderName =
             args.senderName.trim().isNotEmpty
                 ? args.senderName.trim()
                 : 'Someone';
-        AppToast.info('$senderName mentioned all group members');
+        AppToast.info(context.l10n.mentionedAllGroupMembers(senderName));
       }
       return;
     }
 
     if (userId == currentUserId) {
       if (args.senderId == currentUserId) {
-        AppToast.info('You mentioned yourself in this message');
+        AppToast.info(context.l10n.youMentionedYourselfIn2);
       } else {
         final senderName =
             args.senderName.trim().isNotEmpty
                 ? args.senderName.trim()
                 : 'Someone';
-        AppToast.info('$senderName mentioned you in this message');
+        AppToast.info(context.l10n.mentionedYouInThis2(senderName));
       }
     } else {
       Navigator.of(
@@ -1092,7 +1090,7 @@ class _MessageInfoViewState extends State<MessageInfoView> {
                 Icon(Icons.add_reaction_outlined, color: primary, size: 20),
                 const Gap(8),
                 Text(
-                  'Reactions ',
+                  '${context.l10n.reactions} ',
                   style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.bold,
@@ -1189,7 +1187,7 @@ class _MessageInfoViewState extends State<MessageInfoView> {
                 Icon(Icons.add_reaction_outlined, color: primary, size: 20),
                 const Gap(8),
                 Text(
-                  'Reactions (${rows.length})',
+                  '${context.l10n.reactions} (${rows.length})',
                   style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.bold,
@@ -1265,7 +1263,7 @@ class _MessageInfoViewState extends State<MessageInfoView> {
                     Icon(Icons.done_all_rounded, color: primary, size: 20),
                     const Gap(8),
                     Text(
-                      'Read by ',
+                      '${context.l10n.readBy('').replaceAll(RegExp(r'[\(\)]'), '').trim()} ',
                       style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.bold,
@@ -1371,8 +1369,8 @@ class _MessageInfoViewState extends State<MessageInfoView> {
             context,
             icon: Icons.done_rounded,
             iconColor: AppColors.greyColor.withValues(alpha: 0.7),
-            title: 'Sent',
-            subtitle: 'Sent to server',
+            title: context.l10n.sent,
+            subtitle: context.l10n.sentToServer,
             timeText: _fmt(args.createdAt),
           ),
         ),
@@ -1405,7 +1403,7 @@ class _MessageInfoViewState extends State<MessageInfoView> {
                     Icon(Icons.done_all_rounded, color: primary, size: 20),
                     const Gap(8),
                     Text(
-                      'Read by (${_readers.length})',
+                      context.l10n.readBy(_readers.length),
                       style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.bold,
@@ -1435,7 +1433,7 @@ class _MessageInfoViewState extends State<MessageInfoView> {
                       const Gap(10),
                       Expanded(
                         child: Text(
-                          'No group members have read this message yet',
+                          context.l10n.noGroupMembersHave,
                           style: TextStyle(
                             fontSize: 13,
                             color: onSurface.withValues(alpha: 0.6),
@@ -1455,8 +1453,8 @@ class _MessageInfoViewState extends State<MessageInfoView> {
             context,
             icon: Icons.done_rounded,
             iconColor: AppColors.greyColor.withValues(alpha: 0.7),
-            title: 'Sent',
-            subtitle: 'Sent to server',
+            title: context.l10n.sent,
+            subtitle: context.l10n.sentToServer,
             timeText: _fmt(args.createdAt),
           ),
         ),
@@ -1533,13 +1531,13 @@ class _MessageInfoViewState extends State<MessageInfoView> {
             icon: Icons.done_all_rounded,
             iconColor:
                 _isRead ? primary : AppColors.greyColor.withValues(alpha: 0.35),
-            title: 'Read',
+            title: context.l10n.read,
             subtitle:
                 _isRead
                     ? (args.receiverName != null
-                        ? 'Seen by ${args.receiverName}'
-                        : 'Read')
-                    : 'Not read yet',
+                        ? context.l10n.seenBy(args.receiverName!)
+                        : context.l10n.read)
+                    : context.l10n.notReadYet,
             timeText: _isRead ? _fmt(_readAt) : '—',
           ),
           const Divider(height: 1, indent: 56, thickness: 0.5),
@@ -1547,12 +1545,11 @@ class _MessageInfoViewState extends State<MessageInfoView> {
             context,
             icon: Icons.done_all_rounded,
             iconColor: AppColors.greyColor,
-            title: 'Delivered',
+            title: context.l10n.delivered,
             subtitle:
                 args.receiverName != null
-                    ? 'Delivered to ${args.receiverName}'
-                    : 'Delivered',
-            // A read message was necessarily delivered at/before read time.
+                    ? context.l10n.deliveredTo(args.receiverName!)
+                    : context.l10n.delivered,
             timeText: _fmt(_deliveredAt ?? (_isRead ? _readAt : null)),
           ),
           const Divider(height: 1, indent: 56, thickness: 0.5),
@@ -1560,8 +1557,8 @@ class _MessageInfoViewState extends State<MessageInfoView> {
             context,
             icon: Icons.done_rounded,
             iconColor: AppColors.greyColor.withValues(alpha: 0.7),
-            title: 'Sent',
-            subtitle: 'Sent to server',
+            title: context.l10n.sent,
+            subtitle: context.l10n.sentToServer,
             timeText: _fmt(args.createdAt),
           ),
         ],
@@ -1585,8 +1582,11 @@ class _MessageInfoViewState extends State<MessageInfoView> {
             context,
             icon: args.isMe ? Icons.done_rounded : Icons.schedule_rounded,
             iconColor: primary,
-            title: args.isMe ? 'Sent' : 'Generated',
-            subtitle: args.isMe ? 'Delivered to AI' : 'Response created',
+            title: args.isMe ? context.l10n.sent : 'Generated',
+            subtitle:
+                args.isMe
+                    ? context.l10n.deliveredToAi
+                    : context.l10n.responseCreated,
             timeText: _fmt(args.createdAt),
           ),
           const Divider(height: 1, indent: 56, thickness: 0.5),
@@ -1594,8 +1594,8 @@ class _MessageInfoViewState extends State<MessageInfoView> {
             context,
             icon: Icons.smart_toy_outlined,
             iconColor: Colors.amber.shade700,
-            title: 'Model',
-            subtitle: 'AI Engine',
+            title: context.l10n.model,
+            subtitle: context.l10n.aiEngine,
             timeText: args.aiModelLabel ?? 'Gemini 3.5 Flash Lite',
           ),
         ],
@@ -1633,17 +1633,17 @@ class _MessageInfoViewState extends State<MessageInfoView> {
               size: 24,
             ),
           ),
-          title: const Text(
-            'Report message',
-            style: TextStyle(
+          title: Text(
+            context.l10n.reportMessage,
+            style: const TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.bold,
               color: Colors.red,
             ),
           ),
-          subtitle: const Text(
-            'Report spam, abusive content, or inappropriate messages',
-            style: TextStyle(fontSize: 12),
+          subtitle: Text(
+            context.l10n.reportSpamAbusiveContent,
+            style: const TextStyle(fontSize: 12),
           ),
           trailing: const Icon(
             Icons.arrow_forward_ios_rounded,

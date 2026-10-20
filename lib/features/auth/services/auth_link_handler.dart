@@ -13,6 +13,7 @@ import '../../../core/services/active_screen_tracker.dart';
 import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/toast/app_toast.dart';
 import 'auth_recovery_coordinator.dart';
+import 'package:social_media_app/core/localization/app_l10n.dart';
 
 /// Result of a link the auth flow rejected (expired, already used, ...).
 class AuthLinkProblem {
@@ -158,9 +159,7 @@ class AuthLinkHandler {
       await _openResetPasswordIfNeeded();
     } on AuthRetryableFetchException {
       AuthRecoveryCoordinator.consumeRecovery();
-      AppToast.error(
-        'No connection. Check your internet, then tap the link in the email again.',
-      );
+      AppToast.error(AppL10n.current.noConnectionCheckYour);
     } on AuthException catch (e) {
       await _reportProblem(e.code ?? e.statusCode ?? 'invalid_link');
     } catch (e, s) {
@@ -174,7 +173,7 @@ class AuthLinkHandler {
           reason: 'unexpected failure while verifying recovery link',
         ),
       );
-      AppToast.error('Something went wrong. Please request a new link.');
+      AppToast.error(AppL10n.current.somethingWentWrongPlease2);
     }
   }
 

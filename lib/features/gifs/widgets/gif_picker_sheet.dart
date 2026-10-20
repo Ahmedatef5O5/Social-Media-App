@@ -7,6 +7,7 @@ import '../services/giphy_services.dart';
 import '../utils/gif_grid_skeleton.dart';
 import 'gif_grid.dart';
 import 'gif_search_bar.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class GifPickerSheet extends StatefulWidget {
   const GifPickerSheet({super.key});
@@ -44,7 +45,7 @@ class _GifPickerSheetState extends State<GifPickerSheet> {
       if (!mounted) return;
       setState(() {
         _isLoading = false;
-        _error = 'Could not load GIFs';
+        _error = context.l10n.couldNotLoadGifs;
       });
     }
   }
@@ -112,7 +113,7 @@ class _GifPickerSheetState extends State<GifPickerSheet> {
       return Center(child: Text(_error!));
     }
     if (_results.isEmpty) {
-      return const Center(child: Text('No GIFs found'));
+      return Center(child: Text(context.l10n.noGifsFound));
     }
     return GifGrid(results: _results, scrollController: scrollController);
   }

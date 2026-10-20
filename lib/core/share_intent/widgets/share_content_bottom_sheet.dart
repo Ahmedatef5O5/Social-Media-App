@@ -10,6 +10,7 @@ import '../../../features/chat_forwarding/views/forward_target_picker_view.dart'
 import '../../notifications/notification_navigator_key.dart';
 import '../../supabase/supabase_provider.dart';
 import '../../toast/app_toast.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class ShareContentBottomSheet {
   ShareContentBottomSheet._();
@@ -61,7 +62,8 @@ class _ShareContentSheet extends StatelessWidget {
   Future<void> _copyLink(BuildContext context) async {
     Navigator.pop(context);
     await Clipboard.setData(ClipboardData(text: url));
-    AppToast.success('Link copied');
+    if (!context.mounted) return;
+    AppToast.success(context.l10n.linkCopied);
     onShared?.call();
   }
 
@@ -86,9 +88,10 @@ class _ShareContentSheet extends StatelessWidget {
       return;
     }
 
+    if (!context.mounted) return;
     final message = ForwardableMessage(
       originalSenderId: originalAuthorId ?? currentUserId,
-      originalSenderName: originalAuthorName ?? 'You',
+      originalSenderName: originalAuthorName ?? context.l10n.you,
       originalSenderAvatar: originalAuthorAvatarUrl,
       text: shareText,
       messageType: 'text',
@@ -100,9 +103,10 @@ class _ShareContentSheet extends StatelessWidget {
         targets: result,
         currentUserId: currentUserId,
       );
-      AppToast.info('Forwarded to ${result.length} chat(s)');
+      if (!context.mounted) return;
+      AppToast.info(context.l10n.forwardedToChatS(result.length));
     } catch (e) {
-      AppToast.info('Failed to forward. Try again.');
+      AppToast.info(context.l10n.failedToForwardTry);
     }
   }
 
@@ -153,19 +157,19 @@ class _ShareContentSheet extends StatelessWidget {
                 children: [
                   _ShareOptionTile(
                     icon: Icons.copy_rounded,
-                    title: 'Copy Link',
+                    title: context.l10n.copyLink,
                     color: const Color(0xFF4CAF50),
                     onTap: () => _copyLink(context),
                   ),
                   _ShareOptionTile(
                     icon: Icons.forward_rounded,
-                    title: 'Forward to Chat',
+                    title: context.l10n.forwardToChat,
                     color: const Color(0xFF2196F3),
                     onTap: () => _forward(context),
                   ),
                   _ShareOptionTile(
                     icon: Icons.ios_share_rounded,
-                    title: 'Share via...',
+                    title: context.l10n.shareVia,
                     color: const Color(0xFFFF9800),
                     onTap: () => _shareExternally(context),
                   ),
@@ -227,7 +231,7 @@ class _ShareOptionTile extends StatelessWidget {
                     style: theme.textTheme.titleMedium!.copyWith(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
-                      letterSpacing: -0.3,
+                      letterSpacing: context.ls(-0.3),
                       color: theme.colorScheme.onSurface,
                     ),
                   ),

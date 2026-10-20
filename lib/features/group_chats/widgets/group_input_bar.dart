@@ -9,6 +9,7 @@ import '../../ai_assistant/entities/ai_request_context.dart';
 import '../../ai_assistant/helpers/remote_media_fetcher.dart';
 import '../../ai_assistant/widgets/ai_action_icon.dart';
 import '../helpers/send_button.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class GroupInputBar extends StatelessWidget {
   final bool hasText;
@@ -74,7 +75,7 @@ class GroupInputBar extends StatelessWidget {
           controller: controller,
           focusNode: focusNode,
           enabled: true,
-          hintText: 'Type a message...',
+          hintText: context.l10n.typeAMessage,
           restrictSuggestionsToUserIds: mentionCandidateIds,
           onSubmitted: (_) => _send(),
           contentPadding: const EdgeInsets.symmetric(

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:social_media_app/core/localization/app_l10n.dart';
 
 class GroupConfirmDialog {
   const GroupConfirmDialog._();
@@ -19,7 +20,7 @@ class GroupConfirmDialog {
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(ctx, false),
-                child: const Text('Cancel'),
+                child: Text(AppL10n.current.cancel),
               ),
               TextButton(
                 onPressed: () => Navigator.pop(ctx, true),

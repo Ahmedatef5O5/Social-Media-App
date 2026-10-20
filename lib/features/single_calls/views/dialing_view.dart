@@ -7,6 +7,7 @@ import '../../../core/widgets/calls/call_layout_metrics.dart';
 import '../../../core/widgets/calls/calls.dart';
 import '../cubits/single_call_cubit/call_cubit.dart';
 import '../models/call_model.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class DialingView extends StatefulWidget {
   final CallModel call;
@@ -72,7 +73,10 @@ class _DialingViewState extends State<DialingView> {
                           isVideo
                               ? Icons.videocam_rounded
                               : Icons.phone_rounded,
-                      label: isVideo ? 'Video Call' : 'Voice Call',
+                      label:
+                          isVideo
+                              ? context.l10n.videoCall2
+                              : context.l10n.voiceCall2,
                     ),
 
                     SizedBox(height: metrics.midGap),
@@ -91,11 +95,11 @@ class _DialingViewState extends State<DialingView> {
 
                     Text(
                       widget.call.receiverName,
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: Colors.white,
                         fontSize: 30,
                         fontWeight: FontWeight.bold,
-                        letterSpacing: 0.5,
+                        letterSpacing: context.ls(0.5),
                         shadows: [
                           Shadow(
                             color: Colors.black45,
@@ -115,7 +119,7 @@ class _DialingViewState extends State<DialingView> {
 
                     GlassCallActionButton(
                       icon: Icons.call_end_rounded,
-                      label: 'Cancel',
+                      label: context.l10n.cancel,
                       color: Colors.redAccent.shade700,
                       size: metrics.buttonSize,
                       onTap: () {
@@ -146,12 +150,12 @@ class _DialingViewState extends State<DialingView> {
         ),
         const SizedBox(width: 6),
         AnimatedActivityText(
-          text: isVideo ? 'Calling (Video)...' : 'Calling (Audio)...',
+          text: isVideo ? context.l10n.callingVideo : context.l10n.callingAudio,
           forceAnimate: true,
-          style: const TextStyle(
+          style: TextStyle(
             color: Colors.white70,
             fontSize: 16,
-            letterSpacing: 0.3,
+            letterSpacing: context.ls(0.3),
           ),
         ),
       ],

@@ -17,6 +17,8 @@ import '../cubits/group_list_cubit/group_list_cubit.dart';
 import '../models/group_model.dart';
 import '../models/groupe_message_model.dart';
 import '../widgets/group_chat_app_bar.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
+import 'package:social_media_app/core/localization/app_l10n.dart';
 
 class GroupChatAppBarSwitcher extends StatelessWidget
     implements PreferredSizeWidget {
@@ -37,6 +39,10 @@ class GroupChatAppBarSwitcher extends StatelessWidget
 
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+
+  void _showComingSoon(BuildContext context, String feature) {
+    AppToast.info(context.l10n.isComingSoon(feature));
+  }
 
   Future<void> _openForwardPicker(
     BuildContext context, {
@@ -98,9 +104,7 @@ class GroupChatAppBarSwitcher extends StatelessWidget
 
       if (draftText.isEmpty) {
         if (context.mounted) {
-          AppToast.info(
-            "Syncra can't read media messages yet — try a text message.",
-          );
+          AppToast.info(context.l10n.syncraCantReadMedia);
         }
         return;
       }
@@ -126,7 +130,7 @@ class GroupChatAppBarSwitcher extends StatelessWidget
         currentUserId: currentUserId,
       );
       if (context.mounted) {
-        AppToast.info('Forwarded to ${result.length} chat(s)');
+        AppToast.info(AppL10n.current.forwardedToChatS(result.length));
         Future.delayed(const Duration(milliseconds: 400), () {
           if (context.mounted) {
             context.read<ChatsCubit>().getChats(isRefresh: true);
@@ -135,27 +139,28 @@ class GroupChatAppBarSwitcher extends StatelessWidget
         });
       }
     } catch (e) {
-      if (context.mounted) AppToast.info('Failed to forward. Try again.');
+      if (context.mounted) AppToast.info(context.l10n.failedToForwardTry);
     }
   }
 
   void _openMessageInfo(BuildContext context, GroupDetailsCubit cubit) {
     final selected = cubit.selectedMessages;
     if (selected.length != 1) return;
+    final message = selected.first;
+    cubit.clearSelection();
 
-    final args = MessageInfoArgs.fromGroupChat(
-      message: selected.first,
-      group: group,
-      currentUserId: cubit.currentUserId,
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder:
+            (_) => MessageInfoView(
+              args: MessageInfoArgs.fromGroupChat(
+                message: message,
+                group: group,
+                currentUserId: cubit.currentUserId,
+              ),
+            ),
+      ),
     );
-
-    FocusManager.instance.primaryFocus?.unfocus();
-    Navigator.of(
-      context,
-    ).push(MaterialPageRoute(builder: (_) => MessageInfoView(args: args)));
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!cubit.isClosed) cubit.clearSelection();
-    });
   }
 
   @override
@@ -230,7 +235,7 @@ class GroupChatAppBarSwitcher extends StatelessWidget
     final selected = cubit.selectedMessages;
     if (selected.length != 1) return;
     await Clipboard.setData(ClipboardData(text: selected.first.text));
-    if (context.mounted) AppToast.success('Copied to clipboard');
+    if (context.mounted) AppToast.success(context.l10n.copiedToClipboard);
     cubit.clearSelection();
   }
 
@@ -256,13 +261,13 @@ class GroupChatAppBarSwitcher extends StatelessWidget
                 Padding(
                   padding: const EdgeInsets.symmetric(vertical: 8),
                   child: Text(
-                    'Delete $count message${count > 1 ? 's' : ''}?',
+                    context.l10n.deleteNMessages(count),
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                 ),
                 ListTile(
                   leading: const Icon(Icons.person_outline),
-                  title: const Text('Delete for me'),
+                  title: Text(context.l10n.deleteForMe),
                   onTap: () {
                     Navigator.pop(ctx);
                     cubit.deleteSelectedForMe();
@@ -272,7 +277,7 @@ class GroupChatAppBarSwitcher extends StatelessWidget
                   ListTile(
                     leading: const Icon(Icons.delete_outline),
                     title: Text(
-                      'Delete for everyone',
+                      context.l10n.deleteForEveryone,
                       style: Theme.of(
                         context,
                       ).textTheme.titleMedium!.copyWith(color: Colors.red),

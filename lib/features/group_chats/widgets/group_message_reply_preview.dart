@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../../../core/themes/app_colors.dart';
 import '../../../core/chat_shared/widgets/reply_preview_thumbnail.dart';
 import '../models/groupe_message_model.dart';
+import 'package:social_media_app/core/localization/app_l10n.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class GroupReplyBubblePreview extends StatelessWidget {
   final GroupMessageModel message;
@@ -35,8 +37,8 @@ class GroupReplyBubblePreview extends StatelessWidget {
 
     final senderName =
         message.replyToSenderId == currentUserId
-            ? 'You'
-            : (message.replyToSenderName ?? 'Unknown');
+            ? context.l10n.you
+            : (message.replyToSenderName ?? context.l10n.unknown);
 
     return Container(
       width: double.infinity,
@@ -117,15 +119,15 @@ class GroupReplyBubblePreview extends StatelessWidget {
   String _previewText() {
     switch (message.replyToMessageType) {
       case 'image':
-        return '📷 Photo';
+        return AppL10n.current.photo2;
       case 'video':
-        return '🎥 Video';
+        return AppL10n.current.video2;
       case 'gif':
-        return '🖼️ GIF';
+        return AppL10n.current.gif;
       case 'sticker':
-        return '🏷️ Sticker';
+        return AppL10n.current.sticker2;
       case 'voice':
-        return '🎤 Voice message';
+        return AppL10n.current.voiceMessage;
       default:
         final t = message.replyToText ?? '';
         return t.length > 60 ? '${t.substring(0, 60)}...' : t;

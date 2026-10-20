@@ -7,6 +7,7 @@ import '../cubits/posts_cubit/posts_cubit.dart';
 import '../models/post_model.dart';
 import '../widgets/author_image_widget.dart';
 import 'full_screen_video_caption.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class VideoPostAuthorAndCaption extends StatelessWidget {
   final PostModel post;
@@ -53,7 +54,7 @@ class VideoPostAuthorAndCaption extends StatelessWidget {
                     behavior: HitTestBehavior.opaque,
                     onTap: () => _handleAuthorTap(context, currentPost),
                     child: Text(
-                      currentPost.authorName ?? 'Unknown',
+                      currentPost.authorName ?? context.l10n.unknown,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(

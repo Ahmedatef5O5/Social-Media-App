@@ -8,6 +8,7 @@ import '../models/shared_media_item.dart';
 import '../views/shared_media_view.dart';
 import 'sectioned_media_list.dart';
 import 'shared_media_action_menu.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class VoiceMessageGrid extends StatelessWidget {
   final List<SharedMediaItem> items;
@@ -106,7 +107,7 @@ class VoiceMessageGrid extends StatelessWidget {
                               item,
                             ),
                         child: Text(
-                          isMe ? 'You' : item.senderName,
+                          isMe ? context.l10n.you : item.senderName,
                           style: Theme.of(context).textTheme.titleSmall,
                         ),
                       ),

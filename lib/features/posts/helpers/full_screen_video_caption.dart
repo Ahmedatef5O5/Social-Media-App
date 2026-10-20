@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../core/helpers/chat_helper.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class FullScreenVideoCaption extends StatefulWidget {
   final String text;
@@ -49,7 +50,7 @@ class _FullScreenVideoCaptionState extends State<FullScreenVideoCaption> {
                   Padding(
                     padding: const EdgeInsets.only(top: 4),
                     child: Text(
-                      isRtl ? 'قراءة المزيد...' : 'Read more...',
+                      isRtl ? 'قراءة المزيد...' : context.l10n.readMore,
                       style: TextStyle(
                         color: Colors.white.withValues(alpha: 0.7),
                         fontSize: 12.5,

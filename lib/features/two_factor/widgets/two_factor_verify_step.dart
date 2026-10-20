@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../core/widgets/custom_elevated_button.dart';
 import 'otp_code_field.dart';
 import 'totp_window_indicator.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class TwoFactorVerifyStep extends StatefulWidget {
   final bool verifying;
@@ -44,15 +45,14 @@ class _TwoFactorVerifyStepState extends State<TwoFactorVerifyStep> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Enter the 6-digit code',
+          context.l10n.enterThe6Digit,
           style: theme.textTheme.headlineSmall?.copyWith(
             fontWeight: FontWeight.w800,
           ),
         ),
         const SizedBox(height: 8),
         Text(
-          'Type the code your authenticator app shows for Social Mate to '
-          'confirm it is linked.',
+          context.l10n.typeTheCodeYour,
           style: theme.textTheme.bodyMedium?.copyWith(color: theme.hintColor),
         ),
         const SizedBox(height: 26),
@@ -69,7 +69,7 @@ class _TwoFactorVerifyStepState extends State<TwoFactorVerifyStep> {
           child: TextButton(
             onPressed:
                 widget.verifying ? null : () => _otp.currentState?.paste(),
-            child: const Text('Paste code'),
+            child: Text(context.l10n.pasteCode),
           ),
         ),
         const SizedBox(height: 4),
@@ -86,8 +86,7 @@ class _TwoFactorVerifyStepState extends State<TwoFactorVerifyStep> {
         if (widget.showClockHint) ...[
           const SizedBox(height: 10),
           Text(
-            'Still not working? Make sure your phone’s date and time are set '
-            'to automatic in your device settings.',
+            context.l10n.stillNotWorkingMake,
             style: theme.textTheme.bodySmall?.copyWith(color: theme.hintColor),
           ),
         ],
@@ -101,7 +100,7 @@ class _TwoFactorVerifyStepState extends State<TwoFactorVerifyStep> {
         Center(
           child: TextButton(
             onPressed: widget.verifying ? null : widget.onBack,
-            child: const Text('Back to QR code'),
+            child: Text(context.l10n.backToQrCode),
           ),
         ),
       ],

@@ -23,6 +23,7 @@ import '../widgets/feedback_quota_badge.dart';
 import '../widgets/feedback_star_rating_bar.dart';
 import '../widgets/feedback_status_chip.dart';
 import '../widgets/feedback_voice_recorder.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class SubmitFeedbackView extends StatefulWidget {
   const SubmitFeedbackView({super.key});
@@ -63,12 +64,12 @@ class _SubmitFeedbackViewState extends State<SubmitFeedbackView> {
       if (picked == null) return;
       final file = File(picked.path);
       if (await file.length() > _maxImageBytes) {
-        AppToast.warning('Image is too large (max 10 MB).');
+        AppToast.warning(context.l10n.imageIsTooLarge);
         return;
       }
       cubit.setImage(file);
     } catch (_) {
-      AppToast.error('Could not open your gallery.');
+      AppToast.error(context.l10n.couldNotOpenYour);
     }
   }
 
@@ -82,7 +83,7 @@ class _SubmitFeedbackViewState extends State<SubmitFeedbackView> {
     );
     if (edited == null) return;
     if (await edited.length() > _maxImageBytes) {
-      AppToast.warning('Edited image is too large (max 10 MB).');
+      AppToast.warning(context.l10n.editedImageIsToo);
       return;
     }
     cubit.setImage(edited);
@@ -90,9 +91,9 @@ class _SubmitFeedbackViewState extends State<SubmitFeedbackView> {
 
   String? _validateMessage(String? v) {
     final t = (v ?? '').trim();
-    if (t.isEmpty) return 'Please tell us what is on your mind.';
+    if (t.isEmpty) return context.l10n.pleaseTellUsWhat;
     if (t.length < FeedbackCubit.minMessageLength) {
-      return 'Please write at least ${FeedbackCubit.minMessageLength} characters.';
+      return context.l10n.pleaseWriteAtLeast(FeedbackCubit.minMessageLength);
     }
     return null;
   }
@@ -102,7 +103,7 @@ class _SubmitFeedbackViewState extends State<SubmitFeedbackView> {
     if (t.isEmpty) return null;
     final isEmail = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(t);
     final isPhone = RegExp(r'^\+?[0-9\s\-()]{7,20}$').hasMatch(t);
-    return (isEmail || isPhone) ? null : 'Enter a valid email or phone number.';
+    return (isEmail || isPhone) ? null : context.l10n.enterAValidEmail;
   }
 
   void _submit(FeedbackCubit cubit) {
@@ -142,20 +143,20 @@ class _SubmitFeedbackViewState extends State<SubmitFeedbackView> {
                 ),
                 const Gap(16),
                 Text(
-                  'Feedback Submitted Successfully',
+                  context.l10n.feedbackSubmittedSuccessfully,
                   textAlign: TextAlign.center,
                   style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w800,
                   ),
                 ),
                 const Gap(10),
-                const FeedbackStatusChip(
+                FeedbackStatusChip(
                   status: FeedbackStatus.pending,
-                  label: 'Under Review',
+                  label: context.l10n.underReview,
                 ),
                 const Gap(12),
                 Text(
-                  'Our team typically responds within 24 hours (up to 3 business days).',
+                  context.l10n.ourTeamTypicallyResponds,
                   textAlign: TextAlign.center,
                   style: theme.textTheme.bodyMedium?.copyWith(height: 1.45),
                 ),
@@ -165,11 +166,11 @@ class _SubmitFeedbackViewState extends State<SubmitFeedbackView> {
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(ctx, false),
-                child: const Text('Done'),
+                child: Text(context.l10n.done),
               ),
               FilledButton(
                 onPressed: () => Navigator.pop(ctx, true),
-                child: const Text('My Feedbacks'),
+                child: Text(context.l10n.myFeedbacks),
               ),
             ],
           ),
@@ -216,10 +217,10 @@ class _SubmitFeedbackViewState extends State<SubmitFeedbackView> {
               CustomScrollView(
                 physics: const ClampingScrollPhysics(),
                 slivers: [
-                  const SettingsDetailSliverAppBar(
+                  SettingsDetailSliverAppBar(
                     icon: CupertinoIcons.bubble_left_bubble_right_fill,
-                    title: 'Feedback & Support',
-                    subtitle: 'Help us improve Social Mate',
+                    title: context.l10n.feedbackSupport,
+                    subtitle: context.l10n.helpUsImproveSocial,
                   ),
                   SliverToBoxAdapter(
                     child: Padding(
@@ -243,8 +244,8 @@ class _SubmitFeedbackViewState extends State<SubmitFeedbackView> {
                             const Gap(22),
                             _SectionLabel(
                               state.ratingRequired
-                                  ? 'Your rating *'
-                                  : 'Your rating (optional)',
+                                  ? context.l10n.yourRating
+                                  : context.l10n.yourRatingOptional,
                             ),
                             const Gap(8),
                             FeedbackStarRatingBar(
@@ -292,7 +293,7 @@ class _SubmitFeedbackViewState extends State<SubmitFeedbackView> {
                             const Gap(10),
                             CustomTextFormField(
                               controller: _contactController,
-                              hintText: 'Email or phone number',
+                              hintText: context.l10n.emailOrPhoneNumber,
                               keyboardType: TextInputType.emailAddress,
                               textInputAction: TextInputAction.done,
                               validator: _validateContact,
@@ -300,8 +301,8 @@ class _SubmitFeedbackViewState extends State<SubmitFeedbackView> {
                             const Gap(24),
                             SettingsInfoBanner(
                               icon: CupertinoIcons.clock,
-                              title: 'Response time',
-                              message: 'Response within 24 hours (max 3 days).',
+                              title: context.l10n.responseTime,
+                              message: context.l10n.responseWithin24Hours,
                               tone: SettingsBannerTone.info,
                             ),
                             const Gap(18),
@@ -310,8 +311,8 @@ class _SubmitFeedbackViewState extends State<SubmitFeedbackView> {
                               child: CustomElevatedButton(
                                 txtBtn:
                                     locked
-                                        ? 'Daily limit reached'
-                                        : 'Submit Feedback',
+                                        ? context.l10n.dailyLimitReached
+                                        : context.l10n.submitFeedback,
                                 isLoading: busy,
                                 onPressed:
                                     (busy || locked)
@@ -346,7 +347,7 @@ class _SubmitFeedbackViewState extends State<SubmitFeedbackView> {
                 top: topInset + 6,
                 right: 8,
                 child: IconButton(
-                  tooltip: 'My feedbacks',
+                  tooltip: context.l10n.myFeedbacks2,
                   onPressed: () {
                     HapticFeedback.selectionClick();
                     _openHistory(cubit);
@@ -365,12 +366,12 @@ class _SubmitFeedbackViewState extends State<SubmitFeedbackView> {
   }
 
   String _hintFor(FeedbackCategory c) => switch (c) {
-    FeedbackCategory.bug => 'What went wrong? What did you expect to happen?',
-    FeedbackCategory.feature => 'Describe the feature you would love to see…',
-    FeedbackCategory.inquiry => 'What would you like to know?',
-    FeedbackCategory.rating => 'Share your experience with Social Mate…',
-    FeedbackCategory.appreciation => 'Tell us what you enjoy!',
-    FeedbackCategory.other => 'Write your message here…',
+    FeedbackCategory.bug => context.l10n.whatWentWrongWhat,
+    FeedbackCategory.feature => context.l10n.describeTheFeatureYou,
+    FeedbackCategory.inquiry => context.l10n.whatWouldYouLike,
+    FeedbackCategory.rating => context.l10n.shareYourExperienceWith,
+    FeedbackCategory.appreciation => context.l10n.tellUsWhatYou,
+    FeedbackCategory.other => context.l10n.writeYourMessageHere,
   };
 }
 
@@ -384,7 +385,7 @@ class _SectionLabel extends StatelessWidget {
     style: TextStyle(
       fontSize: 14,
       fontWeight: FontWeight.w800,
-      letterSpacing: -0.2,
+      letterSpacing: context.ls(-0.2),
       color:
           Theme.of(context).brightness == Brightness.dark
               ? Colors.white
@@ -433,9 +434,9 @@ class _ImageAttachment extends StatelessWidget {
                 color: theme.primaryColor,
               ),
               const SizedBox(width: 10),
-              const Expanded(
+              Expanded(
                 child: Text(
-                  'Attach a screenshot',
+                  context.l10n.attachAScreenshot,
                   style: TextStyle(fontWeight: FontWeight.w600),
                 ),
               ),

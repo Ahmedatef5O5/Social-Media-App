@@ -29,6 +29,7 @@ import '../constants/app_images.dart';
 import '../supabase/supabase_provider.dart';
 import '../router/main_tab_bridge.dart';
 import 'custom_floating_nav_bar.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class CustomBottomNavBar extends StatefulWidget {
   const CustomBottomNavBar({super.key});
@@ -137,7 +138,7 @@ class _CustomBottomNavBarState extends State<CustomBottomNavBar> {
       context: context,
       builder:
           (context) => CustomConfirmationDialog(
-            title: 'Are you sure you want to quit ?',
+            title: context.l10n.areYouSureYou,
             textAlign: TextAlign.center,
             img: AppImages.exitAnimationLot,
 

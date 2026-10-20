@@ -3,6 +3,7 @@ import 'package:social_media_app/core/widgets/cached_cloudinary_image.dart';
 import 'package:social_media_app/features/posts/models/post_reaction_model.dart';
 import '../../../core/constants/app_images.dart';
 import '../../../core/design/tokens/typography.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class CommentsReactionAvatarStack extends StatelessWidget {
   final List<String> imageUrls;
@@ -88,7 +89,7 @@ class CommentsReactionAvatarStack extends StatelessWidget {
                             fontSize: 10.5,
                             fontWeight: FontWeight.w700,
                             color: remainingTextColor,
-                            letterSpacing: -0.5,
+                            letterSpacing: context.ls(-0.5),
                           ),
                         ),
                       ),

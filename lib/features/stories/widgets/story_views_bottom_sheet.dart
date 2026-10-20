@@ -9,6 +9,7 @@ import '../../../core/widgets/app_avatar.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
 import '../cubits/story_views_cubit/story_views_cubit.dart';
 import '../models/story_viewer_model.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class StoryViewsBottomSheet extends StatelessWidget {
   const StoryViewsBottomSheet({super.key});
@@ -58,7 +59,7 @@ class StoryViewsBottomSheet extends StatelessWidget {
                       final count =
                           state is StoryViewsLoaded ? state.viewers.length : 0;
                       return Text(
-                        '$count Views',
+                        context.l10n.views(count),
                         style: theme.textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.bold,
                         ),
@@ -73,17 +74,17 @@ class StoryViewsBottomSheet extends StatelessWidget {
                           StoryViewsLoading() => const Center(
                             child: CustomLoadingIndicator(),
                           ),
-                          StoryViewsError() => const Center(
+                          StoryViewsError() => Center(
                             child: Text(
-                              'Couldn\'t load views.',
+                              context.l10n.couldntLoadViews,
                               style: TextStyle(color: Colors.grey),
                             ),
                           ),
                           StoryViewsLoaded(:final viewers)
                               when viewers.isEmpty =>
-                            const Center(
+                            Center(
                               child: Text(
-                                'No views yet',
+                                context.l10n.noViewsYet,
                                 style: TextStyle(color: Colors.grey),
                               ),
                             ),

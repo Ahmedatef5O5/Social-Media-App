@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import '../../../core/constants/app_images.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 /// Tombstone shown when the viewed profile belongs to a soft-deleted
 /// (ghost) account. It intentionally exposes no actions.
@@ -24,7 +25,7 @@ class DeletedProfilePlaceholder extends StatelessWidget {
               child: Padding(
                 padding: const EdgeInsets.all(8),
                 child: IconButton(
-                  tooltip: 'Back',
+                  tooltip: context.l10n.back,
                   icon: const Icon(Icons.arrow_back_ios_new_rounded),
                   onPressed: () => Navigator.maybePop(context),
                 ),
@@ -47,7 +48,7 @@ class DeletedProfilePlaceholder extends StatelessWidget {
 
                   const Gap(28),
                   Text(
-                    'Deleted Account',
+                    context.l10n.deletedAccount,
                     textAlign: TextAlign.center,
                     style: theme.textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.w700,
@@ -55,8 +56,7 @@ class DeletedProfilePlaceholder extends StatelessWidget {
                   ),
                   const Gap(8),
                   Text(
-                    'This account has been deleted and its profile is no '
-                    'longer available.',
+                    context.l10n.thisAccountHasBeen2,
                     textAlign: TextAlign.center,
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: mutedColor,

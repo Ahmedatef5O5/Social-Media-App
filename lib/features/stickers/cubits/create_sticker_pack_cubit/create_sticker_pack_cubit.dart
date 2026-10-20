@@ -15,6 +15,7 @@ import '../../../../core/services/media_cleanup_service.dart';
 import '../../models/sticker_pack_privacy.dart';
 import '../../repository/stickers_repository.dart';
 import 'create_sticker_pack_state.dart';
+import 'package:social_media_app/core/localization/app_l10n.dart';
 
 class CreateStickerPackCubit extends Cubit<CreateStickerPackState>
     with SafeEmitMixin<CreateStickerPackState> {
@@ -65,7 +66,7 @@ class CreateStickerPackCubit extends Cubit<CreateStickerPackState>
       await _repository.deleteMyPack(packId);
       await _checkQuota();
     } catch (_) {
-      AppToast.error('Could not delete the pack, please try again.');
+      AppToast.error(AppL10n.current.couldNotDeleteThe);
       emit(current.copyWith(isDeleting: false));
     }
   }
@@ -125,7 +126,7 @@ class CreateStickerPackCubit extends Cubit<CreateStickerPackState>
     try {
       picked = await _filePicker.pickMultipleImagesFromGallery();
     } catch (_) {
-      AppToast.error('Could not open the gallery, please try again.');
+      AppToast.error(AppL10n.current.couldNotOpenThe);
       return;
     }
     if (picked.isEmpty) return;
@@ -134,15 +135,16 @@ class CreateStickerPackCubit extends Cubit<CreateStickerPackState>
         CreateStickerPackForm.maxStickers - current.images.length;
     if (remainingSlots <= 0) {
       AppToast.warning(
-        'This pack already has the maximum of '
-        '${CreateStickerPackForm.maxStickers} stickers.',
+        AppL10n.current.thisPackAlreadyHas(CreateStickerPackForm.maxStickers),
       );
       return;
     }
     if (picked.length > remainingSlots) {
       AppToast.warning(
-        'Only the first $remainingSlots image(s) were added — '
-        'a pack can hold at most ${CreateStickerPackForm.maxStickers} stickers.',
+        AppL10n.current.onlyTheFirstImage(
+          remainingSlots,
+          CreateStickerPackForm.maxStickers,
+        ),
       );
       picked = picked.take(remainingSlots).toList();
     }
@@ -154,10 +156,7 @@ class CreateStickerPackCubit extends Cubit<CreateStickerPackState>
     final newTotalSize = current.totalSizeBytes + addedSize;
 
     if (newTotalSize > CreateStickerPackForm.maxTotalSizeBytes) {
-      AppToast.warning(
-        'This selection pushes the pack past the 25 MB limit — '
-        'pick fewer or smaller images.',
-      );
+      AppToast.warning(AppL10n.current.thisSelectionPushesThe);
       return;
     }
 
@@ -191,18 +190,16 @@ class CreateStickerPackCubit extends Cubit<CreateStickerPackState>
     if (current is! CreateStickerPackForm) return;
 
     if (current.title.trim().isEmpty) {
-      AppToast.warning('Give your pack a name first.');
+      AppToast.warning(AppL10n.current.giveYourPackA);
       return;
     }
     if (current.images.isEmpty) {
-      AppToast.warning('Add at least one sticker.');
+      AppToast.warning(AppL10n.current.addAtLeastOne);
       return;
     }
     if (current.privacy == StickerPackPrivacy.friends &&
         current.selectedFriendIds.isEmpty) {
-      AppToast.warning(
-        'Pick at least one friend, or change the privacy setting.',
-      );
+      AppToast.warning(AppL10n.current.pickAtLeastOne);
       return;
     }
 
@@ -215,7 +212,7 @@ class CreateStickerPackCubit extends Cubit<CreateStickerPackState>
       }
     } catch (_) {
       emit(current.copyWith(isSubmitting: false));
-      AppToast.error('Could not verify your pack quota, please try again.');
+      AppToast.error(AppL10n.current.couldNotVerifyYour);
       return;
     }
 
@@ -314,10 +311,10 @@ class CreateStickerPackCubit extends Cubit<CreateStickerPackState>
             ),
           );
         }
-        AppToast.warning('Upload cancelled.');
+        AppToast.warning(AppL10n.current.uploadCancelled);
         emit(form.copyWith(isSubmitting: false));
       } else {
-        AppToast.error('Could not create the pack, please try again.');
+        AppToast.error(AppL10n.current.couldNotCreateThe);
         emit(form.copyWith(isSubmitting: false));
       }
     }

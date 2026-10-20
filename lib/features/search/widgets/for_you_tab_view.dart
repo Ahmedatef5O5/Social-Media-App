@@ -18,6 +18,7 @@ import '../utils/search_view_metrics.dart';
 import 'for_you_feed_item.dart';
 import 'for_you_reels_grid_section.dart';
 import 'suggested_accounts_section.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class ForYouTabView extends StatefulWidget {
   final ValueListenable<String> searchQuery;
@@ -341,8 +342,8 @@ class _ForYouTabViewState extends State<ForYouTabView>
             const Gap(12),
             Text(
               query.isEmpty
-                  ? 'Nothing to show yet'
-                  : 'No results found for "$query"',
+                  ? context.l10n.nothingToShowYet
+                  : context.l10n.noResultsFoundFor2(query),
               textAlign: TextAlign.center,
               style: theme.textTheme.titleMedium!.copyWith(
                 fontWeight: FontWeight.w700,

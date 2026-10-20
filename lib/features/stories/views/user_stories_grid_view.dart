@@ -11,6 +11,7 @@ import '../models/story_model.dart';
 import '../models/story_stat_model.dart';
 import '../services/stories_services.dart';
 import '../widgets/story_grid_tile.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class UserStoriesGridView extends StatelessWidget {
   final String userId;
@@ -49,7 +50,9 @@ class UserStoriesGridView extends StatelessWidget {
               ),
               titleSpacing: 0,
               title: Text(
-                _isMe ? 'My Stories' : "$authorName's Stories",
+                _isMe
+                    ? context.l10n.myStories
+                    : context.l10n.sStories(authorName),
                 style: theme.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w500,
                   fontSize: 18,
@@ -140,7 +143,7 @@ class UserStoriesGridView extends StatelessWidget {
         if (snapshot.hasError) {
           return Center(
             child: Text(
-              'Could not load stories',
+              context.l10n.couldNotLoadStories,
               style: TextStyle(color: AppColors.grey5),
             ),
           );
@@ -175,7 +178,7 @@ class _StoriesGridBody extends StatelessWidget {
     if (stories.isEmpty) {
       return Center(
         child: Text(
-          'No stories yet',
+          context.l10n.noStoriesYet,
           style: TextStyle(color: AppColors.grey5, fontSize: 15),
         ),
       );

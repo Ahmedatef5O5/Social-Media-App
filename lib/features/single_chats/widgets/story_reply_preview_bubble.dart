@@ -5,6 +5,8 @@ import '../../../core/helpers/media_duration_badge.dart';
 import '../../../core/helpers/story_reply_navigator.dart';
 import '../../../core/themes/app_colors.dart';
 import '../../../core/widgets/cached_cloudinary_image.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
+import 'package:social_media_app/core/localization/app_l10n.dart';
 
 class StoryReplyPreviewBubble extends StatelessWidget {
   final String? replyToStoryId;
@@ -111,12 +113,12 @@ class StoryReplyPreviewBubble extends StatelessWidget {
                         ),
                         const Gap(5),
                         Text(
-                          'Replied to Story',
+                          context.l10n.repliedToStory,
                           style: TextStyle(
                             fontSize: 11.5,
                             fontWeight: FontWeight.w700,
                             color: accentColor,
-                            letterSpacing: 0.1,
+                            letterSpacing: context.ls(0.1),
                           ),
                         ),
                       ],
@@ -142,11 +144,11 @@ class StoryReplyPreviewBubble extends StatelessWidget {
     if (storyText != null && storyText.isNotEmpty) return storyText;
     switch (type) {
       case 'video':
-        return '🎥 Video';
+        return AppL10n.current.video2;
       case 'image':
-        return '📷 Photo';
+        return AppL10n.current.photo2;
       default:
-        return 'Text status';
+        return AppL10n.current.textStatus;
     }
   }
 

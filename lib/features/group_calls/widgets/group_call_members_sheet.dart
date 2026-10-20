@@ -15,6 +15,7 @@ import '../../group_chats/models/group_member_model.dart';
 import '../../group_chats/services/group_chat_services.dart';
 import '../models/group_call_model.dart';
 import '../services/group_call_signaling_service.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class GroupCallMemberEntry {
   final GroupMemberModel member;
@@ -211,8 +212,8 @@ class _GroupCallMembersSheetState extends State<GroupCallMembersSheet> {
                       padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
                       child: Row(
                         children: [
-                          const Text(
-                            'Group Members',
+                          Text(
+                            context.l10n.groupMembers,
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 17,
@@ -342,7 +343,7 @@ class _MemberTile extends StatelessWidget {
                   children: [
                     Flexible(
                       child: Text(
-                        isCurrentUser ? 'You' : member.userName,
+                        isCurrentUser ? context.l10n.you : member.userName,
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 15,
@@ -362,8 +363,8 @@ class _MemberTile extends StatelessWidget {
                           color: Colors.white.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(6),
                         ),
-                        child: const Text(
-                          'Admin',
+                        child: Text(
+                          context.l10n.admin,
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 9,
@@ -376,7 +377,9 @@ class _MemberTile extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  entry.isActive ? 'In the call' : 'Not in the call',
+                  entry.isActive
+                      ? context.l10n.inTheCall
+                      : context.l10n.notInTheCall,
                   style: TextStyle(
                     color: Colors.white.withValues(alpha: 0.55),
                     fontSize: 12,
@@ -387,9 +390,9 @@ class _MemberTile extends StatelessWidget {
           ),
           const SizedBox(width: 10),
           entry.isActive
-              ? const CallStatusPill(
+              ? CallStatusPill(
                 icon: Icons.graphic_eq_rounded,
-                label: 'In Call',
+                label: context.l10n.inCall,
                 showLiveDot: true,
               )
               : _RingButton(
@@ -451,7 +454,7 @@ class _RingButton extends StatelessWidget {
               ),
             const SizedBox(width: 6),
             Text(
-              isRinging ? 'Ringing…' : 'Ring',
+              isRinging ? context.l10n.ringing : context.l10n.ring,
               style: const TextStyle(
                 color: Colors.white,
                 fontSize: 12,

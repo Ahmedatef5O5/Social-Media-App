@@ -15,7 +15,8 @@ class TwoFactorLockoutStore {
 
   final DateTime Function() _now;
 
-  TwoFactorLockoutStore({DateTime Function()? now}) : _now = now ?? DateTime.now;
+  TwoFactorLockoutStore({DateTime Function()? now})
+    : _now = now ?? DateTime.now;
 
   String _k(String userId, String f) => 'tf_lockout_${userId}_$f';
 

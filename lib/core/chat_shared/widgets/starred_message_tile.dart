@@ -3,6 +3,7 @@ import '../../helpers/formatted_date.dart';
 import '../../widgets/app_avatar.dart';
 import '../models/starred_message_entry.dart';
 import 'starred_message_content.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class StarredMessageTile extends StatelessWidget {
   final StarredMessageEntry entry;
@@ -39,7 +40,7 @@ class StarredMessageTile extends StatelessWidget {
                       fit: BoxFit.scaleDown,
                       alignment: Alignment.centerLeft,
                       child: Text(
-                        entry.isMe ? 'You' : entry.senderName,
+                        entry.isMe ? context.l10n.you : entry.senderName,
                         maxLines: 1,
                         style: Theme.of(context).textTheme.titleSmall?.copyWith(
                           fontWeight: FontWeight.w600,

@@ -8,6 +8,7 @@ import '../../../core/services/active_call/pip/call_pip_cubit.dart';
 import '../helpers/return_to_ongoing_single_call_btn.dart';
 import '../models/message_model.dart';
 import 'message_time_and_status.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class CallMessageContent extends StatelessWidget {
   final MessageModel message;
@@ -85,10 +86,12 @@ class CallMessageContent extends StatelessWidget {
 
     final String title =
         isRinging
-            ? (isAudio ? 'Calling…' : 'Video calling…')
+            ? (isAudio ? context.l10n.calling : context.l10n.videoCalling)
             : isMissed
-            ? (isAudio ? 'Missed voice call' : 'Missed video call')
-            : (isAudio ? 'Voice call' : 'Video call');
+            ? (isAudio
+                ? context.l10n.missedVoiceCall
+                : context.l10n.missedVideoCall)
+            : (isAudio ? context.l10n.voiceCall : context.l10n.videoCall);
 
     return Stack(
       clipBehavior: Clip.none,

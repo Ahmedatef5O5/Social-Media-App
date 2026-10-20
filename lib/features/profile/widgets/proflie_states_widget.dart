@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/profile_stats_model.dart';
 import '../utils/profile_ui_tokens.dart';
 import 'state_item_widget.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class ProfileStatsWidget extends StatelessWidget {
   final ProfileStatsModel stats;
@@ -12,10 +13,16 @@ class ProfileStatsWidget extends StatelessWidget {
     final tokens = ProfileUiTokens.of(context);
 
     final items = <({String label, String value})>[
-      (label: 'Posts', value: stats.postsCount.toString()),
-      (label: 'Media', value: stats.mediaCount.toString()),
-      (label: 'Followers', value: _formatNumber(stats.followersCount)),
-      (label: 'Following', value: _formatNumber(stats.followingCount)),
+      (label: context.l10n.posts, value: stats.postsCount.toString()),
+      (label: context.l10n.media, value: stats.mediaCount.toString()),
+      (
+        label: context.l10n.followers,
+        value: _formatNumber(stats.followersCount),
+      ),
+      (
+        label: context.l10n.following,
+        value: _formatNumber(stats.followingCount),
+      ),
     ];
 
     return Container(

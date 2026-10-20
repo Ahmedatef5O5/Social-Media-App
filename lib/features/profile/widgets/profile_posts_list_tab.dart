@@ -8,6 +8,7 @@ import '../../posts/cubits/posts_cubit/posts_cubit.dart';
 import '../../posts/helpers/posts_skeleton_items.dart';
 import '../../posts/widgets/post_item_widget.dart';
 import '../cubits/profile_posts_cubit/profile_posts_cubit.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class ProfilePostsListTab extends StatelessWidget {
   final PostsCubit postsCubit;
@@ -41,7 +42,7 @@ class ProfilePostsListTab extends StatelessWidget {
                 CupertinoButton(
                   onPressed:
                       () => context.read<ProfilePostsCubit>().loadInitial(),
-                  child: const Text('Retry'),
+                  child: Text(context.l10n.retry),
                 ),
               ],
             ),
@@ -68,7 +69,9 @@ class ProfilePostsListTab extends StatelessWidget {
                   ),
                   const Gap(12),
                   Text(
-                    isCurrentUser ? 'No posts to show yet' : 'No posts yet',
+                    isCurrentUser
+                        ? context.l10n.noPostsToShow
+                        : context.l10n.noPostsYet,
                     style: theme.textTheme.titleMedium!.copyWith(
                       fontWeight: FontWeight.w700,
                     ),
@@ -76,8 +79,8 @@ class ProfilePostsListTab extends StatelessWidget {
                   const Gap(6),
                   Text(
                     isCurrentUser
-                        ? 'Share your thoughts with your friends.'
-                        : 'This person hasn’t shared anything yet.',
+                        ? context.l10n.shareYourThoughtsWith
+                        : context.l10n.thisPersonHasntShared,
                     textAlign: TextAlign.center,
                     style: theme.textTheme.bodySmall!.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,

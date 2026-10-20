@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 enum CallControlVariant { neutral, warning, dangerSolid }
 
@@ -93,7 +94,7 @@ class _CallControlButtonState extends State<CallControlButton>
               color: Colors.white,
               fontSize: labelSize,
               fontWeight: FontWeight.w600,
-              letterSpacing: 0.4,
+              letterSpacing: context.ls(0.4),
             ),
           ),
         ],

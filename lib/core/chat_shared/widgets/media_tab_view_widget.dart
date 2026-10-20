@@ -16,6 +16,7 @@ import 'shared_images_grid.dart';
 import 'video_thumbnail_grid.dart';
 import 'voice_grid_tile.dart';
 import 'voice_message_grid.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class MediaTabView extends StatefulWidget {
   final SharedMediaTab tab;
@@ -58,7 +59,9 @@ class _MediaTabViewState extends State<MediaTabView>
           };
         }
         if (items.isEmpty) {
-          return Center(child: Text('No ${_labelFor(widget.tab)} shared yet'));
+          return Center(
+            child: Text(context.l10n.noSharedYet(_labelFor(widget.tab))),
+          );
         }
 
         return switch (widget.tab) {
@@ -93,7 +96,7 @@ class _MediaTabViewState extends State<MediaTabView>
     SharedMediaTab.all => 'media',
     SharedMediaTab.images => 'images',
     SharedMediaTab.videos => 'videos',
-    SharedMediaTab.voice => 'voice messages',
+    SharedMediaTab.voice => context.l10n.voiceMessages,
     SharedMediaTab.links => 'links',
   };
 }
@@ -117,23 +120,23 @@ class _AllMediaGrid extends StatelessWidget {
         final isVoice = (item.voiceUrl ?? '').isNotEmpty;
 
         VoidCallback? onOpen;
-        String openLabel = 'Open';
+        String openLabel = context.l10n.open;
         IconData openIcon = Icons.open_in_full_rounded;
 
         if (item.messageType == 'image') {
           onOpen =
               () => MediaActionHelper.openFullScreenMedia(context, items, item);
-          openLabel = 'View photo';
+          openLabel = context.l10n.viewPhoto;
           openIcon = Icons.image_outlined;
         } else if (item.messageType == 'video') {
           onOpen =
               () => MediaActionHelper.openFullScreenMedia(context, items, item);
-          openLabel = 'Play video';
+          openLabel = context.l10n.playVideo;
           openIcon = Icons.play_circle_outline_rounded;
         } else if (isVoice) {
           onOpen =
               () => MediaActionHelper.openFullScreenMedia(context, items, item);
-          openLabel = 'Play voice message';
+          openLabel = context.l10n.playVoiceMessage;
           openIcon = Icons.mic_none_rounded;
         }
 

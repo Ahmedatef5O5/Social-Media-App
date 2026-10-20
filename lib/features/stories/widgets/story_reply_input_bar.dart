@@ -18,6 +18,7 @@ import '../../single_chats/widgets/full_screen_media_view.dart';
 import '../cubits/story_reply_cubit/story_reply_cubit.dart';
 import '../helpers/story_reaction_btn.dart';
 import '../models/story_model.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class StoryReplyInputBar extends StatefulWidget {
   final StoryModel story;
@@ -75,14 +76,14 @@ class _StoryReplyInputBarState extends State<StoryReplyInputBar> {
           _pickedFile = attachment.localFile;
           _remoteMediaUrl = null;
           _pickedType = 'image';
-          _pickedFileName = attachment.fileName ?? 'Photo';
+          _pickedFileName = attachment.fileName ?? context.l10n.photo;
           _pickedFileSizeBytes = attachment.fileSizeBytes;
           break;
         case AttachmentKind.video:
           _pickedFile = attachment.localFile;
           _remoteMediaUrl = null;
           _pickedType = 'video';
-          _pickedFileName = attachment.fileName ?? 'Video';
+          _pickedFileName = attachment.fileName ?? context.l10n.video;
           _pickedFileSizeBytes = attachment.fileSizeBytes;
           break;
         case AttachmentKind.gif:
@@ -96,7 +97,7 @@ class _StoryReplyInputBarState extends State<StoryReplyInputBar> {
           _pickedFile = null;
           _remoteMediaUrl = attachment.remoteUrl;
           _pickedType = 'sticker';
-          _pickedFileName = 'Sticker';
+          _pickedFileName = context.l10n.sticker;
           _pickedFileSizeBytes = null;
           break;
         default:
@@ -212,7 +213,7 @@ class _StoryReplyInputBarState extends State<StoryReplyInputBar> {
           widget.onSent();
           context.read<StoryReplyCubit>().reset();
         } else if (state is StoryReplyFailed) {
-          AppToast.error('Failed to send reply: ${state.message}');
+          AppToast.error(context.l10n.failedToSendReply(state.message));
           context.read<StoryReplyCubit>().reset();
         }
       },
@@ -320,7 +321,7 @@ class _StoryReplyInputBarState extends State<StoryReplyInputBar> {
                   vertical: 10,
                   horizontal: 4,
                 ),
-                hintText: "Reply to ${widget.story.authorName}'s story…",
+                hintText: context.l10n.replyToSStory(widget.story.authorName),
                 hintStyle: TextStyle(
                   color: Colors.white.withValues(alpha: 0.65),
                   fontSize: 13.5,
@@ -409,14 +410,14 @@ class _StoryReplyInputBarState extends State<StoryReplyInputBar> {
     final size = _formatFileSize(_pickedFileSizeBytes);
     final subtitle =
         _pickedType == 'gif'
-            ? 'GIF Animation'
+            ? context.l10n.gifAnimation
             : _pickedType == 'sticker'
-            ? 'Sticker'
+            ? context.l10n.sticker
             : (ext.isNotEmpty && size.isNotEmpty)
             ? '$ext · $size'
             : size.isNotEmpty
             ? size
-            : (isVideo ? 'Video' : 'Photo');
+            : (isVideo ? context.l10n.video : context.l10n.photo);
 
     return Container(
       width: double.infinity,
@@ -479,7 +480,7 @@ class _StoryReplyInputBarState extends State<StoryReplyInputBar> {
               children: [
                 Text(
                   _pickedFileName ??
-                      (_pickedType?.toUpperCase() ?? 'Attachment'),
+                      (_pickedType?.toUpperCase() ?? context.l10n.attachment2),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(

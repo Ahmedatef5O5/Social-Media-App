@@ -5,6 +5,7 @@ import '../cubits/shared_media_cubit/shared_media_cubit.dart';
 import '../helpers/shared_media_preview_skeleton.dart';
 import '../views/shared_media_view.dart';
 import 'media_preview_tile.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class SharedMediaPreviewSection extends StatelessWidget {
   final SharedMediaCubit mediaCubit;
@@ -38,8 +39,8 @@ class SharedMediaPreviewSection extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  const Text(
-                    'Media, links, and docs',
+                  Text(
+                    context.l10n.mediaLinksAndDocs,
                     style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
                   ),
                   const Spacer(),
@@ -55,7 +56,7 @@ class SharedMediaPreviewSection extends StatelessWidget {
                           ),
                         ),
                     child: Text(
-                      'See all',
+                      context.l10n.seeAll,
                       style: Theme.of(context).textTheme.titleSmall!.copyWith(
                         color: Theme.of(
                           context,

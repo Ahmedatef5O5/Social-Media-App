@@ -10,6 +10,7 @@ import 'package:social_media_app/features/stickers/widgets/sticker_send_picker_s
 import '../utils/video_attachment_meta.dart';
 import 'attachment_kind.dart';
 import 'picked_attachment.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class AttachmentPickerSheet extends StatelessWidget {
   final bool showVoiceOption;
@@ -64,28 +65,28 @@ class AttachmentPickerSheet extends StatelessWidget {
     final options = <_AttachmentOption>[
       _AttachmentOption(
         icon: Icons.image_rounded,
-        label: 'Gallery',
+        label: context.l10n.gallery,
         color: Colors.purple,
         onTap: () => _pickImage(context),
       ),
       if (showVideoOption)
         _AttachmentOption(
           icon: Icons.videocam_rounded,
-          label: 'Video',
+          label: context.l10n.video,
           color: Colors.redAccent,
           onTap: () => _pickVideo(context),
         ),
       if (showFileOption)
         _AttachmentOption(
           icon: Icons.insert_drive_file_rounded,
-          label: 'File',
+          label: context.l10n.file,
           color: Colors.blueAccent,
           onTap: () => _pickFile(context),
         ),
       if (showVoiceOption)
         _AttachmentOption(
           icon: Icons.mic_rounded,
-          label: 'Voice',
+          label: context.l10n.voice,
           color: Colors.orange,
           onTap: () => _recordVoice(context),
         ),
@@ -99,14 +100,14 @@ class AttachmentPickerSheet extends StatelessWidget {
       if (showStickerOption)
         _AttachmentOption(
           icon: Icons.emoji_emotions_rounded,
-          label: 'Sticker',
+          label: context.l10n.sticker,
           color: Colors.pinkAccent,
           onTap: () => _pickSticker(context),
         ),
       if (showCameraOption)
         _AttachmentOption(
           icon: Icons.camera_alt_rounded,
-          label: 'Camera',
+          label: context.l10n.camera,
           color: Colors.green,
           onTap: () => _takePhoto(context),
         ),

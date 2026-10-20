@@ -17,7 +17,10 @@ class TwoFactorFailure implements Exception {
   const TwoFactorFailure(this.kind, this.message);
 
   const TwoFactorFailure.unknown()
-    : this(TwoFactorFailureKind.unknown, 'Something went wrong. Please try again.');
+    : this(
+        TwoFactorFailureKind.unknown,
+        'Something went wrong. Please try again.',
+      );
 
   const TwoFactorFailure.noFactor()
     : this(

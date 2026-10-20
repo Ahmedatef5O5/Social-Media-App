@@ -9,6 +9,7 @@ import '../../helpers/content_deep_link_navigator.dart';
 import '../../helpers/emoji_helper.dart';
 import '../../notifications/notification_navigator_key.dart';
 import '../models/mention_ref.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class MentionRichText extends StatefulWidget {
   final String text;
@@ -329,8 +330,9 @@ class _MentionRichTextState extends State<MentionRichText> {
     };
 
     final isArabicText = direction == TextDirection.rtl;
-    final readMoreLabel = isArabicText ? '...قراءة المزيد' : 'Read more...';
-    final readLessLabel = isArabicText ? 'عرض أقل' : 'Show less';
+    final readMoreLabel =
+        isArabicText ? '...قراءة المزيد' : context.l10n.readMore;
+    final readLessLabel = isArabicText ? 'عرض أقل' : context.l10n.showLess;
 
     if (widget.maxLines != null) {
       return Text.rich(

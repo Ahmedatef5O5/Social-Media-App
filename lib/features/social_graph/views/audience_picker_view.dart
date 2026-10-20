@@ -4,6 +4,7 @@ import 'package:social_media_app/core/widgets/custom_loading_indicator.dart';
 import '../../../core/presence/widgets/presence_avatar_widget.dart';
 import '../../../core/widgets/app_avatar.dart';
 import '../services/connections_service.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class AudiencePickerView extends StatefulWidget {
   final Set<String> initialSelectedIds;
@@ -52,7 +53,7 @@ class _AudiencePickerViewState extends State<AudiencePickerView> {
       debugPrint('AudiencePickerView load error: $e');
       if (mounted) {
         setState(() {
-          _errorMessage = 'Failed to load your connections.';
+          _errorMessage = context.l10n.failedToLoadYour2;
           _isLoading = false;
         });
       }
@@ -90,13 +91,13 @@ class _AudiencePickerViewState extends State<AudiencePickerView> {
           centerTitle: true,
           title: Column(
             children: [
-              const Text(
-                'Select People',
+              Text(
+                context.l10n.selectPeople,
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
               ),
               if (_selectedIds.isNotEmpty)
                 Text(
-                  '${_selectedIds.length} selected',
+                  context.l10n.selected4(_selectedIds.length),
                   style: TextStyle(
                     color: theme.primaryColor,
                     fontSize: 12,
@@ -119,7 +120,7 @@ class _AudiencePickerViewState extends State<AudiencePickerView> {
                   controller: _searchController,
                   onChanged: (value) => setState(() => _searchQuery = value),
                   decoration: InputDecoration(
-                    hintText: 'Search friends...',
+                    hintText: context.l10n.searchFriends,
                     hintStyle: const TextStyle(color: Colors.grey),
                     prefixIcon: const Icon(
                       CupertinoIcons.search,
@@ -174,8 +175,8 @@ class _AudiencePickerViewState extends State<AudiencePickerView> {
                       ),
                       child: Text(
                         _selectedIds.isEmpty
-                            ? 'Done'
-                            : 'Done (${_selectedIds.length})',
+                            ? context.l10n.done
+                            : context.l10n.done2(_selectedIds.length),
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
@@ -218,7 +219,7 @@ class _AudiencePickerViewState extends State<AudiencePickerView> {
             ElevatedButton.icon(
               onPressed: _load,
               icon: const Icon(Icons.refresh),
-              label: const Text('Retry'),
+              label: Text(context.l10n.retry),
               style: ElevatedButton.styleFrom(
                 backgroundColor: theme.primaryColor.withValues(alpha: 0.1),
                 foregroundColor: theme.primaryColor,
@@ -250,13 +251,13 @@ class _AudiencePickerViewState extends State<AudiencePickerView> {
                 ),
               ),
               const SizedBox(height: 24),
-              const Text(
-                "No Connections Yet",
+              Text(
+                context.l10n.noConnectionsYet,
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 12),
-              const Text(
-                "Add some friends or followers first so you can share private posts with them.",
+              Text(
+                context.l10n.addSomeFriendsOr,
                 textAlign: TextAlign.center,
                 style: TextStyle(color: Colors.grey, height: 1.5),
               ),
@@ -267,9 +268,9 @@ class _AudiencePickerViewState extends State<AudiencePickerView> {
     }
 
     if (displayedConnections.isEmpty) {
-      return const Center(
+      return Center(
         child: Text(
-          "No users found.",
+          context.l10n.noUsersFound2,
           style: TextStyle(color: Colors.grey, fontSize: 16),
         ),
       );

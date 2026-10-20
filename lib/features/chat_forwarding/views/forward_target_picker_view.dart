@@ -9,6 +9,7 @@ import '../../group_chats/models/group_model.dart';
 import '../../group_chats/services/group_chat_services.dart';
 import '../../social_graph/services/connections_service.dart';
 import '../models/forward_target_selection.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class ForwardTargetPickerView extends StatefulWidget {
   final int messageCount;
@@ -67,7 +68,7 @@ class _ForwardTargetPickerViewState extends State<ForwardTargetPickerView> {
       debugPrint('ForwardTargetPickerView load error: $e');
       if (mounted) {
         setState(() {
-          _errorMessage = 'Failed to load your chats.';
+          _errorMessage = context.l10n.failedToLoadYour;
           _isLoading = false;
         });
       }
@@ -131,7 +132,7 @@ class _ForwardTargetPickerViewState extends State<ForwardTargetPickerView> {
           title: Column(
             children: [
               Text(
-                'Forward ${widget.messageCount > 1 ? '${widget.messageCount} messages' : 'message'}',
+                context.l10n.forwardNMessages(widget.messageCount),
                 style: const TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 18,
@@ -139,7 +140,7 @@ class _ForwardTargetPickerViewState extends State<ForwardTargetPickerView> {
               ),
               if (_totalSelected > 0)
                 Text(
-                  '$_totalSelected selected',
+                  context.l10n.selected3(_totalSelected),
                   style: TextStyle(
                     color: theme.primaryColor,
                     fontSize: 12,
@@ -163,7 +164,7 @@ class _ForwardTargetPickerViewState extends State<ForwardTargetPickerView> {
                   controller: _searchController,
                   onChanged: (value) => setState(() => _searchQuery = value),
                   decoration: InputDecoration(
-                    hintText: 'Search people or groups...',
+                    hintText: context.l10n.searchPeopleOrGroups,
                     hintStyle: const TextStyle(color: Colors.grey),
                     prefixIcon: const Icon(
                       CupertinoIcons.search,
@@ -235,7 +236,9 @@ class _ForwardTargetPickerViewState extends State<ForwardTargetPickerView> {
                         ),
                       ),
                       child: Text(
-                        _totalSelected == 0 ? 'Send' : 'Send ($_totalSelected)',
+                        _totalSelected == 0
+                            ? context.l10n.send2
+                            : context.l10n.send(_totalSelected),
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
@@ -279,7 +282,7 @@ class _ForwardTargetPickerViewState extends State<ForwardTargetPickerView> {
             ElevatedButton.icon(
               onPressed: _load,
               icon: const Icon(Icons.refresh),
-              label: const Text('Retry'),
+              label: Text(context.l10n.retry),
               style: ElevatedButton.styleFrom(
                 backgroundColor: theme.primaryColor.withValues(alpha: 0.1),
                 foregroundColor: theme.primaryColor,
@@ -317,11 +320,11 @@ class _ForwardTargetPickerViewState extends State<ForwardTargetPickerView> {
         ],
 
         if (!showAi && displayedGroups.isEmpty && displayedPeople.isEmpty)
-          const Padding(
+          Padding(
             padding: EdgeInsets.only(top: 40),
             child: Center(
               child: Text(
-                'No results found.',
+                context.l10n.noResultsFound,
                 style: TextStyle(color: Colors.grey, fontSize: 16),
               ),
             ),
@@ -346,13 +349,13 @@ class _ForwardTargetPickerViewState extends State<ForwardTargetPickerView> {
                   ),
                 ),
                 const SizedBox(height: 24),
-                const Text(
-                  'Nowhere to forward yet',
+                Text(
+                  context.l10n.nowhereToForwardYet,
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 12),
-                const Text(
-                  'Add friends, follow people, or join a group first.',
+                Text(
+                  context.l10n.addFriendsFollowPeople,
                   textAlign: TextAlign.center,
                   style: TextStyle(color: Colors.grey, height: 1.5),
                 ),
@@ -372,7 +375,7 @@ class _ForwardTargetPickerViewState extends State<ForwardTargetPickerView> {
           fontSize: 13,
           fontWeight: FontWeight.w700,
           color: theme.primaryColor,
-          letterSpacing: 0.3,
+          letterSpacing: context.ls(0.3),
         ),
       ),
     );
@@ -428,7 +431,7 @@ class _ForwardTargetPickerViewState extends State<ForwardTargetPickerView> {
                 ),
               ),
               const SizedBox(width: 14),
-              const Expanded(
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -440,7 +443,7 @@ class _ForwardTargetPickerViewState extends State<ForwardTargetPickerView> {
                       ),
                     ),
                     Text(
-                      'Ask the AI assistant about this',
+                      context.l10n.askTheAiAssistant,
                       style: TextStyle(fontSize: 12.5, color: Colors.grey),
                     ),
                   ],

@@ -13,6 +13,7 @@ import 'post_interactions_row.dart';
 import 'post_media_widget.dart';
 import 'post_txt_content_widget.dart';
 import 'shared_post_header_widget.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class PostItemWidget extends StatelessWidget {
   final PostModel currPost;
@@ -128,7 +129,10 @@ class PostItemWidget extends StatelessWidget {
                             sharedPost: currentPost,
                             currentUserId: currentUserId,
                             postsCubit: postsCubit,
-                            contentLabel: isSharedReel ? 'a reel' : 'a post',
+                            contentLabel:
+                                isSharedReel
+                                    ? context.l10n.aReel
+                                    : context.l10n.aPost,
                             trailingAction: HeaderTrailingAction.moreActions,
                             showPinAction: canPin,
                             showPinnedBadge: showPinnedBadge,

@@ -18,6 +18,7 @@ import '../../../core/toast/app_toast.dart';
 import '../../../core/widgets/custom_confirmation_dialog.dart';
 import '../../posts/cubits/posts_cubit/posts_cubit.dart';
 import '../../stories/cubits/stories_cubit/stories_cubit.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class EditProfileView extends StatefulWidget {
   final UserData? userData;
@@ -129,7 +130,10 @@ class _EditProfileViewState extends State<EditProfileView> {
       ),
       builder:
           (context) => ImagePickerBottomSheet(
-            title: isProfile ? 'Edit Profile Picture' : 'Edit Cover Photo',
+            title:
+                isProfile
+                    ? context.l10n.editProfilePicture
+                    : context.l10n.editCoverPhoto,
             showRemoveOption: hasCustomPhoto,
             onEditImage:
                 (isProfile ? selectedProfileImage : selectedBackgroundImage) !=
@@ -248,7 +252,7 @@ class _EditProfileViewState extends State<EditProfileView> {
             );
           } catch (_) {}
 
-          AppToast.success('Profile Updated Successfully');
+          AppToast.success(context.l10n.profileUpdatedSuccessfully);
           await Future.delayed(const Duration(milliseconds: 550));
           if (!context.mounted) return;
           Navigator.of(context).pop(updated);
@@ -369,11 +373,11 @@ class _EditProfileViewState extends State<EditProfileView> {
       context: context,
       builder:
           (context) => CustomConfirmationDialog(
-            title: 'You have unsaved changes. Do you want to discard them?',
+            title: context.l10n.youHaveUnsavedChanges,
             textAlign: TextAlign.center,
             img: AppImages.alertAnimationLot,
-            confirmBtnText: 'Discard',
-            cancelBtnText: 'Cancel',
+            confirmBtnText: context.l10n.discard,
+            cancelBtnText: context.l10n.cancel,
             onConfirm: () {
               Navigator.of(context, rootNavigator: true).pop(true);
             },

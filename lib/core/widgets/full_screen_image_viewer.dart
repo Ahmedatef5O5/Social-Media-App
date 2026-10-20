@@ -13,6 +13,7 @@ import 'package:social_media_app/features/posts/widgets/post_interactions_row.da
 import 'package:social_media_app/features/posts/widgets/post_txt_content_widget.dart';
 import '../helpers/safe_navigator.dart';
 import '../services/gallery_services.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class FullScreenImageViewer extends StatefulWidget {
   const FullScreenImageViewer({super.key});
@@ -29,7 +30,6 @@ class _FullScreenImageViewerState extends State<FullScreenImageViewer> {
   bool _isSaving = false;
   bool _isZoomed = false;
   String? _editedPath;
-
   bool _overlaysHidden = false;
 
   final _closeGuard = SingleFireGuard();
@@ -150,7 +150,7 @@ class _FullScreenImageViewerState extends State<FullScreenImageViewer> {
 
                             if (isEditable)
                               IconButton(
-                                tooltip: 'Edit',
+                                tooltip: context.l10n.edit,
                                 onPressed: () async {
                                   final newPath = await onEdit!();
                                   if (newPath != null && mounted) {
@@ -206,7 +206,7 @@ class _FullScreenImageViewerState extends State<FullScreenImageViewer> {
                                     },
                                     itemBuilder:
                                         (_) => [
-                                          const PopupMenuItem(
+                                          PopupMenuItem(
                                             value: 'save',
                                             child: Row(
                                               children: [
@@ -217,7 +217,7 @@ class _FullScreenImageViewerState extends State<FullScreenImageViewer> {
                                                 ),
                                                 SizedBox(width: 8),
                                                 Text(
-                                                  'Save to gallery',
+                                                  context.l10n.saveToGallery,
                                                   style: TextStyle(
                                                     color: Colors.black45,
                                                   ),

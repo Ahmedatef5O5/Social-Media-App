@@ -19,6 +19,7 @@ import '../../../core/utilities/file_size_formatter.dart';
 import '../../../core/widgets/app_file_image.dart';
 import '../../../core/widgets/app_network_image.dart';
 import '../../single_chats/widgets/full_screen_media_view.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class CommentAttachmentPreview extends StatelessWidget {
   const CommentAttachmentPreview({super.key});
@@ -27,6 +28,8 @@ class CommentAttachmentPreview extends StatelessWidget {
       a.localFile != null &&
       (a.type == CommentType.image || a.type == CommentType.video);
 
+  /// Optional edit of the PENDING attachment only. Re-stages the draft with the
+  /// edited / trimmed file; cancelling leaves the draft untouched.
   Future<void> _edit(BuildContext context, CommentAttachmentDraft a) async {
     final cubit = context.read<CommentsCubit>();
     final file = a.localFile!;
@@ -370,7 +373,7 @@ class _PreviewInfo extends StatelessWidget {
               ),
               const SizedBox(width: 4),
               Text(
-                '🎤 voice',
+                context.l10n.voice2,
                 style: theme.textTheme.bodySmall?.copyWith(
                   fontWeight: FontWeight.w600,
                 ),
@@ -390,7 +393,7 @@ class _PreviewInfo extends StatelessWidget {
         final fileName =
             attachment.fileName?.trim().isNotEmpty == true
                 ? attachment.fileName!
-                : 'File';
+                : context.l10n.file;
         final ext = _getFileExtension();
         final sizeStr = _formatSize(attachment.fileSizeBytes);
 
@@ -429,7 +432,7 @@ class _PreviewInfo extends StatelessWidget {
                       color: isDark ? Colors.white : theme.primaryColor,
                       fontSize: 8.5,
                       fontWeight: FontWeight.w800,
-                      letterSpacing: 0.4,
+                      letterSpacing: context.ls(0.4),
                     ),
                   ),
                 ),
@@ -451,7 +454,7 @@ class _PreviewInfo extends StatelessWidget {
 
       case CommentType.image:
         return Text(
-          'Photo',
+          context.l10n.photo,
           style: theme.textTheme.bodyMedium?.copyWith(
             fontWeight: FontWeight.w600,
           ),
@@ -462,7 +465,7 @@ class _PreviewInfo extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              'Video',
+              context.l10n.video,
               style: theme.textTheme.bodyMedium?.copyWith(
                 fontWeight: FontWeight.w600,
               ),
@@ -482,7 +485,7 @@ class _PreviewInfo extends StatelessWidget {
 
       case CommentType.sticker:
         return Text(
-          'Sticker',
+          context.l10n.sticker,
           style: theme.textTheme.bodyMedium?.copyWith(
             fontWeight: FontWeight.w600,
           ),

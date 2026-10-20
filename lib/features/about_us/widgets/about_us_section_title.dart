@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class AboutUsSectionTitle extends StatelessWidget {
   final String title;
@@ -17,7 +18,7 @@ class AboutUsSectionTitle extends StatelessWidget {
       style: TextStyle(
         fontSize: 20,
         fontWeight: FontWeight.w800,
-        letterSpacing: -0.5,
+        letterSpacing: context.ls(-0.5),
         color: isDark ? Colors.white : Colors.black87,
       ),
     );

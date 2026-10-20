@@ -16,6 +16,7 @@ import 'package:social_media_app/features/settings/repository/settings_repositor
 import 'package:social_media_app/features/single_chats/services/chat_services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
+import 'package:social_media_app/core/localization/app_l10n.dart';
 
 class _StoredMessage {
   final String text;
@@ -180,8 +181,8 @@ class ChatNotificationDispatcher {
         AndroidNotificationAction(
           'reply_action',
           'Reply',
-          inputs: const [
-            AndroidNotificationActionInput(label: 'Type a message...'),
+          inputs: [
+            AndroidNotificationActionInput(label: AppL10n.current.typeAMessage),
           ],
           showsUserInterface: false,
           cancelNotification: false,

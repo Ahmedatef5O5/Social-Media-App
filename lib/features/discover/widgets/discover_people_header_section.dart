@@ -5,6 +5,7 @@ import '../../../core/router/app_routes.dart';
 import '../../profile/cubits/profile_cubit/profile_cubit.dart';
 import '../cubits/discover_people_cubit.dart';
 import '../views/discover_people_search_view.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class DiscoverPeopleHeaderSection extends StatelessWidget {
   const DiscoverPeopleHeaderSection({super.key});
@@ -23,7 +24,7 @@ class DiscoverPeopleHeaderSection extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Discover People',
+                  context.l10n.discoverPeople,
                   style: theme.textTheme.titleLarge!.copyWith(
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
@@ -31,7 +32,7 @@ class DiscoverPeopleHeaderSection extends StatelessWidget {
                 ),
                 const Gap(2),
                 Text(
-                  'People you may know',
+                  context.l10n.peopleYouMayKnow,
                   style: theme.textTheme.bodySmall!.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                     fontSize: 13,

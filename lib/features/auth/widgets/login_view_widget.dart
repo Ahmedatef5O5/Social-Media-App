@@ -10,6 +10,7 @@ import '../../../core/router/app_routes.dart';
 import '../../../core/toast/app_toast.dart';
 import '../../../core/utilities/app_formatters.dart';
 import '../../../core/utilities/app_validators.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class LoginViewWidget extends StatefulWidget {
   const LoginViewWidget({super.key});
@@ -45,8 +46,8 @@ class _LoginViewWidgetState extends State<LoginViewWidget> {
               CustomTextFormField(
                 prefixIcon: const Icon(Icons.email_rounded),
                 controller: _emailController,
-                labelText: 'Email',
-                hintText: 'Enter Email',
+                labelText: context.l10n.email,
+                hintText: context.l10n.enterEmail,
                 inputFormatters: AppFormatters.noSpaces,
                 validator: AppValidators.validateEmail,
               ),
@@ -54,15 +55,15 @@ class _LoginViewWidgetState extends State<LoginViewWidget> {
               CustomTextFormField(
                 prefixIcon: const Icon(Icons.lock_rounded),
                 controller: _passwordController,
-                labelText: 'Password',
-                hintText: 'Enter password',
+                labelText: context.l10n.password,
+                hintText: context.l10n.enterPassword,
                 isPassword: true,
                 validator: AppValidators.validatePassword,
               ),
               const Gap(12),
-              const Align(
+              Align(
                 alignment: Alignment.topRight,
-                child: Text('Forgot Password?'),
+                child: Text(context.l10n.forgotPassword),
               ),
               const Gap(42),
               BlocConsumer<AuthCubit, AuthState>(
@@ -80,7 +81,7 @@ class _LoginViewWidgetState extends State<LoginViewWidget> {
                     return;
                   }
                   if (state is AuthSuccess) {
-                    AppToast.success('Login Successfully');
+                    AppToast.success(context.l10n.loginSuccessfully);
                     await Future.delayed(const Duration(milliseconds: 550));
                     if (context.mounted) {
                       Navigator.of(
@@ -121,7 +122,7 @@ class _LoginViewWidgetState extends State<LoginViewWidget> {
                 },
               ),
               const Gap(14),
-              const SocialSignSection(label: 'Or Sign in with'),
+              SocialSignSection(label: context.l10n.orSignInWith),
               const Gap(22),
               SignTextSection(
                 staticText: 'Don\'t  have an account?',

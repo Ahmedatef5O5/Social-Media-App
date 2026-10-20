@@ -21,6 +21,8 @@ import '../../../core/widgets/calls/call_avatar_backdrop.dart';
 import '../models/group_call_model.dart';
 import '../services/group_call_signaling_service.dart';
 import '../widgets/group_call_members_sheet.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
+import 'package:social_media_app/core/localization/app_l10n.dart';
 
 class LiveKitGroupCallView extends StatefulWidget {
   final GroupCallModel call;
@@ -220,8 +222,8 @@ class _LiveKitGroupCallViewState extends State<LiveKitGroupCallView> {
 
       await CallForegroundService.start(
         serviceId: 102,
-        title: 'Ongoing Group Call',
-        text: 'Tap to return to the group call',
+        title: context.l10n.ongoingGroupCall,
+        text: context.l10n.tapToReturnTo,
         isVideo: widget.call.type == GroupCallType.video,
       );
     } catch (e, st) {
@@ -509,12 +511,12 @@ class _LiveKitGroupCallViewState extends State<LiveKitGroupCallView> {
               children: [
                 const Icon(Icons.error_outline, color: Colors.red, size: 48),
                 const SizedBox(height: 12),
-                const Text('The call could not be initiated.'),
+                Text(context.l10n.theCallCouldNot),
                 const SizedBox(height: 8),
                 ElevatedButton(
                   onPressed:
                       () => CallTerminationService.popRouteIfActive(context),
-                  child: const Text('Back'),
+                  child: Text(context.l10n.back),
                 ),
               ],
             ),
@@ -570,7 +572,9 @@ class _LiveKitGroupCallViewState extends State<LiveKitGroupCallView> {
   Widget _buildTopBar(bool isConnectingUi) {
     final label =
         isConnectingUi
-            ? (widget.isJoining ? 'Joining...' : 'Connecting...')
+            ? (widget.isJoining
+                ? context.l10n.joining
+                : context.l10n.connecting)
             : _durationText;
 
     return Padding(
@@ -784,7 +788,7 @@ class _LiveKitGroupCallViewState extends State<LiveKitGroupCallView> {
           isConnectingUi,
           CallControlButton(
             icon: _micEnabled ? Icons.mic_rounded : Icons.mic_off_rounded,
-            label: _micEnabled ? 'Mute' : 'Unmute',
+            label: _micEnabled ? context.l10n.mute : context.l10n.unmute,
             variant:
                 _micEnabled
                     ? CallControlVariant.neutral
@@ -801,7 +805,7 @@ class _LiveKitGroupCallViewState extends State<LiveKitGroupCallView> {
                   _cameraEnabled
                       ? Icons.videocam_rounded
                       : Icons.videocam_off_rounded,
-              label: _cameraEnabled ? 'Camera' : 'Off',
+              label: _cameraEnabled ? context.l10n.camera : context.l10n.off,
               variant:
                   _cameraEnabled
                       ? CallControlVariant.neutral
@@ -815,14 +819,14 @@ class _LiveKitGroupCallViewState extends State<LiveKitGroupCallView> {
             isConnectingUi,
             CallControlButton(
               icon: Icons.cameraswitch_rounded,
-              label: 'Flip',
+              label: context.l10n.flip,
               size: buttonSize,
               onTap: _switchCamera,
             ),
           ),
         CallControlButton(
           icon: Icons.call_end_rounded,
-          label: 'End',
+          label: context.l10n.end,
           variant: CallControlVariant.dangerSolid,
           size: buttonSize,
           emphasized: true,
@@ -887,12 +891,12 @@ class _ParticipantTile extends StatelessWidget {
   }
 
   String _label(_ParticipantProfile? profile) {
-    if (isMe) return 'You';
+    if (isMe) return AppL10n.current.you;
     final liveKitName = participant?.name ?? '';
     if (liveKitName.isNotEmpty) return liveKitName;
     final resolved = profile?.name ?? '';
     if (resolved.isNotEmpty) return resolved;
-    return 'Member';
+    return AppL10n.current.member;
   }
 
   @override

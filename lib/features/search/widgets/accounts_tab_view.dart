@@ -14,6 +14,7 @@ import '../../social_graph/models/discover_person_model.dart';
 import '../utils/accounts_skeleton_list.dart';
 import '../utils/error_search_state.dart';
 import '../utils/search_view_metrics.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class AccountsTabView extends StatefulWidget {
   final ValueListenable<String> searchQuery;
@@ -158,8 +159,8 @@ class _AccountsTabViewState extends State<AccountsTabView>
             const Gap(12),
             Text(
               query.isEmpty
-                  ? 'No accounts to discover yet'
-                  : 'No accounts found for "$query"',
+                  ? context.l10n.noAccountsToDiscover
+                  : context.l10n.noAccountsFoundFor(query),
               textAlign: TextAlign.center,
               style: theme.textTheme.titleMedium!.copyWith(
                 fontWeight: FontWeight.w700,

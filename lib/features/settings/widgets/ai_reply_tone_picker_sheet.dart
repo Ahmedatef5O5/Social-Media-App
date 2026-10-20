@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../ai_assistant/entities/ai_reply_tone.dart';
 import 'ai_setting_option_card.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class AiReplyTonePickerSheet extends StatelessWidget {
   const AiReplyTonePickerSheet({super.key, required this.selected});
@@ -79,11 +80,11 @@ class AiReplyTonePickerSheet extends StatelessWidget {
 
               // Title
               Text(
-                'Reply Tone',
+                context.l10n.replyTone,
                 textAlign: TextAlign.center,
                 style: theme.textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.w800,
-                  letterSpacing: 0.2,
+                  letterSpacing: context.ls(0.2),
                 ),
               ),
               const SizedBox(height: 6),
@@ -92,7 +93,7 @@ class AiReplyTonePickerSheet extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: Text(
-                  'What tone should AI-generated captions and replies use?',
+                  context.l10n.whatToneShouldAi,
                   textAlign: TextAlign.center,
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,

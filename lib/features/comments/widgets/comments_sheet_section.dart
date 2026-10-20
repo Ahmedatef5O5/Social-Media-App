@@ -20,6 +20,7 @@ import 'ai_comment_suggestions_row.dart';
 import 'comment_typing_row.dart';
 import 'new_comments_pill.dart';
 import 'package:social_media_app/core/mentions/mentions.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class CommentsSheetSection extends StatefulWidget {
   final String postId;
@@ -260,6 +261,7 @@ class _CommentsSheetSectionState extends State<CommentsSheetSection> {
         widget.post;
 
     if (post == null) {
+      // If post is not cached anywhere, fallback gracefully to loading state with a timeout or empty post placeholder
       return const SizedBox(height: 300, child: CustomLoadingIndicator());
     }
 
@@ -444,7 +446,7 @@ class _CommentsSheetSectionState extends State<CommentsSheetSection> {
                                                 ),
                                                 const SizedBox(width: 8),
                                                 Text(
-                                                  'Comments',
+                                                  context.l10n.comments,
                                                   style: theme
                                                       .textTheme
                                                       .titleLarge
@@ -454,7 +456,8 @@ class _CommentsSheetSectionState extends State<CommentsSheetSection> {
                                                         color:
                                                             colorScheme
                                                                 .onSurface,
-                                                        letterSpacing: -0.4,
+                                                        letterSpacing: context
+                                                            .ls(-0.4),
                                                       ),
                                                 ),
                                                 const SizedBox(width: 12),

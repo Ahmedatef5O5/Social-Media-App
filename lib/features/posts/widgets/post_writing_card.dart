@@ -7,6 +7,7 @@ import 'package:social_media_app/core/router/app_routes.dart';
 import 'package:social_media_app/core/widgets/main_user_avatar.dart';
 import 'package:social_media_app/features/home/cubits/home_cubit/home_cubit.dart';
 import '../cubits/posts_cubit/posts_cubit.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class PostWritingCard extends StatelessWidget {
   const PostWritingCard({super.key});
@@ -92,14 +93,14 @@ class PostWritingCard extends StatelessWidget {
                     const Gap(12),
                     Expanded(
                       child: Text(
-                        'What\'s on your mind?',
+                        context.l10n.whatsOnYourMind,
                         style: theme.textTheme.titleMedium!.copyWith(
                           color: colorScheme.onSurfaceVariant.withValues(
                             alpha: 0.7,
                           ),
                           fontWeight: FontWeight.w500,
                           fontSize: isSmallScreen ? 14 : 15,
-                          letterSpacing: 0.2,
+                          letterSpacing: context.ls(0.2),
                         ),
                         overflow: TextOverflow.ellipsis,
                       ),

@@ -15,6 +15,7 @@ import '../cubits/account_security_cubit.dart';
 import '../utils/resend_cooldown.dart';
 import '../widgets/settings_detail_sliver_app_bar.dart';
 import '../widgets/settings_surface_card.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class ChangePasswordView extends StatefulWidget {
   const ChangePasswordView({super.key});
@@ -78,19 +79,16 @@ class _ChangePasswordViewState extends State<ChangePasswordView> {
       context: context,
       builder:
           (ctx) => AlertDialog(
-            title: const Text('Send reset link?'),
-            content: Text(
-              'Send a password reset link to $email?\n\n'
-              'You will stay signed in on this device.',
-            ),
+            title: Text(context.l10n.sendResetLink),
+            content: Text(context.l10n.sendAPasswordReset(email)),
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(ctx).pop(false),
-                child: const Text('Cancel'),
+                child: Text(context.l10n.cancel),
               ),
               TextButton(
                 onPressed: () => Navigator.of(ctx).pop(true),
-                child: const Text('Send link'),
+                child: Text(context.l10n.sendLink),
               ),
             ],
           ),
@@ -105,14 +103,14 @@ class _ChangePasswordViewState extends State<ChangePasswordView> {
     if (state is AccountSecuritySuccess) {
       switch (state.action) {
         case AccountAction.changePassword:
-          AppToast.success('Password changed successfully');
+          AppToast.success(context.l10n.passwordChangedSuccessfully);
           setState(() => _success = true);
           Future<void>.delayed(const Duration(milliseconds: 600), () {
             if (mounted) Navigator.of(context).pop();
           });
         case AccountAction.sendResetLink:
           _resetCooldown.start();
-          AppToast.success('Reset link sent to $_email. Check your inbox.');
+          AppToast.success(context.l10n.resetLinkSentTo(_email ?? ''));
         default:
           break;
       }
@@ -153,20 +151,20 @@ class _ChangePasswordViewState extends State<ChangePasswordView> {
           physics: const ClampingScrollPhysics(),
           keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           slivers: [
-            const SettingsDetailSliverAppBar(
+            SettingsDetailSliverAppBar(
               icon: CupertinoIcons.lock_fill,
-              title: 'Change Password',
-              subtitle: 'Update your account password securely',
+              title: context.l10n.settingsChangePassword,
+              subtitle: context.l10n.updateYourAccountPassword,
             ),
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 40),
                 child:
                     info == null
-                        ? const Padding(
+                        ? Padding(
                           padding: EdgeInsets.only(top: 40),
                           child: Center(
-                            child: Text('Please sign in again to continue.'),
+                            child: Text(context.l10n.pleaseSignInAgain),
                           ),
                         )
                         : _buildForm(context, info),
@@ -202,10 +200,8 @@ class _ChangePasswordViewState extends State<ChangePasswordView> {
                 if (info.isOAuthOnly) ...[
                   SettingsInfoBanner(
                     icon: Icons.link_rounded,
-                    title: 'Linked to ${info.oauthLabel}',
-                    message:
-                        'Your account is linked to ${info.oauthLabel}. '
-                        'You can set a password to enable email login.',
+                    title: context.l10n.linkedTo(info.oauthLabel),
+                    message: context.l10n.yourAccountIsLinked(info.oauthLabel),
                   ),
                   const Gap(20),
                 ],
@@ -213,12 +209,12 @@ class _ChangePasswordViewState extends State<ChangePasswordView> {
                   CustomTextFormField(
                     controller: _currentCtrl,
                     prefixIcon: const Icon(Icons.lock_outline_rounded),
-                    labelText: 'Current Password',
-                    hintText: 'Enter your current password',
+                    labelText: context.l10n.currentPassword,
+                    hintText: context.l10n.enterYourCurrentPassword,
                     isPassword: true,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
-                        return 'Current password is required';
+                        return context.l10n.currentPasswordIsRequired;
                       }
                       return _currentServerError;
                     },
@@ -233,8 +229,8 @@ class _ChangePasswordViewState extends State<ChangePasswordView> {
                           onPressed: disabled ? null : _confirmSendResetLink,
                           child: Text(
                             secs > 0
-                                ? 'Reset link sent · resend in ${secs}s'
-                                : 'Forgot your current password?',
+                                ? context.l10n.resetLinkSentResend(secs)
+                                : context.l10n.forgotYourCurrentPassword,
                             style: const TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
@@ -249,15 +245,15 @@ class _ChangePasswordViewState extends State<ChangePasswordView> {
                 CustomTextFormField(
                   controller: _newCtrl,
                   prefixIcon: const Icon(Icons.lock_reset_rounded),
-                  labelText: 'New Password',
-                  hintText: 'Enter new password',
+                  labelText: context.l10n.newPassword,
+                  hintText: context.l10n.enterNewPassword,
                   isPassword: true,
                   inputFormatters: AppFormatters.noSpaces,
                   validator: (value) {
                     final base = AppValidators.validatePassword(value);
                     if (base != null) return base;
                     if (needsCurrent && value == _currentCtrl.text) {
-                      return 'New password must be different from current password';
+                      return context.l10n.newPasswordMustBe;
                     }
                     return null;
                   },
@@ -279,8 +275,8 @@ class _ChangePasswordViewState extends State<ChangePasswordView> {
                 CustomTextFormField(
                   controller: _confirmCtrl,
                   prefixIcon: const Icon(Icons.check_circle_outline_rounded),
-                  labelText: 'Confirm New Password',
-                  hintText: 'Re-enter new password',
+                  labelText: context.l10n.confirmNewPassword,
+                  hintText: context.l10n.reEnterNewPassword,
                   isPassword: true,
                   inputFormatters: AppFormatters.noSpaces,
                   validator:
@@ -290,15 +286,16 @@ class _ChangePasswordViewState extends State<ChangePasswordView> {
                       ),
                 ),
                 const Gap(24),
-                const SettingsInfoBanner(
+                SettingsInfoBanner(
                   icon: Icons.shield_outlined,
-                  message:
-                      'You will stay signed in on this device. '
-                      'Any other devices will be signed out.',
+                  message: context.l10n.youWillStaySigned,
                 ),
                 const Gap(24),
                 CustomElevatedButton(
-                  txtBtn: needsCurrent ? 'Update Password' : 'Set Password',
+                  txtBtn:
+                      needsCurrent
+                          ? context.l10n.updatePassword
+                          : context.l10n.setPassword,
                   isLoading: changing,
                   isSuccess: _success,
                   onPressed: busy ? null : () => _submit(needsCurrent),

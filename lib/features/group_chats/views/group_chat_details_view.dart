@@ -18,6 +18,7 @@ import '../widgets/group_chat_input_bar_section.dart';
 import '../widgets/group_chat_locked_banner.dart';
 import '../widgets/group_media_preview_screen.dart';
 import '../widgets/group_messages_list.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class GroupChatDetailsView extends StatelessWidget {
   final GroupModel group;
@@ -144,7 +145,7 @@ class _GroupChatDetailsBodyState extends State<_GroupChatDetailsBody> {
           fileSizeBytes: file.lengthSync(),
         );
 
-        AppToast.success('File sent');
+        AppToast.success(context.l10n.fileSent);
         break;
 
       case IncomingShareKind.unsupported:

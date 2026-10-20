@@ -36,16 +36,16 @@ mixin PostPinMixin on Cubit<PostsState> {
     } on PostgrestException catch (e) {
       _setPinned(postId, wasPinned);
       if (e.message.contains('pin_limit_reached')) {
-        AppToast.info('Pin limit reached. Unpin a post first.');
+        AppToast.info(AppL10n.current.pinLimitReachedUnpin);
         return PinResult.limitReached;
       }
       debugPrint('Error pinning post: $e');
-      AppToast.info('Could not update the pin. Please try again.');
+      AppToast.info(AppL10n.current.couldNotUpdateThe);
       return PinResult.failed;
     } catch (e) {
       _setPinned(postId, wasPinned);
       debugPrint('Error pinning post: $e');
-      AppToast.info('Could not update the pin. Please try again.');
+      AppToast.info(AppL10n.current.couldNotUpdateThe);
       return PinResult.failed;
     } finally {
       _pinInFlight.remove(postId);

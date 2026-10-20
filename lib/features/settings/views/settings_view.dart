@@ -5,6 +5,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 import 'package:social_media_app/core/router/app_routes.dart';
 import 'package:social_media_app/features/profile/cubits/profile_cubit/profile_cubit.dart';
+import '../../../core/localization/app_locale.dart';
+import '../../../core/localization/l10n_extension.dart';
 import '../../../core/presence/models/presence_privacy.dart';
 import '../../../core/presence/widgets/presence_privacy_sheet.dart';
 import '../../../core/toast/app_toast.dart';
@@ -12,8 +14,11 @@ import '../../home/cubits/home_cubit/home_cubit.dart';
 import '../../profile/services/user_services.dart';
 import '../../social_graph/views/audience_picker_view.dart';
 import '../../two_factor/widgets/two_factor_disable_sheet.dart';
+import '../cubits/locale_cubit.dart';
 import '../cubits/settings_state.dart';
 import '../cubits/setttings_cubit.dart';
+import '../utils/settings_error_l10n.dart';
+import '../widgets/language_selection_sheet.dart';
 import '../widgets/settings_danger_zone.dart';
 import '../widgets/settings_item_data.dart';
 import '../widgets/settings_section.dart';
@@ -52,24 +57,19 @@ class _SettingsViewState extends State<SettingsView>
           (context) => SettingsCubit(
             userService: context.read<UserService>(),
             homeCubit: context.read<HomeCubit>(),
+            localeCubit: context.read<LocaleCubit>(),
             currentUser: context.read<HomeCubit>().currentUserData,
           ),
       child: BlocConsumer<SettingsCubit, SettingsState>(
-        listenWhen: (previous, current) => current.errorMessage != null,
+        listenWhen: (previous, current) => current.error != null,
         listener: (context, state) {
-          AppToast.error(state.errorMessage!);
+          AppToast.error(context.l10n.settingsErrorMessage(state.error!));
         },
         builder: (context, settingsState) {
           return _buildScaffold(context, settingsState);
         },
       ),
     );
-  }
-
-  void _showComingSoon(BuildContext context, String feature) {
-    HapticFeedback.selectionClick();
-
-    AppToast.info('$feature is coming soon');
   }
 
   void _sendFeedback(BuildContext context) {
@@ -79,6 +79,7 @@ class _SettingsViewState extends State<SettingsView>
 
   Widget _buildScaffold(BuildContext context, SettingsState settingsState) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -93,14 +94,14 @@ class _SettingsViewState extends State<SettingsView>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   SettingsSection(
-                    title: 'Account',
+                    title: l10n.settingsSectionAccount,
                     icon: Icons.manage_accounts_outlined,
                     delay: 0,
                     items: [
                       SettingsItemData(
                         icon: CupertinoIcons.person_fill,
-                        label: 'Edit Profile',
-                        subtitle: 'Update your info and photo',
+                        label: l10n.settingsEditProfile,
+                        subtitle: l10n.settingsEditProfileSubtitle,
                         onTap: () async {
                           final profileCubit = context.read<ProfileCubit>();
                           final profileState = profileCubit.state;
@@ -120,8 +121,8 @@ class _SettingsViewState extends State<SettingsView>
                       ),
                       SettingsItemData(
                         icon: CupertinoIcons.lock_fill,
-                        label: 'Change Password',
-                        subtitle: 'Update your account password',
+                        label: l10n.settingsChangePassword,
+                        subtitle: l10n.settingsChangePasswordSubtitle,
                         onTap:
                             () => Navigator.of(
                               context,
@@ -129,8 +130,8 @@ class _SettingsViewState extends State<SettingsView>
                       ),
                       SettingsItemData(
                         icon: CupertinoIcons.mail_solid,
-                        label: 'Email Address',
-                        subtitle: 'Manage linked email',
+                        label: l10n.settingsEmailAddress,
+                        subtitle: l10n.settingsEmailAddressSubtitle,
                         onTap:
                             () => Navigator.of(
                               context,
@@ -140,14 +141,14 @@ class _SettingsViewState extends State<SettingsView>
                   ),
                   const Gap(10),
                   SettingsSection(
-                    title: 'Notifications',
+                    title: l10n.settingsSectionNotifications,
                     icon: Icons.notifications_outlined,
                     delay: 1,
                     items: [
                       SettingsItemData(
                         icon: Icons.notifications_active_outlined,
-                        label: 'Push Notifications',
-                        subtitle: 'Enable all notifications',
+                        label: l10n.settingsPushNotifications,
+                        subtitle: l10n.settingsPushNotificationsSubtitle,
                         toggle: settingsState.pushNotifications,
                         onToggle:
                             (v) => context
@@ -156,8 +157,8 @@ class _SettingsViewState extends State<SettingsView>
                       ),
                       SettingsItemData(
                         icon: Icons.message_outlined,
-                        label: 'Message Previews',
-                        subtitle: 'Show content in notifications',
+                        label: l10n.settingsMessagePreviews,
+                        subtitle: l10n.settingsMessagePreviewsSubtitle,
                         toggle: settingsState.messagePreviews,
                         onToggle:
                             (v) => context
@@ -166,8 +167,8 @@ class _SettingsViewState extends State<SettingsView>
                       ),
                       SettingsItemData(
                         icon: Icons.call_outlined,
-                        label: 'Call Notifications',
-                        subtitle: 'Incoming call alerts',
+                        label: l10n.settingsCallNotifications,
+                        subtitle: l10n.settingsCallNotificationsSubtitle,
                         toggle: settingsState.callNotifications,
                         onToggle:
                             (v) => context
@@ -178,14 +179,14 @@ class _SettingsViewState extends State<SettingsView>
                   ),
                   const Gap(10),
                   SettingsSection(
-                    title: 'Privacy',
+                    title: l10n.settingsSectionPrivacy,
                     icon: CupertinoIcons.shield_fill,
                     delay: 2,
                     items: [
                       SettingsItemData(
                         icon: Icons.done_all_rounded,
-                        label: 'Read Receipts',
-                        subtitle: 'Show when you\'ve read messages',
+                        label: l10n.settingsReadReceipts,
+                        subtitle: l10n.settingsReadReceiptsSubtitle,
                         toggle: settingsState.readReceipts,
                         onToggle:
                             (v) => context
@@ -194,8 +195,8 @@ class _SettingsViewState extends State<SettingsView>
                       ),
                       SettingsItemData(
                         icon: Icons.circle_outlined,
-                        label: 'Online Status',
-                        subtitle: 'Let others see when you\'re active',
+                        label: l10n.settingsOnlineStatus,
+                        subtitle: l10n.settingsOnlineStatusSubtitle,
                         toggle: settingsState.onlineStatus,
                         onToggle:
                             (v) => context
@@ -205,8 +206,9 @@ class _SettingsViewState extends State<SettingsView>
 
                       SettingsItemData(
                         icon: Icons.visibility_outlined,
-                        label: 'Online Status Visibility',
+                        label: l10n.settingsOnlineStatusVisibility,
                         subtitle: _presencePrivacyLabel(
+                          l10n,
                           settingsState.presencePrivacy,
                         ),
                         enabled: settingsState.onlineStatus,
@@ -219,8 +221,8 @@ class _SettingsViewState extends State<SettingsView>
 
                       SettingsItemData(
                         icon: Icons.fingerprint_rounded,
-                        label: 'App Lock',
-                        subtitle: 'Require fingerprint / Face ID to open app',
+                        label: l10n.settingsAppLock,
+                        subtitle: l10n.settingsAppLockSubtitle,
                         toggle: settingsState.biometricLock,
                         onToggle:
                             (v) => context
@@ -229,13 +231,15 @@ class _SettingsViewState extends State<SettingsView>
                       ),
                       SettingsItemData(
                         icon: CupertinoIcons.lock_shield_fill,
-                        label: 'Two-Factor Auth',
+                        label: l10n.settingsTwoFactor,
                         subtitle:
                             settingsState.twoFactor
                                 ? (settingsState.recoveryCodesCount != null
-                                    ? 'On • ${settingsState.recoveryCodesCount} recovery codes remaining'
-                                    : 'On • Authenticator app')
-                                : 'Extra layer of security',
+                                    ? l10n.settingsTwoFactorOnRecoveryCodes(
+                                      settingsState.recoveryCodesCount!,
+                                    )
+                                    : l10n.settingsTwoFactorOnAuthenticator)
+                                : l10n.settingsTwoFactorOffSubtitle,
                         toggle: settingsState.twoFactor,
                         onToggle: (v) async {
                           if (v) {
@@ -261,8 +265,8 @@ class _SettingsViewState extends State<SettingsView>
                       ),
                       SettingsItemData(
                         icon: Icons.block_outlined,
-                        label: 'Blocked Users',
-                        subtitle: 'Manage blocked accounts',
+                        label: l10n.settingsBlockedUsers,
+                        subtitle: l10n.settingsBlockedUsersSubtitle,
                         onTap:
                             () => Navigator.of(
                               context,
@@ -272,15 +276,15 @@ class _SettingsViewState extends State<SettingsView>
                   ),
                   const Gap(10),
                   SettingsSection(
-                    title: 'Artificial Intelligence',
+                    title: l10n.settingsSectionAi,
                     icon: Icons.auto_awesome_rounded,
                     delay: 3,
                     items: [
                       SettingsItemData(
                         icon: Icons.psychology_rounded,
 
-                        label: 'AI Settings',
-                        subtitle: 'Personalize your AI-powered experience',
+                        label: l10n.settingsAiSettings,
+                        subtitle: l10n.settingsAiSettingsSubtitle,
                         onTap:
                             () => Navigator.of(
                               context,
@@ -290,36 +294,37 @@ class _SettingsViewState extends State<SettingsView>
                   ),
                   const Gap(10),
                   SettingsSection(
-                    title: 'Appearance',
+                    title: l10n.settingsSectionAppearance,
                     icon: Icons.palette_outlined,
                     delay: 4,
                     items: [
                       SettingsItemData(
                         icon: Icons.color_lens_outlined,
-                        label: 'Theme',
-                        subtitle: 'Personalize your app colors',
+                        label: l10n.settingsTheme,
+                        subtitle: l10n.settingsThemeSubtitle,
                         onTap: () => _openThemesSelectView(context),
                       ),
                       SettingsItemData(
                         icon: Icons.language_rounded,
-                        label: 'Language',
-                        subtitle: 'English (US)',
-                        onTap:
-                            () =>
-                                _showComingSoon(context, 'Language selection'),
+                        label: l10n.language,
+                        subtitle:
+                            AppLocale.isArabic(settingsState.languageCode)
+                                ? 'العربية'
+                                : 'English (US)',
+                        onTap: () => showLanguageSelectionSheet(context),
                       ),
                     ],
                   ),
                   const Gap(10),
                   SettingsSection(
-                    title: 'Support',
+                    title: l10n.settingsSectionSupport,
                     icon: CupertinoIcons.question_circle_fill,
                     delay: 5,
                     items: [
                       SettingsItemData(
                         icon: Icons.info_outline_rounded,
-                        label: 'About Us',
-                        subtitle: 'Our story and mission',
+                        label: l10n.settingsAboutUs,
+                        subtitle: l10n.settingsAboutUsSubtitle,
                         onTap:
                             () => Navigator.pushNamed(
                               context,
@@ -328,8 +333,8 @@ class _SettingsViewState extends State<SettingsView>
                       ),
                       SettingsItemData(
                         icon: Icons.help_outline_rounded,
-                        label: 'Help & FAQ',
-                        subtitle: 'Get answers to common questions',
+                        label: l10n.settingsHelpFaq,
+                        subtitle: l10n.settingsHelpFaqSubtitle,
                         onTap:
                             () => Navigator.pushNamed(
                               context,
@@ -338,14 +343,14 @@ class _SettingsViewState extends State<SettingsView>
                       ),
                       SettingsItemData(
                         icon: Icons.feedback_outlined,
-                        label: 'Send Feedback',
-                        subtitle: 'Tell us what you think',
+                        label: l10n.settingsSendFeedback,
+                        subtitle: l10n.settingsSendFeedbackSubtitle,
                         onTap: () => _sendFeedback(context),
                       ),
                       SettingsItemData(
                         icon: Icons.policy_outlined,
-                        label: 'Privacy Policy',
-                        subtitle: 'How we handle your data',
+                        label: l10n.settingsPrivacyPolicy,
+                        subtitle: l10n.settingsPrivacyPolicySubtitle,
                         onTap:
                             () => Navigator.pushNamed(
                               context,
@@ -354,8 +359,8 @@ class _SettingsViewState extends State<SettingsView>
                       ),
                       SettingsItemData(
                         icon: Icons.gavel_rounded,
-                        label: 'Terms of Service',
-                        subtitle: 'Platform rules & community guidelines',
+                        label: l10n.settingsTermsOfService,
+                        subtitle: l10n.settingsTermsOfServiceSubtitle,
                         onTap:
                             () => Navigator.pushNamed(
                               context,
@@ -385,12 +390,13 @@ class _SettingsViewState extends State<SettingsView>
     );
   }
 
-  String _presencePrivacyLabel(PresencePrivacy p) => switch (p) {
-    PresencePrivacy.everyone => 'Everyone',
-    PresencePrivacy.friends => 'My Friends',
-    PresencePrivacy.specific => 'Specific People',
-    PresencePrivacy.nobody => 'Nobody',
-  };
+  String _presencePrivacyLabel(AppLocalizations l10n, PresencePrivacy p) =>
+      switch (p) {
+        PresencePrivacy.everyone => l10n.presenceEveryone,
+        PresencePrivacy.friends => l10n.presenceFriends,
+        PresencePrivacy.specific => l10n.presenceSpecific,
+        PresencePrivacy.nobody => l10n.presenceNobody,
+      };
 
   Future<void> _pickPresencePrivacy(
     BuildContext context,

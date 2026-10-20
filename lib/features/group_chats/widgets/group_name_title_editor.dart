@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class GroupNameTitleEditor extends StatelessWidget {
   final TextEditingController nameController;
@@ -30,7 +31,7 @@ class GroupNameTitleEditor extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Group Name',
+          context.l10n.groupName,
           style: Theme.of(context).textTheme.titleSmall?.copyWith(
             fontWeight: FontWeight.w600,
             color: Colors.grey.shade600,
@@ -48,7 +49,7 @@ class GroupNameTitleEditor extends StatelessWidget {
               controller: nameController,
               style: const TextStyle(fontWeight: FontWeight.w500),
               decoration: InputDecoration(
-                hintText: 'Group name',
+                hintText: context.l10n.groupName2,
                 filled: true,
                 fillColor: Theme.of(context).cardColor,
                 contentPadding: const EdgeInsets.symmetric(
@@ -83,7 +84,7 @@ class GroupNameTitleEditor extends StatelessWidget {
                             color: isChanged ? primary : Colors.grey.shade300,
                           ),
                           onPressed: isChanged ? onSaveName : null,
-                          tooltip: 'Save Name',
+                          tooltip: context.l10n.saveName,
                         ),
               ),
               onSubmitted: isChanged ? (_) => onSaveName() : null,
@@ -93,7 +94,7 @@ class GroupNameTitleEditor extends StatelessWidget {
         const SizedBox(height: 20),
 
         Text(
-          'Group Title',
+          context.l10n.groupTitle,
           style: Theme.of(context).textTheme.titleSmall?.copyWith(
             fontWeight: FontWeight.w600,
             color: Colors.grey.shade600,
@@ -110,7 +111,7 @@ class GroupNameTitleEditor extends StatelessWidget {
               controller: titleController,
               style: const TextStyle(fontWeight: FontWeight.w500),
               decoration: InputDecoration(
-                hintText: 'Add a title for this group',
+                hintText: context.l10n.addATitleFor,
                 hintStyle: TextStyle(
                   color: Colors.grey.shade400,
                   fontWeight: FontWeight.w400,
@@ -149,7 +150,7 @@ class GroupNameTitleEditor extends StatelessWidget {
                             color: isChanged ? primary : Colors.grey.shade300,
                           ),
                           onPressed: isChanged ? onSaveTitle : null,
-                          tooltip: 'Save Title',
+                          tooltip: context.l10n.saveTitle,
                         ),
               ),
               onSubmitted: isChanged ? (_) => onSaveTitle() : null,

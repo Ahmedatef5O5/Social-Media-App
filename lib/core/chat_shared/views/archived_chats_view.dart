@@ -11,6 +11,7 @@ import '../../../features/group_chats/widgets/group_tile_item_widget.dart';
 import '../../../features/single_chats/widgets/chat_item_tile.dart';
 import '../../../features/single_chats/widgets/empty_placeholder_state.dart';
 import '../widgets/archived_selection_header_bar.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class ArchivedChatsView extends StatefulWidget {
   const ArchivedChatsView({super.key});
@@ -78,7 +79,7 @@ class _ArchivedChatsViewState extends State<ArchivedChatsView> {
                         )
                         : AppBar(
                           key: const ValueKey('archive_normal'),
-                          title: const Text('Archived Chats'),
+                          title: Text(context.l10n.archivedChats),
                         ),
               );
             },
@@ -96,7 +97,7 @@ class _ArchivedChatsViewState extends State<ArchivedChatsView> {
               return EmptyPlaceholderState(
                 img: AppImages.blueSmileFaceLot,
                 imgHeight: MediaQuery.of(context).size.height * 0.2,
-                title: 'No archived chats.',
+                title: context.l10n.noArchivedChats,
                 style: Theme.of(context).textTheme.titleMedium!.copyWith(
                   color: Theme.of(context).primaryColor,
                   fontWeight: FontWeight.w600,

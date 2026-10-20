@@ -4,6 +4,7 @@ import 'package:gap/gap.dart';
 import 'package:social_media_app/features/posts/widgets/build_option_item.dart';
 import '../../../core/toast/app_toast.dart';
 import '../cubits/posts_cubit/posts_cubit.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class AddPostOptionsBottomSheet extends StatelessWidget {
   final DraggableScrollableController controller;
@@ -130,20 +131,22 @@ class AddPostOptionsBottomSheet extends StatelessWidget {
                       'Background Color',
                       const Color(0xFFE91E63),
                       onTap:
-                          () =>
-                              AppToast.info('Background Color is coming soon'),
+                          () => AppToast.info(
+                            context.l10n.backgroundColorIsComing,
+                          ),
                     ),
                     BuildOptionItem(
                       Icons.gif_box_rounded,
                       'Add GIF',
                       const Color(0xFF9C27B0),
-                      onTap: () => AppToast.info('Add GIF is coming soon'),
+                      onTap: () => AppToast.info(context.l10n.addGifIsComing),
                     ),
                     BuildOptionItem(
                       Icons.video_camera_front_rounded,
                       'Live Video',
                       const Color(0xFFF44336),
-                      onTap: () => AppToast.info('Live Video is coming soon'),
+                      onTap:
+                          () => AppToast.info(context.l10n.liveVideoIsComing),
                     ),
                     const Gap(20),
                   ],

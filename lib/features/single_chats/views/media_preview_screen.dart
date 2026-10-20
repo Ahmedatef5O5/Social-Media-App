@@ -9,10 +9,14 @@ import '../../../core/widgets/directional_text_field.dart';
 import '../../ai_assistant/entities/ai_action_type.dart';
 import '../../ai_assistant/entities/ai_request_context.dart';
 import '../../ai_assistant/widgets/ai_action_icon.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class MediaPreviewScreen extends StatefulWidget {
   final File file;
   final String type;
+
+  /// Called with the caption, the file that should actually be sent (the
+  /// original, or the edited / trimmed copy) and — for videos — its duration.
   final Function(String? caption, File file, int? durationSeconds) onSend;
 
   const MediaPreviewScreen({
@@ -30,6 +34,7 @@ class _MediaPreviewScreenState extends State<MediaPreviewScreen> {
   final TextEditingController _captionController = TextEditingController();
   VideoPlayerController? _videoPlayerController;
 
+  /// Starts as the picked media; replaced if the user edits / trims it.
   late File _file = widget.file;
 
   bool _showControls = true;
@@ -53,6 +58,7 @@ class _MediaPreviewScreenState extends State<MediaPreviewScreen> {
     });
   }
 
+  /// Optional edit: crop/draw/text/stickers for photos, trim for videos.
   Future<void> _editMedia() async {
     FocusManager.instance.primaryFocus?.unfocus();
     if (widget.type == 'video') {
@@ -182,7 +188,10 @@ class _MediaPreviewScreenState extends State<MediaPreviewScreen> {
           iconTheme: const IconThemeData(color: AppColors.white),
           actions: [
             IconButton(
-              tooltip: widget.type == 'video' ? 'Trim' : 'Edit',
+              tooltip:
+                  widget.type == 'video'
+                      ? context.l10n.trim
+                      : context.l10n.edit,
               icon: Icon(
                 widget.type == 'video'
                     ? Icons.content_cut_rounded
@@ -268,7 +277,7 @@ class _MediaPreviewScreenState extends State<MediaPreviewScreen> {
                         minLines: 1,
                         maxLines: 4,
                         decoration: InputDecoration(
-                          hintText: "Add an optional caption...",
+                          hintText: context.l10n.addAnOptionalCaption,
                           hintStyle: const TextStyle(color: AppColors.white60),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(30),

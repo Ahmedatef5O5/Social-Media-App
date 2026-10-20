@@ -16,6 +16,7 @@ import '../widgets/group_header_section_widget.dart';
 import '../widgets/group_search_field_widget.dart';
 import '../widgets/selected_members_section_widget.dart';
 import '../../home/cubits/home_cubit/home_cubit.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class CreateGroupView extends StatefulWidget {
   const CreateGroupView({super.key});
@@ -133,7 +134,7 @@ class _CreateGroupViewState extends State<CreateGroupView> {
         child: Padding(
           padding: const EdgeInsets.only(top: 40.0),
           child: Text(
-            'No results found for "$query"',
+            context.l10n.noResultsFoundFor2(query),
             style: theme.textTheme.bodyMedium?.copyWith(
               color: Colors.grey,
               fontSize: 15,
@@ -169,18 +170,18 @@ class _CreateGroupViewState extends State<CreateGroupView> {
             ),
             const SizedBox(height: 28),
             Text(
-              'Build Your Community',
+              context.l10n.buildYourCommunity,
               style: theme.textTheme.headlineSmall!.copyWith(
                 color: theme.primaryColor,
                 fontWeight: FontWeight.w800,
-                letterSpacing: -0.5,
+                letterSpacing: context.ls(-0.5),
               ),
             ),
             const SizedBox(height: 12),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 44),
               child: Text(
-                'You haven\'t added any connections yet.\nDiscover people nearby or explore suggested profiles to create your first group.', // تغيير النص الفرعي
+                context.l10n.youHaventAddedAny2, // تغيير النص الفرعي
                 textAlign: TextAlign.center,
                 style: theme.textTheme.bodyMedium!.copyWith(
                   color: isDark ? Colors.white60 : Colors.black54,
@@ -253,12 +254,12 @@ class _CreateGroupViewState extends State<CreateGroupView> {
                         ),
                         const SizedBox(width: 12),
                         Text(
-                          'Discover People',
+                          context.l10n.discoverPeople,
                           style: TextStyle(
                             color: isDark ? Colors.white : Colors.black87,
                             fontWeight: FontWeight.w700,
                             fontSize: 14,
-                            letterSpacing: -0.2,
+                            letterSpacing: context.ls(-0.2),
                           ),
                         ),
                         const SizedBox(width: 16),
@@ -313,7 +314,7 @@ class _CreateGroupViewState extends State<CreateGroupView> {
           scrolledUnderElevation: 0,
           centerTitle: true,
           title: Text(
-            'New Group',
+            context.l10n.newGroup,
             style: theme.textTheme.titleLarge?.copyWith(
               fontWeight: FontWeight.bold,
               color: primary,
@@ -376,7 +377,9 @@ class _CreateGroupViewState extends State<CreateGroupView> {
                             bottom: 8,
                           ),
                           child: Text(
-                            '${_selectedUserIds.length} members selected',
+                            context.l10n.membersSelected(
+                              _selectedUserIds.length,
+                            ),
                             style: theme.textTheme.labelLarge?.copyWith(
                               color: primary,
                               fontWeight: FontWeight.w700,
@@ -472,12 +475,14 @@ class _CreateGroupViewState extends State<CreateGroupView> {
                               )
                               : Text(
                                 _selectedUserIds.isEmpty
-                                    ? 'Create Group'
-                                    : 'Create Group (${_selectedUserIds.length})',
-                                style: const TextStyle(
+                                    ? context.l10n.createGroup
+                                    : context.l10n.createGroup2(
+                                      _selectedUserIds.length,
+                                    ),
+                                style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w700,
-                                  letterSpacing: 0.5,
+                                  letterSpacing: context.ls(0.5),
                                 ),
                               ),
                     ),

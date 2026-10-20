@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../router/app_routes.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class IncomingShareSliverAppBar extends StatelessWidget {
   final ThemeData theme;
@@ -14,8 +15,8 @@ class IncomingShareSliverAppBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SliverAppBar(
-      title: const Text(
-        'Send to...',
+      title: Text(
+        context.l10n.sendTo,
         style: TextStyle(fontWeight: FontWeight.w500),
       ),
       titleSpacing: 0,

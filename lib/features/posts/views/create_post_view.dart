@@ -25,6 +25,7 @@ import '../widgets/create_post_image_preview.dart';
 import '../widgets/create_post_input_field.dart';
 import '../widgets/create_post_user_info.dart';
 import '../widgets/create_post_video_preview.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class CreatePostView extends StatefulWidget {
   final String? initialText;
@@ -149,10 +150,10 @@ class _CreatePostViewState extends State<CreatePostView> {
           }
         }
         if (state is PostUploadCanceled) {
-          AppToast.info('Upload canceled');
+          AppToast.info(context.l10n.uploadCanceled);
         }
         if (state is PostCreated) {
-          AppToast.success('Post Published Successfully');
+          AppToast.success(context.l10n.postPublishedSuccessfully);
 
           Navigator.pop(context);
         } else if (state is PostCreateError) {
@@ -221,7 +222,7 @@ class _CreatePostViewState extends State<CreatePostView> {
                                 HapticFeedback.vibrate();
 
                                 AppToast.warning(
-                                  "Write something or attach a file to share your post.",
+                                  context.l10n.writeSomethingOrAttach,
                                 );
                               }
                             },
@@ -295,6 +296,8 @@ class _CreatePostViewState extends State<CreatePostView> {
                                 );
                               } else if (postsCubit.selectedVideo != null) {
                                 return CreatePostVideoPreview(
+                                  // New key per file so the player re-initialises
+                                  // after a trim.
                                   key: ValueKey(postsCubit.selectedVideo!.path),
                                   videoPath: postsCubit.selectedVideo!.path,
                                   fileSizeBytes:
@@ -389,7 +392,7 @@ class _CreatePostViewState extends State<CreatePostView> {
                                     const Gap(16),
                                     Text(
                                       state.progress >= 1.0
-                                          ? 'Posted'
+                                          ? context.l10n.posted
                                           : (state.totalBytes > 0 &&
                                                   state.sentBytes <
                                                       state.totalBytes
@@ -397,7 +400,7 @@ class _CreatePostViewState extends State<CreatePostView> {
                                                 state.sentBytes,
                                                 state.totalBytes,
                                               )
-                                              : "Publishing Post..."),
+                                              : context.l10n.publishingPost),
                                       textAlign: TextAlign.center,
                                       style: Theme.of(
                                         context,

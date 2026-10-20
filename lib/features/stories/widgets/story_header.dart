@@ -15,6 +15,7 @@ import '../../reports/widgets/report_bottom_sheet.dart';
 import '../cubits/stories_cubit/stories_cubit.dart';
 import '../models/story_model.dart';
 import 'story_delete_dialog.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class StoryHeader extends StatelessWidget {
   final StoryModel story;
@@ -82,7 +83,7 @@ class StoryHeader extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    isMyStory ? 'You' : story.authorName,
+                    isMyStory ? context.l10n.you : story.authorName,
                     style: const TextStyle(color: Colors.white),
                   ),
                   Text(
@@ -145,12 +146,15 @@ class StoryHeader extends StatelessWidget {
               }
             },
             itemBuilder:
-                (_) => const [
-                  PopupMenuItem(value: 'share', child: Text('Share Story')),
+                (_) => [
+                  PopupMenuItem(
+                    value: 'share',
+                    child: Text(context.l10n.shareStory),
+                  ),
                   PopupMenuItem(
                     value: 'delete',
                     child: Text(
-                      'Delete Story',
+                      context.l10n.deleteStory,
                       style: TextStyle(color: Colors.red),
                     ),
                   ),
@@ -177,8 +181,11 @@ class StoryHeader extends StatelessWidget {
               onResume();
             },
             itemBuilder:
-                (_) => const [
-                  PopupMenuItem(value: 'report', child: Text('Report Story')),
+                (_) => [
+                  PopupMenuItem(
+                    value: 'report',
+                    child: Text(context.l10n.reportStory),
+                  ),
                 ],
           ),
       ],

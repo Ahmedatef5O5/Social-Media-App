@@ -17,6 +17,7 @@ import 'group_chat_reaction_overlay.dart';
 import 'group_message_avatar.dart';
 import 'group_reactions_row_widget.dart';
 import 'group_regular_message_content.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 const double _kAvatarSlotWidth = 32;
 
@@ -347,7 +348,9 @@ class _GroupMessageContentState extends State<GroupMessageContent> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     ForwardedHeader(
-                      name: widget.message.forwardedFromUserName ?? 'Unknown',
+                      name:
+                          widget.message.forwardedFromUserName ??
+                          context.l10n.unknown,
                       originalSenderId:
                           widget.message.forwardedFromUserId ?? '',
                       avatarUrl: widget.message.forwardedFromUserAvatar,

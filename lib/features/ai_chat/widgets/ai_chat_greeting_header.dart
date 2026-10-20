@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../core/widgets/cached_cloudinary_image.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class AiChatGreetingHeader extends StatelessWidget {
   final String userName;
@@ -24,18 +25,18 @@ class AiChatGreetingHeader extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'Hi, $userName !',
-                style: const TextStyle(
+                context.l10n.hi(userName),
+                style: TextStyle(
                   color: Colors.white,
                   fontSize: 24,
                   fontWeight: FontWeight.w800,
-                  letterSpacing: -0.5,
+                  letterSpacing: context.ls(-0.5),
                   height: 1.2,
                 ),
               ),
               const SizedBox(height: 4),
               Text(
-                'How can I help you?',
+                context.l10n.howCanIHelp,
                 style: TextStyle(
                   color: Colors.white.withValues(alpha: 0.7),
                   fontSize: 15,

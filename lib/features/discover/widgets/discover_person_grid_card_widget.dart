@@ -13,6 +13,7 @@ import '../../social_graph/models/discover_person_model.dart';
 import '../../social_graph/models/friendship_status.dart';
 import '../cubits/discover_people_cubit.dart';
 import 'discover_grid_action_button.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class DiscoverPersonGridCardWidget extends StatefulWidget {
   final DiscoverPersonModel personData;
@@ -63,7 +64,7 @@ class _DiscoverPersonGridCardWidgetState
           break;
       }
     } catch (_) {
-      AppToast.error('Something went wrong. Please try again.');
+      AppToast.error(context.l10n.somethingWentWrongPlease);
       rethrow;
     }
   }
@@ -75,7 +76,7 @@ class _DiscoverPersonGridCardWidgetState
         isCurrentlyFollowing: widget.personData.isFollowing,
       );
     } catch (_) {
-      AppToast.error('Something went wrong. Please try again.');
+      AppToast.error(context.l10n.somethingWentWrongPlease);
       rethrow;
     }
   }
@@ -203,9 +204,9 @@ class _DiscoverPersonGridCardWidgetState
                         const Gap(3),
                         _MetaLine(
                           icon: Icons.groups_rounded,
-                          label:
-                              '${person.mutualGroupsCount} mutual '
-                              '${person.mutualGroupsCount == 1 ? 'group' : 'groups'}',
+                          label: context.l10n.mutualGroupsCount(
+                            person.mutualGroupsCount,
+                          ),
                         ),
                       ],
                       const Gap(12),
@@ -266,7 +267,7 @@ class _DiscoverPersonGridCardWidgetState
       case FriendshipStatus.pendingReceived:
         return _GridStaticChip(
           theme: theme,
-          label: 'Accept',
+          label: context.l10n.accept,
           icon: Icons.person_add_alt_1_rounded,
           filled: true,
           onTap: () => _handleFriendAction(context),
@@ -274,7 +275,7 @@ class _DiscoverPersonGridCardWidgetState
       case FriendshipStatus.accepted:
         return _GridStaticChip(
           theme: theme,
-          label: 'Friends',
+          label: context.l10n.friends,
           icon: Icons.people_alt_rounded,
           filled: false,
           onTap: null,
@@ -381,7 +382,7 @@ class _FollowsYouBadge extends StatelessWidget {
           Icon(Icons.check_circle_rounded, size: 7, color: theme.primaryColor),
           const SizedBox(width: 2),
           Text(
-            'Follows you',
+            context.l10n.followsYou,
             style: TextStyle(
               fontSize: 7,
               fontWeight: FontWeight.w600,
@@ -408,9 +409,7 @@ class _MutualAvatarsStack extends StatelessWidget {
     if (previews.isEmpty) {
       return _MetaLine(
         icon: Icons.people_alt_rounded,
-        label:
-            '$totalMutualCount mutual '
-            '${totalMutualCount == 1 ? 'friend' : 'friends'}',
+        label: context.l10n.mutualFriendsCount(totalMutualCount),
       );
     }
 
@@ -440,7 +439,7 @@ class _MutualAvatarsStack extends StatelessWidget {
         ),
         const SizedBox(width: 5),
         Text(
-          '$totalMutualCount mutual',
+          context.l10n.mutual2(totalMutualCount),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: TextStyle(

@@ -5,6 +5,8 @@ import '../../../core/chat_shared/helpers/avatar_stack.dart';
 import '../../../core/router/app_routes.dart';
 import '../cubits/comments_cubit.dart';
 import '../models/comment_typing_user.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
+import 'package:social_media_app/core/localization/app_l10n.dart';
 
 class CommentTypingRow extends StatelessWidget {
   final List<CommentTypingUser> typingUsers;
@@ -21,9 +23,12 @@ class CommentTypingRow extends StatelessWidget {
   String _joinedNamesLabel() {
     if (typingUsers.length == 1) return typingUsers.first.name;
     if (typingUsers.length == 2) {
-      return '${typingUsers[0].name} and ${typingUsers[1].name}';
+      return AppL10n.current.and(typingUsers[0].name, typingUsers[1].name);
     }
-    return '${typingUsers[0].name} and ${typingUsers.length - 1} others';
+    return AppL10n.current.andOthers(
+      typingUsers[0].name,
+      typingUsers.length - 1,
+    );
   }
 
   @override
@@ -33,7 +38,9 @@ class CommentTypingRow extends StatelessWidget {
 
     final bool isSingle = typingUsers.length == 1;
     final String actionText =
-        isSingle ? ' is writing a comment...' : ' are writing a comment...';
+        isSingle
+            ? context.l10n.isWritingAComment
+            : context.l10n.areWritingAComment;
 
     return Row(
       children: [

@@ -10,11 +10,17 @@ import 'package:social_media_app/features/gifs/widgets/gif_picker_sheet.dart';
 import 'package:social_media_app/features/stickers/models/sticker_model.dart';
 import 'package:social_media_app/features/stickers/utils/sticker_url_utils.dart';
 import 'package:social_media_app/features/stickers/widgets/sticker_send_picker_sheet.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 /// Full-screen image editor (crop / rotate / flip, draw, text, filters, blur &
 /// pixelate, emoji) built on `pro_image_editor`, plus Sticker and GIF layers
 /// powered by the app's EXISTING pickers.
-
+///
+/// Pops with the edited image bytes on Done, or with `null` on discard.
+///
+/// IMPORTANT: every `pro_image_editor` symbol in the codebase lives in this
+/// file. If a future package upgrade renames an API, this is the only file to
+/// touch.
 class AppImageEditorView extends StatefulWidget {
   const AppImageEditorView({
     super.key,
@@ -208,7 +214,7 @@ class _AppImageEditorViewState extends State<AppImageEditorView> {
                 children: [
                   _LauncherButton(
                     icon: Icons.emoji_emotions_outlined,
-                    label: 'Sticker',
+                    label: context.l10n.sticker,
                     onTap: _pickSticker,
                   ),
                   const SizedBox(height: 10),

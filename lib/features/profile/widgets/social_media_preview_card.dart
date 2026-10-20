@@ -8,6 +8,7 @@ import '../../../core/link/services/link_preview_service.dart';
 import '../../../core/toast/app_toast.dart';
 import '../../../core/widgets/app_network_image.dart';
 import '../models/social_platform_info.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class SocialMediaPreviewCard extends StatefulWidget {
   final SocialPlatformInfo platform;
@@ -47,13 +48,13 @@ class _SocialMediaPreviewCardState extends State<SocialMediaPreviewCard> {
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     } else if (mounted) {
-      AppToast.error('Could not open ${widget.platform.label} link');
+      AppToast.error(context.l10n.couldNotOpenLink(widget.platform.label));
     }
   }
 
   Future<void> _copyLink() async {
     await Clipboard.setData(ClipboardData(text: _url));
-    if (mounted) AppToast.success('Link copied');
+    if (mounted) AppToast.success(context.l10n.linkCopied);
   }
 
   Future<void> _shareLink() async {
@@ -89,8 +90,8 @@ class _SocialMediaPreviewCardState extends State<SocialMediaPreviewCard> {
             cardContent = _StaticBrandRichCard(
               key: const ValueKey('linkedin_static'),
               platform: widget.platform,
-              title: 'LinkedIn Profile',
-              description: 'View professional profile on LinkedIn',
+              title: context.l10n.linkedinProfile,
+              description: context.l10n.viewProfessionalProfileOn,
             );
           } else {
             cardContent = _CompactBrandCard(
@@ -256,7 +257,7 @@ class _RichPreview extends StatelessWidget {
                           color: Colors.white.withValues(alpha: 0.6),
                           fontSize: 9.5,
                           fontWeight: FontWeight.w700,
-                          letterSpacing: 0.4,
+                          letterSpacing: context.ls(0.4),
                         ),
                       ),
                     ),
@@ -402,7 +403,7 @@ class _StaticBrandRichCard extends StatelessWidget {
                           color: Colors.white.withValues(alpha: 0.6),
                           fontSize: 9.5,
                           fontWeight: FontWeight.w700,
-                          letterSpacing: 0.4,
+                          letterSpacing: context.ls(0.4),
                         ),
                       ),
                     ),

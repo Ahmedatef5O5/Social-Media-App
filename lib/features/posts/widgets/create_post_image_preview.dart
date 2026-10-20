@@ -4,11 +4,16 @@ import '../../../core/themes/app_colors.dart';
 import '../../../core/widgets/app_file_image.dart';
 import '../../../core/widgets/full_screen_image_viewer.dart';
 import '../helpers/media_size_badge.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class CreatePostImagePreview extends StatelessWidget {
   final String imagePath;
   final int? fileSizeBytes;
   final VoidCallback onRemove;
+
+  /// Opens the (optional) image editor. Resolves to the edited file path, or
+  /// null if the user discarded the edit. Also handed to the full-screen
+  /// viewer so the user can edit from there too.
   final Future<String?> Function()? onEdit;
 
   const CreatePostImagePreview({
@@ -117,7 +122,7 @@ class CreatePostImagePreview extends StatelessWidget {
                 right: 5,
                 top: 15,
                 child: IconButton(
-                  tooltip: 'Edit',
+                  tooltip: context.l10n.edit,
                   onPressed: () => onEdit!(),
                   icon: DecoratedBox(
                     decoration: BoxDecoration(

@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../ai_chat/helpers/ai_model_iconography.dart';
 import '../cubits/ai_preferences_cubit/ai_preferences_cubit.dart';
 import '../entities/ai_active_provider.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class AiUsageQuotaCard extends StatelessWidget {
   const AiUsageQuotaCard({super.key});
@@ -66,12 +67,12 @@ class AiUsageQuotaCard extends StatelessWidget {
                   const Gap(10),
                   Expanded(
                     child: Text(
-                      "Today's AI Usage",
+                      context.l10n.todaysAiUsage,
                       style: TextStyle(
                         fontSize: 14.5,
                         fontWeight: FontWeight.w700,
                         color: isDark ? Colors.white : Colors.black87,
-                        letterSpacing: -0.2,
+                        letterSpacing: context.ls(-0.2),
                       ),
                     ),
                   ),
@@ -164,11 +165,11 @@ class AiUsageQuotaCard extends StatelessWidget {
                         fontSize: 22,
                         fontWeight: FontWeight.w800,
                         color: isDark ? Colors.white : Colors.black87,
-                        letterSpacing: -0.4,
+                        letterSpacing: context.ls(-0.4),
                       ),
                     ),
                     TextSpan(
-                      text: 'used of your ${usage.dailyLimit} daily requests',
+                      text: context.l10n.usedOfYourDaily2(usage.dailyLimit),
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w500,
@@ -225,7 +226,7 @@ class AiUsageQuotaCard extends StatelessWidget {
                   const Gap(6),
                   Expanded(
                     child: Text(
-                      'Resets at ${_resetTimeLabel()}',
+                      context.l10n.resetsAt(_resetTimeLabel()),
                       style: TextStyle(
                         fontSize: 12,
                         color: isDark ? Colors.white38 : Colors.grey.shade500,
@@ -255,7 +256,7 @@ class _EstimatedChip extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
       ),
       child: Text(
-        'Estimated',
+        context.l10n.estimated,
         style: TextStyle(
           fontSize: 10,
           fontWeight: FontWeight.w700,
@@ -291,7 +292,7 @@ class _BonusChip extends StatelessWidget {
             Icon(Icons.add_circle_rounded, size: 11, color: color),
             const Gap(3),
             Text(
-              '~$bonus Bonus',
+              context.l10n.bonus(bonus),
               style: TextStyle(
                 fontSize: 10,
                 fontWeight: FontWeight.w700,

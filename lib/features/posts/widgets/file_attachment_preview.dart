@@ -7,6 +7,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../core/cache/repository/media_cache_repository.dart';
 import '../../../core/helpers/bidi_text_helper.dart';
 import '../../../core/helpers/modern_progress_painter.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class FileAttachmentPreview extends StatefulWidget {
   final String url;
@@ -338,7 +339,7 @@ class _FileAttachmentPreviewState extends State<FileAttachmentPreview>
                               color: fileColor,
                               fontWeight: FontWeight.w800,
                               fontSize: 9.5,
-                              letterSpacing: 0.5,
+                              letterSpacing: context.ls(0.5),
                             ),
                           ),
                         ),

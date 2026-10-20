@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../core/toast/app_toast.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class SupportActions {
   const SupportActions._();
@@ -21,11 +22,11 @@ class SupportActions {
         mode: LaunchMode.externalApplication,
       );
       if (!launched && context.mounted) {
-        AppToast.error('Could not open your email app.');
+        AppToast.error(context.l10n.couldNotOpenYour2);
       }
     } catch (e) {
       if (context.mounted) {
-        AppToast.error('Could not open your email app.');
+        AppToast.error(context.l10n.couldNotOpenYour2);
       }
     }
   }

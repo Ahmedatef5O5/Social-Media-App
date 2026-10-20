@@ -16,6 +16,7 @@ import '../../widgets/custom_loading_indicator.dart';
 import '../../widgets/waveform_progress_bar.dart';
 import '../controllers/voice_playback_controller.dart';
 import '../models/shared_media_item.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class VoiceFullScreenView extends StatefulWidget {
   final SharedMediaItem item;
@@ -291,7 +292,7 @@ class _VoiceFullScreenViewState extends State<VoiceFullScreenView> {
                 ),
                 const Gap(20),
                 Text(
-                  isMe ? 'You' : item.senderName,
+                  isMe ? context.l10n.you : item.senderName,
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 20,

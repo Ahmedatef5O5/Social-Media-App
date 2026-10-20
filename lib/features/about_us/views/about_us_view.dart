@@ -8,6 +8,7 @@ import '../widgets/about_us_social_links.dart';
 import '../widgets/about_us_stats_row.dart';
 import '../widgets/about_us_team_section.dart';
 import '../widgets/about_us_version_footer.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class AboutUsView extends StatefulWidget {
   const AboutUsView({super.key});
@@ -110,21 +111,21 @@ class _AboutUsViewState extends State<AboutUsView>
                       AboutUsStatsRow(isDark: isDark, primary: primary),
                       const Gap(38),
                       AboutUsSectionTitle(
-                        title: 'What We Offer',
+                        title: context.l10n.whatWeOffer,
                         isDark: isDark,
                       ),
                       const Gap(4),
                       AboutUsFeatureGrid(isDark: isDark, primary: primary),
                       const Gap(20),
                       AboutUsSectionTitle(
-                        title: 'Built & Maintained By',
+                        title: context.l10n.builtMaintainedBy,
                         isDark: isDark,
                       ),
                       const Gap(14),
                       AboutUsTeamSection(isDark: isDark, primary: primary),
                       const Gap(28),
                       AboutUsSectionTitle(
-                        title: 'Connect With Us',
+                        title: context.l10n.connectWithUs,
                         isDark: isDark,
                       ),
                       const Gap(14),

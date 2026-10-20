@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../constants/app_images.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class EmptyStarredMsgState extends StatelessWidget {
   const EmptyStarredMsgState({super.key});
@@ -37,13 +38,13 @@ class EmptyStarredMsgState extends StatelessWidget {
               ),
               SizedBox(height: largeSpacing),
               Text(
-                'No starred messages',
+                context.l10n.noStarredMessages,
                 textAlign: TextAlign.center,
                 style: textTheme.titleMedium?.copyWith(fontSize: titleFontSize),
               ),
               SizedBox(height: smallSpacing),
               Text(
-                'Tap and hold on any message to star it, so you can find it here later.',
+                context.l10n.tapAndHoldOn,
                 textAlign: TextAlign.center,
                 style: textTheme.bodySmall?.copyWith(
                   fontSize: bodyFontSize,

@@ -4,6 +4,7 @@ import 'package:gap/gap.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:social_media_app/core/widgets/custom_loading_indicator.dart';
 import 'package:social_media_app/features/posts/cubits/posts_cubit/posts_cubit.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class FeedLoadMoreFooter extends StatelessWidget {
   const FeedLoadMoreFooter({super.key});
@@ -119,11 +120,11 @@ class FeedLoadMoreFooter extends StatelessWidget {
                           const CustomLoadingIndicator(radius: 8),
                           const Gap(10),
                           Text(
-                            'Loading more posts...',
+                            context.l10n.loadingMorePosts,
                             style: TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
-                              letterSpacing: 0.2,
+                              letterSpacing: context.ls(0.2),
                               color: isDark ? Colors.white70 : Colors.black87,
                             ),
                           ),

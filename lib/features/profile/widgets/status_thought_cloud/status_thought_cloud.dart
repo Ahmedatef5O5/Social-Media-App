@@ -9,6 +9,7 @@ import 'thought_bubble_ripple.dart';
 import 'thought_bubble_shape.dart';
 import 'thought_cloud_geometry.dart';
 import 'thought_trail_dots.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class StatusThoughtCloud extends StatelessWidget {
   final String? tagline;
@@ -80,7 +81,7 @@ class StatusThoughtCloud extends StatelessWidget {
       avatarSize / 2 + _bubbleBottomBound - _bubbleTopFromBackground,
     );
 
-    final displayText = _hasTagline ? tagline!.trim() : 'Add a status ✨';
+    final displayText = _hasTagline ? tagline!.trim() : context.l10n.addAStatus;
 
     final fit = _resolveTaglineFit(
       text: displayText,

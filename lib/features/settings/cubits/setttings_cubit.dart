@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:social_media_app/features/settings/cubits/settings_state.dart';
 import '../../../core/helpers/safe_emit_mixin.dart';
+import '../../../core/localization/app_locale.dart';
 import '../../../core/notifications/services/notification_prefs_sync_service.dart';
 import '../../../core/presence/services/presence_service.dart';
 import '../../auth/data/models/user_data.dart';
@@ -11,18 +14,23 @@ import '../../two_factor/models/two_factor_status.dart';
 import '../../two_factor/services/two_factor_service.dart';
 import '../repository/settings_repository.dart';
 import '../services/app_lock_service.dart';
+import '../services/language_sync_service.dart';
+import 'locale_cubit.dart';
 
 class SettingsCubit extends Cubit<SettingsState>
     with SafeEmitMixin<SettingsState> {
   final UserService _userService;
   final HomeCubit _homeCubit;
+  final LocaleCubit? _localeCubit;
 
   SettingsCubit({
     required UserService userService,
     required HomeCubit homeCubit,
+    LocaleCubit? localeCubit,
     UserData? currentUser,
   }) : _userService = userService,
        _homeCubit = homeCubit,
+       _localeCubit = localeCubit,
        super(
          SettingsState.fromRepository(
            presencePrivacy:
@@ -94,10 +102,10 @@ class SettingsCubit extends Cubit<SettingsState>
       emit(
         state.copyWith(
           presencePrivacy: previous,
-          errorMessage: 'Failed to update privacy setting.',
+          error: SettingsError.privacyUpdateFailed,
         ),
       );
-      emit(state.copyWith(errorMessage: null));
+      emit(state.copyWith());
     }
   }
 
@@ -114,10 +122,10 @@ class SettingsCubit extends Cubit<SettingsState>
       emit(
         state.copyWith(
           presenceVisibleTo: previous,
-          errorMessage: 'Failed to update visibility list.',
+          error: SettingsError.visibilityUpdateFailed,
         ),
       );
-      emit(state.copyWith(errorMessage: null));
+      emit(state.copyWith());
     }
   }
 
@@ -146,10 +154,8 @@ class SettingsCubit extends Cubit<SettingsState>
       final availability =
           await AppLockService.instance.checkBiometricAvailability();
       if (availability != BiometricAvailability.available) {
-        emit(
-          state.copyWith(errorMessage: _biometricErrorMessage(availability)),
-        );
-        emit(state.copyWith(errorMessage: null));
+        emit(state.copyWith(error: _biometricError(availability)));
+        emit(state.copyWith());
         return;
       }
 
@@ -158,13 +164,13 @@ class SettingsCubit extends Cubit<SettingsState>
         final reason = AppLockService.instance.lastUnlockFailureReason;
         emit(
           state.copyWith(
-            errorMessage:
+            error:
                 reason != null
-                    ? _biometricErrorMessage(reason)
-                    : 'Your identity has not been verified; please try again.',
+                    ? _biometricError(reason)
+                    : SettingsError.identityNotVerified,
           ),
         );
-        emit(state.copyWith(errorMessage: null));
+        emit(state.copyWith());
         return;
       }
     }
@@ -173,21 +179,37 @@ class SettingsCubit extends Cubit<SettingsState>
     emit(state.copyWith(biometricLock: value));
   }
 
-  String _biometricErrorMessage(BiometricAvailability reason) {
+  SettingsError _biometricError(BiometricAvailability reason) {
     switch (reason) {
       case BiometricAvailability.noHardware:
-        return "This device doesn't have a fingerprint or Face ID sensor, so App Lock isn't available.";
+        return SettingsError.biometricNoHardware;
       case BiometricAvailability.notEnrolled:
-        return 'No fingerprint or Face ID is set up on this device yet. Add one in your device settings, then try again.';
+        return SettingsError.biometricNotEnrolled;
       case BiometricAvailability.lockedOut:
-        return 'Too many failed attempts. Please wait a moment before trying again.';
+        return SettingsError.biometricLockedOut;
       case BiometricAvailability.permanentlyLockedOut:
-        return "Biometric authentication is locked. Unlock your device with its PIN, pattern, or password first.";
+        return SettingsError.biometricPermanentlyLockedOut;
       case BiometricAvailability.passcodeNotSet:
-        return 'Set up a screen lock (PIN, pattern, or password) on your device before enabling App Lock.';
+        return SettingsError.biometricPasscodeNotSet;
       case BiometricAvailability.available:
       case BiometricAvailability.unknown:
-        return "We couldn't verify your device's biometric setup. Please try again.";
+        return SettingsError.biometricUnknown;
     }
+  }
+
+  /// Persists the UI language, flips `MaterialApp.locale` immediately (via the
+  /// app-wide [LocaleCubit]) and mirrors the choice to `public.users` so push
+  /// notifications are localized server-side.
+  Future<void> setLanguage(String code) async {
+    final normalized = AppLocale.normalize(code);
+    if (normalized == SettingsRepository.instance.languageCode &&
+        normalized == state.languageCode) {
+      return;
+    }
+
+    await SettingsRepository.instance.setLanguageCode(normalized);
+    _localeCubit?.apply(normalized);
+    if (!isClosed) emit(state.copyWith(languageCode: normalized));
+    unawaited(LanguageSyncService.instance.syncNow());
   }
 }

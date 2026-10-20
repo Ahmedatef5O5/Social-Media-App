@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/profile_mutuals_model.dart';
 import '../utils/profile_ui_tokens.dart';
 import 'profile_avatar_stack.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class FriendsCountBadge extends StatelessWidget {
   final bool isMe;
@@ -54,7 +55,7 @@ class FriendsCountBadge extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    '$friendsCount ${friendsCount == 1 ? 'Friend' : 'Friends'}',
+                    '$friendsCount ${friendsCount == 1 ? 'Friend' : context.l10n.friends}',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
@@ -67,7 +68,7 @@ class FriendsCountBadge extends StatelessWidget {
                   if (showMutual) ...[
                     const SizedBox(height: 2),
                     Text(
-                      '$mutualFriendsCount Mutual',
+                      context.l10n.mutual(mutualFriendsCount),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(

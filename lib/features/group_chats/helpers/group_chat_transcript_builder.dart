@@ -1,4 +1,5 @@
 import '../models/groupe_message_model.dart';
+import 'package:social_media_app/core/localization/app_l10n.dart';
 
 class GroupChatTranscriptBuilder {
   static String fromMessages({
@@ -17,7 +18,9 @@ class GroupChatTranscriptBuilder {
       if (text.isEmpty) continue;
 
       final who =
-          message.senderId == currentUserId ? 'You' : message.senderName;
+          message.senderId == currentUserId
+              ? AppL10n.current.you
+              : message.senderName;
       buffer.writeln('$who: $text');
     }
     return buffer.toString().trim();

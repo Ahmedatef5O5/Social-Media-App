@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import '../../../core/themes/app_colors.dart';
 import '../models/message_model.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class EditPreviewBar extends StatelessWidget {
   final MessageModel editingMessage;
@@ -43,7 +44,7 @@ class EditPreviewBar extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  'Editing message',
+                  context.l10n.editingMessage,
                   style: TextStyle(
                     color: Theme.of(context).primaryColor,
                     fontWeight: FontWeight.bold,

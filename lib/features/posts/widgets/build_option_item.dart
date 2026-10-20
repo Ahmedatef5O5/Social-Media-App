@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class BuildOptionItem extends StatelessWidget {
   final IconData icon;
@@ -49,7 +50,7 @@ class BuildOptionItem extends StatelessWidget {
                     style: theme.textTheme.titleMedium!.copyWith(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
-                      letterSpacing: -0.3,
+                      letterSpacing: context.ls(-0.3),
                       color: theme.colorScheme.onSurface,
                     ),
                   ),

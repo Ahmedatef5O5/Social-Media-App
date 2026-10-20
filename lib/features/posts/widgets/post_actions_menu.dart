@@ -9,6 +9,7 @@ import '../../../core/widgets/custom_confirmation_dialog.dart';
 import '../../reports/models/report_target.dart';
 import '../../reports/widgets/report_bottom_sheet.dart';
 import '../cubits/posts_cubit/posts_cubit.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class PostActionsMenu extends StatelessWidget {
   final PostModel post;
@@ -55,7 +56,9 @@ class PostActionsMenu extends StatelessWidget {
                         Icon(Icons.push_pin_outlined, color: neutral),
                       const Gap(8),
                       Text(
-                        post.isPinned ? 'Unpin Post' : 'Pin Post',
+                        post.isPinned
+                            ? context.l10n.unpinPost
+                            : context.l10n.pinPost,
                         style: Theme.of(
                           context,
                         ).textTheme.titleSmall!.copyWith(color: neutral),
@@ -75,7 +78,9 @@ class PostActionsMenu extends StatelessWidget {
                     ),
                     Gap(8),
                     Text(
-                      isShareWrapper ? 'Remove Share' : 'Delete',
+                      isShareWrapper
+                          ? context.l10n.removeShare
+                          : context.l10n.delete,
                       style: Theme.of(
                         context,
                       ).textTheme.titleSmall!.copyWith(color: Colors.red),
@@ -91,7 +96,7 @@ class PostActionsMenu extends StatelessWidget {
                     Icon(Icons.report_gmailerrorred, color: neutral),
                     Gap(8),
                     Text(
-                      'Report Post',
+                      context.l10n.reportPost,
                       style: Theme.of(
                         context,
                       ).textTheme.titleSmall!.copyWith(color: neutral),
@@ -112,9 +117,9 @@ class PostActionsMenu extends StatelessWidget {
       final result = await postsCubit.togglePin(post.id);
       if (!context.mounted) return;
       if (result == PinResult.pinned) {
-        AppToast.info('Post pinned to your profile');
+        AppToast.info(context.l10n.postPinnedToYour);
       } else if (result == PinResult.unpinned) {
-        AppToast.info('Post unpinned');
+        AppToast.info(context.l10n.postUnpinned);
       }
     } else if (value == 'delete') {
       showDialog(
@@ -123,8 +128,8 @@ class PostActionsMenu extends StatelessWidget {
             (ctx) => CustomConfirmationDialog(
               title:
                   isShareWrapper
-                      ? 'Remove this share from your profile?'
-                      : 'Are you sure you want to delete this post?',
+                      ? context.l10n.removeThisShareFrom
+                      : context.l10n.areYouSureYou2,
               textAlign: TextAlign.center,
               img: AppImages.deleteFilesAnimationLot,
               onConfirm: () async {
@@ -137,8 +142,8 @@ class PostActionsMenu extends StatelessWidget {
                 if (context.mounted) {
                   AppToast.info(
                     isShareWrapper
-                        ? 'Share removed'
-                        : 'Post deleted successfully',
+                        ? context.l10n.shareRemoved
+                        : context.l10n.postDeletedSuccessfully,
                   );
                 }
               },

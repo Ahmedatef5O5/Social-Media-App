@@ -12,6 +12,7 @@ import '../models/ai_chat_message.dart';
 import '../models/ai_model_option.dart';
 import 'ai_chat_reply_preview_bar.dart';
 import 'ai_chat_staged_file_preview.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class AiChatInputBar extends StatefulWidget {
   final TextEditingController controller;
@@ -129,7 +130,7 @@ class _AiChatInputBarState extends State<AiChatInputBar> {
     );
     if (!mounted) return;
     if (!started) {
-      AppToast.info("Voice dictation isn't available on this device.");
+      AppToast.info(context.l10n.voiceDictationIsntAvailable);
       return;
     }
     setState(() => _isDictating = true);
@@ -234,7 +235,7 @@ class _AiChatInputBarState extends State<AiChatInputBar> {
                         vertical: 10,
                         horizontal: 6,
                       ),
-                      hintText: 'Message Syncra...',
+                      hintText: context.l10n.messageSyncra,
                       hintStyle: TextStyle(
                         color: Colors.white.withValues(alpha: 0.45),
                         fontSize: 15,

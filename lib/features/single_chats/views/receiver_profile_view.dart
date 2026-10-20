@@ -28,6 +28,7 @@ import '../helpers/safe_pop.dart';
 import '../services/chat_services.dart';
 import '../services/shared_groups_service.dart';
 import '../widgets/shared_groups_section.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class ReceiverProfileView extends StatefulWidget {
   final ChatUserModel receiverUser;
@@ -200,7 +201,7 @@ class _ReceiverProfileViewState extends State<ReceiverProfileView> {
                       return AnimatedActivityText(
                         text:
                             action == ChatActionType.recording
-                                ? 'recording audio...'
+                                ? context.l10n.recordingAudio2
                                 : 'typing...',
                         style: TextStyle(
                           color:
@@ -262,7 +263,7 @@ class _ReceiverProfileViewState extends State<ReceiverProfileView> {
                           isMuted
                               ? Icons.notifications_off
                               : Icons.notifications_off_outlined,
-                          isMuted ? "Unmute" : "Mute",
+                          isMuted ? context.l10n.unmute : context.l10n.mute,
                           () => context.read<ChatDetailsCubit>().toggleMute(
                             receiverId: widget.receiverUser.id,
                           ),
@@ -362,8 +363,10 @@ class _ReceiverProfileViewState extends State<ReceiverProfileView> {
                         Expanded(
                           child: Text(
                             isBlockedByMe
-                                ? 'Unblock ${widget.receiverUser.name}'
-                                : 'Block ${widget.receiverUser.name}',
+                                ? context.l10n.unblock2(
+                                  widget.receiverUser.name,
+                                )
+                                : context.l10n.block(widget.receiverUser.name),
                             style: TextStyle(
                               color: color,
                               fontWeight: FontWeight.w500,

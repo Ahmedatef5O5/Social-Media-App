@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../widgets/waveform_progress_bar.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class LockedPausedRow extends StatelessWidget {
   final int seconds;
@@ -80,7 +81,7 @@ class LockedPausedRow extends StatelessWidget {
                 Icon(Icons.mic_none_rounded, color: primary, size: 16),
                 const SizedBox(width: 3),
                 Text(
-                  'Resume',
+                  context.l10n.resume,
                   style: TextStyle(
                     color: primary,
                     fontWeight: FontWeight.w700,

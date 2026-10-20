@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../controllers/voice_playback_controller.dart';
 import '../cubits/shared_media_cubit/shared_media_cubit.dart';
 import '../widgets/media_tab_view_widget.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 typedef ShowInChatCallback =
     void Function(BuildContext context, String messageId);
@@ -45,8 +46,8 @@ class _SharedMediaViewState extends State<SharedMediaView> {
             icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 22),
             onPressed: () => Navigator.of(context).pop(),
           ),
-          title: const Text(
-            'Shared Media',
+          title: Text(
+            context.l10n.sharedMedia,
             style: TextStyle(fontWeight: FontWeight.w500),
           ),
           titleSpacing: 0,
@@ -73,11 +74,11 @@ class _SharedMediaViewState extends State<SharedMediaView> {
               fontWeight: FontWeight.w600,
               fontSize: 14,
             ),
-            tabs: const [
+            tabs: [
               Tab(text: 'All'),
               Tab(text: 'Images'),
               Tab(text: 'Videos'),
-              Tab(text: 'Voice'),
+              Tab(text: context.l10n.voice),
               Tab(text: 'Links'),
             ],
           ),

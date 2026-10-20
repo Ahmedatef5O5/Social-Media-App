@@ -15,6 +15,7 @@ import '../models/new_chat_list_item.dart';
 import '../models/new_chat_row.dart';
 import '../widgets/new_chat_contact_tile.dart';
 import '../widgets/new_chat_group_tile.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class NewChatView extends StatefulWidget {
   const NewChatView({super.key});
@@ -76,7 +77,7 @@ class _NewChatViewState extends State<NewChatView> {
     if (_searchQuery.isNotEmpty) {
       return Center(
         child: Text(
-          'No results found for "$_searchQuery"',
+          context.l10n.noResultsFoundFor(_searchQuery),
           style: theme.textTheme.bodyMedium?.copyWith(
             color: Colors.grey,
             fontSize: 15,
@@ -111,18 +112,18 @@ class _NewChatViewState extends State<NewChatView> {
             ),
             const SizedBox(height: 28),
             Text(
-              'Grow Your Network',
+              context.l10n.growYourNetwork,
               style: theme.textTheme.headlineSmall!.copyWith(
                 color: theme.primaryColor,
                 fontWeight: FontWeight.w800,
-                letterSpacing: -0.5,
+                letterSpacing: context.ls(-0.5),
               ),
             ),
             const SizedBox(height: 12),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 44),
               child: Text(
-                'You haven\'t added any connections yet.\nDiscover people nearby or explore suggested profiles to start chatting.',
+                context.l10n.youHaventAddedAny,
                 textAlign: TextAlign.center,
                 style: theme.textTheme.bodyMedium!.copyWith(
                   color: isDark ? Colors.white60 : Colors.black54,
@@ -194,12 +195,12 @@ class _NewChatViewState extends State<NewChatView> {
                         ),
                         const SizedBox(width: 12),
                         Text(
-                          'Discover People',
+                          context.l10n.discoverPeople,
                           style: TextStyle(
                             color: isDark ? Colors.white : Colors.black87,
                             fontWeight: FontWeight.w700,
                             fontSize: 14,
-                            letterSpacing: -0.2,
+                            letterSpacing: context.ls(-0.2),
                           ),
                         ),
                         const SizedBox(width: 16),
@@ -260,7 +261,7 @@ class _NewChatViewState extends State<NewChatView> {
                   shadowColor: Colors.transparent,
                   backgroundColor: theme.scaffoldBackgroundColor,
                   titleSpacing: 0,
-                  title: const Text('New Chat'),
+                  title: Text(context.l10n.newChat),
                   leading: IconButton(
                     icon: const Icon(
                       Icons.arrow_back_ios_new_rounded,
@@ -300,7 +301,7 @@ class _NewChatViewState extends State<NewChatView> {
                           context.read<NewChatCubit>().search(q);
                         },
                         decoration: InputDecoration(
-                          hintText: 'Search friends & groups...',
+                          hintText: context.l10n.searchFriendsGroups,
                           hintStyle: const TextStyle(color: Colors.grey),
                           prefixIcon: const Icon(
                             CupertinoIcons.search,

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import '../../../core/widgets/custom_text_form_field.dart';
 import 'tagline_form_field.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class EditProfileForm extends StatelessWidget {
   final TextEditingController nameController;
@@ -32,29 +33,29 @@ class EditProfileForm extends StatelessWidget {
       children: [
         CustomTextFormField(
           controller: nameController,
-          labelText: 'Name',
-          hintText: 'Enter New Name',
+          labelText: context.l10n.name,
+          hintText: context.l10n.enterNewName,
           prefixIcon: Icon(Icons.person_outline_rounded),
         ),
         Gap(16),
         CustomTextFormField(
           controller: userNameController,
-          labelText: 'UserName',
-          hintText: 'Enter New UserName',
+          labelText: context.l10n.username,
+          hintText: context.l10n.enterNewUsername,
           prefixIcon: Icon(CupertinoIcons.person_alt_circle),
         ),
         Gap(16),
         CustomTextFormField(
           controller: titleController,
-          labelText: 'Title',
-          hintText: 'Enter New Title',
+          labelText: context.l10n.title,
+          hintText: context.l10n.enterNewTitle,
           prefixIcon: const Icon(Icons.badge_outlined),
         ),
         Gap(16),
         CustomTextFormField(
           controller: bioController,
-          labelText: 'Bio',
-          hintText: 'Enter New Bio',
+          labelText: context.l10n.bio,
+          hintText: context.l10n.enterNewBio,
           prefixIcon: const Icon(Icons.info_outline_rounded),
         ),
         Gap(16),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import '../models/presence_privacy.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class PresencePrivacySheet extends StatelessWidget {
   const PresencePrivacySheet({super.key, required this.selected});
@@ -63,13 +64,13 @@ class PresencePrivacySheet extends StatelessWidget {
                 ),
               ),
             ),
-            const Text(
-              'Who can see your online status',
+            Text(
+              context.l10n.whoCanSeeYour,
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
             ),
             const Gap(4),
-            const Text(
-              'This controls your green dot and "last seen" everywhere in the app.',
+            Text(
+              context.l10n.thisControlsYourGreen,
               style: TextStyle(fontSize: 12, color: Colors.grey),
             ),
             const Gap(12),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/themes/app_colors.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class ReplyingToBanner extends StatelessWidget {
   final String authorName;
@@ -33,7 +34,7 @@ class ReplyingToBanner extends StatelessWidget {
           Expanded(
             child: Text.rich(
               TextSpan(
-                text: 'Replying to ',
+                text: context.l10n.replyingTo,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: AppColors.grey7,
                   fontSize: 12,

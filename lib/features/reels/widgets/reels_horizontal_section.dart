@@ -7,6 +7,7 @@ import '../services/reels_preferences_store.dart';
 import '../views/reels_full_screen_view.dart';
 import '../views/reels_onboarding_view.dart';
 import 'reel_thumbnail_card.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class ReelsHorizontalSection extends StatelessWidget {
   final List<ReelModel> reels;
@@ -31,7 +32,7 @@ class ReelsHorizontalSection extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Reels',
+                context.l10n.reels,
                 style: Theme.of(context).textTheme.titleSmall!.copyWith(
                   fontWeight: FontWeight.w500,
                   fontSize: 13,

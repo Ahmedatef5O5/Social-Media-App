@@ -8,6 +8,7 @@ import '../cubits/create_sticker_pack_cubit/create_sticker_pack_cubit.dart';
 import '../cubits/create_sticker_pack_cubit/create_sticker_pack_state.dart';
 import '../helpers/create_pack_friend_picker.dart';
 import '../models/sticker_pack_privacy.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class CreateStickerPackPrivacySection extends StatelessWidget {
   final ThemeData theme;
@@ -28,7 +29,7 @@ class CreateStickerPackPrivacySection extends StatelessWidget {
     return Column(
       children: [
         Text(
-          'Privacy & Audience',
+          context.l10n.privacyAudience,
           style: theme.textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.bold,
           ),
@@ -93,7 +94,7 @@ class CreateStickerPackPrivacySection extends StatelessWidget {
                       ),
                       const Gap(2),
                       Text(
-                        'Tap to change audience',
+                        context.l10n.tapToChangeAudience,
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: AppColors.grey6,
                         ),
@@ -148,8 +149,10 @@ class CreateStickerPackPrivacySection extends StatelessWidget {
                 Expanded(
                   child: Text(
                     state.selectedFriendIds.isEmpty
-                        ? 'No friends selected'
-                        : '${state.selectedFriendIds.length} friend(s) selected',
+                        ? context.l10n.noFriendsSelected
+                        : context.l10n.friendSSelected(
+                          state.selectedFriendIds.length,
+                        ),
                     style: theme.textTheme.bodySmall?.copyWith(
                       fontWeight: FontWeight.w600,
                     ),
@@ -170,7 +173,7 @@ class CreateStickerPackPrivacySection extends StatelessWidget {
                   onPressed:
                       () async => await showCreatePackFriendPicker(context),
                   child: Text(
-                    'Edit',
+                    context.l10n.edit,
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 13,

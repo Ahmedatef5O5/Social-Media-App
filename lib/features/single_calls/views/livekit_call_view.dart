@@ -15,6 +15,7 @@ import '../../../core/widgets/calls/calls.dart';
 import '../models/call_model.dart';
 import '../cubits/single_call_cubit/call_cubit.dart';
 import '../services/call_signaling_service.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class LiveKitCallView extends StatefulWidget {
   final CallModel call;
@@ -357,12 +358,12 @@ class _LiveKitCallViewState extends State<LiveKitCallView> {
               children: [
                 const Icon(Icons.error_outline, color: Colors.red, size: 48),
                 const SizedBox(height: 12),
-                const Text('The call could not be initiated.'),
+                Text(context.l10n.theCallCouldNot),
                 const SizedBox(height: 8),
                 ElevatedButton(
                   onPressed:
                       () => CallTerminationService.popRouteIfActive(context),
-                  child: const Text('Back'),
+                  child: Text(context.l10n.back),
                 ),
               ],
             ),
@@ -496,7 +497,10 @@ class _LiveKitCallViewState extends State<LiveKitCallView> {
                       const SizedBox(height: 2),
                       CallStatusPill(
                         icon: Icons.circle,
-                        label: isConnectingUi ? 'Connecting...' : _durationText,
+                        label:
+                            isConnectingUi
+                                ? context.l10n.connecting
+                                : _durationText,
                         showLiveDot: !isConnectingUi,
                       ),
                     ],
@@ -560,7 +564,7 @@ class _LiveKitCallViewState extends State<LiveKitCallView> {
           isConnectingUi,
           CallControlButton(
             icon: _micEnabled ? Icons.mic_rounded : Icons.mic_off_rounded,
-            label: _micEnabled ? 'Mute' : 'Unmute',
+            label: _micEnabled ? context.l10n.mute : context.l10n.unmute,
             variant:
                 _micEnabled
                     ? CallControlVariant.neutral
@@ -577,7 +581,7 @@ class _LiveKitCallViewState extends State<LiveKitCallView> {
                   _cameraEnabled
                       ? Icons.videocam_rounded
                       : Icons.videocam_off_rounded,
-              label: _cameraEnabled ? 'Camera' : 'Off',
+              label: _cameraEnabled ? context.l10n.camera : context.l10n.off,
               variant:
                   _cameraEnabled
                       ? CallControlVariant.neutral
@@ -591,14 +595,14 @@ class _LiveKitCallViewState extends State<LiveKitCallView> {
             isConnectingUi,
             CallControlButton(
               icon: Icons.cameraswitch_rounded,
-              label: 'Flip',
+              label: context.l10n.flip,
               size: buttonSize,
               onTap: _switchCamera,
             ),
           ),
         CallControlButton(
           icon: Icons.call_end_rounded,
-          label: 'End',
+          label: context.l10n.end,
           variant: CallControlVariant.dangerSolid,
           size: buttonSize,
           emphasized: true,

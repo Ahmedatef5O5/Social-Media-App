@@ -1,10 +1,12 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
+
 import '../../../core/themes/app_colors.dart';
 import '../../../core/toast/app_toast.dart';
 import '../../../core/widgets/custom_elevated_button.dart';
 import '../utils/clipboard_guard.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class RecoveryCodesStep extends StatefulWidget {
   final List<String> codes;
@@ -34,7 +36,7 @@ class _RecoveryCodesStepState extends State<RecoveryCodesStep> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Save your recovery codes',
+          context.l10n.saveYourRecoveryCodes,
           style: theme.textTheme.headlineSmall?.copyWith(
             fontWeight: FontWeight.w800,
           ),
@@ -58,9 +60,7 @@ class _RecoveryCodesStepState extends State<RecoveryCodesStep> {
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  'Keep these codes in a safe place to recover your account if '
-                  'you lose your phone. Each code works once and they will '
-                  'not be shown again.',
+                  context.l10n.keepTheseCodesIn,
                   style: theme.textTheme.bodySmall,
                 ),
               ),
@@ -91,11 +91,11 @@ class _RecoveryCodesStepState extends State<RecoveryCodesStep> {
                       ),
                       child: SelectableText(
                         code,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontFamily: 'monospace',
                           fontSize: 15,
                           fontWeight: FontWeight.w700,
-                          letterSpacing: 1,
+                          letterSpacing: context.ls(1),
                         ),
                       ),
                     ),
@@ -111,10 +111,10 @@ class _RecoveryCodesStepState extends State<RecoveryCodesStep> {
               child: OutlinedButton.icon(
                 onPressed: () async {
                   await ClipboardGuard.copySensitive(_asText);
-                  AppToast.success('Codes copied. Clipboard clears in 60s.');
+                  AppToast.success(context.l10n.codesCopiedClipboardClears);
                 },
                 icon: const Icon(CupertinoIcons.doc_on_doc, size: 18),
-                label: const Text('Copy all'),
+                label: Text(context.l10n.copyAll),
               ),
             ),
             const SizedBox(width: 10),
@@ -128,7 +128,7 @@ class _RecoveryCodesStepState extends State<RecoveryCodesStep> {
                       ),
                     ),
                 icon: const Icon(CupertinoIcons.share, size: 18),
-                label: const Text('Save / Share'),
+                label: Text(context.l10n.saveShare),
               ),
             ),
           ],
@@ -143,7 +143,7 @@ class _RecoveryCodesStepState extends State<RecoveryCodesStep> {
             contentPadding: EdgeInsets.zero,
             activeColor: AppColors.primaryColor,
             title: Text(
-              'I saved these codes in a safe place',
+              context.l10n.iSavedTheseCodes,
               style: theme.textTheme.bodyMedium,
             ),
           ),

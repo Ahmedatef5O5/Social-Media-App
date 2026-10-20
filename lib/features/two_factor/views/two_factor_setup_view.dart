@@ -11,7 +11,10 @@ import '../widgets/recovery_codes_step.dart';
 import '../widgets/two_factor_intro_step.dart';
 import '../widgets/two_factor_qr_step.dart';
 import '../widgets/two_factor_verify_step.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
+/// Opened from Settings with `pushNamed<bool>`. Pops `true` once 2FA is active
+/// so the caller refreshes the switch; `false` when the wizard was abandoned.
 class TwoFactorSetupView extends StatelessWidget {
   const TwoFactorSetupView({super.key});
 
@@ -41,33 +44,31 @@ class _SetupBody extends StatelessWidget {
       case TwoFactorSetupStep.enrolling:
       case TwoFactorSetupStep.verifying:
       case TwoFactorSetupStep.generatingCodes:
-        return;
+        return; // a request is in flight
       case TwoFactorSetupStep.recoveryCodes:
         final leave = await showDialog<bool>(
           context: context,
           builder:
               (ctx) => AlertDialog(
-                title: const Text('Leave without saving?'),
-                content: const Text(
-                  'Your recovery codes will not be shown again. Two-factor stays '
-                  'on, and you can generate new codes later from Settings.',
-                ),
+                title: Text(context.l10n.leaveWithoutSaving),
+                content: Text(context.l10n.yourRecoveryCodesWill),
                 actions: [
                   TextButton(
                     onPressed: () => Navigator.of(ctx).pop(false),
-                    child: const Text('Stay'),
+                    child: Text(context.l10n.stay),
                   ),
                   TextButton(
                     onPressed: () => Navigator.of(ctx).pop(true),
-                    child: const Text('Leave'),
+                    child: Text(context.l10n.leave),
                   ),
                 ],
               ),
         );
         if (leave == true && context.mounted) Navigator.of(context).pop(true);
       case TwoFactorSetupStep.codesError:
-        Navigator.of(context).pop(true);
+        Navigator.of(context).pop(true); // 2FA is already active
       default:
+        // Closing the cubit removes the unverified factor.
         Navigator.of(context).pop(false);
     }
   }
@@ -99,7 +100,7 @@ class _SetupBody extends StatelessWidget {
                           ),
                           const Spacer(),
                           Text(
-                            'Step ${_stepNumber(state.step)} of 4',
+                            context.l10n.stepOf4(_stepNumber(state.step)),
                             style: theme.textTheme.labelLarge?.copyWith(
                               color: theme.hintColor,
                             ),
@@ -108,31 +109,15 @@ class _SetupBody extends StatelessWidget {
                       ),
                     ),
                     Expanded(
-                      child: LayoutBuilder(
-                        builder: (context, constraints) {
-                          final availableHeight = constraints.maxHeight - 36;
-                          return SingleChildScrollView(
-                            physics: const BouncingScrollPhysics(),
-                            padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
-                            child: ConstrainedBox(
-                              constraints: BoxConstraints(
-                                minHeight: availableHeight,
-                              ),
-                              child: AnimatedSwitcher(
-                                duration: const Duration(milliseconds: 220),
-                                child: KeyedSubtree(
-                                  key: ValueKey(state.step),
-                                  child: _content(
-                                    context,
-                                    cubit,
-                                    state,
-                                    availableHeight,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          );
-                        },
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
+                        child: AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 220),
+                          child: KeyedSubtree(
+                            key: ValueKey(state.step),
+                            child: _content(context, cubit, state),
+                          ),
+                        ),
                       ),
                     ),
                   ],
@@ -149,7 +134,6 @@ class _SetupBody extends StatelessWidget {
     BuildContext context,
     TwoFactorSetupCubit cubit,
     TwoFactorSetupState state,
-    double availableHeight,
   ) {
     switch (state.step) {
       case TwoFactorSetupStep.intro:
@@ -157,27 +141,31 @@ class _SetupBody extends StatelessWidget {
 
       case TwoFactorSetupStep.enrolling:
       case TwoFactorSetupStep.generatingCodes:
-        return SizedBox(
-          height: availableHeight,
-          child: Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const CupertinoActivityIndicator(radius: 22),
-                const SizedBox(height: 20),
-                Text(
-                  state.step == TwoFactorSetupStep.enrolling
-                      ? 'Preparing your secure key...'
-                      : 'Generating recovery codes...',
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: Theme.of(context).hintColor,
-                  ),
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            return SizedBox(
+              height: MediaQuery.sizeOf(context).height * 0.55,
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const CupertinoActivityIndicator(radius: 16),
+                    const SizedBox(height: 18),
+                    Text(
+                      state.step == TwoFactorSetupStep.enrolling
+                          ? context.l10n.preparingYourSecureKey
+                          : context.l10n.generatingRecoveryCodes,
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: Theme.of(context).hintColor,
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          ),
+              ),
+            );
+          },
         );
 
       case TwoFactorSetupStep.scan:
@@ -200,26 +188,25 @@ class _SetupBody extends StatelessWidget {
         return RecoveryCodesStep(
           codes: state.codes,
           onDone: () {
-            AppToast.success('Two-factor authentication is on');
+            AppToast.success(context.l10n.twoFactorAuthenticationIs2);
             Navigator.of(context).pop(true);
           },
         );
 
       case TwoFactorSetupStep.failure:
         return _ErrorStep(
-          title: 'Could not start setup',
-          message: state.error ?? 'Please try again.',
+          title: context.l10n.couldNotStartSetup,
+          message: state.error ?? context.l10n.pleaseTryAgain,
           primaryLabel: 'Try again',
           onPrimary: cubit.begin,
         );
 
       case TwoFactorSetupStep.codesError:
         return _ErrorStep(
-          title: 'Two-factor is on, but codes failed',
-          message:
-              '${state.error ?? 'Recovery codes could not be generated.'}\n\n'
-              'Your account is already protected. Retry now, or generate codes '
-              'later from Settings.',
+          title: context.l10n.twoFactorIsOn,
+          message: context.l10n.yourAccountIsAlready(
+            state.error ?? context.l10n.recoveryCodesCouldNot,
+          ),
           primaryLabel: 'Retry',
           onPrimary: cubit.retryGenerateCodes,
           secondaryLabel: 'Skip for now',

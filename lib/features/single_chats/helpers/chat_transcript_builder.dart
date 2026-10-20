@@ -1,4 +1,5 @@
 import '../models/message_model.dart';
+import 'package:social_media_app/core/localization/app_l10n.dart';
 
 /// This mapping is done here deterministically (not left to Gemini to
 /// guess), since we already know exactly who "you" is.
@@ -19,7 +20,10 @@ class ChatTranscriptBuilder {
       final text = message.text.trim();
       if (text.isEmpty) continue; // skip media/voice messages with no text
 
-      final who = message.senderId == currentUserId ? 'You' : otherUserName;
+      final who =
+          message.senderId == currentUserId
+              ? AppL10n.current.you
+              : otherUserName;
       buffer.writeln('$who: $text');
     }
     return buffer.toString().trim();

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class SearchField extends StatelessWidget {
   final TextEditingController controller;
@@ -17,7 +18,7 @@ class SearchField extends StatelessWidget {
       child: TextField(
         controller: controller,
         decoration: InputDecoration(
-          hintText: 'Search people',
+          hintText: context.l10n.searchPeople2,
           prefixIcon: const Icon(Icons.search),
         ),
       ),

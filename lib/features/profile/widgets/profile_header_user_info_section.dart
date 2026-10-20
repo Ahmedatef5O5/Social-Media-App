@@ -6,6 +6,7 @@ import '../../social_graph/models/friendship_status.dart';
 import '../cubits/profile_cubit/profile_cubit.dart';
 import '../utils/profile_ui_tokens.dart';
 import 'friends_count_badge.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class ProfileHeaderUserInfoSection extends StatelessWidget {
   final UserData user;
@@ -45,7 +46,7 @@ class ProfileHeaderUserInfoSection extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.w600,
-                      letterSpacing: -0.3,
+                      letterSpacing: context.ls(-0.3),
                       color: tokens.onSurface,
                     ),
                     maxLines: 1,

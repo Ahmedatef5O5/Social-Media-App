@@ -9,6 +9,7 @@ import '../../../core/router/app_routes.dart';
 import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/toast/app_toast.dart';
 import '../models/post_model.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class PostTxtContentWidget extends StatefulWidget {
   const PostTxtContentWidget({super.key, required this.post});
@@ -41,8 +42,9 @@ class _PostTxtContentWidgetState extends State<PostTxtContentWidget> {
     final TextDirection textDirection =
         isArabic ? TextDirection.rtl : TextDirection.ltr;
 
-    final String readMoreTxt = isArabic ? '...قراءة المزيد' : 'Read more...';
-    final String readLessTxt = isArabic ? 'عرض أقل' : 'Show less';
+    final String readMoreTxt =
+        isArabic ? '...قراءة المزيد' : context.l10n.readMore;
+    final String readLessTxt = isArabic ? 'عرض أقل' : context.l10n.showLess;
 
     final textStyle =
         (Theme.of(context).textTheme.titleSmall ?? const TextStyle()).copyWith(
@@ -100,16 +102,16 @@ class _PostTxtContentWidgetState extends State<PostTxtContentWidget> {
                           if (userId == currentUserId) {
                             if (widget.post.authorId == currentUserId) {
                               AppToast.info(
-                                'You mentioned yourself in this post',
+                                context.l10n.youMentionedYourselfIn3,
                               );
                             } else {
                               final authorName =
                                   (widget.post.authorName?.trim().isNotEmpty ??
                                           false)
                                       ? widget.post.authorName!.trim()
-                                      : 'Someone';
+                                      : context.l10n.someone;
                               AppToast.info(
-                                '$authorName mentioned you in this post',
+                                context.l10n.mentionedYouInThis3(authorName),
                               );
                             }
                             return;

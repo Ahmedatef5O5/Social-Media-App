@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class NotificationsHeader extends StatelessWidget {
   final bool isDark;
@@ -40,13 +41,13 @@ class NotificationsHeader extends StatelessWidget {
             ),
             onPressed: () => Navigator.pop(context),
           ),
-          const Expanded(
+          Expanded(
             child: Text(
-              'Notifications',
+              context.l10n.settingsSectionNotifications,
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
-                letterSpacing: -0.3,
+                letterSpacing: context.ls(-0.3),
               ),
             ),
           ),
@@ -55,7 +56,7 @@ class NotificationsHeader extends StatelessWidget {
               onPressed: onMarkAllRead,
               icon: Icon(Icons.done_all_rounded, size: 16, color: primary),
               label: Text(
-                'Mark all read',
+                context.l10n.markAllRead,
                 style: TextStyle(
                   color: primary,
                   fontSize: 13,

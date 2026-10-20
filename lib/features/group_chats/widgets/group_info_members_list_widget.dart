@@ -7,6 +7,7 @@ import '../../../core/widgets/app_image_provider.dart';
 import '../../single_chats/models/chat_user_model.dart';
 import '../../profile/widgets/user_preview_dialog.dart';
 import '../models/group_member_model.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class GroupInfoMembersList extends StatelessWidget {
   final List<GroupMemberModel> members;
@@ -116,7 +117,7 @@ class GroupInfoMembersList extends StatelessWidget {
           title: Row(
             children: [
               Text(
-                isCurrentUser ? 'You' : member.userName,
+                isCurrentUser ? context.l10n.you : member.userName,
                 style: const TextStyle(fontWeight: FontWeight.w600),
               ),
               if (isMemberOwner) ...[
@@ -130,7 +131,7 @@ class GroupInfoMembersList extends StatelessWidget {
                     color: Colors.amber.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Row(
+                  child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(
@@ -140,7 +141,7 @@ class GroupInfoMembersList extends StatelessWidget {
                       ),
                       SizedBox(width: 3),
                       Text(
-                        'Owner',
+                        context.l10n.owner,
                         style: TextStyle(
                           color: Colors.amber,
                           fontSize: 10,
@@ -162,7 +163,7 @@ class GroupInfoMembersList extends StatelessWidget {
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
-                    'Admin',
+                    context.l10n.admin,
                     style: TextStyle(
                       color: primary,
                       fontSize: 10,
@@ -226,16 +227,19 @@ class GroupInfoMembersList extends StatelessWidget {
         itemBuilder:
             (context) => [
               if (!isMemberAdmin)
-                const PopupMenuItem(value: 'promote', child: Text('Make Admin'))
+                PopupMenuItem(
+                  value: 'promote',
+                  child: Text(context.l10n.makeAdmin),
+                )
               else
-                const PopupMenuItem(
+                PopupMenuItem(
                   value: 'demote',
-                  child: Text('Remove Admin'),
+                  child: Text(context.l10n.removeAdmin),
                 ),
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: 'remove',
                 child: Text(
-                  'Remove from group',
+                  context.l10n.removeFromGroup,
                   style: TextStyle(color: Colors.redAccent),
                 ),
               ),

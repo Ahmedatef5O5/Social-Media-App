@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/themes/app_colors.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class EditingCommentBanner extends StatelessWidget {
   final String commentText;
@@ -34,7 +35,7 @@ class EditingCommentBanner extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  'Editing comment',
+                  context.l10n.editingComment,
                   style: TextStyle(
                     color: primary,
                     fontWeight: FontWeight.w700,

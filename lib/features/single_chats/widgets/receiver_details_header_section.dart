@@ -15,6 +15,7 @@ import '../cubits/chat_details_cubit/chat_details_cubit.dart';
 import '../helpers/safe_pop.dart';
 import '../models/chat_block_status.dart';
 import '../models/chat_user_model.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class ReceiverDetailsHeaderSection extends StatelessWidget {
   final ChatUserModel receiverUser;
@@ -132,7 +133,7 @@ class ReceiverDetailsHeaderSection extends StatelessWidget {
                           return AnimatedActivityText(
                             text:
                                 action == ChatActionType.recording
-                                    ? 'recording audio...'
+                                    ? context.l10n.recordingAudio2
                                     : 'typing...',
                             style: TextStyle(
                               color:
@@ -220,14 +221,14 @@ class ReceiverDetailsHeaderSection extends StatelessWidget {
                   }
                 },
                 itemBuilder:
-                    (_) => const [
+                    (_) => [
                       PopupMenuItem(
                         value: 'search',
                         child: Row(
                           children: [
                             Icon(Icons.search_rounded, size: 20),
                             Gap(10),
-                            Text('Search'),
+                            Text(context.l10n.search),
                           ],
                         ),
                       ),

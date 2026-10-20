@@ -19,6 +19,7 @@ import '../widgets/story_header.dart';
 import '../widgets/story_reply_input_bar.dart';
 import '../widgets/story_views_indicator.dart';
 import 'story_media_view.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class SingleUserStoryView extends StatefulWidget {
   final StoryModel story;
@@ -355,7 +356,7 @@ class _SingleUserStoryViewState extends State<SingleUserStoryView>
                             _resumeStory();
                           },
                           onSent: () {
-                            AppToast.success('Reply sent ✓');
+                            AppToast.success(context.l10n.replySent);
                           },
                         ),
                     ],
@@ -374,13 +375,13 @@ class _SingleUserStoryViewState extends State<SingleUserStoryView>
 
     if (userId == currentUserId) {
       if (widget.story.authorId == currentUserId) {
-        AppToast.info('You mentioned yourself in this story');
+        AppToast.info(context.l10n.youMentionedYourselfIn4);
       } else {
         final authorName =
             widget.story.authorName.trim().isNotEmpty
                 ? widget.story.authorName.trim()
-                : 'Someone';
-        AppToast.info('$authorName mentioned you in this story');
+                : context.l10n.someone;
+        AppToast.info(context.l10n.mentionedYouInThis4(authorName));
       }
     } else {
       _pauseStory();

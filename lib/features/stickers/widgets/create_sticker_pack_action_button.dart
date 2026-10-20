@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class CreateStickerPackActionButton extends StatelessWidget {
   final bool isUploading;
@@ -67,7 +68,7 @@ class CreateStickerPackActionButton extends StatelessWidget {
                                   ),
                                 )
                                 : Text(
-                                  'Create Pack',
+                                  context.l10n.createPack,
                                   key: const ValueKey('idle'),
                                   style: TextStyle(
                                     fontSize: 16,

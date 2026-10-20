@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class VideoProgressSlider extends StatelessWidget {
   final VideoPlayerController controller;
@@ -117,11 +118,11 @@ class VideoProgressSlider extends StatelessWidget {
               _formatDuration(position),
               style:
                   positionStyle ??
-                  const TextStyle(
+                  TextStyle(
                     color: Colors.white,
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
-                    letterSpacing: 0.2,
+                    letterSpacing: context.ls(0.2),
                     fontFeatures: [FontFeature.tabularFigures()],
                     shadows: [Shadow(color: Colors.black54, blurRadius: 4)],
                   ),

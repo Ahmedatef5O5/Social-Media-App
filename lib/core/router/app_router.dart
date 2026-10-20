@@ -99,6 +99,7 @@ import '../share_intent/views/incoming_share_target_view.dart';
 import '../supabase/supabase_provider.dart';
 import '../../features/auth/views/auth_link_expired_view.dart';
 import '../session/session_guard.dart';
+import 'package:social_media_app/core/localization/app_l10n.dart';
 
 enum TypeOfRoute { material, cupertino, fade }
 
@@ -174,7 +175,7 @@ class AppRouter {
       settings: settings,
       builder:
           (_) => Scaffold(
-            appBar: AppBar(title: const Text('Navigation Error')),
+            appBar: AppBar(title: Text(AppL10n.current.navigationError)),
             body: Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -188,7 +189,7 @@ class AppRouter {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Route: ${settings.name}',
+                    AppL10n.current.route(settings.name ?? 'Unknown'),
                     style: const TextStyle(fontSize: 12, color: Colors.grey),
                   ),
                 ],

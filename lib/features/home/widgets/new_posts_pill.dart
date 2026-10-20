@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class NewPostsPill extends StatefulWidget {
   final int count;
@@ -120,7 +121,7 @@ class _NewPostsPillState extends State<NewPostsPill> {
                         ),
                         const SizedBox(width: 6),
                         Text(
-                          '$_displayCount New ${_displayCount == 1 ? 'Post' : 'Posts'}',
+                          context.l10n.newPostsCount(_displayCount),
                           style: const TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.w600,

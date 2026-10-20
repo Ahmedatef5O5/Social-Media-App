@@ -11,6 +11,7 @@ import '../utils/error_search_state.dart';
 import '../utils/search_view_metrics.dart';
 import 'reel_grid_tile.dart';
 import '../utils/reels_grid_skeleton.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class ReelsTabView extends StatefulWidget {
   final ValueListenable<String> searchQuery;
@@ -156,8 +157,8 @@ class _ReelsTabViewState extends State<ReelsTabView>
             const Gap(12),
             Text(
               query.isEmpty
-                  ? 'No reels available'
-                  : 'No reels found for "$query"',
+                  ? context.l10n.noReelsAvailable
+                  : context.l10n.noReelsFoundFor(query),
               textAlign: TextAlign.center,
               style: theme.textTheme.titleMedium!.copyWith(
                 fontWeight: FontWeight.w700,

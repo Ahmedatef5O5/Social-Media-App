@@ -22,6 +22,7 @@ import '../utils/profile_header_back_btn_container.dart';
 import '../utils/profile_ui_tokens.dart';
 import 'profile_header_user_info_section.dart';
 import 'status_thought_cloud/status_thought_cloud.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class ProfileHeader extends StatelessWidget {
   const ProfileHeader({super.key, required this.size, required this.state});
@@ -95,7 +96,10 @@ class ProfileHeader extends StatelessWidget {
                         isMe
                             ? Icons.bookmark_outline_outlined
                             : Icons.people_alt_outlined,
-                    tooltip: isMe ? 'Saved Posts' : 'Friends List',
+                    tooltip:
+                        isMe
+                            ? context.l10n.savedPosts
+                            : context.l10n.friendsList,
                     onPressed: () {
                       if (isMe) {
                         final postsCubit = context.read<PostsCubit>();
@@ -115,7 +119,7 @@ class ProfileHeader extends StatelessWidget {
                   _buildCircularIconButton(
                     theme: theme,
                     assetPath: AppImages.storyIcon,
-                    tooltip: 'Stories',
+                    tooltip: context.l10n.stories,
                     onPressed: () {
                       final storiesCubit = context.read<StoriesCubit>();
                       Navigator.of(context, rootNavigator: true).pushNamed(
@@ -159,7 +163,7 @@ class ProfileHeader extends StatelessWidget {
       children: [
         Expanded(
           child: ProfileActionButton(
-            label: 'Edit Profile',
+            label: context.l10n.settingsEditProfile,
             icon: Icons.edit_rounded,
             style: ProfileActionStyle.outlinePrimary,
             onPressed: () => _navigateToEditProfile(context),
@@ -168,7 +172,7 @@ class ProfileHeader extends StatelessWidget {
         const Gap(8),
         ProfileSquareIconButton(
           icon: Icons.people_alt_outlined,
-          tooltip: 'Friends List',
+          tooltip: context.l10n.friendsList,
           onPressed: () => _openFriendsList(context),
         ),
       ],
@@ -206,7 +210,7 @@ class ProfileHeader extends StatelessWidget {
           const Gap(8),
           ProfileSquareIconButton(
             icon: Icons.close_rounded,
-            tooltip: 'Decline request',
+            tooltip: context.l10n.declineRequest,
             iconColor: ProfileUiTokens.of(context).onSurfaceVariant,
             onPressed: () => cubit.declineFriendRequest(),
           ),
@@ -226,7 +230,7 @@ class ProfileHeader extends StatelessWidget {
         const Gap(8),
         ProfileSquareIconButton(
           icon: Icons.message_outlined,
-          tooltip: 'Send message',
+          tooltip: context.l10n.sendMessage,
           onPressed: () {
             final chatUser = ChatUserModel(
               id: user.id,
@@ -243,7 +247,7 @@ class ProfileHeader extends StatelessWidget {
         const Gap(8),
         ProfileSquareIconButton(
           icon: Icons.report_gmailerrorred,
-          tooltip: 'Report profile',
+          tooltip: context.l10n.reportProfile,
           iconColor: ProfileUiTokens.of(context).onSurfaceVariant,
           onPressed:
               () => ReportBottomSheet.show(
@@ -278,14 +282,14 @@ class ProfileHeader extends StatelessWidget {
         );
       case FriendshipStatus.pendingReceived:
         return ProfileActionButton(
-          label: 'Accept',
+          label: context.l10n.accept,
           icon: Icons.check_rounded,
           style: ProfileActionStyle.primary,
           onPressed: () => cubit.acceptFriendRequest(),
         );
       case FriendshipStatus.accepted:
         return ProfileActionButton(
-          label: 'Friends',
+          label: context.l10n.friends,
           icon: Icons.check_rounded,
           style: ProfileActionStyle.tonal,
           onPressed: () => _confirmUnfriend(context, cubit),

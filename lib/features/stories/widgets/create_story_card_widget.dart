@@ -3,6 +3,7 @@ import 'package:social_media_app/core/widgets/cached_cloudinary_image.dart';
 import 'package:social_media_app/core/widgets/custom_loading_indicator.dart';
 import 'package:social_media_app/core/themes/app_colors.dart';
 import '../helpers/circle_default_user_img.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class CreateStoryCardWidget extends StatelessWidget {
   static const double cardWidth = 107;
@@ -83,7 +84,7 @@ class CreateStoryCardWidget extends StatelessWidget {
                     padding: EdgeInsets.zero,
 
                     child: Text(
-                      'Create\nStory',
+                      context.l10n.createStory,
                       textAlign: TextAlign.center,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,

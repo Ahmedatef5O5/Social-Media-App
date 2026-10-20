@@ -10,6 +10,7 @@ import '../cubits/stories_cubit/stories_cubit.dart';
 import '../helpers/story_creation_launcher.dart';
 import 'create_story_card_widget.dart';
 import 'story_card_widget.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class StoryItemWidget extends StatefulWidget {
   final StoryModel? story;
@@ -146,7 +147,7 @@ class _StoryItemWidgetState extends State<StoryItemWidget> {
     if (widget.isOwnTile && _hasOwnStories) {
       return StoryCardWidget(
         story: widget.userStroies!.first,
-        label: 'Your Story',
+        label: context.l10n.yourStory,
         onTap: () => _openMyStories(context),
         onAddTap: () => _showAddStoryOptions(context),
       );
@@ -156,7 +157,7 @@ class _StoryItemWidgetState extends State<StoryItemWidget> {
       story: widget.story!,
       label:
           widget.story!.authorId == currentUserId
-              ? 'You'
+              ? context.l10n.you
               : widget.story!.authorName,
       onTap: () => _openOtherUserStory(context),
     );

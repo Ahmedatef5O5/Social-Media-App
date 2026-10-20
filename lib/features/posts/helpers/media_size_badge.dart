@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../core/utilities/file_size_formatter.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class MediaSizeBadge extends StatelessWidget {
   final int? fileSizeBytes;
@@ -48,7 +49,7 @@ class MediaSizeBadge extends StatelessWidget {
               fontSize: 11,
               fontWeight: FontWeight.w600,
               color: isDark ? Colors.white.withValues(alpha: 0.9) : primary,
-              letterSpacing: 0.2,
+              letterSpacing: context.ls(0.2),
             ),
           ),
         ],

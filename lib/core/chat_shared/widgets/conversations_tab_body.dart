@@ -12,6 +12,7 @@ import '../../themes/app_colors.dart';
 import '../../widgets/custom_loading_indicator.dart';
 import '../cubits/conversations_cubit/conversations_cubit.dart';
 import '../models/conversation_item.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class ConversationsTabBody extends StatefulWidget {
   final ConversationTab tab;
@@ -37,15 +38,15 @@ class _ConversationsTabBodyState extends State<ConversationsTabBody>
   String _emptyMessageFor(ConversationTab tab) {
     switch (tab) {
       case ConversationTab.all:
-        return 'No conversations yet.';
+        return context.l10n.noConversationsYet2;
       case ConversationTab.chats:
-        return 'No chats yet.';
+        return context.l10n.noChatsYet;
       case ConversationTab.groups:
-        return 'No groups yet.';
+        return context.l10n.noGroupsYet;
       case ConversationTab.favorites:
-        return 'No favorite chats yet.';
+        return context.l10n.noFavoriteChatsYet;
       case ConversationTab.unread:
-        return 'No unread chats.';
+        return context.l10n.noUnreadChats;
     }
   }
 
@@ -168,7 +169,7 @@ class _InteractiveEmptyState extends StatelessWidget {
               style: theme.textTheme.headlineSmall!.copyWith(
                 color: theme.primaryColor,
                 fontWeight: FontWeight.w800,
-                letterSpacing: -0.5,
+                letterSpacing: context.ls(-0.5),
               ),
             ),
             const SizedBox(height: 12),
@@ -176,8 +177,8 @@ class _InteractiveEmptyState extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 44),
               child: Text(
                 isGroupTab
-                    ? 'Bring your friends together.\nCreate a space to share moments.'
-                    : 'Your inbox is waiting.\nStart a conversation and explore new connections.',
+                    ? context.l10n.bringYourFriendsTogether
+                    : context.l10n.yourInboxIsWaiting,
                 textAlign: TextAlign.center,
                 style: theme.textTheme.bodyMedium!.copyWith(
                   color: isDark ? Colors.white60 : Colors.black54,
@@ -267,12 +268,14 @@ class _InteractiveEmptyState extends StatelessWidget {
                         const SizedBox(width: 12),
 
                         Text(
-                          isGroupTab ? 'Create Group' : 'Start Chat',
+                          isGroupTab
+                              ? context.l10n.createGroup
+                              : context.l10n.startChat,
                           style: TextStyle(
                             color: isDark ? Colors.white : Colors.black87,
                             fontWeight: FontWeight.w700,
                             fontSize: 14,
-                            letterSpacing: -0.2,
+                            letterSpacing: context.ls(-0.2),
                           ),
                         ),
                         const SizedBox(width: 16),

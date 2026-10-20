@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class PremiumSelectionCloseButton extends StatelessWidget {
   final VoidCallback onPressed;
@@ -63,7 +64,7 @@ class PremiumSelectionCountLabel extends StatelessWidget {
         ),
         const SizedBox(width: 6),
         Text(
-          'selected',
+          context.l10n.selected,
           style: TextStyle(
             color: color.withValues(alpha: 0.65),
             fontSize: 15,
@@ -112,26 +113,26 @@ class PremiumSelectionActionIcon extends StatelessWidget {
             : (isMixed
                 ? Theme.of(context).disabledColor
                 : (isOn ? (activeColor ?? primary) : primary));
-    return Tooltip(
-      message: isMixed ? 'Mixed selection' : (isOn ? onLabel : offLabel),
-      child: Material(
-        color:
-            isDestructive
-                ? Colors.red.withValues(alpha: 0.10)
-                : (isOn && activeColor != null
-                    ? activeColor!.withValues(alpha: 0.14)
-                    : Colors.transparent),
-        shape: const CircleBorder(),
-        child: InkWell(
-          customBorder: const CircleBorder(),
-          onTap: onTap,
-          child: Semantics(
-            button: true,
-            label: isMixed ? 'Mixed selection' : (isOn ? onLabel : offLabel),
-            child: Padding(
-              padding: const EdgeInsets.all(9),
-              child: Icon(isOn ? onIcon : offIcon, color: iconColor, size: 21),
-            ),
+
+    return Material(
+      color:
+          isDestructive
+              ? Colors.red.withValues(alpha: 0.10)
+              : (isOn && activeColor != null
+                  ? activeColor!.withValues(alpha: 0.14)
+                  : Colors.transparent),
+      shape: const CircleBorder(),
+      child: InkWell(
+        customBorder: const CircleBorder(),
+        onTap: onTap,
+        child: Tooltip(
+          message:
+              isMixed
+                  ? context.l10n.mixedSelection
+                  : (isOn ? onLabel : offLabel),
+          child: Padding(
+            padding: const EdgeInsets.all(9),
+            child: Icon(isOn ? onIcon : offIcon, color: iconColor, size: 21),
           ),
         ),
       ),

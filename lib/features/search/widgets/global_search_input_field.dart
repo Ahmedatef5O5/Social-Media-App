@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class GlobalSearchInputField extends StatelessWidget {
   final TextEditingController controller;
@@ -32,7 +33,7 @@ class GlobalSearchInputField extends StatelessWidget {
         textInputAction: TextInputAction.search,
         decoration: InputDecoration(
           isDense: true,
-          hintText: 'Search accounts, posts, reels...',
+          hintText: context.l10n.searchAccountsPostsReels,
           hintStyle: theme.textTheme.bodyMedium?.copyWith(fontSize: 14),
           prefixIcon: Icon(
             Icons.search_rounded,

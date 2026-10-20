@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'active_call_header_content.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class CallHeaderTitleAndDuration extends StatelessWidget {
   const CallHeaderTitleAndDuration({
@@ -22,11 +23,11 @@ class CallHeaderTitleAndDuration extends StatelessWidget {
           session.title,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: const TextStyle(
+          style: TextStyle(
             color: Colors.white,
             fontSize: 13,
             fontWeight: FontWeight.w600,
-            letterSpacing: 0.2,
+            letterSpacing: context.ls(0.2),
           ),
         ),
         const SizedBox(height: 1),

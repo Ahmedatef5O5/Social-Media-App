@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class GroupInfoQuickActionsRow extends StatelessWidget {
   final bool isMuted;
@@ -28,20 +29,20 @@ class GroupInfoQuickActionsRow extends StatelessWidget {
         children: [
           _QuickAction(
             icon: Icons.chat_bubble_rounded,
-            label: 'Message',
+            label: context.l10n.message,
             color: primary,
             onTap: onMessage,
           ),
           if (isMember) ...[
             _QuickAction(
               icon: Icons.call_rounded,
-              label: 'Call',
+              label: context.l10n.call,
               color: primary,
               onTap: onCall!,
             ),
             _QuickAction(
               icon: Icons.videocam_rounded,
-              label: 'Video',
+              label: context.l10n.video,
               color: primary,
               onTap: onVideo!,
             ),
@@ -51,7 +52,7 @@ class GroupInfoQuickActionsRow extends StatelessWidget {
                 isMuted
                     ? Icons.notifications_off_rounded
                     : Icons.notifications_rounded,
-            label: isMuted ? 'Unmute' : 'Mute',
+            label: isMuted ? context.l10n.unmute : context.l10n.mute,
             color: isMuted ? Colors.orange : primary,
             onTap: onToggleMute,
           ),

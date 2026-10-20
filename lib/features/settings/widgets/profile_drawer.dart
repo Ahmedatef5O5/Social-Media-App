@@ -12,6 +12,7 @@ import '../../discover/views/discover_people_search_view.dart';
 import '../../profile/models/edit_profile_route_args.dart';
 import '../utils/drawer_header_shimmer.dart';
 import 'drawer_header_widget.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class ProfileDrawer extends StatelessWidget {
   final PersistentTabController navController;
@@ -46,7 +47,7 @@ class ProfileDrawer extends StatelessWidget {
               children: [
                 DrawerItemWidget(
                   icon: CupertinoIcons.pen,
-                  title: "Edit Profile",
+                  title: context.l10n.settingsEditProfile,
                   onTap: () async {
                     final profileCubit = context.read<ProfileCubit>();
                     final profileState = profileCubit.state;
@@ -68,7 +69,7 @@ class ProfileDrawer extends StatelessWidget {
                 ),
                 DrawerItemWidget(
                   icon: Icons.search,
-                  title: "Search Profile",
+                  title: context.l10n.searchProfile,
                   onTap: () {
                     Navigator.of(context, rootNavigator: true).push(
                       PageRouteBuilder(
@@ -100,7 +101,7 @@ class ProfileDrawer extends StatelessWidget {
 
                 DrawerItemWidget(
                   icon: Icons.people_outline,
-                  title: "Discover People",
+                  title: context.l10n.discoverPeople,
                   onTap: () {
                     Navigator.of(context).pop();
                     navController.jumpToTab(1);
@@ -109,7 +110,7 @@ class ProfileDrawer extends StatelessWidget {
 
                 DrawerItemWidget(
                   icon: Icons.message_outlined,
-                  title: "Your Chats",
+                  title: context.l10n.yourChats,
                   onTap: () {
                     Navigator.of(context).pop();
                     navController.jumpToTab(2);
@@ -118,12 +119,12 @@ class ProfileDrawer extends StatelessWidget {
 
                 DrawerItemWidget(
                   icon: Icons.color_lens_sharp,
-                  title: "Your Themes",
+                  title: context.l10n.yourThemes,
                   onTap: () => _openThemesSelectView(context),
                 ),
                 DrawerItemWidget(
                   icon: Icons.settings_outlined,
-                  title: "Settings",
+                  title: context.l10n.settingsTitle,
                   onTap:
                       () =>
                           Navigator.of(context, rootNavigator: true).pushNamed(
@@ -133,7 +134,7 @@ class ProfileDrawer extends StatelessWidget {
                 ),
                 DrawerItemWidget(
                   icon: Icons.info_outline,
-                  title: "About Us",
+                  title: context.l10n.settingsAboutUs,
                   onTap: () {
                     Navigator.of(
                       context,
@@ -145,7 +146,7 @@ class ProfileDrawer extends StatelessWidget {
                 BlocConsumer<AuthCubit, AuthState>(
                   listener: (context, state) {
                     if (state is AuthSignedOut) {
-                      AppToast.warning('Log out Successfully');
+                      AppToast.warning(context.l10n.logOutSuccessfully);
                     } else if (state is AuthFailure) {
                       AppToast.error(state.errMsg);
                     }
@@ -159,7 +160,7 @@ class ProfileDrawer extends StatelessWidget {
                     return DrawerItemWidget(
                       icon: Icons.logout,
                       color: Colors.red.withValues(alpha: 0.92),
-                      title: "Log Out",
+                      title: context.l10n.logOut,
                       onTap:
                           state is AuthLoading
                               ? () {}

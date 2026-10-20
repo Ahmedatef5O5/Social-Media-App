@@ -17,6 +17,7 @@ import '../models/incoming_share_payload.dart';
 import '../widgets/incoming_share_sliver_app_bar.dart';
 import '../widgets/modern_share_tile.dart';
 import '../widgets/recent_chat_tile.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class IncomingShareTargetView extends StatelessWidget {
   final IncomingSharePayload payload;
@@ -45,7 +46,7 @@ class IncomingShareTargetView extends StatelessWidget {
     final storiesCubit = context.read<StoriesCubit>();
     final currentUser = context.read<HomeCubit>().currentUserData;
     if (currentUser == null) {
-      AppToast.error('Your profile is still loading — try again in a second.');
+      AppToast.error(context.l10n.yourProfileIsStill);
       return;
     }
     switch (payload.kind) {
@@ -73,7 +74,7 @@ class IncomingShareTargetView extends StatelessWidget {
         break;
       case IncomingShareKind.document:
       case IncomingShareKind.unsupported:
-        AppToast.info("Stories don't support documents yet.");
+        AppToast.info(context.l10n.storiesDontSupportDocuments);
     }
   });
 
@@ -106,7 +107,7 @@ class IncomingShareTargetView extends StatelessWidget {
 
   void _onAiTap(BuildContext context) {
     if (!_aiSupportsPayload) {
-      AppToast.info("AI doesn't support video yet");
+      AppToast.info(context.l10n.aiDoesntSupportVideo);
       return;
     }
     _safeNavigate(context, 'AI', () {
@@ -183,7 +184,7 @@ class IncomingShareTargetView extends StatelessWidget {
                   sliver: SliverList(
                     delegate: SliverChildListDelegate([
                       ModernShareTile(
-                        title: 'Share to Story',
+                        title: context.l10n.shareToStory,
                         leading: Image.asset(
                           AppImages.storyIcon,
                           width: 26,
@@ -196,7 +197,7 @@ class IncomingShareTargetView extends StatelessWidget {
                         onTap: () => _onStoryTap(context),
                       ),
                       ModernShareTile(
-                        title: 'Create Post',
+                        title: context.l10n.createPost,
                         leading: const Icon(
                           Icons.dynamic_feed_rounded,
                           color: Color(0xFF4CAF50),
@@ -208,7 +209,7 @@ class IncomingShareTargetView extends StatelessWidget {
                         onTap: () => _onPostTap(context),
                       ),
                       ModernShareTile(
-                        title: 'Ask Syncra AI',
+                        title: context.l10n.askSyncraAi,
 
                         leading: const Icon(
                           Icons.auto_awesome_rounded,
@@ -222,7 +223,7 @@ class IncomingShareTargetView extends StatelessWidget {
                         subtitle:
                             _aiSupportsPayload
                                 ? null
-                                : "AI doesn't support video yet",
+                                : context.l10n.aiDoesntSupportVideo,
                         onTap: () => _onAiTap(context),
                       ),
                     ]),
@@ -238,7 +239,7 @@ class IncomingShareTargetView extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
                           Text(
-                            'Recent Chats',
+                            context.l10n.recentChats,
                             style: theme.textTheme.titleMedium?.copyWith(
                               fontWeight: FontWeight.bold,
                               color: theme.colorScheme.onSurface,
@@ -283,10 +284,10 @@ class IncomingShareTargetView extends StatelessWidget {
                     child: Center(child: CustomLoadingIndicator()),
                   ),
                 ] else ...[
-                  const SliverFillRemaining(
+                  SliverFillRemaining(
                     child: Center(
                       child: Text(
-                        'No conversations yet',
+                        context.l10n.noConversationsYet,
                         style: TextStyle(color: Colors.grey),
                       ),
                     ),

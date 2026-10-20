@@ -32,6 +32,7 @@ import '../widgets/group_info_quick_actions_row.dart';
 import '../widgets/group_member_header_widget.dart';
 import 'add_group_members_view.dart';
 import 'group_settings_view.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class GroupInfoView extends StatefulWidget {
   final GroupModel group;
@@ -163,7 +164,7 @@ class _GroupInfoViewState extends State<GroupInfoView> {
       }
     } catch (e) {
       if (mounted) {
-        AppToast.error('Failed to update group photo');
+        AppToast.error(context.l10n.failedToUpdateGroup);
       }
     } finally {
       if (mounted) setState(() => _isUploadingPhoto = false);
@@ -217,17 +218,17 @@ class _GroupInfoViewState extends State<GroupInfoView> {
       context: context,
       builder:
           (_) => AlertDialog(
-            title: const Text('Remove Member'),
-            content: Text('Remove ${member.userName} from the group?'),
+            title: Text(context.l10n.removeMember),
+            content: Text(context.l10n.removeFromTheGroup(member.userName)),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context, false),
-                child: const Text('Cancel'),
+                child: Text(context.l10n.cancel),
               ),
               TextButton(
                 onPressed: () => Navigator.pop(context, true),
-                child: const Text(
-                  'Remove',
+                child: Text(
+                  context.l10n.remove,
                   style: TextStyle(color: Colors.red),
                 ),
               ),
@@ -483,11 +484,11 @@ class _GroupInfoViewState extends State<GroupInfoView> {
                                   child: Column(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      const Text('Failed to load members'),
+                                      Text(context.l10n.failedToLoadMembers),
                                       TextButton(
                                         onPressed:
                                             () => _membersCubit.loadMembers(),
-                                        child: const Text('Retry'),
+                                        child: Text(context.l10n.retry),
                                       ),
                                     ],
                                   ),
@@ -509,7 +510,7 @@ class _GroupInfoViewState extends State<GroupInfoView> {
                                     currentUserId: _currentUserId,
                                   );
                                   AppToast.success(
-                                    '${member.userName} is now an admin',
+                                    context.l10n.isNowAnAdmin(member.userName),
                                   );
                                 } catch (e) {
                                   AppToast.error(
@@ -524,7 +525,7 @@ class _GroupInfoViewState extends State<GroupInfoView> {
                                     currentUserId: _currentUserId,
                                   );
                                   AppToast.success(
-                                    '${member.userName} is no longer an admin',
+                                    context.l10n.isNoLongerAn(member.userName),
                                   );
                                 } catch (e) {
                                   AppToast.error(

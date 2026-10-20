@@ -5,6 +5,7 @@ import '../cubits/sticker_pack_detail_cubit/sticker_pack_detail_cubit.dart';
 import '../cubits/sticker_pack_detail_cubit/sticker_pack_detail_state.dart';
 import '../models/sticker_pack_model.dart';
 import 'download_progress_bar_button.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class CreatePackBottomActionBar extends StatelessWidget {
   final StickerPackModel pack;
@@ -33,8 +34,11 @@ class CreatePackBottomActionBar extends StatelessWidget {
     final totalMb = pack.totalSizeBytes / (1024 * 1024);
     final downloadedMb = totalMb * progress;
 
-    final label =
-        '${downloadedMb.toStringAsFixed(1)}/${totalMb.toStringAsFixed(1)} MB  •  ${pack.stickerCount} Stickers';
+    final label = context.l10n.mbStickers(
+      downloadedMb.toStringAsFixed(1),
+      totalMb.toStringAsFixed(1),
+      pack.stickerCount,
+    );
 
     return Container(
       padding: EdgeInsets.fromLTRB(

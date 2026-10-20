@@ -12,6 +12,7 @@ import 'package:social_media_app/features/single_chats/widgets/user_chat_avatar_
 import '../../reports/models/report_target.dart';
 import '../../reports/widgets/report_bottom_sheet.dart';
 import '../models/chat_user_model.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 const double _kAvatarSlotWidth = 28;
 
@@ -146,7 +147,7 @@ class ChatBubbleState extends State<ChatBubble>
                   if (!isCall)
                     ListTile(
                       leading: const Icon(Icons.reply_all_outlined),
-                      title: const Text('Reply'),
+                      title: Text(context.l10n.reply),
                       onTap: () {
                         Navigator.pop(ctx);
                         widget.onReply?.call(widget.message);
@@ -157,7 +158,7 @@ class ChatBubbleState extends State<ChatBubble>
                           widget.message.caption != null))
                     ListTile(
                       leading: const Icon(Icons.edit_outlined),
-                      title: const Text('Edit message'),
+                      title: Text(context.l10n.editMessage),
                       onTap: () {
                         Navigator.pop(ctx);
                         widget.onEdit?.call(widget.message);
@@ -167,7 +168,7 @@ class ChatBubbleState extends State<ChatBubble>
                     ListTile(
                       leading: const Icon(Icons.delete_outline),
                       title: Text(
-                        'Delete message',
+                        context.l10n.deleteMessage,
                         style: Theme.of(
                           context,
                         ).textTheme.titleMedium!.copyWith(color: Colors.red),
@@ -192,7 +193,7 @@ class ChatBubbleState extends State<ChatBubble>
                       widget.message.messageType != 'unblock_event')
                     ListTile(
                       leading: const Icon(Icons.report_gmailerrorred),
-                      title: const Text('Report message'),
+                      title: Text(context.l10n.reportMessage),
                       onTap: () {
                         Navigator.pop(ctx);
                         ReportBottomSheet.show(

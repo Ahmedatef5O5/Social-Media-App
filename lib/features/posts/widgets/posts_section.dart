@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
 import '../cubits/posts_cubit/posts_cubit.dart';
 import 'post_item_widget.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class PostsSection extends StatelessWidget {
   const PostsSection({super.key});
@@ -34,7 +35,7 @@ class PostsSection extends StatelessWidget {
 
           if (posts.isEmpty) {
             return SliverToBoxAdapter(
-              child: const Center(child: Text('No posts available.')),
+              child: Center(child: Text(context.l10n.noPostsAvailable)),
             );
           }
           return SliverList(

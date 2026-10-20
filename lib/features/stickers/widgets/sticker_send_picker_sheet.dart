@@ -8,6 +8,7 @@ import '../cubits/sticker_send_picker_cubit/sticker_send_picker_state.dart';
 import '../views/empty_downloads_sheet_view.dart';
 import '../views/sticker_packs_browser_view.dart';
 import 'sticker_thumbnail.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class StickerSendPickerSheet extends StatelessWidget {
   const StickerSendPickerSheet({super.key});
@@ -151,7 +152,7 @@ class _StickerSendPickerSheetBody extends StatelessWidget {
                                 shape: BoxShape.circle,
                               ),
                               child: IconButton(
-                                tooltip: 'Browse Library',
+                                tooltip: context.l10n.browseLibrary,
                                 icon: Icon(
                                   Icons.add_rounded,
                                   color: theme.primaryColor,

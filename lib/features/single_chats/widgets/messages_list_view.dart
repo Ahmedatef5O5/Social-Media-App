@@ -20,6 +20,7 @@ import '../helpers/chat_system_event_text_builder.dart';
 import '../models/chat_user_model.dart';
 import '../models/message_model.dart';
 import 'recording_bubble_widget.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class MessagesListView extends StatefulWidget {
   final ChatUserModel receiverUser;
@@ -258,7 +259,7 @@ class _MessagesListViewState extends State<MessagesListView> {
     return EmptyPlaceholderState(
       img: AppImages.blueSmileFaceLot,
       imgHeight: MediaQuery.of(context).size.height * 0.2,
-      title: 'No messages yet.',
+      title: context.l10n.noMessagesYet,
       style: Theme.of(context).textTheme.titleMedium!.copyWith(
         color: Theme.of(context).primaryColor,
         fontWeight: FontWeight.w600,

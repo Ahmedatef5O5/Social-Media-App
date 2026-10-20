@@ -17,6 +17,8 @@ import '../../../core/widgets/animated_activity_text.dart';
 import '../../../core/widgets/app_avatar.dart';
 import '../../profile/widgets/user_preview_dialog.dart';
 import '../models/chat_user_model.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
+import 'package:social_media_app/core/localization/app_l10n.dart';
 
 class ChatItemTile extends StatelessWidget {
   final ChatUserModel user;
@@ -172,7 +174,7 @@ class ChatItemTile extends StatelessWidget {
     if (raw == null ||
         raw.trim().isEmpty ||
         raw.trim().toLowerCase() == 'file') {
-      return 'File';
+      return AppL10n.current.file;
     }
     String clean = raw.trim();
     if (clean.startsWith('📄 ')) {
@@ -187,30 +189,30 @@ class ChatItemTile extends StatelessWidget {
   String _getNormalMessageText() {
     switch (user.lastMessageType) {
       case 'image':
-        return '📷 Photo';
+        return AppL10n.current.photo2;
       case 'video':
-        return '🎥 Video';
+        return AppL10n.current.video2;
       case 'voice':
-        return '🎤 Voice message';
+        return AppL10n.current.voiceMessage;
       case 'gif':
-        return '🖼️ GIF';
+        return AppL10n.current.gif;
       case 'sticker':
-        return '🏷️ Sticker';
+        return AppL10n.current.sticker2;
       case 'file':
       case 'document':
         final fileName = _extractCleanFileName(user.lastMessage);
         return '📄 $fileName';
       case 'block_event':
         return user.lastMessageIsMe
-            ? 'You blocked ${user.name}'
-            : '${user.name} blocked you';
+            ? AppL10n.current.youBlocked2(user.name)
+            : AppL10n.current.blockedYou2(user.name);
       case 'unblock_event':
         return user.lastMessageIsMe
-            ? 'You unblocked ${user.name}'
-            : '${user.name} unblocked you';
+            ? AppL10n.current.youUnblocked2(user.name)
+            : AppL10n.current.unblockedYou2(user.name);
       default:
         return (user.lastMessage == null || user.lastMessage!.isEmpty)
-            ? 'No messages yet'
+            ? AppL10n.current.noMessagesYet2
             : user.lastMessage!;
     }
   }
@@ -254,8 +256,10 @@ class ChatItemTile extends StatelessWidget {
           isMissed ? Colors.redAccent : Colors.grey.shade600;
       final String label =
           isMissed
-              ? (isAudio ? 'Missed voice call' : 'Missed video call')
-              : (isAudio ? 'Voice call' : 'Video call');
+              ? (isAudio
+                  ? context.l10n.missedVoiceCall
+                  : context.l10n.missedVideoCall)
+              : (isAudio ? context.l10n.voiceCall : context.l10n.videoCall);
 
       return Row(
         mainAxisSize: MainAxisSize.min,
@@ -280,7 +284,7 @@ class ChatItemTile extends StatelessWidget {
       return Align(
         alignment: Alignment.centerLeft,
         child: MessageReactionPreviewHelper.buildDirectionalFilePreview(
-          fileName: user.lastMessage ?? 'File',
+          fileName: user.lastMessage ?? context.l10n.file,
           style: textStyle,
           defaultIconColor: Colors.grey.shade600,
           iconSize: 14,
@@ -324,7 +328,7 @@ class ChatItemTile extends StatelessWidget {
           const RecordingIndicatorWidget(size: 14),
           const SizedBox(width: 6),
           AnimatedActivityText(
-            text: 'recording audio...',
+            text: context.l10n.recordingAudio2,
             style: TextStyle(color: Colors.red.shade600, fontSize: 14),
           ),
         ],

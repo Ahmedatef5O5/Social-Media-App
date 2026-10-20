@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
@@ -70,6 +70,11 @@ Future<void> initializeCriticalBeforeRunApp() async {
   await Future.wait([
     _safely('Supabase', _initSupabase),
     _safely('HiveCache', _initHiveCache),
+    // The saved UI language must be known before the first frame, otherwise an
+    // Arabic user would see one English frame (and mirrored layout would pop).
+    // SharedPreferences read only; `init()` is idempotent, so the later call in
+    // `initializeCoreServices()` is a no-op.
+    _safely('Settings', SettingsRepository.instance.init),
   ]);
 }
 

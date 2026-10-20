@@ -6,6 +6,7 @@ import '../../../core/constants/app_images.dart';
 import '../../../core/widgets/custom_confirmation_dialog.dart';
 import '../../../core/widgets/custom_grey_container.dart';
 import '../cubits/auth_cubit/auth_cubit.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class SocialSignSection extends StatelessWidget {
   const SocialSignSection({super.key, required this.label});
@@ -17,16 +18,15 @@ class SocialSignSection extends StatelessWidget {
       context: context,
       builder:
           (dialogContext) => CustomConfirmationDialog(
-            title:
-                'Facebook log in is in Dev Mode (Test accounts and admin only). Continue?',
+            title: context.l10n.facebookLogInIs,
             style: Theme.of(context).textTheme.titleMedium!.copyWith(
               fontWeight: FontWeight.w500,
               fontSize: 17,
             ),
             textAlign: TextAlign.center,
             img: AppImages.alertAnimationLot,
-            cancelBtnText: 'Cancel',
-            confirmBtnText: 'Continue',
+            cancelBtnText: context.l10n.cancel,
+            confirmBtnText: context.l10n.continueLabel,
             onConfirm: () {
               Navigator.of(dialogContext, rootNavigator: true).pop(true);
             },

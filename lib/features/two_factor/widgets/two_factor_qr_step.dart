@@ -6,6 +6,8 @@ import '../../../core/toast/app_toast.dart';
 import '../../../core/widgets/custom_elevated_button.dart';
 import '../models/two_factor_enrollment.dart';
 import '../utils/clipboard_guard.dart';
+import 'package:social_media_app/core/localization/app_l10n.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class TwoFactorQrStep extends StatelessWidget {
   final TwoFactorEnrollment enrollment;
@@ -21,7 +23,7 @@ class TwoFactorQrStep extends StatelessWidget {
     if (uri == null) return;
     final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
     if (!ok) {
-      AppToast.info('No authenticator app found. Copy the secret key instead.');
+      AppToast.info(AppL10n.current.noAuthenticatorAppFound);
     }
   }
 
@@ -37,14 +39,14 @@ class TwoFactorQrStep extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Scan this QR code',
+          context.l10n.scanThisQrCode,
           style: theme.textTheme.headlineSmall?.copyWith(
             fontWeight: FontWeight.w800,
           ),
         ),
         const SizedBox(height: 8),
         Text(
-          'Open your authenticator app, add a new account and scan the code.',
+          context.l10n.openYourAuthenticatorApp,
           style: theme.textTheme.bodyMedium?.copyWith(color: theme.hintColor),
         ),
         const SizedBox(height: 20),
@@ -64,7 +66,7 @@ class TwoFactorQrStep extends StatelessWidget {
         ),
         const SizedBox(height: 22),
         Text(
-          "Can't scan? Enter this key manually",
+          context.l10n.cantScanEnterThis,
           style: theme.textTheme.labelLarge?.copyWith(color: theme.hintColor),
         ),
         const SizedBox(height: 8),
@@ -82,20 +84,20 @@ class TwoFactorQrStep extends StatelessWidget {
               Expanded(
                 child: SelectableText(
                   grouped,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: 'monospace',
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
-                    letterSpacing: 1,
+                    letterSpacing: context.ls(1),
                   ),
                 ),
               ),
               IconButton(
-                tooltip: 'Copy secret',
+                tooltip: context.l10n.copySecret,
                 icon: const Icon(CupertinoIcons.doc_on_doc, size: 20),
                 onPressed: () async {
                   await ClipboardGuard.copySensitive(enrollment.secret);
-                  AppToast.success('Secret copied. It will be cleared in 60s.');
+                  AppToast.success(context.l10n.secretCopiedItWill);
                 },
               ),
             ],
@@ -105,7 +107,7 @@ class TwoFactorQrStep extends StatelessWidget {
         TextButton.icon(
           onPressed: _openAuthenticator,
           icon: const Icon(CupertinoIcons.arrow_up_right_square, size: 18),
-          label: const Text('Open in authenticator app'),
+          label: Text(context.l10n.openInAuthenticatorApp),
         ),
         const SizedBox(height: 14),
         CustomElevatedButton(txtBtn: "I've added it", onPressed: onNext),

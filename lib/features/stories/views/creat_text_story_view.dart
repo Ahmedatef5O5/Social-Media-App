@@ -12,6 +12,7 @@ import '../../social_graph/helpers/privacy_picker_helper.dart';
 import '../../social_graph/models/content_privacy.dart';
 import '../cubits/stories_cubit/stories_cubit.dart';
 import '../widgets/story_text_editor.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class CreateTextStoryView extends StatefulWidget {
   final UserData currentUser;
@@ -247,7 +248,7 @@ class _CreateTextStoryViewState extends State<CreateTextStoryView> {
       listener: (context, state) {
         if (state is AddStorySuccess) {
           Navigator.of(context).pop();
-          AppToast.success('Story Added Successfully');
+          AppToast.success(context.l10n.storyAddedSuccessfully);
         }
 
         if (state is AddStoryError && !state.isConnectivityError) {
@@ -361,8 +362,8 @@ class _CreateTextStoryViewState extends State<CreateTextStoryView> {
                                       color: Colors.white,
                                     ),
                                   )
-                                  : const Text(
-                                    'Share',
+                                  : Text(
+                                    context.l10n.share,
                                     style: TextStyle(
                                       fontSize: 14,
                                       fontWeight: FontWeight.bold,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../ai_assistant/entities/ai_reply_length.dart';
 import 'ai_setting_option_card.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class AiReplyLengthPickerSheet extends StatelessWidget {
   const AiReplyLengthPickerSheet({super.key, required this.selected});
@@ -68,11 +69,11 @@ class AiReplyLengthPickerSheet extends StatelessWidget {
 
               // Title
               Text(
-                'Reply Length',
+                context.l10n.replyLength,
                 textAlign: TextAlign.center,
                 style: theme.textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.w800,
-                  letterSpacing: 0.2,
+                  letterSpacing: context.ls(0.2),
                 ),
               ),
               const SizedBox(height: 6),
@@ -81,7 +82,7 @@ class AiReplyLengthPickerSheet extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: Text(
-                  'How long should AI-generated captions and replies be?',
+                  context.l10n.howLongShouldAi,
                   textAlign: TextAlign.center,
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,

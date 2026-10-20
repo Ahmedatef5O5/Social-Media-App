@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../models/ai_suggestion_item.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class AiSuggestionGrid extends StatelessWidget {
   final List<AiSuggestionItem> items;
@@ -63,11 +64,11 @@ class _AiSuggestionCard extends StatelessWidget {
                   ),
                   Text(
                     item.label,
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.w600,
                       fontSize: 14.5,
-                      letterSpacing: -0.1,
+                      letterSpacing: context.ls(-0.1),
                     ),
                   ),
                 ],

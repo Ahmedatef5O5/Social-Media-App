@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import '../models/groupe_message_model.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class GroupEditPreviewBar extends StatelessWidget {
   final GroupMessageModel message;
@@ -37,7 +38,7 @@ class GroupEditPreviewBar extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  'Editing message',
+                  context.l10n.editingMessage,
                   style: TextStyle(
                     color: primary,
                     fontWeight: FontWeight.bold,

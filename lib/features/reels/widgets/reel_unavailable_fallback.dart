@@ -3,6 +3,7 @@ import 'package:gap/gap.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../core/widgets/app_network_image.dart';
 import '../models/reel_model.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class ReelUnavailableFallback extends StatelessWidget {
   final ReelModel reel;
@@ -21,8 +22,8 @@ class ReelUnavailableFallback extends StatelessWidget {
             children: [
               const Icon(Icons.error_outline, color: Colors.white70, size: 40),
               const Gap(10),
-              const Text(
-                'Learn how to play this video',
+              Text(
+                context.l10n.learnHowToPlay,
                 style: TextStyle(color: Colors.white, fontSize: 15),
               ),
               const Gap(14),
@@ -33,8 +34,8 @@ class ReelUnavailableFallback extends StatelessWidget {
                       mode: LaunchMode.externalApplication,
                     ),
                 icon: const Icon(Icons.open_in_new, color: Colors.white),
-                label: const Text(
-                  'Open on YouTube',
+                label: Text(
+                  context.l10n.openOnYoutube,
                   style: TextStyle(color: Colors.white),
                 ),
               ),

@@ -12,6 +12,8 @@ import '../../social_graph/models/discover_person_model.dart';
 import '../../social_graph/models/friendship_status.dart';
 import '../../social_graph/widgets/animated_action_button.dart';
 import '../cubits/discover_people_cubit.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
+import 'package:social_media_app/core/localization/app_l10n.dart';
 
 class DiscoverPersonCardWidget extends StatelessWidget {
   final DiscoverPersonModel personData;
@@ -47,7 +49,7 @@ class DiscoverPersonCardWidget extends StatelessWidget {
           break;
       }
     } catch (_) {
-      AppToast.error('Something went wrong. Please try again.');
+      AppToast.error(context.l10n.somethingWentWrongPlease);
       rethrow;
     }
   }
@@ -59,7 +61,7 @@ class DiscoverPersonCardWidget extends StatelessWidget {
         isCurrentlyFollowing: personData.isFollowing,
       );
     } catch (_) {
-      AppToast.error('Something went wrong. Please try again.');
+      AppToast.error(context.l10n.somethingWentWrongPlease);
       rethrow;
     }
   }
@@ -250,7 +252,7 @@ class DiscoverPersonCardWidget extends StatelessWidget {
   Widget _buildCompactSocialProof(ThemeData theme) {
     if (personData.mutualFriendsCount > 0) {
       return Text(
-        '${personData.mutualFriendsCount} mutual friends',
+        AppL10n.current.mutualFriends(personData.mutualFriendsCount),
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
         style: TextStyle(
@@ -261,7 +263,7 @@ class DiscoverPersonCardWidget extends StatelessWidget {
       );
     } else if (personData.totalFriendsCount > 0) {
       return Text(
-        '${personData.totalFriendsCount} friends',
+        AppL10n.current.friends2(personData.totalFriendsCount),
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
         style: TextStyle(
@@ -272,7 +274,7 @@ class DiscoverPersonCardWidget extends StatelessWidget {
       );
     } else if (personData.mutualGroupsCount > 0) {
       return Text(
-        '${personData.mutualGroupsCount} mutual groups',
+        AppL10n.current.mutualGroups(personData.mutualGroupsCount),
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
         style: TextStyle(
@@ -312,7 +314,7 @@ class DiscoverPersonCardWidget extends StatelessWidget {
         return _StaticChip(
           height: buttonHeight,
           theme: theme,
-          label: 'Accept',
+          label: context.l10n.accept,
           icon: Icons.person_add_alt_1_rounded,
           onTap: () => _handleFriendAction(context),
         );
@@ -320,7 +322,7 @@ class DiscoverPersonCardWidget extends StatelessWidget {
         return _StaticChip(
           height: buttonHeight,
           theme: theme,
-          label: 'Friends',
+          label: context.l10n.friends,
           icon: Icons.people_alt_rounded,
           onTap: null,
         );
@@ -351,7 +353,7 @@ class _FollowsYouBadge extends StatelessWidget {
           ),
           const SizedBox(width: 2),
           Text(
-            'Follows you',
+            context.l10n.followsYou,
             style: TextStyle(
               fontSize: isMini ? 6 : 7,
               fontWeight: FontWeight.w600,
@@ -439,7 +441,7 @@ class _DiscoverFriendCounts extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              '$totalFriendsCount ${totalFriendsCount == 1 ? 'Friend' : 'Friends'}',
+              '$totalFriendsCount ${totalFriendsCount == 1 ? 'Friend' : context.l10n.friends}',
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(
@@ -450,7 +452,7 @@ class _DiscoverFriendCounts extends StatelessWidget {
             if (showMutual) ...[
               const SizedBox(height: 2),
               Text(
-                '$mutualFriendsCount Mutual',
+                context.l10n.mutual(mutualFriendsCount),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
@@ -479,7 +481,7 @@ class _MutualGroupsLabel extends StatelessWidget {
         Icon(Icons.groups_rounded, size: 12, color: AppColors.grey4),
         const SizedBox(width: 3),
         Text(
-          '$count mutual ${count == 1 ? 'group' : 'groups'}',
+          context.l10n.mutualGroupsCount(count),
           style: TextStyle(
             fontSize: 11,
             color: AppColors.grey4,

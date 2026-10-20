@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../cubits/ai_usage_cubit/ai_usage_cubit.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class AiUsageCard extends StatelessWidget {
   const AiUsageCard({super.key});
@@ -25,8 +26,8 @@ class AiUsageCard extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    const Text(
-                      "Today's AI Usage",
+                    Text(
+                      context.l10n.todaysAiUsage,
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
                     const Spacer(),
@@ -37,13 +38,21 @@ class AiUsageCard extends StatelessWidget {
                     if (usage.bonusGranted != null &&
                         usage.bonusGranted! > 0) ...[
                       const SizedBox(width: 8),
-                      Chip(label: Text('+~${usage.bonusGranted} Bonus')),
+                      Chip(
+                        label: Text(
+                          context.l10n.bonus2(usage.bonusGranted ?? 0),
+                        ),
+                      ),
                     ],
                   ],
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  '$percentLabel used of your ${usage.effectiveUserLimit ?? '—'} daily requests ($usedLabel)',
+                  context.l10n.usedOfYourDaily(
+                    percentLabel,
+                    usage.effectiveUserLimit ?? '—',
+                    usedLabel,
+                  ),
                 ),
                 const SizedBox(height: 6),
                 LinearProgressIndicator(value: fraction ?? 0),

@@ -10,6 +10,7 @@ import '../cubits/saved_posts_cubit/saved_posts_cubit.dart';
 import '../helpers/posts_skeleton_items.dart';
 import '../models/post_model.dart';
 import '../widgets/post_item_widget.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class SavedPostsView extends StatefulWidget {
   const SavedPostsView({super.key, required this.userId});
@@ -53,11 +54,11 @@ class _SavedPostsViewState extends State<SavedPostsView> {
                 ),
               ),
               title: Text(
-                'Saved Posts',
+                context.l10n.savedPosts,
                 style: theme.textTheme.titleMedium!.copyWith(
                   color: theme.primaryColor,
                   fontWeight: FontWeight.w500,
-                  letterSpacing: 0.5,
+                  letterSpacing: context.ls(0.5),
                   fontSize: 20,
                 ),
               ),
@@ -68,7 +69,7 @@ class _SavedPostsViewState extends State<SavedPostsView> {
                     color: theme.primaryColor,
                   ),
                   onPressed: () {
-                    AppToast.info('this feature is coming soon');
+                    AppToast.info(context.l10n.thisFeatureIsComing);
                   },
                 ),
                 const Gap(8),
@@ -167,7 +168,7 @@ class _EmptySavedPosts extends StatelessWidget {
           ),
           const Gap(18),
           Text(
-            'No saved posts yet',
+            context.l10n.noSavedPostsYet,
             style: Theme.of(
               context,
             ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
@@ -176,7 +177,7 @@ class _EmptySavedPosts extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 40),
             child: Text(
-              'Tap the bookmark icon on any post to save it here for later.',
+              context.l10n.tapTheBookmarkIcon,
               textAlign: TextAlign.center,
               style: Theme.of(
                 context,

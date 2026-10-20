@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:social_media_app/features/profile/services/user_services.dart';
@@ -17,6 +17,7 @@ import '../../../group_calls/services/group_call_signaling_service.dart';
 import '../../../notifications/repository/notifications_repository.dart';
 import '../../models/call_model.dart';
 import '../../services/call_signaling_service.dart';
+import 'package:social_media_app/core/localization/app_l10n.dart';
 part 'call_state.dart';
 
 class CallCubit extends Cubit<CallState> with SafeEmitMixin<CallState> {
@@ -130,7 +131,7 @@ class CallCubit extends Cubit<CallState> with SafeEmitMixin<CallState> {
     // One call at a time: starting a second call would overwrite `_activeCall`
     // and tear down the one in progress.
     if (isBusy || IncomingCallNavigationGuard.isUserBusyWithAnotherCall()) {
-      AppToast.warning('Please end your current call before starting another.');
+      AppToast.warning(AppL10n.current.pleaseEndYourCurrent);
       return;
     }
 

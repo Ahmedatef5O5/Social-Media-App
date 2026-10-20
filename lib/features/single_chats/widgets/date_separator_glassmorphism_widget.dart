@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class DateSeparatorGlassmorphismWidget extends StatelessWidget {
   final String date;
@@ -44,7 +45,7 @@ class DateSeparatorGlassmorphismWidget extends StatelessWidget {
                   color: textColor,
                   fontSize: 11,
                   fontWeight: FontWeight.w500,
-                  letterSpacing: 0.5,
+                  letterSpacing: context.ls(0.5),
                 ),
               ),
             ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../helpers/chat_helper.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 typedef ReadMoreContentBuilder =
     Widget Function(BuildContext context, int? maxLines, TextOverflow overflow);
@@ -44,8 +45,8 @@ class _ReadMoreTextState extends State<ReadMoreText> {
         widget.textDirection ?? ChatHelper.getTextDirection(trimmed);
     final isArabic = direction == TextDirection.rtl;
 
-    final readMoreLabel = isArabic ? '...قراءة المزيد' : 'Read more...';
-    final readLessLabel = isArabic ? 'عرض أقل' : 'Show less';
+    final readMoreLabel = isArabic ? '...قراءة المزيد' : context.l10n.readMore;
+    final readLessLabel = isArabic ? 'عرض أقل' : context.l10n.showLess;
 
     final crossAxis =
         widget.crossAxisAlignment ??

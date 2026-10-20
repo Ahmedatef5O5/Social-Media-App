@@ -23,6 +23,7 @@ import '../widgets/post_media_widget.dart';
 import '../widgets/post_interactions_row.dart';
 import '../../comments/widgets/comments_inline_section.dart';
 import '../widgets/shared_post_header_widget.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 enum PostDetailsActiveMode { none, comments, reactions }
 
@@ -195,7 +196,7 @@ class _PostDetailsViewState extends State<PostDetailsView> {
                     isSharedPost ? currentPost.originalPost : currentPost;
 
                 if (isSharedPost && displayPost == null) {
-                  return const Center(child: Text('Content not available'));
+                  return Center(child: Text(context.l10n.contentNotAvailable));
                 }
 
                 final bool isSharedReel = displayPost!.isSharedReel;

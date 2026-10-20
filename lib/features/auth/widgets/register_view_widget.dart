@@ -11,6 +11,7 @@ import 'package:social_media_app/features/auth/widgets/social_sign_section.dart'
 import '../../../core/toast/app_toast.dart';
 import '../../../core/widgets/custom_elevated_button.dart';
 import '../../../core/widgets/custom_text_form_field.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class RegisterViewWidget extends StatefulWidget {
   const RegisterViewWidget({super.key});
@@ -73,8 +74,8 @@ class _RegisterViewWidgetState extends State<RegisterViewWidget> {
               CustomTextFormField(
                 prefixIcon: const Icon(Icons.person_rounded),
                 controller: _fullNameController,
-                labelText: 'Full Name',
-                hintText: 'Your Full Name',
+                labelText: context.l10n.fullName,
+                hintText: context.l10n.yourFullName,
                 inputFormatters: AppFormatters.noLeadingSpace,
                 validator: AppValidators.validateName,
               ),
@@ -82,8 +83,8 @@ class _RegisterViewWidgetState extends State<RegisterViewWidget> {
               CustomTextFormField(
                 prefixIcon: const Icon(Icons.email_rounded),
                 controller: _emailController,
-                labelText: 'Email',
-                hintText: 'Enter New Email',
+                labelText: context.l10n.email,
+                hintText: context.l10n.enterNewEmail,
                 inputFormatters: AppFormatters.noSpaces,
                 validator: AppValidators.validateEmail,
               ),
@@ -92,8 +93,8 @@ class _RegisterViewWidgetState extends State<RegisterViewWidget> {
                 prefixIcon: const Icon(Icons.lock_rounded),
                 controller: _passwordController,
                 focusNode: _passwordFocusNode,
-                labelText: 'Password',
-                hintText: 'Type your password',
+                labelText: context.l10n.password,
+                hintText: context.l10n.typeYourPassword,
                 isPassword: true,
                 validator: AppValidators.validatePassword,
               ),
@@ -124,8 +125,8 @@ class _RegisterViewWidgetState extends State<RegisterViewWidget> {
               CustomTextFormField(
                 prefixIcon: const Icon(Icons.lock_rounded),
                 controller: _confirmPasswordController,
-                labelText: 'Confirm Password',
-                hintText: 'Retype your password',
+                labelText: context.l10n.confirmPassword,
+                hintText: context.l10n.retypeYourPassword,
                 isPassword: true,
                 validator:
                     (v) => AppValidators.validateConfirmPassword(
@@ -141,7 +142,7 @@ class _RegisterViewWidgetState extends State<RegisterViewWidget> {
                         current is AuthFailure,
                 listener: (BuildContext context, AuthState state) async {
                   if (state is AuthSuccess) {
-                    AppToast.success('Sign up Successfully');
+                    AppToast.success(context.l10n.signUpSuccessfully);
                     await Future.delayed(const Duration(milliseconds: 550));
                     if (context.mounted) {
                       Navigator.of(
@@ -185,7 +186,7 @@ class _RegisterViewWidgetState extends State<RegisterViewWidget> {
                 },
               ),
               const Gap(18),
-              const SocialSignSection(label: 'Or Sign up with'),
+              SocialSignSection(label: context.l10n.orSignUpWith),
               const Gap(22),
               SignTextSection(
                 staticText: 'By Using this app you agree with the\n',

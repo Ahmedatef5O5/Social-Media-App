@@ -7,6 +7,7 @@ import '../models/sticker_pack_model.dart';
 import '../utils/byte_size_utils.dart';
 import 'cancel_progress_bubble.dart';
 import 'download_progress_bar_button.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class StickerPackCard extends StatelessWidget {
   final StickerPackModel pack;
@@ -96,8 +97,11 @@ class StickerPackCard extends StatelessWidget {
             const Gap(4),
             Text(
               pack.totalSizeBytes > 0
-                  ? '${pack.stickerCount} stickers  •  ${pack.totalSizeBytes.asReadableSize}'
-                  : '${pack.stickerCount} stickers',
+                  ? context.l10n.stickers5(
+                    pack.stickerCount,
+                    pack.totalSizeBytes.asReadableSize,
+                  )
+                  : context.l10n.stickers2(pack.stickerCount),
               textAlign: TextAlign.center,
               style: theme.textTheme.labelSmall?.copyWith(
                 color: AppColors.grey6,

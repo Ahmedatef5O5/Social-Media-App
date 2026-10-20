@@ -4,6 +4,7 @@ import 'package:social_media_app/core/helpers/chat_helper.dart';
 import 'package:social_media_app/core/themes/app_colors.dart';
 import '../../../core/helpers/file_icon_helper.dart';
 import '../../../core/utilities/file_size_formatter.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class CreatePostFilePreview extends StatelessWidget {
   final String fileName;
@@ -107,7 +108,7 @@ class CreatePostFilePreview extends StatelessWidget {
                           color: isDark ? Colors.white : iconAccent,
                           fontSize: 9,
                           fontWeight: FontWeight.w800,
-                          letterSpacing: 0.4,
+                          letterSpacing: context.ls(0.4),
                         ),
                       ),
                     ),

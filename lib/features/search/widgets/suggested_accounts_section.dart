@@ -4,6 +4,7 @@ import 'package:gap/gap.dart';
 import '../../discover/cubits/discover_people_cubit.dart';
 import '../../discover/widgets/discover_person_card_widget.dart';
 import '../utils/search_view_metrics.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class SuggestedAccountsSection extends StatelessWidget {
   const SuggestedAccountsSection({super.key});
@@ -26,7 +27,7 @@ class SuggestedAccountsSection extends StatelessWidget {
                 horizontal: SearchViewMetrics.horizontalPadding,
               ),
               child: Text(
-                'Suggested for you',
+                context.l10n.suggestedForYou,
                 style: theme.textTheme.titleMedium!.copyWith(
                   fontWeight: FontWeight.w700,
                 ),

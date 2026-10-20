@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:shimmer/shimmer.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class SharedGroupsShimmer extends StatelessWidget {
   const SharedGroupsShimmer({super.key});
@@ -19,8 +20,8 @@ class SharedGroupsShimmer extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Text(
-                'Shared Groups',
+              Text(
+                context.l10n.sharedGroups,
                 style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
               ),
               const Spacer(),

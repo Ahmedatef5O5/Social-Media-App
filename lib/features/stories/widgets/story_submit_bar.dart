@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
 import '../../../core/themes/app_colors.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class StorySubmitBar extends StatelessWidget {
   final bool hasText;
@@ -22,7 +23,7 @@ class StorySubmitBar extends StatelessWidget {
           loading
               ? const CustomLoadingIndicator(radius: 10, color: AppColors.white)
               : Text(
-                'Done',
+                context.l10n.done,
                 style: TextStyle(
                   color:
                       hasText

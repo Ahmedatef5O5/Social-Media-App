@@ -17,6 +17,7 @@ import '../../../core/supabase/supabase_provider.dart';
 import '../helpers/last_message_group_preview.dart';
 import '../models/group_model.dart';
 import 'presence_animated_subtitle.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class GroupTileItem extends StatelessWidget {
   final GroupModel group;
@@ -229,10 +230,10 @@ class GroupTileItem extends StatelessWidget {
 
                     final senderName =
                         isMe
-                            ? 'You'
+                            ? context.l10n.you
                             : (senderNameFromData?.trim().isNotEmpty == true
                                 ? senderNameFromData!
-                                : 'Someone');
+                                : context.l10n.someone);
 
                     return Row(
                       mainAxisSize: MainAxisSize.min,
@@ -245,7 +246,8 @@ class GroupTileItem extends StatelessWidget {
                         Flexible(
                           child:
                               MessageReactionPreviewHelper.buildDirectionalFilePreview(
-                                fileName: group.lastMessage ?? 'File',
+                                fileName:
+                                    group.lastMessage ?? context.l10n.file,
                                 style: textStyle,
                                 defaultIconColor: Colors.grey.shade600,
                                 iconSize: 12,
@@ -322,7 +324,7 @@ class GroupTileItem extends StatelessWidget {
                 },
               )
               : Text(
-                'Tap to open group chat',
+                context.l10n.tapToOpenGroup,
                 style: TextStyle(
                   color: isDark ? Colors.white38 : Colors.black38,
                   fontSize: 13,

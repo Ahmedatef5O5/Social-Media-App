@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:social_media_app/core/constants/app_images.dart';
 import '../../../core/widgets/empty_findings_animation_widget.dart';
 import '../models/app_notification_model.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class NotificationsEmptyState extends StatelessWidget {
   final bool isDark;
@@ -29,8 +30,8 @@ class NotificationsEmptyState extends StatelessWidget {
           const SizedBox(height: 20),
           Text(
             activeFilter == null
-                ? 'No notifications yet'
-                : 'No ${activeFilter!.name} notifications',
+                ? context.l10n.noNotificationsYet
+                : context.l10n.noNotifications(activeFilter!.name),
             style: TextStyle(
               fontSize: 17,
               fontWeight: FontWeight.w600,
@@ -39,7 +40,7 @@ class NotificationsEmptyState extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            "You're all caught up!",
+            context.l10n.youreAllCaughtUp,
             style: TextStyle(
               fontSize: 13,
               color: isDark ? Colors.white30 : Colors.grey.shade400,

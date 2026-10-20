@@ -17,6 +17,7 @@ import '../../settings/repository/settings_repository.dart';
 import '../../social_graph/models/content_privacy.dart';
 import '../../../core/utilities/file_size_formatter.dart';
 import '../cubits/stories_cubit/stories_cubit.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class AddStoryPreviewView extends StatefulWidget {
   final File file;
@@ -41,6 +42,8 @@ class AddStoryPreviewView extends StatefulWidget {
 class _AddStoryPreviewViewState extends State<AddStoryPreviewView> {
   final _shareGuard = SingleFireGuard();
 
+  // The file / duration actually shown and shared. They start as the picked
+  // media and are replaced when the user (optionally) edits or trims it.
   late File _file = widget.file;
   late Duration? _videoDuration = widget.videoDuration;
   final MentionTextEditingController _captionController =
@@ -115,6 +118,8 @@ class _AddStoryPreviewViewState extends State<AddStoryPreviewView> {
     Navigator.of(context, rootNavigator: true).pop();
   }
 
+  /// Optional edit: crop/draw/text/stickers for photos, trim for videos.
+  /// Cancelling leaves everything (caption, privacy, file) untouched.
   Future<void> _editMedia() async {
     FocusScope.of(context).unfocus();
     if (widget.isVideo) {
@@ -298,7 +303,9 @@ class _AddStoryPreviewViewState extends State<AddStoryPreviewView> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              widget.isVideo ? 'Video Preview' : 'Photo Preview',
+              widget.isVideo
+                  ? context.l10n.videoPreview
+                  : context.l10n.photoPreview,
               style: const TextStyle(
                 color: AppColors.white,
                 fontSize: 16,
@@ -349,7 +356,7 @@ class _AddStoryPreviewViewState extends State<AddStoryPreviewView> {
       actions: [
         IconButton(
           visualDensity: VisualDensity.compact,
-          tooltip: widget.isVideo ? 'Trim' : 'Edit',
+          tooltip: widget.isVideo ? context.l10n.trim : context.l10n.edit,
           icon: Icon(
             widget.isVideo ? Icons.content_cut_rounded : Icons.edit_rounded,
             color: AppColors.white,
@@ -373,8 +380,8 @@ class _AddStoryPreviewViewState extends State<AddStoryPreviewView> {
                     borderRadius: BorderRadius.circular(17),
                   ),
                 ),
-                child: const Text(
-                  'Share',
+                child: Text(
+                  context.l10n.share,
                   style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
                 ),
               ),
@@ -394,14 +401,14 @@ class _AddStoryPreviewViewState extends State<AddStoryPreviewView> {
     }
 
     if (_videoError) {
-      return const Center(
+      return Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(Icons.error_outline, color: Colors.red, size: 48),
             SizedBox(height: 12),
             Text(
-              'Could not load video',
+              context.l10n.couldNotLoadVideo,
               style: TextStyle(color: Colors.white70),
             ),
           ],
@@ -439,13 +446,13 @@ class _AddStoryPreviewViewState extends State<AddStoryPreviewView> {
               controller: _captionController,
               focusNode: _captionFocusNode,
               enabled: true,
-              hintText: 'Add an optional caption...',
+              hintText: context.l10n.addAnOptionalCaption,
               style: const TextStyle(color: AppColors.white),
               maxLines: 3,
               minLines: 1,
               maxLength: 150,
               decoration: InputDecoration(
-                hintText: 'Add an optional caption...',
+                hintText: context.l10n.addAnOptionalCaption,
                 hintStyle: TextStyle(color: hintColor),
                 filled: true,
                 fillColor: Colors.black54,

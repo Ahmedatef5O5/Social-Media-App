@@ -15,6 +15,7 @@ import '../helpers/comment_sheet_shared_widgets.dart';
 import '../helpers/comments_reaction_avatar_stack.dart';
 import 'ai_comment_suggestions_row.dart';
 import 'comment_typing_row.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class CommentsInlineSection extends StatefulWidget {
   final String postId;
@@ -215,11 +216,11 @@ class CommentsInlineSectionState extends State<CommentsInlineSection> {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    'Comments',
+                    context.l10n.comments,
                     style: theme.textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.w800,
                       color: colorScheme.onSurface,
-                      letterSpacing: -0.4,
+                      letterSpacing: context.ls(-0.4),
                     ),
                   ),
                   const SizedBox(width: 12),

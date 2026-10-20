@@ -17,6 +17,7 @@ import '../../posts/views/post_details_view.dart';
 import '../../single_chats/cubits/chats_cubit/chats_cubit.dart';
 import '../../single_chats/models/chat_user_model.dart';
 import '../models/app_notification_model.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class NotificationListItem extends StatelessWidget {
   final AppNotification notification;
@@ -90,7 +91,7 @@ class NotificationListItem extends StatelessWidget {
             ),
             const SizedBox(width: 8),
             Text(
-              'Mark read',
+              context.l10n.markRead,
               style: TextStyle(
                 color: Colors.green.shade600,
                 fontWeight: FontWeight.w600,
@@ -114,7 +115,7 @@ class NotificationListItem extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
             Text(
-              'Delete',
+              context.l10n.delete,
               style: TextStyle(
                 color: Colors.red.shade500,
                 fontWeight: FontWeight.w600,
@@ -284,8 +285,8 @@ class NotificationListItem extends StatelessWidget {
                                 ),
                               ),
                               onPressed: () => onRejectFriendRequest(notif),
-                              child: const Text(
-                                'Reject',
+                              child: Text(
+                                context.l10n.reject,
                                 style: TextStyle(fontSize: 12.5),
                               ),
                             ),
@@ -300,8 +301,8 @@ class NotificationListItem extends StatelessWidget {
                                 ),
                               ),
                               onPressed: () => onAcceptFriendRequest(notif),
-                              child: const Text(
-                                'Accept',
+                              child: Text(
+                                context.l10n.accept,
                                 style: TextStyle(
                                   fontSize: 12.5,
                                   color: Colors.white,
@@ -332,7 +333,9 @@ class NotificationListItem extends StatelessWidget {
                                     ? null
                                     : () => onFollowBack(notif),
                             child: Text(
-                              isFollowingBack ? 'Following' : 'Follow Back',
+                              isFollowingBack
+                                  ? context.l10n.following
+                                  : context.l10n.followBack,
                               style: TextStyle(
                                 fontSize: 12.5,
                                 color:
@@ -577,7 +580,7 @@ class NotificationListItem extends StatelessWidget {
 
     resolvedUser ??= ChatUserModel(
       id: peerId,
-      name: notif.title.isNotEmpty ? notif.title : 'Unknown',
+      name: notif.title.isNotEmpty ? notif.title : context.l10n.unknown,
       imageUrl: notif.senderImageUrl,
     );
 
@@ -619,13 +622,13 @@ class NotificationListItem extends StatelessWidget {
         }
       } catch (e) {
         debugPrint('Error fetching group from notification: $e');
-        AppToast.error('Failed to open group chat');
+        AppToast.error(context.l10n.failedToOpenGroup);
         return;
       }
     }
 
     if (group == null) {
-      AppToast.warning('This group is no longer available');
+      AppToast.warning(context.l10n.thisGroupIsNo);
       return;
     }
 

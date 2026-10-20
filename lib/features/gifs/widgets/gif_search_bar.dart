@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class GifSearchBar extends StatelessWidget {
   final TextEditingController controller;
@@ -18,7 +19,7 @@ class GifSearchBar extends StatelessWidget {
       controller: controller,
       onChanged: onChanged,
       decoration: InputDecoration(
-        hintText: 'Search GIFs...',
+        hintText: context.l10n.searchGifs,
         prefixIcon: const Icon(Icons.search_rounded),
         filled: true,
         fillColor: theme.colorScheme.surfaceContainerHighest.withValues(

@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../notifications/notification_navigator_key.dart';
 import '../../supabase/supabase_provider.dart';
 import '../../toast/app_toast.dart';
+import 'package:social_media_app/core/localization/app_l10n.dart';
 
 class AppPermissionsService {
   AppPermissionsService._();
@@ -118,7 +119,7 @@ class AppPermissionsService {
   }) async {
     final host = navigatorKey.currentContext ?? context;
     if (host == null || !host.mounted) {
-      AppToast.info('Enable microphone/camera access in Settings to call');
+      AppToast.info(AppL10n.current.enableMicrophoneCameraAccess);
       return;
     }
 
@@ -131,19 +132,16 @@ class AppPermissionsService {
       context: host,
       builder:
           (dialogContext) => AlertDialog(
-            title: const Text('Permission required'),
-            content: Text(
-              '$what access is turned off for this app. '
-              'Enable it in Settings to make or join calls.',
-            ),
+            title: Text(AppL10n.current.permissionRequired),
+            content: Text(AppL10n.current.accessIsTurnedOff(what)),
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(dialogContext).pop(false),
-                child: const Text('Not now'),
+                child: Text(AppL10n.current.notNow),
               ),
               TextButton(
                 onPressed: () => Navigator.of(dialogContext).pop(true),
-                child: const Text('Open Settings'),
+                child: Text(AppL10n.current.openSettings),
               ),
             ],
           ),

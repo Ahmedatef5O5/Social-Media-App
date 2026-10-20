@@ -7,6 +7,7 @@ import '../../../core/constants/app_images.dart';
 import '../../../core/toast/app_toast.dart';
 import '../../../core/widgets/custom_confirmation_dialog.dart';
 import 'delete_account_verification_sheet.dart';
+import '../../../core/localization/l10n_extension.dart';
 
 enum _DangerAction { logout, delete }
 
@@ -41,7 +42,11 @@ class _SettingsDangerZoneState extends State<SettingsDangerZone> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.only(left: 4, bottom: 8, top: 6),
+            padding: const EdgeInsetsDirectional.only(
+              start: 4,
+              bottom: 8,
+              top: 6,
+            ),
             child: Row(
               children: [
                 Icon(
@@ -51,11 +56,11 @@ class _SettingsDangerZoneState extends State<SettingsDangerZone> {
                 ),
                 const Gap(6),
                 Text(
-                  'DANGER ZONE',
+                  context.l10n.dangerZone.toUpperCase(),
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
-                    letterSpacing: 1.2,
+                    letterSpacing: context.ls(1.2),
                     color: Colors.red.shade400,
                   ),
                 ),
@@ -81,7 +86,7 @@ class _SettingsDangerZoneState extends State<SettingsDangerZone> {
               listener: (context, state) {
                 if (state is AuthSignedOut &&
                     _pendingAction != _DangerAction.delete) {
-                  AppToast.error('Logged out successfully');
+                  AppToast.error(context.l10n.loggedOutSuccessfully);
                 } else if (state is AuthFailure) {
                   AppToast.error(state.errMsg);
                 }
@@ -103,8 +108,8 @@ class _SettingsDangerZoneState extends State<SettingsDangerZone> {
                       context,
                       isDark,
                       icon: Icons.logout_rounded,
-                      label: 'Log Out',
-                      subtitle: 'Sign out of your account',
+                      label: context.l10n.logOut,
+                      subtitle: context.l10n.logOutSubtitle,
                       color: Colors.orange.shade600,
                       isLoading:
                           isLoading && _pendingAction == _DangerAction.logout,
@@ -123,8 +128,8 @@ class _SettingsDangerZoneState extends State<SettingsDangerZone> {
                       context,
                       isDark,
                       icon: Icons.delete_forever_rounded,
-                      label: 'Delete Account',
-                      subtitle: 'Permanently remove your account',
+                      label: context.l10n.deleteAccount,
+                      subtitle: context.l10n.deleteAccountSubtitle,
                       color: Colors.red.shade500,
                       isLoading:
                           isLoading && _pendingAction == _DangerAction.delete,
@@ -197,7 +202,7 @@ class _SettingsDangerZoneState extends State<SettingsDangerZone> {
                       fontSize: 14.5,
                       fontWeight: FontWeight.w600,
                       color: color,
-                      letterSpacing: -0.2,
+                      letterSpacing: context.ls(-0.2),
                     ),
                   ),
                   const Gap(2),
@@ -232,13 +237,11 @@ class _SettingsDangerZoneState extends State<SettingsDangerZone> {
       context: context,
       builder:
           (dialogContext) => CustomConfirmationDialog(
-            title:
-                'Are you sure you want to delete your account? '
-                'This action is permanent and cannot be undone.',
+            title: context.l10n.deleteAccountConfirmation,
             textAlign: TextAlign.center,
             img: AppImages.alertAnimationLot,
-            confirmBtnText: 'Delete Account',
-            cancelBtnText: 'Cancel',
+            confirmBtnText: context.l10n.deleteAccount,
+            cancelBtnText: context.l10n.cancel,
             confirmTxtColor: Colors.red.shade600,
             onConfirm: () {
               Navigator.of(dialogContext, rootNavigator: true).pop(true);

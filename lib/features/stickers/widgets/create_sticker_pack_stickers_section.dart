@@ -5,6 +5,7 @@ import '../../../core/widgets/full_screen_image_viewer.dart';
 import '../cubits/create_sticker_pack_cubit/create_sticker_pack_cubit.dart';
 import '../cubits/create_sticker_pack_cubit/create_sticker_pack_state.dart';
 import 'sticker_grid_item.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class CreateStickerPackStickersSection extends StatelessWidget {
   final ThemeData theme;
@@ -28,13 +29,17 @@ class CreateStickerPackStickersSection extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              'Stickers',
+              context.l10n.stickers,
               style: theme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.bold,
               ),
             ),
             Text(
-              '${state.images.length}/${CreateStickerPackForm.maxStickers}  •  $sizeMb/25 MB',
+              context.l10n.t25Mb(
+                state.images.length,
+                CreateStickerPackForm.maxStickers,
+                sizeMb,
+              ),
               style: theme.textTheme.labelMedium?.copyWith(
                 color: AppColors.grey6,
                 fontWeight: FontWeight.w600,

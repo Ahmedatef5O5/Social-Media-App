@@ -1,4 +1,5 @@
 import 'package:social_media_app/core/constants/app_images.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class OnBoardingModel {
   final String image;
@@ -8,24 +9,22 @@ class OnBoardingModel {
   OnBoardingModel({required this.image, required this.title, this.subTitle});
 }
 
-List<OnBoardingModel> onboardingPages = [
+/// Built per-build (not a global list) so the text follows the active language.
+List<OnBoardingModel> buildOnboardingPages(AppLocalizations l10n) => [
   OnBoardingModel(image: AppImages.logoApp, title: AppImages.secondaryLogoApp),
   OnBoardingModel(
     image: AppImages.onBoardingOne,
-    title: 'Find Friends & Get Inspiration',
-    subTitle:
-        'Discover creative content, explore new ideas, and connect with a global community that shares your interests.',
+    title: l10n.onboardingOneTitle,
+    subTitle: l10n.onboardingOneSubtitle,
   ),
   OnBoardingModel(
     image: AppImages.onBoardingTwo,
-    title: 'Meet Awesome People & Enjoy yourself',
-    subTitle:
-        'Expand your social network, engage in meaningful conversations, and share your favorite moments with others.',
+    title: l10n.onboardingTwoTitle,
+    subTitle: l10n.onboardingTwoSubtitle,
   ),
   OnBoardingModel(
     image: AppImages.onBoardingThree,
-    title: 'Hangout with Friends',
-    subTitle:
-        'Stay close to your loved ones through seamless video, voice, and text chats no matter where you are.',
+    title: l10n.onboardingThreeTitle,
+    subTitle: l10n.onboardingThreeSubtitle,
   ),
 ];

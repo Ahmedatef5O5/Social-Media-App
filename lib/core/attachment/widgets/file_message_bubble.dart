@@ -7,6 +7,7 @@ import '../../cache/repository/media_cache_repository.dart';
 import '../../helpers/bidi_text_helper.dart';
 import '../../helpers/file_icon_helper.dart';
 import '../../helpers/modern_progress_painter.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class FileMessageBubble extends StatefulWidget {
   final String fileUrl;
@@ -206,7 +207,9 @@ class _FileMessageBubbleState extends State<FileMessageBubble> {
     final sizeStr = _formatSize(widget.fileSizeBytes);
     final bool isDownloaded = _localPath != null || widget.isMe;
     final displayName =
-        widget.fileName?.trim().isNotEmpty == true ? widget.fileName! : 'File';
+        widget.fileName?.trim().isNotEmpty == true
+            ? widget.fileName!
+            : context.l10n.file;
     final textDirection = BidiTextHelper.detectDirection(displayName);
 
     return InkWell(
@@ -321,7 +324,7 @@ class _FileMessageBubbleState extends State<FileMessageBubble> {
                             color: widget.isMe ? Colors.white : iconAccent,
                             fontSize: 9.5,
                             fontWeight: FontWeight.w800,
-                            letterSpacing: 0.5,
+                            letterSpacing: context.ls(0.5),
                           ),
                         ),
                       ),

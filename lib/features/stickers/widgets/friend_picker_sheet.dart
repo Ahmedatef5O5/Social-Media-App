@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:social_media_app/features/social_graph/models/friend_list_item_model.dart';
 import '../../../core/presence/widgets/presence_avatar_widget.dart';
 import '../../../core/widgets/app_avatar.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class FriendPickerSheet extends StatefulWidget {
   final List<FriendListItemModel> friends;
@@ -72,14 +73,14 @@ class _FriendPickerSheetState extends State<FriendPickerSheet> {
 
                 // Header
                 Text(
-                  'Select People',
+                  context.l10n.selectPeople,
                   style: theme.textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
                 ),
                 if (widget.selectedIds.isNotEmpty)
                   Text(
-                    '${widget.selectedIds.length} selected',
+                    context.l10n.selected4(widget.selectedIds.length),
                     style: TextStyle(
                       color: theme.primaryColor,
                       fontSize: 13,
@@ -95,7 +96,7 @@ class _FriendPickerSheetState extends State<FriendPickerSheet> {
                     controller: _searchController,
                     onChanged: (value) => setState(() => _searchQuery = value),
                     decoration: InputDecoration(
-                      hintText: 'Search friends...',
+                      hintText: context.l10n.searchFriends,
                       hintStyle: const TextStyle(
                         color: Colors.grey,
                         fontSize: 15,
@@ -138,9 +139,9 @@ class _FriendPickerSheetState extends State<FriendPickerSheet> {
                 Expanded(
                   child:
                       displayedFriends.isEmpty
-                          ? const Center(
+                          ? Center(
                             child: Text(
-                              'No friends found.',
+                              context.l10n.noFriendsFound,
                               style: TextStyle(color: Colors.grey),
                             ),
                           )
@@ -259,8 +260,8 @@ class _FriendPickerSheetState extends State<FriendPickerSheet> {
                         ),
                         child: Text(
                           widget.selectedIds.isEmpty
-                              ? 'Done'
-                              : 'Done (${widget.selectedIds.length})',
+                              ? context.l10n.done
+                              : context.l10n.done2(widget.selectedIds.length),
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,

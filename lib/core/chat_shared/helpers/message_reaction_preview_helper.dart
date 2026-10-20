@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../helpers/bidi_text_helper.dart';
 import '../../helpers/file_icon_helper.dart';
+import 'package:social_media_app/core/localization/app_l10n.dart';
 
 class MessageReactionPreviewHelper {
   MessageReactionPreviewHelper._();
@@ -55,7 +56,7 @@ class MessageReactionPreviewHelper {
   }
 
   static String extractCleanFileName(String? raw, {bool keepCaption = false}) {
-    if (raw == null || raw.trim().isEmpty) return 'File';
+    if (raw == null || raw.trim().isEmpty) return AppL10n.current.file;
     String clean = raw.trim();
     if (clean.startsWith('📄')) {
       clean = clean.substring('📄'.length).trim();
@@ -70,7 +71,7 @@ class MessageReactionPreviewHelper {
         clean = '$first • $rest';
       }
     }
-    return clean.isEmpty ? 'File' : clean;
+    return clean.isEmpty ? AppL10n.current.file : clean;
   }
 
   static String getMessageFallback({
@@ -87,28 +88,32 @@ class MessageReactionPreviewHelper {
       final rawName =
           cleanFileName.isNotEmpty
               ? cleanFileName
-              : (cleanBody.isNotEmpty ? cleanBody : 'File');
+              : (cleanBody.isNotEmpty ? cleanBody : AppL10n.current.file);
       return '📄 ${extractCleanFileName(rawName)}';
     }
 
     switch (type) {
       case 'image':
-        return cleanCaption.isNotEmpty ? '📷 $cleanCaption' : '📷 Photo';
+        return cleanCaption.isNotEmpty
+            ? '📷 $cleanCaption'
+            : AppL10n.current.photo2;
       case 'video':
-        return cleanCaption.isNotEmpty ? '🎥 $cleanCaption' : '🎥 Video';
+        return cleanCaption.isNotEmpty
+            ? '🎥 $cleanCaption'
+            : AppL10n.current.video2;
       case 'voice':
-        return '🎤 Voice message';
+        return AppL10n.current.voiceMessage;
       case 'gif':
-        return '🖼️ GIF';
+        return AppL10n.current.gif;
       case 'sticker':
-        return '🏷️ Sticker';
+        return AppL10n.current.sticker2;
       case 'call':
-        return '📞 Call';
+        return AppL10n.current.call2;
       default:
         if (cleanBody.isNotEmpty) return cleanBody;
         if (cleanCaption.isNotEmpty) return cleanCaption;
         if (cleanFileName.isNotEmpty) return cleanFileName;
-        return '📎 Attachment';
+        return AppL10n.current.attachment;
     }
   }
 
@@ -123,8 +128,10 @@ class MessageReactionPreviewHelper {
   }) {
     final actor =
         isMe
-            ? 'You'
-            : (reactorName.trim().isNotEmpty ? reactorName.trim() : 'Someone');
+            ? AppL10n.current.you
+            : (reactorName.trim().isNotEmpty
+                ? reactorName.trim()
+                : AppL10n.current.someone);
     final emoji = resolveEmoji(reactionType);
     final snippet = getMessageFallback(
       type: messageType,
@@ -134,9 +141,9 @@ class MessageReactionPreviewHelper {
     );
 
     if (isMediaMessageType(messageType)) {
-      return '$actor react with $emoji to $snippet';
+      return AppL10n.current.reactWithTo(actor, emoji, snippet);
     }
-    return '$actor react with $emoji to "$snippet"';
+    return AppL10n.current.reactWithTo2(actor, emoji, snippet);
   }
 
   static Widget buildDirectionalFilePreview({

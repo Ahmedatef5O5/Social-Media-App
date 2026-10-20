@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:social_media_app/core/constants/app_images.dart';
 import '../../../core/router/app_routes.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class AboutUsTeamSection extends StatelessWidget {
   final bool isDark;
@@ -99,7 +100,7 @@ class AboutUsTeamSection extends StatelessWidget {
                               fontSize: 15,
                               fontWeight: FontWeight.w700,
                               color: isDark ? Colors.white : Colors.black87,
-                              letterSpacing: -0.2,
+                              letterSpacing: context.ls(-0.2),
                             ),
                           ),
                           const Gap(3),

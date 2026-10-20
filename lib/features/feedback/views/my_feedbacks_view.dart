@@ -12,6 +12,7 @@ import '../models/feedback_models.dart';
 import '../widgets/feedback_skeletons.dart';
 import '../widgets/feedback_star_rating_bar.dart';
 import '../widgets/feedback_status_chip.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class MyFeedbacksView extends StatelessWidget {
   const MyFeedbacksView({super.key});
@@ -33,10 +34,10 @@ class MyFeedbacksView extends StatelessWidget {
             parent: ClampingScrollPhysics(),
           ),
           slivers: [
-            const SettingsDetailSliverAppBar(
+            SettingsDetailSliverAppBar(
               icon: CupertinoIcons.tray_full_fill,
-              title: 'My Feedbacks',
-              subtitle: 'Track the status of your submissions',
+              title: context.l10n.myFeedbacks,
+              subtitle: context.l10n.trackTheStatusOf,
             ),
             BlocBuilder<FeedbackCubit, FeedbackState>(
               buildWhen:
@@ -56,22 +57,21 @@ class MyFeedbacksView extends StatelessWidget {
                     hasScrollBody: false,
                     child: _Message(
                       icon: CupertinoIcons.wifi_exclamationmark,
-                      title: 'Could not load your feedbacks',
+                      title: context.l10n.couldNotLoadYour,
                       action: TextButton(
                         onPressed: cubit.refreshHistory,
-                        child: const Text('Retry'),
+                        child: Text(context.l10n.retry),
                       ),
                     ),
                   );
                 }
                 if (state.history.isEmpty) {
-                  return const SliverFillRemaining(
+                  return SliverFillRemaining(
                     hasScrollBody: false,
                     child: _Message(
                       icon: CupertinoIcons.chat_bubble_text,
-                      title: 'No feedback yet',
-                      subtitle:
-                          'Anything you send us will show up here with its status.',
+                      title: context.l10n.noFeedbackYet,
+                      subtitle: context.l10n.anythingYouSendUs,
                     ),
                   );
                 }
@@ -164,7 +164,7 @@ class _FeedbackTile extends StatelessWidget {
                 ),
                 if (item.hasReply) ...[
                   const Gap(8),
-                  const Row(
+                  Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(
@@ -174,7 +174,7 @@ class _FeedbackTile extends StatelessWidget {
                       ),
                       Gap(4),
                       Text(
-                        'Reply received',
+                        context.l10n.replyReceived,
                         style: TextStyle(
                           fontSize: 11.5,
                           fontWeight: FontWeight.w700,
@@ -194,7 +194,7 @@ class _FeedbackTile extends StatelessWidget {
                   const Gap(4),
                   Expanded(
                     child: Text(
-                      'Response within 24 hours (max 3 days)',
+                      context.l10n.responseWithin24Hours2,
                       style: TextStyle(fontSize: 11, color: muted),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,

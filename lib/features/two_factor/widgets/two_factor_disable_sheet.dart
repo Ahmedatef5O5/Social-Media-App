@@ -9,6 +9,7 @@ import '../../auth/data/models/account_auth_info.dart';
 import '../cubits/two_factor_disable_cubit.dart';
 import '../services/two_factor_service.dart';
 import 'otp_code_field.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 /// Returns `true` when 2FA was turned off, `null` when dismissed.
 Future<bool?> showTwoFactorDisableSheet(BuildContext context) {
@@ -72,7 +73,7 @@ class _DisableFormState extends State<_DisableForm> {
               (!p.done && c.done) || (c.error != null && c.error != p.error),
       listener: (context, state) {
         if (state.done) {
-          AppToast.success('Two-factor authentication is off');
+          AppToast.success(context.l10n.twoFactorAuthenticationIs);
           Navigator.of(context).pop(true);
         } else if (state.method == TwoFactorDisableMethod.totp) {
           _otp.currentState?.clear();
@@ -118,7 +119,7 @@ class _DisableFormState extends State<_DisableForm> {
                       ),
                       const SizedBox(width: 12),
                       Text(
-                        'Turn off two-factor?',
+                        context.l10n.turnOffTwoFactor,
                         style: theme.textTheme.titleLarge?.copyWith(
                           fontWeight: FontWeight.w800,
                         ),
@@ -127,9 +128,7 @@ class _DisableFormState extends State<_DisableForm> {
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    'Your account will be protected by your password only. Your '
-                    'recovery codes will be deleted. Confirm it is you to '
-                    'continue.',
+                    context.l10n.yourAccountWillBe,
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: theme.hintColor,
                     ),
@@ -138,7 +137,7 @@ class _DisableFormState extends State<_DisableForm> {
                   if (isPassword)
                     CustomTextFormField(
                       controller: _password,
-                      hintText: 'Current password',
+                      hintText: context.l10n.currentPassword2,
                       isPassword: true,
                       textInputAction: TextInputAction.done,
                     )
@@ -173,8 +172,8 @@ class _DisableFormState extends State<_DisableForm> {
                                 ),
                         child: Text(
                           isPassword
-                              ? 'Use an authenticator code instead'
-                              : 'Use my password instead',
+                              ? context.l10n.useAnAuthenticatorCode
+                              : context.l10n.useMyPasswordInstead,
                         ),
                       ),
                     ),
@@ -199,7 +198,7 @@ class _DisableFormState extends State<_DisableForm> {
                           state.submitting
                               ? null
                               : () => Navigator.of(context).pop(),
-                      child: const Text('Cancel'),
+                      child: Text(context.l10n.cancel),
                     ),
                   ),
                 ],

@@ -18,6 +18,7 @@ import '../widgets/group_danger_zone_section.dart';
 import '../widgets/group_invite_link_section.dart';
 import '../widgets/group_name_title_editor.dart';
 import '../widgets/group_owner_admins_section.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class GroupSettingsView extends StatefulWidget {
   final GroupModel group;
@@ -88,7 +89,7 @@ class _GroupSettingsViewState extends State<GroupSettingsView> {
         groupId: widget.group.id,
         newName: newName,
       );
-      if (mounted) AppToast.success('Group name updated');
+      if (mounted) AppToast.success(context.l10n.groupNameUpdated);
     } catch (e) {
       if (mounted) AppToast.error(SupabaseErrorMapper.toUserMessage(e));
     } finally {
@@ -108,7 +109,7 @@ class _GroupSettingsViewState extends State<GroupSettingsView> {
         groupId: widget.group.id,
         newTitle: value,
       );
-      if (mounted) AppToast.success('Group title updated');
+      if (mounted) AppToast.success(context.l10n.groupTitleUpdated);
     } catch (e) {
       if (mounted) AppToast.error(SupabaseErrorMapper.toUserMessage(e));
     } finally {
@@ -155,7 +156,7 @@ class _GroupSettingsViewState extends State<GroupSettingsView> {
       }
     } catch (e) {
       if (mounted) {
-        AppToast.error('Failed to update group photo');
+        AppToast.error(context.l10n.failedToUpdateGroup);
       }
     } finally {
       if (mounted) setState(() => _isUploadingPhoto = false);
@@ -165,7 +166,7 @@ class _GroupSettingsViewState extends State<GroupSettingsView> {
   Future<void> _removePhoto() async {
     final confirm = await GroupConfirmDialog.show(
       context,
-      title: 'Remove Group Photo',
+      title: context.l10n.removeGroupPhoto,
       body: 'This will remove the current group photo for everyone.',
       confirmLabel: 'Remove',
       confirmColor: Colors.red,
@@ -180,7 +181,7 @@ class _GroupSettingsViewState extends State<GroupSettingsView> {
       widget.groupListCubit.clearGroupAvatar(widget.group.id);
       if (mounted) {
         setState(() => _currentAvatarUrl = null);
-        AppToast.success('Group photo removed');
+        AppToast.success(context.l10n.groupPhotoRemoved);
       }
     } catch (e) {
       if (mounted) AppToast.error(SupabaseErrorMapper.toUserMessage(e));
@@ -192,7 +193,7 @@ class _GroupSettingsViewState extends State<GroupSettingsView> {
   Future<void> _leaveGroup(BuildContext context, GroupModel liveGroup) async {
     final confirm = await GroupConfirmDialog.show(
       context,
-      title: 'Leave Group',
+      title: context.l10n.leaveGroup,
       body: 'Are you sure you want to leave "${liveGroup.name}"?',
       confirmLabel: 'Leave',
       confirmColor: Colors.red,
@@ -212,11 +213,11 @@ class _GroupSettingsViewState extends State<GroupSettingsView> {
   Future<void> _blockGroup(BuildContext context, GroupModel liveGroup) async {
     final confirm = await GroupConfirmDialog.show(
       context,
-      title: 'Block Group',
+      title: context.l10n.blockGroup,
       body:
           liveGroup.isMember
-              ? 'You will leave "${liveGroup.name}", the chat history on this device will be cleared, and you won\'t be able to be re-added to this group. Continue?'
-              : 'The chat history on this device will be cleared, and you won\'t be able to be re-added to this group. Continue?',
+              ? context.l10n.youWillLeaveThe(liveGroup.name)
+              : context.l10n.theChatHistoryOn,
       confirmLabel: 'Block',
       confirmColor: Colors.red,
     );
@@ -238,7 +239,7 @@ class _GroupSettingsViewState extends State<GroupSettingsView> {
   Future<void> _deleteGroup(BuildContext context, GroupModel liveGroup) async {
     final confirm = await GroupConfirmDialog.show(
       context,
-      title: 'Delete Group',
+      title: context.l10n.deleteGroup,
       body:
           'This will permanently delete "${liveGroup.name}" for you and '
           'every member — all messages, media, and members will be '
@@ -272,12 +273,12 @@ class _GroupSettingsViewState extends State<GroupSettingsView> {
           currentUserId: widget.currentUserId,
         );
         if (mounted) {
-          AppToast.success('${admin.userName} is no longer an admin');
+          AppToast.success(context.l10n.isNoLongerAn(admin.userName));
         }
       } else if (action == 'remove') {
         final confirm = await GroupConfirmDialog.show(
           context,
-          title: 'Remove Member',
+          title: context.l10n.removeMember,
           body: 'Remove ${admin.userName} from the group?',
           confirmLabel: 'Remove',
           confirmColor: Colors.red,
@@ -288,7 +289,7 @@ class _GroupSettingsViewState extends State<GroupSettingsView> {
           currentUserId: widget.currentUserId,
         );
         if (mounted) {
-          AppToast.success('${admin.userName} removed from the group');
+          AppToast.success(context.l10n.removedFromTheGroup(admin.userName));
         }
       }
     } catch (e) {
@@ -333,8 +334,8 @@ class _GroupSettingsViewState extends State<GroupSettingsView> {
             body: CustomScrollView(
               slivers: [
                 SliverAppBar(
-                  title: const Text(
-                    'Group Settings',
+                  title: Text(
+                    context.l10n.groupSettings,
                     style: TextStyle(fontWeight: FontWeight.w600),
                   ),
                   centerTitle: true,

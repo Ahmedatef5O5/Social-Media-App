@@ -4,6 +4,7 @@ import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/design/tokens/typography.dart';
 import '../cubits/group_details_cubit/group_details_cubit.dart';
 import '../models/groupe_message_model.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class GroupMessageMenuSheet {
   static void show({
@@ -73,7 +74,7 @@ class GroupMessageMenuSheet {
                 const Divider(),
                 ListTile(
                   leading: const Icon(Icons.reply_all_outlined),
-                  title: const Text('Reply'),
+                  title: Text(context.l10n.reply),
                   onTap: () {
                     Navigator.pop(ctx);
                     onReply(message);
@@ -84,8 +85,8 @@ class GroupMessageMenuSheet {
               if (message.senderId == currentUserId)
                 ListTile(
                   leading: const Icon(Icons.delete_outline, color: Colors.red),
-                  title: const Text(
-                    'Delete',
+                  title: Text(
+                    context.l10n.delete,
                     style: TextStyle(color: Colors.red),
                   ),
                   onTap: () {

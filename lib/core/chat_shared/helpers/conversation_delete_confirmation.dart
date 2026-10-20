@@ -4,6 +4,7 @@ import '../../../features/group_chats/cubits/group_list_cubit/group_list_cubit.d
 import '../../../features/single_chats/cubits/chats_cubit/chats_cubit.dart';
 import '../cubits/conversation_selection_cubit/conversation_selection_cubit.dart';
 import '../models/conversation_ref.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 Future<void> confirmAndDeleteConversations(
   BuildContext context,
@@ -13,21 +14,19 @@ Future<void> confirmAndDeleteConversations(
     context: context,
     builder:
         (dialogContext) => AlertDialog(
-          title: Text(
-            'Delete ${refs.length} chat${refs.length > 1 ? 's' : ''}?',
-          ),
-          content: const Text(
-            'This clears the chat history on this device only. '
-            'Other participants keep their own copy.',
-          ),
+          title: Text(context.l10n.deleteNChats(refs.length)),
+          content: Text(context.l10n.thisClearsTheChat),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogContext, false),
-              child: const Text('Cancel'),
+              child: Text(context.l10n.cancel),
             ),
             TextButton(
               onPressed: () => Navigator.pop(dialogContext, true),
-              child: const Text('Delete', style: TextStyle(color: Colors.red)),
+              child: Text(
+                context.l10n.delete,
+                style: TextStyle(color: Colors.red),
+              ),
             ),
           ],
         ),

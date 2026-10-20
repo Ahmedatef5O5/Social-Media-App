@@ -16,6 +16,7 @@ import '../../home/cubits/home_cubit/home_cubit.dart';
 import '../cubits/posts_cubit/posts_cubit.dart';
 import '../models/post_model.dart';
 import '../widgets/post_reaction_overlay.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class RightInteractionsPostVideoColumn extends StatefulWidget {
   final PostModel post;
@@ -79,7 +80,7 @@ class _RightInteractionsPostVideoColumnState
 
   void _openComments(PostModel post) {
     if (widget.postsCubit.isPostGhost(post.id)) {
-      AppToast.info('This post is no longer available.');
+      AppToast.info(context.l10n.thisPostIsNo);
       return;
     }
     final bool wasPlaying = widget.videoController.value.isPlaying;
@@ -121,7 +122,7 @@ class _RightInteractionsPostVideoColumnState
     final bool success = await widget.postsCubit.toggleSharePost(post);
     if (success) {
       AppToast.save(
-        wasShared ? 'Share removed' : 'Shared successfully',
+        wasShared ? context.l10n.shareRemoved : context.l10n.sharedSuccessfully,
         icon: Icons.repeat_rounded,
       );
     }
@@ -133,7 +134,9 @@ class _RightInteractionsPostVideoColumnState
     final bool success = await widget.postsCubit.toggleSavePost(post);
     if (success) {
       AppToast.save(
-        wasSaved ? 'Post removed from saves' : 'Post saved successfully',
+        wasSaved
+            ? context.l10n.postRemovedFromSaves
+            : context.l10n.postSavedSuccessfully,
         icon: wasSaved ? Icons.bookmark_remove_rounded : Icons.bookmark_rounded,
       );
     }

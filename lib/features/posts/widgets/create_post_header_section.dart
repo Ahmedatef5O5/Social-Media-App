@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import '../../../core/themes/app_colors.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class CreatePostHeaderSection extends StatelessWidget {
   const CreatePostHeaderSection({
@@ -36,7 +37,7 @@ class CreatePostHeaderSection extends StatelessWidget {
           ),
           const Gap(12),
           Text(
-            'Create a Post',
+            context.l10n.createAPost,
             style: Theme.of(context).textTheme.titleMedium!.copyWith(
               fontWeight: FontWeight.w500,
               fontSize: 18,
@@ -63,7 +64,7 @@ class CreatePostHeaderSection extends StatelessWidget {
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
-                        'Post',
+                        context.l10n.post,
                         style: Theme.of(
                           context,
                         ).textTheme.titleMedium!.copyWith(

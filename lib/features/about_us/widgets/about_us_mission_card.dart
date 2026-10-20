@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class AboutUsMissionCard extends StatelessWidget {
   final bool isDark;
@@ -47,24 +48,24 @@ class AboutUsMissionCard extends StatelessWidget {
               ),
               const Gap(10),
               Text(
-                'Our Mission',
+                context.l10n.ourMission,
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
                   color: isDark ? Colors.white : Colors.black87,
-                  letterSpacing: -0.3,
+                  letterSpacing: context.ls(-0.3),
                 ),
               ),
             ],
           ),
           const Gap(14),
           Text(
-            'We believe meaningful connections change lives. Our platform is built to bring people closer — through conversations, shared moments, and real-time experiences that matter.',
+            context.l10n.weBelieveMeaningfulConnections,
             style: TextStyle(
               fontSize: 14.5,
               height: 1.6,
               color: isDark ? Colors.white70 : Colors.black54,
-              letterSpacing: 0.1,
+              letterSpacing: context.ls(0.1),
             ),
           ),
         ],

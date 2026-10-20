@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class GroupChatLockedBanner extends StatelessWidget {
   const GroupChatLockedBanner({super.key});
@@ -20,7 +21,7 @@ class GroupChatLockedBanner extends StatelessWidget {
           const SizedBox(width: 8),
           Flexible(
             child: Text(
-              'You are no longer a member of this group',
+              context.l10n.youAreNoLonger,
               textAlign: TextAlign.center,
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.hintColor,

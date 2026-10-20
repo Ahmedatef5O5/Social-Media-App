@@ -13,6 +13,7 @@ import '../../../../core/session/session_guard.dart';
 import '../../../../core/supabase/supabase_provider.dart';
 import '../../../../core/toast/app_toast.dart';
 import '../../../../core/utilities/supabase_constants.dart';
+import 'package:social_media_app/core/localization/app_l10n.dart';
 part 'auth_state.dart';
 
 class AuthCubit extends Cubit<AuthState> with SafeEmitMixin<AuthState> {
@@ -235,7 +236,7 @@ class AuthCubit extends Cubit<AuthState> with SafeEmitMixin<AuthState> {
       'local sign-out',
       _authServices.signOutLocallyAfterDeletion,
     );
-    AppToast.success('Your account has been deleted successfully.');
+    AppToast.success(AppL10n.current.yourAccountHasBeen);
   }
 
   Future<void> _bestEffort(String label, Future<void> Function() action) async {

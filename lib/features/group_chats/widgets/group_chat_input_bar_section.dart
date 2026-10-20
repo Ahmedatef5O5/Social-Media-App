@@ -16,6 +16,7 @@ import '../models/groupe_message_model.dart';
 import '../helpers/group_chat_transcript_builder.dart';
 import 'group_edit_preview_section.dart';
 import 'reply_preview_section.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class GroupChatInputBarSection extends StatefulWidget {
   final MentionTextEditingController controller;
@@ -114,7 +115,7 @@ class _GroupChatInputBarSectionState extends State<GroupChatInputBarSection> {
         widget.controller.clear();
         widget.controller.clearMentions();
         _cubit.sendMessage(
-          text: nameToSend ?? 'File',
+          text: nameToSend ?? context.l10n.file,
 
           messageType: 'file',
           documentFile: docToSend,
@@ -266,7 +267,7 @@ class _GroupChatInputBarSectionState extends State<GroupChatInputBarSection> {
         if (_stagedDocument != null)
           ChatStagedFilePreview(
             file: _stagedDocument,
-            fileName: _stagedFileName ?? 'File',
+            fileName: _stagedFileName ?? context.l10n.file,
             fileSizeBytes: _stagedFileSizeBytes ?? 0,
             onRemove: () {
               setState(() {
@@ -305,7 +306,7 @@ class _GroupChatInputBarSectionState extends State<GroupChatInputBarSection> {
                   replyTo == null
                       ? null
                       : (replyTo.senderId == _cubit.currentUserId
-                          ? 'You'
+                          ? context.l10n.you
                           : replyTo.senderName),
               targetImageUrl:
                   (replyTo != null && replyTo.messageType == 'image')

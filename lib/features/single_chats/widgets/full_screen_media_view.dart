@@ -14,6 +14,7 @@ import '../../../core/widgets/blurred_media_placeholders.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
 import '../../../core/widgets/vertical_volume_indicator.dart';
 import '../../../core/widgets/video_progress_slider.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class FullScreenMediaView extends StatefulWidget {
   final String? imageUrl;
@@ -385,7 +386,7 @@ class _FullScreenMediaViewState extends State<FullScreenMediaView>
                     },
                     itemBuilder:
                         (_) => [
-                          const PopupMenuItem(
+                          PopupMenuItem(
                             value: 'save',
                             child: Row(
                               children: [
@@ -396,7 +397,7 @@ class _FullScreenMediaViewState extends State<FullScreenMediaView>
                                 ),
                                 SizedBox(width: 8),
                                 Text(
-                                  'Save to gallery',
+                                  context.l10n.saveToGallery,
                                   style: TextStyle(color: Colors.black45),
                                 ),
                               ],
@@ -554,7 +555,7 @@ class _FullScreenMediaViewState extends State<FullScreenMediaView>
                             borderRadius: BorderRadius.circular(40),
                           ),
                           alignment: Alignment.center,
-                          child: const Column(
+                          child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Icon(
@@ -564,7 +565,7 @@ class _FullScreenMediaViewState extends State<FullScreenMediaView>
                               ),
                               SizedBox(height: 8),
                               Text(
-                                '-5 sec',
+                                context.l10n.t5Sec,
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontWeight: FontWeight.bold,
@@ -592,7 +593,7 @@ class _FullScreenMediaViewState extends State<FullScreenMediaView>
                             borderRadius: BorderRadius.circular(40),
                           ),
                           alignment: Alignment.center,
-                          child: const Column(
+                          child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Icon(
@@ -602,7 +603,7 @@ class _FullScreenMediaViewState extends State<FullScreenMediaView>
                               ),
                               SizedBox(height: 8),
                               Text(
-                                '+5 sec',
+                                context.l10n.t5Sec2,
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontWeight: FontWeight.bold,

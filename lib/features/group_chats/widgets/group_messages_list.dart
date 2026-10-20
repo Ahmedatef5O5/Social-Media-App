@@ -11,6 +11,7 @@ import '../../single_chats/widgets/empty_placeholder_state.dart';
 import '../cubits/group_details_cubit/group_details_cubit.dart';
 import 'group_message_item_builder.dart';
 import 'group_presence_bubble_row.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class GroupMessagesList extends StatefulWidget {
   final ItemScrollController scrollController;
@@ -188,7 +189,7 @@ class _GroupMessagesListState extends State<GroupMessagesList> {
     return EmptyPlaceholderState(
       img: AppImages.blueSmileFaceLot,
       imgHeight: MediaQuery.of(context).size.height * 0.2,
-      title: 'No messages yet.',
+      title: context.l10n.noMessagesYet,
       style: Theme.of(context).textTheme.titleMedium!.copyWith(
         color: Theme.of(context).primaryColor,
         fontWeight: FontWeight.w600,

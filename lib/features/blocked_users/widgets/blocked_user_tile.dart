@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../core/constants/app_images.dart';
 import '../../../core/widgets/app_image_provider.dart';
 import '../models/blocked_user_item_model.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class BlockedUserTile extends StatelessWidget {
   final BlockedUserItemModel item;
@@ -61,7 +62,7 @@ class BlockedUserTile extends StatelessWidget {
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            'Blocked',
+                            context.l10n.blocked,
                             style: theme.textTheme.bodySmall?.copyWith(
                               color: Colors.red.shade400,
                               fontWeight: FontWeight.w600,
@@ -78,7 +79,7 @@ class BlockedUserTile extends StatelessWidget {
             TextButton(
               onPressed: onUnblock,
               style: TextButton.styleFrom(foregroundColor: theme.primaryColor),
-              child: const Text('Unblock'),
+              child: Text(context.l10n.unblock),
             ),
           ],
         ),

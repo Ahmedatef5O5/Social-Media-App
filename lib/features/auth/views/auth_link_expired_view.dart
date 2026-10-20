@@ -5,6 +5,7 @@ import '../../../core/session/session_guard.dart';
 import '../../../core/themes/app_colors.dart';
 import '../../../core/themes/background_theme_widget.dart';
 import '../../../core/widgets/custom_elevated_button.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 /// Shown when a recovery link is expired, already used, or invalid.
 class AuthLinkExpiredView extends StatelessWidget {
@@ -58,8 +59,8 @@ class AuthLinkExpiredView extends StatelessWidget {
                   const Gap(24),
                   Text(
                     alreadySignedIn
-                        ? 'This link was already used'
-                        : 'This link is no longer valid',
+                        ? context.l10n.thisLinkWasAlready
+                        : context.l10n.thisLinkIsNo,
                     textAlign: TextAlign.center,
                     style: theme.textTheme.headlineSmall?.copyWith(
                       fontWeight: FontWeight.bold,
@@ -69,9 +70,8 @@ class AuthLinkExpiredView extends StatelessWidget {
                   const Gap(12),
                   Text(
                     alreadySignedIn
-                        ? "Your password was already updated and you're signed in."
-                        : 'This link has expired or has already been used. '
-                            'Please request a new one.',
+                        ? context.l10n.yourPasswordWasAlready
+                        : context.l10n.thisLinkHasExpired,
                     textAlign: TextAlign.center,
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: AppColors.grey,
@@ -80,7 +80,10 @@ class AuthLinkExpiredView extends StatelessWidget {
                   ),
                   const Gap(32),
                   CustomElevatedButton(
-                    txtBtn: alreadySignedIn ? 'Go to Home' : 'Request new link',
+                    txtBtn:
+                        alreadySignedIn
+                            ? context.l10n.goToHome
+                            : context.l10n.requestNewLink,
                     onPressed:
                         () =>
                             alreadySignedIn
@@ -91,7 +94,7 @@ class AuthLinkExpiredView extends StatelessWidget {
                     const Gap(12),
                     TextButton(
                       onPressed: () => _goToLogin(context),
-                      child: const Text('Back to login'),
+                      child: Text(context.l10n.backToLogin),
                     ),
                   ],
                 ],

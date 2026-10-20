@@ -9,6 +9,7 @@ import '../../../core/widgets/calls/call_layout_metrics.dart';
 import '../../../core/widgets/calls/calls.dart';
 import '../cubits/single_call_cubit/call_cubit.dart';
 import '../models/call_model.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class IncomingCallView extends StatefulWidget {
   final CallModel call;
@@ -146,8 +147,8 @@ class _IncomingCallViewState extends State<IncomingCallView>
                               : Icons.phone_callback_rounded,
                       label:
                           isVideo
-                              ? 'Incoming Video Call'
-                              : 'Incoming Voice Call',
+                              ? context.l10n.incomingVideoCall
+                              : context.l10n.incomingVoiceCall,
                       shake: _shakeAnim,
                     ),
 
@@ -168,11 +169,11 @@ class _IncomingCallViewState extends State<IncomingCallView>
 
                     Text(
                       widget.call.callerName,
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: Colors.white,
                         fontSize: 30,
                         fontWeight: FontWeight.bold,
-                        letterSpacing: 0.5,
+                        letterSpacing: context.ls(0.5),
                         shadows: [
                           Shadow(
                             color: Colors.black45,
@@ -187,12 +188,12 @@ class _IncomingCallViewState extends State<IncomingCallView>
                     ),
 
                     const SizedBox(height: 8),
-                    const Text(
-                      'is calling you...',
+                    Text(
+                      context.l10n.isCallingYou,
                       style: TextStyle(
                         color: Colors.white60,
                         fontSize: 15,
-                        letterSpacing: 0.3,
+                        letterSpacing: context.ls(0.3),
                       ),
                     ),
 
@@ -205,7 +206,7 @@ class _IncomingCallViewState extends State<IncomingCallView>
                         children: [
                           GlassCallActionButton(
                             icon: Icons.call_end_rounded,
-                            label: 'Decline',
+                            label: context.l10n.decline,
                             color: Colors.redAccent.shade700,
                             size: metrics.buttonSize,
                             onTap: () {
@@ -218,7 +219,7 @@ class _IncomingCallViewState extends State<IncomingCallView>
                                 isVideo
                                     ? Icons.videocam_rounded
                                     : Icons.call_rounded,
-                            label: 'Accept',
+                            label: context.l10n.accept,
                             color: Colors.green.shade600,
                             size: metrics.buttonSize,
                             emphasized: true,

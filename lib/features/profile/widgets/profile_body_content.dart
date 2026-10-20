@@ -9,6 +9,7 @@ import 'package:social_media_app/features/profile/widgets/sliver_tab_bar_delegat
 import '../../../core/themes/app_colors.dart';
 import '../../posts/cubits/posts_cubit/posts_cubit.dart';
 import '../cubits/profile_cubit/profile_cubit.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class ProfileBodyContent extends StatelessWidget {
   final PostsCubit postsCubit;
@@ -71,7 +72,10 @@ class ProfileBodyContent extends StatelessWidget {
                     padding: EdgeInsets.symmetric(horizontal: 30),
                     indicatorPadding: const EdgeInsets.only(top: 45),
 
-                    tabs: [Tab(text: 'Posts'), Tab(text: 'Details')],
+                    tabs: [
+                      Tab(text: context.l10n.posts),
+                      Tab(text: context.l10n.details),
+                    ],
                   ),
                 ),
               ),

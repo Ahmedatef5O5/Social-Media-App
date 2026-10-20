@@ -1,6 +1,20 @@
 import '../../../core/presence/models/presence_privacy.dart';
 import '../repository/settings_repository.dart';
 
+/// Typed, presentation-agnostic errors. The cubit has no `BuildContext`, so it
+/// reports WHAT went wrong and the view maps it to localized text.
+enum SettingsError {
+  privacyUpdateFailed,
+  visibilityUpdateFailed,
+  identityNotVerified,
+  biometricNoHardware,
+  biometricNotEnrolled,
+  biometricLockedOut,
+  biometricPermanentlyLockedOut,
+  biometricPasscodeNotSet,
+  biometricUnknown,
+}
+
 class SettingsState {
   final bool pushNotifications;
   final bool messagePreviews;
@@ -12,7 +26,8 @@ class SettingsState {
   final PresencePrivacy presencePrivacy;
   final List<String> presenceVisibleTo;
   final int? recoveryCodesCount;
-  final String? errorMessage;
+  final String languageCode;
+  final SettingsError? error;
 
   const SettingsState({
     required this.pushNotifications,
@@ -24,8 +39,9 @@ class SettingsState {
     required this.twoFactor,
     required this.presencePrivacy,
     required this.presenceVisibleTo,
+    required this.languageCode,
     this.recoveryCodesCount,
-    this.errorMessage,
+    this.error,
   });
 
   factory SettingsState.fromRepository({
@@ -43,9 +59,12 @@ class SettingsState {
       twoFactor: repo.twoFactor,
       presencePrivacy: presencePrivacy,
       presenceVisibleTo: presenceVisibleTo,
+      languageCode: repo.languageCode,
     );
   }
 
+  /// `error` is intentionally NOT carried over: each emit either sets a fresh
+  /// error or clears it (same one-shot semantics the old `errorMessage` had).
   SettingsState copyWith({
     bool? pushNotifications,
     bool? messagePreviews,
@@ -57,7 +76,8 @@ class SettingsState {
     PresencePrivacy? presencePrivacy,
     List<String>? presenceVisibleTo,
     int? recoveryCodesCount,
-    String? errorMessage,
+    String? languageCode,
+    SettingsError? error,
   }) {
     return SettingsState(
       pushNotifications: pushNotifications ?? this.pushNotifications,
@@ -70,7 +90,8 @@ class SettingsState {
       presencePrivacy: presencePrivacy ?? this.presencePrivacy,
       presenceVisibleTo: presenceVisibleTo ?? this.presenceVisibleTo,
       recoveryCodesCount: recoveryCodesCount ?? this.recoveryCodesCount,
-      errorMessage: errorMessage,
+      languageCode: languageCode ?? this.languageCode,
+      error: error,
     );
   }
 }

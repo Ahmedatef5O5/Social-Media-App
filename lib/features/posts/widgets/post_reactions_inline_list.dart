@@ -15,6 +15,8 @@ import '../../single_chats/models/chat_user_model.dart';
 import '../cubits/posts_cubit/posts_cubit.dart';
 import '../models/post_model.dart';
 import '../models/post_reaction_model.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
+import 'package:social_media_app/core/localization/app_l10n.dart';
 
 class PostReactionsInlineList extends StatefulWidget {
   final String postId;
@@ -59,7 +61,7 @@ class _PostReactionsInlineListState extends State<PostReactionsInlineList> {
           final lastSeenStr = user?[UserColumns.lastSeen] as String?;
           return ReactionEntry(
             userId: user?[UserColumns.id] ?? '',
-            userName: user?[UserColumns.name] ?? 'Unknown User',
+            userName: user?[UserColumns.name] ?? context.l10n.unknownUser,
             userImageUrl: user?[UserColumns.imageUrl],
             lastSeen:
                 lastSeenStr != null ? DateTime.tryParse(lastSeenStr) : null,
@@ -90,7 +92,7 @@ class _PostReactionsInlineListState extends State<PostReactionsInlineList> {
         0,
         ReactionEntry(
           userId: currentUserId,
-          userName: userData?.name ?? 'You',
+          userName: userData?.name ?? context.l10n.you,
           userImageUrl: userData?.imageUrl,
           lastSeen: null,
           emoji: reactionGlyph(newEmoji),
@@ -166,7 +168,7 @@ class _PostReactionsInlineListState extends State<PostReactionsInlineList> {
             return Padding(
               padding: const EdgeInsets.symmetric(vertical: 24),
               child: Text(
-                'Failed to load reactions.',
+                context.l10n.failedToLoadReactions,
                 style: Theme.of(
                   context,
                 ).textTheme.bodyMedium?.copyWith(color: AppColors.grey6),
@@ -188,7 +190,7 @@ class _PostReactionsInlineListState extends State<PostReactionsInlineList> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'No reactions yet.',
+                      context.l10n.noReactionsYet,
                       style: Theme.of(
                         context,
                       ).textTheme.bodyMedium?.copyWith(color: AppColors.grey6),
@@ -206,7 +208,7 @@ class _PostReactionsInlineListState extends State<PostReactionsInlineList> {
               Row(
                 children: [
                   Text(
-                    '${entries.length} Reactions',
+                    context.l10n.reactions2(entries.length),
                     style: Theme.of(
                       context,
                     ).textTheme.titleMedium!.copyWith(color: AppColors.grey7),
@@ -350,7 +352,7 @@ class _ReactionEntryTile extends StatelessWidget {
 String _formatRelativeTime(DateTime dateTime) {
   final diff = DateTime.now().difference(dateTime);
   if (diff.inSeconds < 60) return 'now';
-  if (diff.inMinutes < 60) return '${diff.inMinutes} min';
+  if (diff.inMinutes < 60) return AppL10n.current.min(diff.inMinutes);
   if (diff.inHours < 24) return '${diff.inHours} hr';
   if (diff.inDays < 7) return '${diff.inDays} d';
   return '${(diff.inDays / 7).floor()} w';

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../core/design/tokens/typography.dart';
 import '../models/groupe_message_model.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class GroupReactionPickerBubble extends StatefulWidget {
   final GroupMessageModel message;
@@ -178,20 +179,20 @@ class _GroupReactionPickerBubbleState extends State<GroupReactionPickerBubble>
                   ),
                   _ActionTile(
                     icon: Icons.reply_all_outlined,
-                    label: 'Reply',
+                    label: context.l10n.reply,
                     onTap: widget.onReply,
                   ),
                 ],
                 if (widget.onEdit != null)
                   _ActionTile(
                     icon: Icons.edit_outlined,
-                    label: 'Edit',
+                    label: context.l10n.edit,
                     onTap: widget.onEdit!,
                   ),
                 if (widget.onDelete != null)
                   _ActionTile(
                     icon: Icons.delete_outline,
-                    label: 'Delete',
+                    label: context.l10n.delete,
                     color: Colors.red,
                     onTap: widget.onDelete!,
                   ),
@@ -199,7 +200,7 @@ class _GroupReactionPickerBubbleState extends State<GroupReactionPickerBubble>
                 if (widget.onReport != null)
                   _ActionTile(
                     icon: Icons.report_gmailerrorred,
-                    label: 'Report',
+                    label: context.l10n.report,
                     onTap: widget.onReport!,
                   ),
               ],

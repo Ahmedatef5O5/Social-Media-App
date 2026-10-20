@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../../core/themes/app_colors.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class TotpWindowIndicator extends StatefulWidget {
   const TotpWindowIndicator({super.key});
@@ -66,8 +67,8 @@ class _TotpWindowIndicatorState extends State<TotpWindowIndicator> {
             Flexible(
               child: Text(
                 urgent
-                    ? 'Code about to change, wait for next'
-                    : 'Code updates in ${remaining}s',
+                    ? context.l10n.codeAboutToChange
+                    : context.l10n.codeUpdatesInS(remaining),
                 textAlign: TextAlign.center,
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: urgent ? Colors.orange.shade800 : theme.hintColor,

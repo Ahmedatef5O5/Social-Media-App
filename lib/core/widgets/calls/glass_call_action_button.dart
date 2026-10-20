@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class GlassCallActionButton extends StatefulWidget {
   final IconData icon;
@@ -78,7 +79,7 @@ class _GlassCallActionButtonState extends State<GlassCallActionButton>
               color: Colors.white,
               fontSize: labelSize,
               fontWeight: FontWeight.w600,
-              letterSpacing: 0.4,
+              letterSpacing: context.ls(0.4),
             ),
           ),
         ],

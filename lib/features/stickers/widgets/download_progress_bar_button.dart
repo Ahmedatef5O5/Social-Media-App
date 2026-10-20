@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 enum DownloadButtonStatus { idle, downloading, downloaded }
 
@@ -35,8 +36,8 @@ class DownloadProgressBarButton extends StatelessWidget {
             foregroundColor: theme.colorScheme.onErrorContainer,
             padding: EdgeInsets.zero,
           ),
-          child: const Text(
-            'Remove',
+          child: Text(
+            context.l10n.remove,
             style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
           ),
         ),
@@ -94,7 +95,7 @@ class DownloadProgressBarButton extends StatelessWidget {
                                   ),
                                 )
                                 : Text(
-                                  'Download',
+                                  context.l10n.download,
                                   key: const ValueKey('idle'),
                                   style: TextStyle(
                                     fontSize: 13,

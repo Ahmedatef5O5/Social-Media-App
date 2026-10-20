@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:social_media_app/core/supabase/supabase_provider.dart';
+import 'package:social_media_app/features/settings/repository/settings_repository.dart';
 
 class AiRemoteService {
   Future<Map<String, dynamic>> invoke({
@@ -10,6 +11,7 @@ class AiRemoteService {
       final response = await SupabaseProvider.client.functions.invoke(
         'ai-gateway',
         body: {'action': action, 'payload': payload},
+        headers: {'x-user-language': SettingsRepository.instance.languageCode},
       );
 
       final data = response.data;

@@ -27,6 +27,7 @@ import 'comment_action_chip.dart';
 import 'comment_overlay_picker.dart';
 import '../../../core/helpers/formatted_date.dart';
 import '../../../core/themes/app_colors.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class CommentWidget extends StatefulWidget {
   final CommentModel comment;
@@ -138,7 +139,7 @@ class _CommentWidgetState extends State<CommentWidget>
       if (isMyComment)
         CommentMenuAction(
           icon: Icons.edit_outlined,
-          label: 'Edit',
+          label: context.l10n.edit,
           onTap: () {
             _dismissPicker();
             widget.onEditTap?.call(widget.comment);
@@ -148,7 +149,7 @@ class _CommentWidgetState extends State<CommentWidget>
       if (canDelete)
         CommentMenuAction(
           icon: Icons.delete_outline,
-          label: 'Delete',
+          label: context.l10n.delete,
           color: Colors.red,
           onTap: () {
             _dismissPicker();
@@ -160,7 +161,7 @@ class _CommentWidgetState extends State<CommentWidget>
       if (!isMyComment)
         CommentMenuAction(
           icon: Icons.report_gmailerrorred,
-          label: 'Report',
+          label: context.l10n.report,
           onTap: () {
             _dismissPicker();
             ReportBottomSheet.show(
@@ -194,7 +195,7 @@ class _CommentWidgetState extends State<CommentWidget>
       context: context,
       builder:
           (ctx) => CustomConfirmationDialog(
-            title: 'Delete this comment ?',
+            title: context.l10n.deleteThisComment,
             textAlign: TextAlign.center,
             img: AppImages.deleteFilesAnimationLot,
             onConfirm: () async {
@@ -204,7 +205,7 @@ class _CommentWidgetState extends State<CommentWidget>
                 postId: widget.comment.postId,
               );
               if (context.mounted) {
-                AppToast.info('Comment deleted successfully');
+                AppToast.info(context.l10n.commentDeletedSuccessfully);
               }
             },
           ),
@@ -261,13 +262,13 @@ class _CommentWidgetState extends State<CommentWidget>
 
     if (userId == currentUserId) {
       if (widget.comment.authorId == currentUserId) {
-        AppToast.info('You mentioned yourself in this comment');
+        AppToast.info(context.l10n.youMentionedYourselfIn);
       } else {
         final authorName =
             (widget.comment.authorName?.trim().isNotEmpty ?? false)
                 ? widget.comment.authorName!.trim()
-                : 'Someone';
-        AppToast.info('$authorName mentioned you in this comment');
+                : context.l10n.someone;
+        AppToast.info(context.l10n.mentionedYouInThis(authorName));
       }
     } else {
       Navigator.of(
@@ -558,7 +559,7 @@ class _CommentWidgetState extends State<CommentWidget>
                                 if (widget.comment.isEdited) ...[
                                   const SizedBox(width: 4),
                                   Text(
-                                    '· Edited',
+                                    context.l10n.edited,
                                     style: theme.textTheme.bodySmall?.copyWith(
                                       color: AppColors.grey6,
                                       fontSize: 11,
@@ -598,7 +599,7 @@ class _CommentWidgetState extends State<CommentWidget>
                                 ),
                                 const SizedBox(width: 12),
                                 CommentActionChip(
-                                  label: 'Reply',
+                                  label: context.l10n.reply,
                                   onTap:
                                       () => widget.onReplyTap?.call(
                                         widget.comment.id,
@@ -645,7 +646,7 @@ class _CommentWidgetState extends State<CommentWidget>
                           const SizedBox(width: 4),
                           Text(
                             isExpanded
-                                ? 'Hide replies'
+                                ? context.l10n.hideReplies
                                 : 'View $replyCount ${replyCount == 1 ? "reply" : "replies"}',
                             style: theme.textTheme.labelMedium?.copyWith(
                               color: theme.primaryColor,

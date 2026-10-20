@@ -7,6 +7,7 @@ import '../../../core/widgets/app_image_provider.dart';
 import '../../../core/widgets/overlapping_avatar_stack.dart';
 import '../../single_chats/widgets/typing_indicator_widget.dart';
 import '../models/group_presence_entry.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class GroupPresenceBubbleRow extends StatelessWidget {
   final GroupPresenceSnapshot snapshot;
@@ -123,8 +124,12 @@ class _ActionBubble extends StatelessWidget {
                         AnimatedActivityText(
                           text:
                               entries.length == 1
-                                  ? '${entries.first.userName} recording audio...'
-                                  : '${entries.length} people recording audio...',
+                                  ? context.l10n.recordingAudio(
+                                    entries.first.userName,
+                                  )
+                                  : context.l10n.peopleRecordingAudio(
+                                    entries.length,
+                                  ),
                           style: TextStyle(
                             color:
                                 isDark

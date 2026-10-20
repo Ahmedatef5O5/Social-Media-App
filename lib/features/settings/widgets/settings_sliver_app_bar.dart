@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
+import '../../../core/localization/l10n_extension.dart';
 
 class SettingsSliverAppBar extends StatelessWidget {
   const SettingsSliverAppBar({super.key});
@@ -36,24 +37,27 @@ class SettingsSliverAppBar extends StatelessWidget {
 
           return FlexibleSpaceBar(
             collapseMode: CollapseMode.parallax,
-            titlePadding: const EdgeInsets.only(left: 52, bottom: 20),
+            titlePadding: const EdgeInsetsDirectional.only(
+              start: 52,
+              bottom: 20,
+            ),
 
             title: AnimatedOpacity(
               duration: const Duration(milliseconds: 200),
 
               opacity: titleOpacity,
               child: Text(
-                'Settings',
+                context.l10n.settingsTitle,
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w700,
                   color: isDark ? Colors.white : Colors.black87,
-                  letterSpacing: -0.4,
+                  letterSpacing: context.ls(-0.4),
                 ),
               ),
             ),
             background: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 70, 20, 0),
+              padding: const EdgeInsetsDirectional.fromSTEB(20, 70, 20, 0),
               child: Row(
                 children: [
                   Container(
@@ -75,16 +79,16 @@ class SettingsSliverAppBar extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Settings',
+                        context.l10n.settingsTitle,
                         style: TextStyle(
                           fontSize: 26,
                           fontWeight: FontWeight.w800,
-                          letterSpacing: -0.6,
+                          letterSpacing: context.ls(-0.6),
                           color: isDark ? Colors.white : Colors.black87,
                         ),
                       ),
                       Text(
-                        'Manage your preferences',
+                        context.l10n.settingsSubtitle,
                         style: TextStyle(
                           fontSize: 13,
                           color: isDark ? Colors.white38 : Colors.grey.shade500,

@@ -44,6 +44,8 @@ import '../widgets/ai_model_selector.dart';
 import '../widgets/ai_suggestion_grid.dart';
 import '../widgets/syncra_backdrop.dart';
 import 'ai_photo_preview_screen.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
+import 'package:social_media_app/core/localization/app_l10n.dart';
 
 class AiChatView extends StatefulWidget {
   final String? initialSessionId;
@@ -129,7 +131,7 @@ class _AiChatViewState extends State<AiChatView> with TickerProviderStateMixin {
       activeCubit: () => _chatCubit,
       ensureDepsReady: () {
         if (_deps == null) {
-          AppToast.info('Still getting Syncra ready — try again in a second.');
+          AppToast.info(AppL10n.current.stillGettingSyncraReady);
           return false;
         }
         _scheduleScrollToBottom();
@@ -203,7 +205,7 @@ class _AiChatViewState extends State<AiChatView> with TickerProviderStateMixin {
         if (mounted) {
           _openForwardedFilePreview(
             widget.initialDraftFileRemoteUrl!,
-            widget.initialDraftFileName ?? 'Forwarded File',
+            widget.initialDraftFileName ?? AppL10n.current.forwardedFile,
           );
         }
       });
@@ -440,7 +442,7 @@ class _AiChatViewState extends State<AiChatView> with TickerProviderStateMixin {
       }
     } catch (_) {
       if (mounted) {
-        AppToast.error('Failed to delete this chat. Please try again.');
+        AppToast.error(context.l10n.failedToDeleteThis);
       }
     }
   }
@@ -522,9 +524,9 @@ class _AiChatViewState extends State<AiChatView> with TickerProviderStateMixin {
         targets: result,
         currentUserId: SupabaseProvider.id,
       );
-      if (mounted) AppToast.info('Forwarded to ${result.length} chat(s)');
+      if (mounted) AppToast.info(context.l10n.forwardedToChatS(result.length));
     } catch (_) {
-      if (mounted) AppToast.error('Failed to forward. Please try again.');
+      if (mounted) AppToast.error(context.l10n.failedToForwardPlease);
     }
   }
 
@@ -538,7 +540,7 @@ class _AiChatViewState extends State<AiChatView> with TickerProviderStateMixin {
         .join('\n\n');
 
     if (combinedText.isEmpty) {
-      AppToast.info("There's no text to share in this selection.");
+      AppToast.info(context.l10n.theresNoTextTo);
       return;
     }
 
@@ -561,7 +563,7 @@ class _AiChatViewState extends State<AiChatView> with TickerProviderStateMixin {
     await Clipboard.setData(ClipboardData(text: combinedText));
 
     if (mounted) {
-      AppToast.success('Copied to clipboard');
+      AppToast.success(context.l10n.copiedToClipboard);
       _selection.clearSelection();
     }
   }
@@ -574,34 +576,27 @@ class _AiChatViewState extends State<AiChatView> with TickerProviderStateMixin {
   void _openMessageInfo(BuildContext context) {
     final selectedIds = _selection.selectedMessageIds.value;
     if (selectedIds.length != 1) return;
+    final selectedId = selectedIds.first;
     final state = _chatCubit?.state;
-    if (state is! AiChatMessagesLoaded) {
-      debugPrint('[AiChatView] info ignored, state=${state.runtimeType}');
-      return;
-    }
-    final message = state.messages.firstWhereOrNull(
-      (m) => m.id == selectedIds.first,
-    );
-    if (message == null) {
-      debugPrint('[AiChatView] info ignored, message not found');
-      return;
-    }
+    if (state is! AiChatMessagesLoaded) return;
+    final message = state.messages.firstWhereOrNull((m) => m.id == selectedId);
+    if (message == null) return;
+    _selection.clearSelection();
 
     final currentUser = context.read<HomeCubit>().currentUserData;
-    final args = MessageInfoArgs.fromAiChat(
-      message: message,
-      currentUserId: SupabaseProvider.id,
-      currentUserName: currentUser?.name,
-      currentUserAvatar: currentUser?.imageUrl,
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder:
+            (_) => MessageInfoView(
+              args: MessageInfoArgs.fromAiChat(
+                message: message,
+                currentUserId: SupabaseProvider.id,
+                currentUserName: currentUser?.name,
+                currentUserAvatar: currentUser?.imageUrl,
+              ),
+            ),
+      ),
     );
-
-    FocusManager.instance.primaryFocus?.unfocus();
-    Navigator.of(
-      context,
-    ).push(MaterialPageRoute(builder: (_) => MessageInfoView(args: args)));
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _selection.clearSelection();
-    });
   }
 
   // ---------------------------------------------------------------------
@@ -629,25 +624,25 @@ class _AiChatViewState extends State<AiChatView> with TickerProviderStateMixin {
     return [
       AiSuggestionItem(
         icon: Icons.image_rounded,
-        label: 'Image',
+        label: context.l10n.image,
         accentColor: Colors.purpleAccent,
         onTap: () => _prefillAndFocus('Create an image of '),
       ),
       AiSuggestionItem(
         icon: Icons.translate_rounded,
-        label: 'Translate',
+        label: context.l10n.translate,
         accentColor: Colors.lightBlueAccent,
         onTap: () => _prefillAndFocus('Translate this to '),
       ),
       AiSuggestionItem(
         icon: Icons.graphic_eq_rounded,
-        label: 'Audio Chat',
+        label: context.l10n.audioChat,
         accentColor: Colors.orangeAccent,
         onTap: () => _textFocusNode.requestFocus(),
       ),
       AiSuggestionItem(
         icon: Icons.description_rounded,
-        label: 'Chat Files',
+        label: context.l10n.chatFiles,
         accentColor: Colors.tealAccent,
         onTap: _openFilesSuggestion,
       ),
@@ -687,7 +682,7 @@ class _AiChatViewState extends State<AiChatView> with TickerProviderStateMixin {
     }
     final deps = _deps;
     if (deps == null) {
-      AppToast.info('Still getting Syncra ready — try again in a second.');
+      AppToast.info(context.l10n.stillGettingSyncraReady);
       return;
     }
     _startConversationIfNeeded();
@@ -709,7 +704,7 @@ class _AiChatViewState extends State<AiChatView> with TickerProviderStateMixin {
       _scheduleScrollToBottom();
     } catch (_) {
       if (mounted) {
-        AppToast.error('Failed to send your message. Please try again.');
+        AppToast.error(context.l10n.failedToSendYour);
       }
     }
   }
@@ -808,13 +803,13 @@ class _AiChatViewState extends State<AiChatView> with TickerProviderStateMixin {
   String _friendlyErrorMessage(String reason) {
     switch (reason) {
       case 'user_quota_exceeded':
-        return "You've reached today's Syncra limit — try again tomorrow.";
+        return context.l10n.youveReachedTodaysSyncra;
       case 'global_quota_exceeded':
-        return 'Syncra is a bit busy right now — please try again shortly.';
+        return context.l10n.syncraIsABit;
       case 'all_providers_unavailable':
-        return "Syncra couldn't reach any AI provider — please try again.";
+        return context.l10n.syncraCouldntReachAny;
       default:
-        return 'Something went wrong. Please try again.';
+        return context.l10n.somethingWentWrongPlease;
     }
   }
 
@@ -824,7 +819,7 @@ class _AiChatViewState extends State<AiChatView> with TickerProviderStateMixin {
         .resolveLocalPath(remoteUrl);
     if (!mounted) return;
     if (localPath == null) {
-      AppToast.error("Couldn't load that photo. Please try again.");
+      AppToast.error(context.l10n.couldntLoadThatPhoto);
       return;
     }
     if (widget.initialDraftImageCaption != null) {
@@ -844,7 +839,7 @@ class _AiChatViewState extends State<AiChatView> with TickerProviderStateMixin {
     if (!mounted) return;
 
     if (localPath == null) {
-      AppToast.error("Couldn't load that file. Please try again.");
+      AppToast.error(context.l10n.couldntLoadThatFile);
       return;
     }
 
@@ -855,6 +850,8 @@ class _AiChatViewState extends State<AiChatView> with TickerProviderStateMixin {
     await _attachments.stageFile(File(localPath), fileName);
   }
 
+  /// Optional: crop, draw (highlight) or blur the staged image before asking
+  /// the model about it. Cancelling keeps the original staged image.
   Future<void> _editStagedImage() async {
     final file = _attachments.stagedMediaFile;
     if (file == null || _attachments.stagedMediaType != AiChatMediaType.image) {
@@ -866,6 +863,7 @@ class _AiChatViewState extends State<AiChatView> with TickerProviderStateMixin {
       preset: MediaEditorPreset.aiChat,
     );
     if (edited == null || !mounted) return;
+    // stageImage() clears any remote URL, so the edited pixels are what get sent.
     await _attachments.stageImage(
       edited,
       fileName: edited.path.split(Platform.pathSeparator).last,
@@ -892,10 +890,10 @@ class _AiChatViewState extends State<AiChatView> with TickerProviderStateMixin {
     try {
       final result = await OpenFilex.open(file.path);
       if (result.type != ResultType.done && mounted) {
-        AppToast.error("Couldn't open that file.");
+        AppToast.error(context.l10n.couldntOpenThatFile);
       }
     } catch (_) {
-      if (mounted) AppToast.error("Couldn't open that file.");
+      if (mounted) AppToast.error(context.l10n.couldntOpenThatFile);
     }
   }
 
@@ -904,7 +902,7 @@ class _AiChatViewState extends State<AiChatView> with TickerProviderStateMixin {
       child: Padding(
         padding: const EdgeInsets.all(24),
         child: Text(
-          "Couldn't load this conversation.\n$message",
+          context.l10n.couldntLoadThisConversation(message),
           textAlign: TextAlign.center,
           style: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
         ),
@@ -1288,7 +1286,7 @@ class _AiChatViewState extends State<AiChatView> with TickerProviderStateMixin {
   Widget _buildHeaderRestContent(BuildContext context, UserData? currentUser) {
     return Row(
       children: [
-        const Expanded(
+        Expanded(
           child: Center(
             child: Text(
               'Syncra',
@@ -1296,7 +1294,7 @@ class _AiChatViewState extends State<AiChatView> with TickerProviderStateMixin {
                 color: Colors.white,
                 fontWeight: FontWeight.w700,
                 fontSize: 16,
-                letterSpacing: -0.2,
+                letterSpacing: context.ls(-0.2),
               ),
             ),
           ),

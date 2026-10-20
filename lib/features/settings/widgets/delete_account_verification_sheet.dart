@@ -4,6 +4,7 @@ import 'package:gap/gap.dart';
 import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/widgets/custom_elevated_button.dart';
 import '../../../core/widgets/custom_text_form_field.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 /// Result of the final security gate shown before an account is deleted.
 
@@ -119,8 +120,8 @@ class _DeleteAccountVerificationBodyState
           const Gap(16),
           Text(
             widget.requiresPassword
-                ? 'Confirm your password'
-                : 'One last confirmation',
+                ? context.l10n.confirmYourPassword
+                : context.l10n.oneLastConfirmation,
             textAlign: TextAlign.center,
             style: theme.textTheme.titleLarge?.copyWith(
               fontWeight: FontWeight.w700,
@@ -128,10 +129,7 @@ class _DeleteAccountVerificationBodyState
           ),
           const Gap(8),
           Text(
-            'Your profile will be anonymized as "Deleted Account" and you '
-            'will be signed out on all devices. Your posts, comments and '
-            'messages stay visible to others under that name. This cannot '
-            'be undone.',
+            context.l10n.yourProfileWillBe,
             textAlign: TextAlign.center,
             style: theme.textTheme.bodyMedium?.copyWith(
               color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
@@ -151,11 +149,13 @@ class _DeleteAccountVerificationBodyState
                     isPassword: widget.requiresPassword,
                     headerText:
                         widget.requiresPassword
-                            ? 'Current password'
-                            : 'Type ${DeleteAccountVerificationSheet.confirmationWord} to confirm',
+                            ? context.l10n.currentPassword2
+                            : context.l10n.typeToConfirm(
+                              DeleteAccountVerificationSheet.confirmationWord,
+                            ),
                     hintText:
                         widget.requiresPassword
-                            ? 'Enter your password'
+                            ? context.l10n.enterYourPassword
                             : DeleteAccountVerificationSheet.confirmationWord,
                     keyboardType:
                         widget.requiresPassword
@@ -187,7 +187,7 @@ class _DeleteAccountVerificationBodyState
           TextButton(
             onPressed: () => Navigator.of(context, rootNavigator: true).pop(),
             child: Text(
-              'Cancel',
+              context.l10n.cancel,
               style: theme.textTheme.titleMedium?.copyWith(
                 color: theme.primaryColor,
               ),

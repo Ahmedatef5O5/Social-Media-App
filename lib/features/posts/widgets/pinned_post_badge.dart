@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class PinnedPostBadge extends StatelessWidget {
   const PinnedPostBadge({super.key});
@@ -21,7 +22,7 @@ class PinnedPostBadge extends StatelessWidget {
           const SizedBox(width: 2.5),
           Flexible(
             child: Text(
-              'Pinned Post',
+              context.l10n.pinnedPost,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: theme.textTheme.titleSmall?.copyWith(

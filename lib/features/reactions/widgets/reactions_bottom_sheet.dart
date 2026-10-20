@@ -13,6 +13,7 @@ import '../../profile/widgets/user_preview_dialog.dart';
 import '../../single_chats/models/chat_user_model.dart';
 import '../models/reaction_entry.dart';
 import 'reactions_bottom_sheet_skeleton.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class ReactionsBottomSheet extends StatefulWidget {
   final Future<List<ReactionEntry>> Function() fetchReactions;
@@ -176,7 +177,7 @@ class _ReactionsBottomSheetState extends State<ReactionsBottomSheet> {
                   ),
                   const Gap(12),
                   Text(
-                    'Reactions',
+                    context.l10n.reactions,
                     style: theme.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                       fontSize: 18,
@@ -213,7 +214,7 @@ class _ReactionsBottomSheetState extends State<ReactionsBottomSheet> {
                         _isLoading
                             ? const ReactionsBottomSheetSkeleton()
                             : displayed.isEmpty
-                            ? const Center(child: Text('No reactions yet.'))
+                            ? Center(child: Text(context.l10n.noReactionsYet))
                             : ListView.builder(
                               physics: const ClampingScrollPhysics(),
                               controller: scrollController,

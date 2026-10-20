@@ -9,6 +9,7 @@ import '../helpers/invite_link_section_skeleton.dart';
 import '../models/group_invite_state.dart';
 import '../services/group_chat_services.dart';
 import 'group_confirm_dialog.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 /// The whole "Invite Link" card — loading, generate, active-link display
 /// (copy/forward/revoke), and its expiry badge — as a fully
@@ -102,13 +103,13 @@ class _GroupInviteLinkSectionState extends State<GroupInviteLinkSection> {
       context: context,
       builder:
           (_) => SimpleDialog(
-            title: const Text('Link Expiration'),
+            title: Text(context.l10n.linkExpiration),
             children: [
               SimpleDialogOption(
                 onPressed:
                     () =>
                         Navigator.pop(context, const _InviteExpiryChoice(null)),
-                child: const Text('Never expires'),
+                child: Text(context.l10n.neverExpires),
               ),
               SimpleDialogOption(
                 onPressed:
@@ -116,7 +117,7 @@ class _GroupInviteLinkSectionState extends State<GroupInviteLinkSection> {
                       context,
                       const _InviteExpiryChoice(Duration(hours: 24)),
                     ),
-                child: const Text('24 hours'),
+                child: Text(context.l10n.t24Hours),
               ),
               SimpleDialogOption(
                 onPressed:
@@ -124,7 +125,7 @@ class _GroupInviteLinkSectionState extends State<GroupInviteLinkSection> {
                       context,
                       const _InviteExpiryChoice(Duration(days: 2)),
                     ),
-                child: const Text('2 days'),
+                child: Text(context.l10n.t2Days),
               ),
               SimpleDialogOption(
                 onPressed:
@@ -132,7 +133,7 @@ class _GroupInviteLinkSectionState extends State<GroupInviteLinkSection> {
                       context,
                       const _InviteExpiryChoice(Duration(days: 7)),
                     ),
-                child: const Text('1 week'),
+                child: Text(context.l10n.t1Week),
               ),
             ],
           ),
@@ -167,7 +168,7 @@ class _GroupInviteLinkSectionState extends State<GroupInviteLinkSection> {
   Future<void> _revokeInviteLink() async {
     final confirm = await GroupConfirmDialog.show(
       context,
-      title: 'Revoke Invite Link',
+      title: context.l10n.revokeInviteLink,
       body:
           'Anyone with the current link will no longer be able to join using it. Continue?',
       confirmLabel: 'Revoke',
@@ -198,7 +199,7 @@ class _GroupInviteLinkSectionState extends State<GroupInviteLinkSection> {
     final hash = _inviteState?.inviteHash;
     if (hash == null) return;
     Clipboard.setData(ClipboardData(text: _inviteUrlFor(hash)));
-    AppToast.success('Invite link copied');
+    AppToast.success(context.l10n.inviteLinkCopied);
   }
 
   void _forwardInviteLink() {
@@ -207,8 +208,10 @@ class _GroupInviteLinkSectionState extends State<GroupInviteLinkSection> {
     final box = context.findRenderObject() as RenderBox?;
     SharePlus.instance.share(
       ShareParams(
-        text:
-            'Join "${widget.groupName}" on Social Media App: ${_inviteUrlFor(hash)}',
+        text: context.l10n.joinOnSocialMedia(
+          widget.groupName,
+          _inviteUrlFor(hash),
+        ),
         sharePositionOrigin:
             box != null ? (box.localToGlobal(Offset.zero) & box.size) : null,
       ),
@@ -220,14 +223,20 @@ class _GroupInviteLinkSectionState extends State<GroupInviteLinkSection> {
     if (expiresAt == null) return null;
 
     final remaining = expiresAt.difference(DateTime.now());
-    if (remaining.isNegative) return 'Expired';
+    if (remaining.isNegative) return context.l10n.expired;
     if (remaining.inDays >= 1) {
-      return 'Expires in ${remaining.inDays}d ${remaining.inHours.remainder(24)}h';
+      return context.l10n.expiresInDH(
+        remaining.inDays,
+        remaining.inHours.remainder(24),
+      );
     }
     if (remaining.inHours >= 1) {
-      return 'Expires in ${remaining.inHours}h ${remaining.inMinutes.remainder(60)}m';
+      return context.l10n.expiresInHM(
+        remaining.inHours,
+        remaining.inMinutes.remainder(60),
+      );
     }
-    return 'Expires in ${remaining.inMinutes}m';
+    return context.l10n.expiresInM(remaining.inMinutes);
   }
 
   Widget _buildGenerateInviteRow() {
@@ -235,7 +244,7 @@ class _GroupInviteLinkSectionState extends State<GroupInviteLinkSection> {
       children: [
         Expanded(
           child: Text(
-            'Create a link to let others join this group.',
+            context.l10n.createALinkTo,
             style: TextStyle(color: Colors.grey.shade700, fontSize: 13.5),
           ),
         ),
@@ -248,7 +257,7 @@ class _GroupInviteLinkSectionState extends State<GroupInviteLinkSection> {
             )
             : TextButton(
               onPressed: _generateInviteLink,
-              child: const Text('Generate'),
+              child: Text(context.l10n.generate),
             ),
       ],
     );
@@ -256,7 +265,7 @@ class _GroupInviteLinkSectionState extends State<GroupInviteLinkSection> {
 
   Widget _buildActiveInviteRow(GroupInviteState state) {
     final badgeText = _expiryBadgeText();
-    final isExpired = badgeText == 'Expired';
+    final isExpired = badgeText == context.l10n.expired;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -269,7 +278,7 @@ class _GroupInviteLinkSectionState extends State<GroupInviteLinkSection> {
         if (state.joinCount > 0) ...[
           const SizedBox(height: 4),
           Text(
-            '${state.joinCount} joined via this link',
+            context.l10n.joinedViaThisLink(state.joinCount),
             style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
           ),
         ],
@@ -280,7 +289,7 @@ class _GroupInviteLinkSectionState extends State<GroupInviteLinkSection> {
               child: OutlinedButton.icon(
                 onPressed: _isUpdatingInvite ? null : _copyInviteLink,
                 icon: const Icon(Icons.copy_rounded, size: 18),
-                label: const Text('Copy'),
+                label: Text(context.l10n.copy),
               ),
             ),
             const SizedBox(width: 8),
@@ -288,7 +297,7 @@ class _GroupInviteLinkSectionState extends State<GroupInviteLinkSection> {
               child: OutlinedButton.icon(
                 onPressed: _isUpdatingInvite ? null : _forwardInviteLink,
                 icon: const Icon(Icons.forward_rounded, size: 18),
-                label: const Text('Forward'),
+                label: Text(context.l10n.forward),
               ),
             ),
           ],
@@ -332,8 +341,8 @@ class _GroupInviteLinkSectionState extends State<GroupInviteLinkSection> {
                 size: 18,
                 color: Colors.red,
               ),
-              label: const Text(
-                'Revoke Link',
+              label: Text(
+                context.l10n.revokeLink,
                 style: TextStyle(color: Colors.red),
               ),
             ),
@@ -349,7 +358,7 @@ class _GroupInviteLinkSectionState extends State<GroupInviteLinkSection> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Invite Link',
+          context.l10n.inviteLink,
           style: Theme.of(context).textTheme.titleSmall?.copyWith(
             fontWeight: FontWeight.w600,
             color: Colors.grey.shade600,

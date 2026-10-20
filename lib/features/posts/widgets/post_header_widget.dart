@@ -15,6 +15,7 @@ import '../models/post_model.dart';
 import '../views/post_details_view.dart';
 import 'author_image_widget.dart';
 import 'pinned_post_badge.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class PostHeaderWidget extends StatelessWidget {
   final PostModel post;
@@ -43,10 +44,10 @@ class PostHeaderWidget extends StatelessWidget {
         color: Theme.of(context).primaryColor.withValues(alpha: 0.75),
         size: 19,
       ),
-      tooltip: 'Open original post',
+      tooltip: context.l10n.openOriginalPost,
       onPressed: () {
         if (postsCubit.isPostGhost(post.id)) {
-          AppToast.info('This post is no longer available.');
+          AppToast.info(context.l10n.thisPostIsNo);
           return;
         }
         Navigator.of(
@@ -67,7 +68,7 @@ class PostHeaderWidget extends StatelessWidget {
         borderRadius: BorderRadius.circular(5),
       ),
       child: Text(
-        'Suggested for you',
+        context.l10n.suggestedForYou,
         style: Theme.of(context).textTheme.titleSmall?.copyWith(
           fontWeight: FontWeight.w600,
           fontSize: 9.3,
@@ -140,7 +141,7 @@ class PostHeaderWidget extends StatelessWidget {
               color: colorScheme.onSurface.withValues(alpha: 0.8),
               size: 26,
             ),
-            tooltip: 'Close',
+            tooltip: context.l10n.close,
             onPressed: () => Navigator.of(context).pop(),
           );
 
@@ -179,7 +180,7 @@ class PostHeaderWidget extends StatelessWidget {
               ? null
               : () {
                 if (postsCubit.isPostGhost(post.id)) {
-                  AppToast.info('This post is no longer available.');
+                  AppToast.info(context.l10n.thisPostIsNo);
                   return;
                 }
                 Navigator.of(context, rootNavigator: true).pushNamed(
@@ -213,7 +214,7 @@ class PostHeaderWidget extends StatelessWidget {
           children: [
             Flexible(
               child: Text(
-                post.authorName ?? 'Unknown',
+                post.authorName ?? context.l10n.unknown,
                 overflow: TextOverflow.ellipsis,
                 style: Theme.of(context).textTheme.titleSmall!.copyWith(
                   fontWeight: FontWeight.w500,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class ReturnToOngoingSingleCallButton extends StatelessWidget {
   final bool isVideo;
@@ -70,12 +71,12 @@ class ReturnToOngoingSingleCallButton extends StatelessWidget {
               ),
               const SizedBox(width: 6),
               Text(
-                'Return to call',
+                context.l10n.returnToCall,
                 style: TextStyle(
                   color: accent,
                   fontWeight: FontWeight.w700,
                   fontSize: 13,
-                  letterSpacing: 0.1,
+                  letterSpacing: context.ls(0.1),
                 ),
               ),
               const SizedBox(width: 6),

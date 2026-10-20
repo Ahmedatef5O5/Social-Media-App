@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../core/localization/l10n_extension.dart';
 import '../../../core/themes/cubits/theme_cubit.dart';
 import '../../../core/themes/models/app_theme_model.dart';
 import '../widgets/settings_detail_sliver_app_bar.dart';
@@ -21,11 +22,10 @@ class ThemesSelectView extends StatelessWidget {
           return CustomScrollView(
             physics: const ClampingScrollPhysics(),
             slivers: [
-              const SettingsDetailSliverAppBar(
+              SettingsDetailSliverAppBar(
                 icon: Icons.palette_rounded,
-                title: 'Appearance',
-                subtitle:
-                    'Pick a look that feels like you. Changes apply instantly.',
+                title: context.l10n.themesTitle,
+                subtitle: context.l10n.themesSubtitle,
               ),
 
               SliverPadding(

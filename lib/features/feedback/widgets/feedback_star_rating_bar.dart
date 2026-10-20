@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class FeedbackStarRatingBar extends StatelessWidget {
   final int? value;
@@ -30,7 +31,7 @@ class FeedbackStarRatingBar extends StatelessWidget {
         final filled = (value ?? 0) >= star;
         return Semantics(
           button: !readOnly,
-          label: '$star star${star == 1 ? '' : 's'}',
+          label: context.l10n.starsCount(star),
           child: GestureDetector(
             behavior: HitTestBehavior.opaque,
             onTap:

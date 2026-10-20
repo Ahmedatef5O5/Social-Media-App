@@ -6,10 +6,13 @@ import 'package:social_media_app/core/media_editor/views/app_image_editor_view.d
 import 'package:social_media_app/core/media_editor/views/app_video_trim_view.dart';
 import 'package:social_media_app/core/services/media_cleanup_service.dart';
 import 'package:social_media_app/core/toast/app_toast.dart';
+import 'package:social_media_app/core/localization/app_l10n.dart';
 export 'package:social_media_app/core/media_editor/media_editor_models.dart';
 
 /// Single entry point every staging screen uses.
-
+///
+/// Both methods are 100% optional for the user and return `null` when the user
+/// cancels, in which case the caller must leave its state untouched.
 class MediaEditorService {
   MediaEditorService._();
 
@@ -21,7 +24,7 @@ class MediaEditorService {
     MediaEditorPreset preset = MediaEditorPreset.free,
   }) async {
     if (!await source.exists()) {
-      AppToast.error('Image file not found.');
+      AppToast.error(AppL10n.current.imageFileNotFound);
       return null;
     }
     MediaCleanupService.instance.purgeStaleTempFiles();
@@ -45,7 +48,7 @@ class MediaEditorService {
       );
     } catch (e) {
       debugPrint('[MediaEditorService] could not save edited image: $e');
-      AppToast.error('Could not save your edit. Please try again.');
+      AppToast.error(AppL10n.current.couldNotSaveYour);
       return null;
     }
   }
@@ -58,7 +61,7 @@ class MediaEditorService {
     Duration? maxDuration,
   }) async {
     if (!await source.exists()) {
-      AppToast.error('Video file not found.');
+      AppToast.error(AppL10n.current.videoFileNotFound);
       return null;
     }
     MediaCleanupService.instance.purgeStaleTempFiles();

@@ -9,6 +9,7 @@ import '../cubits/discover_people_cubit.dart';
 import '../utils/discover_grid_metrics.dart';
 import '../widgets/discover_person_grid_card_widget.dart';
 import 'discover_skeleton_view.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class DiscoverPeopleSearchView extends StatefulWidget {
   const DiscoverPeopleSearchView({super.key});
@@ -193,7 +194,7 @@ class _DiscoverPeopleSearchViewState extends State<DiscoverPeopleSearchView> {
                   color: isDark ? Colors.white : Colors.black87,
                 ),
                 decoration: InputDecoration(
-                  hintText: 'Search people...',
+                  hintText: context.l10n.searchPeople,
                   hintStyle: TextStyle(
                     color:
                         isDark
@@ -251,8 +252,8 @@ class _DiscoverPeopleSearchViewState extends State<DiscoverPeopleSearchView> {
             const SizedBox(height: 16),
             Text(
               query.isEmpty
-                  ? 'No suggestions right now'
-                  : 'No results for "$query"',
+                  ? context.l10n.noSuggestionsRightNow
+                  : context.l10n.noResultsFor(query),
               textAlign: TextAlign.center,
               style: theme.textTheme.titleMedium!.copyWith(
                 fontWeight: FontWeight.w700,
@@ -261,7 +262,7 @@ class _DiscoverPeopleSearchViewState extends State<DiscoverPeopleSearchView> {
             if (query.isNotEmpty) ...[
               const SizedBox(height: 6),
               Text(
-                'Try a different name or username',
+                context.l10n.tryADifferentName,
                 style: theme.textTheme.bodySmall!.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
@@ -298,7 +299,7 @@ class _DiscoverPeopleSearchViewState extends State<DiscoverPeopleSearchView> {
                       query.isEmpty
                           ? _cubit.getDiscoverPeople()
                           : _cubit.searchPeople(query),
-              child: const Text('Retry'),
+              child: Text(context.l10n.retry),
             ),
           ],
         ),

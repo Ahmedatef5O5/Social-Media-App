@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../../core/themes/models/app_theme_model.dart';
 import '../../../core/design/tokens/typography.dart';
+import '../utils/theme_name_l10n.dart';
+import '../../../core/localization/l10n_extension.dart';
 
 class ThemeSelectionTile extends StatelessWidget {
   final AppThemeModel item;
@@ -131,12 +133,12 @@ class ThemeSelectionTile extends StatelessWidget {
                     const SizedBox(height: 12),
 
                     Text(
-                      item.name,
+                      context.l10n.themeName(item.type),
                       style: TextStyle(
                         fontWeight:
                             isSelected ? FontWeight.w700 : FontWeight.w600,
                         fontSize: 14,
-                        letterSpacing: -0.2,
+                        letterSpacing: context.ls(-0.2),
                         color:
                             isSelected
                                 ? (isAppDark ? Colors.white : item.primaryColor)

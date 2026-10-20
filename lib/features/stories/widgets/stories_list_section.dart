@@ -7,6 +7,7 @@ import '../../../core/toast/app_toast.dart';
 import '../cubits/stories_cubit/stories_cubit.dart';
 import 'stories_list_skeleton.dart';
 import 'story_card_widget.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class StoriesListSection extends StatelessWidget {
   const StoriesListSection({super.key});
@@ -32,16 +33,18 @@ class StoriesListSection extends StatelessWidget {
                 current is StoryVideoPickError,
         listener: (context, state) {
           if (state is StoriesError) {
-            AppToast.error('Error: ${state.message}');
+            AppToast.error(context.l10n.error(state.message));
           }
           if (state is StoryVideoTooLong) {
             AppToast.warning(
-              'Video is ${state.videoDuration.inSeconds}s — '
-              'max allowed is ${state.maxAllowed.inSeconds}s.',
+              context.l10n.videoIsSMax(
+                state.videoDuration.inSeconds,
+                state.maxAllowed.inSeconds,
+              ),
             );
           }
           if (state is StoryVideoPickError) {
-            AppToast.error('Error: ${state.message}');
+            AppToast.error(context.l10n.error(state.message));
           }
         },
         buildWhen:

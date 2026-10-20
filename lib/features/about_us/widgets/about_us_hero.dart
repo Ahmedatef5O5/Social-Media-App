@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import '../../../core/constants/app_images.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class AboutUsHero extends StatelessWidget {
   final Animation<double> heroScale;
@@ -93,22 +94,24 @@ class AboutUsHero extends StatelessWidget {
                                 ),
                               ),
                               const Gap(18),
-                              const Text(
+                              Text(
                                 'Social Mate',
                                 style: TextStyle(
                                   fontSize: 32,
                                   fontWeight: FontWeight.w800,
                                   color: Colors.white,
-                                  letterSpacing: -0.8,
+                                  letterSpacing: context.ls(-0.8),
                                 ),
                               ),
                               const Gap(6),
                               Text(
-                                'Connecting people, building communities',
+                                context
+                                    .l10n
+                                    .connectingPeopleBuildingCommunities,
                                 style: TextStyle(
                                   fontSize: 14,
                                   color: Colors.white.withValues(alpha: 0.75),
-                                  letterSpacing: 0.1,
+                                  letterSpacing: context.ls(0.1),
                                 ),
                               ),
                             ],

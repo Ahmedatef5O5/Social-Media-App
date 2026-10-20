@@ -5,6 +5,7 @@ import '../../../core/toast/app_toast.dart';
 import '../../../core/utilities/supabase_constants.dart';
 import '../../profile/services/user_services.dart';
 import '../../single_calls/models/call_model.dart';
+import 'package:social_media_app/core/localization/app_l10n.dart';
 
 class CallActions {
   static Future<CallModel?> buildCall({
@@ -29,7 +30,7 @@ class CallActions {
               .eq(UserColumns.id, receiverId)
               .maybeSingle();
       if (row != null && row[UserColumns.isDeleted] == true) {
-        AppToast.error('This account has been deleted.');
+        AppToast.error(AppL10n.current.thisAccountHasBeen3);
         return null;
       }
     } catch (_) {}

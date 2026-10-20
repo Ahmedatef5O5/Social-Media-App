@@ -25,6 +25,7 @@ class CallStatusPill extends StatelessWidget {
 
   bool get _isAnimatedLabel =>
       label.endsWith('...') ||
+      label.endsWith('…') ||
       label.contains('Connecting') ||
       label.contains('Joining');
 

@@ -21,6 +21,7 @@ import '../helpers/reply_preview_bar.dart';
 import '../models/chat_user_model.dart';
 import '../models/message_model.dart';
 import '../views/media_preview_screen.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class TextInputAreaSection extends StatefulWidget {
   final TextEditingController messageController;
@@ -141,7 +142,7 @@ class _TextInputAreaSectionState extends State<TextInputAreaSection> {
             senderName:
                 widget.replyTo!.senderId ==
                         context.read<ChatDetailsCubit>().currentUserId
-                    ? 'You'
+                    ? context.l10n.you
                     : widget.receiverUser.name,
             onCancel: widget.onCancelReply ?? () {},
           ),
@@ -149,7 +150,7 @@ class _TextInputAreaSectionState extends State<TextInputAreaSection> {
         if (_stagedDocument != null)
           ChatStagedFilePreview(
             file: _stagedDocument,
-            fileName: _stagedFileName ?? 'File',
+            fileName: _stagedFileName ?? context.l10n.file,
             fileSizeBytes: _stagedFileSizeBytes ?? 0,
             onRemove: () {
               setState(() {
@@ -180,7 +181,7 @@ class _TextInputAreaSectionState extends State<TextInputAreaSection> {
                   textInputAction: TextInputAction.newline,
                   decoration: InputDecoration(
                     hoverColor: AppColors.white,
-                    hintText: 'Type a message...',
+                    hintText: context.l10n.typeAMessage,
                     filled: false,
                     fillColor: Colors.transparent,
                     border: InputBorder.none,
@@ -203,7 +204,7 @@ class _TextInputAreaSectionState extends State<TextInputAreaSection> {
                                       context
                                           .read<ChatDetailsCubit>()
                                           .currentUserId
-                                  ? 'You'
+                                  ? context.l10n.you
                                   : widget.receiverUser.name),
                       targetText:
                           (widget.replyTo == null ||
@@ -267,7 +268,7 @@ class _TextInputAreaSectionState extends State<TextInputAreaSection> {
                       widget.onCancelReply?.call();
                       context.read<ChatDetailsCubit>().sendMessage(
                         receiverId: widget.receiverUser.id,
-                        messageText: nameToSend ?? 'File',
+                        messageText: nameToSend ?? context.l10n.file,
                         messageType: 'file',
                         documentFile: docToSend,
                         fileName: nameToSend,

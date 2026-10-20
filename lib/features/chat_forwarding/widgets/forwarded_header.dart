@@ -10,6 +10,7 @@ import '../../single_chats/models/chat_user_model.dart';
 import '../../profile/widgets/user_preview_dialog.dart';
 import '../../home/cubits/home_cubit/home_cubit.dart';
 import '../models/forwardable_message.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class ForwardedHeader extends StatefulWidget {
   final String originalSenderId;
@@ -156,8 +157,8 @@ class _ForwardedHeaderState extends State<ForwardedHeader> {
                 ),
               ),
             ),
-            const TextSpan(
-              text: 'Forwarded from ',
+            TextSpan(
+              text: context.l10n.forwardedFrom,
               style: TextStyle(fontWeight: FontWeight.w500),
             ),
             WidgetSpan(

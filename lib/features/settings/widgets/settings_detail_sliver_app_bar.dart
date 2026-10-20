@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
+import '../../../core/localization/l10n_extension.dart';
 
 class SettingsDetailSliverAppBar extends StatelessWidget {
   final IconData icon;
@@ -45,7 +46,10 @@ class SettingsDetailSliverAppBar extends StatelessWidget {
 
           return FlexibleSpaceBar(
             collapseMode: CollapseMode.parallax,
-            titlePadding: const EdgeInsets.only(left: 52, bottom: 18),
+            titlePadding: const EdgeInsetsDirectional.only(
+              start: 52,
+              bottom: 18,
+            ),
             title: AnimatedOpacity(
               duration: const Duration(milliseconds: 200),
               opacity: titleOpacity,
@@ -55,7 +59,7 @@ class SettingsDetailSliverAppBar extends StatelessWidget {
                   fontSize: 18,
                   fontWeight: FontWeight.w700,
                   color: isDark ? Colors.white : Colors.black87,
-                  letterSpacing: -0.4,
+                  letterSpacing: context.ls(-0.4),
                 ),
               ),
             ),
@@ -90,7 +94,7 @@ class SettingsDetailSliverAppBar extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 26,
                             fontWeight: FontWeight.w800,
-                            letterSpacing: -0.6,
+                            letterSpacing: context.ls(-0.6),
                             height: 1.2,
                             color: isDark ? Colors.white : Colors.black87,
                           ),

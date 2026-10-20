@@ -13,6 +13,7 @@ import '../../../core/widgets/calls/calls.dart';
 import '../models/group_call_model.dart';
 import '../services/group_call_signaling_service.dart';
 import 'livekit_group_call_view.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class OutgoingGroupCallScreen extends StatefulWidget {
   final String groupId;
@@ -182,7 +183,9 @@ class _OutgoingGroupCallScreenState extends State<OutgoingGroupCallScreen>
                                 ? Icons.videocam_rounded
                                 : Icons.phone_rounded,
                         label:
-                            isVideo ? 'Group Video Call' : 'Group Voice Call',
+                            isVideo
+                                ? context.l10n.groupVideoCall
+                                : context.l10n.groupVoiceCall,
                       ),
 
                       SizedBox(height: metrics.midGap),
@@ -202,11 +205,11 @@ class _OutgoingGroupCallScreenState extends State<OutgoingGroupCallScreen>
 
                       Text(
                         widget.groupName,
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: Colors.white,
                           fontSize: 30,
                           fontWeight: FontWeight.bold,
-                          letterSpacing: 0.5,
+                          letterSpacing: context.ls(0.5),
                           shadows: [
                             Shadow(
                               color: Colors.black45,
@@ -228,7 +231,7 @@ class _OutgoingGroupCallScreenState extends State<OutgoingGroupCallScreen>
 
                       GlassCallActionButton(
                         icon: Icons.call_end_rounded,
-                        label: 'Cancel',
+                        label: context.l10n.cancel,
                         color: Colors.redAccent.shade700,
                         size: metrics.buttonSize,
                         onTap: () async {
@@ -270,12 +273,14 @@ class _OutgoingGroupCallScreenState extends State<OutgoingGroupCallScreen>
         const SizedBox(width: 6),
         AnimatedActivityText(
           text:
-              isVideo ? 'Calling group (Video)...' : 'Calling group (Audio)...',
+              isVideo
+                  ? context.l10n.callingGroupVideo
+                  : context.l10n.callingGroupAudio,
           forceAnimate: true,
-          style: const TextStyle(
+          style: TextStyle(
             color: Colors.white70,
             fontSize: 16,
-            letterSpacing: 0.3,
+            letterSpacing: context.ls(0.3),
           ),
         ),
       ],

@@ -20,6 +20,7 @@ import '../models/comment_model.dart';
 import 'comment_attachment_preview.dart';
 import '../../../core/mentions/mentions.dart';
 import 'comment_voice_recorder_sheet.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class SendCommentSection extends StatefulWidget {
   final PostModel post;
@@ -282,10 +283,13 @@ class _SendCommentSectionState extends State<SendCommentSection> {
                               enabled: !isLoading && !isStickerOnly,
                               hintText:
                                   isStickerOnly
-                                      ? 'Sticker ready to send'
+                                      ? context.l10n.stickerReadyToSend
                                       : isReplying
-                                      ? 'Reply to @${widget.replyingToAuthorName}...'
-                                      : 'Write a comment...',
+                                      ? context.l10n.replyTo(
+                                        widget.replyingToAuthorName ??
+                                            'Author Name',
+                                      )
+                                      : context.l10n.writeAComment,
                               onSubmitted: (_) => _submitComment(),
                               trailingIcon: AiActionIcon(
                                 controller: _commentController,
@@ -304,7 +308,8 @@ class _SendCommentSectionState extends State<SendCommentSection> {
                                             pendingMedia!.localFile!
                                                 .readAsBytes()
                                         : null,
-                                targetUserName: widget.replyingToAuthorName,
+                                targetUserName:
+                                    (widget.replyingToAuthorName ?? ""),
                                 targetText:
                                     (repliedComment == null)
                                         ? widget.post.text

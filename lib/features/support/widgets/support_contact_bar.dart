@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../utils/support_actions.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class SupportContactBar extends StatelessWidget {
   const SupportContactBar({super.key});
@@ -30,7 +31,7 @@ class SupportContactBar extends StatelessWidget {
             child: ElevatedButton.icon(
               onPressed: () => SupportActions.sendFeedback(context),
               icon: const Icon(Icons.email_outlined, size: 18),
-              label: const Text('Still need help? Contact Support'),
+              label: Text(context.l10n.stillNeedHelpContact),
               style: ElevatedButton.styleFrom(
                 backgroundColor: theme.primaryColor,
                 foregroundColor: Colors.white,

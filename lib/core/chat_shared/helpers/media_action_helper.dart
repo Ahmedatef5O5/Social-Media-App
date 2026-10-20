@@ -5,6 +5,8 @@ import '../../toast/app_toast.dart';
 import '../cubits/shared_media_cubit/shared_media_cubit.dart';
 import '../models/shared_media_item.dart';
 import '../views/full_screen_media_pager.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
+import 'package:social_media_app/core/localization/app_l10n.dart';
 
 typedef ShowInChatCallback =
     void Function(BuildContext context, String messageId);
@@ -53,7 +55,7 @@ class MediaActionHelper {
     ShowInChatCallback? onShowInChat,
   ) {
     if (onShowInChat == null) {
-      AppToast.info('Open this from a chat to jump to the message');
+      AppToast.info(context.l10n.openThisFromA);
       return;
     }
 
@@ -73,14 +75,16 @@ class MediaActionHelper {
 
       if (context.mounted) {
         AppToast.success(
-          forEveryone ? 'Deleted for everyone' : 'Deleted for you',
+          forEveryone
+              ? AppL10n.current.deletedForEveryone
+              : AppL10n.current.deletedForYou,
         );
       }
     } catch (e) {
       debugPrint('[MediaActionHelper] delete error: $e');
 
       if (context.mounted) {
-        AppToast.error('Failed to delete message');
+        AppToast.error(AppL10n.current.failedToDeleteMessage);
       }
     }
   }

@@ -1,3 +1,4 @@
+import 'package:social_media_app/core/localization/app_l10n.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -6,6 +7,7 @@ import '../../../features/group_chats/widgets/group_invite_bottom_sheet.dart';
 import '../../deep_link/services/deep_link_service.dart';
 import '../../helpers/chat_helper.dart';
 import '../../helpers/content_deep_link_navigator.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class LinkPreviewCard extends StatelessWidget {
   final LinkPreviewData data;
@@ -195,7 +197,7 @@ class LinkPreviewCard extends StatelessWidget {
                               color: domainColor,
                               fontSize: 10,
                               fontWeight: FontWeight.w700,
-                              letterSpacing: 0.5,
+                              letterSpacing: context.ls(0.5),
                             ),
                           ),
                         ),
@@ -232,7 +234,7 @@ class LinkPreviewCard extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'Preview not available',
+            AppL10n.current.previewNotAvailable,
             style: TextStyle(
               color:
                   useLightContent

@@ -9,6 +9,7 @@ import '../entities/ai_action_type.dart';
 import '../entities/ai_result.dart';
 import '../repository/ai_repository.dart';
 import 'animated_ai_stars_icon.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class AiChatSummarySheet extends StatefulWidget {
   final AiActionType mode;
@@ -75,13 +76,13 @@ class _AiChatSummarySheetState extends State<AiChatSummarySheet> {
   String get _title {
     switch (widget.mode) {
       case AiActionType.chatSummaryShort:
-        return 'Chat Summary';
+        return context.l10n.chatSummary;
       case AiActionType.chatSummaryDetailed:
-        return 'Detailed Summary';
+        return context.l10n.detailedSummary;
       case AiActionType.chatSummaryTopic:
-        return 'What is the topic?';
+        return context.l10n.whatIsTheTopic;
       default:
-        return 'Summary';
+        return context.l10n.summary;
     }
   }
 
@@ -136,10 +137,10 @@ class _AiChatSummarySheetState extends State<AiChatSummarySheet> {
 
       final message =
           _failureReason == 'empty_chat'
-              ? 'There aren\'t enough messages in the chat to summarize.'
+              ? context.l10n.thereArentEnoughMessages
               : isQuota
-              ? 'You have used up your daily AI quota. Please try again tomorrow.'
-              : 'An error occurred. Please try again later.';
+              ? context.l10n.youHaveUsedUp2
+              : context.l10n.anErrorOccurredPlease;
 
       return Text(message, style: Theme.of(context).textTheme.bodyMedium);
     }
@@ -166,10 +167,10 @@ class _AiChatSummarySheetState extends State<AiChatSummarySheet> {
           child: TextButton.icon(
             onPressed: () {
               Clipboard.setData(ClipboardData(text: _text ?? ''));
-              AppToast.success('Copied successfully');
+              AppToast.success(context.l10n.copiedSuccessfully);
             },
             icon: const Icon(Icons.copy_rounded, size: 18),
-            label: const Text('Copy'),
+            label: Text(context.l10n.copy),
           ),
         ),
       ],

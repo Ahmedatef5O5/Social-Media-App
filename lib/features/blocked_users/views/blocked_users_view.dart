@@ -8,6 +8,7 @@ import '../models/blocked_user_item_model.dart';
 import '../widgets/blocked_user_tile.dart';
 import '../widgets/blocked_users_empty_state.dart';
 import '../widgets/blocked_users_skeleton.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class BlockedUsersView extends StatefulWidget {
   const BlockedUsersView({super.key});
@@ -35,19 +36,17 @@ class _BlockedUsersViewState extends State<BlockedUsersView> {
       context: context,
       builder:
           (_) => AlertDialog(
-            title: const Text('Unblock User'),
-            content: Text(
-              'Unblock ${item.user.name}? They will be able to message you again.',
-            ),
+            title: Text(context.l10n.unblockUser),
+            content: Text(context.l10n.unblockTheyWillBe(item.user.name)),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context, false),
-                child: const Text('Cancel'),
+                child: Text(context.l10n.cancel),
               ),
               TextButton(
                 onPressed: () => Navigator.pop(context, true),
                 child: Text(
-                  'Unblock',
+                  context.l10n.unblock,
                   style: TextStyle(color: Theme.of(context).primaryColor),
                 ),
               ),
@@ -68,10 +67,10 @@ class _BlockedUsersViewState extends State<BlockedUsersView> {
           return CustomScrollView(
             physics: const ClampingScrollPhysics(),
             slivers: [
-              const SettingsDetailSliverAppBar(
+              SettingsDetailSliverAppBar(
                 icon: Icons.block_outlined,
-                title: 'Blocked Users',
-                subtitle: "Manage the accounts you've blocked",
+                title: context.l10n.settingsBlockedUsers,
+                subtitle: context.l10n.manageTheAccountsYouve,
               ),
               if (state is BlockedUsersLoading || state is BlockedUsersInitial)
                 const SliverToBoxAdapter(

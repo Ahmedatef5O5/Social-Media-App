@@ -14,6 +14,7 @@ import '../../../features/stories/services/stories_services.dart';
 import '../../cache/utils/cloudinary_url_extensions.dart';
 import '../../constants/app_images.dart';
 import '../../deep_link/services/deep_link_service.dart';
+import 'package:social_media_app/core/localization/app_l10n.dart';
 
 class LinkPreviewService {
   LinkPreviewService._();
@@ -243,7 +244,7 @@ class LinkPreviewService {
 
     return LinkPreviewData(
       url: url,
-      title: "${story.authorName}'s Story",
+      title: AppL10n.current.sStory(story.authorName),
       description: caption.isNotEmpty ? caption : null,
       imageUrl: story.imageUrl ?? story.videoUrl?.cloudinaryVideoThumbnailUrl,
       siteName: 'Social Media App',

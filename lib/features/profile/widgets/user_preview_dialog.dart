@@ -10,6 +10,7 @@ import '../../../core/widgets/calls/call_icon_button.dart';
 import '../../single_calls/models/call_model.dart';
 import '../../single_chats/models/chat_block_status.dart';
 import '../../single_chats/services/chat_block_service.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class UserPreviewDialog extends StatefulWidget {
   final ChatUserModel user;
@@ -185,7 +186,7 @@ class _UserPreviewDialogState extends State<UserPreviewDialog> {
                           const SizedBox(width: 8),
                           Flexible(
                             child: Text(
-                              'This account has been deleted',
+                              context.l10n.thisAccountHasBeen,
                               style: Theme.of(
                                 context,
                               ).textTheme.bodyMedium?.copyWith(

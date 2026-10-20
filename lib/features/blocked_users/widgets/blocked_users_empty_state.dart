@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
 import '../../../core/constants/app_images.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class BlockedUsersEmptyState extends StatelessWidget {
   const BlockedUsersEmptyState({super.key});
@@ -43,7 +44,7 @@ class BlockedUsersEmptyState extends StatelessWidget {
             ),
             const SizedBox(height: 20),
             Text(
-              'No Blocked Users',
+              context.l10n.noBlockedUsers,
               style: theme.textTheme.titleMedium!.copyWith(
                 fontWeight: FontWeight.w800,
                 color: theme.primaryColor,
@@ -51,7 +52,7 @@ class BlockedUsersEmptyState extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              "Accounts you block will show up here so you can manage them anytime.",
+              context.l10n.accountsYouBlockWill,
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyMedium!.copyWith(
                 color: isDark ? Colors.white60 : Colors.black54,

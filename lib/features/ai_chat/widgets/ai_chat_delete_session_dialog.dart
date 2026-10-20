@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/ai_chat_session.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class AiChatDeleteSessionDialog {
   const AiChatDeleteSessionDialog._();
@@ -13,27 +14,26 @@ class AiChatDeleteSessionDialog {
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(20),
             ),
-            title: const Text(
-              'Delete this chat?',
+            title: Text(
+              context.l10n.deleteThisChat,
               style: TextStyle(color: Colors.white),
             ),
             content: Text(
-              'Delete "${session.title}"? This permanently removes it '
-              "from Syncra and can't be undone.",
+              context.l10n.deleteThisPermanentlyRemoves(session.title),
               style: const TextStyle(color: Colors.white70),
             ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(ctx, false),
-                child: const Text(
-                  'Cancel',
+                child: Text(
+                  context.l10n.cancel,
                   style: TextStyle(color: Colors.white70),
                 ),
               ),
               TextButton(
                 onPressed: () => Navigator.pop(ctx, true),
-                child: const Text(
-                  'Delete',
+                child: Text(
+                  context.l10n.delete,
                   style: TextStyle(color: Colors.redAccent),
                 ),
               ),

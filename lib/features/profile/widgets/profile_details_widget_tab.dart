@@ -5,6 +5,7 @@ import '../../../core/themes/app_colors.dart';
 import '../../auth/data/models/user_data.dart';
 import '../models/social_platform_info.dart';
 import 'social_media_preview_card.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class ProfileDetailsWidgetTab extends StatelessWidget {
   final UserData user;
@@ -61,7 +62,7 @@ class ProfileDetailsWidgetTab extends StatelessWidget {
               ),
               const Gap(8),
               Text(
-                'Social Media',
+                context.l10n.socialMedia,
                 style: Theme.of(
                   context,
                 ).textTheme.headlineSmall!.copyWith(fontSize: 16),
@@ -81,7 +82,12 @@ class ProfileDetailsWidgetTab extends StatelessWidget {
     );
   }
 
-  Widget _buildInfoRow(IconData icon, String title, String? value, context) {
+  Widget _buildInfoRow(
+    IconData icon,
+    String title,
+    String? value,
+    BuildContext context,
+  ) {
     return Row(
       children: [
         Icon(icon, size: 20, color: Theme.of(context).primaryColor),
@@ -96,7 +102,7 @@ class ProfileDetailsWidgetTab extends StatelessWidget {
               ),
               Text(
                 (value == null || value.isEmpty)
-                    ? 'No $title provided yet.'
+                    ? context.l10n.noProvidedYet(title)
                     : value,
                 style: const TextStyle(
                   fontSize: 16,

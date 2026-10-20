@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class AboutUsStatsRow extends StatelessWidget {
   final bool isDark;
@@ -49,7 +50,7 @@ class AboutUsStatsRow extends StatelessWidget {
                         fontSize: 20,
                         fontWeight: FontWeight.w800,
                         color: primary,
-                        letterSpacing: -0.5,
+                        letterSpacing: context.ls(-0.5),
                       ),
                     ),
                     const Gap(4),

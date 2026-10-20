@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:gap/gap.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class AboutUsSocialLinks extends StatelessWidget {
   final bool isDark;
@@ -21,7 +22,7 @@ class AboutUsSocialLinks extends StatelessWidget {
         iconBuilder:
             (color, size) =>
                 FaIcon(FontAwesomeIcons.globe, color: color, size: size),
-        label: 'Website',
+        label: context.l10n.website,
         value: 'www.social-media-app.com',
         url: 'https://www.ahmedatef.tech/projects/social-mate',
         color: Colors.blue,
@@ -31,7 +32,7 @@ class AboutUsSocialLinks extends StatelessWidget {
             (color, size) =>
                 FaIcon(FontAwesomeIcons.briefcase, color: color, size: size),
 
-        label: 'Portfolio',
+        label: context.l10n.portfolio,
         value: 'ahmedatef.tech',
         url: 'https://www.ahmedatef.tech',
         color: Colors.deepPurpleAccent,
@@ -75,7 +76,7 @@ class AboutUsSocialLinks extends StatelessWidget {
               size: size,
             ),
 
-        label: 'Email',
+        label: context.l10n.email,
         value: 'ahmedateif0@gmail.com',
         url:
             'mailto:ahmedateif0@gmail.com'

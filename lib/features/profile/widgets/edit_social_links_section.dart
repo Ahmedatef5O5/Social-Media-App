@@ -3,6 +3,7 @@ import 'package:gap/gap.dart';
 import '../../../core/themes/app_colors.dart';
 import '../../../core/widgets/custom_text_form_field.dart';
 import '../models/social_platform_info.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class EditSocialLinksSection extends StatefulWidget {
   final Map<String, TextEditingController> controllers;
@@ -41,7 +42,7 @@ class _EditSocialLinksSectionState extends State<EditSocialLinksSection> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Social Media',
+                        context.l10n.socialMedia,
                         style: Theme.of(
                           context,
                         ).textTheme.headlineSmall!.copyWith(fontSize: 16),
@@ -50,7 +51,7 @@ class _EditSocialLinksSectionState extends State<EditSocialLinksSection> {
                       Text(
                         _filledCount > 0
                             ? '$_filledCount link${_filledCount > 1 ? 's' : ''} added'
-                            : 'Optional — shown as rich cards on your profile.',
+                            : context.l10n.optionalShownAsRich,
                         style: TextStyle(color: AppColors.grey, fontSize: 12.5),
                       ),
                     ],

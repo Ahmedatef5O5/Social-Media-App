@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../constants/app_images.dart';
 import '../../widgets/custom_confirmation_dialog.dart';
+import 'package:social_media_app/core/localization/app_l10n.dart';
 
 class _SharedMediaMenuAction {
   final IconData icon;
@@ -48,11 +49,11 @@ Future<void> showSharedMediaActionMenu({
           (dialogContext) => CustomConfirmationDialog(
             title:
                 isMe
-                    ? 'Delete this message for everyone?'
-                    : 'Delete this message for you?',
+                    ? AppL10n.current.deleteThisMessageFor
+                    : AppL10n.current.deleteThisMessageFor2,
             textAlign: TextAlign.center,
             img: AppImages.deleteFilesAnimationLot,
-            confirmBtnText: 'Delete',
+            confirmBtnText: AppL10n.current.delete,
             onConfirm: () {
               Navigator.of(dialogContext, rootNavigator: true).pop();
               onConfirmedDelete();
@@ -64,7 +65,7 @@ Future<void> showSharedMediaActionMenu({
   final actions = <_SharedMediaMenuAction>[
     _SharedMediaMenuAction(
       icon: Icons.forum_outlined,
-      label: 'Show in chat',
+      label: AppL10n.current.showInChat,
       onTap: () {
         close();
         onShowInChat();
@@ -81,7 +82,7 @@ Future<void> showSharedMediaActionMenu({
       ),
     _SharedMediaMenuAction(
       icon: isMe ? Icons.delete_forever_rounded : Icons.delete_outline_rounded,
-      label: isMe ? 'Delete' : 'Delete from me',
+      label: isMe ? AppL10n.current.delete : AppL10n.current.deleteFromMe,
       color: isMe ? Theme.of(context).colorScheme.error : null,
       onTap: confirmAndDelete,
     ),

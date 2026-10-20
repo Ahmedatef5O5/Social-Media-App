@@ -3,6 +3,7 @@ import 'package:gap/gap.dart';
 import '../../supabase/supabase_provider.dart';
 import '../../widgets/app_image_provider.dart';
 import '../models/shared_media_item.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class VoiceGridTile extends StatelessWidget {
   final SharedMediaItem item;
@@ -71,7 +72,7 @@ class VoiceGridTile extends StatelessWidget {
           ),
           const Gap(6),
           Text(
-            isMe ? 'You' : item.senderName,
+            isMe ? context.l10n.you : item.senderName,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: theme.textTheme.bodySmall?.copyWith(

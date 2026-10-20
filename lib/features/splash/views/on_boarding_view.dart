@@ -7,6 +7,7 @@ import 'package:social_media_app/features/splash/models/on_boarding_model.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/themes/app_colors.dart';
 import '../widgets/on_boarding_content_widget.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class OnBoardingView extends StatefulWidget {
   const OnBoardingView({super.key});
@@ -32,6 +33,7 @@ class _OnBoardingViewState extends State<OnBoardingView> {
 
   @override
   Widget build(BuildContext context) {
+    final onboardingPages = buildOnboardingPages(context.l10n);
     return Scaffold(
       body: BackgroundThemeWidget(
         top: false,
@@ -39,18 +41,18 @@ class _OnBoardingViewState extends State<OnBoardingView> {
         child: Column(
           children: [
             Padding(
-              padding: const EdgeInsets.only(right: 7.2, top: 26.0),
+              padding: const EdgeInsetsDirectional.only(end: 7.2, top: 26.0),
               child: Align(
-                alignment: Alignment.topRight,
+                alignment: AlignmentDirectional.topEnd,
                 child: TextButton(
                   onPressed: _finishOnboarding,
                   child: Text(
-                    'Skip',
+                    context.l10n.skip,
                     style: Theme.of(context).textTheme.titleMedium!.copyWith(
                       color: AppColors.grey,
                       fontWeight: FontWeight.bold,
                       fontSize: 13,
-                      letterSpacing: 1.3,
+                      letterSpacing: context.ls(1.3),
                     ),
                   ),
                 ),
@@ -112,7 +114,7 @@ class _OnBoardingViewState extends State<OnBoardingView> {
                             TextButton(
                               onPressed: _finishOnboarding,
                               child: Text(
-                                'Sign In',
+                                context.l10n.signIn,
                                 style: TextStyle(
                                   color: Theme.of(context).primaryColor,
                                   fontWeight: FontWeight.bold,

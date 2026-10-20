@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/widgets/app_image_provider.dart';
 import '../cubits/group_members_cubit/group_members_cubit.dart';
 import '../models/group_member_model.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class GroupOwnerAdminsSection extends StatelessWidget {
   final GroupMembersCubit membersCubit;
@@ -47,7 +48,7 @@ class GroupOwnerAdminsSection extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Group Owner',
+              context.l10n.groupOwner,
               style: Theme.of(context).textTheme.titleSmall?.copyWith(
                 fontWeight: FontWeight.w600,
                 color: Colors.grey.shade600,
@@ -84,7 +85,7 @@ class GroupOwnerAdminsSection extends StatelessWidget {
                           : null,
                 ),
                 title: Text(
-                  isMe ? 'You' : owner.userName,
+                  isMe ? context.l10n.you : owner.userName,
                   style: const TextStyle(
                     fontWeight: FontWeight.w600,
                     fontSize: 15,
@@ -99,7 +100,7 @@ class GroupOwnerAdminsSection extends StatelessWidget {
                     color: Colors.amber.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(20),
                   ),
-                  child: const Row(
+                  child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(
@@ -109,7 +110,7 @@ class GroupOwnerAdminsSection extends StatelessWidget {
                       ),
                       SizedBox(width: 4),
                       Text(
-                        'Owner',
+                        context.l10n.owner,
                         style: TextStyle(
                           color: Colors.amber,
                           fontSize: 12,
@@ -149,7 +150,7 @@ class GroupOwnerAdminsSection extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Group Admins',
+              context.l10n.groupAdmins,
               style: Theme.of(context).textTheme.titleSmall?.copyWith(
                 fontWeight: FontWeight.w600,
                 color: Colors.grey.shade600,
@@ -195,7 +196,7 @@ class GroupOwnerAdminsSection extends StatelessWidget {
                               : null,
                     ),
                     title: Text(
-                      isMe ? 'You' : admin.userName,
+                      isMe ? context.l10n.you : admin.userName,
                       style: const TextStyle(
                         fontWeight: FontWeight.w600,
                         fontSize: 15,
@@ -215,7 +216,7 @@ class GroupOwnerAdminsSection extends StatelessWidget {
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(
-                            'Admin',
+                            context.l10n.admin,
                             style: TextStyle(
                               color: primary,
                               fontSize: 12,
@@ -234,14 +235,14 @@ class GroupOwnerAdminsSection extends StatelessWidget {
                             onSelected: (value) => onAdminAction(admin, value),
                             itemBuilder:
                                 (context) => [
-                                  const PopupMenuItem(
+                                  PopupMenuItem(
                                     value: 'demote',
-                                    child: Text('Remove Admin'),
+                                    child: Text(context.l10n.removeAdmin),
                                   ),
-                                  const PopupMenuItem(
+                                  PopupMenuItem(
                                     value: 'remove',
                                     child: Text(
-                                      'Remove from group',
+                                      context.l10n.removeFromGroup,
                                       style: TextStyle(color: Colors.redAccent),
                                     ),
                                   ),

@@ -21,6 +21,8 @@ import '../helpers/ai_model_iconography.dart';
 import '../models/ai_chat_session.dart';
 import '../models/ai_model_option.dart';
 import 'syncra_backdrop.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
+import 'package:social_media_app/core/localization/app_l10n.dart';
 
 class AiChatSessionsDrawer extends StatelessWidget {
   final AiChatDependencies? deps;
@@ -90,16 +92,16 @@ class AiChatSessionsDrawer extends StatelessWidget {
         builder: (context, state) {
           if (state is AiChatSessionsLoading) return const _SessionsShimmer();
           if (state is AiChatSessionsError) {
-            return const _SessionsMessage(
+            return _SessionsMessage(
               icon: Icons.cloud_off_rounded,
-              text: "Couldn't load your conversations.",
+              text: context.l10n.couldntLoadYourConversations,
             );
           }
           final sessions = (state as AiChatSessionsLoaded).sessions;
           if (sessions.isEmpty) {
-            return const _SessionsMessage(
+            return _SessionsMessage(
               icon: Icons.forum_outlined,
-              text: 'No conversations yet — start one above.',
+              text: context.l10n.noConversationsYetStart,
             );
           }
           return _SessionsListSection(
@@ -122,7 +124,7 @@ class AiChatSessionsDrawer extends StatelessWidget {
           _DrawerRow(
             leadingIcon: FontAwesomeIcons.gear,
             leadingColor: Colors.white70,
-            title: 'AI Settings',
+            title: context.l10n.settingsAiSettings,
             isActive: false,
             onTap: () {
               Navigator.of(context).pop(); // close the drawer
@@ -172,14 +174,14 @@ class _DrawerTopBar extends StatelessWidget {
         children: [
           const Icon(Icons.auto_awesome_rounded, color: Colors.white, size: 20),
           const Gap(8),
-          const Expanded(
+          Expanded(
             child: Text(
               'Syncra',
               style: TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.w700,
                 fontSize: 18,
-                letterSpacing: -0.2,
+                letterSpacing: context.ls(-0.2),
               ),
             ),
           ),
@@ -217,13 +219,13 @@ class _NewChatButton extends StatelessWidget {
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: Colors.white.withValues(alpha: 0.14)),
               ),
-              child: const Row(
+              child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(Icons.add_rounded, color: Colors.white, size: 19),
                   Gap(8),
                   Text(
-                    'New Chat',
+                    context.l10n.newChat,
                     style: TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.w700,
@@ -420,7 +422,7 @@ class _SectionLabel extends StatelessWidget {
           color: Colors.white.withValues(alpha: 0.4),
           fontWeight: FontWeight.w700,
           fontSize: 11.5,
-          letterSpacing: 0.3,
+          letterSpacing: context.ls(0.3),
         ),
       ),
     );
@@ -562,7 +564,7 @@ class _SessionTile extends StatelessWidget {
       );
     } catch (_) {
       if (context.mounted) {
-        AppToast.error('Failed to share this chat. Please try again.');
+        AppToast.error(context.l10n.failedToShareThis);
       }
     }
   }
@@ -645,7 +647,7 @@ class _LoadMoreTile extends StatelessWidget {
     return _DrawerRow(
       leadingIcon: FontAwesomeIcons.expand,
       leadingColor: Colors.white54,
-      title: 'Load more',
+      title: context.l10n.loadMore,
       isActive: false,
       onTap: onTap,
     );
@@ -687,7 +689,7 @@ Future<void> showAiSessionActionMenu({
   final actions = <_AiSessionMenuAction>[
     _AiSessionMenuAction(
       icon: Icons.chat_bubble_outline_rounded,
-      label: 'Open',
+      label: AppL10n.current.open,
       onTap: () {
         close();
         onOpen();
@@ -695,7 +697,7 @@ Future<void> showAiSessionActionMenu({
     ),
     _AiSessionMenuAction(
       icon: Icons.share_outlined,
-      label: 'Share',
+      label: AppL10n.current.share,
       onTap: () {
         close();
         onShare();
@@ -703,7 +705,7 @@ Future<void> showAiSessionActionMenu({
     ),
     _AiSessionMenuAction(
       icon: Icons.delete_outline_rounded,
-      label: 'Delete',
+      label: AppL10n.current.delete,
       color: Colors.redAccent,
       onTap: () {
         close();

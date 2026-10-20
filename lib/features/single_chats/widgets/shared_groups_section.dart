@@ -5,6 +5,7 @@ import '../cubits/shared_groups_cubit/shared_groups_cubit.dart';
 import '../cubits/shared_groups_cubit/shared_groups_state.dart';
 import '../helpers/shared_groups_shimmer.dart';
 import 'shared_group_tile.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class SharedGroupsSection extends StatelessWidget {
   final SharedGroupsCubit groupsCubit;
@@ -32,8 +33,8 @@ class SharedGroupsSection extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  const Text(
-                    'Shared Groups',
+                  Text(
+                    context.l10n.sharedGroups,
                     style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
                   ),
                   const Spacer(),

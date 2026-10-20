@@ -9,6 +9,7 @@ import '../cubits/reels_feed_cubit/reels_feed_cubit.dart';
 import '../models/reel_model.dart';
 import '../services/reels_preferences_store.dart';
 import 'reels_horizontal_section.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class HomeFeedWithReels extends StatefulWidget {
   const HomeFeedWithReels({super.key});
@@ -114,8 +115,8 @@ class _HomeFeedWithReelsState extends State<HomeFeedWithReels> {
     } else if (postsState is PostsLoaded) {
       final posts = postsState.posts;
       if (posts.isEmpty) {
-        return const SliverToBoxAdapter(
-          child: Center(child: Text('No posts available.')),
+        return SliverToBoxAdapter(
+          child: Center(child: Text(context.l10n.noPostsAvailable)),
         );
       }
 

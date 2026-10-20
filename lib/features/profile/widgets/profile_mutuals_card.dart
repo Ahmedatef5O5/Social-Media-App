@@ -7,6 +7,8 @@ import '../../group_chats/services/group_chat_services.dart';
 import '../models/profile_mutuals_model.dart';
 import '../utils/profile_ui_tokens.dart';
 import 'profile_avatar_stack.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
+import 'package:social_media_app/core/localization/app_l10n.dart';
 
 class ProfileMutualsCard extends StatelessWidget {
   final String userId;
@@ -93,7 +95,7 @@ class _MutualFriendsRow extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '$total mutual ${total == 1 ? 'friend' : 'friends'}',
+                  context.l10n.mutualFriendsCount(total),
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
@@ -127,16 +129,16 @@ class _MutualFriendsRow extends StatelessWidget {
         friends.map((f) => f.name.trim()).where((n) => n.isNotEmpty).toList();
     if (names.isEmpty || total <= 0) return '';
 
-    if (total == 1) return '${names[0]} is friends with both of you';
+    if (total == 1) return AppL10n.current.isFriendsWithBoth(names[0]);
 
     if (total == 2) {
       final second = names.length > 1 ? names[1] : '1 other';
-      return '${names[0]} and $second are friends with both of you';
+      return AppL10n.current.andAreFriendsWith(names[0], second);
     }
 
     if (names.length < 2) {
       final others = total - 1;
-      return '${names[0]} and $others others are friends with both of you';
+      return AppL10n.current.andOthersAreFriends(names[0], others);
     }
     final others = total - 2;
     return '${names[0]}, ${names[1]} and $others '
@@ -198,7 +200,7 @@ class _MutualGroupsSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          '$total mutual ${total == 1 ? 'group' : 'groups'}',
+          context.l10n.mutualGroupsCount(total),
           style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w600,

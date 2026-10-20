@@ -30,7 +30,9 @@ class TwoFactorChallengeState {
   });
 
   bool get isLocked =>
-      lockRemaining != null && lockRemaining! > Duration.zero && lockMode == mode;
+      lockRemaining != null &&
+      lockRemaining! > Duration.zero &&
+      lockMode == mode;
 
   bool get showClockHint =>
       mode == TwoFactorChallengeMode.totp && consecutiveInvalid >= 2;
@@ -50,12 +52,14 @@ class TwoFactorChallengeState {
     mode: mode ?? this.mode,
     submitting: submitting ?? this.submitting,
     error: identical(error, _unset) ? this.error : error as String?,
-    lockRemaining: identical(lockRemaining, _unset)
-        ? this.lockRemaining
-        : lockRemaining as Duration?,
-    lockMode: identical(lockMode, _unset)
-        ? this.lockMode
-        : lockMode as TwoFactorChallengeMode?,
+    lockRemaining:
+        identical(lockRemaining, _unset)
+            ? this.lockRemaining
+            : lockRemaining as Duration?,
+    lockMode:
+        identical(lockMode, _unset)
+            ? this.lockMode
+            : lockMode as TwoFactorChallengeMode?,
     consecutiveInvalid: consecutiveInvalid ?? this.consecutiveInvalid,
     completed: completed ?? this.completed,
     reenrollRequired: reenrollRequired ?? this.reenrollRequired,

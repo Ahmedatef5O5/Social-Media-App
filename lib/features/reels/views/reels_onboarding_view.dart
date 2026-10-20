@@ -5,6 +5,7 @@ import '../../../core/widgets/custom_elevated_button.dart';
 import '../models/reel_category.dart';
 import '../services/reels_preferences_store.dart';
 import '../widgets/category_tile.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class ReelsOnboardingView extends StatefulWidget {
   const ReelsOnboardingView({super.key});
@@ -89,12 +90,12 @@ class _ReelsOnboardingViewState extends State<ReelsOnboardingView> {
                               const SizedBox(height: 28),
 
                               Text(
-                                'What do you like?',
+                                context.l10n.whatDoYouLike,
                                 style: TextStyle(
                                   color: colorScheme.onSurface,
                                   fontSize: 28,
                                   fontWeight: FontWeight.w900,
-                                  letterSpacing: 0.2,
+                                  letterSpacing: context.ls(0.2),
                                 ),
                                 textAlign: TextAlign.center,
                               ),
@@ -104,7 +105,7 @@ class _ReelsOnboardingViewState extends State<ReelsOnboardingView> {
                                   horizontal: 40,
                                 ),
                                 child: Text(
-                                  'Choose the topics that interest you so we can personalize your reels experience.',
+                                  context.l10n.chooseTheTopicsThat,
                                   style: TextStyle(
                                     color: colorScheme.onSurface.withValues(
                                       alpha: 0.55,
@@ -191,12 +192,12 @@ class _ReelsOnboardingViewState extends State<ReelsOnboardingView> {
                         minimumSize: Size.zero,
                         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       ),
-                      child: const Text(
-                        'Skip for now',
+                      child: Text(
+                        context.l10n.skipForNow,
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
-                          letterSpacing: 0.3,
+                          letterSpacing: context.ls(0.3),
                         ),
                       ),
                     ),
@@ -205,8 +206,8 @@ class _ReelsOnboardingViewState extends State<ReelsOnboardingView> {
                     CustomElevatedButton(
                       txtBtn:
                           _selected.isEmpty
-                              ? 'Done'
-                              : 'Done (${_selected.length} selected)',
+                              ? context.l10n.done
+                              : context.l10n.doneSelected(_selected.length),
                       isLoading: _isSaving,
                       bgColor: AppColors.primaryColor,
                       onPressed: () => _finish(skipped: false),

@@ -24,6 +24,7 @@ import '../../../social_graph/models/content_privacy.dart';
 import 'package:social_media_app/core/mentions/mentions.dart';
 import '../../models/story_model.dart';
 import '../../services/stories_services.dart';
+import 'package:social_media_app/core/localization/app_l10n.dart';
 part 'stories_state.dart';
 
 const Duration kMaxStoryVideoDuration = Duration(seconds: 60);
@@ -238,7 +239,7 @@ class StoriesCubit extends Cubit<StoriesState>
       ];
       _disposeProgressNotifier(storyId);
       emit(StoriesLoaded(cachedStories, DateTime.now()));
-      AppToast.success('Story Added Successfully');
+      AppToast.success(AppL10n.current.storyAddedSuccessfully);
       unawaited(_silentReconcile());
       _uploadCancelTokens.remove(storyId);
     } catch (e) {
@@ -348,7 +349,7 @@ class StoriesCubit extends Cubit<StoriesState>
       _disposeProgressNotifier(storyId);
       _cleanupStableVideo();
       emit(StoriesLoaded(cachedStories, DateTime.now()));
-      AppToast.success('Story Added Successfully');
+      AppToast.success(AppL10n.current.storyAddedSuccessfully);
       unawaited(_silentReconcile());
       _uploadCancelTokens.remove(storyId);
     } on UploadCanceledException {

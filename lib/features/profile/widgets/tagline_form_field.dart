@@ -4,6 +4,7 @@ import 'package:gap/gap.dart';
 import '../../../core/widgets/custom_text_form_field.dart';
 import '../utils/grapheme_length_input_formatter.dart';
 import '../utils/profile_ui_tokens.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class TaglineFormField extends StatefulWidget {
   final TextEditingController controller;
@@ -64,8 +65,8 @@ class _TaglineFormFieldState extends State<TaglineFormField> {
         CustomTextFormField(
           controller: widget.controller,
           focusNode: widget.focusNode,
-          labelText: 'Status',
-          hintText: 'A short quote, mood or emoji statement',
+          labelText: context.l10n.status,
+          hintText: context.l10n.aShortQuoteMood,
           prefixIcon: const Icon(Icons.cloud_outlined),
           inputFormatters: [GraphemeLengthInputFormatter(widget.maxLength)],
           suffixIcon: _HiddenToggleButton(
@@ -131,7 +132,8 @@ class _HiddenToggleButton extends StatelessWidget {
 
     return IconButton(
       onPressed: onTap,
-      tooltip: isHidden ? 'Show on profile' : 'Hide from profile',
+      tooltip:
+          isHidden ? context.l10n.showOnProfile : context.l10n.hideFromProfile,
       icon: AnimatedSwitcher(
         duration: const Duration(milliseconds: 200),
         transitionBuilder:
@@ -172,8 +174,7 @@ class _HiddenStatusNotice extends StatelessWidget {
           const Gap(8),
           Expanded(
             child: Text(
-              'Your status will be hidden from your profile until you '
-              'switch this back on.',
+              context.l10n.yourStatusWillBe,
               style: TextStyle(
                 fontSize: 12.5,
                 height: 1.35,

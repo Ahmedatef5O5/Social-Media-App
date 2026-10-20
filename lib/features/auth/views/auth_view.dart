@@ -5,6 +5,7 @@ import 'package:social_media_app/features/auth/widgets/login_view_widget.dart';
 import 'package:social_media_app/features/auth/widgets/register_view_widget.dart';
 import '../../../core/themes/background_theme_widget.dart';
 import '../widgets/custom_tab_bar.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class AuthView extends StatelessWidget {
   const AuthView({super.key});
@@ -12,8 +13,8 @@ class AuthView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final List<Tab> tabs = [
-      const Tab(text: 'Sign in'),
-      const Tab(text: 'Sign up'),
+      Tab(text: context.l10n.signIn2),
+      Tab(text: context.l10n.signUp),
     ];
     final List<Widget> tabViews = [LoginViewWidget(), RegisterViewWidget()];
     return DefaultTabController(

@@ -1,5 +1,6 @@
 import '../models/group_model.dart';
 import '../models/groupe_message_model.dart';
+import 'package:social_media_app/core/localization/app_l10n.dart';
 
 String buildGroupLastMessagePreview({
   required GroupModel group,
@@ -12,7 +13,7 @@ String buildGroupLastMessagePreview({
       type == 'text';
 
   if (hasNoMessage) {
-    return 'No messages yet';
+    return AppL10n.current.noMessagesYet2;
   }
 
   final senderId = group.lastMessageSenderId;
@@ -47,26 +48,26 @@ String buildGroupLastMessagePreview({
 
   final senderName =
       isMe
-          ? 'You'
+          ? AppL10n.current.you
           : (senderNameFromData?.trim().isNotEmpty == true
               ? senderNameFromData!
-              : 'Someone');
+              : AppL10n.current.someone);
 
   switch (type) {
     case 'message_react':
       return group.lastMessage ?? '';
     case 'image':
-      return '$senderName: 📷 Photo';
+      return AppL10n.current.photo3(senderName);
     case 'video':
-      return '$senderName: 🎬 Video';
+      return AppL10n.current.video3(senderName);
     case 'gif':
-      return '$senderName: 🎞️ GIF';
+      return AppL10n.current.gif2(senderName);
     case 'sticker':
-      return '$senderName: 😊 Sticker';
+      return AppL10n.current.sticker3(senderName);
     case 'voice':
-      return '$senderName: 🎤 Voice message';
+      return AppL10n.current.voiceMessage4(senderName);
     case 'call':
-      return '$senderName: 📞 Group Call';
+      return AppL10n.current.groupCall(senderName);
 
     case 'file':
       final fileName =
@@ -74,7 +75,7 @@ String buildGroupLastMessagePreview({
                   group.lastMessage!.trim().isNotEmpty &&
                   group.lastMessage!.toLowerCase() != 'file')
               ? group.lastMessage!.trim()
-              : 'File';
+              : AppL10n.current.file;
       return '$senderName: 📄 $fileName';
     case 'text':
     default:

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../helpers/group_info_action_btn_widget.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class GroupDangerZoneSection extends StatelessWidget {
   final bool isMember;
@@ -24,7 +25,7 @@ class GroupDangerZoneSection extends StatelessWidget {
         if (isMember) ...[
           GroupInfoActionButton(
             icon: Icons.exit_to_app_rounded,
-            label: 'Leave Group',
+            label: context.l10n.leaveGroup,
             color: Colors.orange,
             onTap: onLeave,
           ),
@@ -32,7 +33,7 @@ class GroupDangerZoneSection extends StatelessWidget {
         ],
         GroupInfoActionButton(
           icon: Icons.block_rounded,
-          label: 'Block Group',
+          label: context.l10n.blockGroup,
           color: Colors.red,
           onTap: onBlock,
         ),
@@ -40,7 +41,7 @@ class GroupDangerZoneSection extends StatelessWidget {
           const SizedBox(height: 12),
           GroupInfoActionButton(
             icon: Icons.delete_forever_rounded,
-            label: 'Delete Group',
+            label: context.l10n.deleteGroup,
             color: Colors.red.shade900,
             onTap: onDelete,
           ),

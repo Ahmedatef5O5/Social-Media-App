@@ -3,6 +3,7 @@ import 'package:social_media_app/features/single_chats/widgets/chat_bubble_shimm
 import '../models/starred_message_entry.dart';
 import '../widgets/empty_starred_msg_state.dart';
 import '../widgets/starred_message_tile.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class StarredMessagesView extends StatefulWidget {
   final Future<List<StarredMessageEntry>> Function() entriesLoader;
@@ -84,12 +85,12 @@ class _StarredMessagesViewState extends State<StarredMessagesView> {
 
             titleSpacing: 4,
             centerTitle: false,
-            title: const Text(
-              'Starred Messages',
+            title: Text(
+              context.l10n.starredMessages,
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
-                letterSpacing: -0.3,
+                letterSpacing: context.ls(-0.3),
               ),
             ),
 

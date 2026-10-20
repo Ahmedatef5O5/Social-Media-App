@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:social_media_app/features/group_chats/helpers/group_info_action_btn_widget.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class GroupInfoActionsSection extends StatelessWidget {
   final bool isAdmin;
@@ -25,7 +26,7 @@ class GroupInfoActionsSection extends StatelessWidget {
             const Gap(8),
             GroupInfoActionButton(
               icon: Icons.exit_to_app_rounded,
-              label: 'Leave Group',
+              label: context.l10n.leaveGroup,
               color: Colors.orange,
               onTap: onLeave,
             ),
@@ -33,7 +34,7 @@ class GroupInfoActionsSection extends StatelessWidget {
               const Gap(8),
               GroupInfoActionButton(
                 icon: Icons.delete_forever_rounded,
-                label: 'Delete Group',
+                label: context.l10n.deleteGroup,
                 color: Colors.red,
                 onTap: onDelete,
               ),

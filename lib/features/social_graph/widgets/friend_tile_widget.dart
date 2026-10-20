@@ -8,6 +8,7 @@ import '../../../core/themes/app_colors.dart';
 import '../../../core/widgets/app_avatar.dart';
 import '../models/friend_list_item_model.dart';
 import 'unfriend_confirmation_dialog.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class FriendTileWidget extends StatelessWidget {
   final FriendListItemModel friend;
@@ -144,8 +145,8 @@ class FriendTileWidget extends StatelessWidget {
                   Icons.person_remove_rounded,
                   color: Colors.redAccent,
                 ),
-                title: const Text(
-                  'Unfriend',
+                title: Text(
+                  context.l10n.unfriend,
                   style: TextStyle(
                     color: Colors.redAccent,
                     fontWeight: FontWeight.w600,

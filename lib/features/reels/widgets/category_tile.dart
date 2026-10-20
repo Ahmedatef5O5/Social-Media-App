@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../core/themes/app_colors.dart';
 import '../models/reel_category.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class CategoryTile extends StatefulWidget {
   final ReelCategoryOption category;
@@ -133,7 +134,7 @@ class _CategoryTileState extends State<CategoryTile> {
                                   ? FontWeight.w800
                                   : FontWeight.w600,
                           fontSize: 14,
-                          letterSpacing: 0.3,
+                          letterSpacing: context.ls(0.3),
                           fontFamily: theme.textTheme.bodyMedium?.fontFamily,
                         ),
                         child: Text(widget.category.label),

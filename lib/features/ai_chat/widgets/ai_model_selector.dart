@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../helpers/ai_model_iconography.dart';
 import '../models/ai_model_option.dart';
 import 'syncra_backdrop.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class AiModelSelector extends StatelessWidget {
   final AiModelOption selected;
@@ -58,11 +59,11 @@ class AiModelSelector extends StatelessWidget {
                 const SizedBox(width: 6),
                 Text(
                   selected.name,
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.w600,
                     fontSize: 12.5,
-                    letterSpacing: -0.1,
+                    letterSpacing: context.ls(-0.1),
                   ),
                 ),
                 const SizedBox(width: 2),
@@ -120,13 +121,13 @@ class _AiModelPickerSheet extends StatelessWidget {
                     ),
                   ),
                 ),
-                const Text(
-                  'Choose a model',
+                Text(
+                  context.l10n.chooseAModel,
                   style: TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.w700,
                     fontSize: 16,
-                    letterSpacing: -0.2,
+                    letterSpacing: context.ls(-0.2),
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -209,11 +210,11 @@ class _ModelTile extends StatelessWidget {
                 children: [
                   Text(
                     model.name,
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.w700,
                       fontSize: 14.5,
-                      letterSpacing: -0.1,
+                      letterSpacing: context.ls(-0.1),
                     ),
                   ),
                   Text(

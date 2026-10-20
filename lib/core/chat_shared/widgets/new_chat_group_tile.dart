@@ -3,6 +3,7 @@ import '../../../core/router/app_routes.dart';
 import '../../../core/widgets/app_avatar.dart';
 import '../../../features/group_chats/models/group_model.dart';
 import '../../constants/app_images.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class NewChatGroupTile extends StatelessWidget {
   final GroupModel group;
@@ -122,8 +123,8 @@ class NewChatGroupTile extends StatelessWidget {
         group.name,
         TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: textColor),
       ),
-      subtitle: const Text(
-        'Group',
+      subtitle: Text(
+        context.l10n.group,
         style: TextStyle(color: Colors.grey, fontSize: 12),
       ),
     );

@@ -19,7 +19,11 @@ import '../services/two_factor_lockout_store.dart';
 import '../services/two_factor_service.dart';
 import '../widgets/otp_code_field.dart';
 import '../widgets/totp_window_indicator.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
+/// Shown after a correct password / OAuth login when the account has 2FA and
+/// the session is still aal1. It cannot be dismissed: the only exits are
+/// "verify" and "sign out".
 class TwoFactorChallengeView extends StatelessWidget {
   const TwoFactorChallengeView({super.key});
 
@@ -52,6 +56,8 @@ class _ChallengeBodyState extends State<_ChallengeBody> {
   @override
   void initState() {
     super.initState();
+    // Defensive: reached by a stale route. No session -> sign-in; nothing
+    // pending (already aal2, or 2FA was removed) -> straight to Home.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       if (!SessionGuard.hasSession) {
@@ -73,6 +79,7 @@ class _ChallengeBodyState extends State<_ChallengeBody> {
   }
 
   Future<void> _onCompleted(bool reenroll) async {
+    // Capture before navigating away: this context is about to be disposed.
     final nav = Navigator.of(context, rootNavigator: true);
     context.read<AuthCubit>().completeMfa();
     await completeSignInBootstrap();
@@ -80,7 +87,7 @@ class _ChallengeBodyState extends State<_ChallengeBody> {
     nav.pushNamedAndRemoveUntil(AppRoutes.homeRoute, (r) => false);
     if (reenroll) {
       AppToast.warning(
-        'Two-factor was turned off after you used a recovery code.',
+        context.l10n.twoFactorWasTurned,
         actionLabel: 'Set up again',
         onAction: () => nav.pushNamed(AppRoutes.twoFactorSetupRoute),
         duration: const Duration(seconds: 10),
@@ -90,6 +97,7 @@ class _ChallengeBodyState extends State<_ChallengeBody> {
 
   Future<void> _submitTotp(TwoFactorChallengeCubit cubit, String code) async {
     await cubit.submitTotp(code);
+    // Clear after every attempt so the next code starts from an empty field.
     if (mounted && !cubit.state.completed) {
       _otp.currentState?.clear();
       _totpCode = '';
@@ -143,6 +151,7 @@ class _ChallengeBodyState extends State<_ChallengeBody> {
                             mainAxisAlignment: MainAxisAlignment.center,
                             crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
+                              // 1. Enlarged and enhanced lock shield icon
                               Container(
                                 width: 96,
                                 height: 96,
@@ -159,25 +168,29 @@ class _ChallengeBodyState extends State<_ChallengeBody> {
                                 ),
                               ),
                               const SizedBox(height: 24),
+
+                              // 2. Centered title
                               Text(
-                                'Two-step verification',
+                                context.l10n.twoStepVerification,
                                 textAlign: TextAlign.center,
                                 style: theme.textTheme.headlineSmall?.copyWith(
                                   fontWeight: FontWeight.w800,
                                 ),
                               ),
                               const SizedBox(height: 8),
+
+                              // 3. Centered subtitle
                               Text(
                                 isTotp
-                                    ? 'Enter the 6-digit code from your authenticator app.'
-                                    : 'Enter one of the recovery codes you saved. Using '
-                                        'it turns two-factor off.',
+                                    ? context.l10n.enterThe6Digit2
+                                    : context.l10n.enterOneOfThe,
                                 textAlign: TextAlign.center,
                                 style: theme.textTheme.bodyMedium?.copyWith(
                                   color: theme.hintColor,
                                 ),
                               ),
                               const SizedBox(height: 28),
+
                               if (isTotp) ...[
                                 OtpCodeField(
                                   key: _otp,
@@ -195,7 +208,7 @@ class _ChallengeBodyState extends State<_ChallengeBody> {
                                         state.submitting || state.isLocked
                                             ? null
                                             : () => _otp.currentState?.paste(),
-                                    child: const Text('Paste code'),
+                                    child: Text(context.l10n.pasteCode),
                                   ),
                                 ),
                                 const Center(child: TotpWindowIndicator()),
@@ -214,6 +227,7 @@ class _ChallengeBodyState extends State<_ChallengeBody> {
                                   ],
                                 ),
                               ],
+
                               if (state.isLocked) ...[
                                 const SizedBox(height: 16),
                                 Container(
@@ -234,8 +248,9 @@ class _ChallengeBodyState extends State<_ChallengeBody> {
                                       const SizedBox(width: 10),
                                       Expanded(
                                         child: Text(
-                                          'Too many attempts. Try again in '
-                                          '${_mmss(state.lockRemaining!)}.',
+                                          context.l10n.tooManyAttemptsTry(
+                                            _mmss(state.lockRemaining!),
+                                          ),
                                           style: theme.textTheme.bodyMedium,
                                         ),
                                       ),
@@ -251,16 +266,17 @@ class _ChallengeBodyState extends State<_ChallengeBody> {
                                   ),
                                 ),
                               ],
+
                               if (state.showClockHint && !state.isLocked) ...[
                                 const SizedBox(height: 10),
                                 Text(
-                                  'Still not working? Make sure your phone’s date and '
-                                  'time are set to automatic in your device settings.',
+                                  context.l10n.stillNotWorkingMake,
                                   style: theme.textTheme.bodySmall?.copyWith(
                                     color: theme.hintColor,
                                   ),
                                 ),
                               ],
+
                               const SizedBox(height: 24),
                               CustomElevatedButton(
                                 txtBtn: 'Verify',
@@ -297,8 +313,8 @@ class _ChallengeBodyState extends State<_ChallengeBody> {
                                           },
                                   child: Text(
                                     isTotp
-                                        ? 'Use a backup code'
-                                        : 'Use authenticator code',
+                                        ? context.l10n.useABackupCode
+                                        : context.l10n.useAuthenticatorCode,
                                   ),
                                 ),
                               ),
@@ -306,7 +322,7 @@ class _ChallengeBodyState extends State<_ChallengeBody> {
                                 child: TextButton(
                                   onPressed: state.submitting ? null : _signOut,
                                   child: Text(
-                                    'Not you? Sign out',
+                                    context.l10n.notYouSignOut,
                                     style: TextStyle(color: theme.hintColor),
                                   ),
                                 ),

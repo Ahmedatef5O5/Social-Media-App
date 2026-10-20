@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../core/helpers/formatted_date.dart';
 import '../../../core/themes/app_colors.dart';
 import '../models/groupe_message_model.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class GroupTimeRow extends StatelessWidget {
   final GroupMessageModel message;
@@ -18,7 +19,7 @@ class GroupTimeRow extends StatelessWidget {
         children: [
           if (message.isEdited) ...[
             Text(
-              'Edited',
+              context.l10n.edited2,
               style: Theme.of(context).textTheme.titleMedium!.copyWith(
                 color:
                     isMe

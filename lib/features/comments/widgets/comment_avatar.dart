@@ -7,6 +7,7 @@ import '../../../core/widgets/app_avatar.dart';
 import '../../single_chats/models/chat_user_model.dart';
 import '../../profile/widgets/user_preview_dialog.dart';
 import '../models/comment_model.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class CommentAvatar extends StatelessWidget {
   final CommentModel comment;
@@ -60,7 +61,7 @@ class CommentAvatar extends StatelessWidget {
   void _showUserPreview(BuildContext context) {
     final user = ChatUserModel(
       id: comment.authorId,
-      name: comment.authorName ?? 'Unknown',
+      name: comment.authorName ?? context.l10n.unknown,
       imageUrl: comment.authorImageUrl,
     );
     showDialog(

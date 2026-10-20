@@ -11,6 +11,7 @@ import '../utils/chat_tile_skeleton_list.dart';
 import '../utils/error_search_state.dart';
 import '../utils/search_view_metrics.dart';
 import 'group_search_result_tile.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class GroupsTabView extends StatefulWidget {
   final ValueListenable<String> searchQuery;
@@ -139,9 +140,9 @@ class _GroupsTabViewState extends State<GroupsTabView>
             Text(
               query.isEmpty
                   ? (isMyGroupsEmpty
-                      ? 'You haven\'t joined any groups yet'
-                      : 'Search for groups')
-                  : 'No groups found for "$query"',
+                      ? context.l10n.youHaventJoinedAny
+                      : context.l10n.searchForGroups)
+                  : context.l10n.noGroupsFoundFor(query),
               textAlign: TextAlign.center,
               style: theme.textTheme.titleMedium!.copyWith(
                 fontWeight: FontWeight.w700,

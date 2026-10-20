@@ -8,6 +8,7 @@ import 'package:social_media_app/core/widgets/app_file_image.dart';
 import '../../helpers/file_icon_helper.dart';
 import '../../toast/app_toast.dart';
 import '../../router/app_routes.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class ChatStagedFilePreview extends StatelessWidget {
   final String fileName;
@@ -56,10 +57,10 @@ class ChatStagedFilePreview extends StatelessWidget {
     try {
       final result = await OpenFilex.open(fileToOpen.path);
       if (result.type != ResultType.done && context.mounted) {
-        AppToast.error("Couldn't open that file.");
+        AppToast.error(context.l10n.couldntOpenThatFile);
       }
     } catch (_) {
-      if (context.mounted) AppToast.error("Couldn't open that file.");
+      if (context.mounted) AppToast.error(context.l10n.couldntOpenThatFile);
     }
   }
 

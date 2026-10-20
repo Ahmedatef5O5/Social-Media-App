@@ -8,6 +8,7 @@ import '../helpers/add_members_list_skeleton.dart';
 import '../helpers/group_user_list_tile.dart';
 import '../widgets/group_search_field_widget.dart';
 import '../widgets/selected_members_section_widget.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class AddGroupMembersView extends StatefulWidget {
   final GroupMembersCubit membersCubit;
@@ -83,19 +84,22 @@ class _AddGroupMembersViewState extends State<AddGroupMembersView> {
       } else if (result.isPartialSuccess) {
         AppToast.error(
           result.failed.length == 1
-              ? 'Added ${result.added.length}. One person isn\'t available to join right now.'
-              : 'Added ${result.added.length}. ${result.failed.length} people aren\'t available to join right now.',
+              ? context.l10n.addedOnePersonIsnt(result.added.length)
+              : context.l10n.addedPeopleArentAvailable(
+                result.added.length,
+                result.failed.length,
+              ),
         );
         if (mounted) Navigator.pop(context);
       } else {
         AppToast.error(
           result.failed.length == 1
-              ? "This person isn't available to join the group right now."
-              : "These people aren't available to join the group right now.",
+              ? context.l10n.thisPersonIsntAvailable
+              : context.l10n.thesePeopleArentAvailable,
         );
       }
     } catch (e) {
-      AppToast.error('Failed to add members. Please try again.');
+      AppToast.error(context.l10n.failedToAddMembers);
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
     }
@@ -126,7 +130,7 @@ class _AddGroupMembersViewState extends State<AddGroupMembersView> {
           scrolledUnderElevation: 0,
           centerTitle: true,
           title: Text(
-            'Add Members',
+            context.l10n.addMembers,
             style: theme.textTheme.titleLarge?.copyWith(
               fontWeight: FontWeight.bold,
               color: primary,
@@ -156,7 +160,7 @@ class _AddGroupMembersViewState extends State<AddGroupMembersView> {
                       ),
                       const Gap(16),
                       Text(
-                        'No new connections to add',
+                        context.l10n.noNewConnectionsTo,
                         style: theme.textTheme.titleMedium?.copyWith(
                           color: Colors.grey.shade600,
                           fontWeight: FontWeight.w600,
@@ -205,7 +209,9 @@ class _AddGroupMembersViewState extends State<AddGroupMembersView> {
                                     bottom: 8,
                                   ),
                                   child: Text(
-                                    '${_selectedUserIds.length} selected',
+                                    context.l10n.selected4(
+                                      _selectedUserIds.length,
+                                    ),
                                     style: theme.textTheme.labelLarge?.copyWith(
                                       color: primary,
                                       fontWeight: FontWeight.w700,
@@ -225,7 +231,7 @@ class _AddGroupMembersViewState extends State<AddGroupMembersView> {
                           padding: const EdgeInsets.only(top: 40),
                           child: Center(
                             child: Text(
-                              'No people found',
+                              context.l10n.noPeopleFound,
                               style: theme.textTheme.bodyLarge?.copyWith(
                                 color: Colors.grey.shade500,
                               ),
@@ -308,12 +314,14 @@ class _AddGroupMembersViewState extends State<AddGroupMembersView> {
                               )
                               : Text(
                                 _selectedUserIds.isEmpty
-                                    ? 'Add Members'
-                                    : 'Add ${_selectedUserIds.length} Members',
-                                style: const TextStyle(
+                                    ? context.l10n.addMembers
+                                    : context.l10n.addMembers2(
+                                      _selectedUserIds.length,
+                                    ),
+                                style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w700,
-                                  letterSpacing: 0.5,
+                                  letterSpacing: context.ls(0.5),
                                 ),
                               ),
                     ),

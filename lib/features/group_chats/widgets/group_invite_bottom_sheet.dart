@@ -13,6 +13,7 @@ import '../../../core/widgets/app_network_image.dart';
 import '../helpers/group_navigation.dart';
 import '../models/group_invite_preview.dart';
 import '../services/group_chat_services.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class GroupInviteBottomSheet extends StatefulWidget {
   final String inviteHash;
@@ -91,7 +92,7 @@ class _GroupInviteBottomSheetState extends State<GroupInviteBottomSheet> {
       final matches = groups.where((g) => g.id == groupId);
       final group = matches.isNotEmpty ? matches.first : null;
       if (group == null) {
-        AppToast.warning('This group is no longer available');
+        AppToast.warning(context.l10n.thisGroupIsNo);
         return;
       }
       openGroupChat(
@@ -102,7 +103,7 @@ class _GroupInviteBottomSheetState extends State<GroupInviteBottomSheet> {
         ),
       );
     } catch (e) {
-      AppToast.error('Failed to open group chat');
+      AppToast.error(context.l10n.failedToOpenGroup);
     }
   }
 
@@ -122,7 +123,7 @@ class _GroupInviteBottomSheetState extends State<GroupInviteBottomSheet> {
 
     if (invalid) {
       return _InvalidInviteContent(
-        message: _errorMessage ?? 'This invite link is no longer valid',
+        message: _errorMessage ?? context.l10n.thisInviteLinkIs,
         onClose: () => Navigator.of(context).pop(),
       );
     }
@@ -159,7 +160,7 @@ class _InvalidInviteContent extends StatelessWidget {
         ),
         const SizedBox(height: 24),
         AppButton(
-          text: 'Close',
+          text: context.l10n.close,
           onPressed: onClose,
           variant: AppButtonVariant.secondary,
         ),
@@ -220,7 +221,7 @@ class _ValidInviteContent extends StatelessWidget {
         ),
         const SizedBox(height: 16),
         Text(
-          preview.groupName ?? 'Group',
+          preview.groupName ?? context.l10n.group,
           textAlign: TextAlign.center,
           style: context.typography.titleLarge?.copyWith(
             fontWeight: FontWeight.w700,
@@ -239,17 +240,17 @@ class _ValidInviteContent extends StatelessWidget {
         ],
         const SizedBox(height: 8),
         Text(
-          '${preview.memberCount} member${preview.memberCount == 1 ? '' : 's'}',
+          context.l10n.membersCountPlural(preview.memberCount),
           style: context.typography.bodySmall?.copyWith(
             color: palette.onSurfaceVariant,
           ),
         ),
         const SizedBox(height: 24),
         if (preview.isAlreadyMember)
-          AppButton(text: 'Open Chat', onPressed: onOpenChat)
+          AppButton(text: context.l10n.openChat, onPressed: onOpenChat)
         else
           AppButton(
-            text: 'Join Group',
+            text: context.l10n.joinGroup,
             onPressed: onJoin,
             isLoading: isJoining,
           ),

@@ -14,6 +14,7 @@ import '../services/feedback_service.dart';
 import '../widgets/feedback_skeletons.dart';
 import '../widgets/feedback_star_rating_bar.dart';
 import '../widgets/feedback_status_chip.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 /// Self-contained so it can be opened from a push notification (cold start
 /// included) with nothing but a `feedbackId`. Updates live while open.
@@ -101,7 +102,7 @@ class _FeedbackDetailsViewState extends State<FeedbackDetailsView> {
                       imageUrl: url,
                       fit: BoxFit.contain,
                       errorWidget: (_, __, ___) {
-                        AppToast.error('Could not load the image.');
+                        AppToast.error(context.l10n.couldNotLoadThe);
                         return const SizedBox.shrink();
                       },
                     ),
@@ -137,8 +138,11 @@ class _FeedbackDetailsViewState extends State<FeedbackDetailsView> {
         slivers: [
           SettingsDetailSliverAppBar(
             icon: item?.category.icon ?? CupertinoIcons.chat_bubble_text_fill,
-            title: item == null ? 'Feedback' : 'Feedback #${item.shortId}',
-            subtitle: item?.category.label ?? 'Support conversation',
+            title:
+                item == null
+                    ? context.l10n.feedback2
+                    : context.l10n.feedback(item.shortId),
+            subtitle: item?.category.label ?? context.l10n.supportConversation,
           ),
           if (_loading)
             const SliverPadding(
@@ -154,11 +158,14 @@ class _FeedbackDetailsViewState extends State<FeedbackDetailsView> {
                   children: [
                     Text(
                       _failed
-                          ? 'Could not load this feedback.'
-                          : 'This feedback is no longer available.',
+                          ? context.l10n.couldNotLoadThis2
+                          : context.l10n.thisFeedbackIsNo,
                     ),
                     if (_failed)
-                      TextButton(onPressed: _load, child: const Text('Retry')),
+                      TextButton(
+                        onPressed: _load,
+                        child: Text(context.l10n.retry),
+                      ),
                   ],
                 ),
               ),
@@ -189,7 +196,7 @@ class _FeedbackDetailsViewState extends State<FeedbackDetailsView> {
             const Gap(10),
             Expanded(
               child: Text(
-                'Sent ${fmt.format(item.createdAt)}',
+                context.l10n.sent2(fmt.format(item.createdAt)),
                 style: TextStyle(fontSize: 12, color: muted),
               ),
             ),
@@ -197,9 +204,9 @@ class _FeedbackDetailsViewState extends State<FeedbackDetailsView> {
         ),
         if (item.status == FeedbackStatus.pending) ...[
           const Gap(12),
-          const SettingsInfoBanner(
+          SettingsInfoBanner(
             icon: CupertinoIcons.clock,
-            message: 'Response within 24 hours (max 3 days).',
+            message: context.l10n.responseWithin24Hours,
           ),
         ],
         const Gap(18),
@@ -207,8 +214,8 @@ class _FeedbackDetailsViewState extends State<FeedbackDetailsView> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Your message',
+              Text(
+                context.l10n.yourMessage,
                 style: TextStyle(fontWeight: FontWeight.w800),
               ),
               if (item.rating != null) ...[
@@ -269,17 +276,15 @@ class _FeedbackDetailsViewState extends State<FeedbackDetailsView> {
           _ReplyCard(response: item.adminResponse!, at: item.respondedAt)
         else if (item.status == FeedbackStatus.resolved ||
             item.status == FeedbackStatus.closed)
-          const SettingsInfoBanner(
+          SettingsInfoBanner(
             icon: CupertinoIcons.checkmark_seal_fill,
             tone: SettingsBannerTone.success,
-            message:
-                'Our team has reviewed this feedback. Thank you for helping us improve!',
+            message: context.l10n.ourTeamHasReviewed,
           )
         else if (item.status == FeedbackStatus.inProgress)
-          const SettingsInfoBanner(
+          SettingsInfoBanner(
             icon: CupertinoIcons.hammer_fill,
-            message:
-                'We are working on this. You will be notified when we reply.',
+            message: context.l10n.weAreWorkingOn,
           ),
       ],
     );
@@ -369,8 +374,8 @@ class _ReplyCard extends StatelessWidget {
                     Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Text(
-                          'Social Mate Support',
+                        Text(
+                          context.l10n.socialMateSupport,
                           style: TextStyle(fontWeight: FontWeight.w800),
                         ),
                         const Gap(4),
@@ -400,7 +405,7 @@ class _ReplyCard extends StatelessWidget {
                   color: green.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: const Row(
+                child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(
@@ -410,7 +415,7 @@ class _ReplyCard extends StatelessWidget {
                     ),
                     Gap(4),
                     Text(
-                      'Official',
+                      context.l10n.official,
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w800,

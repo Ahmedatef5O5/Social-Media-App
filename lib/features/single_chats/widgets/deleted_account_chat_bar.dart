@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class DeletedAccountChatBar extends StatelessWidget {
   const DeletedAccountChatBar({super.key});
@@ -25,7 +26,7 @@ class DeletedAccountChatBar extends StatelessWidget {
               const Gap(8),
               Flexible(
                 child: Text(
-                  'You cannot send messages to a deleted account.',
+                  context.l10n.youCannotSendMessages,
                   textAlign: TextAlign.center,
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: theme.colorScheme.onSurface.withValues(alpha: 0.7),

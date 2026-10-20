@@ -1,4 +1,5 @@
 import 'package:intl/intl.dart';
+import 'package:social_media_app/core/localization/app_l10n.dart';
 
 class FormattedDate {
   static DateTime safeParseDate(String dateString) {
@@ -14,10 +15,10 @@ class FormattedDate {
     final Duration exactDifference = now.difference(date);
 
     if (isShort) {
-      if (exactDifference.isNegative) return 'Just now';
+      if (exactDifference.isNegative) return AppL10n.current.justNow;
       if (exactDifference.inMinutes < 1) return 'now';
       if (exactDifference.inMinutes < 60) {
-        return '${exactDifference.inMinutes} min';
+        return AppL10n.current.min(exactDifference.inMinutes);
       }
       if (exactDifference.inHours < 24) return '${exactDifference.inHours} hr';
       if (exactDifference.inDays < 7) return '${exactDifference.inDays} d';
@@ -34,13 +35,13 @@ class FormattedDate {
     final String time = DateFormat.jm().format(date);
 
     if (exactDifference.inMinutes < 1 && !exactDifference.isNegative) {
-      return "Just now";
+      return AppL10n.current.justNow;
     }
 
     if (diffInDays == 0) {
-      return "Today at $time";
+      return AppL10n.current.todayAt(time);
     } else if (diffInDays == 1) {
-      return "Yesterday at $time";
+      return AppL10n.current.yesterdayAt(time);
     } else {
       final String dayMonth = DateFormat('d MMM').format(date);
       return "$dayMonth at $time";
@@ -61,11 +62,11 @@ class FormattedDate {
     final int diffInDays = today.difference(msgDate).inDays;
 
     if (diffInDays == 0) {
-      return isChatList ? time : "Today";
+      return isChatList ? time : AppL10n.current.today;
     }
 
     if (diffInDays == 1) {
-      return "Yesterday";
+      return AppL10n.current.yesterday;
     }
 
     if (diffInDays < 7) {
@@ -91,7 +92,7 @@ class FormattedDate {
     final String time = DateFormat.jm().format(localDate);
     final String longTimeAgo = DateFormat('d/M/y').format(localDate);
 
-    if (diff.inSeconds < 30) return 'Online';
+    if (diff.inSeconds < 30) return AppL10n.current.online;
     if (diff.inSeconds < 60) return 'just now';
     if (diff.inMinutes < 60) return 'at ${diff.inMinutes} minutes ago';
 
@@ -103,8 +104,8 @@ class FormattedDate {
     );
     final int diffInDays = today.difference(seenDay).inDays;
 
-    if (diffInDays == 0) return 'Today at $time';
-    if (diffInDays == 1) return 'Yesterday at $time';
+    if (diffInDays == 0) return AppL10n.current.todayAt(time);
+    if (diffInDays == 1) return AppL10n.current.yesterdayAt(time);
     if (diffInDays < 7) return 'at $diffInDays days ago';
     return 'at $longTimeAgo';
   }

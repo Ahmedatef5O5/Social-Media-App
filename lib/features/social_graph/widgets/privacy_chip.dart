@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../models/content_privacy.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class PrivacyChip extends StatelessWidget {
   final ContentPrivacy privacy;
@@ -61,7 +62,7 @@ class PrivacyChip extends StatelessWidget {
                           color: Colors.white.withValues(alpha: 0.8),
                           fontSize: 9,
                           fontWeight: FontWeight.w600,
-                          letterSpacing: 0.3,
+                          letterSpacing: context.ls(0.3),
                         ),
                       ),
                       const SizedBox(width: 2.5),

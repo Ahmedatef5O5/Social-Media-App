@@ -4,6 +4,7 @@ import '../../../core/router/app_routes.dart';
 import '../../../core/widgets/cached_cloudinary_image.dart';
 import '../../group_chats/helpers/group_navigation.dart';
 import '../../group_chats/models/group_model.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class GroupSearchResultTile extends StatelessWidget {
   final GroupModel group;
@@ -41,7 +42,7 @@ class GroupSearchResultTile extends StatelessWidget {
         ),
       ),
       subtitle: Text(
-        group.title?.isNotEmpty == true ? group.title! : 'Group',
+        group.title?.isNotEmpty == true ? group.title! : context.l10n.group,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
         style: theme.textTheme.bodySmall!.copyWith(

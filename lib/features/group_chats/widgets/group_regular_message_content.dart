@@ -18,6 +18,7 @@ import '../models/groupe_message_model.dart';
 import 'group_message_reply_preview.dart';
 import 'group_time_row.dart';
 import 'group_voice_message_bubble.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 const double _kVoiceBubbleContentWidth = 220;
 const int _uncollapsedMaxLines = 1000;
@@ -348,26 +349,28 @@ class _MentionRichText extends StatelessWidget {
             if (userId == 'all') {
               final isMe = message.senderId == currentUserId;
               if (isMe) {
-                AppToast.info('You mentioned all group members');
+                AppToast.info(context.l10n.youMentionedAllGroup);
               } else {
                 final senderName =
                     message.senderName.trim().isNotEmpty
                         ? message.senderName.trim()
-                        : 'Someone';
-                AppToast.info('$senderName mentioned all group members');
+                        : context.l10n.someone;
+                AppToast.info(
+                  context.l10n.mentionedAllGroupMembers(senderName),
+                );
               }
               return;
             }
 
             if (userId == currentUserId) {
               if (message.senderId == currentUserId) {
-                AppToast.info('You mentioned yourself in this message');
+                AppToast.info(context.l10n.youMentionedYourselfIn2);
               } else {
                 final senderName =
                     message.senderName.trim().isNotEmpty
                         ? message.senderName.trim()
-                        : 'Someone';
-                AppToast.info('$senderName mentioned you in this message');
+                        : context.l10n.someone;
+                AppToast.info(context.l10n.mentionedYouInThis2(senderName));
               }
             } else {
               Navigator.of(

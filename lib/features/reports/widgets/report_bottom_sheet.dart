@@ -8,6 +8,7 @@ import 'package:social_media_app/core/toast/app_toast.dart';
 import '../cubits/report_cubit/report_cubit.dart';
 import '../models/report_reason.dart';
 import '../models/report_target.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class ReportBottomSheet extends StatelessWidget {
   const ReportBottomSheet({super.key});
@@ -45,7 +46,7 @@ class ReportBottomSheet extends StatelessWidget {
       listenWhen: (_, current) => current is ReportSubmitted,
       listener: (context, _) {
         Navigator.of(context).pop();
-        AppToast.success('Thanks for reporting. Our team will review it.');
+        AppToast.success(context.l10n.thanksForReportingOur);
       },
       child: Padding(
         padding: EdgeInsets.only(
@@ -56,7 +57,7 @@ class ReportBottomSheet extends StatelessWidget {
             maxHeight: MediaQuery.sizeOf(context).height * 0.85,
           ),
           child: AppBottomSheet(
-            title: 'Report ${target.type.label}',
+            title: context.l10n.report2(target.type.label),
             child: const _ReportForm(),
           ),
         ),
@@ -83,7 +84,7 @@ class _ReportForm extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Why are you reporting this? Your report is confidential.',
+              context.l10n.whyAreYouReporting,
               style: context.typography.bodyMedium?.copyWith(
                 color: palette.onSurfaceVariant,
               ),
@@ -112,8 +113,8 @@ class _ReportForm extends StatelessWidget {
                           decoration: InputDecoration(
                             hintText:
                                 selected == ReportReason.other
-                                    ? 'Tell us what is wrong (required)'
-                                    : 'Add details (optional)',
+                                    ? context.l10n.tellUsWhatIs
+                                    : context.l10n.addDetailsOptional,
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
@@ -126,7 +127,7 @@ class _ReportForm extends StatelessWidget {
             ),
             const Gap(12),
             AppButton(
-              text: 'Submit report',
+              text: context.l10n.submitReport,
               onPressed: form.canSubmit ? cubit.submit : null,
             ),
           ],

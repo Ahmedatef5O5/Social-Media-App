@@ -12,6 +12,7 @@ import '../../social_graph/widgets/friends_list_skeleton.dart';
 import '../cubits/search_friends_cubit/search_friends_cubit.dart';
 import '../utils/error_search_state.dart';
 import '../utils/search_view_metrics.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class FriendsTabView extends StatefulWidget {
   final ValueListenable<String> searchQuery;
@@ -212,8 +213,8 @@ class _FriendsTabViewState extends State<FriendsTabView>
             const Gap(12),
             Text(
               query.isEmpty
-                  ? 'No friends yet'
-                  : 'No friends found for "$query"',
+                  ? context.l10n.noFriendsYet
+                  : context.l10n.noFriendsFoundFor(query),
               textAlign: TextAlign.center,
               style: theme.textTheme.titleMedium!.copyWith(
                 fontWeight: FontWeight.w700,
@@ -222,7 +223,7 @@ class _FriendsTabViewState extends State<FriendsTabView>
             if (query.isEmpty) ...[
               const Gap(6),
               Text(
-                'People you add as friends will show up here.',
+                context.l10n.peopleYouAddAs,
                 textAlign: TextAlign.center,
                 style: theme.textTheme.bodySmall!.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,

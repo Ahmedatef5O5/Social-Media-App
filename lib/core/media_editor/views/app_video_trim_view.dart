@@ -9,12 +9,20 @@ import 'package:social_media_app/core/toast/app_toast.dart';
 import 'package:social_media_app/core/widgets/custom_loading_indicator.dart';
 import 'package:video_player/video_player.dart';
 import 'package:video_thumbnail/video_thumbnail.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
+/// Timeline trimmer (WhatsApp / Instagram-Stories style): thumbnail strip with
+/// two drag handles, live looping preview of the selected window, and a
+/// "selected / total" readout.
+///
+/// Pops with a [TrimmedVideo] on Done, or `null` if cancelled / unchanged.
 class AppVideoTrimView extends StatefulWidget {
-  final File file;
-  final Duration? maxDuration;
-
   const AppVideoTrimView({super.key, required this.file, this.maxDuration});
+
+  final File file;
+
+  /// Longest selectable window (e.g. story limit). `null` = unlimited.
+  final Duration? maxDuration;
 
   @override
   State<AppVideoTrimView> createState() => _AppVideoTrimViewState();
@@ -181,7 +189,7 @@ class _AppVideoTrimViewState extends State<AppVideoTrimView> {
       );
     } catch (e) {
       debugPrint('[AppVideoTrimView] trim failed: $e');
-      AppToast.error('Could not trim this video. Please try again.');
+      AppToast.error(context.l10n.couldNotTrimThis);
       if (mounted) setState(() => _exporting = false);
     }
   }
@@ -208,8 +216,8 @@ class _AppVideoTrimViewState extends State<AppVideoTrimView> {
             icon: const Icon(Icons.close, color: AppColors.white),
             onPressed: _exporting ? null : () => Navigator.of(context).pop(),
           ),
-          title: const Text(
-            'Trim video',
+          title: Text(
+            context.l10n.trimVideo,
             style: TextStyle(
               color: AppColors.white,
               fontSize: 16,
@@ -221,7 +229,7 @@ class _AppVideoTrimViewState extends State<AppVideoTrimView> {
             Padding(
               padding: const EdgeInsets.only(right: 8),
               child: IconButton(
-                tooltip: 'Done',
+                tooltip: context.l10n.done,
                 icon: Icon(
                   Icons.check_circle_rounded,
                   color: primary,
@@ -239,13 +247,13 @@ class _AppVideoTrimViewState extends State<AppVideoTrimView> {
               Positioned.fill(
                 child: ColoredBox(
                   color: Colors.black54,
-                  child: const Column(
+                  child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       CustomLoadingIndicator(color: AppColors.white),
                       SizedBox(height: 14),
                       Text(
-                        'Trimming…',
+                        context.l10n.trimming,
                         style: TextStyle(color: AppColors.white, fontSize: 14),
                       ),
                     ],
@@ -260,9 +268,9 @@ class _AppVideoTrimViewState extends State<AppVideoTrimView> {
 
   Widget _buildBody(Color primary) {
     if (_loadFailed) {
-      return const Center(
+      return Center(
         child: Text(
-          'Could not load this video.',
+          context.l10n.couldNotLoadThis,
           style: TextStyle(color: AppColors.white70),
         ),
       );
@@ -319,7 +327,7 @@ class _AppVideoTrimViewState extends State<AppVideoTrimView> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Selected ${_fmt(selectedMs)}',
+                  context.l10n.selected2(_fmt(selectedMs)),
                   style: TextStyle(
                     color: primary,
                     fontSize: 14,
@@ -327,7 +335,7 @@ class _AppVideoTrimViewState extends State<AppVideoTrimView> {
                   ),
                 ),
                 Text(
-                  'Total ${_fmt(_totalMs)}',
+                  context.l10n.total(_fmt(_totalMs)),
                   style: const TextStyle(
                     color: AppColors.white60,
                     fontSize: 13,
@@ -342,7 +350,7 @@ class _AppVideoTrimViewState extends State<AppVideoTrimView> {
               child: Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
-                  'Max length is ${_fmt(_maxMs)}',
+                  context.l10n.maxLengthIs(_fmt(_maxMs)),
                   style: const TextStyle(
                     color: AppColors.goldenYellow,
                     fontSize: 12,

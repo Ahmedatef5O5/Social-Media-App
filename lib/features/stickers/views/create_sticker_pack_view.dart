@@ -8,6 +8,7 @@ import '../utils/create_sticker_pack_form_skeleton.dart';
 import '../widgets/create_sticker_pack_form_section.dart';
 import 'create_sticker_pack_quota_view.dart';
 import 'create_sticker_pack_uploading_view.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class CreateStickerPackView extends StatelessWidget {
   const CreateStickerPackView({super.key});
@@ -37,8 +38,8 @@ class _CreateStickerPackBody extends StatelessWidget {
             icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
             onPressed: () => Navigator.pop(context),
           ),
-          title: const Text(
-            'Create Sticker Pack',
+          title: Text(
+            context.l10n.createStickerPack,
             style: TextStyle(fontWeight: FontWeight.w500),
           ),
           centerTitle: true,
@@ -50,7 +51,7 @@ class _CreateStickerPackBody extends StatelessWidget {
         body: BlocListener<CreateStickerPackCubit, CreateStickerPackState>(
           listener: (context, state) {
             if (state is CreateStickerPackSuccess) {
-              AppToast.success('Pack "${state.pack.title}" created!');
+              AppToast.success(context.l10n.packCreated(state.pack.title));
               Navigator.of(context).pop(state.pack);
             }
           },

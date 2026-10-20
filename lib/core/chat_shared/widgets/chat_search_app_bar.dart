@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class ChatSearchAppBar extends StatelessWidget implements PreferredSizeWidget {
   final TextEditingController controller;
@@ -44,8 +45,8 @@ class ChatSearchAppBar extends StatelessWidget implements PreferredSizeWidget {
         autofocus: true,
         onChanged: onChanged,
         textInputAction: TextInputAction.search,
-        decoration: const InputDecoration(
-          hintText: 'Search messages',
+        decoration: InputDecoration(
+          hintText: context.l10n.searchMessages,
           border: InputBorder.none,
         ),
       ),

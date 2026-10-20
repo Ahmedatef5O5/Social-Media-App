@@ -9,6 +9,7 @@ import '../models/mention_suggestion.dart';
 import '../services/mention_search_service.dart';
 import 'mention_text_editing_controller.dart';
 import '../../helpers/emoji_text_input_formatter.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class MentionAwareTextField extends StatefulWidget {
   final MentionTextEditingController controller;
@@ -412,7 +413,7 @@ class _MentionSuggestionsCard extends StatelessWidget {
           height: 16,
           child: CustomLoadingIndicator(radius: 8),
         ),
-        label: 'Searching...',
+        label: context.l10n.searching,
       );
     } else if (results.isEmpty) {
       bodyHeight = _compactHeight;
@@ -423,7 +424,7 @@ class _MentionSuggestionsCard extends StatelessWidget {
           size: 20,
           color: AppColors.grey5,
         ),
-        label: 'No users found',
+        label: context.l10n.noUsersFound,
       );
     } else {
       final maxRows = (maxHeight / _rowHeight).floor().clamp(1, 999);
@@ -483,7 +484,7 @@ class _MentionSuggestionsCard extends StatelessWidget {
                   Expanded(
                     child: Text(
                       suggestion.userId == 'all'
-                          ? 'all (@all members)'
+                          ? context.l10n.allAllMembers
                           : suggestion.name,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,

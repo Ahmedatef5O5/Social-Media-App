@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/content_privacy.dart';
 import 'privacy_option_card.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 Future<ContentPrivacy?> showPrivacySelectorSheet(
   BuildContext context, {
@@ -44,19 +45,19 @@ Future<ContentPrivacy?> showPrivacySelectorSheet(
             const SizedBox(height: 24),
 
             Text(
-              isPack ? 'Who can see this pack?' : 'Who can see this?',
+              isPack ? context.l10n.whoCanSeeThis : context.l10n.whoCanSeeThis2,
               style: theme.textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.w800,
-                letterSpacing: 0.2,
+                letterSpacing: context.ls(0.2),
               ),
             ),
             const SizedBox(height: 6),
             Text(
               isPack
-                  ? 'Choose your audience for this sticker pack'
+                  ? context.l10n.chooseYourAudienceFor
                   : (isStory
-                      ? 'Choose your audience for this story'
-                      : 'Choose your audience for this post'),
+                      ? context.l10n.chooseYourAudienceFor2
+                      : context.l10n.chooseYourAudienceFor3),
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: Colors.grey.shade600,
                 fontWeight: FontWeight.w500,
@@ -67,22 +68,22 @@ Future<ContentPrivacy?> showPrivacySelectorSheet(
             PrivacyOptionCard(
               value: ContentPrivacy.public,
               currentValue: currentPrivacy,
-              title: 'Public',
-              subtitle: 'Anyone on the app can see this',
+              title: context.l10n.public,
+              subtitle: context.l10n.anyoneOnTheApp,
               icon: Icons.public_rounded,
             ),
             PrivacyOptionCard(
               value: ContentPrivacy.friends,
               currentValue: currentPrivacy,
-              title: 'Friends',
-              subtitle: 'Only your friends can see this',
+              title: context.l10n.friends,
+              subtitle: context.l10n.onlyYourFriendsCan,
               icon: Icons.people_alt_rounded,
             ),
             PrivacyOptionCard(
               value: ContentPrivacy.private,
               currentValue: currentPrivacy,
-              title: 'Specific people',
-              subtitle: 'Only specific people you choose',
+              title: context.l10n.specificPeople,
+              subtitle: context.l10n.onlySpecificPeopleYou,
               icon: Icons.lock_rounded,
             ),
           ],

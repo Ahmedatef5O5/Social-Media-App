@@ -8,6 +8,7 @@ import '../../models/report_reason.dart';
 import '../../models/report_submit_status.dart';
 import '../../models/report_target.dart';
 import '../../services/reports_service.dart';
+import 'package:social_media_app/core/localization/app_l10n.dart';
 part 'report_state.dart';
 
 class ReportCubit extends Cubit<ReportState> with SafeEmitMixin<ReportState> {
@@ -78,15 +79,13 @@ class ReportCubit extends Cubit<ReportState> with SafeEmitMixin<ReportState> {
       case ReportSubmitStatus.alreadyReported:
         return;
       case ReportSubmitStatus.rateLimited:
-        AppToast.warning(
-          'Too many reports in a short time. Please try again later.',
-        );
+        AppToast.warning(AppL10n.current.tooManyReportsIn);
       case ReportSubmitStatus.targetNotFound:
-        AppToast.info('This content is no longer available.');
+        AppToast.info(AppL10n.current.thisContentIsNo);
       case ReportSubmitStatus.notAllowed:
       case ReportSubmitStatus.notReportable:
       case ReportSubmitStatus.cannotReportSelf:
-        AppToast.error('You can\'t report this content.');
+        AppToast.error(AppL10n.current.youCantReportThis);
       case ReportSubmitStatus.unknown:
         _showRetry('Report could not be sent. Please try again.', reason, note);
     }

@@ -4,6 +4,7 @@ import '../../single_chats/widgets/typing_indicator_widget.dart';
 import '../helpers/ai_model_iconography.dart';
 import '../models/ai_model_option.dart';
 import '../models/ai_reply_phase.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class AiThinkingBubble extends StatelessWidget {
   final AiReplyPhase phase;
@@ -160,11 +161,11 @@ class _ShimmerPhaseLabelState extends State<_ShimmerPhaseLabel>
             },
             child: Text(
               widget.phase.label,
-              style: const TextStyle(
+              style: TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.w600,
                 fontSize: 13.5,
-                letterSpacing: -0.1,
+                letterSpacing: context.ls(-0.1),
               ),
             ),
           );

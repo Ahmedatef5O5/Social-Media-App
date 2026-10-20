@@ -11,6 +11,7 @@ import '../../../core/services/cloudinary_storage_services.dart';
 import '../../../core/toast/app_toast.dart';
 import '../cubits/ai_chat_cubit/ai_chat_cubit.dart';
 import '../models/ai_chat_message.dart';
+import 'package:social_media_app/core/localization/app_l10n.dart';
 
 class AiChatAttachmentController extends ChangeNotifier {
   final MediaCacheRepository mediaCache;
@@ -110,7 +111,7 @@ class AiChatAttachmentController extends ChangeNotifier {
       stageFile(attachment.localFile!, attachment.fileName ?? 'file');
       return;
     }
-    AppToast.info('Sharing this with Syncra is coming soon.');
+    AppToast.info(AppL10n.current.sharingThisWithSyncra);
   }
 
   Future<void> stageImage(
@@ -119,7 +120,7 @@ class AiChatAttachmentController extends ChangeNotifier {
     String? fileName,
   }) async {
     if (!await file.exists()) {
-      AppToast.error('Image file not found. Please try picking it again.');
+      AppToast.error(AppL10n.current.imageFileNotFound2);
       return;
     }
     final sizeBytes = await file.length();
@@ -135,12 +136,12 @@ class AiChatAttachmentController extends ChangeNotifier {
 
   Future<void> stageFile(File file, String fileName) async {
     if (!await file.exists()) {
-      AppToast.error('File not found. Please try picking it again.');
+      AppToast.error(AppL10n.current.fileNotFoundPlease);
       return;
     }
     final sizeBytes = await file.length();
     if (sizeBytes > maxFileSizeBytes) {
-      AppToast.error("Files larger than 20MB aren't supported yet.");
+      AppToast.error(AppL10n.current.filesLargerThan20mb);
       return;
     }
     if (!isMounted()) return;
@@ -215,7 +216,7 @@ class AiChatAttachmentController extends ChangeNotifier {
   }) async {
     if (isSendingVoice) return;
     if (!await file.exists()) {
-      AppToast.error('Voice message not found. Please try recording again.');
+      AppToast.error(AppL10n.current.voiceMessageNotFound);
       return;
     }
     if (!isMounted()) return;
@@ -232,7 +233,7 @@ class AiChatAttachmentController extends ChangeNotifier {
         cubit = await createSession('🎤 Voice message');
       } catch (_) {
         if (isMounted()) {
-          AppToast.error('Failed to send the voice message. Please try again.');
+          AppToast.error(AppL10n.current.failedToSendThe);
           isSendingVoice = false;
           notifyListeners();
         }
@@ -298,7 +299,7 @@ class AiChatAttachmentController extends ChangeNotifier {
         return;
       }
       if (isMounted()) {
-        AppToast.error('Failed to send the voice message. Please try again.');
+        AppToast.error(AppL10n.current.failedToSendThe);
       }
     } finally {
       if (isMounted()) {
@@ -332,7 +333,7 @@ class AiChatAttachmentController extends ChangeNotifier {
         cubit = await createSession(caption.isEmpty ? fileName : caption);
       } catch (_) {
         if (isMounted()) {
-          AppToast.error('Failed to send the file. Please try again.');
+          AppToast.error(AppL10n.current.failedToSendThe2);
           isSendingFile = false;
           notifyListeners();
         }
@@ -454,7 +455,7 @@ class AiChatAttachmentController extends ChangeNotifier {
       if (e is UploadCanceledException) {
         return;
       }
-      if (isMounted()) AppToast.error('Failed to upload. Please try again.');
+      if (isMounted()) AppToast.error(AppL10n.current.failedToUploadPlease);
     } finally {
       if (isMounted()) {
         isSendingFile = false;
@@ -477,7 +478,7 @@ class AiChatAttachmentController extends ChangeNotifier {
     onBeforeSend();
     if (!ensureDepsReady()) return;
     if (!await file.exists()) {
-      AppToast.error('Image file not found. Please try picking it again.');
+      AppToast.error(AppL10n.current.imageFileNotFound2);
       return;
     }
     if (!isMounted()) return;
@@ -495,7 +496,7 @@ class AiChatAttachmentController extends ChangeNotifier {
         );
       } catch (_) {
         if (isMounted()) {
-          AppToast.error('Failed to send the photo. Please try again.');
+          AppToast.error(AppL10n.current.failedToSendThe3);
           isUploadingImage = false;
           notifyListeners();
         }
@@ -561,7 +562,7 @@ class AiChatAttachmentController extends ChangeNotifier {
         return;
       }
       if (isMounted()) {
-        AppToast.error('Failed to send the photo. Please try again.');
+        AppToast.error(AppL10n.current.failedToSendThe3);
       }
     } finally {
       if (isMounted()) {

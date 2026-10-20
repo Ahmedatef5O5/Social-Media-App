@@ -32,6 +32,7 @@ import '../services/chat_permission_service.dart';
 import '../widgets/deleted_account_chat_bar.dart';
 import '../widgets/text_input_area_section.dart';
 import 'media_preview_screen.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class ChatDetailsView extends StatefulWidget {
   final ChatUserModel receiverUser;
@@ -145,7 +146,7 @@ class _ChatDetailsViewState extends State<ChatDetailsView>
           fileSizeBytes: file.lengthSync(),
         );
 
-        AppToast.success('File sent');
+        AppToast.success(context.l10n.fileSent);
         break;
 
       case IncomingShareKind.unsupported:
@@ -333,7 +334,7 @@ class _ChatDetailsViewState extends State<ChatDetailsView>
   Future<void> _copySelectedMessage(List<MessageModel> selected) async {
     if (selected.length != 1) return;
     await Clipboard.setData(ClipboardData(text: selected.first.text));
-    if (mounted) AppToast.success('Copied to clipboard');
+    if (mounted) AppToast.success(context.l10n.copiedToClipboard);
     _chatCubit.clearSelection();
   }
 
@@ -357,13 +358,13 @@ class _ChatDetailsViewState extends State<ChatDetailsView>
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 8),
                     child: Text(
-                      'Delete $count message${count > 1 ? 's' : ''}?',
+                      context.l10n.deleteNMessages(count),
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                   ),
                   ListTile(
                     leading: const Icon(Icons.person_outline),
-                    title: const Text('Delete for me'),
+                    title: Text(context.l10n.deleteForMe),
                     onTap: () {
                       Navigator.pop(ctx);
                       cubit.deleteSelectedForMe();
@@ -373,7 +374,7 @@ class _ChatDetailsViewState extends State<ChatDetailsView>
                     ListTile(
                       leading: const Icon(Icons.delete_outline),
                       title: Text(
-                        'Delete for everyone',
+                        context.l10n.deleteForEveryone,
                         style: Theme.of(
                           context,
                         ).textTheme.titleMedium!.copyWith(color: Colors.red),
@@ -390,25 +391,30 @@ class _ChatDetailsViewState extends State<ChatDetailsView>
     );
   }
 
+  void _showComingSoon(BuildContext context, String feature) {
+    AppToast.info(context.l10n.isComingSoon(feature));
+  }
+
   void _openMessageInfo(BuildContext context) {
     final selected = _chatCubit.selectedMessages;
     if (selected.length != 1) return;
+    final message = selected.first;
+    _chatCubit.clearSelection();
 
-    final args = MessageInfoArgs.fromSingleChat(
-      message: selected.first,
-      receiverUser: widget.receiverUser,
-      currentUserId: _chatCubit.currentUserId,
-      currentUserName: _chatCubit.currentUserName,
-      currentUserAvatar: _chatCubit.senderImageUrl,
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder:
+            (_) => MessageInfoView(
+              args: MessageInfoArgs.fromSingleChat(
+                message: message,
+                receiverUser: widget.receiverUser,
+                currentUserId: _chatCubit.currentUserId,
+                currentUserName: _chatCubit.currentUserName,
+                currentUserAvatar: _chatCubit.senderImageUrl,
+              ),
+            ),
+      ),
     );
-
-    FocusManager.instance.primaryFocus?.unfocus();
-    Navigator.of(
-      context,
-    ).push(MaterialPageRoute(builder: (_) => MessageInfoView(args: args)));
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _chatCubit.clearSelection();
-    });
   }
 
   Future<void> _openForwardPicker(
@@ -469,9 +475,7 @@ class _ChatDetailsViewState extends State<ChatDetailsView>
 
       if (draftText.isEmpty) {
         if (context.mounted) {
-          AppToast.info(
-            "Syncra can't read media messages yet — try a text message.",
-          );
+          AppToast.info(context.l10n.syncraCantReadMedia);
         }
         return;
       }
@@ -485,7 +489,7 @@ class _ChatDetailsViewState extends State<ChatDetailsView>
       return;
     }
 
-    String currentUserName = 'You';
+    String currentUserName = context.l10n.you;
     String? currentUserAvatar;
     try {
       final currentUserInfo = await ChatServices().getCurrentUserInfo(
@@ -518,7 +522,7 @@ class _ChatDetailsViewState extends State<ChatDetailsView>
         currentUserId: currentUserId,
       );
       if (context.mounted) {
-        AppToast.info('Forwarded to ${result.length} chat(s)');
+        AppToast.info(context.l10n.forwardedToChatS(result.length));
         Future.delayed(const Duration(milliseconds: 400), () {
           if (context.mounted) {
             context.read<ChatsCubit>().getChats(isRefresh: true);
@@ -527,7 +531,7 @@ class _ChatDetailsViewState extends State<ChatDetailsView>
         });
       }
     } catch (e) {
-      if (context.mounted) AppToast.info('Failed to forward. Try again.');
+      if (context.mounted) AppToast.info(context.l10n.failedToForwardTry);
     }
   }
 
@@ -682,8 +686,10 @@ class _ChatDetailsViewState extends State<ChatDetailsView>
                                 children: [
                                   Text(
                                     isAwaitingMe
-                                        ? '${widget.receiverUser} sent you a message request. Reply to accept, or decline.'
-                                        : 'You are not friends or followers. Sending a message will send a message request.',
+                                        ? context.l10n.sentYouAMessage(
+                                          widget.receiverUser,
+                                        )
+                                        : context.l10n.youAreNotFriends,
                                     style:
                                         Theme.of(context).textTheme.bodySmall,
                                   ),
@@ -699,7 +705,7 @@ class _ChatDetailsViewState extends State<ChatDetailsView>
                                             Navigator.of(context).pop();
                                           }
                                         },
-                                        child: const Text('Decline'),
+                                        child: Text(context.l10n.decline),
                                       ),
                                     ),
                                   ],

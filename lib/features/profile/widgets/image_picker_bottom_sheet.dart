@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class ImagePickerBottomSheet extends StatelessWidget {
   final String title;
   final Function(ImageSource source) onImageSelected;
   final bool showRemoveOption;
   final VoidCallback? onRemoveImage;
+
+  /// When non-null, shows an optional "Crop & edit" row for the photo the user
+  /// has already picked in this session.
   final VoidCallback? onEditImage;
 
   const ImagePickerBottomSheet({
@@ -39,7 +43,7 @@ class ImagePickerBottomSheet extends StatelessWidget {
                 Icons.photo_library_outlined,
                 color: Theme.of(context).primaryColor,
               ),
-              title: const Text('Choose from Gallery'),
+              title: Text(context.l10n.chooseFromGallery),
               onTap: () => onImageSelected(ImageSource.gallery),
             ),
             ListTile(
@@ -47,7 +51,7 @@ class ImagePickerBottomSheet extends StatelessWidget {
                 Icons.camera_alt_outlined,
                 color: Colors.green,
               ),
-              title: const Text('Take a Photo'),
+              title: Text(context.l10n.takeAPhoto),
               onTap: () => onImageSelected(ImageSource.camera),
             ),
             if (onEditImage != null)
@@ -56,7 +60,7 @@ class ImagePickerBottomSheet extends StatelessWidget {
                   Icons.crop_rounded,
                   color: Theme.of(context).primaryColor,
                 ),
-                title: const Text('Crop & edit'),
+                title: Text(context.l10n.cropEdit),
                 onTap: onEditImage,
               ),
             if (showRemoveOption) ...[
@@ -65,8 +69,8 @@ class ImagePickerBottomSheet extends StatelessWidget {
                   Icons.delete_outline_rounded,
                   color: Colors.redAccent,
                 ),
-                title: const Text(
-                  'Remove Photo',
+                title: Text(
+                  context.l10n.removePhoto,
                   style: TextStyle(color: Colors.redAccent),
                 ),
                 onTap: onRemoveImage,
