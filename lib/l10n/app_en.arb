@@ -1,0 +1,2332 @@
+{
+  "@@locale": "en",
+  "settingsTitle": "Settings",
+  "@settingsTitle": {
+    "description": "App bar title of the Settings screen"
+  },
+  "settingsSubtitle": "Manage your preferences",
+  "@settingsSubtitle": {
+    "description": "Subtitle under the Settings title"
+  },
+  "settingsSectionAccount": "Account",
+  "@settingsSectionAccount": {
+    "description": "Settings section header"
+  },
+  "settingsSectionNotifications": "Notifications",
+  "@settingsSectionNotifications": {
+    "description": "Settings section header"
+  },
+  "settingsSectionPrivacy": "Privacy",
+  "@settingsSectionPrivacy": {
+    "description": "Settings section header"
+  },
+  "settingsSectionAi": "Artificial Intelligence",
+  "@settingsSectionAi": {
+    "description": "Settings section header"
+  },
+  "settingsSectionAppearance": "Appearance",
+  "@settingsSectionAppearance": {
+    "description": "Settings section header"
+  },
+  "settingsSectionSupport": "Support",
+  "@settingsSectionSupport": {
+    "description": "Settings section header"
+  },
+  "settingsEditProfile": "Edit Profile",
+  "settingsEditProfileSubtitle": "Update your info and photo",
+  "settingsChangePassword": "Change Password",
+  "settingsChangePasswordSubtitle": "Update your account password",
+  "settingsEmailAddress": "Email Address",
+  "settingsEmailAddressSubtitle": "Manage linked email",
+  "settingsPushNotifications": "Push Notifications",
+  "settingsPushNotificationsSubtitle": "Enable all notifications",
+  "settingsMessagePreviews": "Message Previews",
+  "settingsMessagePreviewsSubtitle": "Show content in notifications",
+  "settingsCallNotifications": "Call Notifications",
+  "settingsCallNotificationsSubtitle": "Incoming call alerts",
+  "settingsReadReceipts": "Read Receipts",
+  "settingsReadReceiptsSubtitle": "Show when you’ve read messages",
+  "settingsOnlineStatus": "Online Status",
+  "settingsOnlineStatusSubtitle": "Let others see when you’re active",
+  "settingsOnlineStatusVisibility": "Online Status Visibility",
+  "presenceEveryone": "Everyone",
+  "@presenceEveryone": {
+    "description": "Presence audience option"
+  },
+  "presenceFriends": "My Friends",
+  "@presenceFriends": {
+    "description": "Presence audience option"
+  },
+  "presenceSpecific": "Specific People",
+  "@presenceSpecific": {
+    "description": "Presence audience option"
+  },
+  "presenceNobody": "Nobody",
+  "@presenceNobody": {
+    "description": "Presence audience option"
+  },
+  "settingsAppLock": "App Lock",
+  "settingsAppLockSubtitle": "Require fingerprint / Face ID to open app",
+  "settingsTwoFactor": "Two-Factor Auth",
+  "settingsTwoFactorOffSubtitle": "Extra layer of security",
+  "settingsTwoFactorOnAuthenticator": "On • Authenticator app",
+  "settingsTwoFactorOnRecoveryCodes": "On • {count, plural, =1{1 recovery code} other{{count} recovery codes}} remaining",
+  "@settingsTwoFactorOnRecoveryCodes": {
+    "description": "Two-factor status line with the number of recovery codes left",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsBlockedUsers": "Blocked Users",
+  "settingsBlockedUsersSubtitle": "Manage blocked accounts",
+  "settingsAiSettings": "AI Settings",
+  "settingsAiSettingsSubtitle": "Personalize your AI-powered experience",
+  "settingsTheme": "Theme",
+  "settingsThemeSubtitle": "Personalize your app colors",
+  "language": "Language",
+  "@language": {
+    "description": "Settings row label and language sheet title"
+  },
+  "languageSheetSubtitle": "Choose the language used across the app",
+  "settingsAboutUs": "About Us",
+  "settingsAboutUsSubtitle": "Our story and mission",
+  "settingsHelpFaq": "Help & FAQ",
+  "settingsHelpFaqSubtitle": "Get answers to common questions",
+  "settingsSendFeedback": "Send Feedback",
+  "settingsSendFeedbackSubtitle": "Tell us what you think",
+  "settingsPrivacyPolicy": "Privacy Policy",
+  "settingsPrivacyPolicySubtitle": "How we handle your data",
+  "settingsTermsOfService": "Terms of Service",
+  "settingsTermsOfServiceSubtitle": "Platform rules & community guidelines",
+  "dangerZone": "Danger Zone",
+  "logOut": "Log Out",
+  "logOutSubtitle": "Sign out of your account",
+  "loggedOutSuccessfully": "Logged out successfully",
+  "deleteAccount": "Delete Account",
+  "deleteAccountSubtitle": "Permanently remove your account",
+  "deleteAccountConfirmation": "Are you sure you want to delete your account? This action is permanent and cannot be undone.",
+  "cancel": "Cancel",
+  "settingsErrorPrivacyUpdate": "Failed to update privacy setting.",
+  "settingsErrorVisibilityUpdate": "Failed to update visibility list.",
+  "settingsErrorIdentityNotVerified": "Your identity has not been verified; please try again.",
+  "settingsErrorBiometricNoHardware": "This device doesn’t have a fingerprint or Face ID sensor, so App Lock isn’t available.",
+  "settingsErrorBiometricNotEnrolled": "No fingerprint or Face ID is set up on this device yet. Add one in your device settings, then try again.",
+  "settingsErrorBiometricLockedOut": "Too many failed attempts. Please wait a moment before trying again.",
+  "settingsErrorBiometricPermanentlyLockedOut": "Biometric authentication is locked. Unlock your device with its PIN, pattern, or password first.",
+  "settingsErrorBiometricPasscodeNotSet": "Set up a screen lock (PIN, pattern, or password) on your device before enabling App Lock.",
+  "settingsErrorBiometricUnknown": "We couldn’t verify your device’s biometric setup. Please try again.",
+  "themesTitle": "Appearance",
+  "themesSubtitle": "Pick a look that feels like you. Changes apply instantly.",
+  "themeNameOcean": "Ocean",
+  "@themeNameOcean": {
+    "description": "Name of the \"Ocean\" color theme"
+  },
+  "themeNameSunset": "Sunset",
+  "@themeNameSunset": {
+    "description": "Name of the \"Sunset\" color theme"
+  },
+  "themeNameForest": "Forest",
+  "@themeNameForest": {
+    "description": "Name of the \"Forest\" color theme"
+  },
+  "themeNameMidnight": "Midnight",
+  "@themeNameMidnight": {
+    "description": "Name of the \"Midnight\" color theme"
+  },
+  "themeNameGold": "Gold",
+  "@themeNameGold": {
+    "description": "Name of the \"Gold\" color theme"
+  },
+  "themeNameGlass": "Glass",
+  "@themeNameGlass": {
+    "description": "Name of the \"Glass\" color theme"
+  },
+  "themeNameLavender": "Lavender",
+  "@themeNameLavender": {
+    "description": "Name of the \"Lavender\" color theme"
+  },
+  "themeNameCarbon": "Carbon",
+  "@themeNameCarbon": {
+    "description": "Name of the \"Carbon\" color theme"
+  },
+  "themeNameEmerald": "Emerald",
+  "@themeNameEmerald": {
+    "description": "Name of the \"Emerald\" color theme"
+  },
+  "themeNameNordic": "Nordic",
+  "@themeNameNordic": {
+    "description": "Name of the \"Nordic\" color theme"
+  },
+  "themeNameGrape": "Grape",
+  "@themeNameGrape": {
+    "description": "Name of the \"Grape\" color theme"
+  },
+  "themeNameSahara": "Sahara",
+  "@themeNameSahara": {
+    "description": "Name of the \"Sahara\" color theme"
+  },
+  "connectivityOffline": "No internet connection",
+  "connectivityRestored": "Back to internet",
+  "callOngoingTitle": "Ongoing Call",
+  "@callOngoingTitle": {
+    "description": "Foreground-service notification title during a call"
+  },
+  "callReturnHint": "Tap to return to the call",
+  "@callReturnHint": {
+    "description": "Foreground-service notification text during a call"
+  },
+  "gallery": "Gallery",
+  "video": "Video",
+  "file": "File",
+  "voice": "Voice",
+  "sticker": "Sticker",
+  "camera": "Camera",
+  "resume": "Resume",
+  "slideToCancel": "Slide to cancel",
+  "archivedChats": "Archived Chats",
+  "noArchivedChats": "No archived chats.",
+  "messageInfo": "Message info",
+  "voiceNote": "Voice note",
+  "reportMessage": "Report message",
+  "reportSpamAbusiveContent": "Report spam, abusive content, or inappropriate messages",
+  "growYourNetwork": "Grow Your Network",
+  "youHaventAddedAny": "You haven’t added any connections yet.\nDiscover people nearby or explore suggested profiles to start chatting.",
+  "discoverPeople": "Discover People",
+  "newChat": "New Chat",
+  "searchFriendsGroups": "Search friends & groups...",
+  "sharedMedia": "Shared Media",
+  "starredMessages": "Starred Messages",
+  "searchMessages": "Search messages",
+  "couldntOpenThatFile": "Couldn’t open that file.",
+  "noLinksSharedYet": "No links shared yet",
+  "group": "Group",
+  "selected": "selected",
+  "mediaLinksAndDocs": "Media, links, and docs",
+  "seeAll": "See all",
+  "previewNotAvailable": "Preview not available",
+  "couldNotTrimThis": "Could not trim this video. Please try again.",
+  "trimVideo": "Trim video",
+  "done": "Done",
+  "trimming": "Trimming…",
+  "couldNotLoadThis": "Could not load this video.",
+  "searching": "Searching...",
+  "noUsersFound": "No users found",
+  "whoCanSeeYour": "Who can see your online status",
+  "thisControlsYourGreen": "This controls your green dot and \"last seen\" everywhere in the app.",
+  "lastSeenRecently": "Last seen recently",
+  "online": "Online",
+  "yourProfileIsStill": "Your profile is still loading — try again in a second.",
+  "storiesDontSupportDocuments": "Stories don’t support documents yet.",
+  "aiDoesntSupportVideo": "AI doesn’t support video yet",
+  "shareToStory": "Share to Story",
+  "createPost": "Create Post",
+  "askSyncraAi": "Ask Syncra AI",
+  "recentChats": "Recent Chats",
+  "noConversationsYet": "No conversations yet",
+  "sendTo": "Send to...",
+  "linkCopied": "Link copied",
+  "failedToForwardTry": "Failed to forward. Try again.",
+  "copyLink": "Copy Link",
+  "forwardToChat": "Forward to Chat",
+  "shareVia": "Share via...",
+  "pleaseEndYourCurrent": "Please end your current call before starting another.",
+  "areYouSureYou": "Are you sure you want to quit ?",
+  "edit": "Edit",
+  "saveToGallery": "Save to gallery",
+  "whatWeOffer": "What We Offer",
+  "builtMaintainedBy": "Built & Maintained By",
+  "connectWithUs": "Connect With Us",
+  "connectingPeopleBuildingCommunities": "Connecting people, building communities",
+  "ourMission": "Our Mission",
+  "weBelieveMeaningfulConnections": "We believe meaningful connections change lives. Our platform is built to bring people closer — through conversations, shared moments, and real-time experiences that matter.",
+  "website": "Website",
+  "portfolio": "Portfolio",
+  "email": "Email",
+  "version100": "Version 1.0.0  •  Made with ❤️",
+  "theSmartReplyTo": "The smart reply to images service is currently busy. Please try again later or write your reply manually.",
+  "anErrorOccurredWith": "An error occurred with the AI suggestion. Please try again.",
+  "copiedSuccessfully": "Copied successfully",
+  "copy": "Copy",
+  "todaysAiUsage": "Today’s AI Usage",
+  "estimated": "Estimated",
+  "failedToDeleteThis": "Failed to delete this chat. Please try again.",
+  "failedToForwardPlease": "Failed to forward. Please try again.",
+  "theresNoTextTo": "There’s no text to share in this selection.",
+  "copiedToClipboard": "Copied to clipboard",
+  "image": "Image",
+  "translate": "Translate",
+  "audioChat": "Audio Chat",
+  "chatFiles": "Chat Files",
+  "stillGettingSyncraReady": "Still getting Syncra ready — try again in a second.",
+  "failedToSendYour": "Failed to send your message. Please try again.",
+  "couldntLoadThatPhoto": "Couldn’t load that photo. Please try again.",
+  "addACaption": "Add a caption...",
+  "howCanIHelp": "How can I help you?",
+  "voiceDictationIsntAvailable": "Voice dictation isn’t available on this device.",
+  "messageSyncra": "Message Syncra...",
+  "failedToShareThis": "Failed to share this chat. Please try again.",
+  "loadMore": "Load more",
+  "chooseAModel": "Choose a model",
+  "backToLogin": "Back to login",
+  "aLinkWasJust": "A link was just sent to this address. Please wait.",
+  "forgotPassword": "Forgot Password?",
+  "enterYourRegisteredEmail": "Enter your registered email address and we will send you a recovery link.",
+  "changeEmail": "Change email",
+  "enterYourEmail": "Enter your email",
+  "ifAnAccountExists": "If an account exists for this email, we’ve sent you a password reset link.",
+  "returnToLogin": "Return to Login",
+  "theRecoverySessionIs": "The recovery session is invalid or has expired. Please request a new link.",
+  "createNewPassword": "Create New Password",
+  "yourNewPasswordMust": "Your new password must be at least 6 characters long.",
+  "newPassword": "New Password",
+  "enterNewPassword": "Enter new password",
+  "confirmPassword": "Confirm Password",
+  "reEnterYourPassword": "Re-enter your password",
+  "passwordUpdatedSuccessfully": "Password updated successfully",
+  "enterEmail": "Enter Email",
+  "password": "Password",
+  "enterPassword": "Enter password",
+  "loginSuccessfully": "Login Successfully",
+  "orSignInWith": "Or Sign in with",
+  "fullName": "Full Name",
+  "yourFullName": "Your Full Name",
+  "enterNewEmail": "Enter New Email",
+  "typeYourPassword": "Type your password",
+  "retypeYourPassword": "Retype your password",
+  "signUpSuccessfully": "Sign up Successfully",
+  "orSignUpWith": "Or Sign up with",
+  "facebookLogInIs": "Facebook log in is in Dev Mode (Test accounts and admin only). Continue?",
+  "continueLabel": "Continue",
+  "unblockUser": "Unblock User",
+  "unblock": "Unblock",
+  "manageTheAccountsYouve": "Manage the accounts you’ve blocked",
+  "blocked": "Blocked",
+  "searchPeopleOrGroups": "Search people or groups...",
+  "askTheAiAssistant": "Ask the AI assistant about this",
+  "editingComment": "Editing comment",
+  "voice2": "🎤 voice",
+  "photo": "Photo",
+  "close": "Close",
+  "recordingVoiceMessage": "Recording voice message",
+  "delete": "Delete",
+  "report": "Report",
+  "deleteThisComment": "Delete this comment ?",
+  "commentDeletedSuccessfully": "Comment deleted successfully",
+  "youMentionedYourselfIn": "You mentioned yourself in this comment",
+  "edited": "· Edited",
+  "reply": "Reply",
+  "comments": "Comments",
+  "noCommentsYet": "No comments yet.",
+  "searchPeople": "Search people...",
+  "tryADifferentName": "Try a different name or username",
+  "retry": "Retry",
+  "peopleYouMayKnow": "People you may know",
+  "somethingWentWrongPlease": "Something went wrong. Please try again.",
+  "accept": "Accept",
+  "friends": "Friends",
+  "followsYou": "Follows you",
+  "couldNotLoadThe": "Could not load the image.",
+  "responseWithin24Hours": "Response within 24 hours (max 3 days).",
+  "yourMessage": "Your message",
+  "ourTeamHasReviewed": "Our team has reviewed this feedback. Thank you for helping us improve!",
+  "weAreWorkingOn": "We are working on this. You will be notified when we reply.",
+  "socialMateSupport": "Social Mate Support",
+  "official": "Official",
+  "myFeedbacks": "My Feedbacks",
+  "trackTheStatusOf": "Track the status of your submissions",
+  "couldNotLoadYour": "Could not load your feedbacks",
+  "noFeedbackYet": "No feedback yet",
+  "anythingYouSendUs": "Anything you send us will show up here with its status.",
+  "replyReceived": "Reply received",
+  "responseWithin24Hours2": "Response within 24 hours (max 3 days)",
+  "imageIsTooLarge": "Image is too large (max 10 MB).",
+  "couldNotOpenYour": "Could not open your gallery.",
+  "editedImageIsToo": "Edited image is too large (max 10 MB).",
+  "feedbackSubmittedSuccessfully": "Feedback Submitted Successfully",
+  "underReview": "Under Review",
+  "ourTeamTypicallyResponds": "Our team typically responds within 24 hours (up to 3 business days).",
+  "feedbackSupport": "Feedback & Support",
+  "helpUsImproveSocial": "Help us improve Social Mate",
+  "emailOrPhoneNumber": "Email or phone number",
+  "responseTime": "Response time",
+  "myFeedbacks2": "My feedbacks",
+  "attachAScreenshot": "Attach a screenshot",
+  "microphonePermissionIsRequired": "Microphone permission is required to record.",
+  "couldNotStartRecording": "Could not start recording.",
+  "recordingWasTooShort": "Recording was too short.",
+  "deleteVoiceNote": "Delete voice note",
+  "stop": "Stop",
+  "noGifsFound": "No GIFs found",
+  "searchGifs": "Search GIFs...",
+  "decline": "Decline",
+  "ongoingGroupCall": "Ongoing Group Call",
+  "theCallCouldNot": "The call could not be initiated.",
+  "back": "Back",
+  "flip": "Flip",
+  "end": "End",
+  "groupMembers": "Group Members",
+  "admin": "Admin",
+  "inCall": "In Call",
+  "syncraCantReadMedia": "Syncra can’t read media messages yet — try a text message.",
+  "deleteForMe": "Delete for me",
+  "deleteForEveryone": "Delete for everyone",
+  "failedToAddMembers": "Failed to add members. Please try again.",
+  "addMembers": "Add Members",
+  "noNewConnectionsTo": "No new connections to add",
+  "noPeopleFound": "No people found",
+  "buildYourCommunity": "Build Your Community",
+  "youHaventAddedAny2": "You haven’t added any connections yet.\nDiscover people nearby or explore suggested profiles to create your first group.",
+  "newGroup": "New Group",
+  "fileSent": "File sent",
+  "failedToUpdateGroup": "Failed to update group photo",
+  "removeMember": "Remove Member",
+  "remove": "Remove",
+  "failedToLoadMembers": "Failed to load members",
+  "groupNameUpdated": "Group name updated",
+  "groupTitleUpdated": "Group title updated",
+  "removeGroupPhoto": "Remove Group Photo",
+  "groupPhotoRemoved": "Group photo removed",
+  "leaveGroup": "Leave Group",
+  "blockGroup": "Block Group",
+  "deleteGroup": "Delete Group",
+  "groupSettings": "Group Settings",
+  "tapToJoin": "Tap to Join",
+  "search": "Search",
+  "groupInfo": "group info",
+  "pleaseEndYourCurrent2": "Please end your current call before joining another call.",
+  "join": "Join",
+  "voiceCall": "Voice call",
+  "videoCall": "Video call",
+  "youAreNoLonger": "You are no longer a member of this group",
+  "editingMessage": "Editing message",
+  "enterGroupName": "Enter group name",
+  "members": "Members",
+  "online2": "online",
+  "owner": "Owner",
+  "message": "Message",
+  "call": "Call",
+  "typeAMessage": "Type a message...",
+  "thisGroupIsNo": "This group is no longer available",
+  "failedToOpenGroup": "Failed to open group chat",
+  "linkExpiration": "Link Expiration",
+  "neverExpires": "Never expires",
+  "t24Hours": "24 hours",
+  "t2Days": "2 days",
+  "t1Week": "1 week",
+  "revokeInviteLink": "Revoke Invite Link",
+  "inviteLinkCopied": "Invite link copied",
+  "createALinkTo": "Create a link to let others join this group.",
+  "generate": "Generate",
+  "forward": "Forward",
+  "revokeLink": "Revoke Link",
+  "inviteLink": "Invite Link",
+  "addACaption2": "Add a caption…",
+  "add": "Add",
+  "noMessagesYet": "No messages yet.",
+  "groupName": "Group Name",
+  "groupName2": "Group name",
+  "saveName": "Save Name",
+  "groupTitle": "Group Title",
+  "addATitleFor": "Add a title for this group",
+  "saveTitle": "Save Title",
+  "groupOwner": "Group Owner",
+  "groupAdmins": "Group Admins",
+  "removeAdmin": "Remove Admin",
+  "removeFromGroup": "Remove from group",
+  "youMentionedAllGroup": "You mentioned all group members",
+  "youMentionedYourselfIn2": "You mentioned yourself in this message",
+  "searchPeople2": "Search people",
+  "edited2": "Edited",
+  "loadingMorePosts": "Loading more posts...",
+  "markRead": "Mark read",
+  "reject": "Reject",
+  "markAllRead": "Mark all read",
+  "thisPostIsNo": "This post is no longer available.",
+  "uploadCanceled": "Upload canceled",
+  "postPublishedSuccessfully": "Post Published Successfully",
+  "writeSomethingOrAttach": "Write something or attach a file to share your post.",
+  "contentNotAvailable": "Content not available",
+  "backgroundColor": "Background Color",
+  "savedPosts": "Saved Posts",
+  "thisFeatureIsComing": "this feature is coming soon",
+  "noSavedPostsYet": "No saved posts yet",
+  "tapTheBookmarkIcon": "Tap the bookmark icon on any post to save it here for later.",
+  "backgroundColorIsComing": "Background Color is coming soon",
+  "addGifIsComing": "Add GIF is coming soon",
+  "liveVideoIsComing": "Live Video is coming soon",
+  "createAPost": "Create a Post",
+  "post": "Post",
+  "whatsOnYourHead": "What’s on your head?",
+  "pinnedPost": "Pinned Post",
+  "reportPost": "Report Post",
+  "postPinnedToYour": "Post pinned to your profile",
+  "postUnpinned": "Post unpinned",
+  "openOriginalPost": "Open original post",
+  "suggestedForYou": "Suggested for you",
+  "failedToLoadReactions": "Failed to load reactions.",
+  "noReactionsYet": "No reactions yet.",
+  "youMentionedYourselfIn3": "You mentioned yourself in this post",
+  "videoUnavailableOffline": "Video unavailable offline",
+  "videoIsStillProcessing": "Video is still processing…",
+  "couldntLoadVideo": "Couldn’t load video",
+  "whatsOnYourMind": "What’s on your mind?",
+  "noPostsAvailable": "No posts available.",
+  "openPostDetails": "Open post details",
+  "profileUpdatedSuccessfully": "Profile Updated Successfully",
+  "youHaveUnsavedChanges": "You have unsaved changes. Do you want to discard them?",
+  "discard": "Discard",
+  "deletedAccount": "Deleted Account",
+  "name": "Name",
+  "enterNewName": "Enter New Name",
+  "username": "UserName",
+  "enterNewUsername": "Enter New UserName",
+  "title": "Title",
+  "enterNewTitle": "Enter New Title",
+  "bio": "Bio",
+  "enterNewBio": "Enter New Bio",
+  "socialMedia": "Social Media",
+  "chooseFromGallery": "Choose from Gallery",
+  "takeAPhoto": "Take a Photo",
+  "cropEdit": "Crop & edit",
+  "removePhoto": "Remove Photo",
+  "stories": "Stories",
+  "friendsList": "Friends List",
+  "declineRequest": "Decline request",
+  "sendMessage": "Send message",
+  "reportProfile": "Report profile",
+  "posts": "Posts",
+  "media": "Media",
+  "followers": "Followers",
+  "following": "Following",
+  "linkedinProfile": "LinkedIn Profile",
+  "status": "Status",
+  "aShortQuoteMood": "A short quote, mood or emoji statement",
+  "thisAccountHasBeen": "This account has been deleted",
+  "reactions": "Reactions",
+  "tapToRemove": "Tap to remove",
+  "whatDoYouLike": "What do you like?",
+  "chooseTheTopicsThat": "Choose the topics that interest you so we can personalize your reels experience.",
+  "skipForNow": "Skip for now",
+  "shareRemoved": "Share removed",
+  "reelSharedToYour": "Reel shared to your feed",
+  "couldNotShareThis": "Could not share this reel. Please try again.",
+  "linkCopiedToClipboard": "Link copied to clipboard",
+  "couldNotShareThis2": "Could not share this link. Please try again.",
+  "reshare": "Reshare",
+  "learnHowToPlay": "Learn how to play this video",
+  "openOnYoutube": "Open on YouTube",
+  "reels": "Reels",
+  "thanksForReportingOur": "Thanks for reporting. Our team will review it.",
+  "whyAreYouReporting": "Why are you reporting this? Your report is confidential.",
+  "reelsForYou": "Reels for you",
+  "peopleYouAddAs": "People you add as friends will show up here.",
+  "searchAccountsPostsReels": "Search accounts, posts, reels...",
+  "featuresLanguageUsage": "Features, language & usage",
+  "aiFeatures": "AI Features",
+  "aiAutoComplete": "AI Auto Complete",
+  "tapTheAiIcon": "Tap the AI icon to generate captions & replies",
+  "aiAutoDetect": "AI Auto Detect",
+  "automaticSpellingSuggestionsWhile": "Automatic spelling suggestions while you type",
+  "aiCommentSuggestions": "AI Comment Suggestions",
+  "quickAiSuggestedReplies": "Quick AI-suggested replies under posts",
+  "autoCompleteLanguage": "Auto Complete Language",
+  "replyTone": "Reply Tone",
+  "replyLength": "Reply Length",
+  "sendResetLink": "Send reset link?",
+  "sendLink": "Send link",
+  "passwordChangedSuccessfully": "Password changed successfully",
+  "updateYourAccountPassword": "Update your account password securely",
+  "pleaseSignInAgain": "Please sign in again to continue.",
+  "currentPassword": "Current Password",
+  "enterYourCurrentPassword": "Enter your current password",
+  "confirmNewPassword": "Confirm New Password",
+  "reEnterNewPassword": "Re-enter new password",
+  "yourEmailAddressWas": "Your email address was updated",
+  "emailVerified": "Email verified",
+  "confirmationLinkSent": "Confirmation link sent",
+  "confirmationLinkSentAgain": "Confirmation link sent again",
+  "emailChangeCancelled": "Email change cancelled",
+  "verificationEmailSent": "Verification email sent",
+  "keep": "Keep",
+  "cancelEmailChange": "Cancel email change?",
+  "manageAndUpdateYour": "Manage and update your linked email address",
+  "setAPasswordFirst": "Set a password first",
+  "changeEmailAddress": "Change email address",
+  "enterYourPassword": "Enter your password",
+  "newEmailAddress": "New Email Address",
+  "enterYourNewEmail": "Enter your new email",
+  "whichLanguageShouldAi": "Which language should AI captions, replies, and corrections use?",
+  "howLongShouldAi": "How long should AI-generated captions and replies be?",
+  "whatToneShouldAi": "What tone should AI-generated captions and replies use?",
+  "theAppIsLocked": "The app is locked.",
+  "useYourFingerprintOr": "Use your fingerprint or Face ID to open the app.",
+  "openTheApp": "Open the app",
+  "searchProfile": "Search Profile",
+  "yourChats": "Your Chats",
+  "yourThemes": "Your Themes",
+  "logOutSuccessfully": "Log out Successfully",
+  "isCallingYou": "is calling you...",
+  "returnToCall": "Return to call",
+  "sharedGroups": "Shared Groups",
+  "addAnOptionalCaption": "Add an optional caption...",
+  "editMessage": "Edit message",
+  "deleteMessage": "Delete message",
+  "youCannotSendMessages": "You cannot send messages to a deleted account.",
+  "t5Sec": "-5 sec",
+  "t5Sec2": "+5 sec",
+  "messages": "Messages",
+  "archivedChats2": "Archived chats",
+  "createGroup": "Create Group",
+  "repliedToStory": "Replied to Story",
+  "selectPeople": "Select People",
+  "searchFriends": "Search friends...",
+  "noFriendsYet": "No friends yet",
+  "couldntLoadMoreTap": "Couldn’t load more · Tap to retry",
+  "unfriend": "Unfriend",
+  "skip": "Skip",
+  "signIn": "Sign In",
+  "packName": "Pack Name",
+  "createStickerPack": "Create Sticker Pack",
+  "noStickersYet": "No Stickers Yet",
+  "discoverAndDownloadAmazing": "Discover and download amazing sticker packs from the library to express yourself.",
+  "exploreLibrary": "Explore Library",
+  "stickerLibrary": "Sticker Library",
+  "createPack": "Create Pack",
+  "createYourOwnSticker": "Create Your Own\nSticker Pack",
+  "privacyAudience": "Privacy & Audience",
+  "tapToChangeAudience": "Tap to change audience",
+  "stickers": "Stickers",
+  "nameYourPack": "Name your pack...",
+  "download": "Download",
+  "noFriendsFound": "No friends found.",
+  "browseLibrary": "Browse Library",
+  "share": "Share",
+  "couldNotLoadVideo": "Could not load video",
+  "storyAddedSuccessfully": "Story Added Successfully",
+  "thisStoryIsNo": "This story is no longer available",
+  "replySent": "Reply sent ✓",
+  "youMentionedYourselfIn4": "You mentioned yourself in this story",
+  "couldNotLoadStories": "Could not load stories",
+  "noStoriesYet": "No stories yet",
+  "createStory": "Create\nStory",
+  "shareStory": "Share Story",
+  "deleteStory": "Delete Story",
+  "reportStory": "Report Story",
+  "addToStory": "Add to Story",
+  "textStory": "Text Story",
+  "photoFromGallery": "Photo from Gallery",
+  "videoFromGallery": "Video from Gallery",
+  "max60Seconds": "Max 60 seconds",
+  "recordAVideo": "Record a Video",
+  "yourStory": "Your Story",
+  "writeYourThoughtWith": "Write your thought with others",
+  "couldntLoadViews": "Couldn’t load views.",
+  "noViewsYet": "No views yet",
+  "weCouldntLoadThis": "We couldn’t load this content. Please try again later.",
+  "searchForAQuestion": "Search for a question…",
+  "tableOfContents": "Table of Contents",
+  "stillNeedHelpContact": "Still need help? Contact Support",
+  "twoFactorWasTurned": "Two-factor was turned off after you used a recovery code.",
+  "twoStepVerification": "Two-step verification",
+  "pasteCode": "Paste code",
+  "notYouSignOut": "Not you? Sign out",
+  "leaveWithoutSaving": "Leave without saving?",
+  "stay": "Stay",
+  "leave": "Leave",
+  "saveYourRecoveryCodes": "Save your recovery codes",
+  "codesCopiedClipboardClears": "Codes copied. Clipboard clears in 60s.",
+  "copyAll": "Copy all",
+  "saveShare": "Save / Share",
+  "iSavedTheseCodes": "I saved these codes in a safe place",
+  "twoFactorAuthenticationIs": "Two-factor authentication is off",
+  "turnOffTwoFactor": "Turn off two-factor?",
+  "currentPassword2": "Current password",
+  "protectYourAccount": "Protect your account",
+  "noAuthenticatorAppFound": "No authenticator app found. Copy the secret key instead.",
+  "scanThisQrCode": "Scan this QR code",
+  "openYourAuthenticatorApp": "Open your authenticator app, add a new account and scan the code.",
+  "cantScanEnterThis": "Can’t scan? Enter this key manually",
+  "copySecret": "Copy secret",
+  "secretCopiedItWill": "Secret copied. It will be cleared in 60s.",
+  "openInAuthenticatorApp": "Open in authenticator app",
+  "enterThe6Digit": "Enter the 6-digit code",
+  "backToQrCode": "Back to QR code",
+  "thisClearsTheChat": "This clears the chat history on this device only. Other participants keep their own copy.",
+  "openThisFromA": "Open this from a chat to jump to the message",
+  "failedToDeleteMessage": "Failed to delete message",
+  "readBy": "Read by ({length})",
+  "@readBy": {
+    "placeholders": {
+      "length": {
+        "type": "Object"
+      }
+    }
+  },
+  "noGroupMembersHave": "No group members have read this message yet",
+  "delivered": "Delivered",
+  "deliveredToGroupMembers": "Delivered to group members",
+  "sent": "Sent",
+  "sentToServer": "Sent to server",
+  "read": "Read",
+  "model": "Model",
+  "aiEngine": "AI Engine",
+  "noResultsFoundFor": "No results found for \"{searchQuery}\"",
+  "@noResultsFoundFor": {
+    "placeholders": {
+      "searchQuery": {
+        "type": "Object"
+      }
+    }
+  },
+  "noStarredMessages": "No starred messages",
+  "tapAndHoldOn": "Tap and hold on any message to star it, so you can find it here later.",
+  "noSharedYet": "No {tab} shared yet",
+  "@noSharedYet": {
+    "placeholders": {
+      "tab": {
+        "type": "Object"
+      }
+    }
+  },
+  "showInChat": "Show in chat",
+  "sStory": "{authorName}’s Story",
+  "@sStory": {
+    "placeholders": {
+      "authorName": {
+        "type": "Object"
+      }
+    }
+  },
+  "imageFileNotFound": "Image file not found.",
+  "couldNotSaveYour": "Could not save your edit. Please try again.",
+  "videoFileNotFound": "Video file not found.",
+  "selected2": "Selected {selectedMs}",
+  "@selected2": {
+    "placeholders": {
+      "selectedMs": {
+        "type": "Object"
+      }
+    }
+  },
+  "total": "Total {totalMs}",
+  "@total": {
+    "placeholders": {
+      "totalMs": {
+        "type": "Object"
+      }
+    }
+  },
+  "maxLengthIs": "Max length is {maxMs}",
+  "@maxLengthIs": {
+    "placeholders": {
+      "maxMs": {
+        "type": "Object"
+      }
+    }
+  },
+  "thisCallHasAlready": "This call has already ended",
+  "failedToOpenStory": "Failed to open story",
+  "lastSeen": "Last seen {lastSeenStr}",
+  "@lastSeen": {
+    "placeholders": {
+      "lastSeenStr": {
+        "type": "Object"
+      }
+    }
+  },
+  "navigationError": "Navigation Error",
+  "route": "Route: {name}",
+  "@route": {
+    "placeholders": {
+      "name": {
+        "type": "Object"
+      }
+    }
+  },
+  "savedToGallerySuccessfully": "Saved to gallery successfully! ✅",
+  "pleaseAllowStorageAccess": "Please allow storage access from settings ⚙️",
+  "failedToSave": "Failed to save: {e} ❌",
+  "@failedToSave": {
+    "placeholders": {
+      "e": {
+        "type": "Object"
+      }
+    }
+  },
+  "enableMicrophoneCameraAccess": "Enable microphone/camera access in Settings to call",
+  "permissionRequired": "Permission required",
+  "accessIsTurnedOff": "{what} access is turned off for this app. Enable it in Settings to make or join calls.",
+  "@accessIsTurnedOff": {
+    "placeholders": {
+      "what": {
+        "type": "Object"
+      }
+    }
+  },
+  "notNow": "Not now",
+  "openSettings": "Open Settings",
+  "forwardedToChatS": "Forwarded to {length} chat(s)",
+  "@forwardedToChatS": {
+    "placeholders": {
+      "length": {
+        "type": "Object"
+      }
+    }
+  },
+  "isBusyOnAnother": "{receiverName} is busy on another call",
+  "@isBusyOnAnother": {
+    "placeholders": {
+      "receiverName": {
+        "type": "Object"
+      }
+    }
+  },
+  "socialAppAllRights": "© {year} Social App. All rights reserved.",
+  "@socialAppAllRights": {
+    "placeholders": {
+      "year": {
+        "type": "Object"
+      }
+    }
+  },
+  "resetsAt": "Resets at {resetTimeLabel}",
+  "@resetsAt": {
+    "placeholders": {
+      "resetTimeLabel": {
+        "type": "Object"
+      }
+    }
+  },
+  "bonus": "~{bonus} Bonus",
+  "@bonus": {
+    "placeholders": {
+      "bonus": {
+        "type": "Object"
+      }
+    }
+  },
+  "sharingThisWithSyncra": "Sharing this with Syncra is coming soon.",
+  "imageFileNotFound2": "Image file not found. Please try picking it again.",
+  "fileNotFoundPlease": "File not found. Please try picking it again.",
+  "filesLargerThan20mb": "Files larger than 20MB aren’t supported yet.",
+  "voiceMessageNotFound": "Voice message not found. Please try recording again.",
+  "failedToSendThe": "Failed to send the voice message. Please try again.",
+  "failedToSendThe2": "Failed to send the file. Please try again.",
+  "failedToUploadPlease": "Failed to upload. Please try again.",
+  "failedToSendThe3": "Failed to send the photo. Please try again.",
+  "couldntLoadThatFile": "Couldn’t load that file. Please try again.",
+  "couldntLoadThisConversation": "Couldn’t load this conversation.\n{message}",
+  "@couldntLoadThisConversation": {
+    "placeholders": {
+      "message": {
+        "type": "Object"
+      }
+    }
+  },
+  "deleteThisChat": "Delete this chat?",
+  "deleteThisPermanentlyRemoves": "Delete \"{title}\"? This permanently removes it from Syncra and can’t be undone.",
+  "@deleteThisPermanentlyRemoves": {
+    "placeholders": {
+      "title": {
+        "type": "Object"
+      }
+    }
+  },
+  "hi": "Hi, {userName} !",
+  "@hi": {
+    "placeholders": {
+      "userName": {
+        "type": "Object"
+      }
+    }
+  },
+  "open": "Open",
+  "bonus2": "+~{bonusGranted} Bonus",
+  "@bonus2": {
+    "placeholders": {
+      "bonusGranted": {
+        "type": "Object"
+      }
+    }
+  },
+  "usedOfYourDaily": "{percentLabel} used of your {effectiveUserLimit} daily requests ({usedLabel})",
+  "@usedOfYourDaily": {
+    "placeholders": {
+      "percentLabel": {
+        "type": "Object"
+      },
+      "effectiveUserLimit": {
+        "type": "Object"
+      },
+      "usedLabel": {
+        "type": "Object"
+      }
+    }
+  },
+  "yourAccountHasBeen": "Your account has been deleted successfully.",
+  "noConnectionCheckYour": "No connection. Check your internet, then tap the link in the email again.",
+  "somethingWentWrongPlease2": "Something went wrong. Please request a new link.",
+  "unblockTheyWillBe": "Unblock {name}? They will be able to message you again.",
+  "@unblockTheyWillBe": {
+    "placeholders": {
+      "name": {
+        "type": "Object"
+      }
+    }
+  },
+  "noBlockedUsers": "No Blocked Users",
+  "accountsYouBlockWill": "Accounts you block will show up here so you can manage them anytime.",
+  "selected3": "{totalSelected} selected",
+  "@selected3": {
+    "placeholders": {
+      "totalSelected": {
+        "type": "Object"
+      }
+    }
+  },
+  "noResultsFound": "No results found.",
+  "nowhereToForwardYet": "Nowhere to forward yet",
+  "addFriendsFollowPeople": "Add friends, follow people, or join a group first.",
+  "mentionedYouInThis": "{authorName} mentioned you in this comment",
+  "@mentionedYouInThis": {
+    "placeholders": {
+      "authorName": {
+        "type": "Object"
+      }
+    }
+  },
+  "mutualFriends": "{mutualFriendsCount} mutual friends",
+  "@mutualFriends": {
+    "placeholders": {
+      "mutualFriendsCount": {
+        "type": "Object"
+      }
+    }
+  },
+  "friends2": "{totalFriendsCount} friends",
+  "@friends2": {
+    "placeholders": {
+      "totalFriendsCount": {
+        "type": "Object"
+      }
+    }
+  },
+  "mutualGroups": "{mutualGroupsCount} mutual groups",
+  "@mutualGroups": {
+    "placeholders": {
+      "mutualGroupsCount": {
+        "type": "Object"
+      }
+    }
+  },
+  "mutual": "{mutualFriendsCount} Mutual",
+  "@mutual": {
+    "placeholders": {
+      "mutualFriendsCount": {
+        "type": "Object"
+      }
+    }
+  },
+  "mutual2": "{totalMutualCount} mutual",
+  "@mutual2": {
+    "placeholders": {
+      "totalMutualCount": {
+        "type": "Object"
+      }
+    }
+  },
+  "sent2": "Sent {createdAt}",
+  "@sent2": {
+    "placeholders": {
+      "createdAt": {
+        "type": "Object"
+      }
+    }
+  },
+  "recordAVoiceNote": "Record a voice note (up to {maxSeconds} min)",
+  "@recordAVoiceNote": {
+    "placeholders": {
+      "maxSeconds": {
+        "type": "Object"
+      }
+    }
+  },
+  "isCalling": "{initiatorName} is calling...",
+  "@isCalling": {
+    "placeholders": {
+      "initiatorName": {
+        "type": "Object"
+      }
+    }
+  },
+  "isComingSoon": "{feature} is coming soon",
+  "@isComingSoon": {
+    "placeholders": {
+      "feature": {
+        "type": "Object"
+      }
+    }
+  },
+  "selected4": "{length} selected",
+  "@selected4": {
+    "placeholders": {
+      "length": {
+        "type": "Object"
+      }
+    }
+  },
+  "noResultsFoundFor2": "No results found for \"{query}\"",
+  "@noResultsFoundFor2": {
+    "placeholders": {
+      "query": {
+        "type": "Object"
+      }
+    }
+  },
+  "membersSelected": "{length} members selected",
+  "@membersSelected": {
+    "placeholders": {
+      "length": {
+        "type": "Object"
+      }
+    }
+  },
+  "removeFromTheGroup": "Remove {userName} from the group?",
+  "@removeFromTheGroup": {
+    "placeholders": {
+      "userName": {
+        "type": "Object"
+      }
+    }
+  },
+  "isNowAnAdmin": "{userName} is now an admin",
+  "@isNowAnAdmin": {
+    "placeholders": {
+      "userName": {
+        "type": "Object"
+      }
+    }
+  },
+  "isNoLongerAn": "{userName} is no longer an admin",
+  "@isNoLongerAn": {
+    "placeholders": {
+      "userName": {
+        "type": "Object"
+      }
+    }
+  },
+  "removedFromTheGroup": "{userName} removed from the group",
+  "@removedFromTheGroup": {
+    "placeholders": {
+      "userName": {
+        "type": "Object"
+      }
+    }
+  },
+  "ongoing": "Ongoing",
+  "save": "Save",
+  "makeAdmin": "Make Admin",
+  "joinedViaThisLink": "{joinCount} joined via this link",
+  "@joinedViaThisLink": {
+    "placeholders": {
+      "joinCount": {
+        "type": "Object"
+      }
+    }
+  },
+  "members2": "{count} Members",
+  "@members2": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "mentionedAllGroupMembers": "{senderName} mentioned all group members",
+  "@mentionedAllGroupMembers": {
+    "placeholders": {
+      "senderName": {
+        "type": "Object"
+      }
+    }
+  },
+  "mentionedYouInThis2": "{senderName} mentioned you in this message",
+  "@mentionedYouInThis2": {
+    "placeholders": {
+      "senderName": {
+        "type": "Object"
+      }
+    }
+  },
+  "tapToOpenGroup": "Tap to open group chat",
+  "selected5": "{selectedCount} selected",
+  "@selected5": {
+    "placeholders": {
+      "selectedCount": {
+        "type": "Object"
+      }
+    }
+  },
+  "selected6": "{count} selected",
+  "@selected6": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "youreAllCaughtUp": "You’re all caught up!",
+  "pinLimitReachedUnpin": "Pin limit reached. Unpin a post first.",
+  "couldNotUpdateThe": "Could not update the pin. Please try again.",
+  "reactions2": "{length} Reactions",
+  "@reactions2": {
+    "placeholders": {
+      "length": {
+        "type": "Object"
+      }
+    }
+  },
+  "mentionedYouInThis3": "{authorName} mentioned you in this post",
+  "@mentionedYouInThis3": {
+    "placeholders": {
+      "authorName": {
+        "type": "Object"
+      }
+    }
+  },
+  "thisAccountHasBeen2": "This account has been deleted and its profile is no longer available.",
+  "couldNotOpenLink": "Could not open {label} link",
+  "@couldNotOpenLink": {
+    "placeholders": {
+      "label": {
+        "type": "Object"
+      }
+    }
+  },
+  "viewProfessionalProfileOn": "View professional profile on LinkedIn",
+  "yourStatusWillBe": "Your status will be hidden from your profile until you switch this back on.",
+  "tooManyReportsIn": "Too many reports in a short time. Please try again later.",
+  "thisContentIsNo": "This content is no longer available.",
+  "youCantReportThis": "You can’t report this content.",
+  "report2": "Report {label}",
+  "@report2": {
+    "placeholders": {
+      "label": {
+        "type": "Object"
+      }
+    }
+  },
+  "thisFeatureChecksYour": "This feature checks your typing continuously, so it may use up your daily AI quota faster.",
+  "sendAPasswordReset": "Send a password reset link to {email}?\n\nYou will stay signed in on this device.",
+  "@sendAPasswordReset": {
+    "placeholders": {
+      "email": {
+        "type": "Object"
+      }
+    }
+  },
+  "resetLinkSentTo": "Reset link sent to {email}. Check your inbox.",
+  "@resetLinkSentTo": {
+    "placeholders": {
+      "email": {
+        "type": "Object"
+      }
+    }
+  },
+  "linkedTo": "Linked to {oauthLabel}",
+  "@linkedTo": {
+    "placeholders": {
+      "oauthLabel": {
+        "type": "Object"
+      }
+    }
+  },
+  "yourAccountIsLinked": "Your account is linked to {oauthLabel}. You can set a password to enable email login.",
+  "@yourAccountIsLinked": {
+    "placeholders": {
+      "oauthLabel": {
+        "type": "Object"
+      }
+    }
+  },
+  "youWillStaySigned": "You will stay signed in on this device. Any other devices will be signed out.",
+  "yourEmailStaysThe": "Your email stays {currentEmail}. The link sent to {pendingEmail} will no longer work.",
+  "@yourEmailStaysThe": {
+    "placeholders": {
+      "currentEmail": {
+        "type": "Object"
+      },
+      "pendingEmail": {
+        "type": "Object"
+      }
+    }
+  },
+  "forYourSecurityWe": "For your security, we will ask for your password before changing your email.",
+  "toChangeYourEmail": "To change your email address you first need a password on this account, so we can confirm it is really you.",
+  "currentEmail": "CURRENT EMAIL",
+  "verified": "Verified",
+  "unverified": "Unverified",
+  "verifyThisAddressSo": "Verify this address so you can recover your account and receive important notices.",
+  "signInMethod": "Sign-in method",
+  "confirmYourNewEmail": "Confirm your new email",
+  "confirmationLinkSentTo": "Confirmation link sent to {pendingEmail}. Please click the link to confirm your new address. Your current email remains active until confirmed.",
+  "@confirmationLinkSentTo": {
+    "placeholders": {
+      "pendingEmail": {
+        "type": "Object"
+      }
+    }
+  },
+  "cannotFindItCheck": "Cannot find it? Check your spam folder. You may also be asked to approve the change from your current inbox.",
+  "cancelRequest": "Cancel Request",
+  "enterYourPasswordAnd": "Enter your password and the new address. We’ll email a confirmation link, and your current email stays active until you confirm.",
+  "yourProfileWillBe": "Your profile will be anonymized as \"Deleted Account\" and you will be signed out on all devices. Your posts, comments and messages stay visible to others under that name. This cannot be undone.",
+  "thisAccountHasBeen3": "This account has been deleted.",
+  "noConnectionsYet": "No Connections Yet",
+  "addSomeFriendsOr": "Add some friends or followers first so you can share private posts with them.",
+  "noUsersFound2": "No users found.",
+  "public": "Public",
+  "anyoneOnTheApp": "Anyone on the app can see this",
+  "onlyYourFriendsCan": "Only your friends can see this",
+  "specificPeople": "Specific people",
+  "onlySpecificPeopleYou": "Only specific people you choose",
+  "removeFromYourFriends": "Remove {friendName} from your friends?",
+  "@removeFromYourFriends": {
+    "placeholders": {
+      "friendName": {
+        "type": "Object"
+      }
+    }
+  },
+  "couldNotDeleteThe": "Could not delete the pack, please try again.",
+  "couldNotOpenThe": "Could not open the gallery, please try again.",
+  "thisPackAlreadyHas": "This pack already has the maximum of {maxStickers} stickers.",
+  "@thisPackAlreadyHas": {
+    "placeholders": {
+      "maxStickers": {
+        "type": "Object"
+      }
+    }
+  },
+  "onlyTheFirstImage": "Only the first {remainingSlots} image(s) were added — a pack can hold at most {maxStickers} stickers.",
+  "@onlyTheFirstImage": {
+    "placeholders": {
+      "remainingSlots": {
+        "type": "Object"
+      },
+      "maxStickers": {
+        "type": "Object"
+      }
+    }
+  },
+  "thisSelectionPushesThe": "This selection pushes the pack past the 25 MB limit — pick fewer or smaller images.",
+  "giveYourPackA": "Give your pack a name first.",
+  "addAtLeastOne": "Add at least one sticker.",
+  "pickAtLeastOne": "Pick at least one friend, or change the privacy setting.",
+  "couldNotVerifyYour": "Could not verify your pack quota, please try again.",
+  "uploadCancelled": "Upload cancelled.",
+  "couldNotCreateThe": "Could not create the pack, please try again.",
+  "youAlreadyOwn3": "You already own 3 sticker packs — the maximum allowed. Remove one below to create a new pack.",
+  "stickers2": "{stickerCount} stickers",
+  "@stickers2": {
+    "placeholders": {
+      "stickerCount": {
+        "type": "Object"
+      }
+    }
+  },
+  "uploading": "Uploading  •  {label}",
+  "@uploading": {
+    "placeholders": {
+      "label": {
+        "type": "Object"
+      }
+    }
+  },
+  "packCreated": "Pack \"{title}\" created!",
+  "@packCreated": {
+    "placeholders": {
+      "title": {
+        "type": "Object"
+      }
+    }
+  },
+  "t25Mb": "{length}/{maxStickers}  •  {sizeMb}/25 MB",
+  "@t25Mb": {
+    "placeholders": {
+      "length": {
+        "type": "Object"
+      },
+      "maxStickers": {
+        "type": "Object"
+      },
+      "sizeMb": {
+        "type": "Object"
+      }
+    }
+  },
+  "defaultStoryPrivacySet": "Default story privacy set to {label}",
+  "@defaultStoryPrivacySet": {
+    "placeholders": {
+      "label": {
+        "type": "Object"
+      }
+    }
+  },
+  "mentionedYouInThis4": "{authorName} mentioned you in this story",
+  "@mentionedYouInThis4": {
+    "placeholders": {
+      "authorName": {
+        "type": "Object"
+      }
+    }
+  },
+  "error": "Error: {message}",
+  "@error": {
+    "placeholders": {
+      "message": {
+        "type": "Object"
+      }
+    }
+  },
+  "failedToSendReply": "Failed to send reply: {message}",
+  "@failedToSendReply": {
+    "placeholders": {
+      "message": {
+        "type": "Object"
+      }
+    }
+  },
+  "replyToSStory": "Reply to {authorName}’s story…",
+  "@replyToSStory": {
+    "placeholders": {
+      "authorName": {
+        "type": "Object"
+      }
+    }
+  },
+  "views": "{count} Views",
+  "@views": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "couldNotOpenYour2": "Could not open your email app.",
+  "noResultsFor": "No results for \"{query}\"",
+  "@noResultsFor": {
+    "placeholders": {
+      "query": {
+        "type": "Object"
+      }
+    }
+  },
+  "tooManyAttemptsTry": "Too many attempts. Try again in {lockRemaining}.",
+  "@tooManyAttemptsTry": {
+    "placeholders": {
+      "lockRemaining": {
+        "type": "Object"
+      }
+    }
+  },
+  "stillNotWorkingMake": "Still not working? Make sure your phone’s date and time are set to automatic in your device settings.",
+  "yourRecoveryCodesWill": "Your recovery codes will not be shown again. Two-factor stays on, and you can generate new codes later from Settings.",
+  "stepOf4": "Step {step} of 4",
+  "@stepOf4": {
+    "placeholders": {
+      "step": {
+        "type": "Object"
+      }
+    }
+  },
+  "twoFactorAuthenticationIs2": "Two-factor authentication is on",
+  "couldNotStartSetup": "Could not start setup",
+  "twoFactorIsOn": "Two-factor is on, but codes failed",
+  "yourAccountIsAlready": "{generated}\n\nYour account is already protected. Retry now, or generate codes later from Settings.",
+  "@yourAccountIsAlready": {
+    "placeholders": {
+      "generated": {
+        "type": "Object"
+      }
+    }
+  },
+  "keepTheseCodesIn": "Keep these codes in a safe place to recover your account if you lose your phone. Each code works once and they will not be shown again.",
+  "yourAccountWillBe": "Your account will be protected by your password only. Your recovery codes will be deleted. Confirm it is you to continue.",
+  "evenIfSomeoneLearns": "Even if someone learns your password, they cannot sign in without a code from your phone.",
+  "typeTheCodeYour": "Type the code your authenticator app shows for Social Mate to confirm it is linked.",
+  "mutualFriendsCount": "{count, plural, =1{1 mutual friend} other{{count} mutual friends}}",
+  "@mutualFriendsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mutualGroupsCount": "{count, plural, =1{1 mutual group} other{{count} mutual groups}}",
+  "@mutualGroupsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "newPostsCount": "{count, plural, =1{1 New Post} other{{count} New Posts}}",
+  "@newPostsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "starsCount": "{count, plural, =1{1 star} other{{count} stars}}",
+  "@starsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "forwardNMessages": "Forward {count, plural, =1{message} other{{count} messages}}",
+  "@forwardNMessages": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "videoIsSMax": "Video is {inSeconds}s — max allowed is {inSeconds2}s.",
+  "@videoIsSMax": {
+    "placeholders": {
+      "inSeconds": {
+        "type": "Object"
+      },
+      "inSeconds2": {
+        "type": "Object"
+      }
+    }
+  },
+  "deleteNChats": "Delete {count, plural, =1{1 chat} other{{count} chats}}?",
+  "@deleteNChats": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "deleteNMessages": "Delete {count, plural, =1{1 message} other{{count} messages}}?",
+  "@deleteNMessages": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "membersCountPlural": "{count, plural, =1{1 member} other{{count} members}}",
+  "@membersCountPlural": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "onboardingOneTitle": "Find Friends & Get Inspiration",
+  "onboardingOneSubtitle": "Discover creative content, explore new ideas, and connect with a global community that shares your interests.",
+  "onboardingTwoTitle": "Meet Awesome People & Enjoy yourself",
+  "onboardingTwoSubtitle": "Expand your social network, engage in meaningful conversations, and share your favorite moments with others.",
+  "onboardingThreeTitle": "Hangout with Friends",
+  "onboardingThreeSubtitle": "Stay close to your loved ones through seamless video, voice, and text chats no matter where you are.",
+  "deletedForEveryone": "Deleted for everyone",
+  "deletedForYou": "Deleted for you",
+  "photo2": "📷 Photo",
+  "video2": "🎥 Video",
+  "voiceMessage": "🎤 Voice message",
+  "gif": "🖼️ GIF",
+  "sticker2": "🏷️ Sticker",
+  "call2": "📞 Call",
+  "attachment": "📎 Attachment",
+  "reactWithTo": "{actor} react with {emoji} to {snippet}",
+  "@reactWithTo": {
+    "placeholders": {
+      "actor": {
+        "type": "Object"
+      },
+      "emoji": {
+        "type": "Object"
+      },
+      "snippet": {
+        "type": "Object"
+      }
+    }
+  },
+  "reactWithTo2": "{actor} react with {emoji} to \"{snippet}\"",
+  "@reactWithTo2": {
+    "placeholders": {
+      "actor": {
+        "type": "Object"
+      },
+      "emoji": {
+        "type": "Object"
+      },
+      "snippet": {
+        "type": "Object"
+      }
+    }
+  },
+  "seenBy": "Seen by {receiverName}",
+  "@seenBy": {
+    "placeholders": {
+      "receiverName": {
+        "type": "Object"
+      }
+    }
+  },
+  "notReadYet": "Not read yet",
+  "deliveredTo": "Delivered to {receiverName}",
+  "@deliveredTo": {
+    "placeholders": {
+      "receiverName": {
+        "type": "Object"
+      }
+    }
+  },
+  "deliveredToAi": "Delivered to AI",
+  "responseCreated": "Response created",
+  "noConversationsYet2": "No conversations yet.",
+  "noChatsYet": "No chats yet.",
+  "noGroupsYet": "No groups yet.",
+  "noFavoriteChatsYet": "No favorite chats yet.",
+  "noUnreadChats": "No unread chats.",
+  "bringYourFriendsTogether": "Bring your friends together.\nCreate a space to share moments.",
+  "yourInboxIsWaiting": "Your inbox is waiting.\nStart a conversation and explore new connections.",
+  "startChat": "Start Chat",
+  "voiceMessages": "voice messages",
+  "viewPhoto": "View photo",
+  "playVideo": "Play video",
+  "playVoiceMessage": "Play voice message",
+  "mixedSelection": "Mixed selection",
+  "deleteThisMessageFor": "Delete this message for everyone?",
+  "deleteThisMessageFor2": "Delete this message for you?",
+  "deleteFromMe": "Delete from me",
+  "justNow": "Just now",
+  "min": "{inMinutes} min",
+  "@min": {
+    "placeholders": {
+      "inMinutes": {
+        "type": "Object"
+      }
+    }
+  },
+  "todayAt": "Today at {time}",
+  "@todayAt": {
+    "placeholders": {
+      "time": {
+        "type": "Object"
+      }
+    }
+  },
+  "yesterdayAt": "Yesterday at {time}",
+  "@yesterdayAt": {
+    "placeholders": {
+      "time": {
+        "type": "Object"
+      }
+    }
+  },
+  "allAllMembers": "all (@all members)",
+  "readMore": "Read more...",
+  "showLess": "Show less",
+  "youHaveReachedThe": "You have reached the daily limit for free AI usage. Please try again tomorrow.",
+  "youHaveUsedUp": "You have used up your daily quota of AI suggestions. It will reset tomorrow.",
+  "spellingCorrection": "Spelling Correction",
+  "smartReplyToImages": "Smart reply to images is currently unavailable",
+  "aiSuggestion": "AI Suggestion",
+  "chatSummary": "Chat Summary",
+  "detailedSummary": "Detailed Summary",
+  "whatIsTheTopic": "What is the topic?",
+  "thereArentEnoughMessages": "There aren’t enough messages in the chat to summarize.",
+  "youHaveUsedUp2": "You have used up your daily AI quota. Please try again tomorrow.",
+  "anErrorOccurredPlease": "An error occurred. Please try again later.",
+  "usedOfYourDaily2": "used of your {dailyLimit} daily requests",
+  "@usedOfYourDaily2": {
+    "placeholders": {
+      "dailyLimit": {
+        "type": "Object"
+      }
+    }
+  },
+  "forwardedFile": "Forwarded File",
+  "youveReachedTodaysSyncra": "You’ve reached today’s Syncra limit — try again tomorrow.",
+  "syncraIsABit": "Syncra is a bit busy right now — please try again shortly.",
+  "syncraCouldntReachAny": "Syncra couldn’t reach any AI provider — please try again.",
+  "voiceMessage2": "Voice message",
+  "voiceMessage3": "Voice message · {seconds}",
+  "@voiceMessage3": {
+    "placeholders": {
+      "seconds": {
+        "type": "Object"
+      }
+    }
+  },
+  "couldntLoadYourConversations": "Couldn’t load your conversations.",
+  "noConversationsYetStart": "No conversations yet — start one above.",
+  "thisLinkWasAlready": "This link was already used",
+  "thisLinkIsNo": "This link is no longer valid",
+  "yourPasswordWasAlready": "Your password was already updated and you’re signed in.",
+  "thisLinkHasExpired": "This link has expired or has already been used. Please request a new one.",
+  "goToHome": "Go to Home",
+  "requestNewLink": "Request new link",
+  "signIn2": "Sign in",
+  "signUp": "Sign up",
+  "resendInS": "Resend in {secondsRemaining}s",
+  "@resendInS": {
+    "placeholders": {
+      "secondsRemaining": {
+        "type": "Object"
+      }
+    }
+  },
+  "sendResetLink2": "Send Reset Link",
+  "failedToLoadYour": "Failed to load your chats.",
+  "send": "Send ({totalSelected})",
+  "@send": {
+    "placeholders": {
+      "totalSelected": {
+        "type": "Object"
+      }
+    }
+  },
+  "forwardedFrom": "Forwarded from ",
+  "replyingTo": "Replying to ",
+  "and": "{name} and {name2}",
+  "@and": {
+    "placeholders": {
+      "name": {
+        "type": "Object"
+      },
+      "name2": {
+        "type": "Object"
+      }
+    }
+  },
+  "andOthers": "{name} and {length} others",
+  "@andOthers": {
+    "placeholders": {
+      "name": {
+        "type": "Object"
+      },
+      "length": {
+        "type": "Object"
+      }
+    }
+  },
+  "isWritingAComment": " is writing a comment...",
+  "areWritingAComment": " are writing a comment...",
+  "microphonePermissionDenied": "Microphone permission denied",
+  "couldNotStartRecording2": "Could not start recording",
+  "hideReplies": "Hide replies",
+  "stickerReadyToSend": "Sticker ready to send",
+  "replyTo": "Reply to @{replyingToAuthorName}...",
+  "@replyTo": {
+    "placeholders": {
+      "replyingToAuthorName": {
+        "type": "Object"
+      }
+    }
+  },
+  "writeAComment": "Write a comment...",
+  "noSuggestionsRightNow": "No suggestions right now",
+  "feedback": "Feedback #{shortId}",
+  "@feedback": {
+    "placeholders": {
+      "shortId": {
+        "type": "Object"
+      }
+    }
+  },
+  "supportConversation": "Support conversation",
+  "couldNotLoadThis2": "Could not load this feedback.",
+  "thisFeedbackIsNo": "This feedback is no longer available.",
+  "pleaseTellUsWhat": "Please tell us what is on your mind.",
+  "pleaseWriteAtLeast": "Please write at least {minMessageLength} characters.",
+  "@pleaseWriteAtLeast": {
+    "placeholders": {
+      "minMessageLength": {
+        "type": "Object"
+      }
+    }
+  },
+  "enterAValidEmail": "Enter a valid email or phone number.",
+  "yourRating": "Your rating *",
+  "yourRatingOptional": "Your rating (optional)",
+  "dailyLimitReached": "Daily limit reached",
+  "submitFeedback": "Submit Feedback",
+  "whatWentWrongWhat": "What went wrong? What did you expect to happen?",
+  "describeTheFeatureYou": "Describe the feature you would love to see…",
+  "whatWouldYouLike": "What would you like to know?",
+  "shareYourExperienceWith": "Share your experience with Social Mate…",
+  "tellUsWhatYou": "Tell us what you enjoy!",
+  "writeYourMessageHere": "Write your message here…",
+  "dailyLimitReachedNext": "Daily limit reached · next feedback in {left}",
+  "@dailyLimitReachedNext": {
+    "placeholders": {
+      "left": {
+        "type": "Object"
+      }
+    }
+  },
+  "ofFeedbacksLeftToday": "{remaining} of {limit} feedbacks left today",
+  "@ofFeedbacksLeftToday": {
+    "placeholders": {
+      "remaining": {
+        "type": "Object"
+      },
+      "limit": {
+        "type": "Object"
+      }
+    }
+  },
+  "couldNotLoadGifs": "Could not load GIFs",
+  "incomingGroupVideo": "Incoming Group Video",
+  "incomingGroupVoice": "Incoming Group Voice",
+  "tapToReturnTo": "Tap to return to the group call",
+  "groupVideoCall": "Group Video Call",
+  "groupVoiceCall": "Group Voice Call",
+  "callingGroupVideo": "Calling group (Video)...",
+  "callingGroupAudio": "Calling group (Audio)...",
+  "inTheCall": "In the call",
+  "notInTheCall": "Not in the call",
+  "ringing": "Ringing…",
+  "added": "{actor} added {target}",
+  "@added": {
+    "placeholders": {
+      "actor": {
+        "type": "Object"
+      },
+      "target": {
+        "type": "Object"
+      }
+    }
+  },
+  "removed": "{actor} removed {target}",
+  "@removed": {
+    "placeholders": {
+      "actor": {
+        "type": "Object"
+      },
+      "target": {
+        "type": "Object"
+      }
+    }
+  },
+  "leftTheGroup": "{actor} left the group",
+  "@leftTheGroup": {
+    "placeholders": {
+      "actor": {
+        "type": "Object"
+      }
+    }
+  },
+  "noMessagesYet2": "No messages yet",
+  "photo3": "{senderName}: 📷 Photo",
+  "@photo3": {
+    "placeholders": {
+      "senderName": {
+        "type": "Object"
+      }
+    }
+  },
+  "video3": "{senderName}: 🎬 Video",
+  "@video3": {
+    "placeholders": {
+      "senderName": {
+        "type": "Object"
+      }
+    }
+  },
+  "gif2": "{senderName}: 🎞️ GIF",
+  "@gif2": {
+    "placeholders": {
+      "senderName": {
+        "type": "Object"
+      }
+    }
+  },
+  "sticker3": "{senderName}: 😊 Sticker",
+  "@sticker3": {
+    "placeholders": {
+      "senderName": {
+        "type": "Object"
+      }
+    }
+  },
+  "voiceMessage4": "{senderName}: 🎤 Voice message",
+  "@voiceMessage4": {
+    "placeholders": {
+      "senderName": {
+        "type": "Object"
+      }
+    }
+  },
+  "groupCall": "{senderName}: 📞 Group Call",
+  "@groupCall": {
+    "placeholders": {
+      "senderName": {
+        "type": "Object"
+      }
+    }
+  },
+  "addedOnePersonIsnt": "Added {length}. One person isn’t available to join right now.",
+  "@addedOnePersonIsnt": {
+    "placeholders": {
+      "length": {
+        "type": "Object"
+      }
+    }
+  },
+  "addedPeopleArentAvailable": "Added {length}. {length2} people aren’t available to join right now.",
+  "@addedPeopleArentAvailable": {
+    "placeholders": {
+      "length": {
+        "type": "Object"
+      },
+      "length2": {
+        "type": "Object"
+      }
+    }
+  },
+  "thisPersonIsntAvailable": "This person isn’t available to join the group right now.",
+  "thesePeopleArentAvailable": "These people aren’t available to join the group right now.",
+  "addMembers2": "Add {length} Members",
+  "@addMembers2": {
+    "placeholders": {
+      "length": {
+        "type": "Object"
+      }
+    }
+  },
+  "createGroup2": "Create Group ({length})",
+  "@createGroup2": {
+    "placeholders": {
+      "length": {
+        "type": "Object"
+      }
+    }
+  },
+  "youWillLeaveThe": "You will leave \"{name}\", the chat history on this device will be cleared, and you won’t be able to be re-added to this group. Continue?",
+  "@youWillLeaveThe": {
+    "placeholders": {
+      "name": {
+        "type": "Object"
+      }
+    }
+  },
+  "theChatHistoryOn": "The chat history on this device will be cleared, and you won’t be able to be re-added to this group. Continue?",
+  "missedVoiceCall": "Missed voice call",
+  "missedVideoCall": "Missed video call",
+  "endedCall": "Ended call",
+  "groupVoiceCall2": "Group voice call",
+  "groupVideoCall2": "Group video call",
+  "missedCall": "Missed Call",
+  "ongoingTapToJoin": "Ongoing • Tap to Join",
+  "ended": "Ended • {duration}",
+  "@ended": {
+    "placeholders": {
+      "duration": {
+        "type": "Object"
+      }
+    }
+  },
+  "thisInviteLinkIs": "This invite link is no longer valid",
+  "openChat": "Open Chat",
+  "joinGroup": "Join Group",
+  "joinOnSocialMedia": "Join \"{groupName}\" on Social Media App: {hash}",
+  "@joinOnSocialMedia": {
+    "placeholders": {
+      "groupName": {
+        "type": "Object"
+      },
+      "hash": {
+        "type": "Object"
+      }
+    }
+  },
+  "expiresInDH": "Expires in {inDays}d {remainder}h",
+  "@expiresInDH": {
+    "placeholders": {
+      "inDays": {
+        "type": "Object"
+      },
+      "remainder": {
+        "type": "Object"
+      }
+    }
+  },
+  "expiresInHM": "Expires in {inHours}h {remainder}m",
+  "@expiresInHM": {
+    "placeholders": {
+      "inHours": {
+        "type": "Object"
+      },
+      "remainder": {
+        "type": "Object"
+      }
+    }
+  },
+  "expiresInM": "Expires in {inMinutes}m",
+  "@expiresInM": {
+    "placeholders": {
+      "inMinutes": {
+        "type": "Object"
+      }
+    }
+  },
+  "recordingAudio": "{userName} recording audio...",
+  "@recordingAudio": {
+    "placeholders": {
+      "userName": {
+        "type": "Object"
+      }
+    }
+  },
+  "peopleRecordingAudio": "{length} people recording audio...",
+  "@peopleRecordingAudio": {
+    "placeholders": {
+      "length": {
+        "type": "Object"
+      }
+    }
+  },
+  "noNotificationsYet": "No notifications yet",
+  "noNotifications": "No {name} notifications",
+  "@noNotifications": {
+    "placeholders": {
+      "name": {
+        "type": "Object"
+      }
+    }
+  },
+  "followBack": "Follow Back",
+  "sharedSuccessfully": "Shared successfully",
+  "postRemovedFromSaves": "Post removed from saves",
+  "postSavedSuccessfully": "Post saved successfully",
+  "publishingPost": "Publishing Post...",
+  "unpinPost": "Unpin Post",
+  "pinPost": "Pin Post",
+  "removeShare": "Remove Share",
+  "removeThisShareFrom": "Remove this share from your profile?",
+  "areYouSureYou2": "Are you sure you want to delete this post?",
+  "postDeletedSuccessfully": "Post deleted successfully",
+  "reshareRemoved": "Reshare removed",
+  "resharedSuccessfully": "Reshared successfully",
+  "aReel": "a reel",
+  "aPost": "a post",
+  "unknownUser": "Unknown User",
+  "shared": "  shared {contentLabel}",
+  "@shared": {
+    "placeholders": {
+      "contentLabel": {
+        "type": "Object"
+      }
+    }
+  },
+  "editProfilePicture": "Edit Profile Picture",
+  "editCoverPhoto": "Edit Cover Photo",
+  "optionalShownAsRich": "Optional — shown as rich cards on your profile.",
+  "noProvidedYet": "No {title} provided yet.",
+  "@noProvidedYet": {
+    "placeholders": {
+      "title": {
+        "type": "Object"
+      }
+    }
+  },
+  "isFriendsWithBoth": "{names} is friends with both of you",
+  "@isFriendsWithBoth": {
+    "placeholders": {
+      "names": {
+        "type": "Object"
+      }
+    }
+  },
+  "andAreFriendsWith": "{names} and {second} are friends with both of you",
+  "@andAreFriendsWith": {
+    "placeholders": {
+      "names": {
+        "type": "Object"
+      },
+      "second": {
+        "type": "Object"
+      }
+    }
+  },
+  "andOthersAreFriends": "{names} and {others} others are friends with both of you",
+  "@andOthersAreFriends": {
+    "placeholders": {
+      "names": {
+        "type": "Object"
+      },
+      "others": {
+        "type": "Object"
+      }
+    }
+  },
+  "noPostsToShow": "No posts to show yet",
+  "noPostsYet": "No posts yet",
+  "shareYourThoughtsWith": "Share your thoughts with your friends.",
+  "thisPersonHasntShared": "This person hasn’t shared anything yet.",
+  "addAStatus": "Add a status ✨",
+  "showOnProfile": "Show on profile",
+  "hideFromProfile": "Hide from profile",
+  "doneSelected": "Done ({length} selected)",
+  "@doneSelected": {
+    "placeholders": {
+      "length": {
+        "type": "Object"
+      }
+    }
+  },
+  "tellUsWhatIs": "Tell us what is wrong (required)",
+  "addDetailsOptional": "Add details (optional)",
+  "submitReport": "Submit report",
+  "noAccountsToDiscover": "No accounts to discover yet",
+  "noAccountsFoundFor": "No accounts found for \"{query}\"",
+  "@noAccountsFoundFor": {
+    "placeholders": {
+      "query": {
+        "type": "Object"
+      }
+    }
+  },
+  "nothingToShowYet": "Nothing to show yet",
+  "noFriendsFoundFor": "No friends found for \"{query}\"",
+  "@noFriendsFoundFor": {
+    "placeholders": {
+      "query": {
+        "type": "Object"
+      }
+    }
+  },
+  "youHaventJoinedAny": "You haven’t joined any groups yet",
+  "searchForGroups": "Search for groups",
+  "noGroupsFoundFor": "No groups found for \"{query}\"",
+  "@noGroupsFoundFor": {
+    "placeholders": {
+      "query": {
+        "type": "Object"
+      }
+    }
+  },
+  "noReelsAvailable": "No reels available",
+  "noReelsFoundFor": "No reels found for \"{query}\"",
+  "@noReelsFoundFor": {
+    "placeholders": {
+      "query": {
+        "type": "Object"
+      }
+    }
+  },
+  "currentPasswordIsRequired": "Current password is required",
+  "resetLinkSentResend": "Reset link sent · resend in {secs}s",
+  "@resetLinkSentResend": {
+    "placeholders": {
+      "secs": {
+        "type": "Object"
+      }
+    }
+  },
+  "forgotYourCurrentPassword": "Forgot your current password?",
+  "newPasswordMustBe": "New password must be different from current password",
+  "updatePassword": "Update Password",
+  "setPassword": "Set Password",
+  "noEmailOnFile": "No email on file",
+  "isAlsoLinkedTo": "{oauthLabel} is also linked to this account. Changing your email here does not change your {oauthLabel2} account.",
+  "@isAlsoLinkedTo": {
+    "placeholders": {
+      "oauthLabel": {
+        "type": "Object"
+      },
+      "oauthLabel2": {
+        "type": "Object"
+      }
+    }
+  },
+  "yourPrimarySignIn": "Your primary sign-in is managed by {oauthLabel}. Your email is tied to that provider.",
+  "@yourPrimarySignIn": {
+    "placeholders": {
+      "oauthLabel": {
+        "type": "Object"
+      }
+    }
+  },
+  "resendInS2": "Resend in {secs}s",
+  "@resendInS2": {
+    "placeholders": {
+      "secs": {
+        "type": "Object"
+      }
+    }
+  },
+  "resendVerification": "Resend Verification",
+  "resendLink": "Resend Link",
+  "passwordIsRequired": "Password is required",
+  "newEmailMustBe": "New email must be different from your current email",
+  "confirmYourPassword": "Confirm your password",
+  "oneLastConfirmation": "One last confirmation",
+  "typeToConfirm": "Type {confirmationWord} to confirm",
+  "@typeToConfirm": {
+    "placeholders": {
+      "confirmationWord": {
+        "type": "Object"
+      }
+    }
+  },
+  "videoCall2": "Video Call",
+  "voiceCall2": "Voice Call",
+  "callingVideo": "Calling (Video)...",
+  "callingAudio": "Calling (Audio)...",
+  "incomingVideoCall": "Incoming Video Call",
+  "incomingVoiceCall": "Incoming Voice Call",
+  "youCantMessageUntil": "You can’t message {name} until you unblock them.",
+  "@youCantMessageUntil": {
+    "placeholders": {
+      "name": {
+        "type": "Object"
+      }
+    }
+  },
+  "youCantReplyTo": "You can’t reply to this conversation.",
+  "youBlocked": "You blocked {otherUserName}",
+  "@youBlocked": {
+    "placeholders": {
+      "otherUserName": {
+        "type": "Object"
+      }
+    }
+  },
+  "blockedYou": "{otherUserName} blocked you",
+  "@blockedYou": {
+    "placeholders": {
+      "otherUserName": {
+        "type": "Object"
+      }
+    }
+  },
+  "youUnblocked": "You unblocked {otherUserName}",
+  "@youUnblocked": {
+    "placeholders": {
+      "otherUserName": {
+        "type": "Object"
+      }
+    }
+  },
+  "unblockedYou": "{otherUserName} unblocked you",
+  "@unblockedYou": {
+    "placeholders": {
+      "otherUserName": {
+        "type": "Object"
+      }
+    }
+  },
+  "sentYouAMessage": "{receiverUser} sent you a message request. Reply to accept, or decline.",
+  "@sentYouAMessage": {
+    "placeholders": {
+      "receiverUser": {
+        "type": "Object"
+      }
+    }
+  },
+  "youAreNotFriends": "You are not friends or followers. Sending a message will send a message request.",
+  "recordingAudio2": "recording audio...",
+  "unblock2": "Unblock {name}",
+  "@unblock2": {
+    "placeholders": {
+      "name": {
+        "type": "Object"
+      }
+    }
+  },
+  "block": "Block {name}",
+  "@block": {
+    "placeholders": {
+      "name": {
+        "type": "Object"
+      }
+    }
+  },
+  "calling": "Calling…",
+  "videoCalling": "Video calling…",
+  "youBlocked2": "You blocked {name}",
+  "@youBlocked2": {
+    "placeholders": {
+      "name": {
+        "type": "Object"
+      }
+    }
+  },
+  "blockedYou2": "{name} blocked you",
+  "@blockedYou2": {
+    "placeholders": {
+      "name": {
+        "type": "Object"
+      }
+    }
+  },
+  "youUnblocked2": "You unblocked {name}",
+  "@youUnblocked2": {
+    "placeholders": {
+      "name": {
+        "type": "Object"
+      }
+    }
+  },
+  "unblockedYou2": "{name} unblocked you",
+  "@unblockedYou2": {
+    "placeholders": {
+      "name": {
+        "type": "Object"
+      }
+    }
+  },
+  "textStatus": "Text status",
+  "failedToLoadYour2": "Failed to load your connections.",
+  "done2": "Done ({length})",
+  "@done2": {
+    "placeholders": {
+      "length": {
+        "type": "Object"
+      }
+    }
+  },
+  "whoCanSeeThis": "Who can see this pack?",
+  "whoCanSeeThis2": "Who can see this?",
+  "chooseYourAudienceFor": "Choose your audience for this sticker pack",
+  "chooseYourAudienceFor2": "Choose your audience for this story",
+  "chooseYourAudienceFor3": "Choose your audience for this post",
+  "stickers3": "{stickerCount} Stickers  •  {asReadableSize}",
+  "@stickers3": {
+    "placeholders": {
+      "stickerCount": {
+        "type": "Object"
+      },
+      "asReadableSize": {
+        "type": "Object"
+      }
+    }
+  },
+  "stickers4": "{stickerCount} Stickers",
+  "@stickers4": {
+    "placeholders": {
+      "stickerCount": {
+        "type": "Object"
+      }
+    }
+  },
+  "mbStickers": "{toStringAsFixed}/{toStringAsFixed2} MB  •  {stickerCount} Stickers",
+  "@mbStickers": {
+    "placeholders": {
+      "toStringAsFixed": {
+        "type": "Object"
+      },
+      "toStringAsFixed2": {
+        "type": "Object"
+      },
+      "stickerCount": {
+        "type": "Object"
+      }
+    }
+  },
+  "noFriendsSelected": "No friends selected",
+  "friendSSelected": "{length} friend(s) selected",
+  "@friendSSelected": {
+    "placeholders": {
+      "length": {
+        "type": "Object"
+      }
+    }
+  },
+  "stickers5": "{stickerCount} stickers  •  {asReadableSize}",
+  "@stickers5": {
+    "placeholders": {
+      "stickerCount": {
+        "type": "Object"
+      },
+      "asReadableSize": {
+        "type": "Object"
+      }
+    }
+  },
+  "videoPreview": "Video Preview",
+  "photoPreview": "Photo Preview",
+  "myStories": "My Stories",
+  "sStories": "{authorName}’s Stories",
+  "@sStories": {
+    "placeholders": {
+      "authorName": {
+        "type": "Object"
+      }
+    }
+  },
+  "textStory2": "Text story",
+  "videoStory": "Video story",
+  "photoStory": "Photo story",
+  "deleteStories": "Delete {count} stories?",
+  "@deleteStories": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "deleteThisStory": "Delete this story?",
+  "gifAnimation": "GIF Animation",
+  "enterThe6Digit2": "Enter the 6-digit code from your authenticator app.",
+  "enterOneOfThe": "Enter one of the recovery codes you saved. Using it turns two-factor off.",
+  "useABackupCode": "Use a backup code",
+  "useAuthenticatorCode": "Use authenticator code",
+  "preparingYourSecureKey": "Preparing your secure key...",
+  "generatingRecoveryCodes": "Generating recovery codes...",
+  "pleaseTryAgain": "Please try again.",
+  "recoveryCodesCouldNot": "Recovery codes could not be generated.",
+  "codeAboutToChange": "Code about to change, wait for next",
+  "codeUpdatesInS": "Code updates in {remaining}s",
+  "@codeUpdatesInS": {
+    "placeholders": {
+      "remaining": {
+        "type": "Object"
+      }
+    }
+  },
+  "useAnAuthenticatorCode": "Use an authenticator code instead",
+  "useMyPasswordInstead": "Use my password instead",
+  "preparing": "Preparing...",
+  "joining": "Joining...",
+  "connecting": "Connecting...",
+  "ringing2": "Ringing...",
+  "you": "You",
+  "someone": "Someone",
+  "today": "Today",
+  "yesterday": "Yesterday",
+  "unavailable": "Unavailable",
+  "summary": "Summary",
+  "weak": "Weak",
+  "fair": "Fair",
+  "good": "Good",
+  "strong": "Strong",
+  "send2": "Send",
+  "unknown": "Unknown",
+  "feedback2": "Feedback",
+  "mute": "Mute",
+  "unmute": "Unmute",
+  "off": "Off",
+  "member": "Member",
+  "ring": "Ring",
+  "ended2": "Ended",
+  "expired": "Expired",
+  "trim": "Trim",
+  "posted": "Posted",
+  "details": "Details",
+  "attachment2": "Attachment"
+}
