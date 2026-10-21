@@ -3688,4 +3688,543 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get attachment2 => 'Attachment';
+
+  @override
+  String get aiLangAutoTitle => 'Auto (Based on Context)';
+
+  @override
+  String get aiLangAutoDesc =>
+      'Automatically detects the language of your message or reply';
+
+  @override
+  String get aiLangArabicTitle => 'Arabic';
+
+  @override
+  String get aiLangArabicDesc =>
+      'AI captions, replies, and corrections are always generated in Arabic';
+
+  @override
+  String get aiLangEnglishTitle => 'English';
+
+  @override
+  String get aiLangEnglishDesc =>
+      'AI captions, replies, and corrections are always generated in English';
+
+  @override
+  String get aiToneDefaultTitle => 'Default';
+
+  @override
+  String get aiToneDefaultDesc =>
+      'Lets the AI choose the tone based on context';
+
+  @override
+  String get aiToneFormalTitle => 'Formal';
+
+  @override
+  String get aiToneFormalDesc => 'Polished, professional wording';
+
+  @override
+  String get aiToneEnthusiasticTitle => 'Enthusiastic';
+
+  @override
+  String get aiToneEnthusiasticDesc => 'Energetic and upbeat wording';
+
+  @override
+  String get aiToneCasualTitle => 'Casual';
+
+  @override
+  String get aiToneCasualDesc => 'Relaxed, spontaneous everyday wording';
+
+  @override
+  String get aiToneEncouragingTitle => 'Encouraging';
+
+  @override
+  String get aiToneEncouragingDesc => 'Warm and supportive wording';
+
+  @override
+  String get aiLengthDefaultTitle => 'Default';
+
+  @override
+  String get aiLengthDefaultDesc => 'Natural, everyday length';
+
+  @override
+  String get aiLengthShortTitle => 'Short';
+
+  @override
+  String get aiLengthShortDesc => 'Brief and to the point';
+
+  @override
+  String get aiLengthDetailedTitle => 'Detailed';
+
+  @override
+  String get aiLengthDetailedDesc => 'Longer and more thorough';
+
+  @override
+  String dateAtTime(Object date, Object time) {
+    return '$date at $time';
+  }
+
+  @override
+  String get typing => 'typing...';
+
+  @override
+  String isTyping(String userName) {
+    return '$userName is typing...';
+  }
+
+  @override
+  String peopleTyping(num length) {
+    return '$length people are typing...';
+  }
+
+  @override
+  String get valNameRequired => 'Name is required';
+
+  @override
+  String get valNameInvalid => 'Please enter a valid name (letters only)';
+
+  @override
+  String get valNameMinLength => 'Name must be at least 2 characters';
+
+  @override
+  String get valEmailRequired => 'Email is required';
+
+  @override
+  String get valEmailInvalid => 'Please enter a valid email address';
+
+  @override
+  String get valPasswordRequired => 'Password is required';
+
+  @override
+  String get valPasswordMinLength => 'Password must be at least 6 characters';
+
+  @override
+  String get valConfirmPasswordRequired => 'Confirm Password is required';
+
+  @override
+  String get valPasswordsDoNotMatch => 'Passwords do not match';
+
+  @override
+  String get authErrIncorrectCredentials =>
+      'Incorrect email or password. Please try again.';
+
+  @override
+  String get authErrNoInternet =>
+      'No internet connection. Please check your network.';
+
+  @override
+  String get authErrEmailAlreadyRegistered =>
+      'This email is already registered. Try signing in instead.';
+
+  @override
+  String get authErrEmailNotVerified =>
+      'Your email is not verified yet. Please check your inbox.';
+
+  @override
+  String get authErrGeneral =>
+      'An authentication error occurred. Please try again.';
+
+  @override
+  String get joinNow => 'Join Now';
+
+  @override
+  String get dontHaveAnAccount => 'Do not have an account? ';
+
+  @override
+  String get byUsingAppAgree => 'By using this app you agree with the\n';
+
+  @override
+  String get twoFactorStep1Title => 'Open your authenticator app';
+
+  @override
+  String get twoFactorStep1Desc =>
+      'Google Authenticator, Microsoft Authenticator, Authy or Apple Passwords all work.';
+
+  @override
+  String get twoFactorStep2Title => 'Scan a QR code';
+
+  @override
+  String get twoFactorStep2Desc =>
+      'Or type the secret key by hand if you are on the same phone.';
+
+  @override
+  String get twoFactorStep3Title => 'Save your recovery codes';
+
+  @override
+  String get twoFactorStep3Desc =>
+      'They are the only way back in if you lose your phone.';
+
+  @override
+  String get iveAddedIt => 'I\'ve added it';
+
+  @override
+  String get verifyCode => 'Verify';
+
+  @override
+  String get feedbackWhatIsThisAbout => 'What is this about?';
+
+  @override
+  String get feedbackTellUsMore => 'Tell us more';
+
+  @override
+  String get feedbackAttachments => 'Attachments';
+
+  @override
+  String get feedbackReachYouOptional => 'How can we reach you? (optional)';
+
+  @override
+  String get feedbackCatBug => 'Bug / Issue';
+
+  @override
+  String get feedbackCatFeature => 'Feature Request';
+
+  @override
+  String get feedbackCatInquiry => 'Inquiry';
+
+  @override
+  String get feedbackCatRating => 'Rating & Review';
+
+  @override
+  String get feedbackCatAppreciation => 'Appreciation';
+
+  @override
+  String get feedbackCatOther => 'Other';
+
+  @override
+  String get feedbackStatusPending => 'Pending Review';
+
+  @override
+  String get feedbackStatusInProgress => 'In Progress';
+
+  @override
+  String get feedbackStatusResolved => 'Resolved & Answered';
+
+  @override
+  String get feedbackStatusClosed => 'Closed';
+
+  @override
+  String get aboutStatUsers => 'Users';
+
+  @override
+  String get aboutStatMessages => 'Messages';
+
+  @override
+  String get aboutStatPosts => 'Posts';
+
+  @override
+  String get aboutStatUptime => 'Uptime';
+
+  @override
+  String get aboutFeatCallsTitle => 'HD Voice & Video';
+
+  @override
+  String get aboutFeatCallsDesc => 'Crystal clear calls anytime';
+
+  @override
+  String get aboutFeatChatsTitle => 'Real-time Chats';
+
+  @override
+  String get aboutFeatChatsDesc => 'Instant messaging with read receipts';
+
+  @override
+  String get aboutFeatStoriesTitle => 'Stories';
+
+  @override
+  String get aboutFeatStoriesDesc => 'Share your daily moments';
+
+  @override
+  String get aboutFeatGroupsTitle => 'Group Chats';
+
+  @override
+  String get aboutFeatGroupsDesc => 'Connect with communities';
+
+  @override
+  String get aboutFeatPrivacyTitle => 'Privacy First';
+
+  @override
+  String get aboutFeatPrivacyDesc => 'Your data stays yours';
+
+  @override
+  String get aboutFeatAlertsTitle => 'Smart Alerts';
+
+  @override
+  String get aboutFeatAlertsDesc => 'Never miss what matters';
+
+  @override
+  String get targetProfile => 'profile';
+
+  @override
+  String get targetPost => 'post';
+
+  @override
+  String get targetComment => 'comment';
+
+  @override
+  String get targetStory => 'story';
+
+  @override
+  String get targetMessage => 'message';
+
+  @override
+  String get reportReasonViolence => 'Violence or threats';
+
+  @override
+  String get reportReasonViolenceDesc =>
+      'Threats, incitement or graphic violence';
+
+  @override
+  String get reportReasonNsfw => 'Nudity or sexual content';
+
+  @override
+  String get reportReasonNsfwDesc => 'Explicit or adult material';
+
+  @override
+  String get reportReasonChildSafety => 'Child safety';
+
+  @override
+  String get reportReasonChildSafetyDesc => 'Involves or endangers a minor';
+
+  @override
+  String get reportReasonHateHarassment => 'Hate or harassment';
+
+  @override
+  String get reportReasonHateHarassmentDesc =>
+      'Bullying, abuse or discrimination';
+
+  @override
+  String get reportReasonSpamScam => 'Spam or scam';
+
+  @override
+  String get reportReasonSpamScamDesc =>
+      'Fake offers, phishing or repeated ads';
+
+  @override
+  String get reportReasonMisinformation => 'False information';
+
+  @override
+  String get reportReasonMisinformationDesc =>
+      'Misleading or fabricated content';
+
+  @override
+  String get reportReasonImpersonation => 'Impersonation or privacy';
+
+  @override
+  String get reportReasonImpersonationDesc =>
+      'Pretending to be someone or sharing private info';
+
+  @override
+  String get reportReasonSelfHarm => 'Self-harm';
+
+  @override
+  String get reportReasonSelfHarmDesc => 'Promotes or shows self-injury';
+
+  @override
+  String get reportReasonOther => 'Something else';
+
+  @override
+  String get reportReasonOtherDesc => 'Tell us what is wrong';
+
+  @override
+  String get fieldUsername => 'Username';
+
+  @override
+  String get fieldJobTitle => 'Job Title';
+
+  @override
+  String get fieldBio => 'Bio';
+
+  @override
+  String get fieldJoined => 'Joined';
+
+  @override
+  String get reactionsFilterAll => 'All';
+
+  @override
+  String get sharedTabAll => 'All';
+
+  @override
+  String get sharedTabImages => 'Images';
+
+  @override
+  String get sharedTabVideos => 'Videos';
+
+  @override
+  String get sharedTabLinks => 'Links';
+
+  @override
+  String get sharedLabelMedia => 'media';
+
+  @override
+  String get sharedLabelImages => 'images';
+
+  @override
+  String get sharedLabelVideos => 'videos';
+
+  @override
+  String get sharedLabelLinks => 'links';
+
+  @override
+  String get sharedDateRecent => 'Recent';
+
+  @override
+  String get sharedDateLastWeek => 'Last Week';
+
+  @override
+  String get sharedDateLastMonth => 'Last Month';
+
+  @override
+  String get btnFollow => 'Follow';
+
+  @override
+  String get btnFollowing => 'Following';
+
+  @override
+  String get btnAddFriend => 'Add Friend';
+
+  @override
+  String get btnRequested => 'Requested';
+
+  @override
+  String get tabChatsAll => 'All';
+
+  @override
+  String get tabChatsDirect => 'Chats';
+
+  @override
+  String get tabChatsGroups => 'Groups';
+
+  @override
+  String get tabChatsFavorites => 'Favorites';
+
+  @override
+  String get tabChatsUnread => 'Unread';
+
+  @override
+  String get notifFilterAll => 'All';
+
+  @override
+  String get notifFilterMessages => 'Messages';
+
+  @override
+  String get notifFilterCalls => 'Calls';
+
+  @override
+  String get notifFilterLikes => 'Likes';
+
+  @override
+  String get notifFilterComments => 'Comments';
+
+  @override
+  String get notifFilterFollows => 'Follows';
+
+  @override
+  String get notifFilterFriendRequests => 'Friend Requests';
+
+  @override
+  String get searchTabForYou => 'For You';
+
+  @override
+  String get searchTabAccounts => 'Accounts';
+
+  @override
+  String get searchTabGroups => 'Groups';
+
+  @override
+  String get searchTabReels => 'Reels';
+
+  @override
+  String get searchTabFriends => 'Friends';
+
+  @override
+  String get aiModelGeminiTagline => 'Fast, and great with images';
+
+  @override
+  String get aiModelLlamaTagline => 'Open-weight and efficient';
+
+  @override
+  String get aiModelOpenRouterTagline => 'Auto-picks a free model for you';
+
+  @override
+  String get addPhoto => 'Add Photo';
+
+  @override
+  String get addVideo => 'Add Video';
+
+  @override
+  String get addDocument => 'Add a Document';
+
+  @override
+  String get addGif => 'Add GIF';
+
+  @override
+  String get liveVideo => 'Live Video';
+
+  @override
+  String get sortNewest => 'Newest';
+
+  @override
+  String get sortOldest => 'Oldest';
+
+  @override
+  String get sortTop => 'Top';
+
+  @override
+  String get like => 'Like';
+
+  @override
+  String viewRepliesCount(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'replies',
+      one: 'reply',
+    );
+    return 'View $count $_temp0';
+  }
+
+  @override
+  String get revokeInviteBody =>
+      'Anyone with the current link will no longer be able to join using it. Continue?';
+
+  @override
+  String get revoke => 'Revoke';
+
+  @override
+  String get saveChanges => 'Save Changes';
+
+  @override
+  String get tapForGroupInfo => 'Tap for group info';
+
+  @override
+  String get retryAgain => 'Retry Again';
+
+  @override
+  String get presenceEveryoneDesc => 'Anyone using the app can see your status';
+
+  @override
+  String get presenceFriendsDesc => 'Only accepted friends can see your status';
+
+  @override
+  String get presenceSpecificDesc => 'Choose exactly who can see your status';
+
+  @override
+  String get presenceNobodyDesc => 'Your online status stays private';
+
+  @override
+  String get aiChatPrevious7Days => 'Previous 7 Days';
+
+  @override
+  String get aiChatPrevious30Days => 'Previous 30 Days';
+
+  @override
+  String get aiChatOlder => 'Older';
+
+  @override
+  String get aiAssistant => 'AI Assistant';
+
+  @override
+  String get groups => 'Groups';
+
+  @override
+  String get people => 'People';
 }

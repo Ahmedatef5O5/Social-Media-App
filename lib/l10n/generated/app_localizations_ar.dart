@@ -572,7 +572,7 @@ class AppLocalizationsAr extends AppLocalizations {
       'الإملاء الصوتي غير متاح على هذا الجهاز.';
 
   @override
-  String get messageSyncra => 'راسل Syncra...';
+  String get messageSyncra => 'راسل ‏Syncra...‏';
 
   @override
   String get failedToShareThis => 'تعذّرت مشاركة هذه المحادثة. حاول مرة أخرى.';
@@ -830,7 +830,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get feedbackSupport => 'الملاحظات والدعم';
 
   @override
-  String get helpUsImproveSocial => 'ساعدنا في تحسين Social Mate';
+  String get helpUsImproveSocial => 'ساعدنا في تحسين ‏Social Mate‏';
 
   @override
   String get emailOrPhoneNumber => 'البريد الإلكتروني أو رقم الهاتف';
@@ -3684,4 +3684,536 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get attachment2 => 'مرفق';
+
+  @override
+  String get aiLangAutoTitle => 'تلقائي (حسب السياق)';
+
+  @override
+  String get aiLangAutoDesc => 'يكتشف اللغة تلقائياً مما تكتبه أو ترد عليه';
+
+  @override
+  String get aiLangArabicTitle => 'العربية';
+
+  @override
+  String get aiLangArabicDesc =>
+      'تُنشأ الشروحات والردود والتصحيحات دائماً باللغة العربية';
+
+  @override
+  String get aiLangEnglishTitle => 'الإنجليزية';
+
+  @override
+  String get aiLangEnglishDesc =>
+      'تُنشأ الشروحات والردود والتصحيحات دائماً باللغة الإنجليزية';
+
+  @override
+  String get aiToneDefaultTitle => 'افتراضي';
+
+  @override
+  String get aiToneDefaultDesc =>
+      'يترك للذكاء الاصطناعي اختيار النبرة المناسبة بحسب السياق';
+
+  @override
+  String get aiToneFormalTitle => 'رسمي';
+
+  @override
+  String get aiToneFormalDesc => 'صياغة احترافية ودقيقة';
+
+  @override
+  String get aiToneEnthusiasticTitle => 'حماسي';
+
+  @override
+  String get aiToneEnthusiasticDesc => 'صياغة حيوية ومفعمة بالحماس';
+
+  @override
+  String get aiToneCasualTitle => 'عفوي';
+
+  @override
+  String get aiToneCasualDesc => 'صياغة يومية مريحة وتلقائية';
+
+  @override
+  String get aiToneEncouragingTitle => 'مشجع';
+
+  @override
+  String get aiToneEncouragingDesc => 'صياغة دافئة وداعمة ومحفزة';
+
+  @override
+  String get aiLengthDefaultTitle => 'طبيعي';
+
+  @override
+  String get aiLengthDefaultDesc => 'طول معتدل ومناسب للاستخدام اليومي';
+
+  @override
+  String get aiLengthShortTitle => 'قصير';
+
+  @override
+  String get aiLengthShortDesc => 'موجز ومباشر وفي صلب الموضوع';
+
+  @override
+  String get aiLengthDetailedTitle => 'مفصل';
+
+  @override
+  String get aiLengthDetailedDesc => 'شرح أطول وأكثر شمولاً وتفصيلاً';
+
+  @override
+  String dateAtTime(Object date, Object time) {
+    return '$date في $time';
+  }
+
+  @override
+  String get typing => 'يكتب الآن...';
+
+  @override
+  String isTyping(String userName) {
+    return '$userName يكتب الآن...';
+  }
+
+  @override
+  String peopleTyping(num length) {
+    return '$length أشخاص يكتبون الآن...';
+  }
+
+  @override
+  String get valNameRequired => 'الاسم بالكامل مطلوب';
+
+  @override
+  String get valNameInvalid => 'يرجى إدخال اسم صالح (حروف فقط)';
+
+  @override
+  String get valNameMinLength => 'يجب أن يتكون الاسم من حرفين على الأقل';
+
+  @override
+  String get valEmailRequired => 'البريد الإلكتروني مطلوب';
+
+  @override
+  String get valEmailInvalid => 'يرجى إدخال بريد إلكتروني صالح';
+
+  @override
+  String get valPasswordRequired => 'كلمة المرور مطلوبة';
+
+  @override
+  String get valPasswordMinLength => 'يجب ألا تقل كلمة المرور عن 6 أحرف';
+
+  @override
+  String get valConfirmPasswordRequired => 'تأكيد كلمة المرور مطلوب';
+
+  @override
+  String get valPasswordsDoNotMatch => 'كلمتا المرور غير متطابقتين';
+
+  @override
+  String get authErrIncorrectCredentials =>
+      'البريد الإلكتروني أو كلمة المرور غير صحيحة. يرجى المحاولة مرة أخرى.';
+
+  @override
+  String get authErrNoInternet =>
+      'لا يوجد اتصال بالإنترنت. يرجى التحقق من الشبكة.';
+
+  @override
+  String get authErrEmailAlreadyRegistered =>
+      'هذا البريد الإلكتروني مسجل بالفعل. حاول تسجيل الدخول بدلاً من ذلك.';
+
+  @override
+  String get authErrEmailNotVerified =>
+      'لم يتم تأكيد بريدك الإلكتروني بعد. يرجى مراجعة صندوق الوارد.';
+
+  @override
+  String get authErrGeneral =>
+      'حدث خطأ أثناء المصادقة. يرجى المحاولة مرة أخرى.';
+
+  @override
+  String get joinNow => 'انضم الآن';
+
+  @override
+  String get dontHaveAnAccount => 'ليس لديك حساب؟ ';
+
+  @override
+  String get byUsingAppAgree => 'باستخدامك هذا التطبيق، فإنك توافق على\n';
+
+  @override
+  String get twoFactorStep1Title => 'افتح تطبيق المصادقة لديك';
+
+  @override
+  String get twoFactorStep1Desc =>
+      'يمكنك استخدام Google Authenticator أو Microsoft Authenticator أو Authy أو Apple Passwords.';
+
+  @override
+  String get twoFactorStep2Title => 'امسح رمز QR';
+
+  @override
+  String get twoFactorStep2Desc =>
+      'أو أدخل المفتاح السري يدويًا إذا كنت تستخدم نفس الهاتف.';
+
+  @override
+  String get twoFactorStep3Title => 'احفظ رموز الاسترداد';
+
+  @override
+  String get twoFactorStep3Desc =>
+      'هي الوسيلة الوحيدة للوصول لحسابك في حال فقدان هاتفك.';
+
+  @override
+  String get iveAddedIt => 'تمت الإضافة إلى التطبيق';
+
+  @override
+  String get verifyCode => 'تأكيد الرمز';
+
+  @override
+  String get feedbackWhatIsThisAbout => 'ما هو موضوع ملاحظتك؟';
+
+  @override
+  String get feedbackTellUsMore => 'أخبرنا بمزيد من التفاصيل';
+
+  @override
+  String get feedbackAttachments => 'المرفقات';
+
+  @override
+  String get feedbackReachYouOptional => 'كيف يمكننا التواصل معك؟ (اختياري)';
+
+  @override
+  String get feedbackCatBug => 'مشكلة أو خطأ';
+
+  @override
+  String get feedbackCatFeature => 'اقتراح ميزة';
+
+  @override
+  String get feedbackCatInquiry => 'استفسار عام';
+
+  @override
+  String get feedbackCatRating => 'تقييم ورأي';
+
+  @override
+  String get feedbackCatAppreciation => 'شكر وتقدير';
+
+  @override
+  String get feedbackCatOther => 'أمر آخر';
+
+  @override
+  String get feedbackStatusPending => 'قيد المراجعة';
+
+  @override
+  String get feedbackStatusInProgress => 'جارٍ العمل عليها';
+
+  @override
+  String get feedbackStatusResolved => 'تم الرد والحل';
+
+  @override
+  String get feedbackStatusClosed => 'مغلقة';
+
+  @override
+  String get aboutStatUsers => 'المستخدمون';
+
+  @override
+  String get aboutStatMessages => 'الرسائل';
+
+  @override
+  String get aboutStatPosts => 'المنشورات';
+
+  @override
+  String get aboutStatUptime => 'وقت التشغيل';
+
+  @override
+  String get aboutFeatCallsTitle => 'مكالمات صوت وفيديو فائقة الوضوح';
+
+  @override
+  String get aboutFeatCallsDesc => 'تواصل نقي وثابت في أي وقت وأي مكان';
+
+  @override
+  String get aboutFeatChatsTitle => 'محادثات فورية مباشرة';
+
+  @override
+  String get aboutFeatChatsDesc => 'مراسلة لحظية سريعة مع مؤشرات القراءة';
+
+  @override
+  String get aboutFeatStoriesTitle => 'القصص اليومية';
+
+  @override
+  String get aboutFeatStoriesDesc => 'شارك لحظاتك ويومياتك أولاً بأول';
+
+  @override
+  String get aboutFeatGroupsTitle => 'مجموعات تفاعلية';
+
+  @override
+  String get aboutFeatGroupsDesc => 'تواصل مع أصدقائك ومجتمعاتك المفضلة';
+
+  @override
+  String get aboutFeatPrivacyTitle => 'الخصوصية أولاً';
+
+  @override
+  String get aboutFeatPrivacyDesc => 'بياناتك مشفرة ومحمية وتحت سيطرتك الكاملة';
+
+  @override
+  String get aboutFeatAlertsTitle => 'تنبيهات ذكية';
+
+  @override
+  String get aboutFeatAlertsDesc => 'ابقَ على اطلاع دائم بما يهمك دون إزعاج';
+
+  @override
+  String get targetProfile => 'الحساب الشخصي';
+
+  @override
+  String get targetPost => 'المنشور';
+
+  @override
+  String get targetComment => 'التعليق';
+
+  @override
+  String get targetStory => 'القصة';
+
+  @override
+  String get targetMessage => 'الرسالة';
+
+  @override
+  String get reportReasonViolence => 'عنف أو تهديدات';
+
+  @override
+  String get reportReasonViolenceDesc => 'تهديدات، أو تحريض، أو مشاهد عنيفة';
+
+  @override
+  String get reportReasonNsfw => 'محتوى غير لائق أو إباحي';
+
+  @override
+  String get reportReasonNsfwDesc => 'مواد صريحة أو غير مناسبة';
+
+  @override
+  String get reportReasonChildSafety => 'سلامة الأطفال والقُصّر';
+
+  @override
+  String get reportReasonChildSafetyDesc =>
+      'أي محتوى يمس سلامة الأطفال أو يعرضهم للخطر';
+
+  @override
+  String get reportReasonHateHarassment => 'كراهية أو مضايقة';
+
+  @override
+  String get reportReasonHateHarassmentDesc =>
+      'تنمر، أو إساءة، أو تمييز ضد الآخرين';
+
+  @override
+  String get reportReasonSpamScam => 'احتيال أو محتوى مزعج (Spam)';
+
+  @override
+  String get reportReasonSpamScamDesc =>
+      'عروض وهمية، أو تصيد، أو إعلانات مكررة';
+
+  @override
+  String get reportReasonMisinformation => 'معلومات مضللة أو كاذبة';
+
+  @override
+  String get reportReasonMisinformationDesc => 'أخبار مفبركة أو محتوى غير دقيق';
+
+  @override
+  String get reportReasonImpersonation => 'انتحال شخصية أو انتهاك الخصوصية';
+
+  @override
+  String get reportReasonImpersonationDesc =>
+      'ادعاء هوية شخص آخر أو نشر بيانات خاصة';
+
+  @override
+  String get reportReasonSelfHarm => 'إيذاء النفس';
+
+  @override
+  String get reportReasonSelfHarmDesc => 'تشجيع أو إظهار أفعال تضر بالنفس';
+
+  @override
+  String get reportReasonOther => 'سبب آخر';
+
+  @override
+  String get reportReasonOtherDesc => 'أخبرنا بتفاصيل المشكلة';
+
+  @override
+  String get fieldUsername => 'اسم المستخدم';
+
+  @override
+  String get fieldJobTitle => 'المسمى الوظيفي';
+
+  @override
+  String get fieldBio => 'النبذة التعريفية';
+
+  @override
+  String get fieldJoined => 'تاريخ الانضمام';
+
+  @override
+  String get reactionsFilterAll => 'الكل';
+
+  @override
+  String get sharedTabAll => 'الكل';
+
+  @override
+  String get sharedTabImages => 'الصور';
+
+  @override
+  String get sharedTabVideos => 'الفيديو';
+
+  @override
+  String get sharedTabLinks => 'الروابط';
+
+  @override
+  String get sharedLabelMedia => 'الوسائط';
+
+  @override
+  String get sharedLabelImages => 'الصور';
+
+  @override
+  String get sharedLabelVideos => 'الفيديوهات';
+
+  @override
+  String get sharedLabelLinks => 'الروابط';
+
+  @override
+  String get sharedDateRecent => 'مؤخرًا';
+
+  @override
+  String get sharedDateLastWeek => 'الأسبوع الماضي';
+
+  @override
+  String get sharedDateLastMonth => 'الشهر الماضي';
+
+  @override
+  String get btnFollow => 'متابعة';
+
+  @override
+  String get btnFollowing => 'أتابعه';
+
+  @override
+  String get btnAddFriend => 'إضافة صديق';
+
+  @override
+  String get btnRequested => 'تم الطلب';
+
+  @override
+  String get tabChatsAll => 'الكل';
+
+  @override
+  String get tabChatsDirect => 'المحادثات';
+
+  @override
+  String get tabChatsGroups => 'المجموعات';
+
+  @override
+  String get tabChatsFavorites => 'المفضلة';
+
+  @override
+  String get tabChatsUnread => 'غير مقروءة';
+
+  @override
+  String get notifFilterAll => 'الكل';
+
+  @override
+  String get notifFilterMessages => 'الرسائل';
+
+  @override
+  String get notifFilterCalls => 'المكالمات';
+
+  @override
+  String get notifFilterLikes => 'الإعجابات';
+
+  @override
+  String get notifFilterComments => 'التعليقات';
+
+  @override
+  String get notifFilterFollows => 'المتابعات';
+
+  @override
+  String get notifFilterFriendRequests => 'طلبات الصداقة';
+
+  @override
+  String get searchTabForYou => 'لك';
+
+  @override
+  String get searchTabAccounts => 'الحسابات';
+
+  @override
+  String get searchTabGroups => 'المجموعات';
+
+  @override
+  String get searchTabReels => 'ريلز';
+
+  @override
+  String get searchTabFriends => 'الأصدقاء';
+
+  @override
+  String get aiModelGeminiTagline => 'سريع، ومثالي في فهم ومعالجة الصور';
+
+  @override
+  String get aiModelLlamaTagline => 'مفتوح المصدر، وفائق الكفاءة والسرعة';
+
+  @override
+  String get aiModelOpenRouterTagline =>
+      'يختار لك أفضل نموذج مجاني متاح تلقائيًا';
+
+  @override
+  String get addPhoto => 'إضافة صورة';
+
+  @override
+  String get addVideo => 'إضافة فيديو';
+
+  @override
+  String get addDocument => 'إضافة مستند';
+
+  @override
+  String get addGif => 'إضافة صورة متحركة (GIF)';
+
+  @override
+  String get liveVideo => 'بث مباشر';
+
+  @override
+  String get sortNewest => 'الأحدث';
+
+  @override
+  String get sortOldest => 'الأقدم';
+
+  @override
+  String get sortTop => 'الأبرز';
+
+  @override
+  String get like => 'إعجاب';
+
+  @override
+  String viewRepliesCount(num count) {
+    return 'عرض الردود ($count)';
+  }
+
+  @override
+  String get revokeInviteBody =>
+      'لن يتمكن أي شخص لديه الرابط الحالي من الانضمام إلى المجموعة باستخدامه بعد الآن. هل ترغب في المتابعة؟';
+
+  @override
+  String get revoke => 'إلغاء الرابط';
+
+  @override
+  String get saveChanges => 'حفظ التغييرات';
+
+  @override
+  String get tapForGroupInfo => 'اضغط لمعلومات المجموعة';
+
+  @override
+  String get retryAgain => 'إعادة المحاولة';
+
+  @override
+  String get presenceEveryoneDesc => 'يمكن لأي شخص يستخدم التطبيق رؤية حالتك';
+
+  @override
+  String get presenceFriendsDesc => 'يمكن لأصدقائك المقبولين فقط رؤية حالتك';
+
+  @override
+  String get presenceSpecificDesc => 'اختر تحديداً من يمكنه رؤية حالتك';
+
+  @override
+  String get presenceNobodyDesc => 'تبقى حالة اتصالك مخفية وخاصة';
+
+  @override
+  String get aiChatPrevious7Days => 'آخر 7 أيام';
+
+  @override
+  String get aiChatPrevious30Days => 'آخر 30 يوماً';
+
+  @override
+  String get aiChatOlder => 'أقدم';
+
+  @override
+  String get aiAssistant => 'المساعد الذكي';
+
+  @override
+  String get groups => 'المجموعات';
+
+  @override
+  String get people => 'الأشخاص';
 }

@@ -6423,6 +6423,1020 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Attachment'**
   String get attachment2;
+
+  /// No description provided for @aiLangAutoTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto (Based on Context)'**
+  String get aiLangAutoTitle;
+
+  /// No description provided for @aiLangAutoDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatically detects the language of your message or reply'**
+  String get aiLangAutoDesc;
+
+  /// No description provided for @aiLangArabicTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Arabic'**
+  String get aiLangArabicTitle;
+
+  /// No description provided for @aiLangArabicDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'AI captions, replies, and corrections are always generated in Arabic'**
+  String get aiLangArabicDesc;
+
+  /// No description provided for @aiLangEnglishTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'English'**
+  String get aiLangEnglishTitle;
+
+  /// No description provided for @aiLangEnglishDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'AI captions, replies, and corrections are always generated in English'**
+  String get aiLangEnglishDesc;
+
+  /// No description provided for @aiToneDefaultTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Default'**
+  String get aiToneDefaultTitle;
+
+  /// No description provided for @aiToneDefaultDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Lets the AI choose the tone based on context'**
+  String get aiToneDefaultDesc;
+
+  /// No description provided for @aiToneFormalTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Formal'**
+  String get aiToneFormalTitle;
+
+  /// No description provided for @aiToneFormalDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Polished, professional wording'**
+  String get aiToneFormalDesc;
+
+  /// No description provided for @aiToneEnthusiasticTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Enthusiastic'**
+  String get aiToneEnthusiasticTitle;
+
+  /// No description provided for @aiToneEnthusiasticDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Energetic and upbeat wording'**
+  String get aiToneEnthusiasticDesc;
+
+  /// No description provided for @aiToneCasualTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Casual'**
+  String get aiToneCasualTitle;
+
+  /// No description provided for @aiToneCasualDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Relaxed, spontaneous everyday wording'**
+  String get aiToneCasualDesc;
+
+  /// No description provided for @aiToneEncouragingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Encouraging'**
+  String get aiToneEncouragingTitle;
+
+  /// No description provided for @aiToneEncouragingDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Warm and supportive wording'**
+  String get aiToneEncouragingDesc;
+
+  /// No description provided for @aiLengthDefaultTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Default'**
+  String get aiLengthDefaultTitle;
+
+  /// No description provided for @aiLengthDefaultDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Natural, everyday length'**
+  String get aiLengthDefaultDesc;
+
+  /// No description provided for @aiLengthShortTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Short'**
+  String get aiLengthShortTitle;
+
+  /// No description provided for @aiLengthShortDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Brief and to the point'**
+  String get aiLengthShortDesc;
+
+  /// No description provided for @aiLengthDetailedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Detailed'**
+  String get aiLengthDetailedTitle;
+
+  /// No description provided for @aiLengthDetailedDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Longer and more thorough'**
+  String get aiLengthDetailedDesc;
+
+  /// No description provided for @dateAtTime.
+  ///
+  /// In en, this message translates to:
+  /// **'{date} at {time}'**
+  String dateAtTime(Object date, Object time);
+
+  /// No description provided for @typing.
+  ///
+  /// In en, this message translates to:
+  /// **'typing...'**
+  String get typing;
+
+  /// No description provided for @isTyping.
+  ///
+  /// In en, this message translates to:
+  /// **'{userName} is typing...'**
+  String isTyping(String userName);
+
+  /// No description provided for @peopleTyping.
+  ///
+  /// In en, this message translates to:
+  /// **'{length} people are typing...'**
+  String peopleTyping(num length);
+
+  /// No description provided for @valNameRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Name is required'**
+  String get valNameRequired;
+
+  /// No description provided for @valNameInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a valid name (letters only)'**
+  String get valNameInvalid;
+
+  /// No description provided for @valNameMinLength.
+  ///
+  /// In en, this message translates to:
+  /// **'Name must be at least 2 characters'**
+  String get valNameMinLength;
+
+  /// No description provided for @valEmailRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Email is required'**
+  String get valEmailRequired;
+
+  /// No description provided for @valEmailInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a valid email address'**
+  String get valEmailInvalid;
+
+  /// No description provided for @valPasswordRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Password is required'**
+  String get valPasswordRequired;
+
+  /// No description provided for @valPasswordMinLength.
+  ///
+  /// In en, this message translates to:
+  /// **'Password must be at least 6 characters'**
+  String get valPasswordMinLength;
+
+  /// No description provided for @valConfirmPasswordRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm Password is required'**
+  String get valConfirmPasswordRequired;
+
+  /// No description provided for @valPasswordsDoNotMatch.
+  ///
+  /// In en, this message translates to:
+  /// **'Passwords do not match'**
+  String get valPasswordsDoNotMatch;
+
+  /// No description provided for @authErrIncorrectCredentials.
+  ///
+  /// In en, this message translates to:
+  /// **'Incorrect email or password. Please try again.'**
+  String get authErrIncorrectCredentials;
+
+  /// No description provided for @authErrNoInternet.
+  ///
+  /// In en, this message translates to:
+  /// **'No internet connection. Please check your network.'**
+  String get authErrNoInternet;
+
+  /// No description provided for @authErrEmailAlreadyRegistered.
+  ///
+  /// In en, this message translates to:
+  /// **'This email is already registered. Try signing in instead.'**
+  String get authErrEmailAlreadyRegistered;
+
+  /// No description provided for @authErrEmailNotVerified.
+  ///
+  /// In en, this message translates to:
+  /// **'Your email is not verified yet. Please check your inbox.'**
+  String get authErrEmailNotVerified;
+
+  /// No description provided for @authErrGeneral.
+  ///
+  /// In en, this message translates to:
+  /// **'An authentication error occurred. Please try again.'**
+  String get authErrGeneral;
+
+  /// No description provided for @joinNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Join Now'**
+  String get joinNow;
+
+  /// No description provided for @dontHaveAnAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Do not have an account? '**
+  String get dontHaveAnAccount;
+
+  /// No description provided for @byUsingAppAgree.
+  ///
+  /// In en, this message translates to:
+  /// **'By using this app you agree with the\n'**
+  String get byUsingAppAgree;
+
+  /// No description provided for @twoFactorStep1Title.
+  ///
+  /// In en, this message translates to:
+  /// **'Open your authenticator app'**
+  String get twoFactorStep1Title;
+
+  /// No description provided for @twoFactorStep1Desc.
+  ///
+  /// In en, this message translates to:
+  /// **'Google Authenticator, Microsoft Authenticator, Authy or Apple Passwords all work.'**
+  String get twoFactorStep1Desc;
+
+  /// No description provided for @twoFactorStep2Title.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan a QR code'**
+  String get twoFactorStep2Title;
+
+  /// No description provided for @twoFactorStep2Desc.
+  ///
+  /// In en, this message translates to:
+  /// **'Or type the secret key by hand if you are on the same phone.'**
+  String get twoFactorStep2Desc;
+
+  /// No description provided for @twoFactorStep3Title.
+  ///
+  /// In en, this message translates to:
+  /// **'Save your recovery codes'**
+  String get twoFactorStep3Title;
+
+  /// No description provided for @twoFactorStep3Desc.
+  ///
+  /// In en, this message translates to:
+  /// **'They are the only way back in if you lose your phone.'**
+  String get twoFactorStep3Desc;
+
+  /// No description provided for @iveAddedIt.
+  ///
+  /// In en, this message translates to:
+  /// **'I\'\'ve added it'**
+  String get iveAddedIt;
+
+  /// No description provided for @verifyCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify'**
+  String get verifyCode;
+
+  /// No description provided for @feedbackWhatIsThisAbout.
+  ///
+  /// In en, this message translates to:
+  /// **'What is this about?'**
+  String get feedbackWhatIsThisAbout;
+
+  /// No description provided for @feedbackTellUsMore.
+  ///
+  /// In en, this message translates to:
+  /// **'Tell us more'**
+  String get feedbackTellUsMore;
+
+  /// No description provided for @feedbackAttachments.
+  ///
+  /// In en, this message translates to:
+  /// **'Attachments'**
+  String get feedbackAttachments;
+
+  /// No description provided for @feedbackReachYouOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'How can we reach you? (optional)'**
+  String get feedbackReachYouOptional;
+
+  /// No description provided for @feedbackCatBug.
+  ///
+  /// In en, this message translates to:
+  /// **'Bug / Issue'**
+  String get feedbackCatBug;
+
+  /// No description provided for @feedbackCatFeature.
+  ///
+  /// In en, this message translates to:
+  /// **'Feature Request'**
+  String get feedbackCatFeature;
+
+  /// No description provided for @feedbackCatInquiry.
+  ///
+  /// In en, this message translates to:
+  /// **'Inquiry'**
+  String get feedbackCatInquiry;
+
+  /// No description provided for @feedbackCatRating.
+  ///
+  /// In en, this message translates to:
+  /// **'Rating & Review'**
+  String get feedbackCatRating;
+
+  /// No description provided for @feedbackCatAppreciation.
+  ///
+  /// In en, this message translates to:
+  /// **'Appreciation'**
+  String get feedbackCatAppreciation;
+
+  /// No description provided for @feedbackCatOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get feedbackCatOther;
+
+  /// No description provided for @feedbackStatusPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending Review'**
+  String get feedbackStatusPending;
+
+  /// No description provided for @feedbackStatusInProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'In Progress'**
+  String get feedbackStatusInProgress;
+
+  /// No description provided for @feedbackStatusResolved.
+  ///
+  /// In en, this message translates to:
+  /// **'Resolved & Answered'**
+  String get feedbackStatusResolved;
+
+  /// No description provided for @feedbackStatusClosed.
+  ///
+  /// In en, this message translates to:
+  /// **'Closed'**
+  String get feedbackStatusClosed;
+
+  /// No description provided for @aboutStatUsers.
+  ///
+  /// In en, this message translates to:
+  /// **'Users'**
+  String get aboutStatUsers;
+
+  /// No description provided for @aboutStatMessages.
+  ///
+  /// In en, this message translates to:
+  /// **'Messages'**
+  String get aboutStatMessages;
+
+  /// No description provided for @aboutStatPosts.
+  ///
+  /// In en, this message translates to:
+  /// **'Posts'**
+  String get aboutStatPosts;
+
+  /// No description provided for @aboutStatUptime.
+  ///
+  /// In en, this message translates to:
+  /// **'Uptime'**
+  String get aboutStatUptime;
+
+  /// No description provided for @aboutFeatCallsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'HD Voice & Video'**
+  String get aboutFeatCallsTitle;
+
+  /// No description provided for @aboutFeatCallsDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Crystal clear calls anytime'**
+  String get aboutFeatCallsDesc;
+
+  /// No description provided for @aboutFeatChatsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Real-time Chats'**
+  String get aboutFeatChatsTitle;
+
+  /// No description provided for @aboutFeatChatsDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Instant messaging with read receipts'**
+  String get aboutFeatChatsDesc;
+
+  /// No description provided for @aboutFeatStoriesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Stories'**
+  String get aboutFeatStoriesTitle;
+
+  /// No description provided for @aboutFeatStoriesDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Share your daily moments'**
+  String get aboutFeatStoriesDesc;
+
+  /// No description provided for @aboutFeatGroupsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Group Chats'**
+  String get aboutFeatGroupsTitle;
+
+  /// No description provided for @aboutFeatGroupsDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect with communities'**
+  String get aboutFeatGroupsDesc;
+
+  /// No description provided for @aboutFeatPrivacyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy First'**
+  String get aboutFeatPrivacyTitle;
+
+  /// No description provided for @aboutFeatPrivacyDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Your data stays yours'**
+  String get aboutFeatPrivacyDesc;
+
+  /// No description provided for @aboutFeatAlertsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Smart Alerts'**
+  String get aboutFeatAlertsTitle;
+
+  /// No description provided for @aboutFeatAlertsDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Never miss what matters'**
+  String get aboutFeatAlertsDesc;
+
+  /// No description provided for @targetProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'profile'**
+  String get targetProfile;
+
+  /// No description provided for @targetPost.
+  ///
+  /// In en, this message translates to:
+  /// **'post'**
+  String get targetPost;
+
+  /// No description provided for @targetComment.
+  ///
+  /// In en, this message translates to:
+  /// **'comment'**
+  String get targetComment;
+
+  /// No description provided for @targetStory.
+  ///
+  /// In en, this message translates to:
+  /// **'story'**
+  String get targetStory;
+
+  /// No description provided for @targetMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'message'**
+  String get targetMessage;
+
+  /// No description provided for @reportReasonViolence.
+  ///
+  /// In en, this message translates to:
+  /// **'Violence or threats'**
+  String get reportReasonViolence;
+
+  /// No description provided for @reportReasonViolenceDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Threats, incitement or graphic violence'**
+  String get reportReasonViolenceDesc;
+
+  /// No description provided for @reportReasonNsfw.
+  ///
+  /// In en, this message translates to:
+  /// **'Nudity or sexual content'**
+  String get reportReasonNsfw;
+
+  /// No description provided for @reportReasonNsfwDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Explicit or adult material'**
+  String get reportReasonNsfwDesc;
+
+  /// No description provided for @reportReasonChildSafety.
+  ///
+  /// In en, this message translates to:
+  /// **'Child safety'**
+  String get reportReasonChildSafety;
+
+  /// No description provided for @reportReasonChildSafetyDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Involves or endangers a minor'**
+  String get reportReasonChildSafetyDesc;
+
+  /// No description provided for @reportReasonHateHarassment.
+  ///
+  /// In en, this message translates to:
+  /// **'Hate or harassment'**
+  String get reportReasonHateHarassment;
+
+  /// No description provided for @reportReasonHateHarassmentDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Bullying, abuse or discrimination'**
+  String get reportReasonHateHarassmentDesc;
+
+  /// No description provided for @reportReasonSpamScam.
+  ///
+  /// In en, this message translates to:
+  /// **'Spam or scam'**
+  String get reportReasonSpamScam;
+
+  /// No description provided for @reportReasonSpamScamDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Fake offers, phishing or repeated ads'**
+  String get reportReasonSpamScamDesc;
+
+  /// No description provided for @reportReasonMisinformation.
+  ///
+  /// In en, this message translates to:
+  /// **'False information'**
+  String get reportReasonMisinformation;
+
+  /// No description provided for @reportReasonMisinformationDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Misleading or fabricated content'**
+  String get reportReasonMisinformationDesc;
+
+  /// No description provided for @reportReasonImpersonation.
+  ///
+  /// In en, this message translates to:
+  /// **'Impersonation or privacy'**
+  String get reportReasonImpersonation;
+
+  /// No description provided for @reportReasonImpersonationDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Pretending to be someone or sharing private info'**
+  String get reportReasonImpersonationDesc;
+
+  /// No description provided for @reportReasonSelfHarm.
+  ///
+  /// In en, this message translates to:
+  /// **'Self-harm'**
+  String get reportReasonSelfHarm;
+
+  /// No description provided for @reportReasonSelfHarmDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Promotes or shows self-injury'**
+  String get reportReasonSelfHarmDesc;
+
+  /// No description provided for @reportReasonOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Something else'**
+  String get reportReasonOther;
+
+  /// No description provided for @reportReasonOtherDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Tell us what is wrong'**
+  String get reportReasonOtherDesc;
+
+  /// No description provided for @fieldUsername.
+  ///
+  /// In en, this message translates to:
+  /// **'Username'**
+  String get fieldUsername;
+
+  /// No description provided for @fieldJobTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Job Title'**
+  String get fieldJobTitle;
+
+  /// No description provided for @fieldBio.
+  ///
+  /// In en, this message translates to:
+  /// **'Bio'**
+  String get fieldBio;
+
+  /// No description provided for @fieldJoined.
+  ///
+  /// In en, this message translates to:
+  /// **'Joined'**
+  String get fieldJoined;
+
+  /// No description provided for @reactionsFilterAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get reactionsFilterAll;
+
+  /// No description provided for @sharedTabAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get sharedTabAll;
+
+  /// No description provided for @sharedTabImages.
+  ///
+  /// In en, this message translates to:
+  /// **'Images'**
+  String get sharedTabImages;
+
+  /// No description provided for @sharedTabVideos.
+  ///
+  /// In en, this message translates to:
+  /// **'Videos'**
+  String get sharedTabVideos;
+
+  /// No description provided for @sharedTabLinks.
+  ///
+  /// In en, this message translates to:
+  /// **'Links'**
+  String get sharedTabLinks;
+
+  /// No description provided for @sharedLabelMedia.
+  ///
+  /// In en, this message translates to:
+  /// **'media'**
+  String get sharedLabelMedia;
+
+  /// No description provided for @sharedLabelImages.
+  ///
+  /// In en, this message translates to:
+  /// **'images'**
+  String get sharedLabelImages;
+
+  /// No description provided for @sharedLabelVideos.
+  ///
+  /// In en, this message translates to:
+  /// **'videos'**
+  String get sharedLabelVideos;
+
+  /// No description provided for @sharedLabelLinks.
+  ///
+  /// In en, this message translates to:
+  /// **'links'**
+  String get sharedLabelLinks;
+
+  /// No description provided for @sharedDateRecent.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent'**
+  String get sharedDateRecent;
+
+  /// No description provided for @sharedDateLastWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'Last Week'**
+  String get sharedDateLastWeek;
+
+  /// No description provided for @sharedDateLastMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'Last Month'**
+  String get sharedDateLastMonth;
+
+  /// No description provided for @btnFollow.
+  ///
+  /// In en, this message translates to:
+  /// **'Follow'**
+  String get btnFollow;
+
+  /// No description provided for @btnFollowing.
+  ///
+  /// In en, this message translates to:
+  /// **'Following'**
+  String get btnFollowing;
+
+  /// No description provided for @btnAddFriend.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Friend'**
+  String get btnAddFriend;
+
+  /// No description provided for @btnRequested.
+  ///
+  /// In en, this message translates to:
+  /// **'Requested'**
+  String get btnRequested;
+
+  /// No description provided for @tabChatsAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get tabChatsAll;
+
+  /// No description provided for @tabChatsDirect.
+  ///
+  /// In en, this message translates to:
+  /// **'Chats'**
+  String get tabChatsDirect;
+
+  /// No description provided for @tabChatsGroups.
+  ///
+  /// In en, this message translates to:
+  /// **'Groups'**
+  String get tabChatsGroups;
+
+  /// No description provided for @tabChatsFavorites.
+  ///
+  /// In en, this message translates to:
+  /// **'Favorites'**
+  String get tabChatsFavorites;
+
+  /// No description provided for @tabChatsUnread.
+  ///
+  /// In en, this message translates to:
+  /// **'Unread'**
+  String get tabChatsUnread;
+
+  /// No description provided for @notifFilterAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get notifFilterAll;
+
+  /// No description provided for @notifFilterMessages.
+  ///
+  /// In en, this message translates to:
+  /// **'Messages'**
+  String get notifFilterMessages;
+
+  /// No description provided for @notifFilterCalls.
+  ///
+  /// In en, this message translates to:
+  /// **'Calls'**
+  String get notifFilterCalls;
+
+  /// No description provided for @notifFilterLikes.
+  ///
+  /// In en, this message translates to:
+  /// **'Likes'**
+  String get notifFilterLikes;
+
+  /// No description provided for @notifFilterComments.
+  ///
+  /// In en, this message translates to:
+  /// **'Comments'**
+  String get notifFilterComments;
+
+  /// No description provided for @notifFilterFollows.
+  ///
+  /// In en, this message translates to:
+  /// **'Follows'**
+  String get notifFilterFollows;
+
+  /// No description provided for @notifFilterFriendRequests.
+  ///
+  /// In en, this message translates to:
+  /// **'Friend Requests'**
+  String get notifFilterFriendRequests;
+
+  /// No description provided for @searchTabForYou.
+  ///
+  /// In en, this message translates to:
+  /// **'For You'**
+  String get searchTabForYou;
+
+  /// No description provided for @searchTabAccounts.
+  ///
+  /// In en, this message translates to:
+  /// **'Accounts'**
+  String get searchTabAccounts;
+
+  /// No description provided for @searchTabGroups.
+  ///
+  /// In en, this message translates to:
+  /// **'Groups'**
+  String get searchTabGroups;
+
+  /// No description provided for @searchTabReels.
+  ///
+  /// In en, this message translates to:
+  /// **'Reels'**
+  String get searchTabReels;
+
+  /// No description provided for @searchTabFriends.
+  ///
+  /// In en, this message translates to:
+  /// **'Friends'**
+  String get searchTabFriends;
+
+  /// No description provided for @aiModelGeminiTagline.
+  ///
+  /// In en, this message translates to:
+  /// **'Fast, and great with images'**
+  String get aiModelGeminiTagline;
+
+  /// No description provided for @aiModelLlamaTagline.
+  ///
+  /// In en, this message translates to:
+  /// **'Open-weight and efficient'**
+  String get aiModelLlamaTagline;
+
+  /// No description provided for @aiModelOpenRouterTagline.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-picks a free model for you'**
+  String get aiModelOpenRouterTagline;
+
+  /// No description provided for @addPhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Photo'**
+  String get addPhoto;
+
+  /// No description provided for @addVideo.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Video'**
+  String get addVideo;
+
+  /// No description provided for @addDocument.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a Document'**
+  String get addDocument;
+
+  /// No description provided for @addGif.
+  ///
+  /// In en, this message translates to:
+  /// **'Add GIF'**
+  String get addGif;
+
+  /// No description provided for @liveVideo.
+  ///
+  /// In en, this message translates to:
+  /// **'Live Video'**
+  String get liveVideo;
+
+  /// No description provided for @sortNewest.
+  ///
+  /// In en, this message translates to:
+  /// **'Newest'**
+  String get sortNewest;
+
+  /// No description provided for @sortOldest.
+  ///
+  /// In en, this message translates to:
+  /// **'Oldest'**
+  String get sortOldest;
+
+  /// No description provided for @sortTop.
+  ///
+  /// In en, this message translates to:
+  /// **'Top'**
+  String get sortTop;
+
+  /// No description provided for @like.
+  ///
+  /// In en, this message translates to:
+  /// **'Like'**
+  String get like;
+
+  /// No description provided for @viewRepliesCount.
+  ///
+  /// In en, this message translates to:
+  /// **'View {count} {count, plural, =1{reply} other{replies}}'**
+  String viewRepliesCount(num count);
+
+  /// No description provided for @revokeInviteBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Anyone with the current link will no longer be able to join using it. Continue?'**
+  String get revokeInviteBody;
+
+  /// No description provided for @revoke.
+  ///
+  /// In en, this message translates to:
+  /// **'Revoke'**
+  String get revoke;
+
+  /// No description provided for @saveChanges.
+  ///
+  /// In en, this message translates to:
+  /// **'Save Changes'**
+  String get saveChanges;
+
+  /// No description provided for @tapForGroupInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap for group info'**
+  String get tapForGroupInfo;
+
+  /// No description provided for @retryAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry Again'**
+  String get retryAgain;
+
+  /// No description provided for @presenceEveryoneDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Anyone using the app can see your status'**
+  String get presenceEveryoneDesc;
+
+  /// No description provided for @presenceFriendsDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Only accepted friends can see your status'**
+  String get presenceFriendsDesc;
+
+  /// No description provided for @presenceSpecificDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose exactly who can see your status'**
+  String get presenceSpecificDesc;
+
+  /// No description provided for @presenceNobodyDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Your online status stays private'**
+  String get presenceNobodyDesc;
+
+  /// No description provided for @aiChatPrevious7Days.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous 7 Days'**
+  String get aiChatPrevious7Days;
+
+  /// No description provided for @aiChatPrevious30Days.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous 30 Days'**
+  String get aiChatPrevious30Days;
+
+  /// No description provided for @aiChatOlder.
+  ///
+  /// In en, this message translates to:
+  /// **'Older'**
+  String get aiChatOlder;
+
+  /// No description provided for @aiAssistant.
+  ///
+  /// In en, this message translates to:
+  /// **'AI Assistant'**
+  String get aiAssistant;
+
+  /// No description provided for @groups.
+  ///
+  /// In en, this message translates to:
+  /// **'Groups'**
+  String get groups;
+
+  /// No description provided for @people.
+  ///
+  /// In en, this message translates to:
+  /// **'People'**
+  String get people;
 }
 
 class _AppLocalizationsDelegate
