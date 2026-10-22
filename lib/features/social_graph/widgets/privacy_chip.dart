@@ -57,7 +57,7 @@ class PrivacyChip extends StatelessWidget {
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        privacy.label,
+                        privacy.localizedLabel(context),
                         style: TextStyle(
                           color: Colors.white.withValues(alpha: 0.8),
                           fontSize: 9,

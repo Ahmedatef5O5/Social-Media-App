@@ -20,7 +20,12 @@ class _PrivacyPolicyViewState extends State<PrivacyPolicyView> {
   final Map<int, GlobalKey> _sectionKeys = {};
 
   Future<List<PolicySection>> _load() async {
-    final raw = await rootBundle.loadString('assets/docs/privacy_policy.md');
+    final isAr = Localizations.localeOf(context).languageCode == 'ar';
+    final path =
+        isAr
+            ? 'assets/docs/privacy_policy_ar.md'
+            : 'assets/docs/privacy_policy.md';
+    final raw = await rootBundle.loadString(path);
     return MarkdownSectionParser.parse(raw);
   }
 

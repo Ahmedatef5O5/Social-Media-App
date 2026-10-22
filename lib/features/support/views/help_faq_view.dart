@@ -20,7 +20,10 @@ class _HelpFaqViewState extends State<HelpFaqView> {
   String _query = '';
 
   Future<List<FaqCategory>> _load() async {
-    final raw = await rootBundle.loadString('assets/docs/help_faq.json');
+    final isAr = Localizations.localeOf(context).languageCode == 'ar';
+    final path =
+        isAr ? 'assets/docs/help_faq_ar.json' : 'assets/docs/help_faq.json';
+    final raw = await rootBundle.loadString(path);
     final decoded = jsonDecode(raw) as List<dynamic>;
     return decoded
         .map((e) => FaqCategory.fromJson(e as Map<String, dynamic>))

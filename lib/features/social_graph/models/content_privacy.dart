@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 enum ContentPrivacy { public, friends, private }
 
@@ -30,6 +31,13 @@ extension ContentPrivacyUI on ContentPrivacy {
     ContentPrivacy.friends => Icons.people_alt_rounded,
     ContentPrivacy.private => Icons.lock_outline,
   };
+
+  String localizedLabel(BuildContext context) => switch (this) {
+    ContentPrivacy.public => context.l10n.public,
+    ContentPrivacy.friends => context.l10n.friends,
+    ContentPrivacy.private => context.l10n.specificPeople,
+  };
+
   String get label => switch (this) {
     ContentPrivacy.public => 'Public',
     ContentPrivacy.friends => 'Friends',

@@ -20,7 +20,12 @@ class _TermsOfServiceViewState extends State<TermsOfServiceView> {
   final Map<int, GlobalKey> _sectionKeys = {};
 
   Future<List<PolicySection>> _load() async {
-    final raw = await rootBundle.loadString('assets/docs/terms_of_service.md');
+    final isAr = Localizations.localeOf(context).languageCode == 'ar';
+    final path =
+        isAr
+            ? 'assets/docs/terms_of_service_ar.md'
+            : 'assets/docs/terms_of_service.md';
+    final raw = await rootBundle.loadString(path);
     return MarkdownSectionParser.parse(raw);
   }
 
