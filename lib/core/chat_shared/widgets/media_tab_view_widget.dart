@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../features/home/cubits/home_cubit/home_cubit.dart';
 import '../../cache/utils/cloudinary_url_extensions.dart';
+import '../../constants/app_images.dart';
 import '../../supabase/supabase_provider.dart';
 import '../../widgets/app_network_image.dart';
 import '../cubits/shared_media_cubit/shared_media_cubit.dart';
@@ -59,8 +60,36 @@ class _MediaTabViewState extends State<MediaTabView>
           };
         }
         if (items.isEmpty) {
+          final size = MediaQuery.sizeOf(context);
+          final imageSize = (size.width * 0.36).clamp(110.0, 160.0);
+
           return Center(
-            child: Text(context.l10n.noSharedYet(_labelFor(widget.tab))),
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Image.asset(
+                    _assetFor(widget.tab),
+                    width: imageSize,
+                    height: imageSize,
+                    fit: BoxFit.contain,
+                    color: Theme.of(
+                      context,
+                    ).primaryColor.withValues(alpha: 0.85),
+                  ),
+                  const SizedBox(height: 24),
+                  Text(
+                    context.l10n.noSharedYet(_labelFor(widget.tab, context)),
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(context).hintColor,
+                      fontSize: 14.5,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           );
         }
 
@@ -92,12 +121,20 @@ class _MediaTabViewState extends State<MediaTabView>
     );
   }
 
-  String _labelFor(SharedMediaTab tab) => switch (tab) {
-    SharedMediaTab.all => 'media',
-    SharedMediaTab.images => 'images',
-    SharedMediaTab.videos => 'videos',
+  String _assetFor(SharedMediaTab tab) => switch (tab) {
+    SharedMediaTab.all => AppImages.sharedMediaIcon,
+    SharedMediaTab.images => AppImages.imageGalleryIcon,
+    SharedMediaTab.videos => AppImages.videoMediaIcon,
+    SharedMediaTab.voice => AppImages.voiceMessagesIcon,
+    SharedMediaTab.links => AppImages.linkIcon,
+  };
+
+  String _labelFor(SharedMediaTab tab, BuildContext context) => switch (tab) {
+    SharedMediaTab.all => context.l10n.sharedLabelMedia,
+    SharedMediaTab.images => context.l10n.sharedLabelImages,
+    SharedMediaTab.videos => context.l10n.sharedLabelVideos,
     SharedMediaTab.voice => context.l10n.voiceMessages,
-    SharedMediaTab.links => 'links',
+    SharedMediaTab.links => context.l10n.sharedLabelLinks,
   };
 }
 
