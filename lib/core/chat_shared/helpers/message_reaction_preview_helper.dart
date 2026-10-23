@@ -126,11 +126,14 @@ class MessageReactionPreviewHelper {
     String? fileName,
     String? caption,
   }) {
+    final cleanReactor = reactorName.trim();
     final actor =
         isMe
             ? AppL10n.current.you
-            : (reactorName.trim().isNotEmpty
-                ? reactorName.trim()
+            : (cleanReactor.isNotEmpty
+                ? (cleanReactor.toLowerCase() == 'deleted account'
+                    ? AppL10n.current.deletedAccount
+                    : cleanReactor)
                 : AppL10n.current.someone);
     final emoji = resolveEmoji(reactionType);
     final snippet = getMessageFallback(
@@ -201,7 +204,11 @@ class MessageReactionPreviewHelper {
     Color? defaultIconColor,
     double iconSize = 13,
   }) {
-    final reactIdx = rawPreview.indexOf(' react with ');
+    final localizedPreview = rawPreview.replaceAll(
+      RegExp(r'Deleted Account', caseSensitive: false),
+      AppL10n.current.deletedAccount,
+    );
+    final reactIdx = localizedPreview.indexOf(' react with ');
     final toIdx =
         reactIdx != -1 ? rawPreview.indexOf(' to ', reactIdx + 12) : -1;
 

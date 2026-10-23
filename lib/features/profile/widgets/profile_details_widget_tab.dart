@@ -34,22 +34,47 @@ class ProfileDetailsWidgetTab extends StatelessWidget {
       ),
       padding: const EdgeInsets.all(20),
       children: [
-        _buildInfoRow(CupertinoIcons.mail, 'Email', user.email, context),
+        _buildInfoRow(
+          CupertinoIcons.mail,
+          context.l10n.email,
+          user.email,
+          context,
+        ),
         const Gap(15),
-        _buildInfoRow(CupertinoIcons.person_fill, 'Name', user.name, context),
+        _buildInfoRow(
+          CupertinoIcons.person_fill,
+          context.l10n.fullName,
+          user.name,
+          context,
+        ),
         const Gap(15),
         _buildInfoRow(
           CupertinoIcons.person_circle,
-          'username',
+          context.l10n.fieldUsername,
           user.userName,
           context,
         ),
         const Gap(15),
-        _buildInfoRow(CupertinoIcons.info, 'title', user.title, context),
+        _buildInfoRow(
+          CupertinoIcons.info,
+          context.l10n.fieldJobTitle,
+          user.title,
+          context,
+        ),
         const Gap(15),
-        _buildInfoRow(CupertinoIcons.info, 'Bio', user.bio, context),
+        _buildInfoRow(
+          CupertinoIcons.info,
+          context.l10n.fieldBio,
+          user.bio,
+          context,
+        ),
         const Gap(15),
-        _buildInfoRow(CupertinoIcons.calendar, 'Joined', 'March 2026', context),
+        _buildInfoRow(
+          CupertinoIcons.calendar,
+          context.l10n.fieldJoined,
+          'March 2026',
+          context,
+        ),
 
         if (populatedSocialLinks.isNotEmpty) ...[
           const Gap(25),

@@ -195,9 +195,9 @@ class _DiscoverPersonGridCardWidgetState
                         const Gap(6),
                         _MetaLine(
                           icon: Icons.people_alt_rounded,
-                          label:
-                              '${person.totalFriendsCount} '
-                              '${person.totalFriendsCount == 1 ? 'friend' : 'friends'}',
+                          label: context.l10n.friends2(
+                            person.totalFriendsCount,
+                          ),
                         ),
                       ],
                       if (person.mutualGroupsCount > 0) ...[
@@ -219,8 +219,8 @@ class _DiscoverPersonGridCardWidgetState
                         width: double.infinity,
                         child: DiscoverGridActionButton(
                           isActive: person.isFollowing,
-                          idleLabel: 'Follow',
-                          activeLabel: 'Following',
+                          idleLabel: context.l10n.btnFollow,
+                          activeLabel: context.l10n.btnFollowing,
                           idleIcon: Icons.person_add_rounded,
                           activeIcon: Icons.check_rounded,
                           onPressed: () => _handleFollowAction(context),
@@ -249,8 +249,8 @@ class _DiscoverPersonGridCardWidgetState
       case FriendshipStatus.none:
         return DiscoverGridActionButton(
           isActive: false,
-          idleLabel: 'Add Friend',
-          activeLabel: 'Requested',
+          idleLabel: context.l10n.btnAddFriend,
+          activeLabel: context.l10n.btnRequested,
           idleIcon: Icons.person_add_alt_1_rounded,
           activeIcon: Icons.hourglass_top_rounded,
           onPressed: () => _handleFriendAction(context),
@@ -258,8 +258,8 @@ class _DiscoverPersonGridCardWidgetState
       case FriendshipStatus.pendingSent:
         return DiscoverGridActionButton(
           isActive: true,
-          idleLabel: 'Add Friend',
-          activeLabel: 'Requested',
+          idleLabel: context.l10n.btnAddFriend,
+          activeLabel: context.l10n.btnRequested,
           idleIcon: Icons.person_add_alt_1_rounded,
           activeIcon: Icons.hourglass_top_rounded,
           onPressed: () => _handleFriendAction(context),

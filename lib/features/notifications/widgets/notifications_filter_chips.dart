@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../../core/localization/l10n_extension.dart';
 import '../models/app_notification_model.dart';
 
 class NotificationsFilterChips extends StatefulWidget {
@@ -22,19 +23,29 @@ class NotificationsFilterChips extends StatefulWidget {
 }
 
 class _NotificationsFilterChipsState extends State<NotificationsFilterChips> {
-  final List<(NotificationType?, String, IconData)> _filters = [
-    (null, 'All', Icons.notifications_rounded),
-    (NotificationType.chat, 'Messages', Icons.chat_bubble_outline_rounded),
-    (NotificationType.call, 'Calls', Icons.call_rounded),
-    (NotificationType.like, 'Likes', Icons.favorite_border_rounded),
-    (NotificationType.comment, 'Comments', Icons.comment_outlined),
-    (NotificationType.follow, 'Follows', Icons.person_add_outlined),
-    (
-      NotificationType.friendRequest,
-      'Friend Requests',
-      Icons.person_add_alt_1_rounded,
-    ),
+  static const List<(NotificationType?, IconData)> _filterTypes = [
+    (null, Icons.notifications_rounded),
+    (NotificationType.chat, Icons.chat_bubble_outline_rounded),
+    (NotificationType.call, Icons.call_rounded),
+    (NotificationType.like, Icons.favorite_border_rounded),
+    (NotificationType.comment, Icons.comment_outlined),
+    (NotificationType.follow, Icons.person_add_outlined),
+    (NotificationType.friendRequest, Icons.person_add_alt_1_rounded),
   ];
+
+  String _labelForType(
+    NotificationType? type,
+    BuildContext context,
+  ) => switch (type) {
+    null => context.l10n.notifFilterAll,
+    NotificationType.chat => context.l10n.notifFilterMessages,
+    NotificationType.call => context.l10n.notifFilterCalls,
+    NotificationType.like => context.l10n.notifFilterLikes,
+    NotificationType.comment => context.l10n.notifFilterComments,
+    NotificationType.follow => context.l10n.notifFilterFollows,
+    NotificationType.friendRequest => context.l10n.notifFilterFriendRequests,
+    _ => '',
+  };
 
   late List<GlobalKey> _keys;
   final ScrollController _scrollController = ScrollController();
@@ -42,7 +53,7 @@ class _NotificationsFilterChipsState extends State<NotificationsFilterChips> {
   @override
   void initState() {
     super.initState();
-    _keys = List.generate(_filters.length, (_) => GlobalKey());
+    _keys = List.generate(_filterTypes.length, (_) => GlobalKey());
     _scrollToActiveFilter();
   }
 
@@ -62,7 +73,7 @@ class _NotificationsFilterChipsState extends State<NotificationsFilterChips> {
 
   void _scrollToActiveFilter() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final index = _filters.indexWhere((f) => f.$1 == widget.activeFilter);
+      final index = _filterTypes.indexWhere((f) => f.$1 == widget.activeFilter);
       if (index != -1 && _keys[index].currentContext != null) {
         Scrollable.ensureVisible(
           _keys[index].currentContext!,
@@ -83,9 +94,10 @@ class _NotificationsFilterChipsState extends State<NotificationsFilterChips> {
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         separatorBuilder: (_, __) => const SizedBox(width: 8),
-        itemCount: _filters.length,
+        itemCount: _filterTypes.length,
         itemBuilder: (context, i) {
-          final (type, label, icon) = _filters[i];
+          final (type, icon) = _filterTypes[i];
+          final label = _labelForType(type, context);
           final isActive = widget.activeFilter == type;
           return GestureDetector(
             key: _keys[i],

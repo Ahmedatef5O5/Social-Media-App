@@ -31,7 +31,7 @@ class PostVideoHeaderWidget extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             CircleIconButton(
-              icon: Icons.arrow_back_rounded,
+              icon: Icons.arrow_back_ios_new,
               onTap: () => Navigator.of(context).pop(),
             ),
             AnimatedBuilder(

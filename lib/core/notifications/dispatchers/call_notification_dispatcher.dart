@@ -16,6 +16,8 @@ import 'package:social_media_app/core/supabase/supabase_provider.dart';
 import 'package:social_media_app/features/settings/repository/settings_repository.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../localization/app_l10n.dart';
+
 class CallNotificationDispatcher {
   CallNotificationDispatcher._();
   static final CallNotificationDispatcher instance =
@@ -61,8 +63,9 @@ class CallNotificationDispatcher {
     }
 
     final subtitle =
-        callType == 'video' ? 'Incoming video call' : 'Incoming voice call';
-
+        callType == 'video'
+            ? AppL10n.current.incomingVideoCall
+            : AppL10n.current.incomingVoiceCall;
     final androidDetails = AndroidNotificationDetails(
       NotificationChannelSetup.callChannel.id,
       NotificationChannelSetup.callChannel.name,
@@ -77,14 +80,14 @@ class CallNotificationDispatcher {
       autoCancel: false,
       timeoutAfter: 60000,
       actions: [
-        const AndroidNotificationAction(
+        AndroidNotificationAction(
           'decline_call',
-          'Decline',
+          AppL10n.current.decline,
           cancelNotification: true,
         ),
         AndroidNotificationAction(
           'accept_call',
-          'Accept',
+          AppL10n.current.accept,
           cancelNotification: true,
           showsUserInterface: true,
         ),

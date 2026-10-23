@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../core/localization/l10n_extension.dart';
 import '../cubits/group_details_cubit/group_details_cubit.dart';
 import '../models/group_header_stats.dart';
 
@@ -90,12 +91,20 @@ class _GroupMembersOnlineLabelState extends State<GroupMembersOnlineLabel> {
   @override
   Widget build(BuildContext context) {
     final stats = _displayedStats;
-    final text =
-        stats == null
-            ? 'Tap for group info'
-            : '${stats.totalMembers} member${stats.totalMembers == 1 ? '' : 's'}'
-                '${stats.onlineCount > 0 ? ', ${stats.onlineCount} online' : ''}';
-
+    final String text;
+    if (stats == null) {
+      text = context.l10n.tapForGroupInfo;
+    } else {
+      final membersText = context.l10n.membersCountPlural(stats.totalMembers);
+      if (stats.onlineCount > 0) {
+        final separator =
+            Directionality.of(context) == TextDirection.rtl ? '، ' : ', ';
+        text =
+            '$membersText$separator${stats.onlineCount} ${context.l10n.online}';
+      } else {
+        text = membersText;
+      }
+    }
     return AnimatedSwitcher(
       duration: const Duration(milliseconds: 300),
       transitionBuilder:

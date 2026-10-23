@@ -177,7 +177,7 @@ class _ForgotPasswordViewCustomState extends State<ForgotPasswordView> {
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     Align(
-                      alignment: Alignment.centerLeft,
+                      alignment: AlignmentDirectional.centerStart,
                       child: IconButton(
                         icon: const Icon(Icons.arrow_back_ios_new_rounded),
                         onPressed: () => Navigator.of(context).maybePop(),

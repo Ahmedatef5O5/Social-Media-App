@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
+import 'dart:ui' as ui;
 import 'package:intl/intl.dart';
 import 'package:social_media_app/core/router/app_routes.dart';
 import 'package:social_media_app/features/settings/widgets/settings_detail_sliver_app_bar.dart';
@@ -122,7 +123,7 @@ class _FeedbackTile extends StatelessWidget {
                 const Gap(8),
                 Expanded(
                   child: Text(
-                    item.category.label,
+                    item.category.localizedName(context),
                     style: const TextStyle(
                       fontWeight: FontWeight.w800,
                       fontSize: 14.5,
@@ -156,10 +157,28 @@ class _FeedbackTile extends StatelessWidget {
             Row(
               children: [
                 Expanded(
-                  child: Text(
-                    '#${item.shortId} · ${DateFormat('MMM d, y · h:mm a').format(item.createdAt)}',
-                    style: TextStyle(fontSize: 11.5, color: muted),
-                    overflow: TextOverflow.ellipsis,
+                  child: Row(
+                    children: [
+                      Text(
+                        '#${item.shortId}',
+                        textDirection: ui.TextDirection.ltr,
+                        style: TextStyle(fontSize: 11.5, color: muted),
+                      ),
+                      Text(
+                        ' · ',
+                        style: TextStyle(fontSize: 11.5, color: muted),
+                      ),
+                      Flexible(
+                        child: Text(
+                          DateFormat(
+                            'd MMM y · h:mm a',
+                            Localizations.localeOf(context).languageCode,
+                          ).format(item.createdAt),
+                          style: TextStyle(fontSize: 11.5, color: muted),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
                 if (item.hasReply) ...[

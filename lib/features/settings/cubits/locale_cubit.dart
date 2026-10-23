@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl/intl.dart';
 
 import '../../../core/localization/app_locale.dart';
 import '../repository/settings_repository.dart';
@@ -28,6 +29,9 @@ class LocaleCubit extends Cubit<Locale> {
   void apply(String code) {
     if (isClosed) return;
     final next = AppLocale.toLocale(code);
-    if (next != state) emit(next);
+    if (next != state) {
+      Intl.defaultLocale = next.languageCode;
+      emit(next);
+    }
   }
 }

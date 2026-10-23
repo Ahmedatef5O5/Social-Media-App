@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:social_media_app/core/widgets/custom_elevated_button.dart';
 import '../constants/app_images.dart';
+import '../localization/l10n_extension.dart';
 import '../themes/cubits/theme_cubit.dart';
 import '../themes/themed_error_lottie.dart';
 
@@ -35,8 +36,17 @@ class _CustomTabWrapperState<T> extends State<CustomTabWrapper<T>> {
     final screenSize = MediaQuery.sizeOf(context);
     final theme = Theme.of(context);
     final appTheme = context.watch<ThemeCubit>().state.theme;
-
     Widget content;
+    String displayError = widget.errorMessage ?? '';
+    final lowerError = displayError.toLowerCase();
+    if (lowerError.contains('internet') ||
+        lowerError.contains('network') ||
+        lowerError.contains('connection') ||
+        lowerError.contains('socket') ||
+        lowerError.contains('failed host lookup') ||
+        lowerError.contains('no-internet')) {
+      displayError = context.l10n.authErrNoInternet;
+    }
 
     if (widget.isLoading) {
       content = widget.loadingSkeleton;
@@ -60,11 +70,12 @@ class _CustomTabWrapperState<T> extends State<CustomTabWrapper<T>> {
 
               child: AnimatedSize(
                 duration: const Duration(milliseconds: 400),
+
                 child:
                     _isRetrying
                         ? const SizedBox(width: double.infinity)
                         : Text(
-                          widget.errorMessage!,
+                          displayError,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           textAlign: TextAlign.center,
@@ -79,7 +90,7 @@ class _CustomTabWrapperState<T> extends State<CustomTabWrapper<T>> {
             ),
             SizedBox(height: screenSize.height * 0.04),
             CustomElevatedButton(
-              txtBtn: 'Retry Again',
+              txtBtn: context.l10n.retryAgain,
               isLoading: _isRetrying,
               txtColor: theme.colorScheme.onPrimary,
               bgColor: theme.primaryColor,

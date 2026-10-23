@@ -169,9 +169,8 @@ class _GroupInviteLinkSectionState extends State<GroupInviteLinkSection> {
     final confirm = await GroupConfirmDialog.show(
       context,
       title: context.l10n.revokeInviteLink,
-      body:
-          'Anyone with the current link will no longer be able to join using it. Continue?',
-      confirmLabel: 'Revoke',
+      body: context.l10n.revokeInviteBody,
+      confirmLabel: context.l10n.revoke,
       confirmColor: Colors.red,
     );
     if (confirm != true) return;

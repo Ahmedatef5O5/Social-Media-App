@@ -1,3 +1,4 @@
+import '../../../core/localization/app_l10n.dart';
 import '../../../core/mentions/models/mention_ref.dart';
 import '../../../core/utilities/supabase_constants.dart';
 
@@ -6,7 +7,7 @@ class GroupMessageModel {
   final String? clientMessageId;
   final String groupId;
   final String senderId;
-  final String senderName;
+  final String _senderName;
   final String? senderAvatar;
   final String text;
   final DateTime createdAt;
@@ -38,6 +39,11 @@ class GroupMessageModel {
   final String? targetId;
   final String? targetName;
 
+  String get senderName =>
+      _senderName.trim().toLowerCase() == 'deleted account'
+          ? AppL10n.current.deletedAccount
+          : _senderName;
+
   bool get isForwarded => forwardedFromUserId != null;
 
   static const String systemEventType = 'system_event';
@@ -48,7 +54,7 @@ class GroupMessageModel {
     this.clientMessageId,
     required this.groupId,
     required this.senderId,
-    required this.senderName,
+    required String senderName,
     this.senderAvatar,
     required this.text,
     required this.createdAt,
@@ -79,7 +85,7 @@ class GroupMessageModel {
     this.systemEventData,
     this.targetId,
     this.targetName,
-  });
+  }) : _senderName = senderName;
 
   static String? replyMediaUrlFrom(GroupMessageModel? original) {
     if (original == null) return null;

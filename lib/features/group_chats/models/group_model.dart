@@ -1,3 +1,4 @@
+import 'package:social_media_app/core/localization/app_l10n.dart';
 import 'package:social_media_app/features/group_chats/models/group_member_model.dart';
 import 'group_presence_entry.dart';
 
@@ -13,11 +14,11 @@ class GroupModel {
   final List<GroupMemberModel> members;
   final String? lastMessage;
   final String? lastMessageSenderId;
-  final String? lastMessageSenderName;
+  final String? _lastMessageSenderName;
   final String? lastMessageType;
   final DateTime? lastMessageAt;
   final String? lastMessageTargetId;
-  final String? lastMessageTargetName;
+  final String? _lastMessageTargetName;
   final int unreadCount;
   final String? title;
   final bool isBlocked;
@@ -34,17 +35,26 @@ class GroupModel {
     this.members = const [],
     this.lastMessage,
     this.lastMessageSenderId,
-    this.lastMessageSenderName,
+    String? lastMessageSenderName,
     this.lastMessageType,
     this.lastMessageAt,
     this.lastMessageTargetId,
-    this.lastMessageTargetName,
+    String? lastMessageTargetName,
     this.unreadCount = 0,
     this.title,
     this.isBlocked = false,
     this.isMuted = false,
     this.presence = GroupPresenceSnapshot.empty,
-  });
+  }) : _lastMessageSenderName = lastMessageSenderName,
+       _lastMessageTargetName = lastMessageTargetName;
+  String? get lastMessageSenderName =>
+      _lastMessageSenderName?.trim().toLowerCase() == 'deleted account'
+          ? AppL10n.current.deletedAccount
+          : _lastMessageSenderName;
+  String? get lastMessageTargetName =>
+      _lastMessageTargetName?.trim().toLowerCase() == 'deleted account'
+          ? AppL10n.current.deletedAccount
+          : _lastMessageTargetName;
 
   GroupModel copyWith({
     String? id,
@@ -139,12 +149,11 @@ class GroupModel {
     'created_at': createdAt.toIso8601String(),
     'is_member': isMember,
     'last_message': lastMessage,
-    'last_message_sender_id': lastMessageSenderId,
-    'last_message_sender_name': lastMessageSenderName,
+    'last_message_sender_name': _lastMessageSenderName,
     'last_message_type': lastMessageType,
     'last_message_at': lastMessageAt?.toIso8601String(),
     'last_message_target_id': lastMessageTargetId,
-    'last_message_target_name': lastMessageTargetName,
+    'last_message_target_name': _lastMessageTargetName,
     'unread_count': unreadCount,
     'is_muted': isMuted,
   };

@@ -1,3 +1,6 @@
+import 'package:flutter/widgets.dart';
+import '../../../core/localization/l10n_extension.dart';
+
 enum ReportTargetType {
   post('post'),
   comment('comment'),
@@ -9,14 +12,13 @@ enum ReportTargetType {
   const ReportTargetType(this.dbValue);
   final String dbValue;
 
-  /// Lower-case noun used in UI copy ("Report post").
-  String get label => switch (this) {
-    ReportTargetType.post => 'post',
-    ReportTargetType.comment => 'comment',
-    ReportTargetType.story => 'story',
-    ReportTargetType.message => 'message',
-    ReportTargetType.groupMessage => 'message',
-    ReportTargetType.user => 'profile',
+  String localizedLabel(BuildContext context) => switch (this) {
+    ReportTargetType.post => context.l10n.targetPost,
+    ReportTargetType.comment => context.l10n.targetComment,
+    ReportTargetType.story => context.l10n.targetStory,
+    ReportTargetType.message => context.l10n.targetMessage,
+    ReportTargetType.groupMessage => context.l10n.targetMessage,
+    ReportTargetType.user => context.l10n.targetProfile,
   };
 }
 

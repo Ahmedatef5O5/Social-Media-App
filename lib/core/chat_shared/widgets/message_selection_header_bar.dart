@@ -52,13 +52,13 @@ class MessageSelectionHeaderBar extends StatelessWidget
         child: Row(
           children: [
             PremiumSelectionCloseButton(onPressed: onCancel, color: primary),
-            const SizedBox(width: 4),
+            const SizedBox(width: 8),
             Expanded(
               child: Align(
-                alignment: Alignment.centerLeft,
+                alignment: AlignmentDirectional.centerStart,
                 child: FittedBox(
                   fit: BoxFit.scaleDown,
-                  alignment: Alignment.centerLeft,
+                  alignment: AlignmentDirectional.centerStart,
                   child: PremiumSelectionCountLabel(
                     count: selectedCount,
                     color: Theme.of(context).colorScheme.onSurface,

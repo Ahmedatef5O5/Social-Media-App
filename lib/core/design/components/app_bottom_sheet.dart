@@ -65,7 +65,7 @@ class AppBottomSheet extends StatelessWidget {
               ],
               if (title != null) ...[
                 Align(
-                  alignment: Alignment.centerLeft,
+                  alignment: AlignmentDirectional.centerStart,
                   child: Text(
                     title!,
                     style: context.typography.titleLarge?.copyWith(

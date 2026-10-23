@@ -59,11 +59,14 @@ class _AnimatedActivityTextState extends State<AnimatedActivityText> {
 
     final lower = baseText.toLowerCase();
     if (widget.forceAnimate ||
+        baseText.contains('...') ||
         lower.contains('typing') ||
         lower.contains('recording') ||
         lower.contains('connecting') ||
         lower.contains('joining') ||
-        lower.contains('calling')) {
+        lower.contains('calling') ||
+        baseText.contains('يكتب') ||
+        baseText.contains('يسجّل')) {
       isAnimated = true;
       baseText = baseText.replaceAll(RegExp(r'\.+$'), '');
     }

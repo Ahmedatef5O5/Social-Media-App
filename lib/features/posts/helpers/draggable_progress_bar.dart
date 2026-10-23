@@ -33,25 +33,27 @@ class _DraggableProgressBarState extends State<DraggableProgressBar> {
 
   Duration get _duration => widget.controller.value.duration;
 
-  double _fractionFromDx(double dx, double width) {
+  double _fractionFromDx(double dx, double width, bool isRtl) {
     if (width <= 0) return 0;
-    return (dx / width).clamp(0.0, 1.0);
+    final relativeDx = isRtl ? (width - dx) : dx;
+    return (relativeDx / width).clamp(0.0, 1.0);
   }
 
-  void _handleDragStart(DragStartDetails details, double width) {
+  void _handleDragStart(DragStartDetails details, double width, bool isRtl) {
     if (_duration == Duration.zero) return;
     _wasPlayingBeforeDrag = widget.controller.value.isPlaying;
     widget.controller.pause();
+    final fraction = _fractionFromDx(details.localPosition.dx, width, isRtl);
     setState(() {
       _isDragging = true;
-      _dragPosition = widget.controller.value.position;
+      _dragPosition = _duration * fraction;
     });
     widget.onScrubStart();
   }
 
-  void _handleDragUpdate(DragUpdateDetails details, double width) {
+  void _handleDragUpdate(DragUpdateDetails details, double width, bool isRtl) {
     if (_duration == Duration.zero) return;
-    final fraction = _fractionFromDx(details.localPosition.dx, width);
+    final fraction = _fractionFromDx(details.localPosition.dx, width, isRtl);
     setState(() => _dragPosition = _duration * fraction);
   }
 
@@ -63,9 +65,9 @@ class _DraggableProgressBarState extends State<DraggableProgressBar> {
     widget.onScrubEnd();
   }
 
-  void _handleTapSeek(TapUpDetails details, double width) {
+  void _handleTapSeek(TapUpDetails details, double width, bool isRtl) {
     if (_duration == Duration.zero) return;
-    final fraction = _fractionFromDx(details.localPosition.dx, width);
+    final fraction = _fractionFromDx(details.localPosition.dx, width, isRtl);
     widget.controller.seekTo(_duration * fraction);
     widget.onScrubStart();
     widget.onScrubEnd();
@@ -85,15 +87,17 @@ class _DraggableProgressBarState extends State<DraggableProgressBar> {
 
   @override
   Widget build(BuildContext context) {
+    final bool isRtl = Directionality.of(context) == TextDirection.rtl;
+
     return LayoutBuilder(
       builder: (context, constraints) {
         final width = constraints.maxWidth;
         return GestureDetector(
           behavior: HitTestBehavior.opaque,
-          onHorizontalDragStart: (d) => _handleDragStart(d, width),
-          onHorizontalDragUpdate: (d) => _handleDragUpdate(d, width),
+          onHorizontalDragStart: (d) => _handleDragStart(d, width, isRtl),
+          onHorizontalDragUpdate: (d) => _handleDragUpdate(d, width, isRtl),
           onHorizontalDragEnd: _handleDragEnd,
-          onTapUp: (d) => _handleTapSeek(d, width),
+          onTapUp: (d) => _handleTapSeek(d, width, isRtl),
           child: SizedBox(
             height: _hitTargetHeight,
             width: width,
@@ -120,7 +124,7 @@ class _DraggableProgressBarState extends State<DraggableProgressBar> {
                             ? (positionMs / durationMs).clamp(0.0, 1.0)
                             : 0.0;
 
-                    final dotLeft = (fraction * width - _dotSize / 2).clamp(
+                    final dotStart = (fraction * width - _dotSize / 2).clamp(
                       0.0,
                       width - _dotSize,
                     );
@@ -136,6 +140,7 @@ class _DraggableProgressBarState extends State<DraggableProgressBar> {
                             duration: const Duration(milliseconds: 150),
                             height: barHeight,
                             child: Stack(
+                              alignment: AlignmentDirectional.centerStart,
                               children: [
                                 Container(
                                   color: Colors.white.withValues(
@@ -143,6 +148,7 @@ class _DraggableProgressBarState extends State<DraggableProgressBar> {
                                   ),
                                 ),
                                 FractionallySizedBox(
+                                  alignment: AlignmentDirectional.centerStart,
                                   widthFactor: fraction,
                                   child: Container(
                                     color: Theme.of(context).primaryColor,
@@ -154,8 +160,8 @@ class _DraggableProgressBarState extends State<DraggableProgressBar> {
                         ),
 
                         if (active)
-                          Positioned(
-                            left: dotLeft,
+                          PositionedDirectional(
+                            start: dotStart,
                             bottom: (barHeight / 2) - (_dotSize / 2),
                             child: Container(
                               width: _dotSize,
@@ -174,8 +180,8 @@ class _DraggableProgressBarState extends State<DraggableProgressBar> {
                           ),
 
                         if (_isDragging)
-                          Positioned(
-                            left: (dotLeft - 30).clamp(0.0, width - 90),
+                          PositionedDirectional(
+                            start: (dotStart - 30).clamp(0.0, width - 90),
                             bottom: _hitTargetHeight + 6,
                             child: PlaybackTimeDisplay(
                               text:

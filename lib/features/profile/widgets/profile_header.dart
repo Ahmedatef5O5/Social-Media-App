@@ -219,8 +219,8 @@ class ProfileHeader extends StatelessWidget {
         ProfileAnimatedActionButton(
           width: 112,
           isActive: state.isFollowing,
-          idleLabel: 'Follow',
-          activeLabel: 'Following',
+          idleLabel: context.l10n.btnFollow,
+          activeLabel: context.l10n.btnFollowing,
           idleIcon: Icons.add_rounded,
           activeIcon: Icons.check_rounded,
           idleStyle: ProfileActionStyle.outlineAccent,
@@ -268,8 +268,8 @@ class ProfileHeader extends StatelessWidget {
         return ProfileAnimatedActionButton(
           key: const ValueKey('friendship-request-button'),
           isActive: isRequested,
-          idleLabel: 'Add Friend',
-          activeLabel: 'Requested',
+          idleLabel: context.l10n.btnAddFriend,
+          activeLabel: context.l10n.btnRequested,
           idleIcon: Icons.person_add_alt_1_rounded,
           activeIcon: Icons.hourglass_top_rounded,
           idleStyle: ProfileActionStyle.primary,

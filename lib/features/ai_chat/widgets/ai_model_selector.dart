@@ -218,7 +218,7 @@ class _ModelTile extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    model.tagline,
+                    model.localizedTagline(context),
                     style: TextStyle(
                       color: Colors.white.withValues(alpha: 0.6),
                       fontSize: 12,

@@ -4,6 +4,7 @@ import '../../../core/services/active_call/cubits/active_call_session_cubit.dart
 import '../../../core/services/current_user_name_resolver.dart';
 import '../../../core/services/incoming_call_navigation_guard.dart';
 import '../../../core/services/permissions/app_permissions_service.dart';
+import 'package:social_media_app/core/localization/app_l10n.dart';
 import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/toast/app_toast.dart';
 import '../models/group_call_model.dart';
@@ -13,8 +14,7 @@ import '../views/livekit_group_call_view.dart';
 class GroupCallJoinHelper {
   const GroupCallJoinHelper._();
 
-  static const String busyMessage =
-      'Please end your current call before joining another call.';
+  static String get busyMessage => AppL10n.current.pleaseEndYourCurrent2;
 
   static Future<bool> join(BuildContext context, GroupCallModel call) async {
     final navigator = Navigator.of(context);

@@ -362,7 +362,7 @@ class _VoiceRecorderInputSectionState extends State<VoiceRecorderInputSection> {
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Padding(
-          padding: const EdgeInsets.only(right: 2),
+          padding: const EdgeInsetsDirectional.only(end: 8),
           child:
               isLocked
                   ? ElevatedIconButton(

@@ -297,7 +297,7 @@ class _EmailSettingsViewState extends State<EmailSettingsView>
         const Gap(20),
         if (info.hasPassword) ...[
           CustomElevatedButton(
-            txtBtn: 'Change Email Address',
+            txtBtn: context.l10n.changeEmailAddress,
             prefixIcon: const Icon(
               Icons.edit_rounded,
               color: Colors.white,
@@ -328,7 +328,7 @@ class _EmailSettingsViewState extends State<EmailSettingsView>
           ),
           const Gap(14),
           CustomElevatedButton(
-            txtBtn: 'Set a Password',
+            txtBtn: context.l10n.setPassword,
             onPressed: _goSetPassword,
           ),
         ],
@@ -825,7 +825,7 @@ class _ChangeEmailSheetState extends State<_ChangeEmailSheet> {
                     ),
                     const Gap(24),
                     CustomElevatedButton(
-                      txtBtn: 'Send Confirmation Link',
+                      txtBtn: context.l10n.sendLink,
                       isLoading: saving,
                       onPressed: busy ? null : _submit,
                     ),

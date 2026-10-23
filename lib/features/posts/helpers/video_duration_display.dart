@@ -18,8 +18,8 @@ class VideoDurationDisplay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Positioned(
-      right: 14,
+    return PositionedDirectional(
+      end: 14,
       bottom: 24,
       child: SafeArea(
         top: false,

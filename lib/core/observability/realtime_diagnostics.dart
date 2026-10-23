@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../supabase/supabase_provider.dart';
 import 'error_category.dart';
 import 'observability.dart';
@@ -146,6 +147,20 @@ class RealtimeDiagnostics {
     final record = _channels[topic];
     record?.phase = ChannelPhase.errored;
     record?.errorCount++;
+
+    // 1000 (Normal Closure) and 1001 (Going Away / Reconnecting)
+    // are standard transient WebSocket lifecycle events and should not pollute Crashlytics.
+    final isTransientClose =
+        error is RealtimeCloseEvent &&
+        (error.code == 1000 || error.code == 1001);
+
+    if (isTransientClose) {
+      obs.breadcrumb(
+        'transient channel disconnect (code: ${error.code}): $topic',
+        feature: 'realtime',
+      );
+      return;
+    }
 
     obs.recordError(
       error,

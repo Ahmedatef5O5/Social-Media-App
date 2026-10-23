@@ -51,6 +51,7 @@ class CommentsSection extends StatelessWidget {
       itemBuilder: (context, index) {
         final comment = comments[index];
         return CommentWidget(
+          key: ValueKey(comment.id),
           comment: comment,
           postId: postId,
           postAuthorId: postAuthorId,

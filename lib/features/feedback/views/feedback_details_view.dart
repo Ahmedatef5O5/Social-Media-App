@@ -142,7 +142,9 @@ class _FeedbackDetailsViewState extends State<FeedbackDetailsView> {
                 item == null
                     ? context.l10n.feedback2
                     : context.l10n.feedback(item.shortId),
-            subtitle: item?.category.label ?? context.l10n.supportConversation,
+            subtitle:
+                item?.category.localizedName(context) ??
+                context.l10n.supportConversation,
           ),
           if (_loading)
             const SliverPadding(
@@ -185,8 +187,8 @@ class _FeedbackDetailsViewState extends State<FeedbackDetailsView> {
   Widget _buildBody(BuildContext context, UserFeedback item) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final muted = isDark ? Colors.white60 : Colors.black54;
-    final fmt = DateFormat('MMM d, y · h:mm a');
-
+    final locale = Localizations.localeOf(context).languageCode;
+    final fmt = DateFormat('d MMM y · h:mm a', locale);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -371,25 +373,35 @@ class _ReplyCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          context.l10n.socialMateSupport,
-                          style: TextStyle(fontWeight: FontWeight.w800),
-                        ),
-                        const Gap(4),
-                        const Icon(
-                          Icons.verified_rounded,
-                          color: Color(0xFF1D9BF0),
-                          size: 16,
-                        ),
-                      ],
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: AlignmentDirectional.centerStart,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Text(
+                            context.l10n.socialMateSupport,
+                            maxLines: 1,
+                            softWrap: false,
+                            style: const TextStyle(fontWeight: FontWeight.w800),
+                          ),
+                          const Gap(4),
+                          const Icon(
+                            Icons.verified_rounded,
+                            color: Color(0xFF1D9BF0),
+                            size: 16,
+                          ),
+                        ],
+                      ),
                     ),
                     if (at != null) ...[
                       const Gap(2),
                       Text(
-                        DateFormat('MMM d, y · h:mm a').format(at!),
+                        DateFormat(
+                          'd MMM y · h:mm a',
+                          Localizations.localeOf(context).languageCode,
+                        ).format(at!),
                         style: TextStyle(
                           fontSize: 11.5,
                           color: isDark ? Colors.white60 : Colors.black54,

@@ -104,25 +104,25 @@ class AiSettingsView extends StatelessWidget {
                           SettingsItemData(
                             icon: Icons.translate_rounded,
                             label: context.l10n.autoCompleteLanguage,
-                            subtitle: aiState.language.displayLabel,
+                            subtitle: aiState.language.localizedTitle(context),
                             onTap:
                                 () =>
                                     _pickAiLanguage(context, aiState.language),
                           ),
-                          // [NEW]
                           SettingsItemData(
                             icon: Icons.record_voice_over_rounded,
                             label: context.l10n.replyTone,
-                            subtitle: aiState.replyTone.displayLabel,
+                            subtitle: aiState.replyTone.localizedTitle(context),
                             onTap:
                                 () =>
                                     _pickReplyTone(context, aiState.replyTone),
                           ),
-                          // [NEW]
                           SettingsItemData(
                             icon: Icons.straighten_rounded,
                             label: context.l10n.replyLength,
-                            subtitle: aiState.replyLength.displayLabel,
+                            subtitle: aiState.replyLength.localizedTitle(
+                              context,
+                            ),
                             onTap:
                                 () => _pickReplyLength(
                                   context,

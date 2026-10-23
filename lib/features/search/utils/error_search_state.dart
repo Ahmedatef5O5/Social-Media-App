@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:social_media_app/core/widgets/custom_elevated_button.dart';
 import '../../../core/constants/app_images.dart';
+import '../../../core/localization/l10n_extension.dart';
 import '../../../core/themes/cubits/theme_cubit.dart';
 import '../../../core/themes/themed_error_lottie.dart';
 
@@ -19,6 +20,16 @@ class ErrorSearchState extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final appTheme = context.watch<ThemeCubit>().state.theme;
+    String displayError = message;
+    final lower = message.toLowerCase();
+    if (lower.contains('internet') ||
+        lower.contains('network') ||
+        lower.contains('connection') ||
+        lower.contains('socket') ||
+        lower.contains('failed host lookup') ||
+        lower.contains('no-internet')) {
+      displayError = context.l10n.authErrNoInternet;
+    }
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -41,7 +52,7 @@ class ErrorSearchState extends StatelessWidget {
                   ),
                   const SizedBox(height: 18),
                   Text(
-                    message,
+                    displayError,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     textAlign: TextAlign.center,
@@ -55,7 +66,7 @@ class ErrorSearchState extends StatelessWidget {
                   ),
                   const SizedBox(height: 26),
                   CustomElevatedButton(
-                    txtBtn: 'Retry Again',
+                    txtBtn: context.l10n.retryAgain,
                     txtColor: theme.colorScheme.onPrimary,
                     bgColor: theme.primaryColor,
                     minimumSize: const Size(200, 45),

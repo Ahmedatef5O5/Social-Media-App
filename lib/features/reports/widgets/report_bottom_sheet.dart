@@ -40,8 +40,6 @@ class ReportBottomSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final target = context.read<ReportCubit>().target;
-
     return BlocListener<ReportCubit, ReportState>(
       listenWhen: (_, current) => current is ReportSubmitted,
       listener: (context, _) {
@@ -56,10 +54,7 @@ class ReportBottomSheet extends StatelessWidget {
           constraints: BoxConstraints(
             maxHeight: MediaQuery.sizeOf(context).height * 0.85,
           ),
-          child: AppBottomSheet(
-            title: context.l10n.report2(target.type.label),
-            child: const _ReportForm(),
-          ),
+          child: const AppBottomSheet(child: _ReportForm()),
         ),
       ),
     );
@@ -73,6 +68,7 @@ class _ReportForm extends StatelessWidget {
   Widget build(BuildContext context) {
     final palette = context.palette;
     final cubit = context.read<ReportCubit>();
+    final target = cubit.target;
 
     return BlocBuilder<ReportCubit, ReportState>(
       builder: (context, state) {
@@ -83,16 +79,30 @@ class _ReportForm extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              context.l10n.whyAreYouReporting,
-              style: context.typography.bodyMedium?.copyWith(
-                color: palette.onSurfaceVariant,
+            Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: Text(
+                context.l10n.report2(target.type.localizedLabel(context)),
+                style: context.typography.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: palette.onSurface,
+                ),
               ),
             ),
             const Gap(8),
+            Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: Text(
+                context.l10n.whyAreYouReporting,
+                style: context.typography.bodyMedium?.copyWith(
+                  color: palette.onSurfaceVariant,
+                ),
+              ),
+            ),
+            const Gap(12),
             Flexible(
               child: SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
+                physics: const ClampingScrollPhysics(),
                 child: Column(
                   children: [
                     for (final reason in ReportReason.values)
@@ -169,14 +179,14 @@ class _ReasonTile extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    reason.title,
+                    reason.localizedTitle(context),
                     style: context.typography.titleSmall?.copyWith(
                       fontWeight: FontWeight.w600,
                       color: palette.onSurface,
                     ),
                   ),
                   Text(
-                    reason.subtitle,
+                    reason.localizedSubtitle(context),
                     style: context.typography.bodySmall?.copyWith(
                       color: palette.onSurfaceVariant,
                     ),

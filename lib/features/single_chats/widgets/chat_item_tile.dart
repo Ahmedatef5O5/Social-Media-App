@@ -309,12 +309,13 @@ class ChatItemTile extends StatelessWidget {
     final normalText = EmojiHelper.normalize(_getNormalMessageText());
     final direction = BidiTextHelper.detectDirection(normalText);
 
+    final isRtl = Directionality.of(context) == TextDirection.rtl;
     return Text(
       normalText,
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
-      textDirection: direction,
-      textAlign: TextAlign.left,
+      textDirection: isRtl ? TextDirection.rtl : direction,
+      textAlign: isRtl ? TextAlign.right : TextAlign.left,
       style: effectiveStyle,
     );
   }
@@ -338,10 +339,11 @@ class ChatItemTile extends StatelessWidget {
       return Row(
         mainAxisAlignment: MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.center,
-        children: const [
+        children: [
           AnimatedActivityText(
-            text: 'typing',
-            style: TextStyle(color: Colors.green, fontSize: 14),
+            text: context.l10n.typing,
+            forceAnimate: true,
+            style: const TextStyle(color: Colors.green, fontSize: 14),
           ),
         ],
       );
@@ -363,10 +365,20 @@ class ChatItemTile extends StatelessWidget {
     }
   }
 
+  // ==================== AFTER ====================
   Text _buildUserName(BuildContext context) {
+    final isDeletedAccount =
+        user.isDeleted || user.name.trim().toLowerCase() == 'deleted account';
+    final displayName =
+        isDeletedAccount ? context.l10n.deletedAccount : user.name;
+
     return Text(
-      user.name,
-      style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 17),
+      displayName,
+      style: Theme.of(context).textTheme.titleSmall!.copyWith(
+        fontSize: 16,
+        fontWeight: FontWeight.w600,
+      ),
+      overflow: TextOverflow.ellipsis,
     );
   }
 

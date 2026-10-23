@@ -174,7 +174,7 @@ class _DeleteAccountVerificationBodyState
                   ),
                   const Gap(20),
                   CustomElevatedButton(
-                    txtBtn: 'Delete My Account',
+                    txtBtn: context.l10n.deleteAccount,
                     bgColor: red,
                     txtColor: Colors.white,
                     onPressed: canSubmit ? _submit : null,

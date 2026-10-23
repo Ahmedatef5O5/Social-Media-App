@@ -72,12 +72,12 @@ class AuthCubit extends Cubit<AuthState> with SafeEmitMixin<AuthState> {
       return;
     }
 
+    // ==================== AFTER ====================
+    // lib/features/auth/cubits/auth_cubit/auth_cubit.dart
+
     final message = AuthExceptionHandler.handle(e);
     final displayMessage =
-        message == 'no-internet'
-            ? 'No internet connection. Please check your network.'
-            : message;
-
+        message == 'no-internet' ? AppL10n.current.authErrNoInternet : message;
     if (displayMessage.isEmpty) {
       emit(AuthInitial());
       return;

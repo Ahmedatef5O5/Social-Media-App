@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import '../../../core/localization/l10n_extension.dart';
 import '../utils/search_view_metrics.dart';
 import 'accounts_tab_view.dart';
 import 'for_you_tab_view.dart';
@@ -18,13 +19,7 @@ class SearchViewBodyWidget extends StatefulWidget {
 
 class _SearchViewBodyWidgetState extends State<SearchViewBodyWidget>
     with SingleTickerProviderStateMixin {
-  static const List<String> _tabLabels = [
-    'For You',
-    'Accounts',
-    'Groups',
-    'Reels',
-    'Friends',
-  ];
+  static const int _tabCount = 5;
 
   late final TabController _tabController;
   final TextEditingController _searchController = TextEditingController();
@@ -35,7 +30,7 @@ class _SearchViewBodyWidgetState extends State<SearchViewBodyWidget>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: _tabLabels.length, vsync: this);
+    _tabController = TabController(length: _tabCount, vsync: this);
     _searchController.addListener(_onQueryChanged);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _searchFocusNode.requestFocus();
@@ -71,6 +66,13 @@ class _SearchViewBodyWidgetState extends State<SearchViewBodyWidget>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final tabLabels = [
+      context.l10n.searchTabForYou,
+      context.l10n.searchTabAccounts,
+      context.l10n.searchTabGroups,
+      context.l10n.searchTabReels,
+      context.l10n.searchTabFriends,
+    ];
 
     return GestureDetector(
       onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
@@ -165,7 +167,7 @@ class _SearchViewBodyWidgetState extends State<SearchViewBodyWidget>
                           fontSize: 12,
                         ),
                         tabs:
-                            _tabLabels
+                            tabLabels
                                 .map(
                                   (label) => Tab(
                                     height: 36,

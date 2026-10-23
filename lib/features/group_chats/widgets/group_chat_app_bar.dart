@@ -4,6 +4,7 @@ import 'package:gap/gap.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import '../../../core/chat_shared/helpers/muted_badge_icon.dart';
 import '../../../core/constants/app_images.dart';
+import '../../../core/helpers/chat_helper.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/services/active_call/active_call_session_data.dart';
 import '../../../core/services/active_call/cubits/active_call_session_cubit.dart';
@@ -53,6 +54,9 @@ class GroupChatAppBar extends StatelessWidget implements PreferredSizeWidget {
                     )
                     : group;
             final avatarUrl = updatedGroup.avatarUrl;
+            final nameDirection = ChatHelper.getTextDirection(
+              updatedGroup.name,
+            );
 
             return AppBar(
               elevation: 0,
@@ -105,17 +109,21 @@ class GroupChatAppBar extends StatelessWidget implements PreferredSizeWidget {
                           Row(
                             crossAxisAlignment: CrossAxisAlignment.center,
                             mainAxisSize: MainAxisSize.min,
+                            textDirection: nameDirection,
                             children: [
                               Flexible(
                                 child: Text(
                                   updatedGroup.name,
+                                  textDirection: nameDirection,
                                   style: Theme.of(context).textTheme.titleLarge!
                                       .copyWith(color: primary),
                                   overflow: TextOverflow.ellipsis,
                                 ),
                               ),
-                              if (updatedGroup.isMuted)
+                              if (updatedGroup.isMuted) ...[
+                                const SizedBox(width: 4),
                                 const MutedBadgeIcon(size: 10),
+                              ],
                             ],
                           ),
                           PresenceAnimatedSubtitle(

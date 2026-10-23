@@ -150,8 +150,8 @@ class CallCubit extends Cubit<CallState> with SafeEmitMixin<CallState> {
       emit(CallInitial());
       AppToast.error(
         e.toString().contains('target_user_deleted')
-            ? 'This account has been deleted.'
-            : 'Could not start the call. Please try again.',
+            ? AppL10n.current.thisAccountHasBeen3
+            : AppL10n.current.theCallCouldNot,
       );
       return;
     }

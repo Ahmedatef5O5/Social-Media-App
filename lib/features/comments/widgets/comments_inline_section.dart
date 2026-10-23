@@ -72,6 +72,7 @@ class CommentsInlineSectionState extends State<CommentsInlineSection> {
   void _changeSort(BuildContext context, CommentSortOption option) {
     final cubit = context.read<CommentsCubit>();
     if (cubit.currentSort == option) return;
+    cubit.resetExpandedComments();
     cubit.loadComments(postId: widget.postId, sort: option);
   }
 

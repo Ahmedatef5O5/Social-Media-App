@@ -166,7 +166,7 @@ class _RegisterViewWidgetState extends State<RegisterViewWidget> {
                         current is AuthSignedOut,
                 builder: (context, state) {
                   return CustomElevatedButton(
-                    txtBtn: 'Join Now',
+                    txtBtn: context.l10n.joinNow,
                     isLoading: state is AuthLoading,
                     isSuccess: state is AuthSuccess,
                     onPressed: () {
@@ -189,8 +189,8 @@ class _RegisterViewWidgetState extends State<RegisterViewWidget> {
               SocialSignSection(label: context.l10n.orSignUpWith),
               const Gap(22),
               SignTextSection(
-                staticText: 'By Using this app you agree with the\n',
-                clickableText: 'Terms of Service',
+                staticText: context.l10n.byUsingAppAgree,
+                clickableText: context.l10n.settingsTermsOfService,
                 onTap: () {
                   Navigator.of(
                     context,

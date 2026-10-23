@@ -15,10 +15,10 @@ class AboutUsStatsRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final stats = [
-      ('50K+', 'Users'),
-      ('1M+', 'Messages'),
-      ('200K+', 'Posts'),
-      ('99.9%', 'Uptime'),
+      ('50K+', context.l10n.aboutStatUsers),
+      ('1M+', context.l10n.aboutStatMessages),
+      ('200K+', context.l10n.aboutStatPosts),
+      ('99.9%', context.l10n.aboutStatUptime),
     ];
     return Row(
       children:
@@ -26,7 +26,7 @@ class AboutUsStatsRow extends StatelessWidget {
             final isLast = s == stats.last;
             return Expanded(
               child: Container(
-                margin: EdgeInsets.only(right: isLast ? 0 : 10),
+                margin: EdgeInsetsDirectional.only(end: isLast ? 0 : 8),
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 decoration: BoxDecoration(
                   color:

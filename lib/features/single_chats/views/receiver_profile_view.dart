@@ -11,6 +11,7 @@ import '../../../core/chat_shared/cubits/shared_media_cubit/shared_media_cubit.d
 import '../../../core/chat_shared/widgets/shared_media_preview_section.dart';
 import '../../../core/chat_shared/models/starred_message_entry.dart';
 import '../../../core/chat_shared/widgets/starred_messages_row.dart';
+import '../../../core/helpers/bidi_text_helper.dart';
 import '../../../core/presence/models/chat_action_type.dart';
 import '../../../core/chat_shared/services/shared_media_data_source.dart';
 import '../../../core/presence/widgets/presence_status_text.dart';
@@ -142,7 +143,7 @@ class _ReceiverProfileViewState extends State<ReceiverProfileView> {
                   profileUserId: widget.receiverUser.id,
                 ),
                 Align(
-                  alignment: Alignment.topLeft,
+                  alignment: AlignmentDirectional.topStart,
                   child: Padding(
                     padding: const EdgeInsets.only(top: 18.0),
                     child: GestureDetector(
@@ -169,27 +170,34 @@ class _ReceiverProfileViewState extends State<ReceiverProfileView> {
               ],
             ),
             const Gap(10),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-
-              children: [
-                Flexible(
-                  child: Text(
-                    widget.receiverUser.name,
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
+            Directionality(
+              textDirection: BidiTextHelper.detectDirection(
+                widget.receiverUser.name,
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Flexible(
+                    child: Text(
+                      widget.receiverUser.name,
+                      style: Theme.of(context).textTheme.headlineSmall
+                          ?.copyWith(fontWeight: FontWeight.bold),
                     ),
                   ),
-                ),
-                ValueListenableBuilder<bool>(
-                  valueListenable: context.read<ChatDetailsCubit>().muteStatus,
-                  builder:
-                      (context, isMuted, _) =>
-                          isMuted
-                              ? const MutedBadgeIcon(size: 10)
-                              : const SizedBox.shrink(),
-                ),
-              ],
+                  ValueListenableBuilder<bool>(
+                    valueListenable:
+                        context.read<ChatDetailsCubit>().muteStatus,
+                    builder: (context, isMuted, _) {
+                      if (!isMuted) return const SizedBox.shrink();
+                      return const Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 4),
+                        child: MutedBadgeIcon(size: 10),
+                      );
+                    },
+                  ),
+                ],
+              ),
             ),
             BlocBuilder<ChatDetailsCubit, ChatDetailsState>(
               builder: (context, state) {
@@ -202,7 +210,8 @@ class _ReceiverProfileViewState extends State<ReceiverProfileView> {
                         text:
                             action == ChatActionType.recording
                                 ? context.l10n.recordingAudio2
-                                : 'typing...',
+                                : context.l10n.typing,
+                        forceAnimate: true,
                         style: TextStyle(
                           color:
                               action == ChatActionType.recording
@@ -237,21 +246,23 @@ class _ReceiverProfileViewState extends State<ReceiverProfileView> {
                     _buildOptionItem(
                       context,
                       Icons.message_outlined,
-                      "Message",
+                      context.l10n.message,
                       () => safePop(context),
                     ),
                     _buildOptionItem(
                       context,
                       Icons.call_outlined,
-                      "Call",
+                      context.l10n.call,
                       () {},
+                      callType: CallType.audio,
                       isBlocked: blockStatus.isBlocked,
                     ),
                     _buildOptionItem(
                       context,
                       Icons.videocam_outlined,
-                      "Video",
+                      context.l10n.video,
                       () {},
+                      callType: CallType.video,
                       isBlocked: blockStatus.isBlocked,
                     ),
                     ValueListenableBuilder<bool>(
@@ -390,22 +401,19 @@ class _ReceiverProfileViewState extends State<ReceiverProfileView> {
     IconData icon,
     String label,
     VoidCallback onTap, {
+    CallType? callType,
     bool isBlocked = false,
   }) {
     final buttonStyle = IconButton.styleFrom(
       backgroundColor: Theme.of(context).primaryColor.withValues(alpha: 0.1),
       padding: const EdgeInsets.all(12),
     );
-
-    final lowerLabel = label.toLowerCase();
-    final isCallOrVideo = lowerLabel == 'call' || lowerLabel == 'video';
-
+    final isCallOrVideo = callType != null;
     Widget iconWidget;
     Widget labelWidget;
-
     if (isCallOrVideo) {
       iconWidget = CallIconButton(
-        type: lowerLabel == 'call' ? CallType.audio : CallType.video,
+        type: callType,
         receiverId: widget.receiverUser.id,
         receiverName: widget.receiverUser.name,
         receiverAvatar: widget.receiverUser.imageUrl ?? '',

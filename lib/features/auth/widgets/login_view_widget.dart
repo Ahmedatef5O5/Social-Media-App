@@ -62,8 +62,21 @@ class _LoginViewWidgetState extends State<LoginViewWidget> {
               ),
               const Gap(12),
               Align(
-                alignment: Alignment.topRight,
-                child: Text(context.l10n.forgotPassword),
+                alignment: AlignmentDirectional.centerEnd,
+                child: GestureDetector(
+                  onTap: () {
+                    Navigator.of(
+                      context,
+                    ).pushNamed(AppRoutes.forgotPasswordRoute);
+                  },
+                  child: Text(
+                    context.l10n.forgotPassword,
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      color: Theme.of(context).primaryColor,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
               ),
               const Gap(42),
               BlocConsumer<AuthCubit, AuthState>(
@@ -106,7 +119,7 @@ class _LoginViewWidgetState extends State<LoginViewWidget> {
                         current is AuthAccountDeleted,
                 builder: (context, state) {
                   return CustomElevatedButton(
-                    txtBtn: 'Login',
+                    txtBtn: context.l10n.signIn2,
                     isLoading: state is AuthLoading,
                     isSuccess: state is AuthSuccess,
                     onPressed: () {
@@ -125,8 +138,8 @@ class _LoginViewWidgetState extends State<LoginViewWidget> {
               SocialSignSection(label: context.l10n.orSignInWith),
               const Gap(22),
               SignTextSection(
-                staticText: 'Don\'t  have an account?',
-                clickableText: '\t\tSign up',
+                staticText: context.l10n.dontHaveAnAccount,
+                clickableText: context.l10n.signUp,
                 onTap: () {
                   DefaultTabController.of(context).animateTo(1);
                 },

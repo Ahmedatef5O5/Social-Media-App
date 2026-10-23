@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import '../../../core/localization/l10n_extension.dart';
 import '../helpers/ai_model_iconography.dart';
 
 enum AiModelProvider { gemini, llama, openrouter }
@@ -18,6 +19,12 @@ class AiModelOption {
     required this.icon,
     required this.accentColor,
   });
+
+  String localizedTagline(BuildContext context) => switch (provider) {
+    AiModelProvider.gemini => context.l10n.aiModelGeminiTagline,
+    AiModelProvider.llama => context.l10n.aiModelLlamaTagline,
+    AiModelProvider.openrouter => context.l10n.aiModelOpenRouterTagline,
+  };
 }
 
 class AiModelCatalog {

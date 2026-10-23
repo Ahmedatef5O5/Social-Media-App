@@ -15,9 +15,15 @@ class _FullScreenVideoCaptionState extends State<FullScreenVideoCaption> {
 
   @override
   Widget build(BuildContext context) {
-    final direction = ChatHelper.getTextDirection(widget.text);
+    final TextDirection direction;
+    if (ChatHelper.isArabic(widget.text)) {
+      direction = TextDirection.rtl;
+    } else if (RegExp(r'[a-zA-Z]').hasMatch(widget.text)) {
+      direction = TextDirection.ltr;
+    } else {
+      direction = Directionality.of(context);
+    }
     final bool isRtl = direction == TextDirection.rtl;
-
     return GestureDetector(
       onTap: () {
         setState(() {

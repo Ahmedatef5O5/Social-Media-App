@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 enum FeedbackCategory {
   bug('bug', 'Bug / Issue', CupertinoIcons.ant_fill),
@@ -13,6 +14,15 @@ enum FeedbackCategory {
   final IconData icon;
   const FeedbackCategory(this.value, this.label, this.icon);
 
+  String localizedName(BuildContext context) => switch (this) {
+    FeedbackCategory.bug => context.l10n.feedbackCatBug,
+    FeedbackCategory.feature => context.l10n.feedbackCatFeature,
+    FeedbackCategory.inquiry => context.l10n.feedbackCatInquiry,
+    FeedbackCategory.rating => context.l10n.feedbackCatRating,
+    FeedbackCategory.appreciation => context.l10n.feedbackCatAppreciation,
+    FeedbackCategory.other => context.l10n.feedbackCatOther,
+  };
+
   static FeedbackCategory fromValue(String? v) => FeedbackCategory.values
       .firstWhere((c) => c.value == v, orElse: () => FeedbackCategory.other);
 }
@@ -26,6 +36,13 @@ enum FeedbackStatus {
   final String value;
   final String label;
   const FeedbackStatus(this.value, this.label);
+
+  String localizedName(BuildContext context) => switch (this) {
+    FeedbackStatus.pending => context.l10n.feedbackStatusPending,
+    FeedbackStatus.inProgress => context.l10n.feedbackStatusInProgress,
+    FeedbackStatus.resolved => context.l10n.feedbackStatusResolved,
+    FeedbackStatus.closed => context.l10n.feedbackStatusClosed,
+  };
 
   static FeedbackStatus fromValue(String? v) => FeedbackStatus.values
       .firstWhere((s) => s.value == v, orElse: () => FeedbackStatus.pending);

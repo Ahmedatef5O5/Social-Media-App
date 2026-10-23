@@ -1,3 +1,4 @@
+import 'package:social_media_app/core/localization/app_l10n.dart';
 import '../../../core/utilities/supabase_constants.dart';
 
 enum GroupMemberRole { owner, admin, member }
@@ -6,7 +7,7 @@ class GroupMemberModel {
   final String id;
   final String groupId;
   final String userId;
-  final String userName;
+  final String _userName;
   final String? userAvatar;
   final GroupMemberRole role;
   final DateTime joinedAt;
@@ -15,11 +16,16 @@ class GroupMemberModel {
     required this.id,
     required this.groupId,
     required this.userId,
-    required this.userName,
+    required String userName,
     this.userAvatar,
     required this.role,
     required this.joinedAt,
-  });
+  }) : _userName = userName;
+
+  String get userName =>
+      _userName.trim().toLowerCase() == 'deleted account'
+          ? AppL10n.current.deletedAccount
+          : _userName;
 
   factory GroupMemberModel.fromMap(Map<String, dynamic> map) {
     final groupId = map[GroupMemberColumns.groupId] as String;

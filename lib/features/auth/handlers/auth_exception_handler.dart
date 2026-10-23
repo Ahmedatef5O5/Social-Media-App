@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/errors/network_error_utils.dart';
+import '../../../core/localization/app_l10n.dart';
 
 class AuthExceptionHandler {
   static String handle(Object e) {
@@ -18,14 +19,32 @@ class AuthExceptionHandler {
     }
 
     if (NetworkErrorUtils.isTimeoutError(e)) {
-      return 'Request timed out. Please try again.';
+      return AppL10n.isArabic
+          ? 'انتهت مهلة الطلب. يرجى المحاولة مرة أخرى.'
+          : 'Request timed out. Please try again.';
     }
 
-    if (msg.contains('aborted')) {
-      return 'Sign-in was cancelled.';
+    if (msg.contains('aborted') || msg.contains('user_cancelled')) {
+      return AppL10n.isArabic
+          ? 'تم إلغاء عملية تسجيل الدخول.'
+          : 'Sign-in was cancelled.';
     }
 
-    return 'Something went wrong. Please try again.';
+    if (msg.contains('api_exception: 10') ||
+        msg.contains('apiexception: 10') ||
+        msg.contains('developer_error')) {
+      return AppL10n.isArabic
+          ? 'فشل تسجيل الدخول بجوجل (خطأ في إعدادات بصمة SHA-1 أو OAuth Client ID في وضع التطوير).'
+          : 'Google sign-in failed (Missing debug SHA-1 or OAuth Client ID misconfiguration).';
+    }
+
+    if (msg.contains('sign_in_failed') || msg.contains('google')) {
+      return AppL10n.isArabic
+          ? 'تعذر تسجيل الدخول بحساب جوجل. يرجى المحاولة مرة أخرى.'
+          : 'Google sign-in failed. Please try again.';
+    }
+
+    return AppL10n.current.somethingWentWrongPlease;
   }
 
   // ─────────────────────────────────────────────────────────────
@@ -71,7 +90,7 @@ class AuthExceptionHandler {
     if (msg.contains('invalid login credentials') ||
         msg.contains('invalid credentials') ||
         code == 'invalid_credentials') {
-      return 'Incorrect email or password. Please try again.';
+      return AppL10n.current.authErrIncorrectCredentials;
     }
 
     if (msg.contains('too many invalid password attempts') ||

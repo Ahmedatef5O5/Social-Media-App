@@ -1,4 +1,3 @@
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:social_media_app/core/widgets/app_avatar.dart';
@@ -31,23 +30,7 @@ class ForwardedHeader extends StatefulWidget {
 }
 
 class _ForwardedHeaderState extends State<ForwardedHeader> {
-  late TapGestureRecognizer _nameTapRecognizer;
-  TapGestureRecognizer? _aiNameTapRecognizer;
   bool get _isAi => widget.originalSenderId == ForwardableMessage.aiSenderId;
-
-  @override
-  void initState() {
-    super.initState();
-    _nameTapRecognizer = TapGestureRecognizer()..onTap = _onNameTap;
-    _aiNameTapRecognizer = TapGestureRecognizer()..onTap = _openAiChat;
-  }
-
-  @override
-  void dispose() {
-    _nameTapRecognizer.dispose();
-    _aiNameTapRecognizer?.dispose();
-    super.dispose();
-  }
 
   void _openAiChat() {
     Navigator.of(
@@ -126,6 +109,7 @@ class _ForwardedHeaderState extends State<ForwardedHeader> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isRtl = Directionality.of(context) == TextDirection.rtl;
 
     final bubbleIsDark =
         ThemeData.estimateBrightnessForColor(theme.primaryColor) ==
@@ -138,57 +122,82 @@ class _ForwardedHeaderState extends State<ForwardedHeader> {
                 : Colors.black.withValues(alpha: 0.75))
             : theme.primaryColor;
 
+    final avatarWidget = Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 2),
+      child:
+          _isAi
+              ? GestureDetector(
+                onTap: _openAiChat,
+                behavior: HitTestBehavior.opaque,
+                child: _AiAvatar(
+                  modelName: widget.name,
+                  onColoredBubble: widget.onColoredBubble,
+                ),
+              )
+              : AppAvatar(
+                imageUrl: widget.avatarUrl,
+                size: 15,
+                onTap: _onAvatarTap,
+              ),
+    );
+
+    final iconWidget = Padding(
+      padding: EdgeInsets.only(left: isRtl ? 4 : 0, right: isRtl ? 0 : 4),
+      child: Transform.flip(
+        flipX: isRtl,
+        child: Icon(Icons.shortcut_rounded, size: 14, color: labelColor),
+      ),
+    );
+
+    final nameWidget = GestureDetector(
+      onTap: _isAi ? _openAiChat : _onNameTap,
+      behavior: HitTestBehavior.opaque,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 160),
+        child: Text(
+          widget.name,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            fontSize: 12.5,
+            color: labelColor,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ),
+    );
+
+    final textWidget = Text(
+      context.l10n.forwardedFrom,
+      style: TextStyle(
+        fontSize: 12.5,
+        color: labelColor,
+        fontWeight: FontWeight.w500,
+      ),
+    );
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 4, top: 1),
-      child: RichText(
-        maxLines: 2,
-        overflow: TextOverflow.ellipsis,
-        text: TextSpan(
-          style: TextStyle(fontSize: 12.5, color: labelColor),
-          children: [
-            WidgetSpan(
-              alignment: PlaceholderAlignment.middle,
-              child: Padding(
-                padding: const EdgeInsets.only(right: 4),
-                child: Icon(
-                  Icons.shortcut_rounded,
-                  size: 14,
-                  color: labelColor,
-                ),
-              ),
-            ),
-            TextSpan(
-              text: context.l10n.forwardedFrom,
-              style: TextStyle(fontWeight: FontWeight.w500),
-            ),
-            WidgetSpan(
-              alignment: PlaceholderAlignment.middle,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 3),
-                child:
-                    _isAi
-                        ? GestureDetector(
-                          onTap: _openAiChat,
-                          behavior: HitTestBehavior.opaque,
-                          child: _AiAvatar(
-                            modelName: widget.name,
-                            onColoredBubble: widget.onColoredBubble,
-                          ),
-                        )
-                        : AppAvatar(
-                          imageUrl: widget.avatarUrl,
-                          size: 15,
-                          onTap: _onAvatarTap,
-                        ),
-              ),
-            ),
-            TextSpan(
-              text: widget.name,
-              style: const TextStyle(fontWeight: FontWeight.w700),
-              recognizer: _isAi ? _aiNameTapRecognizer : _nameTapRecognizer,
-            ),
-          ],
-        ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children:
+            isRtl
+                ? [
+                  iconWidget,
+                  textWidget,
+                  const SizedBox(width: 4),
+                  nameWidget,
+                  const SizedBox(width: 4),
+                  avatarWidget,
+                ]
+                : [
+                  iconWidget,
+                  textWidget,
+                  avatarWidget,
+                  const SizedBox(width: 4),
+                  nameWidget,
+                ],
       ),
     );
   }

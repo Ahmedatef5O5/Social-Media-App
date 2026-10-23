@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 import '../../../core/widgets/custom_elevated_button.dart';
 import 'otp_code_field.dart';
 import 'totp_window_indicator.dart';
-import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class TwoFactorVerifyStep extends StatefulWidget {
   final bool verifying;
@@ -31,7 +31,6 @@ class _TwoFactorVerifyStepState extends State<TwoFactorVerifyStep> {
   @override
   void didUpdateWidget(covariant TwoFactorVerifyStep old) {
     super.didUpdateWidget(old);
-    // A new error means the last code was rejected: clear for the next try.
     if (widget.error != null && widget.error != old.error) {
       _otp.currentState?.clear();
       _code = '';
@@ -92,7 +91,7 @@ class _TwoFactorVerifyStepState extends State<TwoFactorVerifyStep> {
         ],
         const SizedBox(height: 24),
         CustomElevatedButton(
-          txtBtn: 'Verify',
+          txtBtn: context.l10n.verifyCode,
           isLoading: widget.verifying,
           onPressed: () => widget.onSubmit(_code),
         ),

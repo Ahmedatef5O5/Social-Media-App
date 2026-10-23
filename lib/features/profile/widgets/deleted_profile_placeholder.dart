@@ -21,7 +21,7 @@ class DeletedProfilePlaceholder extends StatelessWidget {
         children: [
           if (Navigator.canPop(context))
             Align(
-              alignment: Alignment.topLeft,
+              alignment: AlignmentDirectional.topStart,
               child: Padding(
                 padding: const EdgeInsets.all(8),
                 child: IconButton(

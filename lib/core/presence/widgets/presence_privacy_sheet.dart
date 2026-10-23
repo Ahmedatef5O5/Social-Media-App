@@ -21,28 +21,26 @@ class PresencePrivacySheet extends StatelessWidget {
     );
   }
 
-  static const _options = <PresencePrivacy, (String, String, IconData)>{
-    PresencePrivacy.everyone: (
-      'Everyone',
-      'Anyone using the app can see your status',
-      Icons.public,
-    ),
-    PresencePrivacy.friends: (
-      'My Friends',
-      'Only accepted friends can see your status',
-      Icons.people_alt_outlined,
-    ),
-    PresencePrivacy.specific: (
-      'Specific People',
-      'Choose exactly who can see your status',
-      Icons.person_search_outlined,
-    ),
-    PresencePrivacy.nobody: (
-      'Nobody',
-      'Your online status stays private',
-      Icons.visibility_off_outlined,
-    ),
+  static const _icons = <PresencePrivacy, IconData>{
+    PresencePrivacy.everyone: Icons.public,
+    PresencePrivacy.friends: Icons.people_alt_outlined,
+    PresencePrivacy.specific: Icons.person_search_outlined,
+    PresencePrivacy.nobody: Icons.visibility_off_outlined,
   };
+  String _labelFor(BuildContext context, PresencePrivacy privacy) =>
+      switch (privacy) {
+        PresencePrivacy.everyone => context.l10n.presenceEveryone,
+        PresencePrivacy.friends => context.l10n.presenceFriends,
+        PresencePrivacy.specific => context.l10n.presenceSpecific,
+        PresencePrivacy.nobody => context.l10n.presenceNobody,
+      };
+  String _subtitleFor(BuildContext context, PresencePrivacy privacy) =>
+      switch (privacy) {
+        PresencePrivacy.everyone => context.l10n.presenceEveryoneDesc,
+        PresencePrivacy.friends => context.l10n.presenceFriendsDesc,
+        PresencePrivacy.specific => context.l10n.presenceSpecificDesc,
+        PresencePrivacy.nobody => context.l10n.presenceNobodyDesc,
+      };
 
   @override
   Widget build(BuildContext context) {
@@ -74,10 +72,9 @@ class PresencePrivacySheet extends StatelessWidget {
               style: TextStyle(fontSize: 12, color: Colors.grey),
             ),
             const Gap(12),
-            ..._options.entries.map((entry) {
-              final privacy = entry.key;
-              final (label, subtitle, icon) = entry.value;
+            ...PresencePrivacy.values.map((privacy) {
               final isSelected = privacy == selected;
+              final icon = _icons[privacy] ?? Icons.public;
               return ListTile(
                 contentPadding: EdgeInsets.zero,
                 leading: Icon(
@@ -85,12 +82,15 @@ class PresencePrivacySheet extends StatelessWidget {
                   color: isSelected ? Theme.of(context).primaryColor : null,
                 ),
                 title: Text(
-                  label,
+                  _labelFor(context, privacy),
                   style: TextStyle(
                     fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                   ),
                 ),
-                subtitle: Text(subtitle, style: const TextStyle(fontSize: 12)),
+                subtitle: Text(
+                  _subtitleFor(context, privacy),
+                  style: const TextStyle(fontSize: 12),
+                ),
                 trailing:
                     isSelected
                         ? Icon(

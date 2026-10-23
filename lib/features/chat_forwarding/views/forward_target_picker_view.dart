@@ -297,25 +297,27 @@ class _ForwardTargetPickerViewState extends State<ForwardTargetPickerView> {
     final showAi =
         _searchQuery.isEmpty ||
         'ai assistant'.contains(_searchQuery.toLowerCase()) ||
-        'syncra'.contains(_searchQuery.toLowerCase());
+        'المساعد الذكي'.contains(_searchQuery.toLowerCase()) ||
+        'syncra'.contains(_searchQuery.toLowerCase()) ||
+        'سينكرا'.contains(_searchQuery.toLowerCase());
 
     return ListView(
       padding: const EdgeInsets.symmetric(horizontal: 8),
       children: [
         if (showAi) ...[
-          _sectionHeader('AI Assistant', theme),
+          _sectionHeader(context.l10n.aiAssistant, theme),
           _aiTile(theme),
           const SizedBox(height: 8),
         ],
 
         if (displayedGroups.isNotEmpty) ...[
-          _sectionHeader('Groups', theme),
+          _sectionHeader(context.l10n.groups, theme),
           for (final group in displayedGroups) _groupTile(group, theme),
           const SizedBox(height: 8),
         ],
 
         if (displayedPeople.isNotEmpty) ...[
-          _sectionHeader('People', theme),
+          _sectionHeader(context.l10n.people, theme),
           for (final user in displayedPeople) _personTile(user, theme),
         ],
 

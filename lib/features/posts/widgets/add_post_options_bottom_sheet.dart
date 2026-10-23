@@ -104,31 +104,31 @@ class AddPostOptionsBottomSheet extends StatelessWidget {
                   children: [
                     BuildOptionItem(
                       Icons.image_rounded,
-                      'Add Photo',
+                      context.l10n.addPhoto,
                       const Color(0xFF4CAF50),
                       onTap: () => postsCubit.pickImageFromGallery(),
                     ),
                     BuildOptionItem(
                       Icons.videocam_rounded,
-                      'Add Video',
+                      context.l10n.addVideo,
                       const Color(0xFF2196F3),
                       onTap: () => postsCubit.pickVideo(),
                     ),
                     BuildOptionItem(
                       Icons.camera_alt_rounded,
-                      'Camera',
+                      context.l10n.camera,
                       const Color(0xFF009688),
                       onTap: () => postsCubit.takePhotoByCamera(),
                     ),
                     BuildOptionItem(
                       Icons.insert_drive_file_rounded,
-                      'Add A Document',
+                      context.l10n.addDocument,
                       const Color(0xFFFF9800),
                       onTap: () => postsCubit.pickDocument(),
                     ),
                     BuildOptionItem(
                       Icons.color_lens_rounded,
-                      'Background Color',
+                      context.l10n.backgroundColor,
                       const Color(0xFFE91E63),
                       onTap:
                           () => AppToast.info(
@@ -137,13 +137,13 @@ class AddPostOptionsBottomSheet extends StatelessWidget {
                     ),
                     BuildOptionItem(
                       Icons.gif_box_rounded,
-                      'Add GIF',
+                      context.l10n.addGif,
                       const Color(0xFF9C27B0),
                       onTap: () => AppToast.info(context.l10n.addGifIsComing),
                     ),
                     BuildOptionItem(
                       Icons.video_camera_front_rounded,
-                      'Live Video',
+                      context.l10n.liveVideo,
                       const Color(0xFFF44336),
                       onTap:
                           () => AppToast.info(context.l10n.liveVideoIsComing),

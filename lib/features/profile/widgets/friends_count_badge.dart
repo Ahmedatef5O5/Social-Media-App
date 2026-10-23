@@ -55,7 +55,7 @@ class FriendsCountBadge extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    '$friendsCount ${friendsCount == 1 ? 'Friend' : context.l10n.friends}',
+                    '$friendsCount ${friendsCount == 1 ? context.l10n.friends2(friendsCount) : context.l10n.friends}',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(

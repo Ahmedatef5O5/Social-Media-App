@@ -17,18 +17,34 @@ class AboutUsFeatureGrid extends StatelessWidget {
     final features = [
       (
         Icons.chat_bubble_rounded,
-        'Real-time Chats',
-        'Instant messaging with read receipts',
+        context.l10n.aboutFeatChatsTitle,
+        context.l10n.aboutFeatChatsDesc,
       ),
-      (Icons.call_rounded, 'HD Voice & Video', 'Crystal clear calls anytime'),
-      (Icons.people_alt_rounded, 'Group Chats', 'Connect with communities'),
-      (Icons.auto_stories_rounded, 'Stories', 'Share your daily moments'),
+      (
+        Icons.call_rounded,
+        context.l10n.aboutFeatCallsTitle,
+        context.l10n.aboutFeatCallsDesc,
+      ),
+      (
+        Icons.people_alt_rounded,
+        context.l10n.aboutFeatGroupsTitle,
+        context.l10n.aboutFeatGroupsDesc,
+      ),
+      (
+        Icons.auto_stories_rounded,
+        context.l10n.aboutFeatStoriesTitle,
+        context.l10n.aboutFeatStoriesDesc,
+      ),
       (
         Icons.notifications_active_rounded,
-        'Smart Alerts',
-        'Never miss what matters',
+        context.l10n.aboutFeatAlertsTitle,
+        context.l10n.aboutFeatAlertsDesc,
       ),
-      (Icons.shield_rounded, 'Privacy First', 'Your data stays yours'),
+      (
+        Icons.shield_rounded,
+        context.l10n.aboutFeatPrivacyTitle,
+        context.l10n.aboutFeatPrivacyDesc,
+      ),
     ];
 
     return LayoutBuilder(

@@ -1,5 +1,4 @@
 import 'package:flutter/widgets.dart';
-
 import '../../features/settings/repository/settings_repository.dart';
 import '../../l10n/generated/app_localizations.dart';
 import 'app_locale.dart';
@@ -13,4 +12,7 @@ abstract final class AppL10n {
   static AppLocalizations get current => lookupAppLocalizations(
     Locale(AppLocale.normalize(SettingsRepository.instance.languageCode)),
   );
+
+  static bool get isArabic =>
+      AppLocale.normalize(SettingsRepository.instance.languageCode) == 'ar';
 }

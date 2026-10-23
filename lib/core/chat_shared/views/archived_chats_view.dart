@@ -78,6 +78,10 @@ class _ArchivedChatsViewState extends State<ArchivedChatsView> {
                                   confirmAndDeleteConversations(context, refs),
                         )
                         : AppBar(
+                          leading: IconButton(
+                            icon: const Icon(Icons.arrow_back_ios_new_rounded),
+                            onPressed: () => Navigator.of(context).pop(),
+                          ),
                           key: const ValueKey('archive_normal'),
                           title: Text(context.l10n.archivedChats),
                         ),

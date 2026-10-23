@@ -16,27 +16,12 @@ class AiReplyTonePickerSheet extends StatelessWidget {
     );
   }
 
-  static const _options = <AiReplyTone, (String, IconData)>{
-    AiReplyTone.standard: (
-      'Lets the AI choose the tone based on context',
-      Icons.auto_awesome_rounded,
-    ),
-    AiReplyTone.formal: (
-      'Polished, professional wording',
-      Icons.work_outline_rounded,
-    ),
-    AiReplyTone.enthusiastic: (
-      'Energetic and upbeat wording',
-      Icons.bolt_rounded,
-    ),
-    AiReplyTone.casual: (
-      'Relaxed, spontaneous everyday wording',
-      Icons.emoji_emotions_outlined,
-    ),
-    AiReplyTone.encouraging: (
-      'Warm and supportive wording',
-      Icons.favorite_outline_rounded,
-    ),
+  static const _icons = <AiReplyTone, IconData>{
+    AiReplyTone.standard: Icons.auto_awesome_rounded,
+    AiReplyTone.formal: Icons.work_outline_rounded,
+    AiReplyTone.enthusiastic: Icons.bolt_rounded,
+    AiReplyTone.casual: Icons.emoji_emotions_outlined,
+    AiReplyTone.encouraging: Icons.favorite_outline_rounded,
   };
 
   @override
@@ -111,15 +96,13 @@ class AiReplyTonePickerSheet extends StatelessWidget {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children:
-                        _options.entries.map((entry) {
-                          final tone = entry.key;
-                          final (subtitle, icon) = entry.value;
+                        AiReplyTone.values.map((tone) {
                           return AiSettingOptionCard<AiReplyTone>(
                             value: tone,
                             currentValue: selected,
-                            title: tone.displayLabel,
-                            subtitle: subtitle,
-                            icon: icon,
+                            title: tone.localizedTitle(context),
+                            subtitle: tone.localizedDescription(context),
+                            icon: _icons[tone] ?? Icons.auto_awesome_rounded,
                           );
                         }).toList(),
                   ),

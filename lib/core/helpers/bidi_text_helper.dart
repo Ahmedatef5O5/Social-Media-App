@@ -3,12 +3,15 @@ import 'package:flutter/widgets.dart';
 class BidiTextHelper {
   const BidiTextHelper._();
 
-  static TextDirection detectDirection(String text) {
+  static TextDirection detectDirection(
+    String text, [
+    TextDirection fallback = TextDirection.ltr,
+  ]) {
     for (final rune in text.runes) {
       if (_isRtl(rune)) return TextDirection.rtl;
       if (_isLtr(rune)) return TextDirection.ltr;
     }
-    return TextDirection.ltr;
+    return fallback;
   }
 
   static TextAlign alignFor(TextDirection direction) =>

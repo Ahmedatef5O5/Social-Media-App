@@ -70,6 +70,7 @@ class VideoPostAuthorAndCaption extends StatelessWidget {
             ),
             if (currentPost.text.trim().isNotEmpty)
               Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   FullScreenVideoCaption(text: currentPost.text),
                   const SizedBox(height: 14),

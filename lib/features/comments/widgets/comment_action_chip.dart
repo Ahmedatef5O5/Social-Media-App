@@ -8,6 +8,7 @@ class CommentActionChip extends StatelessWidget {
   final VoidCallback? onLongPress;
   final bool isActive;
   final Color? activeColor;
+  final bool? isEmoji;
 
   const CommentActionChip({
     super.key,
@@ -16,20 +17,27 @@ class CommentActionChip extends StatelessWidget {
     this.onLongPress,
     this.isActive = false,
     this.activeColor,
+    this.isEmoji,
   });
 
   @override
   Widget build(BuildContext context) {
-    final isEmoji = label != 'Like' && label != 'Reply' && label.isNotEmpty;
+    final effectiveIsEmoji =
+        isEmoji ??
+        (isActive &&
+            label.isNotEmpty &&
+            label != 'Like' &&
+            label != 'Reply' &&
+            label != 'إعجاب' &&
+            label != 'رد');
 
-    if (isEmoji) {
+    if (effectiveIsEmoji) {
       return GestureDetector(
         onTap: onTap,
         onLongPress: onLongPress,
         child: Text(
           label,
-          style: TextStyle(
-            inherit: false,
+          style: const TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.normal,
             fontFamilyFallback: AppTypography.emojiFontFallback,

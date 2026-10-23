@@ -180,32 +180,16 @@ class NotificationListItem extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            notif.title,
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight:
-                                  notif.isRead
-                                      ? FontWeight.w500
-                                      : FontWeight.w700,
-                              color: isDark ? Colors.white : Colors.black87,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        Text(
-                          _formatTime(notif.createdAt),
-                          style: TextStyle(
-                            fontSize: 11,
-                            color:
-                                isDark ? Colors.white30 : Colors.grey.shade400,
-                          ),
-                        ),
-                      ],
+                    Text(
+                      notif.title,
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight:
+                            notif.isRead ? FontWeight.w500 : FontWeight.w700,
+                        color: isDark ? Colors.white : Colors.black87,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 3),
 
@@ -351,18 +335,31 @@ class NotificationListItem extends StatelessWidget {
                   ],
                 ),
               ),
-              if (!notif.isRead)
-                Padding(
-                  padding: const EdgeInsets.only(left: 8, top: 4),
-                  child: Container(
-                    width: 8,
-                    height: 8,
-                    decoration: BoxDecoration(
-                      color: primary,
-                      shape: BoxShape.circle,
+              const SizedBox(width: 8),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    _formatTime(notif.createdAt),
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: isDark ? Colors.white30 : Colors.grey.shade400,
                     ),
                   ),
-                ),
+                  const SizedBox(height: 8),
+                  if (!notif.isRead)
+                    Container(
+                      width: 8,
+                      height: 8,
+                      decoration: BoxDecoration(
+                        color: primary,
+                        shape: BoxShape.circle,
+                      ),
+                    )
+                  else
+                    const SizedBox(width: 8, height: 8),
+                ],
+              ),
             ],
           ),
         ),

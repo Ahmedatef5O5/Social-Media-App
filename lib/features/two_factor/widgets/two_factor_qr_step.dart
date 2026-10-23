@@ -1,13 +1,13 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:social_media_app/core/localization/app_l10n.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../core/toast/app_toast.dart';
 import '../../../core/widgets/custom_elevated_button.dart';
 import '../models/two_factor_enrollment.dart';
 import '../utils/clipboard_guard.dart';
-import 'package:social_media_app/core/localization/app_l10n.dart';
-import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class TwoFactorQrStep extends StatelessWidget {
   final TwoFactorEnrollment enrollment;
@@ -30,7 +30,6 @@ class TwoFactorQrStep extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    // Group the secret in blocks of four so it is easy to read and type.
     final grouped = RegExp(
       r'.{1,4}',
     ).allMatches(enrollment.secret).map((m) => m.group(0)).join(' ');
@@ -51,7 +50,6 @@ class TwoFactorQrStep extends StatelessWidget {
         ),
         const SizedBox(height: 20),
         Center(
-          // Always white: scanners need dark-on-light, also in dark mode.
           child: Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
@@ -110,7 +108,10 @@ class TwoFactorQrStep extends StatelessWidget {
           label: Text(context.l10n.openInAuthenticatorApp),
         ),
         const SizedBox(height: 14),
-        CustomElevatedButton(txtBtn: "I've added it", onPressed: onNext),
+        CustomElevatedButton(
+          txtBtn: context.l10n.iveAddedIt,
+          onPressed: onNext,
+        ),
       ],
     );
   }

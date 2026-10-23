@@ -19,13 +19,10 @@ class AiReplyLengthPickerSheet extends StatelessWidget {
     );
   }
 
-  static const _options = <AiReplyLength, (String, IconData)>{
-    AiReplyLength.standard: (
-      'Natural, everyday length',
-      Icons.auto_awesome_rounded,
-    ),
-    AiReplyLength.short: ('Brief and to the point', Icons.short_text_rounded),
-    AiReplyLength.detailed: ('Longer and more thorough', Icons.subject_rounded),
+  static const _icons = <AiReplyLength, IconData>{
+    AiReplyLength.standard: Icons.auto_awesome_rounded,
+    AiReplyLength.short: Icons.short_text_rounded,
+    AiReplyLength.detailed: Icons.subject_rounded,
   };
 
   @override
@@ -100,15 +97,13 @@ class AiReplyLengthPickerSheet extends StatelessWidget {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children:
-                        _options.entries.map((entry) {
-                          final length = entry.key;
-                          final (subtitle, icon) = entry.value;
+                        AiReplyLength.values.map((length) {
                           return AiSettingOptionCard<AiReplyLength>(
                             value: length,
                             currentValue: selected,
-                            title: length.displayLabel,
-                            subtitle: subtitle,
-                            icon: icon,
+                            title: length.localizedTitle(context),
+                            subtitle: length.localizedDescription(context),
+                            icon: _icons[length] ?? Icons.auto_awesome_rounded,
                           );
                         }).toList(),
                   ),

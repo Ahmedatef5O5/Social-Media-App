@@ -1,3 +1,6 @@
+import '../localization/app_l10n.dart';
+import '../../l10n/generated/app_localizations.dart';
+
 class AppValidators {
   static final RegExp _nameRegExp = RegExp(
     r"^[a-zA-Zأ-ي]+(([',. -][a-zA-Zأ-ي ])?[a-zA-Zأ-ي]*)*$",
@@ -6,45 +9,53 @@ class AppValidators {
     r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+",
   );
 
-  static String? validateName(String? value) {
+  static String? validateName(String? value, [AppLocalizations? l10n]) {
+    final strings = l10n ?? AppL10n.current;
     if (value == null || value.trim().isEmpty) {
-      return 'Name is required';
+      return strings.valNameRequired;
     }
     if (!_nameRegExp.hasMatch(value.trim())) {
-      return 'Please enter a valid name (letters only)';
+      return strings.valNameInvalid;
     }
     if (value.trim().length < 2) {
-      return 'Name must be at least 2 characters';
+      return strings.valNameMinLength;
     }
     return null;
   }
 
-  static String? validateEmail(String? value) {
+  static String? validateEmail(String? value, [AppLocalizations? l10n]) {
+    final strings = l10n ?? AppL10n.current;
     if (value == null || value.trim().isEmpty) {
-      return 'Email is required';
+      return strings.valEmailRequired;
     }
     if (!_emailRegExp.hasMatch(value.trim())) {
-      return 'Please enter a valid email address';
+      return strings.valEmailInvalid;
     }
     return null;
   }
 
-  static String? validatePassword(String? value) {
+  static String? validatePassword(String? value, [AppLocalizations? l10n]) {
+    final strings = l10n ?? AppL10n.current;
     if (value == null || value.isEmpty) {
-      return 'Password is required';
+      return strings.valPasswordRequired;
     }
     if (value.length < 6) {
-      return 'Password must be at least 6 characters';
+      return strings.valPasswordMinLength;
     }
     return null;
   }
 
-  static String? validateConfirmPassword(String? value, String password) {
+  static String? validateConfirmPassword(
+    String? value,
+    String password, [
+    AppLocalizations? l10n,
+  ]) {
+    final strings = l10n ?? AppL10n.current;
     if (value == null || value.isEmpty) {
-      return 'Confirm Password is required';
+      return strings.valConfirmPasswordRequired;
     }
     if (value != password) {
-      return 'Passwords do not match';
+      return strings.valPasswordsDoNotMatch;
     }
     return null;
   }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/widgets/custom_elevated_button.dart';
 import '../cubits/edit_profile_cubit/edit_profile_cubit.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class EditProfileActionButton extends StatelessWidget {
   final VoidCallback onPressed;
@@ -14,7 +15,7 @@ class EditProfileActionButton extends StatelessWidget {
         return CustomElevatedButton(
           maximumSize: const Size(240, 50),
           minimumSize: const Size(240, 50),
-          txtBtn: 'Save Changes',
+          txtBtn: context.l10n.saveChanges,
           txtBtnStyle: Theme.of(
             context,
           ).textTheme.titleMedium!.copyWith(color: Colors.white),

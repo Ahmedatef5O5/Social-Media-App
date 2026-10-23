@@ -1,10 +1,11 @@
+import 'package:social_media_app/core/localization/app_l10n.dart';
 import 'package:social_media_app/core/utilities/supabase_constants.dart';
 import '../../../core/presence/models/presence_privacy.dart';
 import '../../auth/data/models/user_data.dart';
 
 class ChatUserModel {
   final String id;
-  final String name;
+  final String _name;
   final String? imageUrl;
   final String? lastMessage;
   final String? lastMessageType;
@@ -21,7 +22,7 @@ class ChatUserModel {
 
   const ChatUserModel({
     required this.id,
-    required this.name,
+    required String name,
     this.imageUrl,
     this.lastMessage,
     this.lastMessageType,
@@ -35,7 +36,13 @@ class ChatUserModel {
     this.isOnline = false,
     this.presencePrivacy = PresencePrivacy.friends,
     this.isDeleted = false,
-  });
+  }) : _name = name;
+
+  String get name =>
+      (isDeleted || _name.trim().toLowerCase() == 'deleted account')
+          ? AppL10n.current.deletedAccount
+          : _name;
+
 
   factory ChatUserModel.fromUserData(
     Map<String, dynamic> map,
@@ -121,7 +128,7 @@ class ChatUserModel {
 
   Map<String, dynamic> toCacheJson() => {
     'id': id,
-    'name': name,
+    'name': _name,  
     'image_url': imageUrl,
     'last_message': lastMessage,
     'last_message_type': lastMessageType,

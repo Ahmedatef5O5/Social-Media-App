@@ -268,10 +268,10 @@ class _FullScreenVideoPostViewState extends State<FullScreenVideoPostView> {
     return DismissibleVideoOverlay(
       listenable: _showOverlays,
       fadeDuration: _fadeDuration,
-      alignment: Alignment.bottomRight,
+      alignment: AlignmentDirectional.bottomEnd,
       child: Padding(
-        padding: EdgeInsets.only(
-          right: 14,
+        padding: EdgeInsetsDirectional.only(
+          end: 14,
           bottom:
               hasCaption
                   ? _rightColumnBottomWithCaption
@@ -287,12 +287,12 @@ class _FullScreenVideoPostViewState extends State<FullScreenVideoPostView> {
   }
 
   Widget _buildBottomInfoRow(BuildContext context) {
-    return Positioned(
-      left: 0,
-      right: 90,
+    return PositionedDirectional(
+      start: 0,
+      end: 90,
       bottom: 45,
       child: Padding(
-        padding: const EdgeInsets.only(left: 14, right: 10),
+        padding: const EdgeInsetsDirectional.only(start: 14, end: 10),
         child: FadeDismissWidget(
           listenable: _showOverlays,
           fadeDuration: _fadeDuration,

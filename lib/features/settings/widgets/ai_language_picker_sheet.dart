@@ -19,19 +19,10 @@ class AiLanguagePickerSheet extends StatelessWidget {
     );
   }
 
-  static const _options = <AiAutoCompleteLanguage, (String, IconData)>{
-    AiAutoCompleteLanguage.auto: (
-      'Detects the language automatically from what you\'re writing or replying to',
-      Icons.auto_awesome_rounded,
-    ),
-    AiAutoCompleteLanguage.arabic: (
-      'AI captions, replies, and corrections are always generated in Arabic',
-      Icons.translate_rounded,
-    ),
-    AiAutoCompleteLanguage.english: (
-      'AI captions, replies, and corrections are always generated in English',
-      Icons.translate_rounded,
-    ),
+  static const _icons = <AiAutoCompleteLanguage, IconData>{
+    AiAutoCompleteLanguage.auto: Icons.auto_awesome_rounded,
+    AiAutoCompleteLanguage.arabic: Icons.translate_rounded,
+    AiAutoCompleteLanguage.english: Icons.translate_rounded,
   };
 
   @override
@@ -106,15 +97,13 @@ class AiLanguagePickerSheet extends StatelessWidget {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children:
-                        _options.entries.map((entry) {
-                          final language = entry.key;
-                          final (subtitle, icon) = entry.value;
+                        AiAutoCompleteLanguage.values.map((language) {
                           return AiSettingOptionCard<AiAutoCompleteLanguage>(
                             value: language,
                             currentValue: selected,
-                            title: language.displayLabel,
-                            subtitle: subtitle,
-                            icon: icon,
+                            title: language.localizedTitle(context),
+                            subtitle: language.localizedDescription(context),
+                            icon: _icons[language] ?? Icons.translate_rounded,
                           );
                         }).toList(),
                   ),

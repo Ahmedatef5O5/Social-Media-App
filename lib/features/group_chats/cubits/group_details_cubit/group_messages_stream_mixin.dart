@@ -45,41 +45,46 @@ mixin GroupMessagesStreamMixin on Cubit<GroupDetailsState> {
         .from(SupabaseConstants.groupMembers)
         .stream(primaryKey: ['id'])
         .eq(GroupMemberColumns.groupId, group.id)
-        .listen((data) {
-          final myRow = data.firstWhere(
-            (row) => row[GroupMemberColumns.userId] == currentUserId,
-            orElse: () => <String, dynamic>{},
-          );
+        .listen(
+          (data) {
+            final myRow = data.firstWhere(
+              (row) => row[GroupMemberColumns.userId] == currentUserId,
+              orElse: () => <String, dynamic>{},
+            );
 
-          final bool newIsMember =
-              myRow.isNotEmpty &&
-              myRow[GroupMemberColumns.membershipStatus] == 'active';
+            final bool newIsMember =
+                myRow.isNotEmpty &&
+                myRow[GroupMemberColumns.membershipStatus] == 'active';
 
-          final lastStateIsMember =
-              state is GroupDetailsLoaded
-                  ? (state as GroupDetailsLoaded).isMember
-                  : null;
+            final lastStateIsMember =
+                state is GroupDetailsLoaded
+                    ? (state as GroupDetailsLoaded).isMember
+                    : null;
 
-          if (lastStateIsMember == newIsMember) return;
+            if (lastStateIsMember == newIsMember) return;
 
-          isMember = newIsMember;
-          _emitLoaded(force: true);
+            isMember = newIsMember;
+            _emitLoaded(force: true);
 
-          groupListCubit.updateGroupMembership(group.id, newIsMember);
+            groupListCubit.updateGroupMembership(group.id, newIsMember);
 
-          if (!newIsMember) {
-            _messagesSubscription?.cancel();
-            _messagesSubscription = null;
-            _readReceiptsSubscription?.cancel();
-            _readReceiptsSubscription = null;
-            _typingSubscription?.cancel();
-            _typingSubscription = null;
-          } else {
-            _listenMessages();
-            _listenReadReceipts();
-            _listenPresence();
-          }
-        });
+            if (!newIsMember) {
+              _messagesSubscription?.cancel();
+              _messagesSubscription = null;
+              _readReceiptsSubscription?.cancel();
+              _readReceiptsSubscription = null;
+              _typingSubscription?.cancel();
+              _typingSubscription = null;
+            } else {
+              _listenMessages();
+              _listenReadReceipts();
+              _listenPresence();
+            }
+          },
+          onError: (error) {
+            debugPrint('[GroupMembershipStream] transient disconnect: $error');
+          },
+        );
   }
 
   void _listenMessages() {
@@ -100,83 +105,92 @@ mixin GroupMessagesStreamMixin on Cubit<GroupDetailsState> {
 
     final clearedAt = GroupChatClearStore.instance.clearedAtFor(group.id);
 
-    _messagesSubscription = _services.getGroupMessagesStream(group.id).listen((
-      messages,
-    ) {
-      if (myEpoch != (this as GroupDetailsCubit)._messagesEpoch) return;
+    _messagesSubscription = _services
+        .getGroupMessagesStream(group.id)
+        .listen(
+          (messages) {
+            if (myEpoch != (this as GroupDetailsCubit)._messagesEpoch) return;
 
-      final visibleMessages =
-          clearedAt == null
-              ? messages
-              : messages.where((m) => m.createdAt.isAfter(clearedAt)).toList();
+            final visibleMessages =
+                clearedAt == null
+                    ? messages
+                    : messages
+                        .where((m) => m.createdAt.isAfter(clearedAt))
+                        .toList();
 
-      final existingById = {for (final c in cachedMessages) c.id: c};
-      final enriched =
-          visibleMessages.map((msg) {
-            final existing = existingById[msg.id];
-            final mentions =
-                _mentionsCache[msg.id] ??
-                existing?.mentions ??
-                const <MentionRef>[];
-            final reactions =
-                _reactionsCache[msg.id] ?? existing?.reactions ?? {};
-            return msg.copyWith(mentions: mentions, reactions: reactions);
-          }).toList();
+            final existingById = {for (final c in cachedMessages) c.id: c};
+            final enriched =
+                visibleMessages.map((msg) {
+                  final existing = existingById[msg.id];
+                  final mentions =
+                      _mentionsCache[msg.id] ??
+                      existing?.mentions ??
+                      const <MentionRef>[];
+                  final reactions =
+                      _reactionsCache[msg.id] ?? existing?.reactions ?? {};
+                  return msg.copyWith(mentions: mentions, reactions: reactions);
+                }).toList();
 
-      final bool isFirstEventThisTime = !_hasReceivedFirstStreamEvent;
+            final bool isFirstEventThisTime = !_hasReceivedFirstStreamEvent;
 
-      final reconciliation = GroupDetailsCubit._reconciler.applySnapshot(
-        cachedMessages,
-        snapshot: enriched,
-        protectedKeys: (this as GroupDetailsCubit)._protectedKeys,
-      );
-      (this as GroupDetailsCubit)._protectedKeys =
-          reconciliation.stillUnconfirmed;
-      final List<GroupMessageModel> resolved = reconciliation.messages;
+            final reconciliation = GroupDetailsCubit._reconciler.applySnapshot(
+              cachedMessages,
+              snapshot: enriched,
+              protectedKeys: (this as GroupDetailsCubit)._protectedKeys,
+            );
+            (this as GroupDetailsCubit)._protectedKeys =
+                reconciliation.stillUnconfirmed;
+            final List<GroupMessageModel> resolved = reconciliation.messages;
 
-      _hasReceivedFirstStreamEvent = true;
+            _hasReceivedFirstStreamEvent = true;
 
-      if (!isFirstEventThisTime) {
-        final existingIds = cachedMessages.map((m) => m.id).toSet();
-        final newIds = resolved
-            .map((m) => m.id)
-            .toSet()
-            .difference(existingIds);
+            if (!isFirstEventThisTime) {
+              final existingIds = cachedMessages.map((m) => m.id).toSet();
+              final newIds = resolved
+                  .map((m) => m.id)
+                  .toSet()
+                  .difference(existingIds);
 
-        final bool hasOwnNewMessage = resolved.any(
-          (m) => newIds.contains(m.id) && m.senderId == currentUserId,
+              final bool hasOwnNewMessage = resolved.any(
+                (m) => newIds.contains(m.id) && m.senderId == currentUserId,
+              );
+              final int otherNewCount =
+                  resolved
+                      .where(
+                        (m) =>
+                            newIds.contains(m.id) &&
+                            m.senderId != currentUserId,
+                      )
+                      .length;
+
+              if (!isAtBottomNotifier.value &&
+                  otherNewCount > 0 &&
+                  !hasOwnNewMessage) {
+                _pendingMessagesSnapshot = resolved;
+                pendingNewCountNotifier.value = otherNewCount;
+                if (_messagesSnapshotKey != null) {
+                  _persistMessagesSnapshot(_messagesSnapshotKey!, resolved);
+                }
+                _checkRemovalAndUpdatePreview(resolved, visibleMessages);
+                return;
+              }
+            }
+            cachedMessages = resolved;
+            _pendingMessagesSnapshot = [];
+            pendingNewCountNotifier.value = 0;
+            _isFirstLoad = false;
+            _emitLoaded();
+            if (_messagesSnapshotKey != null) {
+              _persistMessagesSnapshot(_messagesSnapshotKey!, resolved);
+            }
+
+            markRead();
+            _checkRemovalAndUpdatePreview(resolved, visibleMessages);
+          },
+          onError: (error) {
+            debugPrint('[GroupMessagesStream] transient disconnect: $error');
+          },
         );
-        final int otherNewCount =
-            resolved
-                .where(
-                  (m) => newIds.contains(m.id) && m.senderId != currentUserId,
-                )
-                .length;
-
-        if (!isAtBottomNotifier.value &&
-            otherNewCount > 0 &&
-            !hasOwnNewMessage) {
-          _pendingMessagesSnapshot = resolved;
-          pendingNewCountNotifier.value = otherNewCount;
-          if (_messagesSnapshotKey != null) {
-            _persistMessagesSnapshot(_messagesSnapshotKey!, resolved);
-          }
-          _checkRemovalAndUpdatePreview(resolved, visibleMessages);
-          return;
-        }
-      }
-      cachedMessages = resolved;
-      _pendingMessagesSnapshot = [];
-      pendingNewCountNotifier.value = 0;
-      _isFirstLoad = false;
-      _emitLoaded();
-      if (_messagesSnapshotKey != null) {
-        _persistMessagesSnapshot(_messagesSnapshotKey!, resolved);
-      }
-
-      markRead();
-      _checkRemovalAndUpdatePreview(resolved, visibleMessages);
-    });
   }
 
   void _checkRemovalAndUpdatePreview(
@@ -229,48 +243,60 @@ mixin GroupMessagesStreamMixin on Cubit<GroupDetailsState> {
     if (!isMember) return;
     _readReceiptsSubscription = _services
         .getReadReceiptsStream(group.id)
-        .listen((receipts) {
-          if (receipts.isEmpty) return;
+        .listen(
+          (receipts) {
+            if (receipts.isEmpty) return;
 
-          final receiptMap = <String, Set<String>>{};
-          for (final r in receipts) {
-            final id = r['id'] as String?;
-            final readByRaw = r['read_by'];
-            if (id == null) continue;
-            Set<String> readBySet = {};
-            if (readByRaw is List) {
-              readBySet = readByRaw.map((e) => e.toString()).toSet();
-            }
-            receiptMap[id] = readBySet;
-          }
-
-          bool changed = false;
-          cachedMessages = GroupDetailsCubit._reconciler.applyFieldUpdate(
-            cachedMessages,
-            (msg) {
-              final newReadBy = receiptMap[msg.id];
-              if (newReadBy != null && newReadBy != msg.readBy) {
-                changed = true;
-                return msg.copyWith(readBy: newReadBy);
+            final receiptMap = <String, Set<String>>{};
+            for (final r in receipts) {
+              final id = r['id'] as String?;
+              final readByRaw = r['read_by'];
+              if (id == null) continue;
+              Set<String> readBySet = {};
+              if (readByRaw is List) {
+                readBySet = readByRaw.map((e) => e.toString()).toSet();
               }
-              return msg;
-            },
-          );
+              receiptMap[id] = readBySet;
+            }
 
-          if (changed) _emitLoaded();
-        });
+            bool changed = false;
+            cachedMessages = GroupDetailsCubit._reconciler.applyFieldUpdate(
+              cachedMessages,
+              (msg) {
+                final newReadBy = receiptMap[msg.id];
+                if (newReadBy != null && newReadBy != msg.readBy) {
+                  changed = true;
+                  return msg.copyWith(readBy: newReadBy);
+                }
+                return msg;
+              },
+            );
+
+            if (changed) _emitLoaded();
+          },
+          onError: (error) {
+            debugPrint(
+              '[GroupReadReceiptsStream] transient disconnect: $error',
+            );
+          },
+        );
   }
 
   void _listenPresence() {
     _typingSubscription?.cancel();
     if (!isMember) return;
-    _typingSubscription = _services.watchGroupPresence(group.id).listen((
-      snapshot,
-    ) {
-      _presence = snapshot;
-      presenceNotifier.value = snapshot;
-      _recomputeListVisiblePresence();
-    });
+    _typingSubscription = _services
+        .watchGroupPresence(group.id)
+        .listen(
+          (snapshot) {
+            _presence = snapshot;
+            presenceNotifier.value = snapshot;
+            _recomputeListVisiblePresence();
+          },
+          onError: (error) {
+            debugPrint('[GroupPresenceStream] transient disconnect: $error');
+          },
+        );
   }
 
   void flushPendingMessages() {

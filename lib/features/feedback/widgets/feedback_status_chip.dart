@@ -46,7 +46,7 @@ class FeedbackStatusChip extends StatelessWidget {
           Text(emojiFor(status), style: TextStyle(fontSize: compact ? 9 : 10)),
           const SizedBox(width: 5),
           Text(
-            label ?? status.label,
+            label ?? status.localizedName(context),
             style: TextStyle(
               fontSize: compact ? 11 : 12,
               fontWeight: FontWeight.w700,

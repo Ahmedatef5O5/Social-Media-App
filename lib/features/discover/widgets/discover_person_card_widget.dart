@@ -235,9 +235,9 @@ class DiscoverPersonCardWidget extends StatelessWidget {
                 child: AnimatedActionButton(
                   height: isCompact ? 34 : 38,
                   isActive: personData.isFollowing,
-                  idleLabel: 'Follow',
-                  activeLabel: 'Following',
-                  idleIcon: Icons.person_add_rounded,
+                  idleLabel: context.l10n.btnFollow,
+                  activeLabel: context.l10n.btnFollowing,
+                  idleIcon: Icons.add_rounded,
                   activeIcon: Icons.check_rounded,
                   onPressed: () => _handleFollowAction(context),
                 ),
@@ -294,8 +294,8 @@ class DiscoverPersonCardWidget extends StatelessWidget {
         return AnimatedActionButton(
           height: buttonHeight,
           isActive: false,
-          idleLabel: 'Add Friend',
-          activeLabel: 'Requested',
+          idleLabel: context.l10n.btnAddFriend,
+          activeLabel: context.l10n.btnRequested,
           idleIcon: Icons.person_add_alt_1_rounded,
           activeIcon: Icons.hourglass_top_rounded,
           onPressed: () => _handleFriendAction(context),
@@ -304,8 +304,8 @@ class DiscoverPersonCardWidget extends StatelessWidget {
         return AnimatedActionButton(
           height: buttonHeight,
           isActive: true,
-          idleLabel: 'Add Friend',
-          activeLabel: 'Requested',
+          idleLabel: context.l10n.btnAddFriend,
+          activeLabel: context.l10n.btnRequested,
           idleIcon: Icons.person_add_alt_1_rounded,
           activeIcon: Icons.hourglass_top_rounded,
           onPressed: () => _handleFriendAction(context),
@@ -441,7 +441,7 @@ class _DiscoverFriendCounts extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              '$totalFriendsCount ${totalFriendsCount == 1 ? 'Friend' : context.l10n.friends}',
+              context.l10n.friends2(totalFriendsCount),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(

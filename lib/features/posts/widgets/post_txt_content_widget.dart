@@ -83,44 +83,52 @@ class _PostTxtContentWidgetState extends State<PostTxtContentWidget> {
                   text: postText,
                   isMe: false,
                   textWidget: Column(
-                    crossAxisAlignment:
-                        isArabic
-                            ? CrossAxisAlignment.end
-                            : CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      MentionRichText(
-                        text: postText,
-                        mentions: widget.post.mentions,
-                        maxLines: _isExpanded ? null : maxLines,
-                        overflow:
-                            _isExpanded
-                                ? TextOverflow.visible
-                                : TextOverflow.ellipsis,
-                        style: textStyle,
-                        onMentionTap: (userId, name) {
-                          final currentUserId = SupabaseProvider.idOrNull;
-                          if (userId == currentUserId) {
-                            if (widget.post.authorId == currentUserId) {
-                              AppToast.info(
-                                context.l10n.youMentionedYourselfIn3,
-                              );
-                            } else {
-                              final authorName =
-                                  (widget.post.authorName?.trim().isNotEmpty ??
-                                          false)
-                                      ? widget.post.authorName!.trim()
-                                      : context.l10n.someone;
-                              AppToast.info(
-                                context.l10n.mentionedYouInThis3(authorName),
-                              );
+                      Align(
+                        alignment:
+                            isArabic
+                                ? Alignment.centerRight
+                                : Alignment.centerLeft,
+                        child: MentionRichText(
+                          text: postText,
+                          mentions: widget.post.mentions,
+                          maxLines: _isExpanded ? null : maxLines,
+                          overflow:
+                              _isExpanded
+                                  ? TextOverflow.visible
+                                  : TextOverflow.ellipsis,
+                          style: textStyle,
+                          onMentionTap: (userId, name) {
+                            final currentUserId = SupabaseProvider.idOrNull;
+                            if (userId == currentUserId) {
+                              if (widget.post.authorId == currentUserId) {
+                                AppToast.info(
+                                  context.l10n.youMentionedYourselfIn3,
+                                );
+                              } else {
+                                final authorName =
+                                    (widget.post.authorName
+                                                ?.trim()
+                                                .isNotEmpty ??
+                                            false)
+                                        ? widget.post.authorName!.trim()
+                                        : context.l10n.someone;
+                                AppToast.info(
+                                  context.l10n.mentionedYouInThis3(authorName),
+                                );
+                              }
+                              return;
                             }
-                            return;
-                          }
-                          Navigator.of(context, rootNavigator: true).pushNamed(
-                            AppRoutes.profileViewRoute,
-                            arguments: userId,
-                          );
-                        },
+                            Navigator.of(
+                              context,
+                              rootNavigator: true,
+                            ).pushNamed(
+                              AppRoutes.profileViewRoute,
+                              arguments: userId,
+                            );
+                          },
+                        ),
                       ),
 
                       if (isOverflowing)

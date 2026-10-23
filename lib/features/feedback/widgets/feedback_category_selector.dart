@@ -65,7 +65,7 @@ class FeedbackCategorySelector extends StatelessWidget {
                   ),
                   const SizedBox(width: 7),
                   Text(
-                    c.label,
+                    c.localizedName(context),
                     style: TextStyle(
                       fontSize: 13.5,
                       fontWeight: FontWeight.w600,

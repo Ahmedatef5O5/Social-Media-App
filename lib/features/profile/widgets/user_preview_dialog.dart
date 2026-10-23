@@ -145,7 +145,11 @@ class _UserPreviewDialogState extends State<UserPreviewDialog> {
                           ),
                         ),
                         child: Text(
-                          user.name,
+                          (isDeleted ||
+                                  user.name.trim().toLowerCase() ==
+                                      'deleted account')
+                              ? context.l10n.deletedAccount
+                              : user.name,
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 18,

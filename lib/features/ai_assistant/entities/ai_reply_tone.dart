@@ -1,3 +1,6 @@
+import 'package:flutter/widgets.dart';
+import '../../../core/localization/l10n_extension.dart';
+
 enum AiReplyTone { standard, formal, enthusiastic, casual, encouraging }
 
 extension AiReplyToneX on AiReplyTone {
@@ -15,6 +18,36 @@ extension AiReplyToneX on AiReplyTone {
         return 'casual';
       case AiReplyTone.encouraging:
         return 'encouraging';
+    }
+  }
+
+  String localizedTitle(BuildContext context) {
+    switch (this) {
+      case AiReplyTone.standard:
+        return context.l10n.aiToneDefaultTitle;
+      case AiReplyTone.formal:
+        return context.l10n.aiToneFormalTitle;
+      case AiReplyTone.enthusiastic:
+        return context.l10n.aiToneEnthusiasticTitle;
+      case AiReplyTone.casual:
+        return context.l10n.aiToneCasualTitle;
+      case AiReplyTone.encouraging:
+        return context.l10n.aiToneEncouragingTitle;
+    }
+  }
+
+  String localizedDescription(BuildContext context) {
+    switch (this) {
+      case AiReplyTone.standard:
+        return context.l10n.aiToneDefaultDesc;
+      case AiReplyTone.formal:
+        return context.l10n.aiToneFormalDesc;
+      case AiReplyTone.enthusiastic:
+        return context.l10n.aiToneEnthusiasticDesc;
+      case AiReplyTone.casual:
+        return context.l10n.aiToneCasualDesc;
+      case AiReplyTone.encouraging:
+        return context.l10n.aiToneEncouragingDesc;
     }
   }
 

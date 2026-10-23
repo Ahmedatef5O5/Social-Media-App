@@ -61,7 +61,7 @@ class PostHeaderWidget extends StatelessWidget {
   Widget _buildSuggestedBadge(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     return Container(
-      margin: const EdgeInsets.only(left: 6),
+      margin: const EdgeInsetsDirectional.only(start: 8),
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
       decoration: BoxDecoration(
         color: colorScheme.primary.withValues(alpha: 0.10),
@@ -214,7 +214,11 @@ class PostHeaderWidget extends StatelessWidget {
           children: [
             Flexible(
               child: Text(
-                post.authorName ?? context.l10n.unknown,
+                (post.authorIsDeleted ||
+                        (post.authorName?.trim().toLowerCase() ==
+                            'deleted account'))
+                    ? context.l10n.deletedAccount
+                    : (post.authorName ?? context.l10n.unknown),
                 overflow: TextOverflow.ellipsis,
                 style: Theme.of(context).textTheme.titleSmall!.copyWith(
                   fontWeight: FontWeight.w500,

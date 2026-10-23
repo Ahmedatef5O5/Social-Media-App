@@ -112,26 +112,6 @@ class _ChatsViewState extends State<ChatsView>
         builder: (context, chatsState) {
           return BlocBuilder<GroupListCubit, GroupListState>(
             builder: (context, groupsState) {
-              final chatsLoading =
-                  (context.read<ChatsCubit>().showSkeleton &&
-                      chatsState is! ChatsSuccessloaded) ||
-                  isPullRefreshing.value;
-              final groupsLoading =
-                  groupsState is GroupListInitial ||
-                  groupsState is GroupListLoading ||
-                  isPullRefreshing.value;
-
-              final isLoading =
-                  (_tabNeedsChats && chatsLoading) ||
-                  (_tabNeedsGroups && groupsLoading);
-
-              final errorMsg =
-                  (_tabNeedsChats && chatsState is ChatsError)
-                      ? chatsState.message
-                      : (_tabNeedsGroups && groupsState is GroupListError)
-                      ? groupsState.message
-                      : null;
-
               return Stack(
                 children: [
                   Listener(
@@ -156,20 +136,26 @@ class _ChatsViewState extends State<ChatsView>
                       }
                     },
                     onPointerUp: (event) async {
-                      if (_refreshProgress.value >= 1.0 &&
-                          !_isRefreshing.value) {
-                        _isRefreshing.value = true;
-                        isPullRefreshing.value = true;
-
-                        await _refreshActiveSources(context);
-
-                        await Future.delayed(const Duration(milliseconds: 300));
-
-                        isPullRefreshing.value = false;
-                        _isRefreshing.value = false;
-                      }
+                      final shouldRefresh =
+                          _refreshProgress.value >= 1.0 && !_isRefreshing.value;
                       _dragStartY = 0;
                       _refreshProgress.value = 0.0;
+
+                      if (shouldRefresh) {
+                        _isRefreshing.value = true;
+                        isPullRefreshing.value = true;
+                        try {
+                          await _refreshActiveSources(context);
+                          await Future.delayed(
+                            const Duration(milliseconds: 300),
+                          );
+                        } finally {
+                          if (mounted) {
+                            isPullRefreshing.value = false;
+                            _isRefreshing.value = false;
+                          }
+                        }
+                      }
                     },
                     onPointerCancel: (_) {
                       _dragStartY = 0;
@@ -182,6 +168,27 @@ class _ChatsViewState extends State<ChatsView>
                         isPullRefreshing,
                       ]),
                       builder: (context, child) {
+                        final chatsLoading =
+                            (context.read<ChatsCubit>().showSkeleton &&
+                                chatsState is! ChatsSuccessloaded) ||
+                            isPullRefreshing.value;
+                        final groupsLoading =
+                            groupsState is GroupListInitial ||
+                            groupsState is GroupListLoading ||
+                            isPullRefreshing.value;
+
+                        final isLoading =
+                            (_tabNeedsChats && chatsLoading) ||
+                            (_tabNeedsGroups && groupsLoading);
+
+                        final errorMsg =
+                            (_tabNeedsChats && chatsState is ChatsError)
+                                ? chatsState.message
+                                : (_tabNeedsGroups &&
+                                    groupsState is GroupListError)
+                                ? groupsState.message
+                                : null;
+
                         return CustomTabWrapper(
                           isLoading: isLoading,
                           loadingSkeleton: const ChatsViewSkeleton(),
@@ -201,12 +208,17 @@ class _ChatsViewState extends State<ChatsView>
                       child: CustomPullToRefresh(
                         onRefresh: () async {
                           isPullRefreshing.value = true;
-                          await _refreshActiveSources(context);
-                          isPullRefreshing.value = false;
+                          try {
+                            await _refreshActiveSources(context);
+                          } finally {
+                            if (mounted) {
+                              isPullRefreshing.value = false;
+                            }
+                          }
                         },
 
                         child: NestedScrollView(
-                          controller: widget.scrollController,
+                          controller: _scrollController,
                           headerSliverBuilder: (context, innerBoxIsScrolled) {
                             return [
                               BlocBuilder<

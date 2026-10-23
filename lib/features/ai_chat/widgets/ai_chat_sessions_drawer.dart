@@ -8,6 +8,7 @@ import 'package:gap/gap.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:shimmer/shimmer.dart';
 import '../../../core/constants/app_images.dart';
+import '../../../core/helpers/bidi_text_helper.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/toast/app_toast.dart';
 import '../../../core/widgets/app_avatar.dart';
@@ -344,11 +345,12 @@ class _SessionsListSectionState extends State<_SessionsListSection> {
             onTap: () => setState(() => _visibleCount += _pageSize),
           );
         }
+        // ==================== AFTER ====================
         final group = groups[index];
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _SectionLabel(label: group.label),
+            _SectionLabel(label: group.bucket.label(context)),
             ...group.sessions.map(
               (session) => _SessionTile(
                 session: session,
@@ -365,9 +367,32 @@ class _SessionsListSectionState extends State<_SessionsListSection> {
   }
 }
 
+enum _RecencyBucket {
+  today,
+  yesterday,
+  previous7Days,
+  previous30Days,
+  older;
+
+  String label(BuildContext context) {
+    switch (this) {
+      case _RecencyBucket.today:
+        return context.l10n.today;
+      case _RecencyBucket.yesterday:
+        return context.l10n.yesterday;
+      case _RecencyBucket.previous7Days:
+        return context.l10n.aiChatPrevious7Days;
+      case _RecencyBucket.previous30Days:
+        return context.l10n.aiChatPrevious30Days;
+      case _RecencyBucket.older:
+        return context.l10n.aiChatOlder;
+    }
+  }
+}
+
 class _SessionGroup {
-  const _SessionGroup(this.label, this.sessions);
-  final String label;
+  const _SessionGroup(this.bucket, this.sessions);
+  final _RecencyBucket bucket;
   final List<AiChatSession> sessions;
 }
 
@@ -378,27 +403,27 @@ List<_SessionGroup> _groupByRecency(List<AiChatSession> sessions) {
   final week = today.subtract(const Duration(days: 7));
   final month = today.subtract(const Duration(days: 30));
 
-  final buckets = <String, List<AiChatSession>>{
-    'Today': [],
-    'Yesterday': [],
-    'Previous 7 Days': [],
-    'Previous 30 Days': [],
-    'Older': [],
+  final buckets = <_RecencyBucket, List<AiChatSession>>{
+    _RecencyBucket.today: [],
+    _RecencyBucket.yesterday: [],
+    _RecencyBucket.previous7Days: [],
+    _RecencyBucket.previous30Days: [],
+    _RecencyBucket.older: [],
   };
 
   for (final session in sessions) {
     final dt = session.lastMessageAt ?? session.createdAt;
     final day = DateTime(dt.year, dt.month, dt.day);
     if (!day.isBefore(today)) {
-      buckets['Today']!.add(session);
+      buckets[_RecencyBucket.today]!.add(session);
     } else if (!day.isBefore(yesterday)) {
-      buckets['Yesterday']!.add(session);
+      buckets[_RecencyBucket.yesterday]!.add(session);
     } else if (!day.isBefore(week)) {
-      buckets['Previous 7 Days']!.add(session);
+      buckets[_RecencyBucket.previous7Days]!.add(session);
     } else if (!day.isBefore(month)) {
-      buckets['Previous 30 Days']!.add(session);
+      buckets[_RecencyBucket.previous30Days]!.add(session);
     } else {
-      buckets['Older']!.add(session);
+      buckets[_RecencyBucket.older]!.add(session);
     }
   }
 
@@ -492,12 +517,14 @@ class _DrawerRow extends StatelessWidget {
                         title,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
+                        textDirection: BidiTextHelper.detectDirection(title),
+                        textAlign: TextAlign.start,
                         style: TextStyle(
                           color: Colors.white.withValues(
                             alpha: isActive ? 1 : 0.92,
                           ),
                           fontWeight:
-                              isActive ? FontWeight.w700 : FontWeight.w600,
+                              isActive ? FontWeight.w700 : FontWeight.w500,
                           fontSize: 13.5,
                         ),
                       ),

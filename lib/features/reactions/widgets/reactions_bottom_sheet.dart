@@ -105,7 +105,7 @@ class _ReactionsBottomSheetState extends State<ReactionsBottomSheet> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              filterKey == 'All' ? 'All' : '$count',
+              filterKey == 'All' ? context.l10n.reactionsFilterAll : '$count',
               style: TextStyle(
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
                 color:
@@ -248,6 +248,8 @@ class _ReactionsBottomSheetState extends State<ReactionsBottomSheet> {
                                                       name: r.userName,
                                                       imageUrl: r.userImageUrl,
                                                       lastSeen: r.lastSeen,
+                                                      isDeleted:
+                                                          r.isDeletedAccount,
                                                     ),
                                                     showContactOptions: false,
                                                   ),
@@ -292,21 +294,24 @@ class _ReactionsBottomSheetState extends State<ReactionsBottomSheet> {
                                     ],
                                   ),
                                   title: GestureDetector(
-                                    onTap: () {
-                                      if (isMe) {
-                                        context.safePop();
-                                        navController?.jumpToTab(3);
-                                      } else {
-                                        context.safePopRoot();
-                                        Navigator.of(
-                                          context,
-                                          rootNavigator: true,
-                                        ).pushNamed(
-                                          AppRoutes.profileViewRoute,
-                                          arguments: r.userId,
-                                        );
-                                      }
-                                    },
+                                    onTap:
+                                        r.isDeletedAccount
+                                            ? null
+                                            : () {
+                                              if (isMe) {
+                                                context.safePop();
+                                                navController?.jumpToTab(3);
+                                              } else {
+                                                context.safePopRoot();
+                                                Navigator.of(
+                                                  context,
+                                                  rootNavigator: true,
+                                                ).pushNamed(
+                                                  AppRoutes.profileViewRoute,
+                                                  arguments: r.userId,
+                                                );
+                                              }
+                                            },
                                     child: Text(
                                       r.userName,
                                       style: const TextStyle(

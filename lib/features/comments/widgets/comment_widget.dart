@@ -9,6 +9,7 @@ import 'package:social_media_app/features/comments/widgets/comment_media_bubble.
 import 'package:social_media_app/features/comments/widgets/comment_reaction_summary.dart';
 import 'package:social_media_app/features/comments/widgets/comment_reactions_bottom_sheet.dart';
 import 'package:social_media_app/features/comments/widgets/thread_painter.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 import '../../../core/constants/app_images.dart';
 import '../../../core/helpers/comment_helper.dart';
 import '../../../core/link/widgets/message_link_preview.dart';
@@ -27,7 +28,6 @@ import 'comment_action_chip.dart';
 import 'comment_overlay_picker.dart';
 import '../../../core/helpers/formatted_date.dart';
 import '../../../core/themes/app_colors.dart';
-import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class CommentWidget extends StatefulWidget {
   final CommentModel comment;
@@ -99,9 +99,6 @@ class _CommentWidgetState extends State<CommentWidget>
     }
   }
 
-  /// Plays a one-shot "flash" on the comment's background: a quick fade in,
-  /// a short hold so it's actually noticeable, then a slower fade back to
-  /// nothing. Triggered once per highlight event — see [didUpdateWidget].
   Future<void> _playHighlight() async {
     if (!mounted) return;
     await _highlightController.forward(from: 0);
@@ -157,7 +154,6 @@ class _CommentWidgetState extends State<CommentWidget>
           },
         ),
 
-      // report to comment
       if (!isMyComment)
         CommentMenuAction(
           icon: Icons.report_gmailerrorred,
@@ -217,7 +213,6 @@ class _CommentWidgetState extends State<CommentWidget>
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-
       builder:
           (context) =>
               CommentReactionsBottomSheet(commentId: widget.comment.id),
@@ -293,7 +288,17 @@ class _CommentWidgetState extends State<CommentWidget>
       final avatarBox =
           _lastReplyAvatarKey.currentContext?.findRenderObject() as RenderBox?;
       final thisBox = context.findRenderObject() as RenderBox?;
-      if (avatarBox == null || thisBox == null) return;
+      if (avatarBox == null ||
+          thisBox == null ||
+          !avatarBox.hasSize ||
+          !thisBox.hasSize) {
+        if (mounted && widget.comment.replies.isNotEmpty && _stemEndY == null) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) _recalculateStem();
+          });
+        }
+        return;
+      }
 
       final avatarTopLeft = thisBox.globalToLocal(
         avatarBox.localToGlobal(Offset.zero),
@@ -311,6 +316,7 @@ class _CommentWidgetState extends State<CommentWidget>
     final isExpanded = context.watch<CommentsCubit>().expandedComments.contains(
       widget.comment.id,
     );
+    final bool isRtl = Directionality.of(context) == TextDirection.rtl;
     final theme = Theme.of(context);
     final hasReplies = widget.comment.replies.isNotEmpty;
     final replyCount = widget.comment.replies.length;
@@ -328,6 +334,57 @@ class _CommentWidgetState extends State<CommentWidget>
             ? widget.highlightKey
             : null;
 
+    final hasReacted = widget.comment.reactions.any((r) => r.reactedByMe);
+
+    final likeChip = CommentActionChip(
+      key: _reactionKey,
+      label:
+          hasReacted
+              ? widget.comment.reactions.firstWhere((r) => r.reactedByMe).emoji
+              : context.l10n.like,
+      isActive: hasReacted,
+      isEmoji: hasReacted,
+      activeColor: theme.primaryColor,
+      onTap: () {
+        if (hasReacted) {
+          _applyReaction(
+            widget.comment.reactions.firstWhere((r) => r.reactedByMe).emoji,
+          );
+        } else {
+          _showPicker();
+        }
+      },
+      onLongPress: _showPicker,
+    );
+
+    final replyChip = CommentActionChip(
+      label: context.l10n.reply,
+      isEmoji: false,
+      onTap:
+          () => widget.onReplyTap?.call(
+            widget.comment.id,
+            widget.comment.authorName ?? 'User',
+          ),
+    );
+
+    final dateWidget = Text(
+      FormattedDate.getFormattedDate(widget.comment.createdAt, isShort: true),
+      style: theme.textTheme.bodySmall?.copyWith(
+        color: AppColors.grey6,
+        fontSize: 11,
+      ),
+    );
+
+    final reactionsSummary =
+        widget.comment.reactions.isNotEmpty
+            ? CommentReactionsSummary(
+              reactions: widget.comment.reactions,
+              onTap: () => _showCommentReactions(),
+            )
+            : null;
+    if (hasReplies && isExpanded) {
+      _recalculateStem();
+    }
     return AnimatedBuilder(
       animation: Listenable.merge([_anim, _highlightAnim]),
       builder: (_, __) {
@@ -347,6 +404,7 @@ class _CommentWidgetState extends State<CommentWidget>
               showVerticalStem: hasReplies && isExpanded && _stemEndY != null,
               stemEndY: (isExpanded && hasReplies) ? _stemEndY : null,
               lineColor: AppColors.grey4,
+              isRtl: isRtl,
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -406,12 +464,15 @@ class _CommentWidgetState extends State<CommentWidget>
                                                     .colorScheme
                                                     .surfaceContainerHighest
                                                     .withValues(alpha: 0.85),
-                                        borderRadius: const BorderRadius.only(
-                                          topLeft: Radius.circular(4),
-                                          topRight: Radius.circular(16),
-                                          bottomLeft: Radius.circular(16),
-                                          bottomRight: Radius.circular(16),
-                                        ),
+                                        borderRadius:
+                                            const BorderRadiusDirectional.only(
+                                              topStart: Radius.circular(4),
+                                              topEnd: Radius.circular(16),
+                                              bottomStart: Radius.circular(16),
+                                              bottomEnd: Radius.circular(16),
+                                            ).resolve(
+                                              Directionality.of(context),
+                                            ),
                                       ),
                                       padding: const EdgeInsets.symmetric(
                                         horizontal: 12,
@@ -543,23 +604,45 @@ class _CommentWidgetState extends State<CommentWidget>
                                 widget.comment.reactions.isNotEmpty ? 16 : 6,
                           ),
                           Padding(
-                            padding: const EdgeInsets.only(left: 4),
+                            padding: const EdgeInsets.symmetric(horizontal: 4),
                             child: Row(
                               children: [
-                                Text(
-                                  FormattedDate.getFormattedDate(
-                                    widget.comment.createdAt,
-                                    isShort: true,
-                                  ),
-                                  style: theme.textTheme.bodySmall?.copyWith(
-                                    color: AppColors.grey6,
-                                    fontSize: 11,
+                                Expanded(
+                                  child: SingleChildScrollView(
+                                    scrollDirection: Axis.horizontal,
+                                    physics: const BouncingScrollPhysics(),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        if (isRtl) ...[
+                                          likeChip,
+                                          const SizedBox(width: 12),
+                                          replyChip,
+                                          const SizedBox(width: 12),
+                                          dateWidget,
+                                          if (reactionsSummary != null) ...[
+                                            const SizedBox(width: 12),
+                                            reactionsSummary,
+                                          ],
+                                        ] else ...[
+                                          dateWidget,
+                                          const SizedBox(width: 12),
+                                          replyChip,
+                                          const SizedBox(width: 12),
+                                          likeChip,
+                                          if (reactionsSummary != null) ...[
+                                            const SizedBox(width: 12),
+                                            reactionsSummary,
+                                          ],
+                                        ],
+                                      ],
+                                    ),
                                   ),
                                 ),
                                 if (widget.comment.isEdited) ...[
-                                  const SizedBox(width: 4),
+                                  const SizedBox(width: 8),
                                   Text(
-                                    context.l10n.edited,
+                                    context.l10n.edited2,
                                     style: theme.textTheme.bodySmall?.copyWith(
                                       color: AppColors.grey6,
                                       fontSize: 11,
@@ -567,50 +650,6 @@ class _CommentWidgetState extends State<CommentWidget>
                                     ),
                                   ),
                                 ],
-                                const SizedBox(width: 12),
-                                CommentActionChip(
-                                  key: _reactionKey,
-                                  label:
-                                      widget.comment.reactions.any(
-                                            (r) => r.reactedByMe,
-                                          )
-                                          ? widget.comment.reactions
-                                              .firstWhere((r) => r.reactedByMe)
-                                              .emoji
-                                          : 'Like',
-                                  isActive: widget.comment.reactions.any(
-                                    (r) => r.reactedByMe,
-                                  ),
-                                  activeColor: theme.primaryColor,
-                                  onTap: () {
-                                    if (widget.comment.reactions.any(
-                                      (r) => r.reactedByMe,
-                                    )) {
-                                      _applyReaction(
-                                        widget.comment.reactions
-                                            .firstWhere((r) => r.reactedByMe)
-                                            .emoji,
-                                      );
-                                    } else {
-                                      _showPicker();
-                                    }
-                                  },
-                                  onLongPress: _showPicker,
-                                ),
-                                const SizedBox(width: 12),
-                                CommentActionChip(
-                                  label: context.l10n.reply,
-                                  onTap:
-                                      () => widget.onReplyTap?.call(
-                                        widget.comment.id,
-                                        widget.comment.authorName ?? 'User',
-                                      ),
-                                ),
-                                const SizedBox(width: 12),
-                                CommentReactionsSummary(
-                                  reactions: widget.comment.reactions,
-                                  onTap: () => _showCommentReactions(),
-                                ),
                               ],
                             ),
                           ),
@@ -619,11 +658,12 @@ class _CommentWidgetState extends State<CommentWidget>
                     ),
                   ],
                 ),
+
                 if (hasReplies) ...[
                   const SizedBox(height: 6),
                   Padding(
-                    padding: EdgeInsets.only(
-                      left: visualDepth * kIndent + aR * 2 + 12,
+                    padding: EdgeInsetsDirectional.only(
+                      start: indentWidth + aR * 2 + 8,
                     ),
                     child: GestureDetector(
                       onTap:
@@ -633,12 +673,13 @@ class _CommentWidgetState extends State<CommentWidget>
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const SizedBox(width: 6),
                           AnimatedRotation(
-                            turns: isExpanded ? 0.25 : 0,
+                            turns: isExpanded ? (isRtl ? -0.25 : 0.25) : 0,
                             duration: const Duration(milliseconds: 200),
                             child: Icon(
-                              Icons.arrow_forward_ios_rounded,
+                              isRtl
+                                  ? Icons.arrow_back_ios_rounded
+                                  : Icons.arrow_forward_ios_rounded,
                               size: 11,
                               color: theme.primaryColor,
                             ),
@@ -647,7 +688,7 @@ class _CommentWidgetState extends State<CommentWidget>
                           Text(
                             isExpanded
                                 ? context.l10n.hideReplies
-                                : 'View $replyCount ${replyCount == 1 ? "reply" : "replies"}',
+                                : context.l10n.viewRepliesCount(replyCount),
                             style: theme.textTheme.labelMedium?.copyWith(
                               color: theme.primaryColor,
                               fontWeight: FontWeight.w600,

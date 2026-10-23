@@ -266,12 +266,14 @@ class _MentionAwareTextFieldState extends State<MentionAwareTextField> {
 
     final effectiveDirection =
         widget.controller.text.trim().isEmpty
-            ? BidiTextHelper.detectDirection(widget.hintText)
+            ? BidiTextHelper.detectDirection(
+              widget.hintText,
+              Directionality.of(context),
+            )
             : _direction;
-
     final effectiveTextAlign =
         widget.textAlign == TextAlign.start
-            ? BidiTextHelper.alignFor(_direction)
+            ? BidiTextHelper.alignFor(effectiveDirection)
             : widget.textAlign;
 
     final effectiveStyle = (widget.style ??
@@ -310,6 +312,7 @@ class _MentionAwareTextFieldState extends State<MentionAwareTextField> {
               widget.decoration ??
               InputDecoration(
                 hintText: widget.hintText,
+                hintTextDirection: effectiveDirection,
                 hintStyle:
                     widget.hintStyle ??
                     theme.textTheme.bodyMedium?.copyWith(

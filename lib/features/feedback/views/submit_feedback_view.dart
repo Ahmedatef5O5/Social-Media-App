@@ -235,7 +235,7 @@ class _SubmitFeedbackViewState extends State<SubmitFeedbackView> {
                               onExpired: cubit.refreshQuota,
                             ),
                             const Gap(20),
-                            const _SectionLabel('What is this about?'),
+                            _SectionLabel(context.l10n.feedbackWhatIsThisAbout),
                             const Gap(10),
                             FeedbackCategorySelector(
                               selected: state.category,
@@ -253,7 +253,7 @@ class _SubmitFeedbackViewState extends State<SubmitFeedbackView> {
                               onChanged: busy ? (_) {} : cubit.setRating,
                             ),
                             const Gap(22),
-                            const _SectionLabel('Tell us more'),
+                            _SectionLabel(context.l10n.feedbackTellUsMore),
                             const Gap(10),
                             CustomTextFormField(
                               controller: _messageController,
@@ -266,7 +266,7 @@ class _SubmitFeedbackViewState extends State<SubmitFeedbackView> {
                               validator: _validateMessage,
                             ),
                             const Gap(18),
-                            const _SectionLabel('Attachments'),
+                            _SectionLabel(context.l10n.feedbackAttachments),
                             const Gap(10),
                             _ImageAttachment(
                               file: state.imageFile,
@@ -287,8 +287,8 @@ class _SubmitFeedbackViewState extends State<SubmitFeedbackView> {
                               onChanged: cubit.setAudio,
                             ),
                             const Gap(22),
-                            const _SectionLabel(
-                              'How can we reach you? (optional)',
+                            _SectionLabel(
+                              context.l10n.feedbackReachYouOptional,
                             ),
                             const Gap(10),
                             CustomTextFormField(
@@ -342,10 +342,10 @@ class _SubmitFeedbackViewState extends State<SubmitFeedbackView> {
                   ),
                 ],
               ),
-              // "My Feedbacks" entry point (top-right), above the pinned app bar.
-              Positioned(
+              // "My Feedbacks" entry point (symmetric start/end based on language).
+              PositionedDirectional(
                 top: topInset + 6,
-                right: 8,
+                end: 8,
                 child: IconButton(
                   tooltip: context.l10n.myFeedbacks2,
                   onPressed: () {

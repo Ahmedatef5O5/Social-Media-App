@@ -27,63 +27,74 @@ class ProfileHeaderUserInfoSection extends StatelessWidget {
         state.friendsCount > 0 &&
         (isMe || state.friendshipStatus == FriendshipStatus.accepted);
 
+    final currentDirection = Directionality.of(context);
+
     return Padding(
       padding: const EdgeInsets.symmetric(
         horizontal: ProfileUiTokens.screenPadding,
       ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment: AlignmentDirectional.centerStart,
-                  child: Text(
-                    user.name,
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: context.ls(-0.3),
-                      color: tokens.onSurface,
-                    ),
-                    maxLines: 1,
-                    softWrap: false,
-                  ),
-                ),
-                if (user.userName != null && user.userName!.isNotEmpty) ...[
-                  const Gap(2),
-                  Text(
-                    "@${user.userName?.toLowerCase().replaceAll(' ', '_')}",
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: tokens.onSurfaceVariant,
-                      fontSize: 13,
+      child: Directionality(
+        textDirection: TextDirection.ltr,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      user.name,
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: context.ls(-0.3),
+                        color: tokens.onSurface,
+                      ),
+                      maxLines: 1,
+                      softWrap: false,
                     ),
                   ),
+                  if (user.userName != null && user.userName!.isNotEmpty) ...[
+                    const Gap(2),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        "@${user.userName?.toLowerCase().replaceAll(' ', '_')}",
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: tokens.onSurfaceVariant,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+                  ],
                 ],
-              ],
+              ),
             ),
-          ),
-          if (showFriendsBadge) ...[
-            const Gap(12),
-            FriendsCountBadge(
-              isMe: isMe,
-              friendsCount: state.friendsCount,
-              mutualFriendsCount: state.mutualFriendsCount,
-              mutualPreviews: state.mutuals.friends,
-              onTap: () {
-                Navigator.of(
-                  context,
-                  rootNavigator: true,
-                ).pushNamed(AppRoutes.friendsListViewRoute, arguments: user.id);
-              },
-            ),
+            if (showFriendsBadge) ...[
+              const Gap(12),
+              Directionality(
+                textDirection: currentDirection,
+                child: FriendsCountBadge(
+                  isMe: isMe,
+                  friendsCount: state.friendsCount,
+                  mutualFriendsCount: state.mutualFriendsCount,
+                  mutualPreviews: state.mutuals.friends,
+                  onTap: () {
+                    Navigator.of(context, rootNavigator: true).pushNamed(
+                      AppRoutes.friendsListViewRoute,
+                      arguments: user.id,
+                    );
+                  },
+                ),
+              ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }

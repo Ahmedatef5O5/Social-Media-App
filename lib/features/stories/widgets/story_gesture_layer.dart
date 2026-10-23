@@ -39,11 +39,21 @@ class _StoryGestureLayerState extends State<StoryGestureLayer> {
       behavior: HitTestBehavior.opaque,
       onTapUp: (details) {
         _hideKeyboard();
+        final isRtl = Directionality.of(context) == TextDirection.rtl;
         final halfWidth = MediaQuery.sizeOf(context).width / 2;
-        if (details.globalPosition.dx < halfWidth) {
-          widget.onPrev();
+        final isLeftHalf = details.globalPosition.dx < halfWidth;
+        if (isRtl) {
+          if (isLeftHalf) {
+            widget.onNext();
+          } else {
+            widget.onPrev();
+          }
         } else {
-          widget.onNext();
+          if (isLeftHalf) {
+            widget.onPrev();
+          } else {
+            widget.onNext();
+          }
         }
       },
       onLongPressStart: (_) {
@@ -64,12 +74,23 @@ class _StoryGestureLayerState extends State<StoryGestureLayer> {
       },
       onHorizontalDragEnd: (details) {
         final velocity = details.primaryVelocity ?? 0;
-        if (velocity < -300) {
-          _hideKeyboard();
-          widget.onNextGroup();
-        } else if (velocity > 300) {
-          _hideKeyboard();
-          widget.onPrevGroup();
+        final isRtl = Directionality.of(context) == TextDirection.rtl;
+        if (isRtl) {
+          if (velocity > 300) {
+            _hideKeyboard();
+            widget.onNextGroup();
+          } else if (velocity < -300) {
+            _hideKeyboard();
+            widget.onPrevGroup();
+          }
+        } else {
+          if (velocity < -300) {
+            _hideKeyboard();
+            widget.onNextGroup();
+          } else if (velocity > 300) {
+            _hideKeyboard();
+            widget.onPrevGroup();
+          }
         }
       },
       child: widget.child,

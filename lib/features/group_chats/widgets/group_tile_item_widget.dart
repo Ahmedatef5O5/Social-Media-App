@@ -290,36 +290,24 @@ class GroupTileItem extends StatelessWidget {
                     content.trimLeft(),
                   );
 
-                  if (prefix.isEmpty) {
-                    return Text(
-                      normalText,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      textDirection: direction,
-                      textAlign: TextAlign.left,
-                      style: textStyle,
-                    );
-                  }
-
-                  return Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        prefix,
-                        style: textStyle,
-                        textDirection: TextDirection.ltr,
-                      ),
-                      Expanded(
-                        child: Text(
-                          content,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          textDirection: direction,
-                          textAlign: TextAlign.left,
-                          style: textStyle,
-                        ),
-                      ),
-                    ],
+                  final isRtl = Directionality.of(context) == TextDirection.rtl;
+                  return Text.rich(
+                    TextSpan(
+                      children: [
+                        if (prefix.isNotEmpty)
+                          TextSpan(
+                            text: prefix,
+                            style: textStyle.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        TextSpan(text: normalText, style: textStyle),
+                      ],
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textDirection: isRtl ? TextDirection.rtl : direction,
+                    textAlign: isRtl ? TextAlign.right : TextAlign.left,
                   );
                 },
               )

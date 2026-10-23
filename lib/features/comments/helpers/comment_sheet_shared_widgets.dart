@@ -48,7 +48,7 @@ class CommentSortMenu extends StatelessWidget {
                       ),
                       const SizedBox(width: 12),
                       Text(
-                        option.label,
+                        option.localizedName(context),
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight:

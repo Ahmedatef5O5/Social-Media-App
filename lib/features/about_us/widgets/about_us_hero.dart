@@ -50,9 +50,9 @@ class AboutUsHero extends StatelessWidget {
                       children: [
                         ..._buildDecoCircles(primary),
 
-                        Positioned(
+                        PositionedDirectional(
                           top: MediaQuery.of(context).padding.top + 8,
-                          left: 8,
+                          start: 8,
                           child: IconButton(
                             icon: Container(
                               width: 38,
@@ -62,7 +62,7 @@ class AboutUsHero extends StatelessWidget {
                                 shape: BoxShape.circle,
                               ),
                               child: const Icon(
-                                Icons.arrow_back_ios_new_rounded,
+                                Icons.arrow_back_ios_new,
                                 size: 18,
                                 color: Colors.white,
                               ),

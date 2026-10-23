@@ -103,11 +103,10 @@ class AppPermissionsService {
       return false;
     }
 
-    // Denied this time, but the OS will still let us ask again next time.
     AppToast.info(
       isVideo
-          ? 'Microphone and camera access are needed for video calls'
-          : 'Microphone access is needed for calls',
+          ? AppL10n.current.enableMicrophoneCameraAccess
+          : AppL10n.current.microphonePermissionIsRequired,
     );
     return false;
   }
@@ -123,10 +122,13 @@ class AppPermissionsService {
       return;
     }
 
+    final isAr = AppL10n.isArabic;
     final what =
         missingMic && missingCamera
-            ? 'Microphone and Camera'
-            : (missingMic ? 'Microphone' : 'Camera');
+            ? (isAr ? 'الميكروفون والكاميرا' : 'Microphone and Camera')
+            : (missingMic
+                ? (isAr ? 'الميكروفون' : 'Microphone')
+                : (isAr ? 'الكاميرا' : 'Camera'));
 
     final openSettings = await showDialog<bool>(
       context: host,

@@ -227,6 +227,7 @@ class _CommentsSheetSectionState extends State<CommentsSheetSection> {
   void _changeSort(CommentSortOption option) {
     final cubit = context.read<CommentsCubit>();
     if (cubit.currentSort == option) return;
+    cubit.resetExpandedComments();
     cubit.loadComments(postId: widget.postId, sort: option);
   }
 

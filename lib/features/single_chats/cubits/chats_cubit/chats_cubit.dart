@@ -59,7 +59,10 @@ class ChatsCubit extends Cubit<ChatsState>
   }
 
   void _listenToReactionsStream() {
-    _reactionsChannel?.unsubscribe();
+    if (_reactionsChannel != null) {
+      unawaited(SupabaseProvider.client.removeChannel(_reactionsChannel!));
+      _reactionsChannel = null;
+    }
 
     final channelName = 'public:message_reactions_overview_$_currentUserId';
     _reactionsChannel =
@@ -101,7 +104,7 @@ class ChatsCubit extends Cubit<ChatsState>
   }
 
   void _emitWithPresence() {
-    if (isClosed || _cachedChats.isEmpty) return;
+    if (isClosed || (_showSkeleton && _cachedChats.isEmpty)) return;
 
     final updatedChats =
         _cachedChats.map((chat) {
@@ -222,8 +225,10 @@ class ChatsCubit extends Cubit<ChatsState>
       if (e.toString().contains('no-internet')) {
         if (_cachedChats.isNotEmpty) {
           debugPrint('Silent error: No internet, but showing cached chats.');
+          _emitWithPresence();
           return;
         }
+
         final diskChats = _readChatsSnapshot();
         if (diskChats.isNotEmpty) {
           debugPrint(
@@ -275,6 +280,10 @@ class ChatsCubit extends Cubit<ChatsState>
     _chatsSubscription?.cancel();
     _actionsSubscription?.cancel();
     _refreshDebounce?.cancel();
+    if (_reactionsChannel != null) {
+      unawaited(SupabaseProvider.client.removeChannel(_reactionsChannel!));
+      _reactionsChannel = null;
+    }
     return super.close();
   }
 }

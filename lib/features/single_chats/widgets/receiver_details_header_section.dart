@@ -4,6 +4,7 @@ import 'package:gap/gap.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import 'package:social_media_app/core/router/app_routes.dart';
 import '../../../core/chat_shared/helpers/muted_badge_icon.dart';
+import '../../../core/helpers/chat_helper.dart';
 import '../../../core/presence/models/chat_action_type.dart';
 import '../../../core/presence/widgets/presence_avatar_widget.dart';
 import '../../../core/presence/widgets/presence_status_text.dart';
@@ -29,6 +30,13 @@ class ReceiverDetailsHeaderSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final displayName =
+        (receiverUser.isDeleted ||
+                receiverUser.name.trim().toLowerCase() == 'deleted account')
+            ? context.l10n.deletedAccount
+            : receiverUser.name;
+    final nameDirection = ChatHelper.getTextDirection(displayName);
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       child: Row(
@@ -96,10 +104,14 @@ class ReceiverDetailsHeaderSection extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
+                    textDirection: nameDirection,
                     children: [
                       Flexible(
                         child: Text(
-                          receiverUser.name,
+                          displayName,
+                          textDirection: nameDirection,
                           style: Theme.of(
                             context,
                           ).textTheme.titleSmall!.copyWith(
@@ -116,7 +128,12 @@ class ReceiverDetailsHeaderSection extends StatelessWidget {
                         builder:
                             (context, isMuted, _) =>
                                 isMuted
-                                    ? const MutedBadgeIcon(size: 10)
+                                    ? const Padding(
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: 4,
+                                      ),
+                                      child: MutedBadgeIcon(size: 10),
+                                    )
                                     : const SizedBox.shrink(),
                       ),
                     ],
@@ -134,7 +151,8 @@ class ReceiverDetailsHeaderSection extends StatelessWidget {
                             text:
                                 action == ChatActionType.recording
                                     ? context.l10n.recordingAudio2
-                                    : 'typing...',
+                                    : context.l10n.typing,
+                            forceAnimate: true,
                             style: TextStyle(
                               color:
                                   action == ChatActionType.recording

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:social_media_app/core/widgets/directional_text_field.dart';
 import '../../../core/chat_shared/helpers/muted_badge_icon.dart';
 import '../../../core/constants/app_images.dart';
+import '../../../core/helpers/chat_helper.dart';
 import '../../../core/widgets/app_image_provider.dart';
 import '../../../core/widgets/full_screen_image_viewer.dart';
 import '../models/group_model.dart';
@@ -189,18 +190,17 @@ class _GroupInfoHeaderDelegate extends SliverPersistentHeaderDelegate {
             ),
           ),
 
-          Positioned(
+          PositionedDirectional(
             top: topPadding,
-            left: 0,
+            start: 0,
             child: _GlassCircleButton(
               icon: Icons.arrow_back_ios_new,
               onTap: () => Navigator.of(context).pop(),
             ),
           ),
-
-          Positioned(
+          PositionedDirectional(
             top: topPadding,
-            right: 0,
+            end: 0,
             child: _GlassCircleButton(
               icon: Icons.settings_rounded,
               onTap: onSettingsTap,
@@ -236,6 +236,7 @@ class _GroupInfoHeaderDelegate extends SliverPersistentHeaderDelegate {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     mainAxisAlignment: MainAxisAlignment.start,
+                    textDirection: ChatHelper.getTextDirection(group.name),
                     children: [
                       Flexible(
                         child: Text(
@@ -249,8 +250,10 @@ class _GroupInfoHeaderDelegate extends SliverPersistentHeaderDelegate {
                           ),
                         ),
                       ),
-                      if (isMuted)
+                      if (isMuted) ...[
+                        const SizedBox(width: 4),
                         const MutedBadgeIcon(size: 10, color: Colors.white70),
+                      ],
                     ],
                   ),
                 ),
@@ -395,6 +398,7 @@ class _GroupInfoHeaderDelegate extends SliverPersistentHeaderDelegate {
 
   Widget _buildBigTitle() {
     final Widget nameSection;
+    final nameDirection = ChatHelper.getTextDirection(group.name);
 
     if (isEditingName) {
       nameSection = Padding(
@@ -430,9 +434,11 @@ class _GroupInfoHeaderDelegate extends SliverPersistentHeaderDelegate {
                       decoration: InputDecoration(
                         border: InputBorder.none,
                         isDense: true,
-                        contentPadding: EdgeInsets.symmetric(vertical: 12),
+                        contentPadding: const EdgeInsets.symmetric(
+                          vertical: 12,
+                        ),
                         hintText: AppL10n.current.groupName2,
-                        hintStyle: TextStyle(color: Colors.white38),
+                        hintStyle: const TextStyle(color: Colors.white38),
                       ),
                     ),
                   ),
@@ -476,6 +482,7 @@ class _GroupInfoHeaderDelegate extends SliverPersistentHeaderDelegate {
         onTap: isAdmin ? onEditTap : null,
         child: Row(
           mainAxisSize: MainAxisSize.min,
+          textDirection: nameDirection,
           children: [
             Flexible(
               child: Text(
@@ -515,7 +522,6 @@ class _GroupInfoHeaderDelegate extends SliverPersistentHeaderDelegate {
 
     return Column(
       mainAxisSize: MainAxisSize.min,
-
       children: [
         nameSection,
         if (group.title?.isNotEmpty == true) ...[
@@ -669,7 +675,6 @@ class _GroupInfoGlassBadge extends StatelessWidget {
     return ClipRRect(
       key: key,
       borderRadius: BorderRadius.circular(20),
-
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
         child: Container(
@@ -689,7 +694,6 @@ class _GroupInfoGlassBadge extends StatelessWidget {
   }
 }
 
-/// Bottom-left "N Members" glass pill.
 class _TotalMembersBadge extends StatelessWidget {
   final int count;
 
@@ -737,7 +741,7 @@ class _TotalMembersBadge extends StatelessWidget {
                     const SizedBox(width: 3),
                     Text(
                       context.l10n.members,
-                      style: TextStyle(
+                      style: const TextStyle(
                         color: Colors.white,
                         fontSize: 12.5,
                         fontWeight: FontWeight.w600,
@@ -749,8 +753,6 @@ class _TotalMembersBadge extends StatelessWidget {
     );
   }
 }
-
-/// Bottom-right "N online" glass pill with a breathing presence dot.
 
 class _OnlineMembersBadge extends StatelessWidget {
   final int count;
@@ -785,7 +787,7 @@ class _OnlineMembersBadge extends StatelessWidget {
                     const SizedBox(width: 3),
                     Text(
                       context.l10n.online2,
-                      style: TextStyle(
+                      style: const TextStyle(
                         color: Colors.white,
                         fontSize: 12.5,
                         fontWeight: FontWeight.w600,
@@ -843,7 +845,7 @@ class _PulsingOnlineDotState extends State<_PulsingOnlineDot>
               height: widget.size,
               decoration: const BoxDecoration(
                 shape: BoxShape.circle,
-                color: Color(0xFF34D399), // emerald-400
+                color: Color(0xFF34D399),
               ),
             ),
           ),

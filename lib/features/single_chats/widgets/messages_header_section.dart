@@ -21,14 +21,6 @@ class MessagesHeaderSection extends StatelessWidget {
     required this.tabController,
   });
 
-  static const List<String> _tabTitles = [
-    'All',
-    'Chats',
-    'Groups',
-    'Favorites',
-    'Unread',
-  ];
-
   void _openArchivedChats(BuildContext context) {
     Navigator.of(context, rootNavigator: true).pushNamed(
       AppRoutes.archivedChatsViewRoute,
@@ -207,18 +199,49 @@ class MessagesHeaderSection extends StatelessWidget {
             splashFactory: NoSplash.splashFactory,
             overlayColor: const WidgetStatePropertyAll(Colors.transparent),
             splashBorderRadius: BorderRadius.circular(25),
-            labelPadding: const EdgeInsets.only(right: 8),
-            tabs: List.generate(
-              _tabTitles.length,
-              (i) => _TabItem(
+            labelPadding: const EdgeInsetsDirectional.only(end: 8),
+            tabs: [
+              _TabItem(
                 controller: tabController,
-                title: _tabTitles[i],
-                tab: ConversationTab.values[i],
-                index: i,
+                title: context.l10n.tabChatsAll,
+                tab: ConversationTab.all,
+                index: 0,
                 primary: primary,
                 isDark: isDark,
               ),
-            ),
+              _TabItem(
+                controller: tabController,
+                title: context.l10n.tabChatsDirect,
+                tab: ConversationTab.chats,
+                index: 1,
+                primary: primary,
+                isDark: isDark,
+              ),
+              _TabItem(
+                controller: tabController,
+                title: context.l10n.tabChatsGroups,
+                tab: ConversationTab.groups,
+                index: 2,
+                primary: primary,
+                isDark: isDark,
+              ),
+              _TabItem(
+                controller: tabController,
+                title: context.l10n.tabChatsFavorites,
+                tab: ConversationTab.favorites,
+                index: 3,
+                primary: primary,
+                isDark: isDark,
+              ),
+              _TabItem(
+                controller: tabController,
+                title: context.l10n.tabChatsUnread,
+                tab: ConversationTab.unread,
+                index: 4,
+                primary: primary,
+                isDark: isDark,
+              ),
+            ],
           ),
           const SizedBox(height: 6),
         ],
@@ -299,7 +322,7 @@ class _TabItem extends StatelessWidget {
         return Container(
           height: 40,
           margin: EdgeInsets.zero,
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+          padding: const EdgeInsets.symmetric(horizontal: 14),
           alignment: Alignment.center,
           decoration: BoxDecoration.lerp(
             inactiveDecoration,
@@ -312,13 +335,16 @@ class _TabItem extends StatelessWidget {
               if (unreadCount > 0)
                 ClipRect(
                   child: Align(
-                    alignment: Alignment.centerLeft,
+                    alignment: AlignmentDirectional.centerStart,
                     widthFactor: progress,
                     child: Opacity(
                       opacity: progress,
-                      child: _TabUnreadBadge(
-                        count: unreadCount,
-                        activeColor: primary,
+                      child: Padding(
+                        padding: const EdgeInsetsDirectional.only(end: 8),
+                        child: _TabUnreadBadge(
+                          count: unreadCount,
+                          activeColor: primary,
+                        ),
                       ),
                     ),
                   ),
@@ -342,25 +368,30 @@ class _TabItem extends StatelessWidget {
 class _TabUnreadBadge extends StatelessWidget {
   final int count;
   final Color activeColor;
-
   const _TabUnreadBadge({required this.count, required this.activeColor});
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(right: 6),
-      child: Container(
-        padding: const EdgeInsets.all(4),
-        constraints: const BoxConstraints(minWidth: 20, minHeight: 20),
-        alignment: Alignment.center,
-        decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-        child: Text(
-          count > 99 ? '99+' : '$count',
-          style: TextStyle(
-            color: activeColor,
-            fontSize: 10,
-            fontWeight: FontWeight.bold,
-          ),
+    final text = count > 99 ? '+99' : '$count';
+    final isMax = count > 99;
+    return Container(
+      width: 22,
+      height: 22,
+      alignment: Alignment.center,
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        shape: BoxShape.circle,
+      ),
+      child: Text(
+        text,
+        maxLines: 1,
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          color: activeColor,
+          fontSize: isMax ? 8.5 : 10,
+          fontWeight: FontWeight.w800,
+          height: 1.0,
+          letterSpacing: isMax ? -0.5 : 0,
         ),
       ),
     );

@@ -41,12 +41,16 @@ class DirectionalTextField extends StatelessWidget {
     return ListenableBuilder(
       listenable: controller,
       builder: (context, _) {
-        final direction = BidiTextHelper.detectDirection(controller.text);
+        final contextDirection = Directionality.of(context);
+        final direction = BidiTextHelper.detectDirection(
+          controller.text,
+          contextDirection,
+        );
 
         InputDecoration? effectiveDecoration = decoration;
-        if (effectiveDecoration != null &&
-            effectiveDecoration.border == InputBorder.none) {
+        if (effectiveDecoration != null) {
           effectiveDecoration = effectiveDecoration.copyWith(
+            hintTextDirection: contextDirection,
             filled: effectiveDecoration.filled ?? false,
             fillColor: effectiveDecoration.fillColor ?? Colors.transparent,
             enabledBorder:

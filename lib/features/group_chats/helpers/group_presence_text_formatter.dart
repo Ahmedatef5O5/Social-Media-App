@@ -1,3 +1,4 @@
+import '../../../core/localization/app_l10n.dart';
 import '../../../core/presence/models/chat_action_type.dart';
 import '../models/group_presence_entry.dart';
 
@@ -19,15 +20,18 @@ class GroupPresenceTextFormatter {
   }
 
   static String _phraseFor(ChatActionType action, List entries) {
-    final verb =
-        action == ChatActionType.typing ? 'is typing...' : 'recording audio...';
-
-    if (entries.length == 1) {
-      return '${entries.first.userName} $verb';
+    final l10n = AppL10n.current;
+    final count = entries.length;
+    if (action == ChatActionType.typing) {
+      if (count == 1) {
+        return l10n.isTyping(entries.first.userName);
+      }
+      return l10n.peopleTyping(count);
+    } else {
+      if (count == 1) {
+        return l10n.recordingAudio(entries.first.userName);
+      }
+      return l10n.peopleRecordingAudio(count);
     }
-
-    final noun = action == ChatActionType.typing ? 'typing' : 'recording audio';
-
-    return '${entries.length} people are $noun...';
   }
 }

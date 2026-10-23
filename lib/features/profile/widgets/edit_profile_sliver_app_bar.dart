@@ -169,8 +169,9 @@ class _ProfileHeaderDelegate extends SliverPersistentHeaderDelegate {
     final double currentAvatarTop =
         lerpDouble(expandedAvatarTop, collapsedAvatarTop, progress)!;
 
+    final bool isRtl = Directionality.of(context) == TextDirection.rtl;
     final double expandedAvatarRight = 20.0;
-    final double collapsedAvatarRight = 16.0;
+    final double collapsedAvatarRight = isRtl ? 56.0 : 16.0;
     final double currentAvatarRight =
         lerpDouble(expandedAvatarRight, collapsedAvatarRight, progress)!;
 
@@ -274,6 +275,7 @@ class _ProfileHeaderDelegate extends SliverPersistentHeaderDelegate {
                   onTap: onBackPressed,
                 ),
               ),
+              if (isRtl) SizedBox(width: collapsedAvatarSize + 12),
               Expanded(
                 child: Opacity(
                   opacity: progress,
@@ -287,6 +289,7 @@ class _ProfileHeaderDelegate extends SliverPersistentHeaderDelegate {
                   ),
                 ),
               ),
+              if (!isRtl) SizedBox(width: collapsedAvatarSize + 16),
             ],
           ),
         ),

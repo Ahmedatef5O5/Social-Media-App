@@ -7,7 +7,7 @@ class ProfileHeaderBackBtnContainer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Align(
-      alignment: Alignment.topLeft,
+      alignment: AlignmentDirectional.topStart,
       child: SafeArea(
         child: Padding(
           padding: padding ?? const EdgeInsets.only(top: 22.0),

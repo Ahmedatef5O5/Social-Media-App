@@ -115,6 +115,8 @@ class AppRouter {
     AppRoutes.resetPasswordRoute,
     AppRoutes.authLinkExpiredRoute,
     AppRoutes.twoFactorChallengeRoute,
+    AppRoutes.termsOfServiceRoute,
+    AppRoutes.privacyPolicyViewRoute,
   };
 
   static bool _isAuthCallback(String? routeName) {
@@ -311,24 +313,14 @@ class AppRouter {
     switch (settings.name) {
       case AppRoutes.homeRoute:
         return _buildRoute(
-          MultiBlocProvider(
-            providers: [
-              BlocProvider(
-                create:
-                    (context) => DiscoverPeopleCubit(
-                      context.read<DiscoverPeopleServices>(),
-                      friendshipServices: context.read<FriendshipServices>(),
-                      followServices: context.read<FollowServices>(),
-                      homeCubit: context.read<HomeCubit>(),
-                    )..getDiscoverPeople(),
-              ),
-              BlocProvider(
-                create:
-                    (context) =>
-                        ChatsCubit(context.read<ChatServices>())
-                          ..monitorChats(),
-              ),
-            ],
+          BlocProvider(
+            create:
+                (context) => DiscoverPeopleCubit(
+                  context.read<DiscoverPeopleServices>(),
+                  friendshipServices: context.read<FriendshipServices>(),
+                  followServices: context.read<FollowServices>(),
+                  homeCubit: context.read<HomeCubit>(),
+                )..getDiscoverPeople(),
             child: const CustomBottomNavBar(),
           ),
           settings: settings,

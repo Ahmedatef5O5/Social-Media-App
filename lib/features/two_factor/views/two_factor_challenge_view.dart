@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 import '../../../core/bootstrap/app_bootstrap.dart'
     show completeSignInBootstrap;
 import '../../../core/router/app_routes.dart';
@@ -19,11 +20,7 @@ import '../services/two_factor_lockout_store.dart';
 import '../services/two_factor_service.dart';
 import '../widgets/otp_code_field.dart';
 import '../widgets/totp_window_indicator.dart';
-import 'package:social_media_app/core/localization/l10n_extension.dart';
 
-/// Shown after a correct password / OAuth login when the account has 2FA and
-/// the session is still aal1. It cannot be dismissed: the only exits are
-/// "verify" and "sign out".
 class TwoFactorChallengeView extends StatelessWidget {
   const TwoFactorChallengeView({super.key});
 
@@ -56,8 +53,6 @@ class _ChallengeBodyState extends State<_ChallengeBody> {
   @override
   void initState() {
     super.initState();
-    // Defensive: reached by a stale route. No session -> sign-in; nothing
-    // pending (already aal2, or 2FA was removed) -> straight to Home.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       if (!SessionGuard.hasSession) {
@@ -79,7 +74,6 @@ class _ChallengeBodyState extends State<_ChallengeBody> {
   }
 
   Future<void> _onCompleted(bool reenroll) async {
-    // Capture before navigating away: this context is about to be disposed.
     final nav = Navigator.of(context, rootNavigator: true);
     context.read<AuthCubit>().completeMfa();
     await completeSignInBootstrap();
@@ -97,7 +91,6 @@ class _ChallengeBodyState extends State<_ChallengeBody> {
 
   Future<void> _submitTotp(TwoFactorChallengeCubit cubit, String code) async {
     await cubit.submitTotp(code);
-    // Clear after every attempt so the next code starts from an empty field.
     if (mounted && !cubit.state.completed) {
       _otp.currentState?.clear();
       _totpCode = '';
@@ -151,7 +144,6 @@ class _ChallengeBodyState extends State<_ChallengeBody> {
                             mainAxisAlignment: MainAxisAlignment.center,
                             crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
-                              // 1. Enlarged and enhanced lock shield icon
                               Container(
                                 width: 96,
                                 height: 96,
@@ -168,8 +160,6 @@ class _ChallengeBodyState extends State<_ChallengeBody> {
                                 ),
                               ),
                               const SizedBox(height: 24),
-
-                              // 2. Centered title
                               Text(
                                 context.l10n.twoStepVerification,
                                 textAlign: TextAlign.center,
@@ -178,8 +168,6 @@ class _ChallengeBodyState extends State<_ChallengeBody> {
                                 ),
                               ),
                               const SizedBox(height: 8),
-
-                              // 3. Centered subtitle
                               Text(
                                 isTotp
                                     ? context.l10n.enterThe6Digit2
@@ -190,7 +178,6 @@ class _ChallengeBodyState extends State<_ChallengeBody> {
                                 ),
                               ),
                               const SizedBox(height: 28),
-
                               if (isTotp) ...[
                                 OtpCodeField(
                                   key: _otp,
@@ -227,7 +214,6 @@ class _ChallengeBodyState extends State<_ChallengeBody> {
                                   ],
                                 ),
                               ],
-
                               if (state.isLocked) ...[
                                 const SizedBox(height: 16),
                                 Container(
@@ -266,7 +252,6 @@ class _ChallengeBodyState extends State<_ChallengeBody> {
                                   ),
                                 ),
                               ],
-
                               if (state.showClockHint && !state.isLocked) ...[
                                 const SizedBox(height: 10),
                                 Text(
@@ -276,7 +261,6 @@ class _ChallengeBodyState extends State<_ChallengeBody> {
                                   ),
                                 ),
                               ],
-
                               const SizedBox(height: 24),
                               CustomElevatedButton(
                                 txtBtn: 'Verify',

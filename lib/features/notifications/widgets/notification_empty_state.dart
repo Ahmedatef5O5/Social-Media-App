@@ -31,7 +31,9 @@ class NotificationsEmptyState extends StatelessWidget {
           Text(
             activeFilter == null
                 ? context.l10n.noNotificationsYet
-                : context.l10n.noNotifications(activeFilter!.name),
+                : context.l10n.noNotifications(
+                  _localizedFilterName(context, activeFilter!),
+                ),
             style: TextStyle(
               fontSize: 17,
               fontWeight: FontWeight.w600,
@@ -50,4 +52,17 @@ class NotificationsEmptyState extends StatelessWidget {
       ),
     );
   }
+
+  String _localizedFilterName(
+    BuildContext context,
+    NotificationType type,
+  ) => switch (type) {
+    NotificationType.chat => context.l10n.notifFilterMessages,
+    NotificationType.call => context.l10n.notifFilterCalls,
+    NotificationType.like => context.l10n.notifFilterLikes,
+    NotificationType.comment => context.l10n.notifFilterComments,
+    NotificationType.follow => context.l10n.notifFilterFollows,
+    NotificationType.friendRequest => context.l10n.notifFilterFriendRequests,
+    _ => type.name,
+  };
 }
