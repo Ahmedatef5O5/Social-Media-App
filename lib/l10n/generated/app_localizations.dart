@@ -464,6 +464,18 @@ abstract class AppLocalizations {
   /// **'Cancel'**
   String get cancel;
 
+  /// No description provided for @yes.
+  ///
+  /// In en, this message translates to:
+  /// **'Yes'**
+  String get yes;
+
+  /// No description provided for @no.
+  ///
+  /// In en, this message translates to:
+  /// **'No'**
+  String get no;
+
   /// No description provided for @settingsErrorPrivacyUpdate.
   ///
   /// In en, this message translates to:
@@ -2617,6 +2629,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Skip for now'**
   String get skipForNow;
+
+  /// No description provided for @categoryNews.
+  ///
+  /// In en, this message translates to:
+  /// **'News'**
+  String get categoryNews;
+
+  /// No description provided for @categoryFootball.
+  ///
+  /// In en, this message translates to:
+  /// **'Football'**
+  String get categoryFootball;
+
+  /// No description provided for @categoryTech.
+  ///
+  /// In en, this message translates to:
+  /// **'Tech'**
+  String get categoryTech;
+
+  /// No description provided for @categoryComedy.
+  ///
+  /// In en, this message translates to:
+  /// **'Comedy'**
+  String get categoryComedy;
+
+  /// No description provided for @categoryIslamic.
+  ///
+  /// In en, this message translates to:
+  /// **'Islamic'**
+  String get categoryIslamic;
+
+  /// No description provided for @categoryCooking.
+  ///
+  /// In en, this message translates to:
+  /// **'Cooking'**
+  String get categoryCooking;
+
+  /// No description provided for @categoryGaming.
+  ///
+  /// In en, this message translates to:
+  /// **'Gaming'**
+  String get categoryGaming;
+
+  /// No description provided for @categoryMovies.
+  ///
+  /// In en, this message translates to:
+  /// **'Movies'**
+  String get categoryMovies;
 
   /// No description provided for @shareRemoved.
   ///
@@ -7437,6 +7497,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'People'**
   String get people;
+
+  /// No description provided for @sharedTabDocuments.
+  ///
+  /// In en, this message translates to:
+  /// **'Documents'**
+  String get sharedTabDocuments;
+
+  /// No description provided for @sharedLabelDocuments.
+  ///
+  /// In en, this message translates to:
+  /// **'Documents'**
+  String get sharedLabelDocuments;
+
+  /// No description provided for @noSharedDocumentsYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No documents shared yet'**
+  String get noSharedDocumentsYet;
+
+  /// No description provided for @openLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Open voice message'**
+  String get openLabel;
 }
 
 class _AppLocalizationsDelegate

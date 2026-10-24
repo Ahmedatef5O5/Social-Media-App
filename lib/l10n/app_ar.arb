@@ -61,6 +61,8 @@
   "deleteAccountSubtitle": "حذف حسابك نهائيًا",
   "deleteAccountConfirmation": "هل أنت متأكد أنك تريد حذف حسابك؟ هذا الإجراء نهائي ولا يمكن التراجع عنه.",
   "cancel": "إلغاء",
+  "yes": "نعم",
+  "no": "لا",
   "settingsErrorPrivacyUpdate": "تعذّر تحديث إعداد الخصوصية.",
   "settingsErrorVisibilityUpdate": "تعذّر تحديث قائمة الظهور.",
   "settingsErrorIdentityNotVerified": "لم يتم التحقق من هويتك، يُرجى المحاولة مرة أخرى.",
@@ -420,6 +422,14 @@
   "whatDoYouLike": "ما الذي يعجبك؟",
   "chooseTheTopicsThat": "اختر المواضيع التي تهمك لنخصّص تجربة الريلز لك.",
   "skipForNow": "تخطي الآن",
+  "categoryNews": "أخبار",
+  "categoryFootball": "كرة قدم",
+  "categoryTech": "تقنية",
+  "categoryComedy": "كوميديا",
+  "categoryIslamic": "إسلاميات",
+  "categoryCooking": "طبخ",
+  "categoryGaming": "ألعاب",
+  "categoryMovies": "أفلام",
   "shareRemoved": "تمت إزالة المشاركة",
   "reelSharedToYour": "تمت مشاركة الريل في خلاصتك",
   "couldNotShareThis": "تعذّرت مشاركة هذا الريل. حاول مرة أخرى.",
@@ -1222,6 +1232,10 @@
   "aiChatOlder": "أقدم",
   "aiAssistant": "المساعد الذكي",
   "groups": "المجموعات",
-  "people": "الأشخاص"
+  "people": "الأشخاص",
+  "sharedTabDocuments": "مستند",
+  "sharedLabelDocuments": "المستندات",
+  "noSharedDocumentsYet": "لم يتم مشاركة أي مستندات بعد",
+  "openLabel": "فتح الرسالة الصوتية"
 
 }

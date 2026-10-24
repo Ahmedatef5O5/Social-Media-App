@@ -205,6 +205,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cancel => 'Cancel';
 
   @override
+  String get yes => 'Yes';
+
+  @override
+  String get no => 'No';
+
+  @override
   String get settingsErrorPrivacyUpdate => 'Failed to update privacy setting.';
 
   @override
@@ -1325,6 +1331,30 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get skipForNow => 'Skip for now';
+
+  @override
+  String get categoryNews => 'News';
+
+  @override
+  String get categoryFootball => 'Football';
+
+  @override
+  String get categoryTech => 'Tech';
+
+  @override
+  String get categoryComedy => 'Comedy';
+
+  @override
+  String get categoryIslamic => 'Islamic';
+
+  @override
+  String get categoryCooking => 'Cooking';
+
+  @override
+  String get categoryGaming => 'Gaming';
+
+  @override
+  String get categoryMovies => 'Movies';
 
   @override
   String get shareRemoved => 'Share removed';
@@ -4227,4 +4257,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get people => 'People';
+
+  @override
+  String get sharedTabDocuments => 'Documents';
+
+  @override
+  String get sharedLabelDocuments => 'Documents';
+
+  @override
+  String get noSharedDocumentsYet => 'No documents shared yet';
+
+  @override
+  String get openLabel => 'Open voice message';
 }

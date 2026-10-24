@@ -141,7 +141,8 @@ class _CustomBottomNavBarState extends State<CustomBottomNavBar> {
             title: context.l10n.areYouSureYou,
             textAlign: TextAlign.center,
             img: AppImages.exitAnimationLot,
-
+            confirmBtnText: context.l10n.yes,
+            cancelBtnText: context.l10n.no,
             onConfirm:
                 () => Navigator.of(context, rootNavigator: true).pop(true),
           ),

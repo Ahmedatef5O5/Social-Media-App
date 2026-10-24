@@ -208,6 +208,12 @@ class AppLocalizationsAr extends AppLocalizations {
   String get cancel => 'إلغاء';
 
   @override
+  String get yes => 'نعم';
+
+  @override
+  String get no => 'لا';
+
+  @override
   String get settingsErrorPrivacyUpdate => 'تعذّر تحديث إعداد الخصوصية.';
 
   @override
@@ -1319,6 +1325,30 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get skipForNow => 'تخطي الآن';
+
+  @override
+  String get categoryNews => 'أخبار';
+
+  @override
+  String get categoryFootball => 'كرة قدم';
+
+  @override
+  String get categoryTech => 'تقنية';
+
+  @override
+  String get categoryComedy => 'كوميديا';
+
+  @override
+  String get categoryIslamic => 'إسلاميات';
+
+  @override
+  String get categoryCooking => 'طبخ';
+
+  @override
+  String get categoryGaming => 'ألعاب';
+
+  @override
+  String get categoryMovies => 'أفلام';
 
   @override
   String get shareRemoved => 'تمت إزالة المشاركة';
@@ -4216,4 +4246,16 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get people => 'الأشخاص';
+
+  @override
+  String get sharedTabDocuments => 'مستند';
+
+  @override
+  String get sharedLabelDocuments => 'المستندات';
+
+  @override
+  String get noSharedDocumentsYet => 'لم يتم مشاركة أي مستندات بعد';
+
+  @override
+  String get openLabel => 'فتح الرسالة الصوتية';
 }

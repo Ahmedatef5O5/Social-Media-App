@@ -1,5 +1,6 @@
-import 'package:social_media_app/core/widgets/cached_cloudinary_image.dart';
 import 'package:flutter/material.dart';
+import 'package:social_media_app/core/helpers/chat_helper.dart';
+import 'package:social_media_app/core/widgets/cached_cloudinary_image.dart';
 import '../../../core/constants/app_images.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/widgets/shimmer_low_res_image_placeholder.dart';
@@ -22,6 +23,9 @@ class GroupPreviewDialog extends StatelessWidget {
     final horizontalInset = (screenSize.width * 0.14).clamp(45.0, 80.0);
     final dialogWidth = screenSize.width - (horizontalInset * 2);
     final imageHeight = dialogWidth;
+
+    final isArabicName = ChatHelper.isArabic(group.name);
+    final nameDirection = isArabicName ? TextDirection.rtl : TextDirection.ltr;
 
     return Dialog(
       alignment: const Alignment(0, -0.55),
@@ -101,6 +105,11 @@ class GroupPreviewDialog extends StatelessWidget {
                         ),
                         child: Text(
                           group.name,
+                          textDirection: nameDirection,
+                          textAlign:
+                              isArabicName ? TextAlign.right : TextAlign.left,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 18,

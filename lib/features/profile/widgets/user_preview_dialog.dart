@@ -1,8 +1,9 @@
 import 'dart:async';
-import 'package:social_media_app/core/widgets/cached_cloudinary_image.dart';
 import 'package:flutter/material.dart';
 import 'package:social_media_app/core/constants/app_images.dart';
-import 'package:social_media_app/core/widgets/custom_loading_indicator.dart';
+import 'package:social_media_app/core/helpers/chat_helper.dart';
+import 'package:social_media_app/core/widgets/cached_cloudinary_image.dart';
+import 'package:social_media_app/core/widgets/shimmer_low_res_image_placeholder.dart';
 import 'package:social_media_app/features/single_chats/models/chat_user_model.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/supabase/supabase_provider.dart';
@@ -58,8 +59,14 @@ class _UserPreviewDialogState extends State<UserPreviewDialog> {
 
     final horizontalInset = (screenSize.width * 0.14).clamp(45.0, 80.0);
     final dialogWidth = screenSize.width - (horizontalInset * 2);
-
     final imageHeight = (dialogWidth).clamp(220.0, 340.0);
+
+    final displayName =
+        (isDeleted || user.name.trim().toLowerCase() == 'deleted account')
+            ? context.l10n.deletedAccount
+            : user.name;
+    final isArabicName = ChatHelper.isArabic(displayName);
+    final nameDirection = isArabicName ? TextDirection.rtl : TextDirection.ltr;
 
     return Dialog(
       alignment: const Alignment(0, -0.55),
@@ -106,10 +113,12 @@ class _UserPreviewDialogState extends State<UserPreviewDialog> {
                                 width: double.infinity,
                                 isAvatar: true,
                                 placeholder:
-                                    (context) => SizedBox(
+                                    (context) => ShimmerLowResImagePlaceholder(
+                                      secureUrl: user.imageUrl!,
                                       height: imageHeight,
-                                      child: const Center(
-                                        child: CustomLoadingIndicator(),
+                                      width: double.infinity,
+                                      borderRadius: const BorderRadius.vertical(
+                                        top: Radius.circular(20),
                                       ),
                                     ),
                                 errorWidget:
@@ -145,11 +154,12 @@ class _UserPreviewDialogState extends State<UserPreviewDialog> {
                           ),
                         ),
                         child: Text(
-                          (isDeleted ||
-                                  user.name.trim().toLowerCase() ==
-                                      'deleted account')
-                              ? context.l10n.deletedAccount
-                              : user.name,
+                          displayName,
+                          textDirection: nameDirection,
+                          textAlign:
+                              isArabicName ? TextAlign.right : TextAlign.left,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 18,
