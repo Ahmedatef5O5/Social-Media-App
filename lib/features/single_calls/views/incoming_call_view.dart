@@ -33,6 +33,7 @@ class _IncomingCallViewState extends State<IncomingCallView>
   @override
   void initState() {
     super.initState();
+    FocusManager.instance.primaryFocus?.unfocus();
     _playRingtone();
 
     _shakeController = AnimationController(
@@ -90,7 +91,9 @@ class _IncomingCallViewState extends State<IncomingCallView>
             context: context,
           );
       if (!granted || !mounted) return;
-      _audioPlayer.stop();
+      await _audioPlayer.stop();
+      await _audioPlayer.release();
+      if (!mounted) return;
       await context.read<CallCubit>().acceptCall(widget.call);
     } finally {
       _isAccepting = false;
@@ -121,6 +124,7 @@ class _IncomingCallViewState extends State<IncomingCallView>
     final isVideo = widget.call.type == CallType.video;
 
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       body: Stack(
         children: [
           CallAvatarBackdrop(
@@ -134,7 +138,10 @@ class _IncomingCallViewState extends State<IncomingCallView>
           SafeArea(
             child: LayoutBuilder(
               builder: (context, constraints) {
-                final metrics = CallLayoutMetrics.of(constraints);
+                final metrics = CallLayoutMetrics.of(
+                  constraints,
+                  reservedHeight: 280,
+                );
 
                 return Column(
                   children: [

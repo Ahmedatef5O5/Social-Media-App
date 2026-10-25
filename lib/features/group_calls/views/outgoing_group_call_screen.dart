@@ -37,7 +37,7 @@ class OutgoingGroupCallScreen extends StatefulWidget {
 class _OutgoingGroupCallScreenState extends State<OutgoingGroupCallScreen>
     with TickerProviderStateMixin {
   final AudioPlayer _audioPlayer = AudioPlayer();
-
+  bool _ringtoneStopped = false;
   StreamSubscription? _callSubscription;
   Timer? _timeoutTimer;
   String? _currentCallId;
@@ -55,6 +55,7 @@ class _OutgoingGroupCallScreenState extends State<OutgoingGroupCallScreen>
   @override
   void initState() {
     super.initState();
+    FocusManager.instance.primaryFocus?.unfocus();
     _signaling = context.read<GroupCallSignalingService>();
     // Belt-and-braces: `GroupCallInitiator` already set this before
     // `initiateCall`, but a screen pushed from anywhere else must hold the
@@ -81,12 +82,35 @@ class _OutgoingGroupCallScreenState extends State<OutgoingGroupCallScreen>
     if (mounted) _currentUserName = name;
   }
 
+  // ==================== AFTER ====================
   Future<void> _playRingtone() async {
     try {
       await _audioPlayer.setReleaseMode(ReleaseMode.loop);
+      if (_ringtoneStopped || !mounted) return;
       await _audioPlayer.play(AssetSource('sounds/outgoing_ring.mp3'));
+      if (_ringtoneStopped && mounted) await _audioPlayer.stop();
     } catch (e) {
       debugPrint('[OutgoingGroupCall] failed to play ringtone: $e');
+    }
+  }
+
+  /// Idempotent. Native resources are released only by [_disposeAudioPlayer].
+  Future<void> _stopRingtone() async {
+    if (_ringtoneStopped) return;
+    _ringtoneStopped = true;
+    try {
+      await _audioPlayer.stop();
+    } catch (e) {
+      debugPrint('[OutgoingGroupCall] failed to stop ringtone: $e');
+    }
+  }
+
+  /// `AudioPlayer.dispose()` already performs stop + release internally.
+  Future<void> _disposeAudioPlayer() async {
+    try {
+      await _audioPlayer.dispose();
+    } catch (e) {
+      debugPrint('[OutgoingGroupCall] audio player dispose failed: $e');
     }
   }
 
@@ -107,7 +131,18 @@ class _OutgoingGroupCallScreenState extends State<OutgoingGroupCallScreen>
   Future<void> _navigateToLiveKit(GroupCallModel call) async {
     if (_isNavigating) return;
     _isNavigating = true;
-    _cleanup();
+    _callSubscription?.cancel();
+    _callSubscription = null;
+    _timeoutTimer?.cancel();
+    _timeoutTimer = null;
+
+    _ringtoneStopped = true;
+    try {
+      await _audioPlayer.stop();
+      await _audioPlayer.release();
+    } catch (e) {
+      debugPrint('[OutgoingGroupCall] failed to release ringtone: $e');
+    }
 
     // The call can be accepted before the name lookup finishes. Wait for it:
     // 'Loading...' / 'Me' must never reach LiveKit as the participant name.
@@ -136,7 +171,7 @@ class _OutgoingGroupCallScreenState extends State<OutgoingGroupCallScreen>
   }
 
   void _cleanup() {
-    _audioPlayer.stop();
+    unawaited(_stopRingtone());
     _callSubscription?.cancel();
     _timeoutTimer?.cancel();
   }
@@ -144,8 +179,10 @@ class _OutgoingGroupCallScreenState extends State<OutgoingGroupCallScreen>
   @override
   void dispose() {
     IncomingCallNavigationGuard.setOutgoingGroupCallActive(false);
-    _cleanup();
-    _audioPlayer.dispose();
+    _ringtoneStopped = true;
+    _callSubscription?.cancel();
+    _timeoutTimer?.cancel();
+    unawaited(_disposeAudioPlayer());
     _fadeController.dispose();
     super.dispose();
   }
@@ -156,6 +193,7 @@ class _OutgoingGroupCallScreenState extends State<OutgoingGroupCallScreen>
     final isVideo = widget.callType == GroupCallType.video;
 
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       body: Stack(
         children: [
           CallAvatarBackdrop(
@@ -171,7 +209,10 @@ class _OutgoingGroupCallScreenState extends State<OutgoingGroupCallScreen>
               opacity: _fadeAnim,
               child: LayoutBuilder(
                 builder: (context, constraints) {
-                  final metrics = CallLayoutMetrics.of(constraints);
+                  final metrics = CallLayoutMetrics.of(
+                    constraints,
+                    reservedHeight: 280,
+                  );
 
                   return Column(
                     children: [

@@ -24,6 +24,7 @@ class _DialingViewState extends State<DialingView> {
   @override
   void initState() {
     super.initState();
+    FocusManager.instance.primaryFocus?.unfocus();
     _playRingtone();
   }
 
@@ -49,6 +50,7 @@ class _DialingViewState extends State<DialingView> {
     final isVideo = widget.call.type == CallType.video;
 
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       body: Stack(
         children: [
           CallAvatarBackdrop(
@@ -62,7 +64,10 @@ class _DialingViewState extends State<DialingView> {
           SafeArea(
             child: LayoutBuilder(
               builder: (context, constraints) {
-                final metrics = CallLayoutMetrics.of(constraints);
+                final metrics = CallLayoutMetrics.of(
+                  constraints,
+                  reservedHeight: 280,
+                );
 
                 return Column(
                   children: [

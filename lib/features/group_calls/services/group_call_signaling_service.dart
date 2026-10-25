@@ -32,7 +32,9 @@ class GroupCallSignalingService {
 
   static const Duration _endedConfirmationWindow = Duration(seconds: 2);
 
-  static const Duration _heartbeatStaleAfter = Duration(seconds: 40);
+  /// Production-grade stale heartbeat threshold (2 minutes).
+  /// Allows ample headroom for mobile network handoffs and temporary latency.
+  static const Duration _heartbeatStaleAfter = Duration(seconds: 120);
 
   Future<List<String>> getGroupMemberIds(String groupId) async {
     try {
@@ -351,6 +353,7 @@ class GroupCallSignalingService {
           })
           .eq('call_id', callId)
           .inFilter('status', [
+            GroupCallStatus.ringing.name,
             GroupCallStatus.accepted.name,
             GroupCallStatus.ongoing.name,
           ]);
@@ -695,12 +698,13 @@ class GroupCallSignalingService {
     }
   }
 
-  static const Duration _ringingStaleAfter = Duration(seconds: 50);
+  // ==================== AFTER ====================
+  static const Duration _ringingStaleAfter = Duration(seconds: 90);
 
   bool _isHeartbeatStale(Map<String, dynamic> row) {
     final status = row['status'] as String?;
     if (status == GroupCallStatus.ringing.name) {
-      final startedRaw = row['started_at'] ?? row['last_heartbeat_at'];
+      final startedRaw = row['last_heartbeat_at'] ?? row['started_at'];
       final startedTs =
           DateTime.tryParse(startedRaw?.toString() ?? '')?.toUtc();
       if (startedTs == null) return true;
@@ -719,9 +723,16 @@ class GroupCallSignalingService {
   }
 
   Future<bool> _healIfStale(Map<String, dynamic> row) async {
+    final callId = row['call_id'] as String?;
+    if (callId == null || callId.isEmpty) return false;
+
+    // CRITICAL: Never reap a call that THIS device is actively participating in!
+    if (IncomingCallNavigationGuard.activeSessionCallId == callId) {
+      return false;
+    }
+
     if (!_isHeartbeatStale(row)) return false;
 
-    final callId = row['call_id'] as String;
     debugPrint(
       '[GroupCallSignaling] reaping abandoned call $callId (heartbeat stale)',
     );

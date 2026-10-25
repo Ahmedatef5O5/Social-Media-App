@@ -31,7 +31,7 @@ class CallPipCubit extends Cubit<CallPipState> {
 
     final previous = state.room;
     if (previous != null && previous != room) {
-      unawaited(previous.disconnect());
+      unawaited(_disconnectAndDispose(previous));
     }
     emit(CallPipState(room: room, isMinimized: false, isVideo: isVideo));
 
@@ -70,15 +70,26 @@ class CallPipCubit extends Cubit<CallPipState> {
 
     final room = state.room;
     if (room != null) {
-      try {
-        await room.disconnect();
-      } catch (e) {
-        debugPrint('[CallPipCubit] room.disconnect failed: $e');
-      }
+      await _disconnectAndDispose(room);
     }
 
     if (state.room != null || state.isMinimized) {
       emit(const CallPipState());
+    }
+  }
+
+  Future<void> _disconnectAndDispose(Room room) async {
+    try {
+      await room.disconnect();
+    } catch (e) {
+      debugPrint('[CallPipCubit] room.disconnect failed: $e');
+    }
+    try {
+      if (!room.isDisposed) {
+        await room.dispose();
+      }
+    } catch (e) {
+      debugPrint('[CallPipCubit] room.dispose failed: $e');
     }
   }
 
@@ -88,7 +99,10 @@ class CallPipCubit extends Cubit<CallPipState> {
   Future<void> close() {
     _soloWatchdog.stop();
     _heartbeatTimer?.cancel();
-    state.room?.disconnect();
+    final room = state.room;
+    if (room != null) {
+      unawaited(_disconnectAndDispose(room));
+    }
     return super.close();
   }
 }

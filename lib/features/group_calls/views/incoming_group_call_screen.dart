@@ -33,7 +33,7 @@ class IncomingGroupCallScreen extends StatefulWidget {
 class _IncomingGroupCallScreenState extends State<IncomingGroupCallScreen>
     with TickerProviderStateMixin {
   final AudioPlayer _audioPlayer = AudioPlayer();
-
+  bool _ringtoneStopped = false;
   late final Future<String> _nameFuture;
   bool _isAccepting = false;
   StreamSubscription? _statusSubscription;
@@ -46,9 +46,8 @@ class _IncomingGroupCallScreenState extends State<IncomingGroupCallScreen>
   @override
   void initState() {
     super.initState();
+    FocusManager.instance.primaryFocus?.unfocus();
     _signaling = context.read<GroupCallSignalingService>();
-    // Start resolving the real display name right away so it is ready by the
-    // time Accept is tapped.
     _nameFuture = CurrentUserNameResolver.resolve();
     _playRingtone();
     _initAnimations();
@@ -76,12 +75,12 @@ class _IncomingGroupCallScreenState extends State<IncomingGroupCallScreen>
     _statusSubscription = _signaling
         .activeCallStream(widget.call.groupId)
         .listen((activeCall) {
-          if (!mounted) return;
+          if (!mounted || _isAccepting) return;
           if (activeCall == null ||
               activeCall.status == GroupCallStatus.ended ||
               activeCall.status == GroupCallStatus.missed) {
             _cleanup();
-            Navigator.pop(context);
+            if (Navigator.canPop(context)) Navigator.pop(context);
           }
         });
   }
@@ -89,19 +88,51 @@ class _IncomingGroupCallScreenState extends State<IncomingGroupCallScreen>
   Future<void> _playRingtone() async {
     try {
       await _audioPlayer.setReleaseMode(ReleaseMode.loop);
+      if (_ringtoneStopped || !mounted) return;
       await _audioPlayer.play(AssetSource('sounds/incoming_ring.mp3'));
+      if (_ringtoneStopped && mounted) await _audioPlayer.stop();
     } catch (e) {
       debugPrint('[IncomingGroupCall] failed to play ringtone: $e');
     }
   }
 
-  void _cleanup() {
-    _audioPlayer.stop();
+  Future<void> _stopRingtone() async {
+    if (_ringtoneStopped) return;
+    _ringtoneStopped = true;
+    try {
+      await _audioPlayer.stop();
+    } catch (e) {
+      debugPrint('[IncomingGroupCall] failed to stop ringtone: $e');
+    }
+  }
+
+  Future<void> _disposeAudioPlayer() async {
+    try {
+      await _audioPlayer.dispose();
+    } catch (e) {
+      debugPrint('[IncomingGroupCall] audio player dispose failed: $e');
+    }
+  }
+
+  void _cancelIncomingNotification() {
     unawaited(
       GroupCallDispatcher.instance.cancelIncomingGroupCallNotification(
         widget.call.callId,
       ),
     );
+  }
+
+  void _cancelSubscriptions() {
+    _statusSubscription?.cancel();
+    _statusSubscription = null;
+    _membershipSubscription?.cancel();
+    _membershipSubscription = null;
+  }
+
+  void _cleanup() {
+    _cancelSubscriptions();
+    unawaited(_stopRingtone());
+    _cancelIncomingNotification();
   }
 
   void _listenToMembership() {
@@ -111,7 +142,7 @@ class _IncomingGroupCallScreenState extends State<IncomingGroupCallScreen>
         .stream(primaryKey: ['id'])
         .eq(GroupMemberColumns.groupId, widget.call.groupId)
         .listen((data) {
-          if (!mounted) return;
+          if (!mounted || _isAccepting) return;
           final myRow = data.firstWhere(
             (row) => row[GroupMemberColumns.userId] == myId,
             orElse: () => <String, dynamic>{},
@@ -121,7 +152,7 @@ class _IncomingGroupCallScreenState extends State<IncomingGroupCallScreen>
               myRow[GroupMemberColumns.membershipStatus] == 'active';
           if (!isMember) {
             _cleanup();
-            Navigator.pop(context);
+            if (Navigator.canPop(context)) Navigator.pop(context);
           }
         });
   }
@@ -130,16 +161,20 @@ class _IncomingGroupCallScreenState extends State<IncomingGroupCallScreen>
     if (_isAccepting) return;
     _isAccepting = true;
     try {
-      // Permissions first: the OS dialog must not appear over a connecting
-      // call, and a denial keeps the ringing screen so the user can retry
-      // or decline.
       final granted = await AppPermissionsService.instance
           .ensureCallPermissions(
             isVideo: widget.call.type == GroupCallType.video,
             context: context,
           );
-      if (!granted || !context.mounted) return;
-
+      if (!granted || !context.mounted) {
+        _isAccepting = false;
+        return;
+      }
+      _statusSubscription?.cancel();
+      _statusSubscription = null;
+      _membershipSubscription?.cancel();
+      _membershipSubscription = null;
+      _shakeController.stop();
       _cleanup();
       final userName = await _nameFuture;
       final updatedCall = await _signaling.acceptCall(widget.call.callId);
@@ -155,17 +190,28 @@ class _IncomingGroupCallScreenState extends State<IncomingGroupCallScreen>
               ),
         ),
       );
+    } catch (e) {
+      debugPrint('[IncomingGroupCallScreen] acceptCall failed: $e');
+      if (context.mounted && Navigator.canPop(context)) {
+        Navigator.pop(context);
+      }
     } finally {
-      _isAccepting = false;
+      if (mounted) {
+        _isAccepting = false;
+      }
     }
   }
 
   @override
   void dispose() {
-    _cleanup();
+    _ringtoneStopped = true;
+    _cancelIncomingNotification();
     _statusSubscription?.cancel();
+    _statusSubscription = null;
     _membershipSubscription?.cancel();
-    _audioPlayer.dispose();
+    _membershipSubscription = null;
+    unawaited(_disposeAudioPlayer());
+    _shakeController.stop();
     _shakeController.dispose();
     super.dispose();
   }
@@ -176,6 +222,7 @@ class _IncomingGroupCallScreenState extends State<IncomingGroupCallScreen>
     final isVideo = widget.call.type == GroupCallType.video;
 
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       body: Stack(
         children: [
           CallAvatarBackdrop(
@@ -189,7 +236,10 @@ class _IncomingGroupCallScreenState extends State<IncomingGroupCallScreen>
           SafeArea(
             child: LayoutBuilder(
               builder: (context, constraints) {
-                final metrics = CallLayoutMetrics.of(constraints);
+                final metrics = CallLayoutMetrics.of(
+                  constraints,
+                  reservedHeight: 280,
+                );
 
                 return Column(
                   children: [

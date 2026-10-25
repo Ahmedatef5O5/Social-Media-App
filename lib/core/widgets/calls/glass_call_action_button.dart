@@ -41,6 +41,7 @@ class _GlassCallActionButtonState extends State<GlassCallActionButton>
 
   @override
   void dispose() {
+    _emphasisController.stop();
     _emphasisController.dispose();
     super.dispose();
   }
@@ -48,11 +49,16 @@ class _GlassCallActionButtonState extends State<GlassCallActionButton>
   @override
   Widget build(BuildContext context) {
     final labelSize = (widget.size * 0.17).clamp(11.0, 14.0);
-
     return GestureDetector(
-      onTapDown: (_) => setState(() => _pressed = true),
-      onTapUp: (_) => setState(() => _pressed = false),
-      onTapCancel: () => setState(() => _pressed = false),
+      onTapDown: (_) {
+        if (mounted) setState(() => _pressed = true);
+      },
+      onTapUp: (_) {
+        if (mounted) setState(() => _pressed = false);
+      },
+      onTapCancel: () {
+        if (mounted) setState(() => _pressed = false);
+      },
       onTap: widget.onTap,
       child: Column(
         mainAxisSize: MainAxisSize.min,

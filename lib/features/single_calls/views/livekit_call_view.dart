@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'dart:ui';
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide ConnectionState;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:livekit_client/livekit_client.dart';
 import '../../../core/services/active_call/call_control_message.dart';
@@ -55,6 +55,7 @@ class _LiveKitCallViewState extends State<LiveKitCallView> {
   @override
   void initState() {
     super.initState();
+    FocusManager.instance.primaryFocus?.unfocus();
     _startedAt = widget.call.startTime?.toLocal() ?? DateTime.now();
     _startTicker();
     _listenForRemoteEnd();
@@ -109,65 +110,126 @@ class _LiveKitCallViewState extends State<LiveKitCallView> {
   }
 
   Future<void> _connectNewRoom() async {
-    try {
-      final connection = await LiveKitTokenService.instance.generateToken(
-        roomName: widget.call.callId,
-        participantName: widget.currentUserName,
-      );
+    const maxAttempts = 2;
+    int attempt = 0;
+    Object? lastError;
+    StackTrace? lastStackTrace;
 
-      final room = Room();
-      await room.connect(
-        connection.url,
-        connection.token,
-        roomOptions: const RoomOptions(adaptiveStream: true, dynacast: true),
-      );
-
-      await room.localParticipant?.setMicrophoneEnabled(true);
-      if (_isVideo) {
-        await room.localParticipant?.setCameraEnabled(true);
-      }
-
-      if (!mounted || _isEnding) {
-        await room.disconnect();
-        return;
-      }
-
-      final isCaller = widget.currentUserId == widget.call.callerId;
-      context.read<ActiveCallSessionCubit>().startSingleCallSession(
-        callId: widget.call.callId,
-        title: isCaller ? widget.call.receiverName : widget.call.callerName,
-        avatarUrl:
-            isCaller ? widget.call.receiverAvatar : widget.call.callerAvatar,
-        isVideo: _isVideo,
-        startedAt: _startedAt,
-        call: widget.call,
-        currentUserId: widget.currentUserId,
-        currentUserName: widget.currentUserName,
-      );
-
-      context.read<CallPipCubit>().attach(room: room, isVideo: _isVideo);
-
-      _attachTo(room, alreadyConnected: false);
-    } catch (e, st) {
-      debugPrint('❌ LiveKitCallView._connectNewRoom failed: $e');
-      debugPrintStack(stackTrace: st);
-      if (!mounted) return;
-
+    while (attempt < maxAttempts && mounted && !_isEnding) {
+      attempt++;
+      Room? room;
       try {
-        await context.read<CallCubit>().endCall(widget.call.callId);
-      } catch (_) {
-        // Best-effort — the connection already failed; don't let a
-        // secondary signaling error mask the real one.
+        final connection = await LiveKitTokenService.instance.generateToken(
+          roomName: widget.call.callId,
+          participantName: widget.currentUserName,
+        );
+
+        if (!mounted || _isEnding) return;
+
+        room = Room(
+          roomOptions: const RoomOptions(adaptiveStream: true, dynacast: true),
+        );
+
+        await room.prepareConnection(connection.url, connection.token);
+        if (!mounted || _isEnding) {
+          if (!room.isDisposed) await room.dispose();
+          return;
+        }
+
+        await room.connect(
+          connection.url,
+          connection.token,
+          connectOptions: const ConnectOptions(
+            timeouts: Timeouts(
+              connection: Duration(seconds: 25),
+              debounce: Duration(milliseconds: 200),
+              publish: Duration(seconds: 20),
+              subscribe: Duration(seconds: 15),
+              peerConnection: Duration(seconds: 20),
+              iceRestart: Duration(seconds: 15),
+            ),
+          ),
+        );
+
+        if (room.connectionState == ConnectionState.reconnecting) {
+          final tempListener = room.createListener();
+          try {
+            await tempListener.waitFor<RoomReconnectedEvent>(
+              duration: const Duration(seconds: 8),
+            );
+          } finally {
+            await tempListener.dispose();
+          }
+        }
+
+        await room.localParticipant?.setMicrophoneEnabled(true);
+        if (_isVideo) {
+          await room.localParticipant?.setCameraEnabled(true);
+        }
+
+        if (!mounted || _isEnding) {
+          await room.disconnect();
+          if (!room.isDisposed) await room.dispose();
+          return;
+        }
+
+        final isCaller = widget.currentUserId == widget.call.callerId;
+        context.read<ActiveCallSessionCubit>().startSingleCallSession(
+          callId: widget.call.callId,
+          title: isCaller ? widget.call.receiverName : widget.call.callerName,
+          avatarUrl:
+              isCaller ? widget.call.receiverAvatar : widget.call.callerAvatar,
+          isVideo: _isVideo,
+          startedAt: _startedAt,
+          call: widget.call,
+          currentUserId: widget.currentUserId,
+          currentUserName: widget.currentUserName,
+        );
+
+        context.read<CallPipCubit>().attach(room: room, isVideo: _isVideo);
+
+        _attachTo(room, alreadyConnected: false);
+        return;
+      } catch (e, st) {
+        lastError = e;
+        lastStackTrace = st;
+        debugPrint('⚠️ LiveKitCallView connect attempt $attempt failed: $e');
+
+        if (room != null) {
+          try {
+            await room.disconnect();
+            await room.dispose();
+          } catch (_) {}
+        }
+
+        if (attempt < maxAttempts && mounted && !_isEnding) {
+          await Future<void>.delayed(const Duration(milliseconds: 1500));
+        }
       }
-
-      if (!mounted) return;
-
-      context.read<ActiveCallSessionCubit>().endSession();
-      setState(() {
-        _loadError = e.toString();
-        _connecting = false;
-      });
     }
+
+    if (!mounted || _isEnding) return;
+
+    debugPrint(
+      '❌ LiveKitCallView._connectNewRoom all attempts failed: $lastError',
+    );
+    if (lastStackTrace != null) {
+      debugPrintStack(stackTrace: lastStackTrace);
+    }
+
+    try {
+      await context.read<CallCubit>().endCall(widget.call.callId);
+    } catch (_) {
+      // Best-effort
+    }
+
+    if (!mounted) return;
+
+    context.read<ActiveCallSessionCubit>().endSession();
+    setState(() {
+      _loadError = lastError?.toString() ?? 'Connection failed';
+      _connecting = false;
+    });
   }
 
   void _attachTo(Room room, {required bool alreadyConnected}) {
@@ -350,6 +412,7 @@ class _LiveKitCallViewState extends State<LiveKitCallView> {
   Widget build(BuildContext context) {
     if (_loadError != null) {
       return Scaffold(
+        resizeToAvoidBottomInset: false,
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(24),
@@ -392,6 +455,7 @@ class _LiveKitCallViewState extends State<LiveKitCallView> {
         if (didPop && !isConnectingUi) context.read<CallPipCubit>().minimize();
       },
       child: Scaffold(
+        resizeToAvoidBottomInset: false,
         body: LayoutBuilder(
           builder: (context, constraints) {
             final metrics = CallLayoutMetrics.of(

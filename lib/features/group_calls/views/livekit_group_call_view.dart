@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:math' as math;
 import 'dart:ui';
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide ConnectionState;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:livekit_client/livekit_client.dart';
 import '../../../core/services/active_call/call_control_message.dart';
@@ -47,6 +47,7 @@ class _LiveKitGroupCallViewState extends State<LiveKitGroupCallView> {
   late final CallPipCubit _pipCubit;
   late final ActiveCallSessionCubit _sessionCubit;
   Room? _room;
+  Room? _connectingRoom;
   EventsListener<RoomEvent>? _listener;
 
   bool get _isVideo => widget.call.type == GroupCallType.video;
@@ -75,6 +76,7 @@ class _LiveKitGroupCallViewState extends State<LiveKitGroupCallView> {
   @override
   void initState() {
     super.initState();
+    FocusManager.instance.primaryFocus?.unfocus();
     _signaling = context.read<GroupCallSignalingService>();
     _pipCubit = context.read<CallPipCubit>();
     _sessionCubit = context.read<ActiveCallSessionCubit>();
@@ -174,69 +176,155 @@ class _LiveKitGroupCallViewState extends State<LiveKitGroupCallView> {
     }
   }
 
-  Future<void> _connectNewRoom() async {
+  Future<void> _disposeRoomSafely(Room? room) async {
+    if (room == null) return;
     try {
-      final connection = await LiveKitTokenService.instance.generateToken(
-        roomName: widget.call.callId,
-        participantName: widget.currentUserName,
-      );
-
-      final room = Room();
-      await room.connect(
-        connection.url,
-        connection.token,
-        roomOptions: const RoomOptions(adaptiveStream: true, dynacast: true),
-      );
-
-      await room.localParticipant?.setMicrophoneEnabled(true);
-      if (_isVideo) {
-        await room.localParticipant?.setCameraEnabled(true);
+      await room.disconnect();
+    } catch (_) {}
+    try {
+      if (!room.isDisposed) {
+        await room.dispose();
       }
+    } catch (_) {}
+  }
 
-      // Also bail out when the user pressed End while still connecting.
-      if (!mounted || _isEnding) {
-        await room.disconnect();
-        return;
+  Future<void> _waitForStableConnection(Room room) async {
+    if (room.connectionState == ConnectionState.connected) return;
+    if (room.connectionState == ConnectionState.reconnecting) {
+      final tempListener = room.createListener();
+      try {
+        await tempListener.waitFor<RoomReconnectedEvent>(
+          duration: const Duration(seconds: 8),
+        );
+      } finally {
+        await tempListener.dispose();
       }
-
-      _sessionCubit.startGroupCallSession(
-        callId: widget.call.callId,
-        title: widget.call.groupName,
-        avatarUrl: widget.call.groupAvatarUrl,
-        isVideo: _isVideo,
-        startedAt: _startedAt,
-        groupCall: widget.call,
-        currentUserId: widget.currentUserId,
-        currentUserName: widget.currentUserName,
-      );
-
-      _pipCubit.attach(
-        room: room,
-        isVideo: _isVideo,
-        isGroup: true,
-        onSoloTimeout: _terminateCall,
-        onHeartbeat: () => _signaling.sendHeartbeat(widget.call.callId),
-      );
-
-      _attachTo(room);
-
-      await CallForegroundService.start(
-        serviceId: 102,
-        title: context.l10n.ongoingGroupCall,
-        text: context.l10n.tapToReturnTo,
-        isVideo: widget.call.type == GroupCallType.video,
-      );
-    } catch (e, st) {
-      debugPrint('❌ LiveKitGroupCallView._connectNewRoom failed: $e');
-      debugPrintStack(stackTrace: st);
-      unawaited(CallForegroundService.stop());
-      if (!mounted) return;
-      _sessionCubit.endSession();
-      setState(() {
-        _loadError = e.toString();
-        _connecting = false;
-      });
     }
+  }
+
+  Future<void> _connectNewRoom() async {
+    const maxAttempts = 2;
+    int attempt = 0;
+    Object? lastError;
+    StackTrace? lastStackTrace;
+
+    while (attempt < maxAttempts && mounted && !_isEnding) {
+      attempt++;
+      Room? room;
+      try {
+        final connection = await LiveKitTokenService.instance.generateToken(
+          roomName: widget.call.callId,
+          participantName: widget.currentUserName,
+        );
+
+        if (!mounted || _isEnding) return;
+
+        room = Room(
+          roomOptions: const RoomOptions(adaptiveStream: true, dynacast: true),
+        );
+        _connectingRoom = room;
+
+        await room.prepareConnection(connection.url, connection.token);
+        if (!mounted || _isEnding) {
+          _connectingRoom = null;
+          await _disposeRoomSafely(room);
+          return;
+        }
+
+        await room.connect(
+          connection.url,
+          connection.token,
+          connectOptions: const ConnectOptions(
+            timeouts: Timeouts(
+              connection: Duration(seconds: 25),
+              debounce: Duration(milliseconds: 200),
+              publish: Duration(seconds: 20),
+              subscribe: Duration(seconds: 15),
+              peerConnection: Duration(seconds: 20),
+              iceRestart: Duration(seconds: 15),
+            ),
+          ),
+        );
+
+        if (!mounted || _isEnding) {
+          _connectingRoom = null;
+          await _disposeRoomSafely(room);
+          return;
+        }
+
+        await _waitForStableConnection(room);
+        await room.localParticipant?.setMicrophoneEnabled(true);
+        if (_isVideo) {
+          await room.localParticipant?.setCameraEnabled(true);
+        }
+
+        // Also bail out when the user pressed End while still connecting.
+        if (!mounted || _isEnding) {
+          _connectingRoom = null;
+          await _disposeRoomSafely(room);
+          return;
+        }
+
+        _connectingRoom = null;
+
+        _sessionCubit.startGroupCallSession(
+          callId: widget.call.callId,
+          title: widget.call.groupName,
+          avatarUrl: widget.call.groupAvatarUrl,
+          isVideo: _isVideo,
+          startedAt: _startedAt,
+          groupCall: widget.call,
+          currentUserId: widget.currentUserId,
+          currentUserName: widget.currentUserName,
+        );
+
+        _pipCubit.attach(
+          room: room,
+          isVideo: _isVideo,
+          isGroup: true,
+          onSoloTimeout: _terminateCall,
+          onHeartbeat: () => _signaling.sendHeartbeat(widget.call.callId),
+        );
+
+        _attachTo(room);
+
+        await CallForegroundService.start(
+          serviceId: 102,
+          title: context.l10n.ongoingGroupCall,
+          text: context.l10n.tapToReturnTo,
+          isVideo: widget.call.type == GroupCallType.video,
+        );
+        return;
+      } catch (e, st) {
+        lastError = e;
+        lastStackTrace = st;
+        debugPrint(
+          '⚠️ LiveKitGroupCallView connect attempt $attempt failed: $e',
+        );
+
+        if (_connectingRoom == room) {
+          _connectingRoom = null;
+        }
+        await _disposeRoomSafely(room);
+
+        if (attempt < maxAttempts && mounted && !_isEnding) {
+          await Future<void>.delayed(const Duration(milliseconds: 1200));
+        }
+      }
+    }
+
+    if (!mounted || _isEnding) return;
+
+    debugPrint('❌ LiveKitGroupCallView._connectNewRoom failed: $lastError');
+    if (lastStackTrace != null) {
+      debugPrintStack(stackTrace: lastStackTrace);
+    }
+    unawaited(CallForegroundService.stop());
+    _sessionCubit.endSession();
+    setState(() {
+      _loadError = lastError?.toString() ?? 'Connection failed';
+      _connecting = false;
+    });
   }
 
   void _attachTo(Room room) {
@@ -420,6 +508,12 @@ class _LiveKitGroupCallViewState extends State<LiveKitGroupCallView> {
     _isEnding = true;
     if (mounted) setState(() {});
 
+    final inFlight = _connectingRoom;
+    _connectingRoom = null;
+    if (inFlight != null) {
+      unawaited(_disposeRoomSafely(inFlight));
+    }
+
     IncomingCallNavigationGuard.clearLocalInitiation(widget.call.callId);
 
     if (widget.currentUserId == widget.call.initiatorId) {
@@ -443,6 +537,12 @@ class _LiveKitGroupCallViewState extends State<LiveKitGroupCallView> {
     if (_isEnding) return;
     _isEnding = true;
     if (mounted) setState(() {});
+
+    final inFlight = _connectingRoom;
+    _connectingRoom = null;
+    if (inFlight != null) {
+      unawaited(_disposeRoomSafely(inFlight));
+    }
 
     IncomingCallNavigationGuard.clearLocalInitiation(widget.call.callId);
 
@@ -493,6 +593,11 @@ class _LiveKitGroupCallViewState extends State<LiveKitGroupCallView> {
 
   @override
   void dispose() {
+    final inFlight = _connectingRoom;
+    _connectingRoom = null;
+    if (inFlight != null) {
+      unawaited(_disposeRoomSafely(inFlight));
+    }
     _ticker?.cancel();
     _listener?.dispose();
     _activeCallSub?.cancel();
@@ -503,6 +608,7 @@ class _LiveKitGroupCallViewState extends State<LiveKitGroupCallView> {
   Widget build(BuildContext context) {
     if (_loadError != null) {
       return Scaffold(
+        resizeToAvoidBottomInset: false,
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(24),
@@ -512,11 +618,26 @@ class _LiveKitGroupCallViewState extends State<LiveKitGroupCallView> {
                 const Icon(Icons.error_outline, color: Colors.red, size: 48),
                 const SizedBox(height: 12),
                 Text(context.l10n.theCallCouldNot),
-                const SizedBox(height: 8),
-                ElevatedButton(
-                  onPressed:
-                      () => CallTerminationService.popRouteIfActive(context),
-                  child: Text(context.l10n.back),
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    OutlinedButton(
+                      onPressed: _terminateCall,
+                      child: Text(context.l10n.back),
+                    ),
+                    const SizedBox(width: 12),
+                    ElevatedButton(
+                      onPressed: () {
+                        setState(() {
+                          _loadError = null;
+                          _connecting = true;
+                        });
+                        unawaited(_connectNewRoom());
+                      },
+                      child: Text(context.l10n.retry),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -536,6 +657,7 @@ class _LiveKitGroupCallViewState extends State<LiveKitGroupCallView> {
         }
       },
       child: Scaffold(
+        resizeToAvoidBottomInset: false,
         body: Stack(
           children: [
             CallAvatarBackdrop(

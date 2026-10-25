@@ -31,7 +31,7 @@ class CallLayoutMetrics {
   /// with labels vs. one).
   factory CallLayoutMetrics.of(
     BoxConstraints constraints, {
-    double reservedHeight = 260,
+    double reservedHeight = 280,
   }) {
     final shortest = constraints.biggest.shortestSide;
     final availableHeight = constraints.maxHeight;
