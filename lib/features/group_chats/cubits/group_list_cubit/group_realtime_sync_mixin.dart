@@ -62,6 +62,7 @@ mixin GroupRealtimeSyncMixin on GroupListBase {
         ownerUserId: currentUserId,
       );
 
+      final capturedEpoch = messageChannelEpoch;
       channel
           .onPostgresChanges(
             event: PostgresChangeEvent.insert,
@@ -85,7 +86,19 @@ mixin GroupRealtimeSyncMixin on GroupListBase {
             ),
             callback: _onGroupMessageUpdated,
           )
+          .onPostgresChanges(
+            event: PostgresChangeEvent.delete,
+            schema: 'public',
+            table: SupabaseConstants.groupMessages,
+            filter: PostgresChangeFilter(
+              type: PostgresChangeFilterType.inFilter,
+              column: GroupMemberColumns.groupId,
+              value: chunk,
+            ),
+            callback: (_) => scheduleReconcile(),
+          )
           .subscribe((status, [error]) {
+            if (isClosed || capturedEpoch != messageChannelEpoch) return;
             switch (status) {
               case RealtimeSubscribeStatus.subscribed:
                 RealtimeDiagnostics.instance.onChannelSubscribed(topic);
@@ -96,10 +109,9 @@ mixin GroupRealtimeSyncMixin on GroupListBase {
               case RealtimeSubscribeStatus.channelError:
               case RealtimeSubscribeStatus.timedOut:
                 hadError = true;
-                // If the error is a normal disconnect (e.g. session refresh / token rotation),
-                // do not report as a fatal crash to Firebase Crashlytics.
                 final isTokenOrNormalClose =
-                    error is RealtimeCloseEvent && error.code == 1000;
+                    error is RealtimeCloseEvent &&
+                    (error.code == 1000 || error.code == 1001);
                 if (!isTokenOrNormalClose) {
                   RealtimeDiagnostics.instance.onChannelError(
                     topic,
@@ -107,6 +119,16 @@ mixin GroupRealtimeSyncMixin on GroupListBase {
                     StackTrace.current,
                   );
                 }
+                messageChannelsRetryTimer?.cancel();
+                messageChannelsRetryTimer = Timer(
+                  const Duration(seconds: 3),
+                  () {
+                    if (isClosed) return;
+                    messageChannelGroupIds = <String>{};
+                    syncMessageChannels();
+                    scheduleReconcile();
+                  },
+                );
               case RealtimeSubscribeStatus.closed:
                 break;
             }
@@ -243,9 +265,17 @@ mixin GroupRealtimeSyncMixin on GroupListBase {
     final targetId = row['target_id'] as String?;
     final targetName = row['target_name'] as String?;
     final text = row['message_text'] as String? ?? '';
+    final fileName = row['file_name'] as String?;
+    final caption = row['caption'] as String?;
 
-    final String rawMessage =
-        messageType == 'call' ? _parseGroupCallPreview(text) : text;
+    final String rawMessage = switch (messageType) {
+      'call' => _parseGroupCallPreview(text),
+      'file' || 'document' =>
+        (fileName != null && fileName.trim().isNotEmpty)
+            ? fileName.trim()
+            : text,
+      _ => text.isNotEmpty ? text : (caption ?? ''),
+    };
 
     updateGroupInState(
       groupId: groupId,
@@ -280,10 +310,22 @@ mixin GroupRealtimeSyncMixin on GroupListBase {
   }
 
   void _subscribeRealtime() {
-    channel?.unsubscribe();
+    monitorRetryTimer?.cancel();
+    if (channel != null) {
+      final old = channel!;
+      channel = null;
+      RealtimeDiagnostics.instance.onChannelClosed(old.topic);
+      unawaited(SupabaseProvider.client.removeChannel(old));
+    }
 
-    final channelName = 'group_list_monitor_$currentUserId';
-    channel = SupabaseProvider.client.channel(channelName);
+    final channelName =
+        'group_list_monitor_${currentUserId}_${++monitorChannelEpoch}';
+    final nextChannel = SupabaseProvider.client.channel(channelName);
+    channel = nextChannel;
+    RealtimeDiagnostics.instance.onChannelCreated(
+      nextChannel.topic,
+      ownerUserId: currentUserId,
+    );
 
     channel!
         .onPostgresChanges(
@@ -372,11 +414,22 @@ mixin GroupRealtimeSyncMixin on GroupListBase {
           },
         )
         .subscribe((status, [error]) {
-          if (status == RealtimeSubscribeStatus.subscribed) {
-            loadGroups(isRefresh: true);
-          }
-          if (error != null) {
-            debugPrint('[GroupListCubit] realtime channel error: $error');
+          if (isClosed || !identical(channel, nextChannel)) return;
+          switch (status) {
+            case RealtimeSubscribeStatus.subscribed:
+              RealtimeDiagnostics.instance.onChannelSubscribed(
+                nextChannel.topic,
+              );
+              loadGroups(isRefresh: true);
+            case RealtimeSubscribeStatus.channelError:
+            case RealtimeSubscribeStatus.timedOut:
+              debugPrint('[GroupListCubit] realtime channel error: $error');
+              monitorRetryTimer?.cancel();
+              monitorRetryTimer = Timer(const Duration(seconds: 3), () {
+                if (!isClosed) _subscribeRealtime();
+              });
+            case RealtimeSubscribeStatus.closed:
+              break;
           }
         });
   }

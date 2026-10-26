@@ -223,9 +223,15 @@ mixin GroupMessagesStreamMixin on Cubit<GroupDetailsState> {
           existingGroup.lastMessageAt!.isAfter(latest.createdAt);
 
       if (!hasNewerReactionPreview) {
+        final previewMessage =
+            (latest.messageType == 'file' || latest.messageType == 'document')
+                ? (latest.fileName ?? latest.text)
+                : (latest.text.isNotEmpty
+                    ? latest.text
+                    : (latest.caption ?? ''));
         groupListCubit.updateGroupLastMessage(
           groupId: group.id,
-          message: latest.text,
+          message: previewMessage,
           messageId: latest.id,
           messageType: latest.messageType,
           createdAt: latest.createdAt,

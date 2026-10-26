@@ -40,7 +40,20 @@ mixin GroupMentionsMixin on Cubit<GroupDetailsState> {
       }
       cachedMessages = GroupDetailsCubit._reconciler.applyFieldUpdate(
         cachedMessages,
-        (msg) => msg.copyWith(mentions: _mentionsCache[msg.id] ?? msg.mentions),
+        (msg) {
+          final serverMentions = _mentionsCache[msg.id];
+          if (serverMentions == null) {
+            return msg;
+          }
+          final preservedAll = msg.mentions.where(
+            (m) => m.mentionedUserId == 'all',
+          );
+          final merged = MentionRef.keepLatestBatch([
+            ...serverMentions,
+            ...preservedAll,
+          ]);
+          return msg.copyWith(mentions: merged);
+        },
       );
       _emitLoaded();
       if (_messagesSnapshotKey != null) {

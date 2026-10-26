@@ -182,6 +182,46 @@ class GroupMessageModel {
   static String? _nullIfEmpty(dynamic v) =>
       (v == null || v == '') ? null : v as String;
 
+  static List<MentionRef> _reconcileAllMentions(
+    String messageText,
+    List<MentionRef> existingMentions,
+  ) {
+    if (existingMentions.any((m) => m.mentionedUserId == 'all')) {
+      return existingMentions;
+    }
+    final trimmed = messageText.trim();
+    // Handles legacy messages sent as plain 'all' or 'الكل'
+    if (trimmed.toLowerCase() == 'all' || trimmed == 'الكل') {
+      final startIndex = messageText.indexOf(trimmed);
+      return [
+        ...existingMentions,
+        MentionRef(
+          mentionedUserId: 'all',
+          startIndex: startIndex >= 0 ? startIndex : 0,
+          endIndex: (startIndex >= 0 ? startIndex : 0) + trimmed.length,
+        ),
+      ];
+    }
+    // Handles messages containing '@all' or '@الكل'
+    final regex = RegExp(r'(^|\s)(@(all|الكل))\b', caseSensitive: false);
+    final synthesized = <MentionRef>[];
+    for (final match in regex.allMatches(messageText)) {
+      final start = match.start + (match.group(1)?.length ?? 0);
+      final end = match.end;
+      final overlaps = existingMentions.any(
+        (m) => start < m.endIndex && end > m.startIndex,
+      );
+      if (!overlaps) {
+        synthesized.add(
+          MentionRef(mentionedUserId: 'all', startIndex: start, endIndex: end),
+        );
+      }
+    }
+    return synthesized.isEmpty
+        ? existingMentions
+        : MentionRef.keepLatestBatch([...existingMentions, ...synthesized]);
+  }
+
   factory GroupMessageModel.fromMap(
     Map<String, dynamic> map, {
     List<MentionRef> mentions = const [],
@@ -250,7 +290,10 @@ class GroupMessageModel {
               ? null
               : map['reply_to_message_type'] as String?,
       replyToMediaUrl: _nullIfEmpty(map['reply_to_media_url']),
-      mentions: mentions,
+      mentions: _reconcileAllMentions(
+        (map['message_text'] ?? '') as String,
+        mentions,
+      ),
       reactions: reactionsMap,
       reactionsCreatedAt:
           reactionsCreatedAtMap.isEmpty ? null : reactionsCreatedAtMap,

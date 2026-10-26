@@ -38,7 +38,14 @@ class GroupListCubit extends GroupListBase
   @override
   Future<void> close() {
     WidgetsBinding.instance.removeObserver(this);
-    channel?.unsubscribe();
+    monitorRetryTimer?.cancel();
+    messageChannelsRetryTimer?.cancel();
+    if (channel != null) {
+      final old = channel!;
+      channel = null;
+      RealtimeDiagnostics.instance.onChannelClosed(old.topic);
+      unawaited(SupabaseProvider.client.removeChannel(old));
+    }
     presenceSub?.cancel();
     activeGroupTimer?.cancel();
     reconcileDebounce?.cancel();

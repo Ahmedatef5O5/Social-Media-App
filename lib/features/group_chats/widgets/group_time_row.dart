@@ -16,6 +16,7 @@ class GroupTimeRow extends StatelessWidget {
       padding: const EdgeInsets.only(right: 1.0),
       child: Row(
         mainAxisSize: MainAxisSize.min,
+        textDirection: TextDirection.ltr,
         children: [
           if (message.isEdited) ...[
             Text(

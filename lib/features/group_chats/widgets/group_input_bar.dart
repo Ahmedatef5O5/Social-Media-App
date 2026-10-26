@@ -78,12 +78,11 @@ class GroupInputBar extends StatelessWidget {
           hintText: context.l10n.typeAMessage,
           restrictSuggestionsToUserIds: mentionCandidateIds,
           onSubmitted: (_) => _send(),
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 10,
-          ),
+          contentPadding: const EdgeInsetsDirectional.fromSTEB(6, 10, 6, 10),
+          filled: false,
           fillColor: Colors.transparent,
           border: InputBorder.none,
+          enabledBorder: InputBorder.none,
           focusedBorder: InputBorder.none,
           trailingIcon: AiActionIcon(
             controller: controller,

@@ -5,6 +5,7 @@ import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import 'package:social_media_app/core/mentions/widgets/mention_rich_text.dart';
 import 'package:social_media_app/core/router/app_routes.dart';
 import '../../../core/attachment/widgets/file_message_bubble.dart';
+import '../../../core/helpers/chat_helper.dart';
 import '../../../core/helpers/link_color_helper.dart';
 import '../../../core/link/widgets/message_link_preview.dart';
 import '../../../core/supabase/supabase_provider.dart';
@@ -97,19 +98,37 @@ class GroupRegularMessageContent extends StatelessWidget {
               ),
 
             if (!isMe)
-              Padding(
-                padding: EdgeInsets.only(
-                  bottom: 4,
-                  left: isVideo || isImage || isGif || isSticker ? 6 : 0,
-                ),
-                child: Text(
-                  message.senderName,
-                  style: TextStyle(
-                    color: primary,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12,
-                  ),
-                ),
+              Builder(
+                builder: (context) {
+                  final nameDirection = ChatHelper.getTextDirection(
+                    message.senderName,
+                  );
+                  final isMedia = isVideo || isImage || isGif || isSticker;
+                  return Padding(
+                    padding: EdgeInsets.only(
+                      bottom: 4,
+                      left: isMedia ? 8 : 4,
+                      right: isMedia ? 8 : 4,
+                    ),
+                    child: Align(
+                      alignment:
+                          nameDirection == TextDirection.rtl
+                              ? Alignment.centerRight
+                              : Alignment.centerLeft,
+                      child: Text(
+                        message.senderName,
+                        textDirection: nameDirection,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: primary,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                  );
+                },
               ),
 
             if (isImage)

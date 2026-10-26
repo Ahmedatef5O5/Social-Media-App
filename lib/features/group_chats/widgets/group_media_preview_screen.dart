@@ -262,44 +262,85 @@ class _GroupMediaPreviewScreenState extends State<GroupMediaPreviewScreen> {
               ),
             ),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               color: Colors.black54,
               child: SafeArea(
+                top: false,
                 child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Expanded(
                       child: DirectionalTextField(
                         controller: _captionController,
-                        style: const TextStyle(color: Colors.white),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 15,
+                          height: 1.35,
+                        ),
                         minLines: 1,
                         maxLines: 4,
+                        textAlignVertical: TextAlignVertical.center,
                         decoration: InputDecoration(
+                          isDense: false,
                           hintText: context.l10n.addACaption2,
-                          hintStyle: const TextStyle(color: Colors.white54),
+                          hintStyle: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.65),
+                            fontSize: 14.5,
+                          ),
                           filled: true,
-                          fillColor: Colors.white12,
+                          fillColor: Colors.white.withValues(alpha: 0.14),
+                          contentPadding: const EdgeInsetsDirectional.fromSTEB(
+                            16,
+                            12,
+                            16,
+                            12,
+                          ),
                           border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(30),
-                            borderSide: BorderSide.none,
+                            borderRadius: BorderRadius.circular(26),
+                            gapPadding: 0,
+                            borderSide: BorderSide(
+                              color: Colors.white.withValues(alpha: 0.18),
+                              width: 1,
+                            ),
                           ),
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 10,
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(26),
+                            gapPadding: 0,
+                            borderSide: BorderSide(
+                              color: Colors.white.withValues(alpha: 0.18),
+                              width: 1,
+                            ),
                           ),
-                          suffixIcon: AiActionIcon(
-                            controller: _captionController,
-                            surface: AiSurfaceType.chatMessage,
-                            generationAction: AiActionType.autocompleteCaption,
-                            actionContext: AiActionContext.mediaCaption,
-                            hasMediaAttached: true,
-                            targetMediaType:
-                                widget.type == 'image'
-                                    ? AiTargetMediaType.image
-                                    : AiTargetMediaType.video,
-                            imageBytesProvider:
-                                widget.type == 'image'
-                                    ? () => _file.readAsBytes()
-                                    : null,
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(26),
+                            gapPadding: 0,
+                            borderSide: BorderSide(
+                              color: Colors.white.withValues(alpha: 0.42),
+                              width: 1.2,
+                            ),
+                          ),
+                          suffixIconConstraints: const BoxConstraints(
+                            minWidth: 0,
+                            minHeight: 0,
+                          ),
+                          suffixIcon: Padding(
+                            padding: const EdgeInsetsDirectional.only(end: 12),
+                            child: AiActionIcon(
+                              controller: _captionController,
+                              surface: AiSurfaceType.chatMessage,
+                              generationAction:
+                                  AiActionType.autocompleteCaption,
+                              actionContext: AiActionContext.mediaCaption,
+                              hasMediaAttached: true,
+                              targetMediaType:
+                                  widget.type == 'image'
+                                      ? AiTargetMediaType.image
+                                      : AiTargetMediaType.video,
+                              imageBytesProvider:
+                                  widget.type == 'image'
+                                      ? () => _file.readAsBytes()
+                                      : null,
+                            ),
                           ),
                         ),
                       ),

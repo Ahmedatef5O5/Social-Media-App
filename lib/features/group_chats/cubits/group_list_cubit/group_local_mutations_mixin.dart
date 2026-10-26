@@ -238,6 +238,7 @@ mixin GroupLocalMutationsMixin on GroupListBase {
 
     cached = newList;
     emit(GroupListLoaded(newList));
+    persistGroupsSnapshot(newList);
   }
 
   void updateGroupLastMessage({
@@ -270,6 +271,8 @@ mixin GroupLocalMutationsMixin on GroupListBase {
       lastMessageSenderName: lastMessageSenderName,
       lastMessageTargetId: lastMessageTargetId,
       lastMessageTargetName: lastMessageTargetName,
+      unreadCount:
+          activeGroupId == groupId ? 0 : updatedGroups[idx].unreadCount,
     );
 
     updatedGroups.sort(
@@ -280,9 +283,30 @@ mixin GroupLocalMutationsMixin on GroupListBase {
 
     cached = updatedGroups;
     emit(GroupListLoaded(updatedGroups));
+    persistGroupsSnapshot(updatedGroups);
   }
 
-  void resetGroupUnreadCount(String groupId) {
+  void beginMarkGroupRead(String groupId, {DateTime? upToServerTime}) {
+    pendingMarkReadGroupIds.add(groupId);
+    resetGroupUnreadCount(groupId, upToServerTime: upToServerTime);
+  }
+
+  void endMarkGroupRead(String groupId) {
+    pendingMarkReadGroupIds.remove(groupId);
+  }
+
+  void resetGroupUnreadCount(String groupId, {DateTime? upToServerTime}) {
+    final cachedIdx = cached.indexWhere((g) => g.id == groupId);
+    final watermark =
+        upToServerTime ??
+        (cachedIdx != -1 ? cached[cachedIdx].lastMessageAt : null);
+    if (watermark != null) {
+      final prev = groupReadWatermarkById[groupId];
+      if (prev == null || watermark.isAfter(prev)) {
+        groupReadWatermarkById[groupId] = watermark;
+      }
+    }
+
     if (state is! GroupListLoaded) return;
     final currentState = state as GroupListLoaded;
     final idx = currentState.groups.indexWhere((g) => g.id == groupId);
@@ -292,5 +316,6 @@ mixin GroupLocalMutationsMixin on GroupListBase {
     newList[idx] = newList[idx].copyWith(unreadCount: 0);
     cached = newList;
     emit(GroupListLoaded(newList));
+    persistGroupsSnapshot(newList);
   }
 }

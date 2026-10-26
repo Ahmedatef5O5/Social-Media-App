@@ -393,12 +393,12 @@ class _GroupMessageContentState extends State<GroupMessageContent> {
                                   widget.message.videoUrl == null)
                           ? Colors.transparent
                           : bgColor,
-                  borderRadius: BorderRadius.only(
-                    topLeft: const Radius.circular(20),
-                    topRight: const Radius.circular(20),
-                    bottomLeft: Radius.circular(widget.isMe ? 20 : 0),
-                    bottomRight: Radius.circular(widget.isMe ? 0 : 20),
-                  ),
+                  borderRadius: BorderRadiusDirectional.only(
+                    topStart: const Radius.circular(20),
+                    topEnd: const Radius.circular(20),
+                    bottomStart: Radius.circular(widget.isMe ? 20 : 0),
+                    bottomEnd: Radius.circular(widget.isMe ? 0 : 20),
+                  ).resolve(Directionality.of(context)),
                 ),
                 child:
                     isStickerOrGif

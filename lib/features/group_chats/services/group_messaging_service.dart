@@ -221,11 +221,13 @@ class GroupMessagingService {
         .delete()
         .eq(GroupMessageMentionColumns.groupMessageId, messageId);
 
-    if (mentions.isNotEmpty) {
+    final validMentions =
+        mentions.where((m) => m.mentionedUserId != 'all').toList();
+    if (validMentions.isNotEmpty) {
       await _supabase
           .from(SupabaseConstants.groupMessageMentions)
           .insert(
-            mentions
+            validMentions
                 .map(
                   (m) => {
                     GroupMessageMentionColumns.groupMessageId: messageId,
@@ -376,7 +378,7 @@ class GroupMessagingService {
         .from(SupabaseConstants.groupMessages)
         .select()
         .eq(GroupMemberColumns.groupId, groupId)
-        .inFilter('message_type', ['image', 'video', 'voice'])
+        .inFilter('message_type', ['image', 'video', 'voice', 'file'])
         .order('created_at', ascending: false)
         .limit(limit);
 

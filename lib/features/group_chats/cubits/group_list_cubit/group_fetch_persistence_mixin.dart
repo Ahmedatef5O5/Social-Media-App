@@ -29,8 +29,31 @@ mixin GroupFetchPersistenceMixin on GroupListBase {
         (g) => !g.isMember && !fetchedIds.contains(g.id),
       );
 
+      int resolveUnreadCount(GroupModel newGroup) {
+        if (newGroup.unreadCount == 0) {
+          pendingMarkReadGroupIds.remove(newGroup.id);
+          return 0;
+        }
+        if (activeGroupId == newGroup.id) {
+          if (newGroup.lastMessageAt != null) {
+            groupReadWatermarkById[newGroup.id] = newGroup.lastMessageAt!;
+          }
+          return 0;
+        }
+        if (pendingMarkReadGroupIds.contains(newGroup.id)) {
+          final watermark = groupReadWatermarkById[newGroup.id];
+          if (watermark == null ||
+              newGroup.lastMessageAt == null ||
+              !newGroup.lastMessageAt!.isAfter(watermark)) {
+            return 0;
+          }
+        }
+        return newGroup.unreadCount;
+      }
+
       var mergedActive =
           fetchedGroups.map((newGroup) {
+            final effectiveUnread = resolveUnreadCount(newGroup);
             final existingIndex = cached.indexWhere((g) => g.id == newGroup.id);
             if (existingIndex != -1) {
               final existingGroup = cached[existingIndex];
@@ -41,8 +64,7 @@ mixin GroupFetchPersistenceMixin on GroupListBase {
                   (newGroup.lastMessage?.isEmpty ?? true) &&
                   newGroup.lastMessageAt == null;
               return newGroup.copyWith(
-                unreadCount:
-                    existingGroup.unreadCount == 0 ? 0 : newGroup.unreadCount,
+                unreadCount: effectiveUnread,
                 lastMessage:
                     isNewMessageEmpty
                         ? existingGroup.lastMessage
@@ -61,7 +83,7 @@ mixin GroupFetchPersistenceMixin on GroupListBase {
                     existingGroup.lastMessageSenderName,
               );
             }
-            return newGroup;
+            return newGroup.copyWith(unreadCount: effectiveUnread);
           }).toList();
 
       mergedActive = await _enrichGroupsWithLatestReactions(mergedActive);

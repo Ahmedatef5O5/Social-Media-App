@@ -197,6 +197,10 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState>
       emit(GroupDetailsLoading());
     }
 
+    if (isMember) {
+      groupListCubit.setActiveGroupId(group.id);
+    }
+
     try {
       final confirmedIsMember = await _services.checkIsActiveMember(
         groupId: group.id,
@@ -220,7 +224,7 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState>
     _listenReadReceipts();
     _listenPresence();
     isAtBottomNotifier.addListener(_recomputeListVisiblePresence);
-    markRead();
+    unawaited(markRead());
   }
 
   @override
@@ -250,8 +254,17 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState>
   @override
   Future<void> markRead() async {
     if (!isMember) return;
-    groupListCubit.resetGroupUnreadCount(group.id);
-    await _services.markGroupMessagesRead(group.id);
+    final latestServerTime =
+        cachedMessages.isNotEmpty ? cachedMessages.first.createdAt : null;
+    groupListCubit.beginMarkGroupRead(
+      group.id,
+      upToServerTime: latestServerTime,
+    );
+    try {
+      await _services.markGroupMessagesRead(group.id);
+    } finally {
+      groupListCubit.endMarkGroupRead(group.id);
+    }
   }
 
   int? findMessageIndex(String messageId) {
@@ -297,9 +310,23 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState>
   @override
   Future<void> close() async {
     WidgetsBinding.instance.removeObserver(this);
-    groupListCubit.resetGroupUnreadCount(group.id);
+    final latestServerTime =
+        cachedMessages.isNotEmpty ? cachedMessages.first.createdAt : null;
     if (isMember) {
-      _services.markGroupMessagesRead(group.id);
+      groupListCubit.beginMarkGroupRead(
+        group.id,
+        upToServerTime: latestServerTime,
+      );
+      unawaited(
+        _services.markGroupMessagesRead(group.id).whenComplete(() {
+          groupListCubit.endMarkGroupRead(group.id);
+        }),
+      );
+    } else {
+      groupListCubit.resetGroupUnreadCount(
+        group.id,
+        upToServerTime: latestServerTime,
+      );
     }
     groupListCubit.setActiveGroupId(null);
     _messagesSubscription?.cancel();

@@ -4,14 +4,19 @@ abstract class GroupListBase extends Cubit<GroupListState> {
   final GroupChatServices services;
 
   RealtimeChannel? channel;
+  int monitorChannelEpoch = 0;
+  Timer? monitorRetryTimer;
   final List<RealtimeChannel> messageChannels = [];
   Set<String> messageChannelGroupIds = <String>{};
   int messageChannelEpoch = 0;
+  Timer? messageChannelsRetryTimer;
   StreamSubscription? presenceSub;
   List<GroupModel> cached = [];
   final Map<String, List<GroupMemberModel>> membersByGroupId = {};
   Timer? activeGroupTimer;
   String? activeGroupId;
+  final Set<String> pendingMarkReadGroupIds = <String>{};
+  final Map<String, DateTime> groupReadWatermarkById = <String, DateTime>{};
   int loadGroupsRequestId = 0;
   Timer? reconcileDebounce;
   final Set<String> locallyDeletedGroupIds = {};

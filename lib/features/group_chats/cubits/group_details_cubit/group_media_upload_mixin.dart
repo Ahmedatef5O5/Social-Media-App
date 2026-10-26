@@ -100,6 +100,22 @@ mixin GroupMediaUploadMixin on Cubit<GroupDetailsState> {
     );
     _emitLoaded();
 
+    final optimisticPreview = switch (messageType) {
+      'image' || 'video' => caption ?? '',
+      'voice' => '',
+      'file' || 'document' => fileName ?? 'File',
+      _ => text,
+    };
+    groupListCubit.updateGroupLastMessage(
+      groupId: group.id,
+      message: optimisticPreview,
+      messageId: tempId,
+      messageType: messageType,
+      createdAt: tempMsg.createdAt,
+      lastMessageSenderId: currentUserId,
+      lastMessageSenderName: senderName,
+    );
+
     try {
       String? uploadedImageUrl,
           uploadedVideoUrl,

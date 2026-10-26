@@ -93,13 +93,13 @@ class _ActionBubble extends StatelessWidget {
     }
 
     return Padding(
-      padding: const EdgeInsets.only(left: 0, bottom: 6, top: 2),
+      padding: const EdgeInsetsDirectional.only(start: 0, bottom: 6, top: 2),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           Padding(
-            padding: const EdgeInsets.only(right: 6),
+            padding: const EdgeInsetsDirectional.only(end: 8),
             child: avatarWidget,
           ),
           Container(
@@ -107,11 +107,11 @@ class _ActionBubble extends StatelessWidget {
             decoration: BoxDecoration(
               color: bubbleColor,
               border: isRecording ? Border.all(color: borderColor) : null,
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(18),
-                topRight: Radius.circular(18),
-                bottomRight: Radius.circular(18),
-                bottomLeft: Radius.circular(4),
+              borderRadius: const BorderRadiusDirectional.only(
+                topStart: Radius.circular(18),
+                topEnd: Radius.circular(18),
+                bottomEnd: Radius.circular(18),
+                bottomStart: Radius.circular(4),
               ),
             ),
             child:

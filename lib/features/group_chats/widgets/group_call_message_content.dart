@@ -281,12 +281,12 @@ class _GroupCallMessageContentState extends State<GroupCallMessageContent> {
       constraints: const BoxConstraints(minWidth: 210, maxWidth: 270),
       decoration: BoxDecoration(
         color: bubbleBg,
-        borderRadius: BorderRadius.only(
-          topLeft: const Radius.circular(18),
-          topRight: const Radius.circular(18),
-          bottomLeft: Radius.circular(isMe ? 18 : 4),
-          bottomRight: Radius.circular(isMe ? 4 : 18),
-        ),
+        borderRadius: BorderRadiusDirectional.only(
+          topStart: const Radius.circular(18),
+          topEnd: const Radius.circular(18),
+          bottomStart: Radius.circular(isMe ? 18 : 4),
+          bottomEnd: Radius.circular(isMe ? 4 : 18),
+        ).resolve(Directionality.of(context)),
         border:
             !isMe
                 ? Border.all(

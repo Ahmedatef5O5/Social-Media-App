@@ -175,7 +175,7 @@ class _GroupMessagesListState extends State<GroupMessagesList> {
             return Padding(
               padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
               child: Align(
-                alignment: Alignment.centerLeft,
+                alignment: AlignmentDirectional.centerStart,
                 child: GroupPresenceBubbleRow(snapshot: presence),
               ),
             );
