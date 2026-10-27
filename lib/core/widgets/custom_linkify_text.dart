@@ -62,32 +62,38 @@ class CustomLinkifyText extends StatelessWidget {
             : LinkColorHelper.forBubble(bubbleColor!);
 
     final normalizedText = EmojiHelper.normalize(text);
+    final direction = textDirection ?? ChatHelper.getTextDirection(text);
+    final isRtl = direction == TextDirection.rtl;
 
-    return Linkify(
-      text: normalizedText,
-      textDirection: textDirection ?? ChatHelper.getTextDirection(text),
-      onOpen: _onOpen,
-      maxLines: maxLines,
-      overflow: overflow ?? TextOverflow.ellipsis,
-      style: (style ??
-              Theme.of(context).textTheme.bodyMedium ??
-              const TextStyle())
-          .copyWith(
-            fontSize: style?.fontSize ?? 15,
-            fontFamily: null,
-            fontFamilyFallback: AppTypography.fontFallback,
-          ),
-      linkStyle:
-          linkStyle ??
-          TextStyle(
-            color: linkColor,
-            fontWeight: FontWeight.w600,
-            decoration: TextDecoration.underline,
-            decorationColor: linkColor,
-            decorationThickness: 0.8,
-            fontFamily: null,
-            fontFamilyFallback: AppTypography.fontFallback,
-          ),
+    return Align(
+      alignment: isRtl ? Alignment.centerRight : Alignment.centerLeft,
+      child: Linkify(
+        text: normalizedText,
+        textDirection: direction,
+        textAlign: isRtl ? TextAlign.right : TextAlign.left,
+        onOpen: _onOpen,
+        maxLines: maxLines,
+        overflow: overflow ?? TextOverflow.ellipsis,
+        style: (style ??
+                Theme.of(context).textTheme.bodyMedium ??
+                const TextStyle())
+            .copyWith(
+              fontSize: style?.fontSize ?? 15,
+              fontFamily: null,
+              fontFamilyFallback: AppTypography.fontFallback,
+            ),
+        linkStyle:
+            linkStyle ??
+            TextStyle(
+              color: linkColor,
+              fontWeight: FontWeight.w600,
+              decoration: TextDecoration.underline,
+              decorationColor: linkColor,
+              decorationThickness: 0.8,
+              fontFamily: null,
+              fontFamilyFallback: AppTypography.fontFallback,
+            ),
+      ),
     );
   }
 }

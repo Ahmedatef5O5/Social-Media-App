@@ -64,7 +64,9 @@ class AppImages {
 
   static const String sharedMediaIcon = 'assets/images/shared_media.png';
   static const String imageGalleryIcon = 'assets/images/image_gallery.png';
-  static const String videoMediaIcon = 'assets/images/video_gallery.png';
+  static const String videoMediaIcon = 'assets/images/video_media.png';
   static const String voiceMessagesIcon = 'assets/images/voice_messages.png';
+  static const String sharedDocumentsIcon =
+      'assets/images/shared_documents.png';
   static const String linkIcon = 'assets/images/link.png';
 }

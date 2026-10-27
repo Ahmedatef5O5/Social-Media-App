@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../cache/utils/cloudinary_url_extensions.dart';
+import '../../localization/l10n_extension.dart';
 import '../../supabase/supabase_provider.dart';
 import '../../widgets/app_network_image.dart';
 import '../helpers/media_action_helper.dart' hide ShowInChatCallback;
@@ -46,7 +47,7 @@ class VideoThumbnailGrid extends StatelessWidget {
                       items,
                       item,
                     ),
-                openLabel: 'Play video',
+                openLabel: context.l10n.playVideo,
                 openIcon: Icons.play_circle_outline_rounded,
               ),
           child: Stack(

@@ -367,126 +367,130 @@ class _AppVideoTrimViewState extends State<AppVideoTrimView> {
     );
   }
 
+  // ==================== AFTER ====================
   Widget _buildTrimBar(Color primary) {
     final canTrim = _totalMs > _minMs;
     final total = math.max(_totalMs, 1.0);
 
-    return SizedBox(
-      height: _stripHeight,
-      child: LayoutBuilder(
-        builder: (context, box) {
-          final trackW = box.maxWidth - _handleWidth;
-          final leftPx = _handleWidth / 2 + trackW * (_range.start / total);
-          final rightPx = _handleWidth / 2 + trackW * (_range.end / total);
+    return Directionality(
+      textDirection: TextDirection.ltr,
+      child: SizedBox(
+        height: _stripHeight,
+        child: LayoutBuilder(
+          builder: (context, box) {
+            final trackW = box.maxWidth - _handleWidth;
+            final leftPx = _handleWidth / 2 + trackW * (_range.start / total);
+            final rightPx = _handleWidth / 2 + trackW * (_range.end / total);
 
-          return Stack(
-            children: [
-              // Thumbnails
-              Positioned.fill(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: _handleWidth / 2,
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(6),
-                    child: Row(
-                      children: List.generate(_thumbCount, (i) {
-                        final data = i < _thumbs.length ? _thumbs[i] : null;
-                        return Expanded(
-                          child:
-                              data == null
-                                  ? Container(color: AppColors.grey9)
-                                  : Image.memory(
-                                    data,
-                                    fit: BoxFit.cover,
-                                    height: _stripHeight,
-                                    gaplessPlayback: true,
-                                  ),
-                        );
-                      }),
+            return Stack(
+              children: [
+                // Thumbnails
+                Positioned.fill(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: _handleWidth / 2,
                     ),
-                  ),
-                ),
-              ),
-              // Dim everything outside the selection
-              Positioned(
-                left: _handleWidth / 2,
-                width: math.max(0, leftPx - _handleWidth / 2),
-                top: 0,
-                bottom: 0,
-                child: const ColoredBox(color: Colors.black54),
-              ),
-              Positioned(
-                left: rightPx,
-                right: _handleWidth / 2,
-                top: 0,
-                bottom: 0,
-                child: const ColoredBox(color: Colors.black54),
-              ),
-              // Selection frame
-              Positioned(
-                left: leftPx,
-                width: math.max(0, rightPx - leftPx),
-                top: 0,
-                bottom: 0,
-                child: IgnorePointer(
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      border: Border.symmetric(
-                        horizontal: BorderSide(color: primary, width: 2),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(6),
+                      child: Row(
+                        children: List.generate(_thumbCount, (i) {
+                          final data = i < _thumbs.length ? _thumbs[i] : null;
+                          return Expanded(
+                            child:
+                                data == null
+                                    ? Container(color: AppColors.grey9)
+                                    : Image.memory(
+                                      data,
+                                      fit: BoxFit.cover,
+                                      height: _stripHeight,
+                                      gaplessPlayback: true,
+                                    ),
+                          );
+                        }),
                       ),
                     ),
                   ),
                 ),
-              ),
-              // Drag handles
-              Positioned.fill(
-                child: SliderTheme(
-                  data: SliderTheme.of(context).copyWith(
-                    trackHeight: _stripHeight,
-                    activeTrackColor: Colors.transparent,
-                    inactiveTrackColor: Colors.transparent,
-                    overlayShape: SliderComponentShape.noOverlay,
-                    rangeThumbShape: _TrimHandleShape(
-                      color: primary,
-                      width: _handleWidth,
-                      height: _stripHeight,
-                    ),
-                    rangeTrackShape: const RoundedRectRangeSliderTrackShape(),
-                  ),
-                  child: RangeSlider(
-                    min: 0,
-                    max: total,
-                    values: RangeValues(
-                      _range.start.clamp(0.0, total),
-                      _range.end.clamp(0.0, total),
-                    ),
-                    onChanged: canTrim ? _onRangeChanged : null,
-                    onChangeEnd: (_) => HapticFeedback.selectionClick(),
-                  ),
-                ),
-              ),
-              // Playhead
-              if (_controller != null)
+                // Dim everything outside the selection
                 Positioned(
-                  left:
-                      _handleWidth / 2 +
-                      trackW *
-                          (_controller!.value.position.inMilliseconds / total)
-                              .clamp(0.0, 1.0) -
-                      1,
-                  top: -2,
-                  bottom: -2,
-                  child: const IgnorePointer(
-                    child: SizedBox(
-                      width: 2,
-                      child: ColoredBox(color: AppColors.white),
+                  left: _handleWidth / 2,
+                  width: math.max(0, leftPx - _handleWidth / 2),
+                  top: 0,
+                  bottom: 0,
+                  child: const ColoredBox(color: Colors.black54),
+                ),
+                Positioned(
+                  left: rightPx,
+                  right: _handleWidth / 2,
+                  top: 0,
+                  bottom: 0,
+                  child: const ColoredBox(color: Colors.black54),
+                ),
+                // Selection frame
+                Positioned(
+                  left: leftPx,
+                  width: math.max(0, rightPx - leftPx),
+                  top: 0,
+                  bottom: 0,
+                  child: IgnorePointer(
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        border: Border.symmetric(
+                          horizontal: BorderSide(color: primary, width: 2),
+                        ),
+                      ),
                     ),
                   ),
                 ),
-            ],
-          );
-        },
+                // Drag handles
+                Positioned.fill(
+                  child: SliderTheme(
+                    data: SliderTheme.of(context).copyWith(
+                      trackHeight: _stripHeight,
+                      activeTrackColor: Colors.transparent,
+                      inactiveTrackColor: Colors.transparent,
+                      overlayShape: SliderComponentShape.noOverlay,
+                      rangeThumbShape: _TrimHandleShape(
+                        color: primary,
+                        width: _handleWidth,
+                        height: _stripHeight,
+                      ),
+                      rangeTrackShape: const RoundedRectRangeSliderTrackShape(),
+                    ),
+                    child: RangeSlider(
+                      min: 0,
+                      max: total,
+                      values: RangeValues(
+                        _range.start.clamp(0.0, total),
+                        _range.end.clamp(0.0, total),
+                      ),
+                      onChanged: canTrim ? _onRangeChanged : null,
+                      onChangeEnd: (_) => HapticFeedback.selectionClick(),
+                    ),
+                  ),
+                ),
+                // Playhead
+                if (_controller != null)
+                  Positioned(
+                    left:
+                        _handleWidth / 2 +
+                        trackW *
+                            (_controller!.value.position.inMilliseconds / total)
+                                .clamp(0.0, 1.0) -
+                        1,
+                    top: -2,
+                    bottom: -2,
+                    child: const IgnorePointer(
+                      child: SizedBox(
+                        width: 2,
+                        child: ColoredBox(color: AppColors.white),
+                      ),
+                    ),
+                  ),
+              ],
+            );
+          },
+        ),
       ),
     );
   }

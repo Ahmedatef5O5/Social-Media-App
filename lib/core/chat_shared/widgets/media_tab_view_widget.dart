@@ -10,8 +10,10 @@ import '../helpers/media_action_helper.dart' hide ShowInChatCallback;
 import '../helpers/shared_media_tabs_skeleton.dart';
 import '../models/shared_media_item.dart';
 import '../views/shared_media_view.dart';
+import 'document_grid_tile.dart';
 import 'media_links_list.dart';
 import 'sectioned_media_grid.dart';
+import 'shared_documents_grid.dart';
 import 'shared_media_action_menu.dart';
 import 'shared_images_grid.dart';
 import 'video_thumbnail_grid.dart';
@@ -56,12 +58,13 @@ class _MediaTabViewState extends State<MediaTabView>
             SharedMediaTab.images => const GridMediaSkeleton(),
             SharedMediaTab.videos => const GridMediaSkeleton(),
             SharedMediaTab.voice => const VoiceListSkeleton(),
+            SharedMediaTab.documents => const GridMediaSkeleton(),
             SharedMediaTab.links => const LinksListSkeleton(),
           };
         }
         if (items.isEmpty) {
           final size = MediaQuery.sizeOf(context);
-          final imageSize = (size.width * 0.36).clamp(110.0, 160.0);
+          final imageSize = (size.width * 0.52).clamp(120.0, 160.0);
 
           return Center(
             child: SingleChildScrollView(
@@ -78,7 +81,7 @@ class _MediaTabViewState extends State<MediaTabView>
                       context,
                     ).primaryColor.withValues(alpha: 0.85),
                   ),
-                  const SizedBox(height: 24),
+                  SizedBox(height: size.height * 0.06),
                   Text(
                     context.l10n.noSharedYet(_labelFor(widget.tab, context)),
                     textAlign: TextAlign.center,
@@ -112,6 +115,10 @@ class _MediaTabViewState extends State<MediaTabView>
             onShowInChat: widget.onShowInChat,
             currentUserAvatar: currentUserAvatar,
           ),
+          SharedMediaTab.documents => SharedDocumentsGrid(
+            items: items,
+            onShowInChat: widget.onShowInChat,
+          ),
           SharedMediaTab.links => MediaLinksList(
             items: items,
             onShowInChat: widget.onShowInChat,
@@ -126,6 +133,7 @@ class _MediaTabViewState extends State<MediaTabView>
     SharedMediaTab.images => AppImages.imageGalleryIcon,
     SharedMediaTab.videos => AppImages.videoMediaIcon,
     SharedMediaTab.voice => AppImages.voiceMessagesIcon,
+    SharedMediaTab.documents => AppImages.sharedDocumentsIcon,
     SharedMediaTab.links => AppImages.linkIcon,
   };
 
@@ -134,6 +142,7 @@ class _MediaTabViewState extends State<MediaTabView>
     SharedMediaTab.images => context.l10n.sharedLabelImages,
     SharedMediaTab.videos => context.l10n.sharedLabelVideos,
     SharedMediaTab.voice => context.l10n.voiceMessages,
+    SharedMediaTab.documents => context.l10n.sharedLabelDocuments,
     SharedMediaTab.links => context.l10n.sharedLabelLinks,
   };
 }
@@ -255,6 +264,7 @@ class _AllMediaGrid extends StatelessWidget {
                 ),
               ],
             ),
+            'file' => DocumentGridTile(item: item),
             _ => VoiceGridTile(
               item: item,
               currentUserAvatar: currentUserAvatar,

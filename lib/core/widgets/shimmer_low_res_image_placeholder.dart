@@ -26,7 +26,7 @@ class ShimmerLowResImagePlaceholder extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final lowResUrl = secureUrl.cloudinaryLowResPreviewUrl;
 
-    final shimmerWidget = Shimmer.fromColors(
+    final shimmerBase = Shimmer.fromColors(
       baseColor: isDark ? Colors.grey[850]! : Colors.grey[300]!,
       highlightColor: isDark ? Colors.grey[700]! : Colors.grey[100]!,
       child: Container(
@@ -39,8 +39,24 @@ class ShimmerLowResImagePlaceholder extends StatelessWidget {
       ),
     );
 
+    final shimmerWithLoader = Stack(
+      fit: StackFit.expand,
+      alignment: Alignment.center,
+      children: [
+        shimmerBase,
+        const Center(child: CustomLoadingIndicator(radius: 12)),
+      ],
+    );
+
     if (lowResUrl.isEmpty || !lowResUrl.startsWith('http')) {
-      return shimmerWidget;
+      return ClipRRect(
+        borderRadius: borderRadius ?? BorderRadius.zero,
+        child: SizedBox(
+          width: width ?? double.infinity,
+          height: height,
+          child: shimmerWithLoader,
+        ),
+      );
     }
 
     return ClipRRect(
@@ -51,17 +67,15 @@ class ShimmerLowResImagePlaceholder extends StatelessWidget {
         child: Stack(
           fit: StackFit.expand,
           children: [
-            shimmerWidget,
+            shimmerWithLoader,
 
             CachedNetworkImage(
               imageUrl: lowResUrl,
               width: width ?? double.infinity,
               height: height,
               fit: fit,
-              placeholder: (context, url) => shimmerWidget,
-              errorWidget:
-                  (context, url, error) =>
-                      const Center(child: CustomLoadingIndicator(radius: 12)),
+              placeholder: (context, url) => shimmerWithLoader,
+              errorWidget: (context, url, error) => shimmerWithLoader,
               imageBuilder: (context, imageProvider) {
                 return ImageFiltered(
                   imageFilter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),

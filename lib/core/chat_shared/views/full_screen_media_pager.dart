@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:social_media_app/features/single_chats/widgets/full_screen_media_view.dart';
 import '../models/shared_media_item.dart';
+import 'document_full_screen_view.dart';
 import 'voice_full_screen_view.dart';
 
 class FullScreenMediaPager extends StatefulWidget {
@@ -52,6 +53,14 @@ class _FullScreenMediaPagerState extends State<FullScreenMediaPager> {
             item: item,
             isActive: isActive,
             currentUserAvatar: widget.currentUserAvatar,
+          );
+        }
+
+        if (item.messageType == 'file' || (item.fileUrl ?? '').isNotEmpty) {
+          return DocumentFullScreenView(
+            key: ValueKey(item.id),
+            item: item,
+            isActive: isActive,
           );
         }
 

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../localization/l10n_extension.dart';
 import '../../supabase/supabase_provider.dart';
 import '../../widgets/app_network_image.dart';
 import '../helpers/media_action_helper.dart' hide ShowInChatCallback;
@@ -46,7 +47,7 @@ class SharedImagesGrid extends StatelessWidget {
                       items,
                       item,
                     ),
-                openLabel: 'View photo',
+                openLabel: context.l10n.viewPhoto,
                 openIcon: Icons.image_outlined,
               ),
           child: AppNetworkImage(

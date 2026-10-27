@@ -43,7 +43,7 @@ class MentionSearchService {
               'all'.toLowerCase().contains(trimmed.toLowerCase()) ||
               'الكل'.contains(trimmed))) {
         list.add(
-          const MentionSuggestion(userId: 'all', name: 'all', imageUrl: null),
+          const MentionSuggestion(userId: 'all', name: '@all', imageUrl: null),
         );
       }
 

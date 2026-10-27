@@ -21,51 +21,56 @@ class GlassPillBadge extends StatelessWidget {
     final hasText = hasCaption || hasSecondary;
 
     return Container(
-      padding: const EdgeInsets.all(3),
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
       decoration: BoxDecoration(
         color: Colors.black.withValues(alpha: 0.38),
         borderRadius: BorderRadius.circular(24),
         border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          leading,
-          if (hasText) ...[
-            const SizedBox(width: 6),
-            Padding(
-              padding: const EdgeInsets.only(right: 8),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (hasSecondary)
-                    Text(
-                      secondaryCaption!,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 10,
-                        fontWeight: FontWeight.w700,
-                        height: 1.15,
-                      ),
-                    ),
-                  if (hasCaption)
-                    Text(
-                      caption!,
-                      style: TextStyle(
-                        color: Colors.white.withValues(
-                          alpha: hasSecondary ? 0.82 : 1,
+      child: Directionality(
+        textDirection: TextDirection.ltr,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            leading,
+            if (hasText) ...[
+              const SizedBox(width: 4),
+              Padding(
+                padding: const EdgeInsets.only(right: 4, left: 1),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (hasSecondary)
+                      Text(
+                        secondaryCaption!,
+                        textDirection: TextDirection.ltr,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                          height: 1.15,
                         ),
-                        fontSize: hasSecondary ? 10 : 11,
-                        fontWeight: FontWeight.w600,
-                        height: 1.15,
                       ),
-                    ),
-                ],
+                    if (hasCaption)
+                      Text(
+                        caption!,
+                        textDirection: TextDirection.ltr,
+                        style: TextStyle(
+                          color: Colors.white.withValues(
+                            alpha: hasSecondary ? 0.82 : 1,
+                          ),
+                          fontSize: hasSecondary ? 10 : 11,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                  ],
+                ),
               ),
-            ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }

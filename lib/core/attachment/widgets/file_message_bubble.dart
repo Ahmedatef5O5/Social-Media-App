@@ -206,11 +206,18 @@ class _FileMessageBubbleState extends State<FileMessageBubble> {
 
     final sizeStr = _formatSize(widget.fileSizeBytes);
     final bool isDownloaded = _localPath != null || widget.isMe;
-    final displayName =
+    final rawName =
         widget.fileName?.trim().isNotEmpty == true
-            ? widget.fileName!
+            ? widget.fileName!.trim()
             : context.l10n.file;
-    final textDirection = BidiTextHelper.detectDirection(displayName);
+    final dotIndex = rawName.lastIndexOf('.');
+    final baseName = dotIndex != -1 ? rawName.substring(0, dotIndex) : rawName;
+    final extPart = dotIndex != -1 ? rawName.substring(dotIndex + 1) : '';
+    final isArabicName =
+        BidiTextHelper.detectDirection(baseName) == TextDirection.rtl;
+
+    final displayName =
+        isArabicName && extPart.isNotEmpty ? '$baseName .$extPart' : rawName;
 
     return InkWell(
       borderRadius: BorderRadius.circular(16),
@@ -225,7 +232,6 @@ class _FileMessageBubbleState extends State<FileMessageBubble> {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Smooth Animated Container for the Icon / Download State
             AnimatedSwitcher(
               duration: const Duration(milliseconds: 300),
               switchInCurve: Curves.easeInOutCubic,
@@ -286,18 +292,30 @@ class _FileMessageBubbleState extends State<FileMessageBubble> {
 
             Expanded(
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment:
+                    isArabicName
+                        ? CrossAxisAlignment.end
+                        : CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(
-                    displayName,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    textDirection: textDirection,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: fg,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 13.5,
+                  Align(
+                    alignment:
+                        isArabicName
+                            ? Alignment.centerRight
+                            : Alignment.centerLeft,
+                    child: Text(
+                      displayName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textDirection:
+                          isArabicName ? TextDirection.rtl : TextDirection.ltr,
+                      textAlign:
+                          isArabicName ? TextAlign.right : TextAlign.left,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: fg,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 13.5,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 5),
@@ -332,6 +350,7 @@ class _FileMessageBubbleState extends State<FileMessageBubble> {
                       if (sizeStr.isNotEmpty)
                         Text(
                           sizeStr,
+                          textDirection: TextDirection.ltr,
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: fg.withValues(alpha: 0.82),
                             fontSize: 11,

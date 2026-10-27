@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/widgets.dart';
 import 'package:social_media_app/core/supabase/supabase_provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -14,6 +15,7 @@ class PresenceService with WidgetsBindingObserver {
   bool _initialised = false;
   String? _userId;
   bool _writing = false;
+  bool? _pendingOnlineTarget;
 
   Timer? _heartbeatTimer;
   static const Duration _heartbeatInterval = Duration(seconds: 30);
@@ -33,7 +35,7 @@ class PresenceService with WidgetsBindingObserver {
 
     WidgetsBinding.instance.addObserver(this);
 
-    await _setOnline(true);
+    await _syncPresence(true);
     _startHeartbeat();
 
     await _authSub?.cancel();
@@ -41,7 +43,7 @@ class PresenceService with WidgetsBindingObserver {
     _authSub = SupabaseProvider.authChanges.listen((data) async {
       switch (data.event) {
         case AuthChangeEvent.signedOut:
-          await _setOnline(false);
+          await _syncPresence(false);
           await dispose();
 
         case AuthChangeEvent.signedIn:
@@ -86,14 +88,7 @@ class PresenceService with WidgetsBindingObserver {
     final isConnected = await NetworkStatusService.instance.isConnected();
     if (!isConnected) return;
 
-    _writing = true;
-    try {
-      await _setOnline(true, heartbeat: true);
-    } catch (e) {
-      debugPrint('[PresenceService] heartbeat error: $e');
-    } finally {
-      _writing = false;
-    }
+    await _syncPresence(true, heartbeat: true);
   }
 
   void _stopHeartbeat() {
@@ -105,14 +100,14 @@ class PresenceService with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     switch (state) {
       case AppLifecycleState.resumed:
-        _setOnline(true);
+        _syncPresence(true);
         _startHeartbeat();
         break;
       case AppLifecycleState.paused:
       case AppLifecycleState.detached:
       case AppLifecycleState.hidden:
         _stopHeartbeat();
-        _setOnline(false);
+        _syncPresence(false);
         break;
       case AppLifecycleState.inactive:
         break;
@@ -121,17 +116,49 @@ class PresenceService with WidgetsBindingObserver {
 
   Future<void> setVisibility(bool visible) async {
     if (visible) {
-      await _setOnline(true);
+      await _syncPresence(true);
       _startHeartbeat();
     } else {
       _stopHeartbeat();
-      await _setOnline(false);
+      await _syncPresence(false);
     }
+  }
+
+  Future<void> _syncPresence(bool isOnline, {bool heartbeat = false}) async {
+    if (_writing) {
+      if (!heartbeat) {
+        _pendingOnlineTarget = isOnline;
+      }
+      return;
+    }
+
+    _writing = true;
+    try {
+      await _setOnline(isOnline, heartbeat: heartbeat);
+      while (_pendingOnlineTarget != null) {
+        final nextTarget = _pendingOnlineTarget!;
+        _pendingOnlineTarget = null;
+        await _setOnline(nextTarget);
+      }
+    } finally {
+      _writing = false;
+    }
+  }
+
+  bool _isTransientSocketReset(Object error) {
+    if (error is SocketException) return true;
+    final msg = error.toString();
+    return msg.contains('Connection reset by peer') ||
+        msg.contains('Connection closed before full header was received') ||
+        msg.contains('Software caused connection abort');
   }
 
   Future<void> _setOnline(bool isOnline, {bool heartbeat = false}) async {
     final user = SupabaseProvider.user;
     if (user == null) return;
+
+    final isConnected = await NetworkStatusService.instance.isConnected();
+    if (!isConnected) return;
 
     final uid = _userId ?? SupabaseProvider.id;
 
@@ -144,22 +171,30 @@ class PresenceService with WidgetsBindingObserver {
     final bool touchLastSeen =
         !heartbeat || _heartbeatCount % _lastSeenEveryNHeartbeats == 0;
 
-    try {
-      final now = DateTime.now().toUtc().toIso8601String();
-      await SupabaseProvider.client
-          .from(SupabaseConstants.userPresence)
-          .upsert(
-            {
-              PresenceColumns.userId: uid,
-              PresenceColumns.isOnline: effectiveOnline,
-              if (touchLastSeen) PresenceColumns.lastSeen: now,
-              PresenceColumns.updatedAt: now,
-            },
-            onConflict: PresenceColumns.userId,
-            defaultToNull: false,
-          );
-    } catch (e) {
-      debugPrint('[PresenceService] _setOnline($isOnline) error: $e');
+    for (var attempt = 0; attempt < 2; attempt++) {
+      try {
+        final now = DateTime.now().toUtc().toIso8601String();
+        await SupabaseProvider.client
+            .from(SupabaseConstants.userPresence)
+            .upsert(
+              {
+                PresenceColumns.userId: uid,
+                PresenceColumns.isOnline: effectiveOnline,
+                if (touchLastSeen) PresenceColumns.lastSeen: now,
+                PresenceColumns.updatedAt: now,
+              },
+              onConflict: PresenceColumns.userId,
+              defaultToNull: false,
+            );
+        return;
+      } catch (e) {
+        if (attempt == 0 && _isTransientSocketReset(e)) {
+          await Future<void>.delayed(const Duration(milliseconds: 250));
+          continue;
+        }
+        debugPrint('[PresenceService] _setOnline($isOnline) error: $e');
+        return;
+      }
     }
   }
 
@@ -174,18 +209,9 @@ class PresenceService with WidgetsBindingObserver {
   }
 
   Future<void> forceSyncNow() async {
-    if (!_initialised || _writing) return;
-    _writing = true;
-    try {
-      await _setOnline(true);
-      debugPrint(
-        '[PresenceService] Force-synced after connectivity restored ✅',
-      );
-    } catch (e) {
-      debugPrint('[PresenceService] forceSyncNow error: $e');
-    } finally {
-      _writing = false;
-    }
+    if (!_initialised) return;
+    await _syncPresence(true);
+    debugPrint('[PresenceService] Force-synced after connectivity restored ✅');
     _startHeartbeat();
   }
 }

@@ -152,7 +152,7 @@ class _FullScreenImageViewerState extends State<FullScreenImageViewer> {
                               IconButton(
                                 tooltip: context.l10n.edit,
                                 onPressed: () async {
-                                  final newPath = await onEdit!();
+                                  final newPath = await onEdit();
                                   if (newPath != null && mounted) {
                                     _transformationController.value =
                                         Matrix4.identity();

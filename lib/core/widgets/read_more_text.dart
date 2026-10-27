@@ -48,10 +48,6 @@ class _ReadMoreTextState extends State<ReadMoreText> {
     final readMoreLabel = isArabic ? '...قراءة المزيد' : context.l10n.readMore;
     final readLessLabel = isArabic ? 'عرض أقل' : context.l10n.showLess;
 
-    final crossAxis =
-        widget.crossAxisAlignment ??
-        (isArabic ? CrossAxisAlignment.end : CrossAxisAlignment.start);
-
     Widget buildContent(double maxWidth) {
       final textPainter = TextPainter(
         text: TextSpan(text: trimmed, style: widget.style),
@@ -65,24 +61,37 @@ class _ReadMoreTextState extends State<ReadMoreText> {
           _isExpanded ? TextOverflow.visible : TextOverflow.ellipsis;
 
       return Column(
-        crossAxisAlignment: crossAxis,
+        crossAxisAlignment:
+            isArabic ? CrossAxisAlignment.end : CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          widget.contentBuilder(context, effectiveMaxLines, effectiveOverflow),
+          Align(
+            alignment: isArabic ? Alignment.centerRight : Alignment.centerLeft,
+            child: widget.contentBuilder(
+              context,
+              effectiveMaxLines,
+              effectiveOverflow,
+            ),
+          ),
           if (isOverflowing)
-            Padding(
-              padding: widget.togglePadding,
-              child: GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: () => setState(() => _isExpanded = !_isExpanded),
-                child: Text(
-                  _isExpanded ? readLessLabel : readMoreLabel,
-                  style:
-                      widget.toggleTextStyle ??
-                      widget.style.copyWith(
-                        fontWeight: FontWeight.w700,
-                        color: Theme.of(context).colorScheme.outline,
-                      ),
+            Align(
+              alignment:
+                  isArabic ? Alignment.centerRight : Alignment.centerLeft,
+              child: Padding(
+                padding: widget.togglePadding,
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () => setState(() => _isExpanded = !_isExpanded),
+                  child: Text(
+                    _isExpanded ? readLessLabel : readMoreLabel,
+                    textDirection: direction,
+                    style:
+                        widget.toggleTextStyle ??
+                        widget.style.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: Theme.of(context).colorScheme.outline,
+                        ),
+                  ),
                 ),
               ),
             ),

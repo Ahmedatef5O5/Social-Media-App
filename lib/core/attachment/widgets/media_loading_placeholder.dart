@@ -32,9 +32,10 @@ class MediaLoadingPlaceholder extends StatelessWidget {
     }
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final effectiveRadius = borderRadius ?? BorderRadius.circular(16);
 
     return ClipRRect(
-      borderRadius: borderRadius ?? BorderRadius.zero,
+      borderRadius: effectiveRadius,
       child: Shimmer.fromColors(
         baseColor: isDark ? Colors.grey[850]! : Colors.grey[300]!,
         highlightColor: isDark ? Colors.grey[700]! : Colors.grey[100]!,

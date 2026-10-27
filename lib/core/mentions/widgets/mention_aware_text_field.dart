@@ -324,8 +324,8 @@ class _MentionAwareTextFieldState extends State<MentionAwareTextField> {
                     widget.trailingIcon == null
                         ? null
                         : Padding(
-                          padding: EdgeInsets.only(
-                            right: widget.border == InputBorder.none ? 0 : 10,
+                          padding: EdgeInsetsDirectional.only(
+                            end: widget.border == InputBorder.none ? 2 : 12,
                           ),
                           child: widget.trailingIcon,
                         ),

@@ -316,17 +316,26 @@ class _MentionRichTextState extends State<MentionRichText> {
       mentionStyle: mentionStyle,
       resolvedMentionColor: resolvedMentionColor,
     );
+
     final normalizedFullText = EmojiHelper.normalize(widget.text);
-    final direction = ChatHelper.getTextDirection(normalizedFullText);
+    final direction =
+        widget.textDirection ?? ChatHelper.getTextDirection(normalizedFullText);
+
+    final effectiveTextAlign =
+        widget.textAlign ??
+        (direction == TextDirection.rtl ? TextAlign.right : TextAlign.left);
+
     final span = TextSpan(children: spans);
 
-    final toggleAlignment = switch (widget.textAlign) {
+    final isAppRtl = Directionality.of(context) == TextDirection.rtl;
+    final isTextRtl = direction == TextDirection.rtl;
+
+    final toggleAlignment = switch (effectiveTextAlign) {
       TextAlign.center => CrossAxisAlignment.center,
-      TextAlign.right || TextAlign.end => CrossAxisAlignment.end,
       _ =>
-        direction == TextDirection.rtl
-            ? CrossAxisAlignment.end
-            : CrossAxisAlignment.start,
+        isTextRtl == isAppRtl
+            ? CrossAxisAlignment.start
+            : CrossAxisAlignment.end,
     };
 
     final isArabicText = direction == TextDirection.rtl;
@@ -341,7 +350,7 @@ class _MentionRichTextState extends State<MentionRichText> {
         maxLines: widget.maxLines,
         overflow: widget.overflow ?? TextOverflow.ellipsis,
         textDirection: direction,
-        textAlign: widget.textAlign ?? TextAlign.start,
+        textAlign: effectiveTextAlign,
       );
     }
     final effectiveMaxWidth =
@@ -362,6 +371,7 @@ class _MentionRichTextState extends State<MentionRichText> {
       text: measurementSpan,
       maxLines: widget.collapsedMaxLines,
       textDirection: direction,
+      textAlign: effectiveTextAlign,
     )..layout(maxWidth: effectiveMaxWidth);
 
     final isOverflowing = painter.didExceedMaxLines;
@@ -371,7 +381,7 @@ class _MentionRichTextState extends State<MentionRichText> {
         span,
         style: defaultStyle,
         textDirection: direction,
-        textAlign: widget.textAlign ?? TextAlign.start,
+        textAlign: effectiveTextAlign,
       );
     }
 
@@ -384,7 +394,7 @@ class _MentionRichTextState extends State<MentionRichText> {
             span,
             style: defaultStyle,
             textDirection: direction,
-            textAlign: widget.textAlign ?? TextAlign.start,
+            textAlign: effectiveTextAlign,
           ),
           GestureDetector(
             onTap: () {
@@ -399,7 +409,7 @@ class _MentionRichTextState extends State<MentionRichText> {
                   color: resolvedMentionColor,
                   fontWeight: FontWeight.w700,
                 ),
-                textDirection: widget.textDirection,
+                textDirection: direction,
               ),
             ),
           ),
@@ -417,7 +427,7 @@ class _MentionRichTextState extends State<MentionRichText> {
           maxLines: widget.collapsedMaxLines,
           overflow: TextOverflow.ellipsis,
           textDirection: direction,
-          textAlign: widget.textAlign,
+          textAlign: effectiveTextAlign,
         ),
         GestureDetector(
           onTap: () {
@@ -432,7 +442,7 @@ class _MentionRichTextState extends State<MentionRichText> {
                 color: resolvedMentionColor,
                 fontWeight: FontWeight.w700,
               ),
-              textDirection: widget.textDirection,
+              textDirection: direction,
             ),
           ),
         ),

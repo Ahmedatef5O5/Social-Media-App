@@ -15,12 +15,7 @@ import 'package:social_media_app/core/localization/l10n_extension.dart';
 /// Full-screen image editor (crop / rotate / flip, draw, text, filters, blur &
 /// pixelate, emoji) built on `pro_image_editor`, plus Sticker and GIF layers
 /// powered by the app's EXISTING pickers.
-///
-/// Pops with the edited image bytes on Done, or with `null` on discard.
-///
-/// IMPORTANT: every `pro_image_editor` symbol in the codebase lives in this
-/// file. If a future package upgrade renames an API, this is the only file to
-/// touch.
+
 class AppImageEditorView extends StatefulWidget {
   const AppImageEditorView({
     super.key,
@@ -99,14 +94,89 @@ class _AppImageEditorViewState extends State<AppImageEditorView> {
 
   // ── Configs ───────────────────────────────────────────────────────────────
 
-  CropRotateEditorConfigs _cropConfigs() {
+  I18n _buildI18n(BuildContext context) {
+    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+    if (!isArabic) return const I18n();
+    return const I18n(
+      done: 'تم',
+      cancel: 'إلغاء',
+      undo: 'تراجع',
+      redo: 'إعادة',
+      remove: 'حذف',
+      doneLoadingMsg: 'جارٍ حفظ التعديلات...',
+      paintEditor: I18nPaintEditor(
+        bottomNavigationBarText: 'رسم',
+        moveAndZoom: 'تكبير وتصغير',
+        freestyle: 'حر',
+        arrow: 'سهم',
+        line: 'خط',
+        rectangle: 'مستطيل',
+        circle: 'دائرة',
+        lineWidth: 'سُمك الخط',
+      ),
+      textEditor: I18nTextEditor(
+        bottomNavigationBarText: 'نص',
+        inputHintText: 'اكتب نصاً هنا',
+        done: 'تم',
+        back: 'رجوع',
+        textAlign: 'محاذاة النص',
+        fontScale: 'حجم الخط',
+        backgroundMode: 'وضع الخلفية',
+      ),
+      cropRotateEditor: I18nCropRotateEditor(
+        bottomNavigationBarText: 'قص / تدوير',
+        rotate: 'تدوير',
+        flip: 'قلب',
+        ratio: 'النسبة',
+        back: 'رجوع',
+        done: 'تم',
+        cancel: 'إلغاء',
+      ),
+      filterEditor: I18nFilterEditor(
+        bottomNavigationBarText: 'فلاتر',
+        done: 'تطبيق',
+        back: 'رجوع',
+      ),
+      tuneEditor: I18nTuneEditor(
+        bottomNavigationBarText: 'ضبط',
+        done: 'تم',
+        back: 'رجوع',
+        brightness: 'السطوع',
+        contrast: 'التباين',
+        saturation: 'التشبع',
+        exposure: 'التعرض',
+        hue: 'تدرج اللون',
+        temperature: 'حرارة اللون',
+        sharpness: 'الحدة',
+        fade: 'بهتان',
+        luminance: 'الإضاءة',
+        undo: 'تراجع',
+        redo: 'إعادة',
+      ),
+      blurEditor: I18nBlurEditor(
+        bottomNavigationBarText: 'تمويه',
+        done: 'تطبيق',
+        back: 'رجوع',
+      ),
+      various: I18nVarious(
+        loadingDialogMsg: 'يرجى الانتظار...',
+        closeEditorWarningTitle: 'إغلاق محرر الصور؟',
+        closeEditorWarningMessage:
+            'هل أنت متأكد من الإغلاق؟ لن يتم حفظ التعديلات.',
+        closeEditorWarningConfirmBtn: 'نعم',
+        closeEditorWarningCancelBtn: 'إلغاء',
+      ),
+    );
+  }
+
+  CropRotateEditorConfigs _cropConfigs(BuildContext context) {
+    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
     switch (widget.preset) {
       case MediaEditorPreset.avatar:
         return CropRotateEditorConfigs(
           aspectRatios: [AspectRatioItem(text: '1:1', value: 1.0)],
           initAspectRatio: 1.0,
           initialCropMode: CropMode.oval,
-          // Keep the exported file rectangular; the app clips it to a circle.
           exportOvalMask: false,
         );
       case MediaEditorPreset.cover:
@@ -121,7 +191,7 @@ class _AppImageEditorViewState extends State<AppImageEditorView> {
       default:
         return CropRotateEditorConfigs(
           aspectRatios: [
-            AspectRatioItem(text: 'Free', value: null),
+            AspectRatioItem(text: isArabic ? 'حر' : 'Free', value: null),
             AspectRatioItem(text: '1:1', value: 1.0),
             AspectRatioItem(text: '4:5', value: 4 / 5),
             AspectRatioItem(text: '16:9', value: 16 / 9),
@@ -131,14 +201,14 @@ class _AppImageEditorViewState extends State<AppImageEditorView> {
     }
   }
 
-  ProImageEditorConfigs _configs() {
+  ProImageEditorConfigs _configs(BuildContext context) {
     return ProImageEditorConfigs(
-      // Keep transparent PNGs transparent; everything else stays JPEG.
+      i18n: _buildI18n(context),
       imageGeneration:
           _isPng
               ? ImageGenerationConfigs(outputFormat: OutputFormat.png)
               : const ImageGenerationConfigs(),
-      cropRotateEditor: _cropConfigs(),
+      cropRotateEditor: _cropConfigs(context),
       textEditor: TextEditorConfigs(
         customTextStyles: const [
           TextStyle(
@@ -198,7 +268,7 @@ class _AppImageEditorViewState extends State<AppImageEditorView> {
                   ),
                 ),
               ),
-              configs: _configs(),
+              configs: _configs(context),
             ),
           ),
 

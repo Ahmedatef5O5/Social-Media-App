@@ -57,19 +57,31 @@ class ConversationsCubit extends Cubit<ConversationsState>
     _recompute();
   }
 
+  static int _chatMutesEpoch = 0;
+
   void _subscribeSingleChatMutes() {
     final currentUserId = SupabaseProvider.idOrNull;
     if (currentUserId == null) return;
     final supabase = SupabaseProvider.client;
 
-    final channelName = 'conversations_chat_mutes_$currentUserId';
-    supabase.removeChannel(supabase.channel(channelName));
+    if (_chatMutesChannel != null) {
+      unawaited(supabase.removeChannel(_chatMutesChannel!));
+      _chatMutesChannel = null;
+    }
+
+    final channelName =
+        'conversations_chat_mutes_${currentUserId}_${++_chatMutesEpoch}';
     _chatMutesChannel =
         supabase.channel(channelName)
           ..onPostgresChanges(
             event: PostgresChangeEvent.all,
             schema: 'public',
             table: 'chat_mutes',
+            filter: PostgresChangeFilter(
+              type: PostgresChangeFilterType.eq,
+              column: 'owner_id',
+              value: currentUserId,
+            ),
             callback: (payload) {
               final row =
                   payload.eventType == PostgresChangeEvent.delete

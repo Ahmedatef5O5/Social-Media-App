@@ -49,17 +49,17 @@ class DirectionalTextField extends StatelessWidget {
 
         InputDecoration? effectiveDecoration = decoration;
         if (effectiveDecoration != null) {
+          final fallbackBorder = effectiveDecoration.border ?? InputBorder.none;
           effectiveDecoration = effectiveDecoration.copyWith(
             hintTextDirection: contextDirection,
             filled: effectiveDecoration.filled ?? false,
             fillColor: effectiveDecoration.fillColor ?? Colors.transparent,
-            enabledBorder:
-                effectiveDecoration.enabledBorder ?? InputBorder.none,
-            focusedBorder:
-                effectiveDecoration.focusedBorder ?? InputBorder.none,
-            errorBorder: effectiveDecoration.errorBorder ?? InputBorder.none,
+            border: fallbackBorder,
+            enabledBorder: effectiveDecoration.enabledBorder ?? fallbackBorder,
+            focusedBorder: effectiveDecoration.focusedBorder ?? fallbackBorder,
+            errorBorder: effectiveDecoration.errorBorder ?? fallbackBorder,
             disabledBorder:
-                effectiveDecoration.disabledBorder ?? InputBorder.none,
+                effectiveDecoration.disabledBorder ?? fallbackBorder,
           );
         }
 

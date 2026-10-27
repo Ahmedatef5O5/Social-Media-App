@@ -5,7 +5,7 @@ import '../../models/shared_media_item.dart';
 import '../../services/shared_media_data_source.dart';
 part 'shared_media_state.dart';
 
-enum SharedMediaTab { all, images, videos, voice, links }
+enum SharedMediaTab { all, images, videos, voice, documents, links }
 
 class SharedMediaCubit extends Cubit<SharedMediaState>
     with SafeEmitMixin<SharedMediaState> {
@@ -111,6 +111,8 @@ class SharedMediaCubit extends Cubit<SharedMediaState>
         return 'video';
       case SharedMediaTab.voice:
         return 'voice';
+      case SharedMediaTab.documents:
+        return 'file';
       case SharedMediaTab.links:
         return 'text';
     }

@@ -5,6 +5,7 @@ import '../../../features/home/cubits/home_cubit/home_cubit.dart';
 import '../../widgets/app_network_image.dart';
 import '../models/shared_media_item.dart';
 import '../views/full_screen_media_pager.dart';
+import 'document_grid_tile.dart';
 import 'voice_grid_tile.dart';
 
 class MediaPreviewTile extends StatelessWidget {
@@ -64,6 +65,7 @@ class MediaPreviewTile extends StatelessWidget {
               ),
             ],
           ),
+          'file' => DocumentGridTile(item: item),
           _ => VoiceGridTile(item: item, currentUserAvatar: currentUserAvatar),
         },
       ),

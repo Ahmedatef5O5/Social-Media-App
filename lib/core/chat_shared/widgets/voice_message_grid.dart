@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import '../../../features/single_chats/widgets/voice_message_bubble_widget.dart';
+import '../../localization/l10n_extension.dart';
 import '../../supabase/supabase_provider.dart';
 import '../../widgets/app_image_provider.dart';
 import '../helpers/media_action_helper.dart' hide ShowInChatCallback;
@@ -8,7 +9,6 @@ import '../models/shared_media_item.dart';
 import '../views/shared_media_view.dart';
 import 'sectioned_media_list.dart';
 import 'shared_media_action_menu.dart';
-import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class VoiceMessageGrid extends StatelessWidget {
   final List<SharedMediaItem> items;
@@ -57,7 +57,7 @@ class VoiceMessageGrid extends StatelessWidget {
                       items,
                       item,
                     ),
-                openLabel: 'Open voice message',
+                openLabel: context.l10n.openLabel,
                 openIcon: Icons.mic_none_rounded,
               ),
           child: Padding(

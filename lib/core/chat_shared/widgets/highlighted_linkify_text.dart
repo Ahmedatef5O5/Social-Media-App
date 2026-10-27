@@ -179,13 +179,17 @@ class _HighlightedLinkifyTextState extends State<HighlightedLinkifyText> {
     final normalizedText = EmojiHelper.normalize(widget.text);
     final direction =
         widget.textDirection ?? ChatHelper.getTextDirection(normalizedText);
-    return RichText(
-      textDirection: direction,
-      textAlign:
-          direction == TextDirection.rtl ? TextAlign.right : TextAlign.left,
-      maxLines: widget.maxLines,
-      overflow: widget.overflow ?? TextOverflow.ellipsis,
-      text: TextSpan(children: _buildSpans(context)),
+    final isRtl = direction == TextDirection.rtl;
+
+    return Align(
+      alignment: isRtl ? Alignment.centerRight : Alignment.centerLeft,
+      child: RichText(
+        textDirection: direction,
+        textAlign: isRtl ? TextAlign.right : TextAlign.left,
+        maxLines: widget.maxLines,
+        overflow: widget.overflow ?? TextOverflow.ellipsis,
+        text: TextSpan(children: _buildSpans(context)),
+      ),
     );
   }
 }

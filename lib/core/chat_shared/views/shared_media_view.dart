@@ -79,6 +79,7 @@ class _SharedMediaViewState extends State<SharedMediaView> {
               Tab(text: context.l10n.sharedTabImages),
               Tab(text: context.l10n.sharedTabVideos),
               Tab(text: context.l10n.voice),
+              Tab(text: context.l10n.sharedTabDocuments),
               Tab(text: context.l10n.sharedTabLinks),
             ],
           ),
