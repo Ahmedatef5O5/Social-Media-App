@@ -89,10 +89,11 @@ class _ImageBubble extends StatelessWidget {
     }
 
     final heroTag = 'comment_${comment.id}';
+    final bubbleRadius = BorderRadius.circular(14);
     return MediaDownloadGate(
       secureUrl: comment.imageUrl!,
       fileSizeBytes: comment.fileSizeBytes,
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: bubbleRadius,
       previewBuilder:
           (context) => CachedNetworkImage(
             imageUrl: comment.imageUrl!.cloudinaryLowResPreviewUrl,
@@ -100,13 +101,17 @@ class _ImageBubble extends StatelessWidget {
             height: size,
             fit: BoxFit.cover,
             placeholder:
-                (context, _) =>
-                    const MediaLoadingPlaceholder(width: size, height: size),
+                (context, _) => MediaLoadingPlaceholder(
+                  width: size,
+                  height: size,
+                  borderRadius: bubbleRadius,
+                ),
             errorWidget:
-                (context, _, __) => const MediaLoadingPlaceholder(
+                (context, _, __) => MediaLoadingPlaceholder(
                   width: size,
                   height: size,
                   isError: true,
+                  borderRadius: bubbleRadius,
                 ),
           ),
       completedBuilder:
@@ -130,9 +135,10 @@ class _ImageBubble extends StatelessWidget {
                 width: size,
                 height: size,
                 placeholder:
-                    (context) => const MediaLoadingPlaceholder(
+                    (context) => MediaLoadingPlaceholder(
                       width: size,
                       height: size,
+                      borderRadius: bubbleRadius,
                     ),
               ),
             ),

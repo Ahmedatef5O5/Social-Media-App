@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/chat_shared/helpers/message_reaction_preview_helper.dart';
 import '../../../core/helpers/chat_helper.dart';
+import '../../../core/observability/realtime_diagnostics.dart';
 import '../../../core/services/network_status_service.dart';
 import '../../../core/presence/services/presence_service.dart';
 import '../../../core/supabase/supabase_provider.dart';
@@ -10,6 +11,8 @@ import '../../../core/utilities/supabase_constants.dart';
 import '../models/chat_user_model.dart';
 
 class ChatListService {
+  static int _chatsStreamEpoch = 0;
+
   final _supabase = SupabaseProvider.client;
   final NetworkStatusService _networkStatus;
 
@@ -250,30 +253,132 @@ class ChatListService {
     }
   }
 
-  Stream<void> getChatsStream(String currentUserId) {
-    final controller = StreamController<void>.broadcast();
+  Stream<PostgresChangePayload> getChatsStream(
+    String currentUserId, {
+    VoidCallback? onReconnected,
+  }) {
+    final controller = StreamController<PostgresChangePayload>.broadcast();
+    bool disposed = false;
+    bool hadError = false;
+    int retryAttempt = 0;
+    Timer? retryTimer;
+    RealtimeChannel? activeChannel;
 
-    final channelName = 'chats_$currentUserId';
-
-    _supabase.removeChannel(_supabase.channel(channelName));
-
-    final channel = _supabase.channel(channelName);
-
-    void notify(PostgresChangePayload _) {
-      if (!controller.isClosed) controller.add(null);
+    void cleanupExistingForUser() {
+      final prefix = 'realtime:chats_${currentUserId}_';
+      final legacyTopic = 'realtime:chats_$currentUserId';
+      final stale =
+          _supabase
+              .getChannels()
+              .where(
+                (c) => c.topic == legacyTopic || c.topic.startsWith(prefix),
+              )
+              .toList();
+      for (final ch in stale) {
+        RealtimeDiagnostics.instance.onChannelClosed(ch.topic);
+        unawaited(_supabase.removeChannel(ch));
+      }
     }
 
-    channel
-        .onPostgresChanges(
-          event: PostgresChangeEvent.all,
-          schema: 'public',
-          table: SupabaseConstants.messages,
-          callback: notify,
-        )
-        .subscribe();
+    void notify(PostgresChangePayload payload) {
+      if (!disposed && !controller.isClosed) {
+        controller.add(payload);
+      }
+    }
+
+    void subscribeChannel() {
+      if (disposed || currentUserId.isEmpty) return;
+      retryTimer?.cancel();
+
+      if (activeChannel != null) {
+        final prev = activeChannel!;
+        activeChannel = null;
+        RealtimeDiagnostics.instance.onChannelClosed(prev.topic);
+        unawaited(_supabase.removeChannel(prev));
+      } else {
+        cleanupExistingForUser();
+      }
+
+      final channelName = 'chats_${currentUserId}_${++_chatsStreamEpoch}';
+      final channel = _supabase.channel(channelName);
+      activeChannel = channel;
+      final topic = channel.topic;
+
+      RealtimeDiagnostics.instance.onChannelCreated(
+        topic,
+        ownerUserId: currentUserId,
+      );
+
+      channel
+          .onPostgresChanges(
+            event: PostgresChangeEvent.all,
+            schema: 'public',
+            table: SupabaseConstants.messages,
+            filter: PostgresChangeFilter(
+              type: PostgresChangeFilterType.eq,
+              column: MessagesColumns.receiverId,
+              value: currentUserId,
+            ),
+            callback: notify,
+          )
+          .onPostgresChanges(
+            event: PostgresChangeEvent.all,
+            schema: 'public',
+            table: SupabaseConstants.messages,
+            filter: PostgresChangeFilter(
+              type: PostgresChangeFilterType.eq,
+              column: MessagesColumns.senderId,
+              value: currentUserId,
+            ),
+            callback: notify,
+          )
+          .subscribe((status, [error]) {
+            if (disposed || !identical(activeChannel, channel)) return;
+
+            switch (status) {
+              case RealtimeSubscribeStatus.subscribed:
+                retryAttempt = 0;
+                RealtimeDiagnostics.instance.onChannelSubscribed(topic);
+                if (hadError) {
+                  hadError = false;
+                  onReconnected?.call();
+                }
+              case RealtimeSubscribeStatus.channelError:
+              case RealtimeSubscribeStatus.timedOut:
+                hadError = true;
+                final isNormalClose =
+                    error is RealtimeCloseEvent &&
+                    (error.code == 1000 || error.code == 1001);
+                if (!isNormalClose) {
+                  RealtimeDiagnostics.instance.onChannelError(
+                    topic,
+                    error ?? status,
+                    StackTrace.current,
+                  );
+                }
+                retryTimer?.cancel();
+                final delaySeconds = (1 << retryAttempt.clamp(0, 3)) * 2;
+                retryAttempt++;
+                retryTimer = Timer(Duration(seconds: delaySeconds), () {
+                  if (!disposed) subscribeChannel();
+                });
+              case RealtimeSubscribeStatus.closed:
+                break;
+            }
+          });
+    }
+
+    subscribeChannel();
 
     controller.onCancel = () {
-      _supabase.removeChannel(channel);
+      disposed = true;
+      retryTimer?.cancel();
+      if (activeChannel != null) {
+        final prev = activeChannel!;
+        activeChannel = null;
+        RealtimeDiagnostics.instance.onChannelClosed(prev.topic);
+        unawaited(_supabase.removeChannel(prev));
+      }
       controller.close();
     };
 

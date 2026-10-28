@@ -26,12 +26,12 @@ class ImageMessageWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     const preferredWidth = 305.0;
     const preferredHeight = 250.0;
-    final borderRadius = BorderRadius.only(
-      topLeft: const Radius.circular(18),
-      topRight: const Radius.circular(18),
-      bottomLeft: Radius.circular(isMe ? 18 : 0),
-      bottomRight: Radius.circular(isMe ? 0 : 18),
-    );
+    final borderRadius = BorderRadiusDirectional.only(
+      topStart: const Radius.circular(18),
+      topEnd: const Radius.circular(18),
+      bottomStart: Radius.circular(isMe ? 18 : 0),
+      bottomEnd: Radius.circular(isMe ? 0 : 18),
+    ).resolve(Directionality.of(context));
     final bool isLocalFile = !imageUrl.startsWith('http');
 
     if (isLocalFile) {
@@ -56,15 +56,17 @@ class ImageMessageWidget extends StatelessWidget {
             height: preferredHeight,
             fit: BoxFit.cover,
             placeholder:
-                (context, _) => const MediaLoadingPlaceholder(
+                (context, _) => MediaLoadingPlaceholder(
                   width: preferredWidth,
                   height: preferredHeight,
+                  borderRadius: borderRadius,
                 ),
             errorWidget:
-                (context, _, __) => const MediaLoadingPlaceholder(
+                (context, _, __) => MediaLoadingPlaceholder(
                   width: preferredWidth,
                   height: preferredHeight,
                   isError: true,
+                  borderRadius: borderRadius,
                 ),
           ),
       completedBuilder:
@@ -93,9 +95,10 @@ class ImageMessageWidget extends StatelessWidget {
               secureUrl: imageUrl,
               fit: BoxFit.cover,
               placeholder:
-                  (context) => const MediaLoadingPlaceholder(
+                  (context) => MediaLoadingPlaceholder(
                     width: preferredWidth,
                     height: preferredHeight,
+                    borderRadius: borderRadius,
                   ),
               errorWidget:
                   (context, error) => SizedBox(

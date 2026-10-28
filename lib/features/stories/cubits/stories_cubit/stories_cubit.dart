@@ -398,6 +398,7 @@ class StoriesCubit extends Cubit<StoriesState>
   Future<void> pickAndPreviewVideoStory({required ImageSource source}) async {
     if (_isPickingMedia) return;
     _isPickingMedia = true;
+    File? tempCopiedFile;
 
     try {
       final XFile? pickedFile =
@@ -407,13 +408,20 @@ class StoriesCubit extends Cubit<StoriesState>
 
       if (pickedFile == null) return;
 
+      final extension =
+          pickedFile.path.contains('.')
+              ? '.${pickedFile.path.split('.').last.toLowerCase()}'
+              : '.mp4';
+
       final appDir = await getApplicationDocumentsDirectory();
       final destPath =
-          '${appDir.path}/${DateTime.now().millisecondsSinceEpoch}.mp4';
+          '${appDir.path}/${DateTime.now().millisecondsSinceEpoch}$extension';
 
       final stableFile = await File(pickedFile.path).copy(destPath);
+      tempCopiedFile = stableFile;
 
-      if (!await stableFile.exists()) {
+      if (!await stableFile.exists() || await stableFile.length() == 0) {
+        await _safeDeleteFile(stableFile);
         emit(const StoryVideoPickError('Could not process the video file.'));
         return;
       }
@@ -422,6 +430,7 @@ class StoriesCubit extends Cubit<StoriesState>
 
       if (duration > kMaxStoryVideoDuration) {
         await _safeDeleteFile(stableFile);
+        tempCopiedFile = null;
         emit(
           StoryVideoTooLong(
             videoDuration: duration,
@@ -434,9 +443,13 @@ class StoriesCubit extends Cubit<StoriesState>
       _cleanupStableVideo();
       _stableVideoFile = stableFile;
       selectedStoryFile = stableFile;
+      tempCopiedFile = null;
       emit(StoryVideoPicked(file: stableFile, videoDuration: duration));
     } catch (e) {
       debugPrint('Error picking video story: $e');
+      if (tempCopiedFile != null) {
+        await _safeDeleteFile(tempCopiedFile);
+      }
       emit(StoryVideoPickError(SupabaseErrorMapper.toUserMessage(e)));
     } finally {
       _isPickingMedia = false;
@@ -553,10 +566,15 @@ class StoriesCubit extends Cubit<StoriesState>
   Future<Duration> _getVideoDuration(File file) async {
     final controller = VideoPlayerController.file(file);
     try {
-      await controller.initialize();
+      await controller.initialize().timeout(const Duration(seconds: 4));
       return controller.value.duration;
+    } catch (e) {
+      debugPrint('⚠️ [_getVideoDuration] ExoPlayer duration check failed: $e');
+      return Duration.zero;
     } finally {
-      await controller.dispose();
+      try {
+        await controller.dispose();
+      } catch (_) {}
     }
   }
 

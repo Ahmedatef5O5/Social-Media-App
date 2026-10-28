@@ -3,9 +3,12 @@ part of 'chat_details_cubit.dart';
 mixin ChatSelectionMixin on Cubit<ChatDetailsState> {
   String get currentUserId;
   ChatServices get _chatServices;
+  ChatsCubit? get chatsCubit;
+  String? get _activeReceiverId;
   List<MessageModel> get cachedMessages;
   set cachedMessages(List<MessageModel> val);
   void cancelUpload(String messageId);
+  void syncLatestChatPreview(String receiverId);
   final ValueNotifier<Set<String>> selectedMessageIds =
       ValueNotifier<Set<String>>({});
 
@@ -69,6 +72,7 @@ mixin ChatSelectionMixin on Cubit<ChatDetailsState> {
         messages: messages,
         currentUserId: currentUserId,
       );
+      unawaited(chatsCubit?.getChats(isRefresh: true, silent: true));
     } catch (e) {
       debugPrint('error deleting selected messages for me: $e');
       emit(MessagesError(SupabaseErrorMapper.toUserMessage(e)));
@@ -101,6 +105,9 @@ mixin ChatSelectionMixin on Cubit<ChatDetailsState> {
     }
     cachedMessages = updated;
     emit(MessagesSuccessLoaded(messages: List.from(cachedMessages)));
+    if (_activeReceiverId != null) {
+      syncLatestChatPreview(_activeReceiverId!);
+    }
 
     for (final tempId in stillSendingIds) {
       cancelUpload(tempId);
@@ -112,6 +119,7 @@ mixin ChatSelectionMixin on Cubit<ChatDetailsState> {
 
     try {
       await _chatServices.deleteMessagesForEveryone(realIds);
+      unawaited(chatsCubit?.getChats(isRefresh: true, silent: true));
     } catch (e) {
       debugPrint('error deleting selected messages for everyone: $e');
       emit(MessagesError(SupabaseErrorMapper.toUserMessage(e)));

@@ -553,6 +553,7 @@ class _CompactUploadProgress extends StatelessWidget {
                 ),
               Text(
                 ratioText,
+                textDirection: TextDirection.ltr,
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 9.5,

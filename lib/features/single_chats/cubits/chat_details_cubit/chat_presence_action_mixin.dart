@@ -8,6 +8,8 @@ mixin ChatPresenceActionMixin on Cubit<ChatDetailsState> {
   Timer? _typingDebounce;
   Timer? _recordingHeartbeat;
   StreamSubscription? _actionSubscription;
+  DateTime? _lastTypingSentAt;
+  bool _isRecordingActionActive = false;
 
   final ValueNotifier<ChatActionType> receiverAction = ValueNotifier(
     ChatActionType.none,
@@ -29,46 +31,51 @@ mixin ChatPresenceActionMixin on Cubit<ChatDetailsState> {
   void watchReceiverAction(String receiverId) {
     final chatId = getChatId(currentUserId, receiverId);
     _actionSubscription?.cancel();
+    isAtBottomNotifier.removeListener(_recomputeListVisibleAction);
+    isAtBottomNotifier.addListener(_recomputeListVisibleAction);
+
     _actionSubscription = _presenceService
         .getActionStream(chatId: chatId, receiverId: receiverId)
         .listen((action) {
-          receiverAction.value = action;
-          // if (receiverAction.value != action) {
-          //   receiverAction.value = action;
-          // }
+          if (receiverAction.value != action) {
+            receiverAction.value = action;
+          }
           _recomputeListVisibleAction();
         });
-    isAtBottomNotifier.addListener(_recomputeListVisibleAction);
   }
 
   void onUserTyping(String receiverId) {
+    if (_isRecordingActionActive) return;
+
     final chatId = getChatId(currentUserId, receiverId);
-    _presenceService.setAction(
-      chatId: chatId,
-      currentUserId: currentUserId,
-      actionType: ChatActionType.typing,
-    );
+    final now = DateTime.now();
+    if (_lastTypingSentAt == null ||
+        now.difference(_lastTypingSentAt!).inMilliseconds >= 1500) {
+      _lastTypingSentAt = now;
+      _emitAction(chatId, ChatActionType.typing);
+    }
+
     _typingDebounce?.cancel();
-    _typingDebounce = Timer(const Duration(seconds: 2), () {
-      _presenceService.setAction(
-        chatId: chatId,
-        currentUserId: currentUserId,
-        actionType: ChatActionType.none,
-      );
+    _typingDebounce = Timer(const Duration(seconds: 3), () {
+      _lastTypingSentAt = null;
+      if (!_isRecordingActionActive) {
+        _emitAction(chatId, ChatActionType.none);
+      }
     });
   }
 
   void stopTyping(String receiverId) {
     _typingDebounce?.cancel();
-    final chatId = getChatId(currentUserId, receiverId);
-    _presenceService.setAction(
-      chatId: chatId,
-      currentUserId: currentUserId,
-      actionType: ChatActionType.none,
-    );
+    _lastTypingSentAt = null;
+    if (_isRecordingActionActive) return;
+    _emitAction(getChatId(currentUserId, receiverId), ChatActionType.none);
   }
 
   void startRecordingAction(String receiverId) {
+    _isRecordingActionActive = true;
+    _typingDebounce?.cancel();
+    _lastTypingSentAt = null;
+
     final chatId = getChatId(currentUserId, receiverId);
     _emitAction(chatId, ChatActionType.recording);
 
@@ -79,6 +86,7 @@ mixin ChatPresenceActionMixin on Cubit<ChatDetailsState> {
   }
 
   void pauseRecordingAction(String receiverId) {
+    _isRecordingActionActive = false;
     _recordingHeartbeat?.cancel();
     _emitAction(getChatId(currentUserId, receiverId), ChatActionType.none);
   }
@@ -87,6 +95,7 @@ mixin ChatPresenceActionMixin on Cubit<ChatDetailsState> {
       startRecordingAction(receiverId);
 
   void stopRecordingAction(String receiverId) {
+    _isRecordingActionActive = false;
     _recordingHeartbeat?.cancel();
     _emitAction(getChatId(currentUserId, receiverId), ChatActionType.none);
   }

@@ -571,7 +571,7 @@ class _FileSizeBadge extends StatelessWidget {
           const Icon(Icons.storage_rounded, color: Colors.white70, size: 14),
           const SizedBox(width: 4),
           Text(
-            formatMediaFileSize(bytes),
+            formatLocalizedMediaFileSize(context, bytes),
             style: const TextStyle(color: Colors.white70, fontSize: 12),
           ),
         ],

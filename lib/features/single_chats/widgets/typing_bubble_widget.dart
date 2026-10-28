@@ -18,13 +18,14 @@ class TypingBubbleWidget extends StatelessWidget {
     final bubbleColor = getReceiverBubbleColor(context);
 
     return Padding(
-      padding: const EdgeInsets.only(left: 3, bottom: 8, top: 4),
+      padding: const EdgeInsetsDirectional.only(start: 4, bottom: 8, top: 4),
       child: Row(
+        mainAxisSize: MainAxisSize.min,
         mainAxisAlignment: MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           Padding(
-            padding: const EdgeInsets.only(right: 8, bottom: 2),
+            padding: const EdgeInsetsDirectional.only(end: 8, bottom: 2),
             child: UserChatAvatar(
               userId: receiverUserId,
               userImgUrl: receiverUserImgUrl ?? AppImages.defaultUserImg,
@@ -35,12 +36,12 @@ class TypingBubbleWidget extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
               color: getReceiverBubbleColor(context),
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(18),
-                topRight: Radius.circular(18),
-                bottomRight: Radius.circular(18),
-                bottomLeft: Radius.circular(4),
-              ),
+              borderRadius: BorderRadiusDirectional.only(
+                topStart: const Radius.circular(18),
+                topEnd: const Radius.circular(18),
+                bottomEnd: const Radius.circular(18),
+                bottomStart: const Radius.circular(4),
+              ).resolve(Directionality.of(context)),
             ),
             child: TypingIndicatorWidget(
               color:

@@ -66,77 +66,97 @@ class _MessagesListViewState extends State<MessagesListView> {
   @override
   Widget build(BuildContext context) {
     final cubit = context.read<ChatDetailsCubit>();
-    return ValueListenableBuilder<ChatActionType>(
-      valueListenable: cubit.listVisibleAction,
-      builder: (context, action, _) {
-        final hasBubble = action != ChatActionType.none;
+    return Column(
+      children: [
+        Expanded(
+          child: BlocConsumer<ChatDetailsCubit, ChatDetailsState>(
+            listener: _handleMessagesLogic,
+            buildWhen:
+                (prev, curr) =>
+                    curr is MessagesSuccessLoaded ||
+                    curr is MessagesSending ||
+                    curr is ChatDetailsInitial,
+            builder: (context, state) {
+              final cubit = context.read<ChatDetailsCubit>();
+              final messages = cubit.cachedMessages;
 
-        return BlocConsumer<ChatDetailsCubit, ChatDetailsState>(
-          listener: _handleMessagesLogic,
-          buildWhen:
-              (prev, curr) =>
-                  curr is MessagesSuccessLoaded ||
-                  curr is MessagesSending ||
-                  curr is ChatDetailsInitial,
-          builder: (context, state) {
-            final cubit = context.read<ChatDetailsCubit>();
-            final messages = cubit.cachedMessages;
-
-            if (messages.isEmpty) {
-              if (state is MessagesError) {
-                return Center(child: Text(state.message));
+              if (messages.isEmpty) {
+                if (state is MessagesError) {
+                  return Center(child: Text(state.message));
+                }
+                if (!cubit.hasConfirmedInitialLoad) {
+                  return const ChatLoadingSkeleton();
+                }
+                return _buildEmptyState(context);
               }
-              if (!cubit.hasConfirmedInitialLoad) {
-                return const ChatLoadingSkeleton();
-              }
-              return _buildEmptyState(context);
-            }
 
-            return Stack(
-              children: [
-                ScrollablePositionedList.separated(
-                  physics: const AlwaysScrollableScrollPhysics(
-                    parent: ClampingScrollPhysics(),
-                  ),
-                  padding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                  itemScrollController: widget.itemScrollController,
-                  itemPositionsListener: widget.itemPositionsListener,
-                  reverse: true,
+              return Stack(
+                children: [
+                  ScrollablePositionedList.separated(
+                    physics: const AlwaysScrollableScrollPhysics(
+                      parent: ClampingScrollPhysics(),
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 8,
+                    ),
+                    itemScrollController: widget.itemScrollController,
+                    itemPositionsListener: widget.itemPositionsListener,
+                    reverse: true,
+                    itemCount: messages.length,
+                    itemBuilder: (BuildContext context, int index) {
+                      final cubit = context.read<ChatDetailsCubit>();
+                      final msgIndex = index;
+                      if (msgIndex < 0 || msgIndex >= messages.length) {
+                        return const SizedBox.shrink();
+                      }
 
-                  itemCount: messages.length + (hasBubble ? 1 : 0),
+                      final msg = messages[msgIndex];
+                      final bool isMe = msg.senderId == SupabaseProvider.id;
+                      final double? currentProgress =
+                          cubit.uploadProgressMap[msg.id];
 
-                  itemBuilder: (BuildContext context, int index) {
-                    final cubit = context.read<ChatDetailsCubit>();
-
-                    if (hasBubble && index == 0) {
-                      return action == ChatActionType.recording
-                          ? RecordingBubbleWidget(
-                            receiverUserId: widget.receiverUser.id,
-                            receiverUserImgUrl: widget.receiverUser.imageUrl,
-                          )
-                          : TypingBubbleWidget(
-                            receiverUserId: widget.receiverUser.id,
-                            receiverUserImgUrl: widget.receiverUser.imageUrl,
+                      final showDateSeparator =
+                          ChatDateSeparatorHelper.shouldShowDate<MessageModel>(
+                            messages: messages,
+                            index: msgIndex,
+                            getCreatedAt: (m) => m.createdAt,
                           );
-                    }
-                    final msgIndex = hasBubble ? index - 1 : index;
-                    if (msgIndex < 0 || msgIndex >= messages.length) {
-                      return const SizedBox.shrink();
-                    }
 
-                    final msg = messages[msgIndex];
-                    final bool isMe = msg.senderId == SupabaseProvider.id;
-                    final double? currentProgress =
-                        cubit.uploadProgressMap[msg.id];
-
-                    final showDateSeparator =
-                        ChatDateSeparatorHelper.shouldShowDate<MessageModel>(
-                          messages: messages,
-                          index: msgIndex,
-                          getCreatedAt: (m) => m.createdAt,
+                      if (msg.isSystemEvent) {
+                        final stableKey = correlationKeyFor(
+                          id: msg.id,
+                          clientMessageId: msg.clientMessageId,
                         );
+                        return Column(
+                          key: ValueKey('item_$stableKey'),
+                          children: [
+                            if (showDateSeparator)
+                              DateSeparatorGlassmorphismWidget(
+                                key: ValueKey('date_$stableKey'),
+                                date: FormattedDate.getChatTime(msg.createdAt),
+                              ),
+                            ChatSystemEventSeparator(
+                              text: ChatSystemEventTextBuilder.build(
+                                message: msg,
+                                currentUserId: SupabaseProvider.id,
+                                otherUserName: widget.receiverUser.name,
+                              ),
+                            ),
+                          ],
+                        );
+                      }
 
-                    if (msg.isSystemEvent) {
+                      final showAvatar =
+                          ChatDateSeparatorHelper.isLastInSenderCluster<
+                            MessageModel
+                          >(
+                            messages: messages,
+                            index: msgIndex,
+                            getSenderId: (m) => m.senderId,
+                            getCreatedAt: (m) => m.createdAt,
+                          );
+
                       final stableKey = correlationKeyFor(
                         id: msg.id,
                         clientMessageId: msg.clientMessageId,
@@ -149,64 +169,55 @@ class _MessagesListViewState extends State<MessagesListView> {
                               key: ValueKey('date_$stableKey'),
                               date: FormattedDate.getChatTime(msg.createdAt),
                             ),
-                          ChatSystemEventSeparator(
-                            text: ChatSystemEventTextBuilder.build(
-                              message: msg,
-                              currentUserId: SupabaseProvider.id,
-                              otherUserName: widget.receiverUser.name,
-                            ),
+                          ChatBubble(
+                            userImgUrl:
+                                isMe ? null : widget.receiverUser.imageUrl,
+                            receiverUser: widget.receiverUser,
+                            message: msg,
+                            onReply: widget.onReply,
+                            onEdit: widget.onEdit,
+                            itemScrollController: widget.itemScrollController,
+                            isMe: isMe,
+                            uploadProgress: currentProgress,
+                            showAvatar: showAvatar,
                           ),
                         ],
                       );
-                    }
-
-                    final showAvatar =
-                        ChatDateSeparatorHelper.isLastInSenderCluster<
-                          MessageModel
-                        >(
-                          messages: messages,
-                          index: msgIndex,
-                          getSenderId: (m) => m.senderId,
-                          getCreatedAt: (m) => m.createdAt,
-                        );
-
-                    final stableKey = correlationKeyFor(
-                      id: msg.id,
-                      clientMessageId: msg.clientMessageId,
-                    );
-                    return Column(
-                      key: ValueKey('item_$stableKey'),
-                      children: [
-                        if (showDateSeparator)
-                          DateSeparatorGlassmorphismWidget(
-                            key: ValueKey('date_$stableKey'),
-                            date: FormattedDate.getChatTime(msg.createdAt),
-                          ),
-                        ChatBubble(
-                          userImgUrl:
-                              isMe ? null : widget.receiverUser.imageUrl,
-                          receiverUser: widget.receiverUser,
-                          message: msg,
-                          onReply: widget.onReply,
-                          onEdit: widget.onEdit,
-                          itemScrollController: widget.itemScrollController,
-                          isMe: isMe,
-                          uploadProgress: currentProgress,
-                          showAvatar: showAvatar,
+                    },
+                    separatorBuilder:
+                        (context, index) => __buildSeparator(index, messages),
+                  ),
+                  _buildScrollToBottomButton(context),
+                ],
+              );
+            },
+          ),
+        ),
+        ValueListenableBuilder<ChatActionType>(
+          valueListenable: cubit.listVisibleAction,
+          builder: (context, action, _) {
+            if (action == ChatActionType.none) {
+              return const SizedBox.shrink();
+            }
+            return Padding(
+              padding: const EdgeInsets.fromLTRB(20, 4, 20, 4),
+              child: Align(
+                alignment: AlignmentDirectional.centerStart,
+                child:
+                    action == ChatActionType.recording
+                        ? RecordingBubbleWidget(
+                          receiverUserId: widget.receiverUser.id,
+                          receiverUserImgUrl: widget.receiverUser.imageUrl,
+                        )
+                        : TypingBubbleWidget(
+                          receiverUserId: widget.receiverUser.id,
+                          receiverUserImgUrl: widget.receiverUser.imageUrl,
                         ),
-                      ],
-                    );
-                  },
-                  separatorBuilder:
-                      (context, index) =>
-                          __buildSeparator(index, messages, hasBubble),
-                ),
-                _buildScrollToBottomButton(context),
-              ],
+              ),
             );
           },
-        );
-      },
+        ),
+      ],
     );
   }
 
@@ -268,15 +279,8 @@ class _MessagesListViewState extends State<MessagesListView> {
     );
   }
 
-  Widget __buildSeparator(
-    int index,
-    List<MessageModel> messages,
-    bool isTyping,
-  ) {
-    if (isTyping && index == 0) {
-      return const Gap(8);
-    }
-    final i = isTyping ? index - 1 : index;
+  Widget __buildSeparator(int index, List<MessageModel> messages) {
+    final i = index;
     if (i < 0 || i + 1 >= messages.length) {
       return const Gap(8);
     }

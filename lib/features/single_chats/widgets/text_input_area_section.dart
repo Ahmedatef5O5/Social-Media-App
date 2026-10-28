@@ -187,46 +187,55 @@ class _TextInputAreaSectionState extends State<TextInputAreaSection> {
                     border: InputBorder.none,
                     enabledBorder: InputBorder.none,
                     focusedBorder: InputBorder.none,
-                    contentPadding: const EdgeInsets.symmetric(
-                      vertical: 10,
-                      horizontal: 8,
+                    contentPadding: const EdgeInsetsDirectional.fromSTEB(
+                      6,
+                      10,
+                      6,
+                      10,
                     ),
-                    suffixIcon: AiActionIcon(
-                      controller: widget.messageController,
-                      surface: AiSurfaceType.chatMessage,
-                      generationAction: AiActionType.replySuggestion,
-                      actionContext: AiActionContext.chatReply,
-                      hasReplyContext: widget.replyTo != null,
-                      targetUserName:
-                          widget.replyTo == null
-                              ? widget.receiverUser.name
-                              : (widget.replyTo!.senderId ==
-                                      context
-                                          .read<ChatDetailsCubit>()
-                                          .currentUserId
-                                  ? context.l10n.you
-                                  : widget.receiverUser.name),
-                      targetText:
-                          (widget.replyTo == null ||
-                                  widget.replyTo!.messageType == 'text')
-                              ? widget.replyTo?.text
-                              : null,
-                      mediaCaption:
-                          (widget.replyTo != null &&
-                                  widget.replyTo!.messageType != 'text')
-                              ? widget.replyTo!.caption
-                              : null,
-                      targetMediaType: AiTargetMediaType.fromWireMessageType(
-                        widget.replyTo?.messageType,
+                    suffixIconConstraints: const BoxConstraints(
+                      minWidth: 0,
+                      minHeight: 0,
+                    ),
+                    suffixIcon: Padding(
+                      padding: const EdgeInsetsDirectional.only(end: 2),
+                      child: AiActionIcon(
+                        controller: widget.messageController,
+                        surface: AiSurfaceType.chatMessage,
+                        generationAction: AiActionType.replySuggestion,
+                        actionContext: AiActionContext.chatReply,
+                        hasReplyContext: widget.replyTo != null,
+                        targetUserName:
+                            widget.replyTo == null
+                                ? widget.receiverUser.name
+                                : (widget.replyTo!.senderId ==
+                                        context
+                                            .read<ChatDetailsCubit>()
+                                            .currentUserId
+                                    ? context.l10n.you
+                                    : widget.receiverUser.name),
+                        targetText:
+                            (widget.replyTo == null ||
+                                    widget.replyTo!.messageType == 'text')
+                                ? widget.replyTo?.text
+                                : null,
+                        mediaCaption:
+                            (widget.replyTo != null &&
+                                    widget.replyTo!.messageType != 'text')
+                                ? widget.replyTo!.caption
+                                : null,
+                        targetMediaType: AiTargetMediaType.fromWireMessageType(
+                          widget.replyTo?.messageType,
+                        ),
+                        targetImageBytesProvider:
+                            (widget.replyTo != null &&
+                                    widget.replyTo!.messageType == 'image' &&
+                                    widget.replyTo!.imageUrl != null)
+                                ? () => RemoteMediaFetcher.fetchBytes(
+                                  widget.replyTo!.imageUrl!,
+                                )
+                                : null,
                       ),
-                      targetImageBytesProvider:
-                          (widget.replyTo != null &&
-                                  widget.replyTo!.messageType == 'image' &&
-                                  widget.replyTo!.imageUrl != null)
-                              ? () => RemoteMediaFetcher.fetchBytes(
-                                widget.replyTo!.imageUrl!,
-                              )
-                              : null,
                     ),
                   ),
                 ),

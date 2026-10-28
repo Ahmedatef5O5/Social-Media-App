@@ -81,6 +81,7 @@ class _ChatDetailsViewState extends State<ChatDetailsView>
     _itemPositionsListener.itemPositions.addListener(_scrollListener);
 
     _chatCubit = context.read<ChatDetailsCubit>();
+    _chatCubit.onChatOpened(_receiverId);
     _chatCubit.resolveChatPermission(_receiverId);
     _chatCubit.watchMuteStatus(_receiverId);
     _chatCubit.watchBlockStatus(_receiverId);
@@ -184,8 +185,10 @@ class _ChatDetailsViewState extends State<ChatDetailsView>
 
   @override
   void didPop() {
-    if (mounted && !_chatCubit.isClosed) {
-      _chatCubit.markAsRead(senderId: _receiverId);
+    if (!_chatCubit.isClosed) {
+      _chatCubit.onChatClosed(_receiverId);
+    } else {
+      _chatCubit.chatsCubit?.setActiveChatPeerId(null);
     }
   }
 
@@ -311,6 +314,7 @@ class _ChatDetailsViewState extends State<ChatDetailsView>
     routeObserver.unsubscribe(this);
 
     ActiveScreenTracker.setActiveChatReceiver(null);
+    _chatCubit.chatsCubit?.setActiveChatPeerId(null);
     _messageController.dispose();
     _showScrollButtonNotifier.dispose();
     if (!_chatCubit.isClosed) {

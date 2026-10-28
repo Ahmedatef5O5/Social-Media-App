@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class ReelCategoryOption {
   final String value;
@@ -10,6 +11,29 @@ class ReelCategoryOption {
     required this.label,
     required this.icon,
   });
+
+  String localizedLabel(BuildContext context) {
+    switch (value.toLowerCase()) {
+      case 'news':
+        return context.l10n.categoryNews;
+      case 'football':
+        return context.l10n.categoryFootball;
+      case 'tech':
+        return context.l10n.categoryTech;
+      case 'comedy':
+        return context.l10n.categoryComedy;
+      case 'islamic':
+        return context.l10n.categoryIslamic;
+      case 'cooking':
+        return context.l10n.categoryCooking;
+      case 'gaming':
+        return context.l10n.categoryGaming;
+      case 'movies':
+        return context.l10n.categoryMovies;
+      default:
+        return label;
+    }
+  }
 }
 
 class ReelCategories {

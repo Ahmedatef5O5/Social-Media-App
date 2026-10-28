@@ -173,6 +173,7 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
         wasBackgrounded &&
         _activeReceiverId != null) {
       getMessagesStream(receiverId: _activeReceiverId!);
+      watchReceiverAction(_activeReceiverId!);
     }
   }
 
@@ -437,6 +438,29 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
             emit(MessagesSuccessLoaded(messages: resolved));
 
             _persistMessagesSnapshot(_messagesSnapshotKey!, resolved);
+
+            final latestServerTime =
+                resolved.isNotEmpty ? resolved.first.createdAt : null;
+            final hasUnreadIncoming = resolved.any(
+              (m) => m.senderId == receiverId && !m.isRead,
+            );
+            if (isAtBottomNotifier.value) {
+              if (hasUnreadIncoming ||
+                  !SettingsRepository.instance.readReceipts) {
+                unawaited(
+                  markAsRead(
+                    senderId: receiverId,
+                    upToServerTime: latestServerTime,
+                  ),
+                );
+              } else {
+                chatsCubit?.resetChatUnreadCount(
+                  receiverId,
+                  upToServerTime: latestServerTime,
+                );
+              }
+            }
+            syncLatestChatPreview(receiverId);
           },
           onError: (e) {
             debugPrint('Messages stream error: $e');
@@ -451,6 +475,10 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
     _pendingMessagesSnapshot = [];
     pendingNewCountNotifier.value = 0;
     emit(MessagesSuccessLoaded(messages: cachedMessages));
+    if (_activeReceiverId != null) {
+      unawaited(markAsRead(senderId: _activeReceiverId!));
+      syncLatestChatPreview(_activeReceiverId!);
+    }
   }
 
   // Keyed by stable logical identity (clientMessageId when present, else
@@ -489,8 +517,87 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
     return _snapshotCache.read(key);
   }
 
-  Future<void> markAsRead({required String senderId}) async {
+  String _buildChatListPreviewText({
+    required String messageType,
+    required String text,
+    String? fileName,
+    String? caption,
+  }) {
+    if (messageType == 'file' || messageType == 'document') {
+      return (fileName != null && fileName.trim().isNotEmpty)
+          ? fileName.trim()
+          : text;
+    }
+    if (text.isNotEmpty) return text;
+    return caption ?? '';
+  }
+
+  @override
+  void syncLatestChatPreview(String receiverId) {
+    final parent = chatsCubit;
+    if (parent == null) return;
+    if (cachedMessages.isEmpty) {
+      unawaited(parent.getChats(isRefresh: true, silent: true));
+      return;
+    }
+
+    final latest = cachedMessages.first;
+    final existingChat = parent.cachedChats.firstWhereOrNull(
+      (c) => c.id == receiverId,
+    );
+    final hasNewerReactionPreview =
+        existingChat != null &&
+        existingChat.lastMessageType == 'message_react' &&
+        existingChat.lastMessageTime != null &&
+        existingChat.lastMessageTime!.isAfter(latest.createdAt);
+
+    if (hasNewerReactionPreview) return;
+
+    parent.updateChatLastMessagePreview(
+      otherUserId: receiverId,
+      lastMessage: _buildChatListPreviewText(
+        messageType: latest.messageType,
+        text: latest.text,
+        fileName: latest.fileName,
+        caption: latest.caption,
+      ),
+      lastMessageType: latest.messageType,
+      lastMessageTime: latest.createdAt,
+      lastMessageIsMe: latest.senderId == currentUserId,
+      lastMessageIsRead: latest.isRead,
+      unreadCount: isAtBottomNotifier.value ? 0 : null,
+    );
+  }
+
+  void onChatOpened(String receiverId) {
+    chatsCubit?.setActiveChatPeerId(receiverId);
+    unawaited(markAsRead(senderId: receiverId));
+  }
+
+  void onChatClosed(String receiverId) {
+    unawaited(markAsRead(senderId: receiverId));
+    chatsCubit?.setActiveChatPeerId(null);
+  }
+
+  Future<void> markAsRead({
+    required String senderId,
+    DateTime? upToServerTime,
+  }) async {
+    final effectiveServerTime =
+        upToServerTime ??
+        (cachedMessages.isNotEmpty ? cachedMessages.first.createdAt : null);
+
+    chatsCubit?.resetChatUnreadCount(
+      senderId,
+      upToServerTime: effectiveServerTime,
+    );
+
     if (!SettingsRepository.instance.readReceipts) return;
+
+    chatsCubit?.beginMarkPeerRead(
+      senderId,
+      upToServerTime: effectiveServerTime,
+    );
     try {
       await _chatServices.markMessagesAsRead(
         senderId: senderId,
@@ -498,7 +605,11 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
       );
     } catch (e) {
       debugPrint('error marking as read: $e');
-      emit(MessagesError(SupabaseErrorMapper.toUserMessage(e)));
+      if (!isClosed) {
+        emit(MessagesError(SupabaseErrorMapper.toUserMessage(e)));
+      }
+    } finally {
+      chatsCubit?.endMarkPeerRead(senderId);
     }
   }
 
@@ -599,6 +710,48 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
     cachedMessages = updatedMessages;
     _protectedKeys.add(correlationKeyFor(id: tempId, clientMessageId: tempId));
     emit(MessagesSending(messages: updatedMessages));
+    chatsCubit?.updateChatLastMessagePreview(
+      otherUserId: receiverId,
+      lastMessage: _buildChatListPreviewText(
+        messageType: messageType,
+        text: messageText,
+        fileName: fileName,
+        caption: caption,
+      ),
+      lastMessageType: messageType,
+      lastMessageTime: optimisticMessage.createdAt,
+      lastMessageIsMe: true,
+      lastMessageIsRead: false,
+      unreadCount: 0,
+    );
+    chatsCubit?.updateChatLastMessagePreview(
+      otherUserId: receiverId,
+      lastMessage: _buildChatListPreviewText(
+        messageType: messageType,
+        text: messageText,
+        fileName: fileName,
+        caption: caption,
+      ),
+      lastMessageType: messageType,
+      lastMessageTime: optimisticMessage.createdAt,
+      lastMessageIsMe: true,
+      lastMessageIsRead: false,
+      unreadCount: 0,
+    );
+    chatsCubit?.updateChatLastMessagePreview(
+      otherUserId: receiverId,
+      lastMessage: _buildChatListPreviewText(
+        messageType: messageType,
+        text: messageText,
+        fileName: fileName,
+        caption: caption,
+      ),
+      lastMessageType: messageType,
+      lastMessageTime: optimisticMessage.createdAt,
+      lastMessageIsMe: true,
+      lastMessageIsRead: false,
+      unreadCount: 0,
+    );
 
     final cancelToken = dio_pkg.CancelToken();
     _cancelTokens[tempId] = cancelToken;
@@ -822,6 +975,20 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
       );
       _registerBubbleKeys(cachedMessages);
       emit(MessagesSuccessLoaded(messages: cachedMessages));
+      chatsCubit?.updateChatLastMessagePreview(
+        otherUserId: receiverId,
+        lastMessage: _buildChatListPreviewText(
+          messageType: messageType,
+          text: messageText,
+          fileName: fileName,
+          caption: caption,
+        ),
+        lastMessageType: messageType,
+        lastMessageTime: sent.createdAt,
+        lastMessageIsMe: true,
+        lastMessageIsRead: false,
+        unreadCount: 0,
+      );
 
       if (messageType != 'call') {
         if (isClosed) return;
@@ -844,6 +1011,7 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
       }
       _cancelTokens.remove(tempId);
     } on UploadCanceledException {
+      syncLatestChatPreview(receiverId);
       return;
     } catch (e) {
       _cancelTokens.remove(tempId);
@@ -852,6 +1020,7 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
       if (e is dio_pkg.DioException &&
           e.type == dio_pkg.DioExceptionType.cancel) {
         debugPrint("User canceled the upload");
+        syncLatestChatPreview(receiverId);
         return;
       }
 
@@ -863,6 +1032,7 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
       _protectedKeys.remove(
         correlationKeyFor(id: tempId, clientMessageId: tempId),
       );
+      syncLatestChatPreview(receiverId);
       debugPrint('error sending message: $e');
 
       if (e.toString().contains('session_expired')) {
@@ -899,8 +1069,10 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
           ? m.copyWith(caption: trimmed, isEdited: true)
           : m.copyWith(text: trimmed, isEdited: true);
     });
-    // _emitLoaded();
     emit(MessagesSuccessLoaded(messages: cachedMessages));
+    if (_activeReceiverId != null) {
+      syncLatestChatPreview(_activeReceiverId!);
+    }
 
     try {
       await _chatServices.editMessage(
@@ -993,6 +1165,7 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
   }) async {
     try {
       await _chatServices.deleteMessage(messageId: messageId);
+      unawaited(chatsCubit?.getChats(isRefresh: true, silent: true));
     } catch (e) {
       debugPrint('error deleting message: $e');
       emit(MessagesError(SupabaseErrorMapper.toUserMessage(e)));

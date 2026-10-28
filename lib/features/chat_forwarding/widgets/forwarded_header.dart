@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:social_media_app/core/widgets/app_avatar.dart';
 import '../../../core/constants/app_images.dart';
+import '../../../core/helpers/bidi_text_helper.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/supabase/supabase_provider.dart';
 import '../../ai_chat/helpers/ai_model_iconography.dart';
@@ -149,15 +150,16 @@ class _ForwardedHeaderState extends State<ForwardedHeader> {
       ),
     );
 
-    final nameWidget = GestureDetector(
-      onTap: _isAi ? _openAiChat : _onNameTap,
-      behavior: HitTestBehavior.opaque,
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 160),
+    final nameWidget = Flexible(
+      fit: FlexFit.loose,
+      child: GestureDetector(
+        onTap: _isAi ? _openAiChat : _onNameTap,
+        behavior: HitTestBehavior.opaque,
         child: Text(
           widget.name,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
+          textDirection: BidiTextHelper.detectDirection(widget.name),
           style: TextStyle(
             fontSize: 12.5,
             color: labelColor,
@@ -169,6 +171,8 @@ class _ForwardedHeaderState extends State<ForwardedHeader> {
 
     final textWidget = Text(
       context.l10n.forwardedFrom,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
       style: TextStyle(
         fontSize: 12.5,
         color: labelColor,
@@ -176,28 +180,31 @@ class _ForwardedHeaderState extends State<ForwardedHeader> {
       ),
     );
 
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 4, top: 1),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children:
-            isRtl
-                ? [
-                  iconWidget,
-                  textWidget,
-                  const SizedBox(width: 4),
-                  nameWidget,
-                  const SizedBox(width: 4),
-                  avatarWidget,
-                ]
-                : [
-                  iconWidget,
-                  textWidget,
-                  avatarWidget,
-                  const SizedBox(width: 4),
-                  nameWidget,
-                ],
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 4, top: 1),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children:
+              isRtl
+                  ? [
+                    iconWidget,
+                    textWidget,
+                    const SizedBox(width: 4),
+                    nameWidget,
+                    const SizedBox(width: 4),
+                    avatarWidget,
+                  ]
+                  : [
+                    iconWidget,
+                    textWidget,
+                    avatarWidget,
+                    const SizedBox(width: 4),
+                    nameWidget,
+                  ],
+        ),
       ),
     );
   }

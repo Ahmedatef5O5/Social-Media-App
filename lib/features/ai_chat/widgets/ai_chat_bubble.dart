@@ -122,12 +122,13 @@ class _AiChatBubbleState extends State<AiChatBubble> {
     }
   }
 
-  BorderRadius _radius(bool isMe) => BorderRadius.only(
-    topLeft: const Radius.circular(16),
-    topRight: const Radius.circular(16),
-    bottomLeft: Radius.circular(isMe ? 16 : 4),
-    bottomRight: Radius.circular(isMe ? 4 : 16),
-  );
+  BorderRadius _radius(BuildContext context, bool isMe) =>
+      BorderRadiusDirectional.only(
+        topStart: const Radius.circular(16),
+        topEnd: const Radius.circular(16),
+        bottomStart: Radius.circular(isMe ? 16 : 4),
+        bottomEnd: Radius.circular(isMe ? 4 : 16),
+      ).resolve(Directionality.of(context));
 
   @override
   Widget build(BuildContext context) {
@@ -167,7 +168,7 @@ class _AiChatBubbleState extends State<AiChatBubble> {
                   )
                   : null,
           color: isMe ? null : Colors.white.withValues(alpha: 0.08),
-          borderRadius: _radius(isMe),
+          borderRadius: _radius(context, isMe),
           border: Border.all(
             color: Colors.white.withValues(alpha: isMe ? 0.14 : 0.12),
           ),
@@ -642,7 +643,7 @@ class _AiChatBubbleState extends State<AiChatBubble> {
           height: 220,
           child: MediaStateOverlay(
             state: transferState,
-            borderRadius: _radius(isMe),
+            borderRadius: _radius(context, isMe),
             onCancelTap: widget.onCancelUpload,
             fileSizeBytes: message.fileSizeBytes,
 
@@ -667,7 +668,7 @@ class _AiChatBubbleState extends State<AiChatBubble> {
           height: 200,
           child: MediaStateOverlay(
             state: transferState,
-            borderRadius: _radius(isMe),
+            borderRadius: _radius(context, isMe),
             isVideo: true,
             durationSeconds: message.durationSeconds,
             onCancelTap: widget.onCancelUpload,

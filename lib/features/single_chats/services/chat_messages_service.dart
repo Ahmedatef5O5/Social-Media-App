@@ -71,7 +71,12 @@ class ChatMessagesService {
         .from(SupabaseConstants.messages)
         .select()
         .eq(MessagesColumns.conversationId, conversationId)
-        .inFilter(MessagesColumns.messageType, ['image', 'video', 'voice'])
+        .inFilter(MessagesColumns.messageType, [
+          'image',
+          'video',
+          'voice',
+          'file',
+        ])
         .order(MessagesColumns.createdAt, ascending: false)
         .limit(limit);
 

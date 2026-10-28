@@ -59,12 +59,12 @@ class _VideoMessageWidgetState extends State<VideoMessageWidget> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDarkMode = theme.brightness == Brightness.dark;
-    final borderRadius = BorderRadius.only(
-      topLeft: const Radius.circular(15),
-      topRight: const Radius.circular(15),
-      bottomRight: Radius.circular(widget.isMe ? 0 : 15),
-      bottomLeft: Radius.circular(widget.isMe ? 15 : 0),
-    );
+    final borderRadius = BorderRadiusDirectional.only(
+      topStart: const Radius.circular(15),
+      topEnd: const Radius.circular(15),
+      bottomStart: Radius.circular(widget.isMe ? 15 : 0),
+      bottomEnd: Radius.circular(widget.isMe ? 0 : 15),
+    ).resolve(Directionality.of(context));
 
     final thumbnailUrl =
         _isLocal ? null : widget.videoUrl.cloudinaryVideoThumbnailUrl;

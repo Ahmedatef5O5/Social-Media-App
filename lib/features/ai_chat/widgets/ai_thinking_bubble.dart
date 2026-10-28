@@ -37,12 +37,12 @@ class AiThinkingBubble extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               decoration: BoxDecoration(
                 color: Colors.white.withValues(alpha: 0.08),
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(20),
-                  topRight: Radius.circular(20),
-                  bottomLeft: Radius.circular(4),
-                  bottomRight: Radius.circular(20),
-                ),
+                borderRadius: BorderRadiusDirectional.only(
+                  topStart: const Radius.circular(20),
+                  topEnd: const Radius.circular(20),
+                  bottomStart: const Radius.circular(4),
+                  bottomEnd: const Radius.circular(20),
+                ).resolve(Directionality.of(context)),
                 border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
               ),
               child: Row(

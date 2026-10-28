@@ -137,17 +137,16 @@ class _CategoryTileState extends State<CategoryTile> {
                           letterSpacing: context.ls(0.3),
                           fontFamily: theme.textTheme.bodyMedium?.fontFamily,
                         ),
-                        child: Text(widget.category.label),
+                        child: Text(widget.category.localizedLabel(context)),
                       ),
                     ],
                   ),
                 ),
               ),
-
               if (widget.isSelected)
-                Positioned(
+                PositionedDirectional(
                   top: 14,
-                  right: 14,
+                  end: 14,
                   child: TweenAnimationBuilder<double>(
                     tween: Tween(begin: 0.0, end: 1.0),
                     duration: const Duration(milliseconds: 250),

@@ -121,13 +121,22 @@ class ChatPresenceService {
     required String currentUserId,
     required ChatActionType actionType,
   }) async {
-    await _supabase.from(SupabaseConstants.typingStatus).upsert({
-      TypingStatusColumns.chatId: chatId,
-      TypingStatusColumns.userId: currentUserId,
-      TypingStatusColumns.isTyping: actionType == ChatActionType.typing,
-      'action_type': actionType.value,
-      TypingStatusColumns.updatedAt: DateTime.now().toUtc().toIso8601String(),
-    });
+    try {
+      await _supabase.from(SupabaseConstants.typingStatus).upsert(
+        {
+          TypingStatusColumns.chatId: chatId,
+          TypingStatusColumns.userId: currentUserId,
+          TypingStatusColumns.isTyping: actionType == ChatActionType.typing,
+          'action_type': actionType.value,
+          TypingStatusColumns.updatedAt:
+              DateTime.now().toUtc().toIso8601String(),
+        },
+        onConflict:
+            '${TypingStatusColumns.chatId},${TypingStatusColumns.userId}',
+      );
+    } catch (e) {
+      debugPrint('[setAction] FAILED to write presence: $e');
+    }
   }
 
   static const int _presenceStaleAfterSeconds = 5;
@@ -139,6 +148,9 @@ class ChatPresenceService {
   }) {
     final controller = StreamController<ChatActionType>.broadcast();
     List<Map<String, dynamic>> latestRows = const [];
+    DateTime? localReceiveTime;
+    String? lastUpdatedAtStr;
+    bool hasProcessedInitialSnapshot = false;
 
     ChatActionType computeCurrent() {
       final row = latestRows.where(
@@ -150,17 +162,30 @@ class ChatPresenceService {
       if (actionType == ChatActionType.none) return ChatActionType.none;
 
       final updatedAtRaw = row.first[TypingStatusColumns.updatedAt];
-      if (updatedAtRaw == null) return ChatActionType.none;
-      final updatedAt = DateTime.parse(updatedAtRaw.toString()).toUtc();
-      if (DateTime.now().toUtc().difference(updatedAt).inSeconds >
+      if (updatedAtRaw != null) {
+        final updatedAt = DateTime.tryParse(updatedAtRaw.toString())?.toUtc();
+        if (updatedAt != null &&
+            DateTime.now().toUtc().difference(updatedAt).abs().inMinutes > 10) {
+          return ChatActionType.none;
+        }
+      }
+
+      if (localReceiveTime == null) return ChatActionType.none;
+      if (DateTime.now().difference(localReceiveTime!).inSeconds >
           _presenceStaleAfterSeconds) {
         return ChatActionType.none;
       }
+
       return actionType;
     }
 
+    ChatActionType? lastEmitted;
     void emit() {
-      if (!controller.isClosed) controller.add(computeCurrent());
+      if (controller.isClosed) return;
+      final current = computeCurrent();
+      if (current == lastEmitted) return;
+      lastEmitted = current;
+      controller.add(current);
     }
 
     final sub = _supabase
@@ -170,6 +195,38 @@ class ChatPresenceService {
         )
         .eq(TypingStatusColumns.chatId, chatId)
         .listen((rows) {
+          final now = DateTime.now();
+          final nowUtc = now.toUtc();
+          final receiverRows = rows.where(
+            (r) => r[TypingStatusColumns.userId] == receiverId,
+          );
+
+          if (receiverRows.isNotEmpty) {
+            final row = receiverRows.first;
+            final actionType = ChatActionTypeX.fromValue(row['action_type']);
+            final updatedAtStr =
+                row[TypingStatusColumns.updatedAt]?.toString() ?? '';
+
+            if (actionType == ChatActionType.none) {
+              localReceiveTime = null;
+              lastUpdatedAtStr = updatedAtStr;
+            } else if (!hasProcessedInitialSnapshot) {
+              lastUpdatedAtStr = updatedAtStr;
+              final parsed = DateTime.tryParse(updatedAtStr)?.toUtc();
+              if (parsed != null &&
+                  nowUtc.difference(parsed).abs().inSeconds <=
+                      _presenceStaleAfterSeconds) {
+                localReceiveTime = now;
+              }
+            } else if (lastUpdatedAtStr != updatedAtStr) {
+              localReceiveTime = now;
+              lastUpdatedAtStr = updatedAtStr;
+            }
+          } else {
+            localReceiveTime = null;
+          }
+
+          hasProcessedInitialSnapshot = true;
           latestRows = rows;
           emit();
         }, onError: (e) => debugPrint('[getActionStream] stream error: $e'));
@@ -243,15 +300,15 @@ class ChatPresenceService {
 
     final Map<
       String,
-      ({String userId, ChatActionType action, DateTime updatedAt})
+      ({String userId, ChatActionType action, DateTime receivedAt})
     >
     byChatId = {};
 
     Map<String, ChatActionType> computeCurrent() {
-      final now = DateTime.now().toUtc();
+      final now = DateTime.now();
       byChatId.removeWhere(
         (_, v) =>
-            now.difference(v.updatedAt).inSeconds > _presenceStaleAfterSeconds,
+            now.difference(v.receivedAt).inSeconds > _presenceStaleAfterSeconds,
       );
       return {for (final v in byChatId.values) v.userId: v.action};
     }
@@ -301,11 +358,20 @@ class ChatPresenceService {
                         ? DateTime.tryParse(updatedAtRaw)?.toUtc()
                         : null;
 
-                if (actionType != ChatActionType.none && updatedAt != null) {
+                final isFreshEnough =
+                    updatedAt == null ||
+                    DateTime.now()
+                            .toUtc()
+                            .difference(updatedAt)
+                            .abs()
+                            .inMinutes <=
+                        10;
+
+                if (actionType != ChatActionType.none && isFreshEnough) {
                   byChatId[chatId] = (
                     userId: userId,
                     action: actionType,
-                    updatedAt: updatedAt,
+                    receivedAt: DateTime.now(),
                   );
                 } else {
                   byChatId.remove(chatId);

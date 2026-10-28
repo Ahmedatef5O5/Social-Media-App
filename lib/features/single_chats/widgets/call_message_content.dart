@@ -102,12 +102,12 @@ class CallMessageContent extends StatelessWidget {
           constraints: BoxConstraints(maxWidth: maxBubbleWidth, minWidth: 180),
           decoration: BoxDecoration(
             color: bubbleBg,
-            borderRadius: BorderRadius.only(
-              topLeft: const Radius.circular(20),
-              topRight: const Radius.circular(20),
-              bottomLeft: Radius.circular(isMe ? 20 : 4),
-              bottomRight: Radius.circular(isMe ? 4 : 20),
-            ),
+            borderRadius: BorderRadiusDirectional.only(
+              topStart: const Radius.circular(20),
+              topEnd: const Radius.circular(20),
+              bottomStart: Radius.circular(isMe ? 20 : 4),
+              bottomEnd: Radius.circular(isMe ? 4 : 20),
+            ).resolve(Directionality.of(context)),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.05),

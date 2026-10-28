@@ -44,7 +44,7 @@ class MediaSizeBadge extends StatelessWidget {
           Icon(icon, size: 13, color: isDark ? Colors.white70 : primary),
           const SizedBox(width: 5),
           Text(
-            formatMediaFileSize(fileSizeBytes),
+            formatLocalizedMediaFileSize(context, fileSizeBytes),
             style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w600,

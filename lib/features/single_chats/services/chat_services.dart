@@ -1,5 +1,7 @@
+import 'dart:ui';
 import 'package:social_media_app/core/services/cloudinary_storage_services.dart';
 import 'package:social_media_app/features/single_chats/models/message_model.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/presence/models/chat_action_type.dart';
 import '../../../core/services/network_status_service.dart';
 import '../models/chat_block_status.dart';
@@ -36,8 +38,10 @@ class ChatServices {
   Future<List<ChatUserModel>> getChatsList(String currentUserId) =>
       _list.getChatsList(currentUserId);
 
-  Stream<void> getChatsStream(String currentUserId) =>
-      _list.getChatsStream(currentUserId);
+  Stream<PostgresChangePayload> getChatsStream(
+    String currentUserId, {
+    VoidCallback? onReconnected,
+  }) => _list.getChatsStream(currentUserId, onReconnected: onReconnected);
 
   // ── Messages ────────────────────────────────────────────────────────────
   Stream<List<MessageModel>> getMessagesStream({

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
+import 'package:social_media_app/core/localization/l10n_extension.dart';
 import '../../../core/constants/app_images.dart';
-import '../../../core/toast/app_toast.dart';
 import '../../../core/widgets/custom_tab_wrapper.dart';
 import '../../../core/widgets/empty_findings_animation_widget.dart';
 import '../cubits/posts_cubit/posts_cubit.dart';
@@ -10,7 +10,6 @@ import '../cubits/saved_posts_cubit/saved_posts_cubit.dart';
 import '../helpers/posts_skeleton_items.dart';
 import '../models/post_model.dart';
 import '../widgets/post_item_widget.dart';
-import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class SavedPostsView extends StatefulWidget {
   const SavedPostsView({super.key, required this.userId});
@@ -62,18 +61,7 @@ class _SavedPostsViewState extends State<SavedPostsView> {
                   fontSize: 20,
                 ),
               ),
-              actions: [
-                IconButton(
-                  icon: Icon(
-                    Icons.more_vert_rounded,
-                    color: theme.primaryColor,
-                  ),
-                  onPressed: () {
-                    AppToast.info(context.l10n.thisFeatureIsComing);
-                  },
-                ),
-                const Gap(8),
-              ],
+              actions: const [_SavedPostsCountBadge(), Gap(16)],
             ),
           ];
         },
@@ -94,6 +82,75 @@ class _SavedPostsViewState extends State<SavedPostsView> {
           },
         ),
       ),
+    );
+  }
+}
+
+class _SavedPostsCountBadge extends StatelessWidget {
+  const _SavedPostsCountBadge();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return BlocBuilder<SavedPostsCubit, SavedPostsState>(
+      builder: (context, savedState) {
+        if (savedState is! SavedPostsLoaded) {
+          return const SizedBox.shrink();
+        }
+
+        final postIds = savedState.postIds;
+
+        return BlocBuilder<PostsCubit, PostsState>(
+          builder: (context, postsState) {
+            final allPosts =
+                postsState is PostsLoaded ? postsState.posts : <PostModel>[];
+
+            final count =
+                postIds
+                    .map((id) => allPosts.findById(id))
+                    .whereType<PostModel>()
+                    .where((p) => p.isSavedByMe)
+                    .length;
+
+            if (count == 0) {
+              return const SizedBox.shrink();
+            }
+
+            return Center(
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 250),
+                transitionBuilder: (child, animation) {
+                  return ScaleTransition(scale: animation, child: child);
+                },
+                child: Container(
+                  key: ValueKey<int>(count),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 9,
+                    vertical: 3,
+                  ),
+                  decoration: BoxDecoration(
+                    color: theme.primaryColor.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: theme.primaryColor.withValues(alpha: 0.25),
+                      width: 1,
+                    ),
+                  ),
+                  child: Text(
+                    '$count',
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      color: theme.primaryColor,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 13,
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 }
@@ -119,13 +176,7 @@ class _SavedPostsList extends StatelessWidget {
 
         final visiblePosts =
             loadedState.postIds
-                .map((id) {
-                  try {
-                    return allPosts.firstWhere((p) => p.id == id);
-                  } catch (_) {
-                    return null;
-                  }
-                })
+                .map((id) => allPosts.findById(id))
                 .whereType<PostModel>()
                 .where((p) => p.isSavedByMe)
                 .toList();

@@ -185,12 +185,12 @@ class _MessageContentContainerState extends State<MessageContentContainer> {
                         : (isDarkMode
                             ? Theme.of(context).colorScheme.surfaceContainerHigh
                             : Colors.grey.shade200)),
-            borderRadius: BorderRadius.only(
-              topLeft: const Radius.circular(20),
-              topRight: const Radius.circular(20),
-              bottomLeft: Radius.circular(widget.isMe ? 20 : 0),
-              bottomRight: Radius.circular(widget.isMe ? 0 : 20),
-            ),
+            borderRadius: BorderRadiusDirectional.only(
+              topStart: const Radius.circular(20),
+              topEnd: const Radius.circular(20),
+              bottomStart: Radius.circular(widget.isMe ? 20 : 0),
+              bottomEnd: Radius.circular(widget.isMe ? 0 : 20),
+            ).resolve(Directionality.of(context)),
             boxShadow:
                 (isUploading && !isFile) || isStickerOrGif
                     ? []
