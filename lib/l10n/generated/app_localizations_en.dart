@@ -4259,7 +4259,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get people => 'People';
 
   @override
-  String get sharedTabDocuments => 'Documents';
+  String get sharedTabDocuments => 'Docs';
 
   @override
   String get sharedLabelDocuments => 'Documents';
@@ -4269,4 +4269,313 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get openLabel => 'Open voice message';
+
+  @override
+  String get yourGroups => 'Your Groups';
+
+  @override
+  String get requestToJoin => 'Request to Join';
+
+  @override
+  String get requestSent => 'Request Sent';
+
+  @override
+  String get requestSentPending => 'Request Sent (Pending Review)';
+
+  @override
+  String get requestPendingReview => 'Request Pending Review';
+
+  @override
+  String get pendingRequests => 'Pending Requests';
+
+  @override
+  String get viewPendingRequests => 'View pending requests';
+
+  @override
+  String get noPendingRequests => 'No pending requests';
+
+  @override
+  String get requestAccepted => 'Request accepted';
+
+  @override
+  String get requestRejected => 'Request rejected';
+
+  @override
+  String get failedToSendRequest =>
+      'Couldn’t send the request. Please try again.';
+
+  @override
+  String get whoCanPost => 'Who can post';
+
+  @override
+  String get allMembers => 'All Members';
+
+  @override
+  String get adminsOnly => 'Admins Only';
+
+  @override
+  String get onlyAdminsCanPostNotice =>
+      'Only group admins can post in this group';
+
+  @override
+  String get writeInGroupHint => 'Write something in the group...';
+
+  @override
+  String get groupPosts => 'Group Posts';
+
+  @override
+  String get beFirstToPost => 'Be the first to share a post here!';
+
+  @override
+  String get searchYourGroups => 'Search your groups';
+
+  @override
+  String get searchGroupMembers => 'Search members';
+
+  @override
+  String get groupActionChat => 'Group chat';
+
+  @override
+  String get groupActionInvite => 'Invite';
+
+  @override
+  String get groupActionSettings => 'Settings';
+
+  @override
+  String get groupActionNewPost => 'New post';
+
+  @override
+  String get groupDetailsAndMedia => 'Details & Media';
+
+  @override
+  String get groupDescription => 'About';
+
+  @override
+  String get groupPrivateNotice =>
+      'Private group — content is available to members only';
+
+  @override
+  String get groupMembersOnly => 'Group members';
+
+  @override
+  String get groupNotFound => 'This group is no longer available';
+
+  @override
+  String get changeCover => 'Change cover';
+
+  @override
+  String get groupCoverUpdated => 'Group cover updated';
+
+  @override
+  String get removeGroupPost => 'Remove post from group';
+
+  @override
+  String membersCountLabel(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count members',
+      one: '1 member',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String creatingIn(String name) {
+    return 'Creating in $name';
+  }
+
+  @override
+  String createdOnDate(String date) {
+    return 'Created on $date';
+  }
+
+  @override
+  String createdByName(String name) {
+    return 'Created by $name';
+  }
+
+  @override
+  String get chooseTheme => 'Choose Theme';
+
+  @override
+  String get clearTheme => 'Remove Theme';
+
+  @override
+  String get changeTheme => 'Change Theme';
+
+  @override
+  String get gifAttachment => 'GIF';
+
+  @override
+  String get themePreviewSample =>
+      'Your words deserve a beautiful background ✨';
+
+  @override
+  String get themeSunsetBlaze => 'Sunset Blaze';
+
+  @override
+  String get themeNeonCyberpunk => 'Neon Cyberpunk';
+
+  @override
+  String get themeEmeraldForest => 'Emerald Forest';
+
+  @override
+  String get themeOceanBreeze => 'Ocean Breeze';
+
+  @override
+  String get themeRoyalAmethyst => 'Royal Amethyst';
+
+  @override
+  String get themeSweetRomance => 'Sweet Romance';
+
+  @override
+  String get themeGoldenHour => 'Golden Hour';
+
+  @override
+  String get themeHighVoltage => 'High Voltage';
+
+  @override
+  String get themeWarmMocha => 'Warm Mocha';
+
+  @override
+  String get themeAuroraBorealis => 'Aurora Borealis';
+
+  @override
+  String get themeCherryBlossom => 'Cherry Blossom';
+
+  @override
+  String get themeMinimalistOnyx => 'Minimalist Onyx';
+
+  @override
+  String get themeMotifsLabel => 'Background Icons — Optional';
+
+  @override
+  String get themeMotifsNone => 'Color Only';
+
+  @override
+  String get themeAddCustomEmoji => 'Custom Emoji';
+
+  @override
+  String get themeCustomEmojiHint => 'Pick any emoji from your keyboard';
+
+  @override
+  String get themeShuffleMotifs => 'Shuffle pattern';
+
+  @override
+  String get themeSectionGradients => 'Gradients';
+
+  @override
+  String get themeSectionSolids => 'Solid Colors';
+
+  @override
+  String get themeSolidRed => 'Classic Red';
+
+  @override
+  String get themeSolidBlue => 'Royal Blue';
+
+  @override
+  String get themeSolidGreen => 'Forest Green';
+
+  @override
+  String get themeSolidOrange => 'Vibrant Orange';
+
+  @override
+  String get themeSolidPurple => 'Deep Purple';
+
+  @override
+  String get themeSolidYellow => 'Sunshine Yellow';
+
+  @override
+  String get themeSolidSlate => 'Slate Grey';
+
+  @override
+  String get themeSolidPink => 'Hot Pink';
+
+  @override
+  String get themeSolidTeal => 'Teal Cyan';
+
+  @override
+  String get themeSolidAmber => 'Warm Amber';
+
+  @override
+  String get themeSolidBrown => 'Espresso Brown';
+
+  @override
+  String get themeSolidNavy => 'Midnight Navy';
+
+  @override
+  String get systemMaintenanceTitle => 'We\'ll be right back';
+
+  @override
+  String get systemMaintenanceDefaultMessage =>
+      'Social Mate is undergoing scheduled maintenance. Please check back shortly.';
+
+  @override
+  String systemMaintenanceBackAt(String time) {
+    return 'Expected back around $time';
+  }
+
+  @override
+  String get systemMaintenanceRetry => 'Check again';
+
+  @override
+  String get systemMaintenanceChecking => 'Checking…';
+
+  @override
+  String get systemMaintenanceStaffSignIn => 'Staff sign in';
+
+  @override
+  String get systemSignOut => 'Sign out';
+
+  @override
+  String get systemUpdateRequiredTitle => 'Update required';
+
+  @override
+  String systemUpdateRequiredBody(String version) {
+    return 'This version of Social Mate is no longer supported. Please update to version $version or later to continue.';
+  }
+
+  @override
+  String get systemUpdateNow => 'Update now';
+
+  @override
+  String get systemUpdateStoreUnavailable =>
+      'The store link is unavailable. Please update from your app store.';
+
+  @override
+  String get systemUpdateOpenStoreFailed =>
+      'Couldn\'t open the store. Please update from your app store.';
+
+  @override
+  String systemUpdateRecommendedMessage(String version) {
+    return 'A new version ($version) is available.';
+  }
+
+  @override
+  String get systemUpdateAction => 'Update';
+
+  @override
+  String get systemBannerDismiss => 'Dismiss';
+
+  @override
+  String get systemSuspendedTitle => 'Your account is suspended';
+
+  @override
+  String get systemSuspendedBody =>
+      'You can\'t post, comment or send messages while your account is suspended.';
+
+  @override
+  String get systemSuspendedReasonLabel => 'Reason';
+
+  @override
+  String systemSuspendedUntil(String date) {
+    return 'Your suspension ends on $date.';
+  }
+
+  @override
+  String get systemSuspendedPermanent => 'This suspension has no end date.';
+
+  @override
+  String get systemSuspendedCheckAgain => 'Check status';
 }

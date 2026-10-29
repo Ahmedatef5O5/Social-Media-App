@@ -2408,7 +2408,7 @@
   "feedbackTellUsMore": "Tell us more",
   "feedbackAttachments": "Attachments",
   "feedbackReachYouOptional": "How can we reach you? (optional)",
-    "feedbackCatBug": "Bug / Issue",
+  "feedbackCatBug": "Bug / Issue",
   "feedbackCatFeature": "Feature Request",
   "feedbackCatInquiry": "Inquiry",
   "feedbackCatRating": "Rating & Review",
@@ -2422,7 +2422,7 @@
   "aboutStatMessages": "Messages",
   "aboutStatPosts": "Posts",
   "aboutStatUptime": "Uptime",
-    "aboutFeatCallsTitle": "HD Voice & Video",
+  "aboutFeatCallsTitle": "HD Voice & Video",
   "aboutFeatCallsDesc": "Crystal clear calls anytime",
   "aboutFeatChatsTitle": "Real-time Chats",
   "aboutFeatChatsDesc": "Instant messaging with read receipts",
@@ -2473,11 +2473,11 @@
   "sharedDateRecent": "Recent",
   "sharedDateLastWeek": "Last Week",
   "sharedDateLastMonth": "Last Month",
-    "btnFollow": "Follow",
+  "btnFollow": "Follow",
   "btnFollowing": "Following",
   "btnAddFriend": "Add Friend",
   "btnRequested": "Requested",
-    "tabChatsAll": "All",
+  "tabChatsAll": "All",
   "tabChatsDirect": "Chats",
   "tabChatsGroups": "Groups",
   "tabChatsFavorites": "Favorites",
@@ -2522,8 +2522,161 @@
   "aiAssistant": "AI Assistant",
   "groups": "Groups",
   "people": "People",
-  "sharedTabDocuments": "Documents",
+  "sharedTabDocuments": "Docs",
   "sharedLabelDocuments": "Documents",
   "noSharedDocumentsYet": "No documents shared yet",
-  "openLabel": "Open voice message"
+  "openLabel": "Open voice message",
+  "yourGroups": "Your Groups",
+  "requestToJoin": "Request to Join",
+  "requestSent": "Request Sent",
+  "requestSentPending": "Request Sent (Pending Review)",
+  "requestPendingReview": "Request Pending Review",
+  "pendingRequests": "Pending Requests",
+  "viewPendingRequests": "View pending requests",
+  "noPendingRequests": "No pending requests",
+  "requestAccepted": "Request accepted",
+  "requestRejected": "Request rejected",
+  "failedToSendRequest": "Couldn’t send the request. Please try again.",
+  "whoCanPost": "Who can post",
+  "allMembers": "All Members",
+  "adminsOnly": "Admins Only",
+  "onlyAdminsCanPostNotice": "Only group admins can post in this group",
+  "writeInGroupHint": "Write something in the group...",
+  "groupPosts": "Group Posts",
+  "beFirstToPost": "Be the first to share a post here!",
+  "searchYourGroups": "Search your groups",
+  "searchGroupMembers": "Search members",
+  "groupActionChat": "Group chat",
+  "groupActionInvite": "Invite",
+  "groupActionSettings": "Settings",
+  "groupActionNewPost": "New post",
+  "groupDetailsAndMedia": "Details & Media",
+  "groupDescription": "About",
+  "groupPrivateNotice": "Private group — content is available to members only",
+  "groupMembersOnly": "Group members",
+  "groupNotFound": "This group is no longer available",
+  "changeCover": "Change cover",
+  "groupCoverUpdated": "Group cover updated",
+  "removeGroupPost": "Remove post from group",
+  "membersCountLabel": "{count, plural, =1{1 member} other{{count} members}}",
+  "@membersCountLabel": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "creatingIn": "Creating in {name}",
+  "@creatingIn": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "createdOnDate": "Created on {date}",
+  "@createdOnDate": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "createdByName": "Created by {name}",
+  "@createdByName": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "chooseTheme": "Choose Theme",
+  "clearTheme": "Remove Theme",
+  "changeTheme": "Change Theme",
+  "gifAttachment": "GIF",
+  "themePreviewSample": "Your words deserve a beautiful background ✨",
+  "themeSunsetBlaze": "Sunset Blaze",
+  "themeNeonCyberpunk": "Neon Cyberpunk",
+  "themeEmeraldForest": "Emerald Forest",
+  "themeOceanBreeze": "Ocean Breeze",
+  "themeRoyalAmethyst": "Royal Amethyst",
+  "themeSweetRomance": "Sweet Romance",
+  "themeGoldenHour": "Golden Hour",
+  "themeHighVoltage": "High Voltage",
+  "themeWarmMocha": "Warm Mocha",
+  "themeAuroraBorealis": "Aurora Borealis",
+  "themeCherryBlossom": "Cherry Blossom",
+  "themeMinimalistOnyx": "Minimalist Onyx",
+  "themeMotifsLabel": "Background Icons — Optional",
+  "themeMotifsNone": "Color Only",
+  "themeAddCustomEmoji": "Custom Emoji",
+  "themeCustomEmojiHint": "Pick any emoji from your keyboard",
+  "themeShuffleMotifs": "Shuffle pattern",
+  "themeSectionGradients": "Gradients",
+  "themeSectionSolids": "Solid Colors",
+  "themeSolidRed": "Classic Red",
+  "themeSolidBlue": "Royal Blue",
+  "themeSolidGreen": "Forest Green",
+  "themeSolidOrange": "Vibrant Orange",
+  "themeSolidPurple": "Deep Purple",
+  "themeSolidYellow": "Sunshine Yellow",
+  "themeSolidSlate": "Slate Grey",
+  "themeSolidPink": "Hot Pink",
+  "themeSolidTeal": "Teal Cyan",
+  "themeSolidAmber": "Warm Amber",
+  "themeSolidBrown": "Espresso Brown",
+  "themeSolidNavy": "Midnight Navy",
+  "systemMaintenanceTitle": "We''ll be right back",
+  "@systemMaintenanceTitle": {
+    "description": "Title of the maintenance screen"
+  },
+  "systemMaintenanceDefaultMessage": "Social Mate is undergoing scheduled maintenance. Please check back shortly.",
+  "systemMaintenanceBackAt": "Expected back around {time}",
+  "@systemMaintenanceBackAt": {
+    "description": "Expected end of maintenance; {time} is a localized date and time",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "systemMaintenanceRetry": "Check again",
+  "systemMaintenanceChecking": "Checking…",
+  "systemMaintenanceStaffSignIn": "Staff sign in",
+  "systemSignOut": "Sign out",
+  "systemUpdateRequiredTitle": "Update required",
+  "systemUpdateRequiredBody": "This version of Social Mate is no longer supported. Please update to version {version} or later to continue.",
+  "@systemUpdateRequiredBody": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "systemUpdateNow": "Update now",
+  "systemUpdateStoreUnavailable": "The store link is unavailable. Please update from your app store.",
+  "systemUpdateOpenStoreFailed": "Couldn''t open the store. Please update from your app store.",
+  "systemUpdateRecommendedMessage": "A new version ({version}) is available.",
+  "@systemUpdateRecommendedMessage": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "systemUpdateAction": "Update",
+  "systemBannerDismiss": "Dismiss",
+  "systemSuspendedTitle": "Your account is suspended",
+  "systemSuspendedBody": "You can''t post, comment or send messages while your account is suspended.",
+  "systemSuspendedReasonLabel": "Reason",
+  "systemSuspendedUntil": "Your suspension ends on {date}.",
+  "@systemSuspendedUntil": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "systemSuspendedPermanent": "This suspension has no end date.",
+  "systemSuspendedCheckAgain": "Check status"
 }

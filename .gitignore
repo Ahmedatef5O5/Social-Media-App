@@ -35,6 +35,8 @@ migrate_working_dir/
 
 scripts/
 
+supabase/
+
 .repomix/
 master_code.txt
 merge_code.ps1

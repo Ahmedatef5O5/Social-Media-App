@@ -7501,7 +7501,7 @@ abstract class AppLocalizations {
   /// No description provided for @sharedTabDocuments.
   ///
   /// In en, this message translates to:
-  /// **'Documents'**
+  /// **'Docs'**
   String get sharedTabDocuments;
 
   /// No description provided for @sharedLabelDocuments.
@@ -7521,6 +7521,564 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Open voice message'**
   String get openLabel;
+
+  /// No description provided for @yourGroups.
+  ///
+  /// In en, this message translates to:
+  /// **'Your Groups'**
+  String get yourGroups;
+
+  /// No description provided for @requestToJoin.
+  ///
+  /// In en, this message translates to:
+  /// **'Request to Join'**
+  String get requestToJoin;
+
+  /// No description provided for @requestSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Request Sent'**
+  String get requestSent;
+
+  /// No description provided for @requestSentPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Request Sent (Pending Review)'**
+  String get requestSentPending;
+
+  /// No description provided for @requestPendingReview.
+  ///
+  /// In en, this message translates to:
+  /// **'Request Pending Review'**
+  String get requestPendingReview;
+
+  /// No description provided for @pendingRequests.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending Requests'**
+  String get pendingRequests;
+
+  /// No description provided for @viewPendingRequests.
+  ///
+  /// In en, this message translates to:
+  /// **'View pending requests'**
+  String get viewPendingRequests;
+
+  /// No description provided for @noPendingRequests.
+  ///
+  /// In en, this message translates to:
+  /// **'No pending requests'**
+  String get noPendingRequests;
+
+  /// No description provided for @requestAccepted.
+  ///
+  /// In en, this message translates to:
+  /// **'Request accepted'**
+  String get requestAccepted;
+
+  /// No description provided for @requestRejected.
+  ///
+  /// In en, this message translates to:
+  /// **'Request rejected'**
+  String get requestRejected;
+
+  /// No description provided for @failedToSendRequest.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn’t send the request. Please try again.'**
+  String get failedToSendRequest;
+
+  /// No description provided for @whoCanPost.
+  ///
+  /// In en, this message translates to:
+  /// **'Who can post'**
+  String get whoCanPost;
+
+  /// No description provided for @allMembers.
+  ///
+  /// In en, this message translates to:
+  /// **'All Members'**
+  String get allMembers;
+
+  /// No description provided for @adminsOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Admins Only'**
+  String get adminsOnly;
+
+  /// No description provided for @onlyAdminsCanPostNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'Only group admins can post in this group'**
+  String get onlyAdminsCanPostNotice;
+
+  /// No description provided for @writeInGroupHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Write something in the group...'**
+  String get writeInGroupHint;
+
+  /// No description provided for @groupPosts.
+  ///
+  /// In en, this message translates to:
+  /// **'Group Posts'**
+  String get groupPosts;
+
+  /// No description provided for @beFirstToPost.
+  ///
+  /// In en, this message translates to:
+  /// **'Be the first to share a post here!'**
+  String get beFirstToPost;
+
+  /// No description provided for @searchYourGroups.
+  ///
+  /// In en, this message translates to:
+  /// **'Search your groups'**
+  String get searchYourGroups;
+
+  /// No description provided for @searchGroupMembers.
+  ///
+  /// In en, this message translates to:
+  /// **'Search members'**
+  String get searchGroupMembers;
+
+  /// No description provided for @groupActionChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Group chat'**
+  String get groupActionChat;
+
+  /// No description provided for @groupActionInvite.
+  ///
+  /// In en, this message translates to:
+  /// **'Invite'**
+  String get groupActionInvite;
+
+  /// No description provided for @groupActionSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings'**
+  String get groupActionSettings;
+
+  /// No description provided for @groupActionNewPost.
+  ///
+  /// In en, this message translates to:
+  /// **'New post'**
+  String get groupActionNewPost;
+
+  /// No description provided for @groupDetailsAndMedia.
+  ///
+  /// In en, this message translates to:
+  /// **'Details & Media'**
+  String get groupDetailsAndMedia;
+
+  /// No description provided for @groupDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'About'**
+  String get groupDescription;
+
+  /// No description provided for @groupPrivateNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'Private group — content is available to members only'**
+  String get groupPrivateNotice;
+
+  /// No description provided for @groupMembersOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Group members'**
+  String get groupMembersOnly;
+
+  /// No description provided for @groupNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'This group is no longer available'**
+  String get groupNotFound;
+
+  /// No description provided for @changeCover.
+  ///
+  /// In en, this message translates to:
+  /// **'Change cover'**
+  String get changeCover;
+
+  /// No description provided for @groupCoverUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Group cover updated'**
+  String get groupCoverUpdated;
+
+  /// No description provided for @removeGroupPost.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove post from group'**
+  String get removeGroupPost;
+
+  /// No description provided for @membersCountLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 member} other{{count} members}}'**
+  String membersCountLabel(int count);
+
+  /// No description provided for @creatingIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Creating in {name}'**
+  String creatingIn(String name);
+
+  /// No description provided for @createdOnDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Created on {date}'**
+  String createdOnDate(String date);
+
+  /// No description provided for @createdByName.
+  ///
+  /// In en, this message translates to:
+  /// **'Created by {name}'**
+  String createdByName(String name);
+
+  /// No description provided for @chooseTheme.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose Theme'**
+  String get chooseTheme;
+
+  /// No description provided for @clearTheme.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove Theme'**
+  String get clearTheme;
+
+  /// No description provided for @changeTheme.
+  ///
+  /// In en, this message translates to:
+  /// **'Change Theme'**
+  String get changeTheme;
+
+  /// No description provided for @gifAttachment.
+  ///
+  /// In en, this message translates to:
+  /// **'GIF'**
+  String get gifAttachment;
+
+  /// No description provided for @themePreviewSample.
+  ///
+  /// In en, this message translates to:
+  /// **'Your words deserve a beautiful background ✨'**
+  String get themePreviewSample;
+
+  /// No description provided for @themeSunsetBlaze.
+  ///
+  /// In en, this message translates to:
+  /// **'Sunset Blaze'**
+  String get themeSunsetBlaze;
+
+  /// No description provided for @themeNeonCyberpunk.
+  ///
+  /// In en, this message translates to:
+  /// **'Neon Cyberpunk'**
+  String get themeNeonCyberpunk;
+
+  /// No description provided for @themeEmeraldForest.
+  ///
+  /// In en, this message translates to:
+  /// **'Emerald Forest'**
+  String get themeEmeraldForest;
+
+  /// No description provided for @themeOceanBreeze.
+  ///
+  /// In en, this message translates to:
+  /// **'Ocean Breeze'**
+  String get themeOceanBreeze;
+
+  /// No description provided for @themeRoyalAmethyst.
+  ///
+  /// In en, this message translates to:
+  /// **'Royal Amethyst'**
+  String get themeRoyalAmethyst;
+
+  /// No description provided for @themeSweetRomance.
+  ///
+  /// In en, this message translates to:
+  /// **'Sweet Romance'**
+  String get themeSweetRomance;
+
+  /// No description provided for @themeGoldenHour.
+  ///
+  /// In en, this message translates to:
+  /// **'Golden Hour'**
+  String get themeGoldenHour;
+
+  /// No description provided for @themeHighVoltage.
+  ///
+  /// In en, this message translates to:
+  /// **'High Voltage'**
+  String get themeHighVoltage;
+
+  /// No description provided for @themeWarmMocha.
+  ///
+  /// In en, this message translates to:
+  /// **'Warm Mocha'**
+  String get themeWarmMocha;
+
+  /// No description provided for @themeAuroraBorealis.
+  ///
+  /// In en, this message translates to:
+  /// **'Aurora Borealis'**
+  String get themeAuroraBorealis;
+
+  /// No description provided for @themeCherryBlossom.
+  ///
+  /// In en, this message translates to:
+  /// **'Cherry Blossom'**
+  String get themeCherryBlossom;
+
+  /// No description provided for @themeMinimalistOnyx.
+  ///
+  /// In en, this message translates to:
+  /// **'Minimalist Onyx'**
+  String get themeMinimalistOnyx;
+
+  /// No description provided for @themeMotifsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Background Icons — Optional'**
+  String get themeMotifsLabel;
+
+  /// No description provided for @themeMotifsNone.
+  ///
+  /// In en, this message translates to:
+  /// **'Color Only'**
+  String get themeMotifsNone;
+
+  /// No description provided for @themeAddCustomEmoji.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom Emoji'**
+  String get themeAddCustomEmoji;
+
+  /// No description provided for @themeCustomEmojiHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick any emoji from your keyboard'**
+  String get themeCustomEmojiHint;
+
+  /// No description provided for @themeShuffleMotifs.
+  ///
+  /// In en, this message translates to:
+  /// **'Shuffle pattern'**
+  String get themeShuffleMotifs;
+
+  /// No description provided for @themeSectionGradients.
+  ///
+  /// In en, this message translates to:
+  /// **'Gradients'**
+  String get themeSectionGradients;
+
+  /// No description provided for @themeSectionSolids.
+  ///
+  /// In en, this message translates to:
+  /// **'Solid Colors'**
+  String get themeSectionSolids;
+
+  /// No description provided for @themeSolidRed.
+  ///
+  /// In en, this message translates to:
+  /// **'Classic Red'**
+  String get themeSolidRed;
+
+  /// No description provided for @themeSolidBlue.
+  ///
+  /// In en, this message translates to:
+  /// **'Royal Blue'**
+  String get themeSolidBlue;
+
+  /// No description provided for @themeSolidGreen.
+  ///
+  /// In en, this message translates to:
+  /// **'Forest Green'**
+  String get themeSolidGreen;
+
+  /// No description provided for @themeSolidOrange.
+  ///
+  /// In en, this message translates to:
+  /// **'Vibrant Orange'**
+  String get themeSolidOrange;
+
+  /// No description provided for @themeSolidPurple.
+  ///
+  /// In en, this message translates to:
+  /// **'Deep Purple'**
+  String get themeSolidPurple;
+
+  /// No description provided for @themeSolidYellow.
+  ///
+  /// In en, this message translates to:
+  /// **'Sunshine Yellow'**
+  String get themeSolidYellow;
+
+  /// No description provided for @themeSolidSlate.
+  ///
+  /// In en, this message translates to:
+  /// **'Slate Grey'**
+  String get themeSolidSlate;
+
+  /// No description provided for @themeSolidPink.
+  ///
+  /// In en, this message translates to:
+  /// **'Hot Pink'**
+  String get themeSolidPink;
+
+  /// No description provided for @themeSolidTeal.
+  ///
+  /// In en, this message translates to:
+  /// **'Teal Cyan'**
+  String get themeSolidTeal;
+
+  /// No description provided for @themeSolidAmber.
+  ///
+  /// In en, this message translates to:
+  /// **'Warm Amber'**
+  String get themeSolidAmber;
+
+  /// No description provided for @themeSolidBrown.
+  ///
+  /// In en, this message translates to:
+  /// **'Espresso Brown'**
+  String get themeSolidBrown;
+
+  /// No description provided for @themeSolidNavy.
+  ///
+  /// In en, this message translates to:
+  /// **'Midnight Navy'**
+  String get themeSolidNavy;
+
+  /// Title of the maintenance screen
+  ///
+  /// In en, this message translates to:
+  /// **'We\'\'ll be right back'**
+  String get systemMaintenanceTitle;
+
+  /// No description provided for @systemMaintenanceDefaultMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Social Mate is undergoing scheduled maintenance. Please check back shortly.'**
+  String get systemMaintenanceDefaultMessage;
+
+  /// Expected end of maintenance; {time} is a localized date and time
+  ///
+  /// In en, this message translates to:
+  /// **'Expected back around {time}'**
+  String systemMaintenanceBackAt(String time);
+
+  /// No description provided for @systemMaintenanceRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Check again'**
+  String get systemMaintenanceRetry;
+
+  /// No description provided for @systemMaintenanceChecking.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking…'**
+  String get systemMaintenanceChecking;
+
+  /// No description provided for @systemMaintenanceStaffSignIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Staff sign in'**
+  String get systemMaintenanceStaffSignIn;
+
+  /// No description provided for @systemSignOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign out'**
+  String get systemSignOut;
+
+  /// No description provided for @systemUpdateRequiredTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Update required'**
+  String get systemUpdateRequiredTitle;
+
+  /// No description provided for @systemUpdateRequiredBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This version of Social Mate is no longer supported. Please update to version {version} or later to continue.'**
+  String systemUpdateRequiredBody(String version);
+
+  /// No description provided for @systemUpdateNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Update now'**
+  String get systemUpdateNow;
+
+  /// No description provided for @systemUpdateStoreUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'The store link is unavailable. Please update from your app store.'**
+  String get systemUpdateStoreUnavailable;
+
+  /// No description provided for @systemUpdateOpenStoreFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'\'t open the store. Please update from your app store.'**
+  String get systemUpdateOpenStoreFailed;
+
+  /// No description provided for @systemUpdateRecommendedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'A new version ({version}) is available.'**
+  String systemUpdateRecommendedMessage(String version);
+
+  /// No description provided for @systemUpdateAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Update'**
+  String get systemUpdateAction;
+
+  /// No description provided for @systemBannerDismiss.
+  ///
+  /// In en, this message translates to:
+  /// **'Dismiss'**
+  String get systemBannerDismiss;
+
+  /// No description provided for @systemSuspendedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your account is suspended'**
+  String get systemSuspendedTitle;
+
+  /// No description provided for @systemSuspendedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'You can\'\'t post, comment or send messages while your account is suspended.'**
+  String get systemSuspendedBody;
+
+  /// No description provided for @systemSuspendedReasonLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Reason'**
+  String get systemSuspendedReasonLabel;
+
+  /// No description provided for @systemSuspendedUntil.
+  ///
+  /// In en, this message translates to:
+  /// **'Your suspension ends on {date}.'**
+  String systemSuspendedUntil(String date);
+
+  /// No description provided for @systemSuspendedPermanent.
+  ///
+  /// In en, this message translates to:
+  /// **'This suspension has no end date.'**
+  String get systemSuspendedPermanent;
+
+  /// No description provided for @systemSuspendedCheckAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Check status'**
+  String get systemSuspendedCheckAgain;
 }
 
 class _AppLocalizationsDelegate

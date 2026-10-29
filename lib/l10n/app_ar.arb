@@ -157,7 +157,7 @@
   "website": "الموقع الإلكتروني",
   "portfolio": "الأعمال",
   "email": "البريد الإلكتروني",
-  "version100": "الإصدار 1.0.0  •  صُنع بحب ❤️",
+  "version100": "❤️ الإصدار 1.0.0  •  صُنع بحب",
   "theSmartReplyTo": "خدمة الرد الذكي على الصور مشغولة حاليًا. حاول لاحقًا أو اكتب ردك يدويًا.",
   "anErrorOccurredWith": "حدث خطأ في اقتراح الذكاء الاصطناعي. حاول مرة أخرى.",
   "copiedSuccessfully": "تم النسخ بنجاح",
@@ -178,7 +178,7 @@
   "addACaption": "أضف شرحًا توضيحيًا...",
   "howCanIHelp": "كيف يمكنني مساعدتك؟",
   "voiceDictationIsntAvailable": "الإملاء الصوتي غير متاح على هذا الجهاز.",
-  "messageSyncra": "راسل \u200FSyncra...\u200F",
+  "messageSyncra": "راسل ‏Syncra...‏",
   "failedToShareThis": "تعذّرت مشاركة هذه المحادثة. حاول مرة أخرى.",
   "loadMore": "تحميل المزيد",
   "chooseAModel": "اختر نموذجًا",
@@ -219,7 +219,7 @@
   "searchPeopleOrGroups": "ابحث عن أشخاص أو مجموعات...",
   "askTheAiAssistant": "اسأل المساعد الذكي عن هذا",
   "editingComment": "تعديل التعليق",
-  "voice2": "🎤 رسالة صوتية",
+  "voice2": "رسالة صوتية 🎤",
   "photo": "صورة",
   "close": "إغلاق",
   "recordingVoiceMessage": "جارٍ تسجيل رسالة صوتية",
@@ -261,7 +261,7 @@
   "underReview": "قيد المراجعة",
   "ourTeamTypicallyResponds": "يرد فريقنا عادةً خلال 24 ساعة (وحتى 3 أيام عمل).",
   "feedbackSupport": "الملاحظات والدعم",
-  "helpUsImproveSocial": "ساعدنا في تحسين Social Mate",
+  "helpUsImproveSocial": "ساعدنا في تحسين ‏Social Mate‏",
   "emailOrPhoneNumber": "البريد الإلكتروني أو رقم الهاتف",
   "responseTime": "مدة الرد",
   "myFeedbacks2": "ملاحظاتي",
@@ -1114,12 +1114,11 @@
   "twoFactorStep3Desc": "هي الوسيلة الوحيدة للوصول لحسابك في حال فقدان هاتفك.",
   "iveAddedIt": "تمت الإضافة إلى التطبيق",
   "verifyCode": "تأكيد الرمز",
-  "helpUsImproveSocial": "ساعدنا في تحسين \u200FSocial Mate\u200F",
   "feedbackWhatIsThisAbout": "ما هو موضوع ملاحظتك؟",
   "feedbackTellUsMore": "أخبرنا بمزيد من التفاصيل",
   "feedbackAttachments": "المرفقات",
   "feedbackReachYouOptional": "كيف يمكننا التواصل معك؟ (اختياري)",
-    "feedbackCatBug": "مشكلة أو خطأ",
+  "feedbackCatBug": "مشكلة أو خطأ",
   "feedbackCatFeature": "اقتراح ميزة",
   "feedbackCatInquiry": "استفسار عام",
   "feedbackCatRating": "تقييم ورأي",
@@ -1236,6 +1235,154 @@
   "sharedTabDocuments": "مستند",
   "sharedLabelDocuments": "المستندات",
   "noSharedDocumentsYet": "لم يتم مشاركة أي مستندات بعد",
-  "openLabel": "فتح الرسالة الصوتية"
-
+  "openLabel": "فتح الرسالة الصوتية",
+  "yourGroups": "مجموعاتك",
+  "requestToJoin": "طلب الانضمام إلى المجموعة",
+  "requestSent": "تم إرسال الطلب",
+  "requestSentPending": "تم إرسال الطلب (قيد المراجعة)",
+  "requestPendingReview": "طلبك قيد المراجعة من قِبل المشرفين",
+  "pendingRequests": "طلبات الانضمام المعلقة",
+  "viewPendingRequests": "عرض الطلبات المعلقة",
+  "noPendingRequests": "لا توجد طلبات معلقة",
+  "requestAccepted": "تم قبول الطلب",
+  "requestRejected": "تم رفض الطلب",
+  "failedToSendRequest": "تعذر إرسال الطلب. حاول مرة أخرى.",
+  "whoCanPost": "من يمكنه النشر في المجموعة",
+  "allMembers": "جميع الأعضاء",
+  "adminsOnly": "المشرفون فقط",
+  "onlyAdminsCanPostNotice": "النشر في هذه المجموعة مقتصر على المشرفين فقط",
+  "writeInGroupHint": "اكتب منشوراً في المجموعة...",
+  "groupPosts": "منشورات المجموعة",
+  "beFirstToPost": "كن أول من يشارك منشوراً هنا!",
+  "searchYourGroups": "ابحث في مجموعاتك",
+  "searchGroupMembers": "ابحث عن عضو",
+  "groupActionChat": "محادثة المجموعة",
+  "groupActionInvite": "دعوة",
+  "groupActionSettings": "إعدادات",
+  "groupActionNewPost": "منشور جديد",
+  "groupDetailsAndMedia": "التفاصيل والوسائط",
+  "groupDescription": "نبذة",
+  "groupPrivateNotice": "مجموعة خاصة — المحتوى متاح للأعضاء فقط",
+  "groupMembersOnly": "أعضاء المجموعة",
+  "groupNotFound": "هذه المجموعة لم تعد متاحة",
+  "changeCover": "تغيير الغلاف",
+  "groupCoverUpdated": "تم تحديث غلاف المجموعة",
+  "removeGroupPost": "إزالة المنشور من المجموعة",
+  "membersCountLabel": "{count, plural, =1{عضو واحد} =2{عضوان} few{{count} أعضاء} other{{count} عضواً}}",
+  "@membersCountLabel": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "creatingIn": "النشر في {name}",
+  "@creatingIn": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "createdOnDate": "أُنشئت في {date}",
+  "@createdOnDate": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "createdByName": "أنشأها {name}",
+  "@createdByName": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "chooseTheme": "اختر قالباً",
+  "clearTheme": "إزالة القالب",
+  "changeTheme": "تغيير القالب",
+  "gifAttachment": "صورة متحركة GIF",
+  "themePreviewSample": "كلماتك تستحق خلفية جميلة ✨",
+  "themeSunsetBlaze": "وهج الغروب",
+  "themeNeonCyberpunk": "سايبر بانك نيون",
+  "themeEmeraldForest": "الغابة الزمردية",
+  "themeOceanBreeze": "نسيم المحيط",
+  "themeRoyalAmethyst": "الجمشت الملكي",
+  "themeSweetRomance": "رومانسية حالمة",
+  "themeGoldenHour": "الساعة الذهبية",
+  "themeHighVoltage": "الجهد العالي",
+  "themeWarmMocha": "موكا دافئة",
+  "themeAuroraBorealis": "الشفق القطبي",
+  "themeCherryBlossom": "زهر الكرز",
+  "themeMinimalistOnyx": "أونيكس بسيط",
+  "themeMotifsLabel": "رموز الخلفية — اختياري",
+  "themeMotifsNone": "اللون فقط",
+  "themeAddCustomEmoji": "إيموجي مخصص",
+  "themeCustomEmojiHint": "اختر أي إيموجي من لوحة المفاتيح",
+  "themeShuffleMotifs": "توزيع عشوائي جديد",
+  "themeSectionGradients": "الألوان المتدرجة",
+  "themeSectionSolids": "الألوان الأساسية",
+  "themeSolidRed": "أحمر كلاسيكي",
+  "themeSolidBlue": "أزرق ملكي",
+  "themeSolidGreen": "أخضر زمردي",
+  "themeSolidOrange": "برتقالي ناصع",
+  "themeSolidPurple": "بنفسجي داكن",
+  "themeSolidYellow": "أصفر مشرق",
+  "themeSolidSlate": "رمادي رصاصي",
+  "themeSolidPink": "وردي فاقع",
+  "themeSolidTeal": "تركواز هادئ",
+  "themeSolidAmber": "عنبر دافئ",
+  "themeSolidBrown": "بني داكن",
+  "themeSolidNavy": "كحلي ليلي",
+  "systemMaintenanceTitle": "سنعود قريبًا",
+  "systemMaintenanceDefaultMessage": "يخضع Social Mate لصيانة مجدولة. يرجى المحاولة مرة أخرى بعد قليل.",
+  "systemMaintenanceBackAt": "من المتوقع أن نعود حوالي {time}",
+  "@systemMaintenanceBackAt": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "systemMaintenanceRetry": "التحقق مرة أخرى",
+  "systemMaintenanceChecking": "جارٍ التحقق…",
+  "systemMaintenanceStaffSignIn": "دخول فريق العمل",
+  "systemSignOut": "تسجيل الخروج",
+  "systemUpdateRequiredTitle": "التحديث مطلوب",
+  "systemUpdateRequiredBody": "لم يعد هذا الإصدار من Social Mate مدعومًا. يرجى التحديث إلى الإصدار {version} أو أحدث للمتابعة.",
+  "@systemUpdateRequiredBody": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "systemUpdateNow": "حدّث الآن",
+  "systemUpdateStoreUnavailable": "رابط المتجر غير متاح. يرجى التحديث من متجر التطبيقات.",
+  "systemUpdateOpenStoreFailed": "تعذر فتح المتجر. يرجى التحديث من متجر التطبيقات.",
+  "systemUpdateRecommendedMessage": "يتوفر إصدار جديد ({version}).",
+  "@systemUpdateRecommendedMessage": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "systemUpdateAction": "تحديث",
+  "systemBannerDismiss": "إغلاق",
+  "systemSuspendedTitle": "تم إيقاف حسابك",
+  "systemSuspendedBody": "لا يمكنك النشر أو التعليق أو إرسال الرسائل أثناء إيقاف حسابك.",
+  "systemSuspendedReasonLabel": "السبب",
+  "systemSuspendedUntil": "ينتهي إيقاف حسابك في {date}.",
+  "@systemSuspendedUntil": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "systemSuspendedPermanent": "هذا الإيقاف ليس له تاريخ انتهاء.",
+  "systemSuspendedCheckAgain": "التحقق من الحالة"
 }

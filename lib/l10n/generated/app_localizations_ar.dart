@@ -511,7 +511,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get email => 'البريد الإلكتروني';
 
   @override
-  String get version100 => 'الإصدار 1.0.0  •  صُنع بحب ❤️';
+  String get version100 => '❤️ الإصدار 1.0.0  •  صُنع بحب';
 
   @override
   String get theSmartReplyTo =>
@@ -707,7 +707,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get editingComment => 'تعديل التعليق';
 
   @override
-  String get voice2 => '🎤 رسالة صوتية';
+  String get voice2 => 'رسالة صوتية 🎤';
 
   @override
   String get photo => 'صورة';
@@ -4258,4 +4258,312 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get openLabel => 'فتح الرسالة الصوتية';
+
+  @override
+  String get yourGroups => 'مجموعاتك';
+
+  @override
+  String get requestToJoin => 'طلب الانضمام إلى المجموعة';
+
+  @override
+  String get requestSent => 'تم إرسال الطلب';
+
+  @override
+  String get requestSentPending => 'تم إرسال الطلب (قيد المراجعة)';
+
+  @override
+  String get requestPendingReview => 'طلبك قيد المراجعة من قِبل المشرفين';
+
+  @override
+  String get pendingRequests => 'طلبات الانضمام المعلقة';
+
+  @override
+  String get viewPendingRequests => 'عرض الطلبات المعلقة';
+
+  @override
+  String get noPendingRequests => 'لا توجد طلبات معلقة';
+
+  @override
+  String get requestAccepted => 'تم قبول الطلب';
+
+  @override
+  String get requestRejected => 'تم رفض الطلب';
+
+  @override
+  String get failedToSendRequest => 'تعذر إرسال الطلب. حاول مرة أخرى.';
+
+  @override
+  String get whoCanPost => 'من يمكنه النشر في المجموعة';
+
+  @override
+  String get allMembers => 'جميع الأعضاء';
+
+  @override
+  String get adminsOnly => 'المشرفون فقط';
+
+  @override
+  String get onlyAdminsCanPostNotice =>
+      'النشر في هذه المجموعة مقتصر على المشرفين فقط';
+
+  @override
+  String get writeInGroupHint => 'اكتب منشوراً في المجموعة...';
+
+  @override
+  String get groupPosts => 'منشورات المجموعة';
+
+  @override
+  String get beFirstToPost => 'كن أول من يشارك منشوراً هنا!';
+
+  @override
+  String get searchYourGroups => 'ابحث في مجموعاتك';
+
+  @override
+  String get searchGroupMembers => 'ابحث عن عضو';
+
+  @override
+  String get groupActionChat => 'محادثة المجموعة';
+
+  @override
+  String get groupActionInvite => 'دعوة';
+
+  @override
+  String get groupActionSettings => 'إعدادات';
+
+  @override
+  String get groupActionNewPost => 'منشور جديد';
+
+  @override
+  String get groupDetailsAndMedia => 'التفاصيل والوسائط';
+
+  @override
+  String get groupDescription => 'نبذة';
+
+  @override
+  String get groupPrivateNotice => 'مجموعة خاصة — المحتوى متاح للأعضاء فقط';
+
+  @override
+  String get groupMembersOnly => 'أعضاء المجموعة';
+
+  @override
+  String get groupNotFound => 'هذه المجموعة لم تعد متاحة';
+
+  @override
+  String get changeCover => 'تغيير الغلاف';
+
+  @override
+  String get groupCoverUpdated => 'تم تحديث غلاف المجموعة';
+
+  @override
+  String get removeGroupPost => 'إزالة المنشور من المجموعة';
+
+  @override
+  String membersCountLabel(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count عضواً',
+      few: '$count أعضاء',
+      two: 'عضوان',
+      one: 'عضو واحد',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String creatingIn(String name) {
+    return 'النشر في $name';
+  }
+
+  @override
+  String createdOnDate(String date) {
+    return 'أُنشئت في $date';
+  }
+
+  @override
+  String createdByName(String name) {
+    return 'أنشأها $name';
+  }
+
+  @override
+  String get chooseTheme => 'اختر قالباً';
+
+  @override
+  String get clearTheme => 'إزالة القالب';
+
+  @override
+  String get changeTheme => 'تغيير القالب';
+
+  @override
+  String get gifAttachment => 'صورة متحركة GIF';
+
+  @override
+  String get themePreviewSample => 'كلماتك تستحق خلفية جميلة ✨';
+
+  @override
+  String get themeSunsetBlaze => 'وهج الغروب';
+
+  @override
+  String get themeNeonCyberpunk => 'سايبر بانك نيون';
+
+  @override
+  String get themeEmeraldForest => 'الغابة الزمردية';
+
+  @override
+  String get themeOceanBreeze => 'نسيم المحيط';
+
+  @override
+  String get themeRoyalAmethyst => 'الجمشت الملكي';
+
+  @override
+  String get themeSweetRomance => 'رومانسية حالمة';
+
+  @override
+  String get themeGoldenHour => 'الساعة الذهبية';
+
+  @override
+  String get themeHighVoltage => 'الجهد العالي';
+
+  @override
+  String get themeWarmMocha => 'موكا دافئة';
+
+  @override
+  String get themeAuroraBorealis => 'الشفق القطبي';
+
+  @override
+  String get themeCherryBlossom => 'زهر الكرز';
+
+  @override
+  String get themeMinimalistOnyx => 'أونيكس بسيط';
+
+  @override
+  String get themeMotifsLabel => 'رموز الخلفية — اختياري';
+
+  @override
+  String get themeMotifsNone => 'اللون فقط';
+
+  @override
+  String get themeAddCustomEmoji => 'إيموجي مخصص';
+
+  @override
+  String get themeCustomEmojiHint => 'اختر أي إيموجي من لوحة المفاتيح';
+
+  @override
+  String get themeShuffleMotifs => 'توزيع عشوائي جديد';
+
+  @override
+  String get themeSectionGradients => 'الألوان المتدرجة';
+
+  @override
+  String get themeSectionSolids => 'الألوان الأساسية';
+
+  @override
+  String get themeSolidRed => 'أحمر كلاسيكي';
+
+  @override
+  String get themeSolidBlue => 'أزرق ملكي';
+
+  @override
+  String get themeSolidGreen => 'أخضر زمردي';
+
+  @override
+  String get themeSolidOrange => 'برتقالي ناصع';
+
+  @override
+  String get themeSolidPurple => 'بنفسجي داكن';
+
+  @override
+  String get themeSolidYellow => 'أصفر مشرق';
+
+  @override
+  String get themeSolidSlate => 'رمادي رصاصي';
+
+  @override
+  String get themeSolidPink => 'وردي فاقع';
+
+  @override
+  String get themeSolidTeal => 'تركواز هادئ';
+
+  @override
+  String get themeSolidAmber => 'عنبر دافئ';
+
+  @override
+  String get themeSolidBrown => 'بني داكن';
+
+  @override
+  String get themeSolidNavy => 'كحلي ليلي';
+
+  @override
+  String get systemMaintenanceTitle => 'سنعود قريبًا';
+
+  @override
+  String get systemMaintenanceDefaultMessage =>
+      'يخضع Social Mate لصيانة مجدولة. يرجى المحاولة مرة أخرى بعد قليل.';
+
+  @override
+  String systemMaintenanceBackAt(String time) {
+    return 'من المتوقع أن نعود حوالي $time';
+  }
+
+  @override
+  String get systemMaintenanceRetry => 'التحقق مرة أخرى';
+
+  @override
+  String get systemMaintenanceChecking => 'جارٍ التحقق…';
+
+  @override
+  String get systemMaintenanceStaffSignIn => 'دخول فريق العمل';
+
+  @override
+  String get systemSignOut => 'تسجيل الخروج';
+
+  @override
+  String get systemUpdateRequiredTitle => 'التحديث مطلوب';
+
+  @override
+  String systemUpdateRequiredBody(String version) {
+    return 'لم يعد هذا الإصدار من Social Mate مدعومًا. يرجى التحديث إلى الإصدار $version أو أحدث للمتابعة.';
+  }
+
+  @override
+  String get systemUpdateNow => 'حدّث الآن';
+
+  @override
+  String get systemUpdateStoreUnavailable =>
+      'رابط المتجر غير متاح. يرجى التحديث من متجر التطبيقات.';
+
+  @override
+  String get systemUpdateOpenStoreFailed =>
+      'تعذر فتح المتجر. يرجى التحديث من متجر التطبيقات.';
+
+  @override
+  String systemUpdateRecommendedMessage(String version) {
+    return 'يتوفر إصدار جديد ($version).';
+  }
+
+  @override
+  String get systemUpdateAction => 'تحديث';
+
+  @override
+  String get systemBannerDismiss => 'إغلاق';
+
+  @override
+  String get systemSuspendedTitle => 'تم إيقاف حسابك';
+
+  @override
+  String get systemSuspendedBody =>
+      'لا يمكنك النشر أو التعليق أو إرسال الرسائل أثناء إيقاف حسابك.';
+
+  @override
+  String get systemSuspendedReasonLabel => 'السبب';
+
+  @override
+  String systemSuspendedUntil(String date) {
+    return 'ينتهي إيقاف حسابك في $date.';
+  }
+
+  @override
+  String get systemSuspendedPermanent => 'هذا الإيقاف ليس له تاريخ انتهاء.';
+
+  @override
+  String get systemSuspendedCheckAgain => 'التحقق من الحالة';
 }
