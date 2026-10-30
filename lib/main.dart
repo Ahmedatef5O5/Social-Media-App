@@ -6,6 +6,7 @@ import 'core/bootstrap/app_bootstrap.dart';
 import 'core/errors/network_error_utils.dart';
 import 'core/observability/error_category.dart';
 import 'core/observability/observability.dart';
+import 'core/observability/overflow_filter.dart';
 import 'core/toast/app_toast.dart';
 
 void main() {
@@ -31,7 +32,12 @@ void main() {
         if (!isImage404) {
           FlutterError.dumpErrorToConsole(details);
         }
-        unawaited(obs.recordFlutterError(details));
+        // RenderFlex overflows are layout bugs, not crashes: report them as
+        // non-fatal `layoutOverflow` (deduplicated per fingerprint) instead
+        // of the fatal framework path below.
+        if (!OverflowFilter.tryRecord(details)) {
+          unawaited(obs.recordFlutterError(details));
+        }
         _notifyUserOfUncaughtError(details.exception);
       };
 

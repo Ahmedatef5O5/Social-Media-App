@@ -1,5 +1,4 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
-
 import '../errors/exceptions.dart';
 import '../errors/network_error_utils.dart';
 import '../supabase/supabase_provider.dart';
@@ -36,11 +35,13 @@ enum ErrorCategory {
   database(ReportingPolicy.nonFatal),
   parsing(ReportingPolicy.nonFatal),
   aiProvider(ReportingPolicy.nonFatal),
-  mediaUpload(ReportingPolicy.nonFatal);
+  mediaUpload(ReportingPolicy.nonFatal),
+  layoutOverflow(ReportingPolicy.nonFatal, 'layout_overflow');
 
-  const ErrorCategory(this.policy);
+  const ErrorCategory(this.policy, [this._key]);
 
   final ReportingPolicy policy;
+  final String? _key;
 
   bool get shouldReportToCrashlytics =>
       policy == ReportingPolicy.fatal || policy == ReportingPolicy.nonFatal;
@@ -48,7 +49,7 @@ enum ErrorCategory {
   bool get isFatal => policy == ReportingPolicy.fatal;
 
   /// Stable string used as a Crashlytics custom key / log prefix.
-  String get key => name;
+  String get key => _key ?? name;
 }
 
 /// Turns a raw caught object into an [ErrorCategory].

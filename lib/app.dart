@@ -23,6 +23,7 @@ import 'package:social_media_app/di/service_providers.dart';
 import 'core/connectivity/cubits/connectivity_cubit.dart';
 import 'core/connectivity/cubits/connectivity_state.dart';
 import 'core/connectivity/widgets/connectivity_banner.dart';
+import 'core/guards/system_control_gate.dart';
 import 'core/presence/services/presence_service.dart';
 import 'core/services/active_call/call_navigation_helper.dart';
 import 'core/services/active_call/cubits/active_call_session_cubit.dart';
@@ -254,7 +255,7 @@ class _MyAppState extends State<MyApp> {
                             ],
                             child: Stack(
                               children: [
-                                activeChild,
+                                SystemControlGate(child: activeChild),
                                 const ConnectivityBanner(),
                                 const AppToastOverlay(),
                                 const CallPipOverlay(), // 1:1 + group calls (LiveKit)

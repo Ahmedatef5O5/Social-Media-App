@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../features/auth/handlers/auth_exception_handler.dart';
+import '../guards/suspension_interceptor.dart';
 import 'network_error_utils.dart';
 
 /// Single entry point every non-auth Cubit/Repository should route
@@ -48,6 +49,9 @@ class SupabaseErrorMapper {
     }
     // RLS / permission
     if (code == '42501' || msg.contains('permission denied')) {
+      // A suspended account is rejected by RLS with exactly this error:
+      // re-check the system status right away (throttled, fire-and-forget).
+      SuspensionInterceptor.onError(e);
       return 'You don\'t have permission to do this.';
     }
 

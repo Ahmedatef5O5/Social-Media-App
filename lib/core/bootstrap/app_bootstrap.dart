@@ -30,11 +30,15 @@ import '../deep_link/services/deep_link_service.dart';
 import '../errors/supabase_error_mapper.dart';
 import '../notifications/notification_service.dart';
 import '../observability/build_info.dart';
+import '../observability/composite_crash_reporter.dart';
+import '../observability/crash_reporter.dart';
 import '../observability/crashlytics_reporter.dart';
+import '../observability/incident_reporter.dart';
 import '../observability/observability.dart';
 import '../observability/realtime_channel_sampler.dart';
 import '../observability/realtime_diagnostics.dart';
 import '../services/active_screen_tracker.dart';
+import '../services/system_control_service.dart';
 import '../session/session_guard.dart';
 import '../session/session_scope.dart';
 import '../share_intent/services/share_intent_service.dart';
@@ -65,6 +69,14 @@ Future<void> initializeCriticalBeforeRunApp() async {
   //
   // Wrapped in `_safely`: a Firebase outage must never prevent the app from
   // starting. Losing telemetry is acceptable; losing the app is not.
+  // Feature B: must be registered BEFORE runApp so it sits ahead of
+  // WidgetsApp in the back-button chain (see attachBackBlocker). Synchronous.
+  try {
+    SystemControlService.instance.attachBackBlocker();
+  } catch (e, s) {
+    debugPrint('⚠️ attachBackBlocker failed: $e\n$s');
+  }
+
   await _safely('FirebaseCore', _initFirebaseCore);
   await _safely('Observability', _initObservability);
   await Future.wait([
@@ -86,8 +98,21 @@ void _configureImageCache() {
 }
 
 Future<void> _initObservability() async {
+  // Crashlytics + the Operations Control Platform (`incident_report_batch`).
+  // `CrashlyticsReporter()` throws when Firebase failed to initialise; that
+  // must not also take the incident pipeline down, so it is built defensively.
+  final reporters = <CrashReporter>[];
+  try {
+    reporters.add(CrashlyticsReporter());
+  } catch (e) {
+    debugPrint(
+      '⚠️ Crashlytics unavailable, continuing with incidents only: $e',
+    );
+  }
+  reporters.add(IncidentReporter.instance);
+
   await obs.attachReporter(
-    CrashlyticsReporter(),
+    CompositeCrashReporter(reporters),
     environment: BuildInfo.environment,
     appVersion: BuildInfo.appVersion,
     buildNumber: BuildInfo.buildNumber,
@@ -174,6 +199,10 @@ Future<void> initializeCoreServices() async {
   await obs.setContext('supabase_ready', supabaseReady);
 
   if (supabaseReady) {
+    // Remote App Control (maintenance / version gate / banner / suspension).
+    // `init` is synchronous and starts the first fetch in the background, so an
+    // offline cold start is never delayed or blocked; the fetch fails open.
+    await _safely('SystemControl', () async => SystemControlService.instance.init());
     await _safely('AuthRecoveryRestore', AuthRecoveryCoordinator.restore);
     await _safely('AuthLinkHandler', AuthLinkHandler.instance.init);
     await _safely(
@@ -255,6 +284,7 @@ Future<void> completeSignInBootstrap() async {
   final session = SupabaseProvider.currentSession;
   final userId = session?.user.id;
   if (userId != null) {
+    SystemControlService.instance.onAuthChanged();
     await obs.setSessionUser(userId);
     await obs.breadcrumb(
       'mfa challenge completed - signed in',
@@ -308,6 +338,7 @@ void _setupAuthListener() {
           return;
         }
 
+        SystemControlService.instance.onAuthChanged();
         await obs.setSessionUser(session.user.id);
         await obs.breadcrumb('signed in', feature: 'auth');
         RealtimeDiagnostics.instance.detectZombies(session.user.id);
@@ -348,6 +379,7 @@ void _setupAuthListener() {
 
       debugPrint('⚠️ Session expired or signed out. Redirecting to Login...');
       await obs.breadcrumb('signed out ($event)', feature: 'auth');
+      SystemControlService.instance.onAuthChanged();
       await obs.setSessionUser(null);
       RealtimeChannelSampler.instance.setOwner(null);
       await PresenceService.instance.dispose();

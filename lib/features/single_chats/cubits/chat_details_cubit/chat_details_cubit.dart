@@ -15,12 +15,15 @@ import '../../../../core/chat_shared/services/chat_mute_service.dart';
 import '../../../../core/connectivity/services/connectivity_banner_controller.dart';
 import '../../../../core/errors/exceptions.dart';
 import '../../../../core/errors/supabase_error_mapper.dart';
+import '../../../../core/guards/suspension_interceptor.dart';
 import '../../../../core/helpers/chat_helper.dart';
 import '../../../../core/helpers/safe_emit_mixin.dart';
 import '../../../../core/helpers/selected_message_star_controller.dart';
+import '../../../../core/localization/app_l10n.dart';
 import '../../../../core/messaging/message_reconciler.dart';
 import '../../../../core/presence/models/chat_action_type.dart';
 import '../../../../core/services/fcm_services.dart';
+import '../../../../core/services/system_control_service.dart';
 import '../../../../core/supabase/supabase_provider.dart';
 import '../../../../core/toast/app_toast.dart';
 import '../../../../core/utilities/supabase_constants.dart';
@@ -933,22 +936,30 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
           forwardedFromUserAvatar: forwardedFromUserAvatar,
         );
       } catch (e) {
-        // UNKNOWN OUTCOME, not definite failure: uploads already
-        // succeeded (we got this far), so the INSERT itself may well have
-        // committed even though this HTTP call failed/timed out before we
-        // saw the response. Do NOT remove the optimistic message — it
-        // stays in `cachedMessages` and its correlation key stays in
-        // `_protectedKeys`, so if a later Realtime snapshot (or a
-        // reconnect, which re-triggers this same `.stream()`) confirms the
-        // row by clientMessageId, it will be reconciled into REAL
-        // automatically. If the row genuinely was never written, the
-        // upsert's `ON CONFLICT ... DO NOTHING` semantics make a future
-        // retry with this same CID safe either way.
+        _cancelTokens.remove(tempId);
+        uploadProgressMap.remove(tempId);
+
+        // Check for Account Suspension (RLS 42501)
+        if (SuspensionInterceptor.looksLikePermissionRejection(e) ||
+            e.toString().contains('suspension_block_insert')) {
+          cachedMessages.removeWhere((m) => m.clientMessageId == tempId);
+          _protectedKeys.remove(tempId);
+          SuspensionInterceptor.onError(e);
+          SystemControlService.instance.refresh(force: true);
+          emit(
+            MessagesError(
+              AppL10n.isArabic
+                  ? "تم إيقاف حسابك، لا يمكنك إرسال الرسائل."
+                  : "Your account is suspended. You cannot send messages.",
+            ),
+          );
+          emit(MessagesSuccessLoaded(messages: List.from(cachedMessages)));
+          return;
+        }
+
         debugPrint(
           'sendMessage: unknown outcome, keeping optimistic message: $e',
         );
-        _cancelTokens.remove(tempId);
-        uploadProgressMap.remove(tempId);
         unawaited(ConnectivityBannerController.notifyIfOffline());
         emit(
           MessagesError(

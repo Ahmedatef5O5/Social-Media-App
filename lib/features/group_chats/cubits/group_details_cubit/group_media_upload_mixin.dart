@@ -259,11 +259,36 @@ mixin GroupMediaUploadMixin on Cubit<GroupDetailsState> {
           forwardedFromUserAvatar: forwardedFromUserAvatar,
         );
       } catch (e) {
+        _cancelTokens.remove(tempId);
+        uploadProgressMap.remove(tempId);
+
+        // Check for Account Suspension (RLS 42501)
+        if (SuspensionInterceptor.looksLikePermissionRejection(e) ||
+            e.toString().contains('suspension_block_insert')) {
+          cachedMessages = GroupDetailsCubit._reconciler.removeById(
+            cachedMessages,
+            tempId,
+          );
+          (this as GroupDetailsCubit)._protectedKeys.remove(
+            correlationKeyFor(id: tempId, clientMessageId: tempId),
+          );
+          SuspensionInterceptor.onError(e);
+          SystemControlService.instance.refresh(force: true);
+          if (isClosed) return;
+          emit(
+            GroupDetailsError(
+              AppL10n.isArabic
+                  ? "تم إيقاف حسابك، لا يمكنك إرسال رسائل جماعية."
+                  : "Your account is suspended. You cannot send group messages.",
+            ),
+          );
+          emit(GroupDetailsLoaded(messages: List.from(cachedMessages)));
+          return;
+        }
+
         debugPrint(
           'sendGroupMessage: unknown outcome, keeping optimistic message: $e',
         );
-        _cancelTokens.remove(tempId);
-        uploadProgressMap.remove(tempId);
         unawaited(ConnectivityBannerController.notifyIfOffline());
 
         if (isClosed) return;
