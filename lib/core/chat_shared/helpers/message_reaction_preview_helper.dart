@@ -19,19 +19,6 @@ class MessageReactionPreviewHelper {
     'fire': '🔥',
   };
 
-  static const List<String> _mediaPrefixes = [
-    '📷',
-    '🎥',
-    '🎬',
-    '🎤',
-    '🖼️',
-    '🎞️',
-    '🏷️',
-    '😊',
-    '📞',
-    '📎',
-  ];
-
   static String resolveEmoji(String? reactionType) {
     if (reactionType == null || reactionType.trim().isEmpty) return '👍';
     final trimmed = reactionType.trim();
@@ -95,11 +82,11 @@ class MessageReactionPreviewHelper {
     switch (type) {
       case 'image':
         return cleanCaption.isNotEmpty
-            ? '📷 $cleanCaption'
+            ? '$cleanCaption 📷'
             : AppL10n.current.photo2;
       case 'video':
         return cleanCaption.isNotEmpty
-            ? '🎥 $cleanCaption'
+            ? '$cleanCaption 🎥'
             : AppL10n.current.video2;
       case 'voice':
         return AppL10n.current.voiceMessage;
@@ -135,6 +122,7 @@ class MessageReactionPreviewHelper {
                     ? AppL10n.current.deletedAccount
                     : cleanReactor)
                 : AppL10n.current.someone);
+
     final emoji = resolveEmoji(reactionType);
     final snippet = getMessageFallback(
       type: messageType,
@@ -147,6 +135,151 @@ class MessageReactionPreviewHelper {
       return AppL10n.current.reactWithTo(actor, emoji, snippet);
     }
     return AppL10n.current.reactWithTo2(actor, emoji, snippet);
+  }
+
+  static Widget buildReactionPreviewWidget({
+    required String rawPreview,
+    required TextStyle style,
+    Color? defaultIconColor,
+    double iconSize = 13,
+  }) {
+    final localizedPreview = rawPreview.replaceAll(
+      RegExp(r'Deleted Account', caseSensitive: false),
+      AppL10n.current.deletedAccount,
+    );
+
+    final enReactIdx = localizedPreview.indexOf(' react with ');
+    final enToIdx =
+        enReactIdx != -1
+            ? localizedPreview.indexOf(' to ', enReactIdx + 12)
+            : -1;
+
+    final arReactIdx = localizedPreview.indexOf(' تفاعل بـ ');
+    final arToIdx =
+        arReactIdx != -1
+            ? localizedPreview.indexOf(' على ', arReactIdx + 10)
+            : -1;
+
+    final isEn = enReactIdx != -1 && enToIdx != -1;
+    final isAr = arReactIdx != -1 && arToIdx != -1;
+
+    if (!isEn && !isAr) {
+      final isRtlLocale = AppL10n.current.localeName.toLowerCase().startsWith('ar');
+      return Text(
+        rawPreview,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        textDirection:
+            isRtlLocale
+                ? TextDirection.rtl
+                : BidiTextHelper.detectDirection(rawPreview),
+        textAlign: isRtlLocale ? TextAlign.right : TextAlign.left,
+        style: style,
+      );
+    }
+
+    if (isAr) {
+      final actor = rawPreview.substring(0, arReactIdx).trim();
+      final emoji = rawPreview.substring(arReactIdx + 10, arToIdx).trim();
+      String target = rawPreview.substring(arToIdx + 5).trim();
+
+      if (target.startsWith('“') && target.endsWith('”')) {
+        target = target.substring(1, target.length - 1).trim();
+      } else if (target.length >= 2 &&
+          target.startsWith('"') &&
+          target.endsWith('"')) {
+        target = target.substring(1, target.length - 1).trim();
+      }
+
+      if (target.startsWith('📄')) {
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              '$actor تفاعل بـ $emoji على ',
+              style: style,
+              textDirection: TextDirection.rtl,
+            ),
+            Flexible(
+              child: buildDirectionalFilePreview(
+                fileName: target,
+                style: style,
+                defaultIconColor: defaultIconColor,
+                iconSize: iconSize,
+                quoted: true,
+              ),
+            ),
+          ],
+        );
+      }
+
+      return Text.rich(
+        TextSpan(
+          children: [
+            TextSpan(
+              text: '$actor ',
+              style: style.copyWith(fontWeight: FontWeight.w600),
+            ),
+            TextSpan(text: 'تفاعل بـ $emoji على '),
+            TextSpan(text: '“$target”', style: style),
+          ],
+        ),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        textDirection: TextDirection.rtl,
+        textAlign: TextAlign.right,
+      );
+    }
+
+    // الحالة الإنجليزية
+    final actor = rawPreview.substring(0, enReactIdx).trim();
+    final emoji = rawPreview.substring(enReactIdx + 12, enToIdx).trim();
+    String target = rawPreview.substring(enToIdx + 4).trim();
+
+    if (target.length >= 2 &&
+        target.startsWith('"') &&
+        target.endsWith('"')) {
+      target = target.substring(1, target.length - 1).trim();
+    }
+
+    if (target.startsWith('📄')) {
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            '$actor reacted with $emoji to ',
+            style: style,
+            textDirection: TextDirection.ltr,
+          ),
+          Flexible(
+            child: buildDirectionalFilePreview(
+              fileName: target,
+              style: style,
+              defaultIconColor: defaultIconColor,
+              iconSize: iconSize,
+              quoted: true,
+            ),
+          ),
+        ],
+      );
+    }
+
+    return Text.rich(
+      TextSpan(
+        children: [
+          TextSpan(
+            text: '$actor ',
+            style: style.copyWith(fontWeight: FontWeight.w600),
+          ),
+          TextSpan(text: 'reacted with $emoji to '),
+          TextSpan(text: '"$target"', style: style),
+        ],
+      ),
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      textDirection: TextDirection.ltr,
+      textAlign: TextAlign.left,
+    );
   }
 
   static Widget buildDirectionalFilePreview({
@@ -195,125 +328,6 @@ class MessageReactionPreviewHelper {
           if (quoted) Text('"', style: style),
         ],
       ),
-    );
-  }
-
-  static Widget buildReactionPreviewWidget({
-    required String rawPreview,
-    required TextStyle style,
-    Color? defaultIconColor,
-    double iconSize = 13,
-  }) {
-    final localizedPreview = rawPreview.replaceAll(
-      RegExp(r'Deleted Account', caseSensitive: false),
-      AppL10n.current.deletedAccount,
-    );
-    final reactIdx = localizedPreview.indexOf(' react with ');
-    final toIdx =
-        reactIdx != -1 ? rawPreview.indexOf(' to ', reactIdx + 12) : -1;
-
-    if (reactIdx == -1 || toIdx == -1) {
-      final dir = BidiTextHelper.detectDirection(rawPreview);
-      return Text(
-        rawPreview,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        textDirection: dir,
-        textAlign: TextAlign.left,
-        style: style,
-      );
-    }
-
-    final prefix = rawPreview.substring(0, toIdx + 4);
-    String target = rawPreview.substring(toIdx + 4).trim();
-
-    if (target.length >= 2 && target.startsWith('"') && target.endsWith('"')) {
-      target = target.substring(1, target.length - 1).trim();
-    }
-
-    if (target.startsWith('📄')) {
-      return Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(prefix, style: style, textDirection: TextDirection.ltr),
-          Flexible(
-            child: buildDirectionalFilePreview(
-              fileName: target,
-              style: style,
-              defaultIconColor: defaultIconColor,
-              iconSize: iconSize,
-              quoted: true,
-            ),
-          ),
-        ],
-      );
-    }
-
-    for (final mediaEmoji in _mediaPrefixes) {
-      if (target.startsWith(mediaEmoji)) {
-        final afterEmoji = target.substring(mediaEmoji.length).trim();
-        final contentDir = BidiTextHelper.detectDirection(afterEmoji);
-        return Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(prefix, style: style, textDirection: TextDirection.ltr),
-            Flexible(
-              child: Directionality(
-                textDirection: contentDir,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      mediaEmoji,
-                      style: style,
-                      textDirection: TextDirection.ltr,
-                    ),
-                    const SizedBox(width: 4),
-                    Flexible(
-                      child: Text(
-                        afterEmoji,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        textDirection: contentDir,
-                        style: style,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        );
-      }
-    }
-
-    final textDir = BidiTextHelper.detectDirection(target);
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(prefix, style: style, textDirection: TextDirection.ltr),
-        Flexible(
-          child: Directionality(
-            textDirection: textDir,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text('"', style: style),
-                Flexible(
-                  child: Text(
-                    target,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    textDirection: textDir,
-                    style: style,
-                  ),
-                ),
-                Text('"', style: style),
-              ],
-            ),
-          ),
-        ),
-      ],
     );
   }
 }

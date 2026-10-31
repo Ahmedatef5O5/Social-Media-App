@@ -13,6 +13,9 @@ mixin PostCreationMixin on Cubit<PostsState> {
   int? selectedImageSizeBytes;
   int? selectedVideoSizeBytes;
   int? selectedDocumentSizeBytes;
+  String? selectedThemeId;
+  String? selectedGifUrl;
+  double? selectedGifAspectRatio;
   MediaCacheRepository get _mediaCacheRepository;
   dio_pkg.CancelToken? _cancelToken;
 
@@ -21,6 +24,7 @@ mixin PostCreationMixin on Cubit<PostsState> {
     ContentPrivacy privacy = ContentPrivacy.public,
     List<String> allowedViewerIds = const [],
     List<MentionRef> mentions = const [],
+    String? groupId,
   }) async {
     if (state is PostCreating) return;
     final user = SupabaseProvider.user;
@@ -34,6 +38,16 @@ mixin PostCreationMixin on Cubit<PostsState> {
     String? imageUrl, videoUrl, fileUrl;
     String? imagePublicId, videoPublicId, filePublicId;
     int? mediaWidth, mediaHeight;
+    String? gifUrl;
+
+    final bool hasFileMedia =
+        selectedImage != null ||
+        selectedVideo != null ||
+        selectedDocument != null;
+    final String? backgroundTheme =
+        (hasFileMedia || selectedGifUrl != null)
+            ? null
+            : PostThemeSelection.normalizeEncoded(selectedThemeId);
 
     try {
       void updateProgress(int sentBytes, int totalBytes) {
@@ -123,6 +137,15 @@ mixin PostCreationMixin on Cubit<PostsState> {
         }
       }
 
+      if (!hasFileMedia && selectedGifUrl != null) {
+        // Already hosted on Giphy's CDN: no upload, store the url as is.
+        gifUrl = selectedGifUrl;
+        final ratio = (selectedGifAspectRatio ?? 1.0).clamp(0.1, 10.0);
+        mediaWidth = (ratio * 1000).round();
+        mediaHeight = 1000;
+        emit(const PostCreating(0.95));
+      }
+
       final postId = const Uuid().v4();
       final postRequest = PostRequestBody(
         id: postId,
@@ -136,23 +159,42 @@ mixin PostCreationMixin on Cubit<PostsState> {
         filePublicId: filePublicId,
         mediaWidth: mediaWidth,
         mediaHeight: mediaHeight,
-        privacyType: privacy,
+        backgroundTheme: backgroundTheme,
+        gifUrl: gifUrl,
+        privacyType: groupId != null ? ContentPrivacy.private : privacy,
+        groupId: groupId,
       );
 
       await _postsServices.addPost(postRequest);
-      if (privacy == ContentPrivacy.private && allowedViewerIds.isNotEmpty) {
+      if (groupId == null &&
+          privacy == ContentPrivacy.private &&
+          allowedViewerIds.isNotEmpty) {
         await _postsServices.setPostAllowedViewers(postId, allowedViewerIds);
       }
 
       if (mentions.isNotEmpty) {
-        await _postsServices.insertPostMentions(
-          postId: postId,
-          mentions: mentions,
-        );
-        for (final mention in mentions) {
+        final realMentions =
+            mentions.where((m) => m.mentionedUserId != 'all').toList();
+        final mentionsAll =
+            groupId != null && mentions.any((m) => m.mentionedUserId == 'all');
+
+        if (realMentions.isNotEmpty) {
+          await _postsServices.insertPostMentions(
+            postId: postId,
+            mentions: realMentions,
+          );
+        }
+
+        final receiverIds = <String>{
+          ...realMentions.map((m) => m.mentionedUserId),
+          if (mentionsAll)
+            ...await _postsServices.fetchActiveGroupMemberIds(groupId),
+        }..remove(userId);
+
+        for (final receiverId in receiverIds) {
           unawaited(
             FcmService.instance.notifyMention(
-              receiverId: mention.mentionedUserId,
+              receiverId: receiverId,
               actorId: userId,
               actorName: currentUserData?.name ?? 'Someone',
               actorImageUrl: currentUserData?.imageUrl ?? '',
@@ -364,6 +406,7 @@ mixin PostCreationMixin on Cubit<PostsState> {
     try {
       final image = await filePickerServices.pickImageFromGallery();
       if (image != null) {
+        _clearThemeAndGif();
         selectedImage = image;
         selectedImageSizeBytes = File(image.path).lengthSync();
         emit(MediaPicked(image));
@@ -381,6 +424,7 @@ mixin PostCreationMixin on Cubit<PostsState> {
     try {
       final image = await filePickerServices.takePhotoByCamera();
       if (image != null) {
+        _clearThemeAndGif();
         selectedImage = image;
         selectedImageSizeBytes = File(image.path).lengthSync();
         emit(MediaPicked(image));
@@ -398,6 +442,7 @@ mixin PostCreationMixin on Cubit<PostsState> {
     try {
       final video = await filePickerServices.pickVideoFromGallery();
       if (video != null) {
+        _clearThemeAndGif();
         selectedVideo = video;
         selectedVideoSizeBytes = File(video.path).lengthSync();
         emit(MediaPicked(video));
@@ -415,6 +460,7 @@ mixin PostCreationMixin on Cubit<PostsState> {
     try {
       final doc = await filePickerServices.pickFile();
       if (doc != null) {
+        _clearThemeAndGif();
         selectedDocument = doc;
         selectedDocumentSizeBytes = File(doc.path).lengthSync();
         emit(MediaPicked(doc));
@@ -428,6 +474,7 @@ mixin PostCreationMixin on Cubit<PostsState> {
   }
 
   void attachExternalMedia({XFile? image, XFile? video, XFile? document}) {
+    _clearThemeAndGif();
     if (image != null) {
       selectedImage = image;
       selectedImageSizeBytes = File(image.path).lengthSync();
@@ -441,7 +488,68 @@ mixin PostCreationMixin on Cubit<PostsState> {
     emit(MediaPicked(image ?? video ?? document ?? XFile('')));
   }
 
+  // ── Themes & GIFs ──────────────────────────────────────────────────────────
+
+  void _clearThemeAndGif() {
+    selectedThemeId = null;
+    selectedGifUrl = null;
+    selectedGifAspectRatio = null;
+  }
+
+  void _clearFileMedia() {
+    selectedImage = null;
+    selectedVideo = null;
+    selectedDocument = null;
+    selectedImageSizeBytes = null;
+    selectedVideoSizeBytes = null;
+    selectedDocumentSizeBytes = null;
+  }
+
+  /// Applies a background theme selection (drops any media / GIF).
+  void selectTheme(String encodedSelection) {
+    final normalized = PostThemeSelection.normalizeEncoded(encodedSelection);
+    if (normalized == null) return;
+    _clearFileMedia();
+    selectedGifUrl = null;
+    selectedGifAspectRatio = null;
+    selectedThemeId = normalized;
+    emit(PostAttachmentChanged());
+  }
+
+  /// Generates a fresh random scatter layout for the currently selected motifs.
+  void shuffleSelectedThemeSeed() {
+    final parsed = PostThemeSelection.parse(selectedThemeId);
+    if (parsed == null || !parsed.hasMotifs) return;
+    selectedThemeId =
+        parsed.copyWith(seed: PostThemeSelection.generateSeed()).encode();
+    emit(PostAttachmentChanged());
+  }
+
+  void clearTheme() {
+    selectedThemeId = null;
+    emit(PostAttachmentChanged());
+  }
+
+  /// Attaches a GIF (drops any media / theme).
+  void selectGif({required String url, required double aspectRatio}) {
+    if (url.isEmpty) return;
+    _clearFileMedia();
+    selectedThemeId = null;
+    selectedGifUrl = url;
+    selectedGifAspectRatio = aspectRatio;
+    emit(PostAttachmentChanged());
+  }
+
+  void clearGif() {
+    selectedGifUrl = null;
+    selectedGifAspectRatio = null;
+    emit(PostAttachmentChanged());
+  }
+
   void _resetMedia() {
+    selectedThemeId = null;
+    selectedGifUrl = null;
+    selectedGifAspectRatio = null;
     selectedImage = null;
     selectedVideo = null;
     selectedDocument = null;
@@ -460,6 +568,24 @@ mixin PostCreationMixin on Cubit<PostsState> {
 
   String _mapExceptionToMessage(Object e) {
     final error = e.toString().toLowerCase();
+
+    // Check for Account Suspension (RLS 42501)
+    if (SuspensionInterceptor.looksLikePermissionRejection(e) ||
+        error.contains('suspension_block_insert') ||
+        error.contains('42501')) {
+      SuspensionInterceptor.onError(e);
+      SystemControlService.instance.refresh(force: true);
+      final status = SystemControlService.instance.status.value;
+      if (status.suspensionReason != null) {
+        return AppL10n.isArabic
+            ? "تم إيقاف حسابك بسبب: ${status.suspensionReason}"
+            : "Your account is suspended: ${status.suspensionReason}";
+      }
+      return AppL10n.isArabic
+          ? "حسابك موقوف حالياً ولا يمكنك نشر أي محتوى جديد."
+          : "Your account is suspended. You cannot create new posts.";
+    }
+
     if (error.contains('canceled') || error.contains('cancel')) {
       return "upload_canceled";
     }

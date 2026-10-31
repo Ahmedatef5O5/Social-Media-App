@@ -8,7 +8,6 @@ import 'package:social_media_app/features/profile/cubits/profile_cubit/profile_c
 import 'package:social_media_app/features/settings/widgets/drawer_item_widget.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/toast/app_toast.dart';
-import '../../discover/views/discover_people_search_view.dart';
 import '../../profile/models/edit_profile_route_args.dart';
 import '../utils/drawer_header_shimmer.dart';
 import 'drawer_header_widget.dart';
@@ -67,35 +66,25 @@ class ProfileDrawer extends StatelessWidget {
                     }
                   },
                 ),
+
                 DrawerItemWidget(
-                  icon: Icons.search,
-                  title: context.l10n.searchProfile,
+                  icon: Icons.message_outlined,
+                  title: context.l10n.yourChats,
                   onTap: () {
-                    Navigator.of(context, rootNavigator: true).push(
-                      PageRouteBuilder(
-                        pageBuilder:
-                            (_, animation, __) =>
-                                const DiscoverPeopleSearchView(),
-                        transitionsBuilder: (_, anim, __, child) {
-                          return FadeTransition(
-                            opacity: anim,
-                            child: SlideTransition(
-                              position: Tween<Offset>(
-                                begin: const Offset(0, 0.05),
-                                end: Offset.zero,
-                              ).animate(
-                                CurvedAnimation(
-                                  parent: anim,
-                                  curve: Curves.easeOut,
-                                ),
-                              ),
-                              child: child,
-                            ),
-                          );
-                        },
-                        transitionDuration: const Duration(milliseconds: 280),
-                      ),
-                    );
+                    Navigator.of(context).pop();
+                    navController.jumpToTab(2);
+                  },
+                ),
+
+                DrawerItemWidget(
+                  icon: Icons.groups_outlined,
+                  title: context.l10n.yourGroups,
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    Navigator.of(
+                      context,
+                      rootNavigator: true,
+                    ).pushNamed(AppRoutes.yourGroupsRoute);
                   },
                 ),
 
@@ -105,15 +94,6 @@ class ProfileDrawer extends StatelessWidget {
                   onTap: () {
                     Navigator.of(context).pop();
                     navController.jumpToTab(1);
-                  },
-                ),
-
-                DrawerItemWidget(
-                  icon: Icons.message_outlined,
-                  title: context.l10n.yourChats,
-                  onTap: () {
-                    Navigator.of(context).pop();
-                    navController.jumpToTab(2);
                   },
                 ),
 

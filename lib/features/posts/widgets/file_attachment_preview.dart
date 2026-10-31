@@ -347,6 +347,7 @@ class _FileAttachmentPreviewState extends State<FileAttachmentPreview>
                           const Gap(8),
                           Text(
                             sizeStr,
+                            textDirection: TextDirection.ltr,
                             style: theme.textTheme.bodySmall?.copyWith(
                               color: theme.textTheme.bodySmall?.color
                                   ?.withValues(alpha: 0.7),
@@ -370,7 +371,6 @@ class _FileAttachmentPreviewState extends State<FileAttachmentPreview>
       ),
     );
   }
-  // lib/features/posts/widgets/file_attachment_preview.dart
 
   Widget _buildModernAction(Color fileColor, bool isDownloaded) {
     if (widget.isAuthor) {
@@ -381,55 +381,59 @@ class _FileAttachmentPreviewState extends State<FileAttachmentPreview>
 
     if (_isDownloading) {
       final clamped = _downloadProgress.clamp(0.0, 1.0);
-      actionWidget = Column(
-        key: const ValueKey('downloading'),
-        mainAxisSize: MainAxisSize.min,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          GestureDetector(
-            onTap: _cancelDownload,
-            behavior: HitTestBehavior.opaque,
-            child: SizedBox(
-              width: 32,
-              height: 32,
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  TweenAnimationBuilder<double>(
-                    tween: Tween(begin: 0, end: clamped),
-                    duration: const Duration(milliseconds: 200),
-                    curve: Curves.easeOut,
-                    builder: (context, value, _) {
-                      return CustomPaint(
-                        size: const Size(32, 32),
-                        painter: ModernProgressPainter(
-                          progress: value,
-                          backgroundColor: fileColor.withValues(alpha: 0.22),
-                          progressColor: fileColor,
-                        ),
-                      );
-                    },
-                  ),
-                  Icon(Icons.close_rounded, size: 14, color: fileColor),
-                ],
+      actionWidget = Directionality(
+        textDirection: TextDirection.ltr,
+        child: Column(
+          key: const ValueKey('downloading'),
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            GestureDetector(
+              onTap: _cancelDownload,
+              behavior: HitTestBehavior.opaque,
+              child: SizedBox(
+                width: 32,
+                height: 32,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    TweenAnimationBuilder<double>(
+                      tween: Tween(begin: 0, end: clamped),
+                      duration: const Duration(milliseconds: 200),
+                      curve: Curves.easeOut,
+                      builder: (context, value, _) {
+                        return CustomPaint(
+                          size: const Size(32, 32),
+                          painter: ModernProgressPainter(
+                            progress: value,
+                            backgroundColor: fileColor.withValues(alpha: 0.22),
+                            progressColor: fileColor,
+                          ),
+                        );
+                      },
+                    ),
+                    Icon(Icons.close_rounded, size: 14, color: fileColor),
+                  ],
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: 3),
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Text(
-              _formatTransfer(clamped, _resolvedSizeBytes),
-              style: TextStyle(
-                color: fileColor,
-                fontSize: 8.5,
-                fontWeight: FontWeight.w700,
-                height: 1,
+            const SizedBox(height: 3),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                _formatTransfer(clamped, _resolvedSizeBytes),
+                textDirection: TextDirection.ltr,
+                style: TextStyle(
+                  color: fileColor,
+                  fontSize: 8.5,
+                  fontWeight: FontWeight.w700,
+                  height: 1,
+                ),
+                textAlign: TextAlign.center,
               ),
-              textAlign: TextAlign.center,
             ),
-          ),
-        ],
+          ],
+        ),
       );
     } else if (isDownloaded || _showCheckmark) {
       actionWidget = Container(

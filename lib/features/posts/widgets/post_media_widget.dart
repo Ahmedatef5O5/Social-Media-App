@@ -3,6 +3,7 @@ import 'package:social_media_app/core/widgets/cached_cloudinary_image.dart';
 import 'package:social_media_app/features/posts/widgets/post_video_player.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/widgets/blurred_media_placeholders.dart';
+import '../../gifs/utils/loop_limited_gif.dart';
 import '../cubits/posts_cubit/posts_cubit.dart';
 import '../models/post_model.dart';
 import 'file_attachment_preview.dart';
@@ -53,6 +54,22 @@ class PostMediaWidget extends StatelessWidget {
                         height: MediaQuery.sizeOf(context).height * 0.3,
                         child: const Icon(Icons.error),
                       ),
+                ),
+              ),
+            ),
+          ),
+        if (post.gifUrl != null && post.gifUrl!.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(top: 2),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(14),
+              child: AspectRatio(
+                aspectRatio: post.mediaAspectRatio.clamp(0.6, 2.2),
+                child: LoopLimitedGif(
+                  key: ValueKey('post-gif-${post.id}'),
+                  url: post.gifUrl!,
+                  maxLoops: 3,
+                  fit: BoxFit.cover,
                 ),
               ),
             ),

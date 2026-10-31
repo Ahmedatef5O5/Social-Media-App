@@ -119,24 +119,27 @@ class _RightInteractionsPostVideoColumnState
   Future<void> _toggleReshare(PostModel post) async {
     HapticFeedback.lightImpact();
     final bool wasShared = post.isSharedByMe;
+    final String toastMessage =
+        wasShared ? context.l10n.shareRemoved : context.l10n.sharedSuccessfully;
+
     final bool success = await widget.postsCubit.toggleSharePost(post);
     if (success) {
-      AppToast.save(
-        wasShared ? context.l10n.shareRemoved : context.l10n.sharedSuccessfully,
-        icon: Icons.repeat_rounded,
-      );
+      AppToast.save(toastMessage, icon: Icons.repeat_rounded);
     }
   }
 
   Future<void> _toggleSave(PostModel post) async {
     HapticFeedback.lightImpact();
     final bool wasSaved = post.isSavedByMe;
+    final String toastMessage =
+        wasSaved
+            ? context.l10n.postRemovedFromSaves
+            : context.l10n.postSavedSuccessfully;
+
     final bool success = await widget.postsCubit.toggleSavePost(post);
     if (success) {
       AppToast.save(
-        wasSaved
-            ? context.l10n.postRemovedFromSaves
-            : context.l10n.postSavedSuccessfully,
+        toastMessage,
         icon: wasSaved ? Icons.bookmark_remove_rounded : Icons.bookmark_rounded,
       );
     }

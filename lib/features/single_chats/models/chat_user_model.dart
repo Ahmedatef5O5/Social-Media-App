@@ -43,7 +43,6 @@ class ChatUserModel {
           ? AppL10n.current.deletedAccount
           : _name;
 
-
   factory ChatUserModel.fromUserData(
     Map<String, dynamic> map,
     String currentUserId,
@@ -128,7 +127,7 @@ class ChatUserModel {
 
   Map<String, dynamic> toCacheJson() => {
     'id': id,
-    'name': _name,  
+    'name': _name,
     'image_url': imageUrl,
     'last_message': lastMessage,
     'last_message_type': lastMessageType,

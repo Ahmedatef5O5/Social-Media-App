@@ -34,7 +34,8 @@ class _PostTxtContentWidgetState extends State<PostTxtContentWidget> {
     final bool hasMedia =
         (widget.post.imageUrl?.isNotEmpty ?? false) ||
         (widget.post.videoUrl?.isNotEmpty ?? false) ||
-        (widget.post.fileUrl?.isNotEmpty ?? false);
+        (widget.post.fileUrl?.isNotEmpty ?? false) ||
+        (widget.post.gifUrl?.isNotEmpty ?? false);
 
     final int maxLines = hasMedia ? 3 : 5;
 

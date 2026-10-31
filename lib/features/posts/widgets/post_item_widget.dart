@@ -12,6 +12,7 @@ import '../views/post_details_view.dart';
 import 'post_interactions_row.dart';
 import 'post_media_widget.dart';
 import 'post_txt_content_widget.dart';
+import 'themed_post_card.dart';
 import 'shared_post_header_widget.dart';
 import 'package:social_media_app/core/localization/l10n_extension.dart';
 
@@ -198,7 +199,14 @@ class PostItemWidget extends StatelessWidget {
                                   isProfileContext: isProfileContext,
                                 ),
                                 const SizedBox(height: 8),
-                                PostTxtContentWidget(post: displayPost),
+                                displayPost.hasBackgroundTheme
+                                    ? ThemedPostCard(
+                                      post: displayPost,
+                                      postsCubit: postsCubit,
+                                      heroTag:
+                                          'themed-post-${currentPost.id}-${displayPost.id}',
+                                    )
+                                    : PostTxtContentWidget(post: displayPost),
                                 PostMediaWidget(
                                   post: displayPost,
                                   postsCubit: postsCubit,

@@ -64,3 +64,10 @@ final class MediaPickingError extends PostsState {
   final String message;
   MediaPickingError(this.message);
 }
+
+/// Emitted when the theme / GIF selection changes so the create screen
+/// rebuilds. Intentionally NOT const: Bloc drops an emit equal to the current
+/// state, and two const instances would be equal.
+final class PostAttachmentChanged extends PostsState {
+  PostAttachmentChanged();
+}

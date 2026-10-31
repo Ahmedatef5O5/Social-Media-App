@@ -13,6 +13,7 @@ import '../../social_graph/models/content_privacy.dart';
 import '../../../core/mentions/models/mention_ref.dart';
 import '../models/post_model.dart';
 import '../models/post_request_body.dart';
+import '../models/group_posts_page.dart';
 import '../models/profile_posts_page.dart';
 
 class PostsServices {
@@ -31,6 +32,7 @@ class PostsServices {
   is_post_shared,
   post_mentions(${PostMentionColumns.mentionedUserId},${PostMentionColumns.startIndex},${PostMentionColumns.endIndex}),
   ${SupabaseConstants.users}!posts_author_id_fkey (${UserColumns.name}, ${UserColumns.imageUrl}, ${UserColumns.lastSeen}, ${UserColumns.isDeleted}),
+  ${PostColumns.groupRelation}!posts_group_id_fkey (${GroupColumns.id}, ${GroupColumns.name}, ${GroupColumns.avatarUrl}),
   ${SupabaseConstants.reelsCache}!posts_shared_reel_id_fkey (
     ${ReelColumns.id},
     ${ReelColumns.youtubeVideoId},
@@ -479,6 +481,67 @@ class PostsServices {
     };
 
     return controller.stream;
+  }
+
+  Future<GroupPostsPage> fetchGroupPostsPage(
+    String groupId, {
+    int pageSize = 15,
+    String? beforeCreatedAt,
+    String? beforeId,
+  }) async {
+    if (!(await _networkStatus.isConnected())) {
+      throw Exception('no-internet');
+    }
+
+    final rows = await _supabase.rpc(
+      SupabaseConstants.getGroupPostIdsRpc,
+      params: {
+        'p_group_id': groupId,
+        'p_limit': pageSize + 1,
+        if (beforeCreatedAt != null && beforeId != null) ...{
+          'p_before_created_at': beforeCreatedAt,
+          'p_before_id': beforeId,
+        },
+      },
+    );
+
+    final all = (rows as List).cast<Map<String, dynamic>>();
+    final hasMore = all.length > pageSize;
+    final page = hasMore ? all.sublist(0, pageSize) : all;
+    if (page.isEmpty) return GroupPostsPage.empty;
+
+    final ids = [for (final r in page) r['post_id'] as String];
+    final posts = await fetchPostsByIds(ids);
+    if (posts.isEmpty) throw Exception('group-posts-hydration-failed');
+
+    return GroupPostsPage(
+      posts: posts,
+      hasMore: hasMore,
+      nextCursorCreatedAt: page.last['post_created_at'] as String,
+      nextCursorId: page.last['post_id'] as String,
+    );
+  }
+
+  /// Active, non-blocked members of a group (capped) — used to fan out `@all`.
+  Future<List<String>> fetchActiveGroupMemberIds(
+    String groupId, {
+    int limit = 200,
+  }) async {
+    try {
+      final rows = await _supabase
+          .from(SupabaseConstants.groupMembers)
+          .select(GroupMemberColumns.userId)
+          .eq(GroupMemberColumns.groupId, groupId)
+          .eq(GroupMemberColumns.membershipStatus, 'active')
+          .eq(GroupMemberColumns.isBlocked, false)
+          .limit(limit);
+      return [
+        for (final r in rows as List) r[GroupMemberColumns.userId] as String,
+      ];
+    } catch (e) {
+      debugPrint('fetchActiveGroupMemberIds error: $e');
+      return const [];
+    }
   }
 
   Future<void> addPost(PostRequestBody post) async {

@@ -1,5 +1,7 @@
 import 'dart:io';
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 import 'package:social_media_app/core/design/tokens/typography.dart';
@@ -11,6 +13,7 @@ import 'package:social_media_app/features/posts/cubits/posts_cubit/posts_cubit.d
 import 'package:social_media_app/features/posts/models/post_model.dart';
 import 'package:social_media_app/features/posts/widgets/post_interactions_row.dart';
 import 'package:social_media_app/features/posts/widgets/post_txt_content_widget.dart';
+import 'package:social_media_app/features/posts/widgets/themed_post_card.dart';
 import '../helpers/safe_navigator.dart';
 import '../services/gallery_services.dart';
 import 'package:social_media_app/core/localization/l10n_extension.dart';
@@ -25,6 +28,7 @@ class FullScreenImageViewer extends StatefulWidget {
 class _FullScreenImageViewerState extends State<FullScreenImageViewer> {
   final TransformationController _transformationController =
       TransformationController();
+  final GlobalKey _themedRepaintKey = GlobalKey();
 
   double _dragOffset = 0;
   bool _isSaving = false;
@@ -33,6 +37,19 @@ class _FullScreenImageViewerState extends State<FullScreenImageViewer> {
   bool _overlaysHidden = false;
 
   final _closeGuard = SingleFireGuard();
+
+  Future<void> _saveThemedCardToGallery() async {
+    final boundary =
+        _themedRepaintKey.currentContext?.findRenderObject()
+            as RenderRepaintBoundary?;
+    if (boundary == null) return;
+    final ui.Image image = await boundary.toImage(pixelRatio: 3.0);
+    final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+    if (byteData == null) return;
+    await GalleryServices.saveImageBytesToGallery(
+      byteData.buffer.asUint8List(),
+    );
+  }
 
   @override
   void initState() {
@@ -79,8 +96,12 @@ class _FullScreenImageViewerState extends State<FullScreenImageViewer> {
     final args =
         ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
 
-    final String imageUrl = args['url'];
-    final String heroTag = args['tag'] ?? imageUrl;
+    final PostModel? themedPost = args['themedPost'] as PostModel?;
+    final bool isThemedPost = themedPost != null;
+    final String imageUrl = (args['url'] as String?) ?? '';
+    final String heroTag =
+        (args['tag'] as String?) ??
+        (isThemedPost ? 'themed-post-${themedPost.id}' : imageUrl);
     final bool isAsset = args['isAsset'] ?? false;
     final bool isLocalFile = args['isLocalFile'] ?? false;
     final String? staticCaption = args['caption'];
@@ -193,11 +214,15 @@ class _FullScreenImageViewerState extends State<FullScreenImageViewer> {
                                       if (value == 'save') {
                                         setState(() => _isSaving = true);
 
-                                        await GalleryServices.saveMediaToGallery(
-                                          context: context,
-                                          url: imageUrl,
-                                          isVideo: false,
-                                        );
+                                        if (isThemedPost) {
+                                          await _saveThemedCardToGallery();
+                                        } else {
+                                          await GalleryServices.saveMediaToGallery(
+                                            context: context,
+                                            url: imageUrl,
+                                            isVideo: false,
+                                          );
+                                        }
 
                                         if (mounted) {
                                           setState(() => _isSaving = false);
@@ -247,7 +272,18 @@ class _FullScreenImageViewerState extends State<FullScreenImageViewer> {
                             child: Hero(
                               tag: heroTag,
                               child:
-                                  isAsset
+                                  isThemedPost
+                                      ? Material(
+                                        type: MaterialType.transparency,
+                                        child: RepaintBoundary(
+                                          key: _themedRepaintKey,
+                                          child: ThemedPostCard(
+                                            post: themedPost,
+                                            isFullScreen: true,
+                                          ),
+                                        ),
+                                      )
+                                      : isAsset
                                       ? Image.asset(
                                         imageUrl,
                                         fit: BoxFit.contain,
@@ -356,8 +392,12 @@ class _FullScreenImageViewerState extends State<FullScreenImageViewer> {
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                _ViewerPostCaption(postId: postId),
-                                PostInteractionsRow(postId: postId),
+                                if (!isThemedPost)
+                                  _ViewerPostCaption(postId: postId),
+                                PostInteractionsRow(
+                                  postId: postId,
+                                  initialPost: themedPost,
+                                ),
                               ],
                             ),
                           ),

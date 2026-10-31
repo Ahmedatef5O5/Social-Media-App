@@ -16,8 +16,10 @@ import 'package:social_media_app/features/auth/data/models/user_data.dart';
 import 'package:uuid/uuid.dart';
 import '../../../../core/connectivity/services/connectivity_banner_controller.dart';
 import '../../../../core/errors/supabase_error_mapper.dart';
+import '../../../../core/guards/suspension_interceptor.dart';
 import '../../../../core/services/cloudinary_storage_services.dart';
 import '../../../../core/services/fcm_services.dart';
+import '../../../../core/services/system_control_service.dart';
 import '../../../../core/supabase/supabase_provider.dart';
 import '../../../../core/toast/app_toast.dart';
 import '../../../comments/events/comment_event_bus.dart';
@@ -26,6 +28,7 @@ import '../../../comments/models/comment_model.dart';
 import '../../../notifications/repository/notifications_repository.dart';
 import '../../models/feed_event.dart';
 import '../../models/post_model.dart';
+import '../../models/post_theme_model.dart';
 import '../../models/post_reaction_model.dart';
 import '../../helpers/feed_window.dart';
 import '../../models/post_request_body.dart';
@@ -104,6 +107,22 @@ class PostsCubit extends Cubit<PostsState>
           ? fixedPost
           : fixedPost.copyWith(originalPost: fixedOriginal);
     }).toList();
+  }
+
+  /// Drops every post (and share wrapper) that belongs to [groupId] from the
+  /// feed cache, the pending queue and the disk snapshot. Called when the user
+  /// leaves, is removed from, or blocks a group.
+  void removePostsOfGroup(String groupId) {
+    if (isClosed) return;
+    bool belongs(PostModel p) =>
+        p.groupId == groupId || p.originalPost?.groupId == groupId;
+
+    _pendingPosts.removeWhere(belongs);
+    final remaining = cachedPosts.where((p) => !belongs(p)).toList();
+    if (remaining.length == cachedPosts.length) return;
+    cachedPosts = remaining;
+    persistPostsSnapshot(cachedPosts);
+    emit(PostsLoaded(List<PostModel>.from(cachedPosts), DateTime.now()));
   }
 
   void resetSession() {

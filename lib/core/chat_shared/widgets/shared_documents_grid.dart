@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../cache/repository/media_cache_repository.dart';
 import '../../supabase/supabase_provider.dart';
 import '../helpers/media_action_helper.dart' hide ShowInChatCallback;
 import '../models/shared_media_item.dart';
@@ -26,8 +28,11 @@ class SharedDocumentsGrid extends StatelessWidget {
         final isMe = item.senderId == SupabaseProvider.id;
 
         return GestureDetector(
-          onTap: () => DocumentGridTile.openFile(item.fileUrl),
           onLongPressStart: (details) {
+            final repo = context.read<MediaCacheRepository>();
+            final local = repo.resolveLocalPathSync(item.fileUrl ?? '');
+            final fileToOpen = local ?? item.fileUrl ?? '';
+
             showSharedMediaActionMenu(
               context: context,
               globalPosition: details.globalPosition,
@@ -44,7 +49,7 @@ class SharedDocumentsGrid extends StatelessWidget {
                     item,
                     forEveryone: isMe,
                   ),
-              onOpen: () => DocumentGridTile.openFile(item.fileUrl),
+              onOpen: () => DocumentGridTile.openLocalFile(context, fileToOpen),
               openLabel: context.l10n.open,
               openIcon: Icons.open_in_new_rounded,
             );

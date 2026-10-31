@@ -387,55 +387,59 @@ class _TransferProgressIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final clamped = progress.clamp(0.0, 1.0);
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        GestureDetector(
-          onTap: onCancel,
-          behavior: HitTestBehavior.opaque,
-          child: SizedBox(
-            width: 26,
-            height: 26,
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                TweenAnimationBuilder<double>(
-                  tween: Tween(begin: 0, end: clamped),
-                  duration: const Duration(milliseconds: 200),
-                  curve: Curves.easeOut,
-                  builder: (context, value, _) {
-                    return CustomPaint(
-                      size: const Size(26, 26),
-                      painter: ModernProgressPainter(
-                        progress: value,
-                        backgroundColor: color.withValues(alpha: 0.25),
-                        progressColor: color,
-                      ),
-                    );
-                  },
-                ),
-                Icon(Icons.close_rounded, size: 12, color: color),
-              ],
+    return Directionality(
+      textDirection: TextDirection.ltr,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          GestureDetector(
+            onTap: onCancel,
+            behavior: HitTestBehavior.opaque,
+            child: SizedBox(
+              width: 26,
+              height: 26,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  TweenAnimationBuilder<double>(
+                    tween: Tween(begin: 0, end: clamped),
+                    duration: const Duration(milliseconds: 200),
+                    curve: Curves.easeOut,
+                    builder: (context, value, _) {
+                      return CustomPaint(
+                        size: const Size(26, 26),
+                        painter: ModernProgressPainter(
+                          progress: value,
+                          backgroundColor: color.withValues(alpha: 0.25),
+                          progressColor: color,
+                        ),
+                      );
+                    },
+                  ),
+                  Icon(Icons.close_rounded, size: 12, color: color),
+                ],
+              ),
             ),
           ),
-        ),
-        const SizedBox(height: 3),
-        FittedBox(
-          fit: BoxFit.scaleDown,
-          child: Text(
-            formatTransfer(clamped, totalBytes),
-            style: TextStyle(
-              color: color,
-              fontSize: 7.5,
-              fontWeight: FontWeight.bold,
-              height: 1,
+          const SizedBox(height: 3),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              formatTransfer(clamped, totalBytes),
+              textDirection: TextDirection.ltr,
+              style: TextStyle(
+                color: color,
+                fontSize: 7.5,
+                fontWeight: FontWeight.bold,
+                height: 1,
+              ),
+              textAlign: TextAlign.center,
+              maxLines: 1,
             ),
-            textAlign: TextAlign.center,
-            maxLines: 1,
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

@@ -231,6 +231,8 @@ class ChatItemTile extends StatelessWidget {
                   : Colors.grey.shade600,
         );
 
+    final isRtl = Directionality.of(context) == TextDirection.rtl;
+
     if (user.lastMessageType == 'call') {
       Map<String, dynamic> callData = {};
       try {
@@ -264,25 +266,26 @@ class ChatItemTile extends StatelessWidget {
       return Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 16, color: iconColor),
-          const Gap(4),
+          if (!isRtl) ...[Icon(icon, size: 16, color: iconColor), const Gap(4)],
           Expanded(
             child: Text(
               label,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
+              textAlign: isRtl ? TextAlign.right : TextAlign.left,
               style: textStyle.copyWith(
                 color: isMissed ? Colors.redAccent : textStyle.color,
               ),
             ),
           ),
+          if (isRtl) ...[const Gap(4), Icon(icon, size: 16, color: iconColor)],
         ],
       );
     }
 
     if (user.lastMessageType == 'file' || user.lastMessageType == 'document') {
       return Align(
-        alignment: Alignment.centerLeft,
+        alignment: AlignmentDirectional.centerStart,
         child: MessageReactionPreviewHelper.buildDirectionalFilePreview(
           fileName: user.lastMessage ?? context.l10n.file,
           style: textStyle,
@@ -309,7 +312,6 @@ class ChatItemTile extends StatelessWidget {
     final normalText = EmojiHelper.normalize(_getNormalMessageText());
     final direction = BidiTextHelper.detectDirection(normalText);
 
-    final isRtl = Directionality.of(context) == TextDirection.rtl;
     return Text(
       normalText,
       maxLines: 1,

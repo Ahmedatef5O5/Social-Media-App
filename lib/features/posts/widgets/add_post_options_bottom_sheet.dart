@@ -8,7 +8,15 @@ import 'package:social_media_app/core/localization/l10n_extension.dart';
 
 class AddPostOptionsBottomSheet extends StatelessWidget {
   final DraggableScrollableController controller;
-  const AddPostOptionsBottomSheet({super.key, required this.controller});
+  final VoidCallback onPickTheme;
+  final VoidCallback onPickGif;
+
+  const AddPostOptionsBottomSheet({
+    super.key,
+    required this.controller,
+    required this.onPickTheme,
+    required this.onPickGif,
+  });
 
   static const double _initialSize = 0.2;
   static const double _minSize = 0.15;
@@ -130,16 +138,13 @@ class AddPostOptionsBottomSheet extends StatelessWidget {
                       Icons.color_lens_rounded,
                       context.l10n.backgroundColor,
                       const Color(0xFFE91E63),
-                      onTap:
-                          () => AppToast.info(
-                            context.l10n.backgroundColorIsComing,
-                          ),
+                      onTap: onPickTheme,
                     ),
                     BuildOptionItem(
                       Icons.gif_box_rounded,
                       context.l10n.addGif,
                       const Color(0xFF9C27B0),
-                      onTap: () => AppToast.info(context.l10n.addGifIsComing),
+                      onTap: onPickGif,
                     ),
                     BuildOptionItem(
                       Icons.video_camera_front_rounded,

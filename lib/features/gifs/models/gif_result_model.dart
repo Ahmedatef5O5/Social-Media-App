@@ -3,12 +3,16 @@ class GifResult {
   final String previewUrl;
   final String sendUrl;
   final double aspectRatio;
+  final String? mediumUrl;
+
+  String get postUrl => mediumUrl ?? sendUrl;
 
   const GifResult({
     required this.id,
     required this.previewUrl,
     required this.sendUrl,
     required this.aspectRatio,
+    this.mediumUrl,
   });
 
   factory GifResult.fromGiphyJson(Map<String, dynamic> json) {
@@ -27,6 +31,9 @@ class GifResult {
       previewUrl: preview['url'] as String,
       sendUrl: full['url'] as String,
       aspectRatio: height == 0 ? 1 : width / height,
+      mediumUrl:
+          (images['downsized_medium'] as Map<String, dynamic>?)?['url']
+              as String?,
     );
   }
 }

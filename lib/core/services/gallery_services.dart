@@ -1,3 +1,5 @@
+import 'dart:io';
+import 'dart:typed_data';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:gal/gal.dart';
@@ -39,6 +41,29 @@ class GalleryServices {
         } else {
           AppToast.error(AppL10n.current.failedToSave(e));
         }
+      }
+    }
+  }
+
+  static Future<void> saveImageBytesToGallery(Uint8List bytes) async {
+    try {
+      if (!await Gal.hasAccess()) {
+        await Gal.requestAccess();
+      }
+
+      final tempDir = await getTemporaryDirectory();
+      final savePath =
+          '${tempDir.path}/temp_themed_${DateTime.now().millisecondsSinceEpoch}.png';
+
+      await File(savePath).writeAsBytes(bytes, flush: true);
+      await Gal.putImage(savePath);
+
+      AppToast.success(AppL10n.current.savedToGallerySuccessfully);
+    } catch (e) {
+      if (e is GalException && e.type == GalExceptionType.accessDenied) {
+        AppToast.warning(AppL10n.current.pleaseAllowStorageAccess);
+      } else {
+        AppToast.error(AppL10n.current.failedToSave(e));
       }
     }
   }

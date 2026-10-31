@@ -20,8 +20,15 @@ class PostModel {
   String get reactionsSignature =>
       reactions.map((r) => '${r.emoji}:${r.count}').join(',');
 
+  bool get hasBackgroundTheme =>
+      backgroundTheme != null && backgroundTheme!.isNotEmpty;
+  bool get hasGif => gifUrl != null && gifUrl!.isNotEmpty;
+
   bool get isSharedPost => sharedPostId != null;
   bool get isSharedReel => sharedReelId != null;
+
+  /// True when the post was published inside a group.
+  bool get isGroupPost => groupId != null && groupId!.isNotEmpty;
 
   PostModel get displayPost =>
       (isSharedPost && originalPost != null) ? originalPost! : this;
@@ -47,6 +54,8 @@ class PostModel {
   final bool isSavedByMe;
   final int? mediaWidth;
   final int? mediaHeight;
+  final String? backgroundTheme;
+  final String? gifUrl;
   // ── Shared Post feature ──────────────────────────────────────────────
   final String? sharedPostId;
   final PostModel? originalPost;
@@ -62,6 +71,11 @@ class PostModel {
   // - Privacy publishing
   final ContentPrivacy privacyType;
   final bool isSuggestedForYou;
+
+  // ── Group posts ──────────────────────────────────────────────────────
+  final String? groupId;
+  final String? groupName;
+  final String? groupAvatarUrl;
 
   double get mediaAspectRatio {
     if (mediaWidth != null && mediaHeight != null && mediaHeight! > 0) {
@@ -98,10 +112,15 @@ class PostModel {
     this.linkShareCount = 0,
     this.mediaWidth,
     this.mediaHeight,
+    this.backgroundTheme,
+    this.gifUrl,
     this.sharedReelId,
     this.sharedReel,
     this.privacyType = ContentPrivacy.public,
     this.isSuggestedForYou = false,
+    this.groupId,
+    this.groupName,
+    this.groupAvatarUrl,
   });
 
   Map<String, dynamic> toMap() {
@@ -120,9 +139,12 @@ class PostModel {
       'comments': comments,
       PostColumns.mediaWidth: mediaWidth,
       PostColumns.mediaHeight: mediaHeight,
+      PostColumns.backgroundTheme: backgroundTheme,
+      PostColumns.gifUrl: gifUrl,
       PostColumns.privacyType: contentPrivacyToString(privacyType),
       PostColumns.sharedPostId: sharedPostId,
       PostColumns.sharedReelId: sharedReelId,
+      PostColumns.groupId: groupId,
       UserColumns.lastSeen: lastSeen,
     };
   }
@@ -167,6 +189,8 @@ class PostModel {
     final sharedReelData =
         map[SupabaseConstants.reelsCache] as Map<String, dynamic>?;
 
+    final groupData = map[PostColumns.groupRelation] as Map<String, dynamic>?;
+
     return PostModel(
       id: map['id'] as String? ?? '',
       text: map[PostColumns.text] as String? ?? '',
@@ -187,6 +211,8 @@ class PostModel {
       fileUrl: map['file_url'] != null ? map['file_url'] as String : null,
       mediaWidth: map[PostColumns.mediaWidth] as int?,
       mediaHeight: map[PostColumns.mediaHeight] as int?,
+      backgroundTheme: map[PostColumns.backgroundTheme] as String?,
+      gifUrl: map[PostColumns.gifUrl] as String?,
       likes: likesList,
       likersImages: imagesList,
       reactions: reactionsList,
@@ -216,6 +242,9 @@ class PostModel {
         map[PostColumns.privacyType] as String?,
       ),
       isSuggestedForYou: map['is_suggested_for_you'] as bool? ?? false,
+      groupId: map[PostColumns.groupId] as String?,
+      groupName: groupData?[GroupColumns.name] as String?,
+      groupAvatarUrl: groupData?[GroupColumns.avatarUrl] as String?,
     );
   }
 
@@ -247,10 +276,15 @@ class PostModel {
     bool? isSharedByMe,
     int? mediaWidth,
     int? mediaHeight,
+    String? backgroundTheme,
+    String? gifUrl,
     String? sharedReelId,
     ReelModel? sharedReel,
     ContentPrivacy? privacyType,
     bool? isSuggestedForYou,
+    String? groupId,
+    String? groupName,
+    String? groupAvatarUrl,
   }) {
     return PostModel(
       id: id ?? this.id,
@@ -274,6 +308,8 @@ class PostModel {
       isSavedByMe: isSavedByMe ?? this.isSavedByMe,
       mediaWidth: mediaWidth ?? this.mediaWidth,
       mediaHeight: mediaHeight ?? this.mediaHeight,
+      backgroundTheme: backgroundTheme ?? this.backgroundTheme,
+      gifUrl: gifUrl ?? this.gifUrl,
       sharedPostId: sharedPostId ?? this.sharedPostId,
       originalPost: originalPost ?? this.originalPost,
       isPinned: isPinned ?? this.isPinned,
@@ -284,6 +320,9 @@ class PostModel {
       sharedReel: sharedReel ?? this.sharedReel,
       privacyType: privacyType ?? this.privacyType,
       isSuggestedForYou: isSuggestedForYou ?? this.isSuggestedForYou,
+      groupId: groupId ?? this.groupId,
+      groupName: groupName ?? this.groupName,
+      groupAvatarUrl: groupAvatarUrl ?? this.groupAvatarUrl,
     );
   }
 
@@ -317,8 +356,13 @@ class PostModel {
     'shared_reel': sharedReel?.toJson(),
     'media_width': mediaWidth,
     'media_height': mediaHeight,
+    PostColumns.backgroundTheme: backgroundTheme,
+    PostColumns.gifUrl: gifUrl,
     PostColumns.privacyType: contentPrivacyToString(privacyType),
     'is_suggested_for_you': isSuggestedForYou,
+    PostColumns.groupId: groupId,
+    'group_name': groupName,
+    'group_avatar_url': groupAvatarUrl,
   };
 
   factory PostModel.fromCacheJson(Map<String, dynamic> map) {
@@ -360,6 +404,8 @@ class PostModel {
       isSavedByMe: map['is_post_saved'] as bool? ?? false,
       mediaWidth: map['media_width'] as int?,
       mediaHeight: map['media_height'] as int?,
+      backgroundTheme: map[PostColumns.backgroundTheme] as String?,
+      gifUrl: map[PostColumns.gifUrl] as String?,
       sharedPostId: map['shared_post_id'] as String?,
       originalPost:
           map['original_post'] != null
@@ -380,6 +426,9 @@ class PostModel {
         map[PostColumns.privacyType] as String?,
       ),
       isSuggestedForYou: map['is_suggested_for_you'] as bool? ?? false,
+      groupId: map[PostColumns.groupId] as String?,
+      groupName: map['group_name'] as String?,
+      groupAvatarUrl: map['group_avatar_url'] as String?,
     );
   }
 }

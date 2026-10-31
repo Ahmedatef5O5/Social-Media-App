@@ -455,14 +455,16 @@ class _ReshareButtonWidgetState extends State<_ReshareButtonWidget>
     final primaryColor = Theme.of(context).primaryColor;
     final postsCubit = context.read<PostsCubit>();
     final bool wasShared = currentPost.isSharedByMe;
+    final String toastMessage =
+        wasShared
+            ? context.l10n.reshareRemoved
+            : context.l10n.resharedSuccessfully;
 
     final bool success = await postsCubit.toggleSharePost(currentPost);
 
     if (success) {
       AppToast.save(
-        wasShared
-            ? context.l10n.reshareRemoved
-            : context.l10n.resharedSuccessfully,
+        toastMessage,
         icon: Icons.repeat_rounded,
         iconColor: wasShared ? AppColors.grey5 : primaryColor,
       );
@@ -619,18 +621,17 @@ class _SaveButtonWidgetState extends State<_SaveButtonWidget>
   void _handleTap(PostModel currentPost) async {
     _animationController.forward(from: 0.0);
     HapticFeedback.lightImpact();
-
+    final postsCubit = context.read<PostsCubit>();
     final bool wasSaved = currentPost.isSavedByMe;
-    final bool success = await context.read<PostsCubit>().toggleSavePost(
-      currentPost,
-    );
-
-    if (success) {
-      AppToast.save(
-        icon: wasSaved ? Icons.bookmark_remove_rounded : Icons.bookmark_rounded,
+    final String toastMessage =
         wasSaved
             ? context.l10n.postRemovedFromSaves
-            : context.l10n.postSavedSuccessfully,
+            : context.l10n.postSavedSuccessfully;
+    final bool success = await postsCubit.toggleSavePost(currentPost);
+    if (success) {
+      AppToast.save(
+        toastMessage,
+        icon: wasSaved ? Icons.bookmark_remove_rounded : Icons.bookmark_rounded,
         iconColor: wasSaved ? AppColors.grey5 : AppColors.goldenYellow,
       );
     }

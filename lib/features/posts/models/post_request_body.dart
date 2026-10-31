@@ -12,7 +12,10 @@ class PostRequestBody {
   final String? filePublicId;
   final int? mediaWidth;
   final int? mediaHeight;
+  final String? backgroundTheme;
+  final String? gifUrl;
   final ContentPrivacy privacyType;
+  final String? groupId;
 
   const PostRequestBody({
     this.id,
@@ -26,7 +29,10 @@ class PostRequestBody {
     this.filePublicId,
     this.mediaWidth,
     this.mediaHeight,
+    this.backgroundTheme,
+    this.gifUrl,
     this.privacyType = ContentPrivacy.public,
+    this.groupId,
   });
 
   Map<String, dynamic> toMap() {
@@ -42,7 +48,10 @@ class PostRequestBody {
       'file_public_id': filePublicId,
       'media_width': mediaWidth,
       'media_height': mediaHeight,
+      if (backgroundTheme != null) 'background_theme': backgroundTheme,
+      if (gifUrl != null) 'gif_url': gifUrl,
       'privacy_type': contentPrivacyToString(privacyType),
+      if (groupId != null) 'group_id': groupId,
     };
   }
 
@@ -55,6 +64,8 @@ class PostRequestBody {
       fileUrl: map['file_url'] as String?,
       mediaWidth: map['media_width'] as int?,
       mediaHeight: map['media_height'] as int?,
+      backgroundTheme: map['background_theme'] as String?,
+      gifUrl: map['gif_url'] as String?,
     );
   }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../features/home/cubits/home_cubit/home_cubit.dart';
+import '../../cache/repository/media_cache_repository.dart';
 import '../../cache/utils/cloudinary_url_extensions.dart';
 import '../../constants/app_images.dart';
 import '../../supabase/supabase_provider.dart';
@@ -184,6 +185,13 @@ class _AllMediaGrid extends StatelessWidget {
               () => MediaActionHelper.openFullScreenMedia(context, items, item);
           openLabel = context.l10n.playVoiceMessage;
           openIcon = Icons.mic_none_rounded;
+        } else if (item.messageType == 'file') {
+          final repo = context.read<MediaCacheRepository>();
+          final local = repo.resolveLocalPathSync(item.fileUrl ?? '');
+          final fileToOpen = local ?? item.fileUrl ?? '';
+          onOpen = () => DocumentGridTile.openLocalFile(context, fileToOpen);
+          openLabel = context.l10n.open;
+          openIcon = Icons.open_in_new_rounded;
         }
 
         return GestureDetector(
