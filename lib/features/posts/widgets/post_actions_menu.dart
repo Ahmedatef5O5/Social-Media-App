@@ -16,6 +16,7 @@ class PostActionsMenu extends StatelessWidget {
   final String currentUserId;
   final PostsCubit postsCubit;
   final bool showPinAction;
+  final bool canModerateGroupPost;
 
   const PostActionsMenu({
     super.key,
@@ -23,6 +24,7 @@ class PostActionsMenu extends StatelessWidget {
     required this.currentUserId,
     required this.postsCubit,
     this.showPinAction = false,
+    this.canModerateGroupPost = false,
   });
 
   @override
@@ -88,7 +90,23 @@ class PostActionsMenu extends StatelessWidget {
                   ],
                 ),
               ),
-            ] else
+            ] else ...[
+              if (canModerateGroupPost)
+                PopupMenuItem(
+                  value: 'delete',
+                  child: Row(
+                    children: [
+                      const Icon(Icons.delete_outline, color: Colors.red),
+                      const Gap(8),
+                      Text(
+                        context.l10n.removeGroupPost,
+                        style: Theme.of(
+                          context,
+                        ).textTheme.titleSmall!.copyWith(color: Colors.red),
+                      ),
+                    ],
+                  ),
+                ),
               PopupMenuItem(
                 value: 'report',
                 child: Row(
@@ -104,6 +122,7 @@ class PostActionsMenu extends StatelessWidget {
                   ],
                 ),
               ),
+            ],
           ],
     );
   }

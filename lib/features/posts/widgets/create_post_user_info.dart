@@ -1,16 +1,17 @@
-// lib/features/posts/widgets/create_post_user_info.dart
-
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:social_media_app/core/widgets/main_user_avatar.dart';
 import '../../social_graph/models/content_privacy.dart';
 import '../../social_graph/widgets/privacy_chip.dart';
+import '../../group_chats/models/group_model.dart';
+import 'create_post_group_target_header.dart';
 
 class CreatePostUserInfo extends StatelessWidget {
   final String userName;
   final String? userImageUrl;
   final ContentPrivacy privacy;
   final VoidCallback onPrivacyTap;
+  final GroupModel? targetGroup;
 
   const CreatePostUserInfo({
     super.key,
@@ -18,10 +19,18 @@ class CreatePostUserInfo extends StatelessWidget {
     this.userImageUrl,
     required this.privacy,
     required this.onPrivacyTap,
+    this.targetGroup,
   });
 
   @override
   Widget build(BuildContext context) {
+    if (targetGroup != null) {
+      return CreatePostGroupTargetHeader(
+        group: targetGroup!,
+        userName: userName,
+        userImageUrl: userImageUrl,
+      );
+    }
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [

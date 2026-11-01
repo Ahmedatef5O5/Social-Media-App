@@ -19,6 +19,7 @@ import '../models/post_model.dart';
 import '../widgets/post_header_widget.dart';
 import '../widgets/post_reactions_inline_list.dart';
 import '../widgets/post_txt_content_widget.dart';
+import '../widgets/themed_post_card.dart';
 import '../widgets/post_media_widget.dart';
 import '../widgets/post_interactions_row.dart';
 import '../../comments/widgets/comments_inline_section.dart';
@@ -251,7 +252,16 @@ class _PostDetailsViewState extends State<PostDetailsView> {
                                           showPinnedBadge: showPinnedBadge,
                                         ),
                                         const Gap(12),
-                                        PostTxtContentWidget(post: displayPost),
+                                        displayPost.hasBackgroundTheme
+                                            ? ThemedPostCard(
+                                              post: displayPost,
+                                              postsCubit: postsCubit,
+                                              heroTag:
+                                                  'themed-post-details-${currentPost.id}-${displayPost.id}',
+                                            )
+                                            : PostTxtContentWidget(
+                                              post: displayPost,
+                                            ),
                                         const Gap(8),
 
                                         ClipRRect(

@@ -29,6 +29,8 @@ class SocialNotificationDispatcher {
     'story_react',
     'message_react',
     'feedback_reply',
+    'group_join_request',
+    'group_join_accept',
   };
 
   static bool isSocialType(String type) =>
@@ -41,6 +43,8 @@ class SocialNotificationDispatcher {
     if (postId != null && postId.isNotEmpty) return postId;
     final storyId = data['storyId'] as String?;
     if (storyId != null && storyId.isNotEmpty) return storyId;
+    final groupId = data['groupId'] as String?;
+    if (groupId != null && groupId.isNotEmpty) return groupId;
     return '';
   }
 

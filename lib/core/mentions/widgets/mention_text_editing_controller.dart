@@ -27,7 +27,8 @@ class MentionTextEditingController extends TextEditingController {
     ),
   });
 
-  final TextStyle mentionStyle;
+  /// Mutable so the themed post canvas can recolor mentions for contrast.
+  TextStyle mentionStyle;
   final List<_ActiveMention> _mentions = [];
 
   bool _isInsertingMention = false;

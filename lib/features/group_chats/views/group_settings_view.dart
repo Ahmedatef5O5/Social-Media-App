@@ -9,6 +9,11 @@ import '../../../core/toast/app_toast.dart';
 import '../cubits/group_details_cubit/group_details_cubit.dart';
 import '../cubits/group_list_cubit/group_list_cubit.dart';
 import '../cubits/group_members_cubit/group_members_cubit.dart';
+import '../cubits/group_profile_cubit/group_profile_cubit.dart';
+import '../../posts/cubits/posts_cubit/posts_cubit.dart';
+import '../helpers/group_role_resolver.dart';
+import '../services/group_social_service.dart';
+import '../widgets/group_posting_policy_section.dart';
 import '../models/group_member_model.dart';
 import '../models/group_model.dart';
 import '../services/group_chat_services.dart';
@@ -29,6 +34,9 @@ class GroupSettingsView extends StatefulWidget {
   final bool isOwner;
   final String currentUserId;
 
+  /// Provided when opened from GroupView so the posting policy updates live.
+  final GroupProfileCubit? profileCubit;
+
   const GroupSettingsView({
     super.key,
     required this.group,
@@ -38,6 +46,7 @@ class GroupSettingsView extends StatefulWidget {
     required this.isAdmin,
     required this.isOwner,
     required this.currentUserId,
+    this.profileCubit,
   });
 
   @override
@@ -190,6 +199,17 @@ class _GroupSettingsViewState extends State<GroupSettingsView> {
     }
   }
 
+  /// Leaving / blocking must instantly remove the group's posts from the
+  /// shared feed cache (home feed, disk snapshot, pending queue).
+  void _purgeGroupPosts(BuildContext context) {
+    GroupRoleResolver.invalidate(widget.group.id);
+    try {
+      context.read<PostsCubit>().removePostsOfGroup(widget.group.id);
+    } catch (e) {
+      debugPrint('[GroupSettingsView] could not purge group posts: $e');
+    }
+  }
+
   Future<void> _leaveGroup(BuildContext context, GroupModel liveGroup) async {
     final confirm = await GroupConfirmDialog.show(
       context,
@@ -204,6 +224,7 @@ class _GroupSettingsViewState extends State<GroupSettingsView> {
         currentUserId: widget.currentUserId,
         groupListCubit: widget.groupListCubit,
       );
+      _purgeGroupPosts(context);
       if (context.mounted) Navigator.of(context).popUntil((r) => r.isFirst);
     } catch (e) {
       if (context.mounted) AppToast.error(SupabaseErrorMapper.toUserMessage(e));
@@ -228,6 +249,7 @@ class _GroupSettingsViewState extends State<GroupSettingsView> {
         groupListCubit: widget.groupListCubit,
         isCurrentlyMember: liveGroup.isMember,
       );
+      _purgeGroupPosts(context);
       if (context.mounted) {
         Navigator.of(context, rootNavigator: true).popUntil((r) => r.isFirst);
       }
@@ -395,6 +417,15 @@ class _GroupSettingsViewState extends State<GroupSettingsView> {
                                   _handleAdminAction(context, admin, action),
                         ),
                         const SizedBox(height: 32),
+                        if (widget.isOwner) ...[
+                          GroupPostingPolicySection(
+                            initial: liveGroup.whoCanPost,
+                            profileCubit: widget.profileCubit,
+                            groupId: widget.group.id,
+                            service: GroupSocialService(),
+                          ),
+                          const SizedBox(height: 32),
+                        ],
                         const Divider(height: 1),
                         const SizedBox(height: 24),
                       ],

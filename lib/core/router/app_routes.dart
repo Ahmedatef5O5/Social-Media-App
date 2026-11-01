@@ -34,6 +34,11 @@ class AppRoutes {
   static const String groupInfoViewRoute = '/group-info/View';
   static const String createGroupRoute = '/group-chat/create';
 
+  // Group social (profile, feed, join requests)
+  static const String yourGroupsRoute = '/your-groups-view';
+  static const String groupViewRoute = '/group-view';
+  static const String groupPreviewJoinViewRoute = '/group-preview-join-view';
+
   static const String messageInfoViewRoute = '/message-info-view';
 
   // Calls

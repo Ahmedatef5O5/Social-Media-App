@@ -115,9 +115,15 @@ class _MentionRichTextState extends State<MentionRichText> {
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primaryColor = Theme.of(context).primaryColor;
+    final bool hasExplicitMentionColor = widget.mentionColor != null;
     final bool isOnPrimaryBubble = resolvedMentionColor == Colors.white;
     final bool isWhiteOverlayText =
-        !isOnPrimaryBubble && defaultStyle.color == Colors.white;
+        !hasExplicitMentionColor &&
+        !isOnPrimaryBubble &&
+        defaultStyle.color == Colors.white;
+    final bool isLightCanvasText =
+        hasExplicitMentionColor &&
+        (defaultStyle.color?.computeLuminance() ?? 0.0) > 0.5;
 
     final double baseFontSize = defaultStyle.fontSize ?? 14.0;
     final bool isCompact = baseFontSize <= 11.0;
@@ -134,14 +140,21 @@ class _MentionRichTextState extends State<MentionRichText> {
               primaryColor.withValues(alpha: 0.18),
               Colors.white.withValues(alpha: 0.92),
             )
-            : resolvedMentionColor.withValues(alpha: isDark ? 0.20 : 0.12);
+            : isLightCanvasText
+            ? Color.alphaBlend(
+              resolvedMentionColor.withValues(alpha: 0.22),
+              Colors.black.withValues(alpha: 0.24),
+            )
+            : resolvedMentionColor.withValues(alpha: isDark ? 0.20 : 0.14);
 
     final Color pillBorderColor =
         isOnPrimaryBubble
             ? Colors.white.withValues(alpha: 0.48)
             : isWhiteOverlayText
             ? primaryColor.withValues(alpha: 0.55)
-            : resolvedMentionColor.withValues(alpha: isDark ? 0.45 : 0.28);
+            : isLightCanvasText
+            ? resolvedMentionColor.withValues(alpha: 0.58)
+            : resolvedMentionColor.withValues(alpha: isDark ? 0.45 : 0.34);
 
     final Color pillTextColor =
         isOnPrimaryBubble
@@ -397,12 +410,13 @@ class _MentionRichTextState extends State<MentionRichText> {
             textAlign: effectiveTextAlign,
           ),
           GestureDetector(
+            behavior: HitTestBehavior.opaque,
             onTap: () {
               setState(() => _expanded = false);
               widget.onExpandChanged?.call(false);
             },
             child: Padding(
-              padding: const EdgeInsets.only(top: 2),
+              padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
               child: Text(
                 readLessLabel,
                 style: defaultStyle.copyWith(
@@ -430,12 +444,13 @@ class _MentionRichTextState extends State<MentionRichText> {
           textAlign: effectiveTextAlign,
         ),
         GestureDetector(
+          behavior: HitTestBehavior.opaque,
           onTap: () {
             setState(() => _expanded = true);
             widget.onExpandChanged?.call(true);
           },
           child: Padding(
-            padding: const EdgeInsets.only(top: 2),
+            padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
             child: Text(
               readMoreLabel,
               style: defaultStyle.copyWith(

@@ -38,6 +38,13 @@ abstract class SupabaseConstants {
   static const String groupMessageMentions = 'group_message_mentions';
   static const String groupTypingStatus = 'group_typing_status';
   static const String groupGroupFcmTokens = 'get_group_fcm_tokens';
+  static const String groupJoinRequests = 'group_join_requests';
+  static const String getGroupProfileRpc = 'get_group_profile';
+  static const String getGroupPostIdsRpc = 'get_group_post_ids';
+  static const String getGroupJoinRequestsRpc = 'get_group_join_requests';
+  static const String getGroupsMemberCountsRpc = 'get_groups_member_counts';
+  static const String requestJoinGroupRpc = 'request_join_group';
+  static const String reviewJoinRequestRpc = 'review_join_request';
 
   //  Presence Feature
   static const String userPresence = 'user_presence';
@@ -106,6 +113,9 @@ abstract class GroupColumns {
   static const String avatarPublicId = 'avatar_public_id';
   static const String createdAt = 'created_at';
   static const String createdBy = 'created_by';
+  static const String coverUrl = 'cover_url';
+  static const String coverPublicId = 'cover_public_id';
+  static const String whoCanPost = 'who_can_post';
 }
 
 // group_members
@@ -278,6 +288,9 @@ abstract class PostColumns {
   //  Media dimensions (scroll-jank fix) ──
   static const String mediaWidth = 'media_width';
   static const String mediaHeight = 'media_height';
+  // ── Themed & GIF posts ──
+  static const String backgroundTheme = 'background_theme';
+  static const String gifUrl = 'gif_url';
   // ── Shared Post feature ──
   static const String sharedPostId = 'shared_post_id';
   static const String isPinned = 'is_pinned';
@@ -288,6 +301,12 @@ abstract class PostColumns {
   // ── Shared Reel feature ──
   static const String sharedReelId = 'shared_reel_id';
   static const String privacyType = 'privacy_type';
+
+  // ── Group posts ──
+  static const String groupId = 'group_id';
+
+  /// Alias of the joined `groups` row used by the post queries.
+  static const String groupRelation = 'groups';
 }
 
 // subClass for post_shares column table

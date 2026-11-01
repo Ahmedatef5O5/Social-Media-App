@@ -23,6 +23,7 @@ import 'package:social_media_app/features/single_chats/models/chat_user_model.da
 import 'package:social_media_app/features/stories/cubits/stories_cubit/stories_cubit.dart';
 import 'package:social_media_app/features/stories/models/story_model.dart';
 import '../../../features/group_chats/helpers/group_navigation.dart';
+import '../../../features/group_chats/models/group_view_args.dart';
 import 'package:social_media_app/core/localization/app_l10n.dart';
 
 class TapActionHandler {
@@ -601,6 +602,11 @@ class TapActionHandler {
       _openPostDetails(referenceId, _activeModeForType(type));
       return;
     }
+    if (type == 'group_join_request' || type == 'group_join_accept') {
+      _openGroupProfile(referenceId);
+      return;
+    }
+
     if (type == 'friend_request') {
       _openNotificationsView(NotificationType.friendRequest);
       return;
@@ -750,6 +756,19 @@ class TapActionHandler {
       debugPrint('Error opening mentioned story from notification: $e');
       AppToast.error(AppL10n.current.failedToOpenStory);
     }
+  }
+
+  static void _openGroupProfile(String groupId) {
+    if (groupId.isEmpty) {
+      _openNotificationsView();
+      return;
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      navigatorKey.currentState?.pushNamed(
+        AppRoutes.groupViewRoute,
+        arguments: GroupViewArgs(groupId: groupId),
+      );
+    });
   }
 
   static Future<void> _openGroupChat(String groupId, String groupName) async {

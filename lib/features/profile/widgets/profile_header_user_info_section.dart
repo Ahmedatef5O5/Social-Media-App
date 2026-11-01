@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 import '../../../core/router/app_routes.dart';
 import '../../auth/data/models/user_data.dart';
+import '../../group_chats/cubits/group_list_cubit/group_list_cubit.dart';
 import '../../social_graph/models/friendship_status.dart';
 import '../cubits/profile_cubit/profile_cubit.dart';
 import '../utils/profile_ui_tokens.dart';
@@ -28,6 +30,20 @@ class ProfileHeaderUserInfoSection extends StatelessWidget {
         (isMe || state.friendshipStatus == FriendshipStatus.accepted);
 
     final currentDirection = Directionality.of(context);
+
+    final groupListState = isMe ? context.watch<GroupListCubit>().state : null;
+    final myGroupsCount =
+        isMe
+            ? (groupListState is GroupListLoaded
+                ? groupListState.groups
+                    .where((g) => g.isMember && !g.isBlocked)
+                    .length
+                : context
+                    .read<GroupListCubit>()
+                    .cachedGroupsChats
+                    .where((g) => g.isMember && !g.isBlocked)
+                    .length)
+            : 0;
 
     return Padding(
       padding: const EdgeInsets.symmetric(
@@ -76,7 +92,7 @@ class ProfileHeaderUserInfoSection extends StatelessWidget {
               ),
             ),
             if (showFriendsBadge) ...[
-              const Gap(12),
+              const Gap(8),
               Directionality(
                 textDirection: currentDirection,
                 child: FriendsCountBadge(
@@ -90,6 +106,55 @@ class ProfileHeaderUserInfoSection extends StatelessWidget {
                       arguments: user.id,
                     );
                   },
+                ),
+              ),
+            ],
+            if (isMe) ...[
+              const Gap(8),
+              Directionality(
+                textDirection: currentDirection,
+                child: Material(
+                  color: tokens.surfaceVariant,
+                  borderRadius: BorderRadius.circular(
+                    ProfileUiTokens.buttonRadius,
+                  ),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(
+                      ProfileUiTokens.buttonRadius,
+                    ),
+                    onTap: () {
+                      Navigator.of(
+                        context,
+                        rootNavigator: true,
+                      ).pushNamed(AppRoutes.yourGroupsRoute);
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            '$myGroupsCount',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: tokens.onSurface,
+                              height: 1.2,
+                            ),
+                          ),
+                          const Gap(6),
+                          Icon(
+                            Icons.groups_rounded,
+                            size: 18,
+                            color: tokens.onSurface,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                 ),
               ),
             ],

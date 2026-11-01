@@ -9,7 +9,6 @@ import '../../../core/chat_shared/helpers/message_reaction_preview_helper.dart';
 import '../../../core/chat_shared/models/conversation_ref.dart';
 import '../../../core/constants/app_images.dart';
 import '../../../core/design/tokens/typography.dart';
-import '../../../core/helpers/bidi_text_helper.dart';
 import '../../../core/helpers/emoji_helper.dart';
 import '../../../core/helpers/formatted_date.dart';
 import '../../../core/router/app_routes.dart';
@@ -222,6 +221,8 @@ class GroupTileItem extends StatelessWidget {
                     fontFamilyFallback: AppTypography.fontFallback,
                   );
 
+                  final isRtl = Directionality.of(context) == TextDirection.rtl;
+
                   if (group.lastMessageType == 'file' ||
                       group.lastMessageType == 'document') {
                     final senderId = group.lastMessageSenderId;
@@ -241,7 +242,8 @@ class GroupTileItem extends StatelessWidget {
                         Text(
                           '$senderName: ',
                           style: textStyle,
-                          textDirection: TextDirection.ltr,
+                          textDirection:
+                              isRtl ? TextDirection.rtl : TextDirection.ltr,
                         ),
                         Flexible(
                           child:
@@ -279,18 +281,13 @@ class GroupTileItem extends StatelessWidget {
 
                   final colonIndex =
                       isEventOrReact ? -1 : fullText.indexOf(': ');
-                  if (colonIndex != -1 && colonIndex < 25) {
+                  if (colonIndex != -1 && colonIndex < 35) {
                     prefix = fullText.substring(0, colonIndex + 2);
                     content = fullText.substring(colonIndex + 2);
                   }
 
                   final normalText = EmojiHelper.normalize(content);
 
-                  final direction = BidiTextHelper.detectDirection(
-                    content.trimLeft(),
-                  );
-
-                  final isRtl = Directionality.of(context) == TextDirection.rtl;
                   return Text.rich(
                     TextSpan(
                       children: [
@@ -306,7 +303,8 @@ class GroupTileItem extends StatelessWidget {
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    textDirection: isRtl ? TextDirection.rtl : direction,
+                    textDirection:
+                        isRtl ? TextDirection.rtl : TextDirection.ltr,
                     textAlign: isRtl ? TextAlign.right : TextAlign.left,
                   );
                 },

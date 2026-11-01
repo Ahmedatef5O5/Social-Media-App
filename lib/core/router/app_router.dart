@@ -21,6 +21,11 @@ import 'package:social_media_app/features/group_chats/cubits/group_details_cubit
 import 'package:social_media_app/features/group_chats/models/group_model.dart';
 import 'package:social_media_app/features/group_chats/views/group_chat_details_view.dart';
 import 'package:social_media_app/features/group_chats/views/group_info_view.dart';
+import 'package:social_media_app/features/group_chats/cubits/group_profile_cubit/group_profile_cubit.dart';
+import 'package:social_media_app/features/group_chats/models/group_view_args.dart';
+import 'package:social_media_app/features/group_chats/views/group_preview_join_view.dart';
+import 'package:social_media_app/features/group_chats/views/group_view.dart';
+import 'package:social_media_app/features/group_chats/views/your_groups_view.dart';
 import 'package:social_media_app/features/profile/services/user_services.dart';
 import 'package:social_media_app/features/social_graph/cubits/friend_lists_cubit/friends_list_cubit.dart';
 import 'package:social_media_app/features/social_graph/services/follow_services.dart';
@@ -255,6 +260,9 @@ class AppRouter {
       case AppRoutes.createGroupRoute:
       case AppRoutes.groupChatRoute:
       case AppRoutes.groupInfoViewRoute:
+      case AppRoutes.yourGroupsRoute:
+      case AppRoutes.groupViewRoute:
+      case AppRoutes.groupPreviewJoinViewRoute:
         return _groupChatRoutes(settings);
 
       case AppRoutes.incomingCallRoute:
@@ -330,6 +338,8 @@ class AppRouter {
         final PostsCubit? cubit =
             raw is Map ? raw['cubit'] as PostsCubit? : raw as PostsCubit?;
         final initialText = raw is Map ? raw['initialText'] as String? : null;
+        final targetGroup =
+            raw is Map ? raw['targetGroup'] as GroupModel? : null;
 
         if (cubit == null) {
           return _errorRoute(settings, 'Missing PostsCubit parameter');
@@ -337,7 +347,10 @@ class AppRouter {
         return _buildRoute(
           BlocProvider.value(
             value: cubit,
-            child: CreatePostView(initialText: initialText),
+            child: CreatePostView(
+              initialText: initialText,
+              targetGroup: targetGroup,
+            ),
           ),
           settings: settings,
         );
@@ -691,6 +704,26 @@ class AppRouter {
             itemScrollController: itemScrollController,
           ),
           typeOfRoute: TypeOfRoute.material,
+          settings: settings,
+        );
+      case AppRoutes.yourGroupsRoute:
+        return _buildRoute(const YourGroupsView(), settings: settings);
+
+      case AppRoutes.groupViewRoute:
+      case AppRoutes.groupPreviewJoinViewRoute:
+        final args = GroupViewArgs.from(settings.arguments);
+        if (args == null) {
+          return _errorRoute(settings, 'Missing group id');
+        }
+        final isPreview = settings.name == AppRoutes.groupPreviewJoinViewRoute;
+        return _buildRoute(
+          BlocProvider(
+            create: (_) => GroupProfileCubit(groupId: args.groupId)..load(),
+            child:
+                isPreview
+                    ? GroupPreviewJoinView(args: args)
+                    : GroupView(args: args),
+          ),
           settings: settings,
         );
       default:

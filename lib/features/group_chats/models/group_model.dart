@@ -4,6 +4,18 @@ import 'group_presence_entry.dart';
 
 const _unset = Object();
 
+/// Who may publish posts inside a group (`groups.who_can_post`).
+enum GroupWhoCanPost {
+  all('all'),
+  adminsOnly('admins_only');
+
+  const GroupWhoCanPost(this.dbValue);
+  final String dbValue;
+
+  static GroupWhoCanPost fromDb(String? raw) =>
+      raw == 'admins_only' ? GroupWhoCanPost.adminsOnly : GroupWhoCanPost.all;
+}
+
 class GroupModel {
   final String id;
   final String name;
@@ -24,6 +36,9 @@ class GroupModel {
   final bool isBlocked;
   final bool isMuted;
   final GroupPresenceSnapshot presence;
+  final String? coverUrl;
+  final String? description;
+  final GroupWhoCanPost whoCanPost;
 
   const GroupModel({
     required this.id,
@@ -45,6 +60,9 @@ class GroupModel {
     this.isBlocked = false,
     this.isMuted = false,
     this.presence = GroupPresenceSnapshot.empty,
+    this.coverUrl,
+    this.description,
+    this.whoCanPost = GroupWhoCanPost.all,
   }) : _lastMessageSenderName = lastMessageSenderName,
        _lastMessageTargetName = lastMessageTargetName;
   String? get lastMessageSenderName =>
@@ -76,6 +94,9 @@ class GroupModel {
     bool? isBlocked,
     bool? isMuted,
     GroupPresenceSnapshot? presence,
+    Object? coverUrl = _unset,
+    Object? description = _unset,
+    GroupWhoCanPost? whoCanPost,
   }) {
     return GroupModel(
       id: id ?? this.id,
@@ -100,6 +121,13 @@ class GroupModel {
       isBlocked: isBlocked ?? this.isBlocked,
       isMuted: isMuted ?? this.isMuted,
       presence: presence ?? this.presence,
+      coverUrl:
+          identical(coverUrl, _unset) ? this.coverUrl : coverUrl as String?,
+      description:
+          identical(description, _unset)
+              ? this.description
+              : description as String?,
+      whoCanPost: whoCanPost ?? this.whoCanPost,
     );
   }
 
@@ -127,6 +155,9 @@ class GroupModel {
       unreadCount: (map['unread_count'] as int?) ?? 0,
       isBlocked: (map['is_blocked'] as bool?) ?? false,
       isMuted: (map['is_muted'] as bool?) ?? false,
+      coverUrl: map['cover_url'] as String?,
+      description: map['description'] as String?,
+      whoCanPost: GroupWhoCanPost.fromDb(map['who_can_post'] as String?),
     );
   }
 
@@ -156,6 +187,9 @@ class GroupModel {
     'last_message_target_name': _lastMessageTargetName,
     'unread_count': unreadCount,
     'is_muted': isMuted,
+    'cover_url': coverUrl,
+    'description': description,
+    'who_can_post': whoCanPost.dbValue,
   };
 
   factory GroupModel.fromCacheJson(Map<String, dynamic> map) {
@@ -183,6 +217,9 @@ class GroupModel {
       lastMessageTargetName: map['last_message_target_name'] as String?,
       unreadCount: (map['unread_count'] as num?)?.toInt() ?? 0,
       isMuted: map['is_muted'] as bool? ?? false,
+      coverUrl: map['cover_url'] as String?,
+      description: map['description'] as String?,
+      whoCanPost: GroupWhoCanPost.fromDb(map['who_can_post'] as String?),
     );
   }
 }

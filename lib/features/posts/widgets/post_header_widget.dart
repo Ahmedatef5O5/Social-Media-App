@@ -13,7 +13,10 @@ import '../helpers/header_trailing_action.dart';
 import '../models/post_details_route_args.dart';
 import '../models/post_model.dart';
 import '../views/post_details_view.dart';
+import '../../group_chats/helpers/group_profile_navigation.dart';
+import '../../group_chats/helpers/group_role_resolver.dart';
 import 'author_image_widget.dart';
+import 'group_post_header_leading.dart';
 import 'pinned_post_badge.dart';
 import 'package:social_media_app/core/localization/l10n_extension.dart';
 
@@ -78,6 +81,134 @@ class PostHeaderWidget extends StatelessWidget {
     );
   }
 
+  void _openAuthor(
+    BuildContext context, {
+    required bool isPostByMe,
+    required dynamic navController,
+  }) {
+    if (isPostByMe) {
+      if (navController != null) navController.jumpToTab(3);
+    } else {
+      Navigator.of(
+        context,
+        rootNavigator: true,
+      ).pushNamed(AppRoutes.profileViewRoute, arguments: post.authorId);
+    }
+  }
+
+  /// Group post header: layered group + author avatar, group name as the
+  /// title, and "Author • time • privacy" as the subtitle.
+  Widget _buildGroupHeader(
+    BuildContext context, {
+    required bool isPostByMe,
+    required dynamic navController,
+    required bool shouldDisableTap,
+    required bool isAlreadyOnSamePost,
+    required Widget? trailing,
+  }) {
+    final theme = Theme.of(context);
+    final groupId = post.groupId ?? '';
+    final onGroup = isOnGroupProfile(context, groupId);
+    final muted = theme.colorScheme.onSurface.withValues(alpha: 0.45);
+    final authorName =
+        (post.authorIsDeleted ||
+                (post.authorName?.trim().toLowerCase() == 'deleted account'))
+            ? context.l10n.deletedAccount
+            : (post.authorName ?? context.l10n.unknown);
+
+    void openGroup() {
+      if (onGroup || groupId.isEmpty) return;
+      openGroupProfile(context, groupId: groupId);
+    }
+
+    void openAuthor() {
+      if (shouldDisableTap) return;
+      _openAuthor(
+        context,
+        isPostByMe: isPostByMe,
+        navController: navController,
+      );
+    }
+
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      leading: GroupPostHeaderLeading(
+        groupAvatarUrl: post.groupAvatarUrl,
+        authorImageUrl: post.authorImageUrl,
+        onGroupTap: onGroup ? null : openGroup,
+        onAuthorTap: shouldDisableTap ? null : openAuthor,
+      ),
+      onTap:
+          isAlreadyOnSamePost
+              ? null
+              : () {
+                if (postsCubit.isPostGhost(post.id)) {
+                  AppToast.info(context.l10n.thisPostIsNo);
+                  return;
+                }
+                Navigator.of(context, rootNavigator: true).pushNamed(
+                  AppRoutes.postDetailsViewRoute,
+                  arguments: PostDetailsRouteArgs(
+                    post: post,
+                    initialActiveMode: PostDetailsActiveMode.comments,
+                    isProfileContext: isProfileContext,
+                  ),
+                );
+              },
+      title: GestureDetector(
+        onTap: onGroup ? null : openGroup,
+        child: Text(
+          post.groupName?.trim().isNotEmpty == true
+              ? post.groupName!
+              : context.l10n.group,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: theme.textTheme.titleSmall!.copyWith(
+            fontWeight: FontWeight.w700,
+            fontSize: 14,
+            letterSpacing: context.ls(0),
+          ),
+        ),
+      ),
+      subtitle: Row(
+        children: [
+          Flexible(
+            child: GestureDetector(
+              onTap: shouldDisableTap ? null : openAuthor,
+              child: Text(
+                authorName,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.titleSmall!.copyWith(
+                  fontWeight: FontWeight.w500,
+                  fontSize: 11.5,
+                  color: muted,
+                  letterSpacing: context.ls(0),
+                ),
+              ),
+            ),
+          ),
+          Text(
+            ' • ${FormattedDate.getFormattedDate(DateTime.parse(post.createdAt).toLocal().toIso8601String())} • ',
+            style: theme.textTheme.titleSmall!.copyWith(
+              fontWeight: FontWeight.w500,
+              fontSize: 10.5,
+              color: muted,
+              letterSpacing: context.ls(0),
+            ),
+          ),
+          // Groups are members-only => lock icon as the privacy marker.
+          Icon(Icons.lock_outline, size: 11, color: muted),
+          if (showPinnedBadge) ...[
+            const SizedBox(width: 6),
+            const PinnedPostBadge(),
+          ],
+        ],
+      ),
+      trailing: trailing,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final currentUserId = SupabaseProvider.id;
@@ -110,6 +241,20 @@ class PostHeaderWidget extends StatelessWidget {
 
       switch (trailingAction) {
         case HeaderTrailingAction.moreActions:
+          if (post.isGroupPost && !isPostByMe) {
+            // Owner / admins may remove any post of their group.
+            return FutureBuilder<bool>(
+              future: GroupRoleResolver.isAdmin(post.groupId!),
+              builder:
+                  (context, snap) => PostActionsMenu(
+                    post: post,
+                    currentUserId: currentUserId,
+                    postsCubit: postsCubit,
+                    showPinAction: showPinAction,
+                    canModerateGroupPost: snap.data == true,
+                  ),
+            );
+          }
           return PostActionsMenu(
             post: post,
             currentUserId: currentUserId,
@@ -148,6 +293,17 @@ class PostHeaderWidget extends StatelessWidget {
         case HeaderTrailingAction.none:
           return const SizedBox.shrink();
       }
+    }
+
+    if (post.isGroupPost) {
+      return _buildGroupHeader(
+        context,
+        isPostByMe: isPostByMe,
+        navController: navController,
+        shouldDisableTap: shouldDisableTap,
+        isAlreadyOnSamePost: isAlreadyOnSamePost,
+        trailing: buildTrailingWidget(),
+      );
     }
 
     return ListTile(

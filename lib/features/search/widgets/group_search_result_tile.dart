@@ -3,6 +3,7 @@ import '../../../core/constants/app_images.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/widgets/cached_cloudinary_image.dart';
 import '../../group_chats/helpers/group_navigation.dart';
+import '../../group_chats/helpers/group_profile_navigation.dart';
 import '../../group_chats/models/group_model.dart';
 import 'package:social_media_app/core/localization/l10n_extension.dart';
 
@@ -50,13 +51,20 @@ class GroupSearchResultTile extends StatelessWidget {
         ),
       ),
       onTap:
-          () => openGroupChat(
-            group.id,
-            () => Navigator.of(
-              context,
-              rootNavigator: true,
-            ).pushNamed(AppRoutes.groupChatRoute, arguments: group),
-          ),
+          () =>
+              !group.isMember
+                  ? openGroupProfile(
+                    context,
+                    groupId: group.id,
+                    group: group,
+                  ) // non-member: preview + request to join
+                  : openGroupChat(
+                    group.id,
+                    () => Navigator.of(
+                      context,
+                      rootNavigator: true,
+                    ).pushNamed(AppRoutes.groupChatRoute, arguments: group),
+                  ),
     );
   }
 }

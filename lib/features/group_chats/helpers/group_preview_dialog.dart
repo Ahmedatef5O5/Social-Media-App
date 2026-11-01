@@ -6,6 +6,7 @@ import '../../../core/router/app_routes.dart';
 import '../../../core/widgets/shimmer_low_res_image_placeholder.dart';
 import 'group_navigation.dart';
 import '../models/group_model.dart';
+import 'group_profile_navigation.dart';
 
 class GroupPreviewDialog extends StatelessWidget {
   final GroupModel group;
@@ -155,6 +156,18 @@ class GroupPreviewDialog extends StatelessWidget {
                     ).pushNamed(AppRoutes.groupInfoViewRoute, arguments: group);
                   },
                 ),
+                if (group.isMember)
+                  IconButton(
+                    icon: Icon(Icons.feed_outlined, color: primary),
+                    onPressed: () {
+                      Navigator.pop(context);
+                      openGroupProfile(
+                        context,
+                        groupId: group.id,
+                        group: group,
+                      );
+                    },
+                  ),
               ],
             ),
           ),
