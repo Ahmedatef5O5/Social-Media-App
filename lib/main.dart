@@ -7,9 +7,13 @@ import 'core/errors/network_error_utils.dart';
 import 'core/observability/error_category.dart';
 import 'core/observability/observability.dart';
 import 'core/observability/overflow_filter.dart';
+import 'core/performance/interceptors/startup_tracker.dart';
 import 'core/toast/app_toast.dart';
 
 void main() {
+  // Reliability Center: cold-start clock starts at main() entry (pure Dart, Type A).
+  StartupTracker.instance.begin();
+
   runZonedGuarded<Future<void>>(
     () async {
       WidgetsFlutterBinding.ensureInitialized();
@@ -62,6 +66,8 @@ void main() {
       const defaultThemeName = 'ocean';
 
       runApp(buildApp(defaultThemeName));
+      // Records main() -> first rendered frame.
+      StartupTracker.instance.attachFirstFrame();
 
       startCoreServicesBootstrap();
     },
