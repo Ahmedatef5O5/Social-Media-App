@@ -77,4 +77,7 @@ mute_test_log.txt
 supabase/.temp/linked-project.json
 
 coverage/
+dist/
 !scripts/local_ci.ps1
+build_social_mate_apks.ps1
+app-release-before-abi-split.apk

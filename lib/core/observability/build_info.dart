@@ -31,5 +31,14 @@ class BuildInfo {
     defaultValue: 'local',
   );
 
+  /// Shorebird track: `stable` or `staging`.
+  static const String shorebirdTrack = String.fromEnvironment(
+    'SHOREBIRD_TRACK',
+    defaultValue: 'stable',
+  );
+
+  /// Release version formatted for Shorebird (e.g. 1.0.0+2).
+  static String get releaseVersion => '$appVersion+$buildNumber';
+
   static bool get isProduction => environment == 'production';
 }

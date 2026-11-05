@@ -17,6 +17,24 @@ if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(FileInputStream(keystorePropertiesFile))
 }
 
+val targetPlatformProp = project.findProperty("target-platform") as String?
+val requestedAbis: Set<String> = targetPlatformProp
+    ?.split(",")
+    ?.mapNotNull {
+        when (it.trim()) {
+            "android-arm" -> "armeabi-v7a"
+            "android-arm64" -> "arm64-v8a"
+            "android-x86" -> "x86"
+            "android-x64" -> "x86_64"
+            else -> null
+        }
+    }
+    ?.toSet()
+    ?.takeIf { it.isNotEmpty() }
+    ?: setOf("armeabi-v7a", "arm64-v8a", "x86_64")
+
+val allKnownAbis = setOf("armeabi-v7a", "arm64-v8a", "x86", "x86_64")
+val excludedAbis = allKnownAbis - requestedAbis
 
 android {
     namespace = "dev.ahmedatef.social_media_app"
@@ -56,10 +74,22 @@ android {
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
+    
+    // 2. Add or update the `packaging` block inside `android {`
+    packaging {
+        jniLibs {
+            // Compresses .so files inside the APK to achieve ~65-75 MB APK size on minSdk 24+
+            useLegacyPackaging = true
+
+            // Strictly exclude native libraries (.so) from non-targeted ABIs (WebRTC, LiveKit, DataStore)
+            excludedAbis.forEach { abi ->
+                excludes += "lib/$abi/**"
+                excludes += "**/$abi/*.so"
+            }
+        }
+    }
 
     buildTypes {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
            getByName("release") {
            
             signingConfig = signingConfigs.getByName("release")
