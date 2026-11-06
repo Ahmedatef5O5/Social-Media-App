@@ -384,9 +384,14 @@ class NotificationRepository {
       }
     }
 
+    const groupBackedTypes = {
+      'group_message',
+      'group_join_accept',
+      'group_member_added',
+    };
     final groupIds =
         rows
-            .where((r) => r['type'] == 'group_message')
+            .where((r) => groupBackedTypes.contains(r['type']))
             .map((r) => r['reference_id'] as String?)
             .whereType<String>()
             .where((id) => id.isNotEmpty)
@@ -398,7 +403,7 @@ class NotificationRepository {
       try {
         final groupsData = await _db
             .from('groups')
-            .select('id, name')
+            .select('id, name, avatar_url')
             .inFilter('id', groupIds);
         for (final g in (groupsData as List)) {
           final map = g as Map<String, dynamic>;
@@ -504,6 +509,22 @@ class NotificationRepository {
                 .then((_) {}, onError: (_) {});
           }
         }
+      }
+
+      // Group-backed rows: the title / avatar are the GROUP's, never the
+      // sender's, so the live user hydration below must not overwrite them.
+      if (type == 'group_join_accept' || type == 'group_member_added') {
+        final groupId = row['reference_id'] as String?;
+        final group = groupId != null ? groupsById[groupId] : null;
+        final liveGroupName = (group?['name'] as String?)?.trim();
+        final liveGroupAvatar = group?['avatar_url'] as String?;
+        if (liveGroupName != null && liveGroupName.isNotEmpty) {
+          row['title'] = liveGroupName;
+        }
+        if (liveGroupAvatar != null && liveGroupAvatar.isNotEmpty) {
+          row['sender_image_url'] = liveGroupAvatar;
+        }
+        continue;
       }
 
       if (user != null) {

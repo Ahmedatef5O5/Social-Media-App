@@ -12,6 +12,7 @@ import '../../../core/widgets/app_image_provider.dart';
 import '../../group_chats/cubits/group_list_cubit/group_list_cubit.dart';
 import '../../group_chats/helpers/group_navigation.dart';
 import '../../group_chats/models/group_model.dart';
+import '../../group_chats/models/group_view_args.dart';
 import '../../group_chats/services/group_chat_services.dart';
 import '../../posts/views/post_details_view.dart';
 import '../../single_chats/cubits/chats_cubit/chats_cubit.dart';
@@ -467,6 +468,39 @@ class NotificationListItem extends StatelessWidget {
     BuildContext context,
     AppNotification notif,
   ) async {
+    // Group social events (stored with a general type): route by raw type.
+    final groupRef = notif.referenceId;
+    if (groupRef != null && groupRef.isNotEmpty) {
+      switch (notif.rawType) {
+        case 'group_join_request':
+          // Owner / admin: group page + auto-open the pending requests sheet.
+          Navigator.of(context, rootNavigator: true).pushNamed(
+            AppRoutes.groupViewRoute,
+            arguments: GroupViewArgs(
+              groupId: groupRef,
+              openJoinRequestsOnLoad: true,
+            ),
+          );
+          return;
+        case 'group_join_accept':
+          // Requester: refresh my groups, then open the group's Posts tab.
+          try {
+            context.read<GroupListCubit>().loadGroups(isRefresh: true);
+          } catch (_) {}
+          Navigator.of(context, rootNavigator: true).pushNamed(
+            AppRoutes.groupViewRoute,
+            arguments: GroupViewArgs(groupId: groupRef, initialTabIndex: 0),
+          );
+          return;
+        case 'group_member_added':
+          try {
+            context.read<GroupListCubit>().loadGroups(isRefresh: true);
+          } catch (_) {}
+          await _openGroupChatFromNotification(context, groupRef);
+          return;
+      }
+    }
+
     switch (notif.type) {
       case NotificationType.like:
         final postId = notif.referenceId;

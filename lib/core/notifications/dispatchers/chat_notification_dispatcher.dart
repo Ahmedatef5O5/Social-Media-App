@@ -334,6 +334,19 @@ class ChatNotificationDispatcher {
               .eq('id', currentUserId)
               .maybeSingle();
       if (isGroup) {
+        // Inline replies bypass the chat UI: re-check the server policy so a
+        // restricted member can never post through the notification.
+        final allowed = await Supabase.instance.client.rpc(
+          'can_send_in_group',
+          params: {'p_group_id': conversationId, 'p_user_id': currentUserId},
+        );
+        if (allowed != true) {
+          debugPrint(
+            '[BackgroundChatAction] reply blocked: sending restricted',
+          );
+          await cancelNotificationSilently(conversationId);
+          return;
+        }
         final result = await GroupChatServices().sendGroupMessage(
           groupId: conversationId,
           groupName: conversationTitle,

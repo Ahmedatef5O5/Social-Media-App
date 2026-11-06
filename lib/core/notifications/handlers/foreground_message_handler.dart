@@ -1,6 +1,8 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
+import 'package:social_media_app/core/notifications/campaign/campaign_push_payload.dart';
 import 'package:social_media_app/core/notifications/dispatchers/call_notification_dispatcher.dart';
+import 'package:social_media_app/core/notifications/dispatchers/campaign_notification_dispatcher.dart';
 import 'package:social_media_app/core/notifications/dispatchers/chat_notification_dispatcher.dart';
 import 'package:social_media_app/core/notifications/dispatchers/group_call_dispatcher.dart';
 import 'package:social_media_app/core/notifications/dispatchers/social_notification_dispatcher.dart';
@@ -72,6 +74,12 @@ class ForegroundMessageHandler {
             callId,
           );
         }
+        return;
+      }
+
+      // Admin campaign: honours the Push Notifications master switch above.
+      if (type == CampaignPushPayload.notificationType) {
+        await CampaignNotificationDispatcher.instance.showFromMessage(message);
         return;
       }
 

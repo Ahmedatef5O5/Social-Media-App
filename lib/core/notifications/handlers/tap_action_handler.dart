@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:social_media_app/features/group_chats/cubits/group_list_cubit/group_list_cubit.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:social_media_app/core/helpers/content_deep_link_navigator.dart';
 import 'package:social_media_app/core/notifications/dispatchers/call_notification_dispatcher.dart';
@@ -602,8 +603,24 @@ class TapActionHandler {
       _openPostDetails(referenceId, _activeModeForType(type));
       return;
     }
-    if (type == 'group_join_request' || type == 'group_join_accept') {
-      _openGroupProfile(referenceId);
+    // Group join request (owner/admin) or acceptance (requester): open the
+    // group profile. GroupView decides itself between the full view (member)
+    // and the preview/join page, and admins see the pending-requests banner.
+    if (type == 'group_join_request') {
+      // Owner / admin: land on the group and auto-open the requests sheet.
+      _openGroupProfile(referenceId, openJoinRequests: true);
+      return;
+    }
+    if (type == 'group_join_accept') {
+      // Requester: refresh my groups so the new group shows up instantly,
+      // then open its Posts tab.
+      _refreshMyGroups();
+      _openGroupProfile(referenceId, initialTabIndex: 0);
+      return;
+    }
+    if (type == 'group_member_added') {
+      _refreshMyGroups();
+      _openGroupChat(referenceId, '');
       return;
     }
 
@@ -758,7 +775,13 @@ class TapActionHandler {
     }
   }
 
-  static void _openGroupProfile(String groupId) {
+  /// Equivalent of `openGroupProfile(context, groupId: …)` for a tap that has
+  /// no BuildContext: pushes the same route through the root navigator key.
+  static void _openGroupProfile(
+    String groupId, {
+    bool openJoinRequests = false,
+    int initialTabIndex = 0,
+  }) {
     if (groupId.isEmpty) {
       _openNotificationsView();
       return;
@@ -766,9 +789,24 @@ class TapActionHandler {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       navigatorKey.currentState?.pushNamed(
         AppRoutes.groupViewRoute,
-        arguments: GroupViewArgs(groupId: groupId),
+        arguments: GroupViewArgs(
+          groupId: groupId,
+          openJoinRequestsOnLoad: openJoinRequests,
+          initialTabIndex: initialTabIndex,
+        ),
       );
     });
+  }
+
+  /// Best-effort refresh of the in-memory groups list (no BuildContext here).
+  static void _refreshMyGroups() {
+    final ctx = navigatorKey.currentContext;
+    if (ctx == null) return;
+    try {
+      ctx.read<GroupListCubit>().loadGroups(isRefresh: true);
+    } catch (e) {
+      debugPrint('Could not refresh groups from notification: $e');
+    }
   }
 
   static Future<void> _openGroupChat(String groupId, String groupName) async {
@@ -777,21 +815,28 @@ class TapActionHandler {
       return;
     }
     try {
-      final groups = await GroupChatServices().getMyGroups();
-      final matches = groups.where((g) => g.id == groupId);
-      final group = matches.isNotEmpty ? matches.first : null;
+      // Cold start / mid-flight list: re-query the server (once more after a
+      // short delay) so the tap never silently fails on a stale list.
+      var groups = await GroupChatServices().getMyGroups();
+      var group = groups.where((g) => g.id == groupId).firstOrNull;
+      if (group == null) {
+        await Future<void>.delayed(const Duration(milliseconds: 900));
+        groups = await GroupChatServices().getMyGroups();
+        group = groups.where((g) => g.id == groupId).firstOrNull;
+      }
 
+      final resolved = group;
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (group == null) {
+        if (resolved == null) {
           AppToast.warning(AppL10n.current.thisGroupIsNo);
           return;
         }
 
         openGroupChat(
-          group.id,
+          resolved.id,
           () => navigatorKey.currentState?.pushNamed(
             AppRoutes.groupChatRoute,
-            arguments: group,
+            arguments: resolved,
           ),
         );
       });

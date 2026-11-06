@@ -29,8 +29,11 @@ class SocialNotificationDispatcher {
     'story_react',
     'message_react',
     'feedback_reply',
+    // Group join requests (owner/admins) and acceptance (requester).
     'group_join_request',
     'group_join_accept',
+    // Creator added me while creating a group.
+    'group_member_added',
   };
 
   static bool isSocialType(String type) =>

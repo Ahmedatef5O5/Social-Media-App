@@ -37,6 +37,20 @@ class NotificationChannelSetup {
         enableVibration: true,
       );
 
+  /// Marketing / announcement pushes from the admin Notification Control
+  /// Center. The id MUST match `ANDROID_CHANNEL_ID` in the dispatch-campaign
+  /// Edge Function, or Android falls back to the default channel.
+  static final AndroidNotificationChannel campaignChannel =
+      AndroidNotificationChannel(
+        'campaigns',
+        'Announcements & Updates',
+        description:
+            'News, announcements and updates from the Social Mate team',
+        importance: Importance.high,
+        playSound: true,
+        enableVibration: true,
+      );
+
   Future<void> createAllChannels(
     FlutterLocalNotificationsPlugin localNotifications,
   ) async {
@@ -49,6 +63,7 @@ class NotificationChannelSetup {
     await androidPlugin?.createNotificationChannel(messageChannel);
     await androidPlugin?.createNotificationChannel(callChannel);
     await androidPlugin?.createNotificationChannel(socialChannel);
+    await androidPlugin?.createNotificationChannel(campaignChannel);
   }
 
   Future<void> requestPermissions(
