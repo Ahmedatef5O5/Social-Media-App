@@ -13,20 +13,21 @@ import '../../../../core/cache/services/messages_snapshot_cache.dart';
 import '../../../../core/chat_shared/helpers/message_reaction_preview_helper.dart';
 import '../../../../core/errors/exceptions.dart';
 import '../../../../core/errors/supabase_error_mapper.dart';
-import '../../../../core/guards/suspension_interceptor.dart';
 import '../../../../core/helpers/safe_emit_mixin.dart';
-import '../../../../core/localization/app_l10n.dart';
 import '../../../../core/messaging/message_reconciler.dart';
 import '../../../../core/presence/models/chat_action_type.dart';
 import '../../../../core/services/fcm_services.dart';
-import '../../../../core/services/system_control_service.dart';
 import '../../../../core/supabase/supabase_provider.dart';
+import '../../../../core/localization/app_l10n.dart';
+import '../../../../core/toast/app_toast.dart';
 import '../../../../core/utilities/supabase_constants.dart';
 import '../../../../core/audio/voice_recorder/services/audio_compression_service.dart';
 import '../../../../core/helpers/selected_message_star_controller.dart';
 import '../../../notifications/repository/notifications_repository.dart';
 import '../../../reactions/services/reaction_profile_resolver.dart';
 import '../../helpers/group_chat_clear_store.dart';
+import '../../helpers/group_role_resolver.dart';
+import '../../models/group_member_model.dart';
 import '../../models/group_header_stats.dart';
 import '../../models/group_model.dart';
 import '../../models/group_presence_entry.dart';
@@ -112,6 +113,7 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState>
 
     if (state == AppLifecycleState.resumed && wasBackgrounded && isMember) {
       _listenMembership();
+      _listenGroupPolicy();
       _listenMessages();
       _listenReadReceipts();
       _listenPresence();
@@ -149,6 +151,43 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState>
   String get currentUserId => SupabaseProvider.id;
   @override
   bool isMember = true;
+
+  /// Live copy of `groups.who_can_send` / my active role (kept fresh by the
+  /// realtime watchers in [GroupMessagesStreamMixin]).
+  @override
+  GroupWhoCanSend whoCanSend = GroupWhoCanSend.all;
+  @override
+  GroupMemberRole? myRole;
+
+  /// Mirrors `can_send_in_group`. Reactions and joining a running call stay
+  /// allowed for restricted members, so they never read this flag.
+  @override
+  bool get canSendMessages {
+    if (!isMember) return false;
+    final role =
+        myRole ??
+        (group.createdBy == currentUserId ? GroupMemberRole.owner : null);
+    if (role == null) return whoCanSend == GroupWhoCanSend.all;
+    return whoCanSend.allows(role);
+  }
+
+  /// Clears every in-flight compose state when sending becomes restricted.
+  @override
+  void _handleSendPermissionChange() {
+    if (canSendMessages) return;
+    replyToMessage.value = null;
+    editingMessage.value = null;
+    stopRecordingAction();
+  }
+
+  /// Optimistic patch from the owner's settings screen.
+  void applyPolicyLocal({GroupWhoCanSend? whoCanSend}) {
+    if (whoCanSend == null || whoCanSend == this.whoCanSend) return;
+    this.whoCanSend = whoCanSend;
+    _handleSendPermissionChange();
+    _emitLoaded(force: true);
+  }
+
   bool get hasConfirmedInitialLoad => _hasReceivedFirstStreamEvent;
 
   final GroupChatReactionProfileResolver reactionProfileResolver =
@@ -166,12 +205,16 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState>
     _messagesSnapshotKey = 'group_messages_snapshot_${group.id}';
 
     final listState = groupListCubit.state;
-    isMember =
+    final liveGroup =
         listState is GroupListLoaded
-            ? listState.groups
-                .firstWhere((g) => g.id == group.id, orElse: () => group)
-                .isMember
-            : group.isMember;
+            ? listState.groups.firstWhere(
+              (g) => g.id == group.id,
+              orElse: () => group,
+            )
+            : group;
+    isMember = liveGroup.isMember;
+    whoCanSend = liveGroup.whoCanSend;
+    myRole = liveGroup.myRole;
 
     final rawDiskMessages = _readMessagesSnapshot(_messagesSnapshotKey!);
     if (rawDiskMessages.isNotEmpty) {
@@ -194,6 +237,8 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState>
           messages: cachedMessages,
           uploadProgress: uploadProgressMap,
           isMember: isMember,
+          canSendMessages: canSendMessages,
+          whoCanSend: whoCanSend,
         ),
       );
     } else {
@@ -221,6 +266,7 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState>
     if (isClosed) return;
     groupListCubit.setActiveGroupId(group.id);
     _listenMembership();
+    _listenGroupPolicy();
     _listenMentions();
     _listenReactions();
     _listenMessages();
@@ -238,6 +284,8 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState>
         messages: cachedMessages,
         uploadProgress: uploadProgressMap,
         isMember: isMember,
+        canSendMessages: canSendMessages,
+        whoCanSend: whoCanSend,
       ),
     );
   }
@@ -336,6 +384,7 @@ class GroupDetailsCubit extends Cubit<GroupDetailsState>
     _readReceiptsSubscription?.cancel();
     _typingSubscription?.cancel();
     _membershipSubscription?.cancel();
+    _policySubscription?.cancel();
     _typingDebounce?.cancel();
 
     await super.close();

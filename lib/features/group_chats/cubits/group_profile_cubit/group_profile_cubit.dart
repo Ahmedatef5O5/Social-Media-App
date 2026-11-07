@@ -98,9 +98,10 @@ class GroupProfileCubit extends Cubit<GroupProfileState>
     }
   }
 
+  /// Owner-only (the DB trigger enforces it as well).
   Future<void> setWhoCanPost(GroupWhoCanPost value) async {
     final current = profile;
-    if (current == null || !current.hasAdminPrivileges) return;
+    if (current == null || !current.isOwner) return;
     emit(GroupProfileLoaded(current.copyWith(whoCanPost: value)));
     try {
       await _service.updateWhoCanPost(groupId, value);
@@ -108,6 +109,49 @@ class GroupProfileCubit extends Cubit<GroupProfileState>
       emit(GroupProfileLoaded(current));
       rethrow;
     }
+  }
+
+  Future<void> setWhoCanSend(GroupWhoCanSend value) async {
+    final current = profile;
+    if (current == null || !current.isOwner) return;
+    emit(GroupProfileLoaded(current.copyWith(whoCanSend: value)));
+    try {
+      await _service.updateWhoCanSend(groupId, value);
+    } catch (e) {
+      emit(GroupProfileLoaded(current));
+      rethrow;
+    }
+  }
+
+  Future<void> setPrivacy(GroupPrivacy value) async {
+    final current = profile;
+    if (current == null || !current.isOwner) return;
+    emit(GroupProfileLoaded(current.copyWith(privacy: value)));
+    try {
+      await _service.updatePrivacy(groupId, value);
+    } catch (e) {
+      emit(GroupProfileLoaded(current));
+      rethrow;
+    }
+  }
+
+  /// Local-only patch (used by the policy controller for optimistic sync).
+  void applyPolicyLocal({
+    GroupWhoCanPost? whoCanPost,
+    GroupWhoCanSend? whoCanSend,
+    GroupPrivacy? privacy,
+  }) {
+    final current = profile;
+    if (current == null) return;
+    emit(
+      GroupProfileLoaded(
+        current.copyWith(
+          whoCanPost: whoCanPost,
+          whoCanSend: whoCanSend,
+          privacy: privacy,
+        ),
+      ),
+    );
   }
 
   Future<void> changeCover(File file) async {

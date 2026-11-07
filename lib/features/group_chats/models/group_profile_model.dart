@@ -28,6 +28,8 @@ class GroupProfileModel {
   final String? createdBy;
   final String? creatorName;
   final GroupWhoCanPost whoCanPost;
+  final GroupWhoCanSend whoCanSend;
+  final GroupPrivacy privacy;
   final int membersCount;
   final int postsCount;
   final int mediaCount;
@@ -47,6 +49,8 @@ class GroupProfileModel {
     this.createdBy,
     this.creatorName,
     this.whoCanPost = GroupWhoCanPost.all,
+    this.whoCanSend = GroupWhoCanSend.all,
+    this.privacy = GroupPrivacy.privateGroup,
     this.membersCount = 0,
     this.postsCount = 0,
     this.mediaCount = 0,
@@ -60,9 +64,13 @@ class GroupProfileModel {
   bool get isAdmin => isMember && myRole == GroupMemberRole.admin;
   bool get hasAdminPrivileges => isOwner || isAdmin;
 
+  bool get isPublic => privacy.isPublic;
+
   /// Mirrors `can_post_in_group` on the server.
-  bool get canPost =>
-      isMember && (whoCanPost == GroupWhoCanPost.all || hasAdminPrivileges);
+  bool get canPost => isMember && whoCanPost.allows(myRole);
+
+  /// Mirrors `can_send_in_group` on the server.
+  bool get canSendMessages => isMember && whoCanSend.allows(myRole);
 
   factory GroupProfileModel.fromMap(Map<String, dynamic> map) {
     int n(String k) => (map[k] as num?)?.toInt() ?? 0;
@@ -79,6 +87,8 @@ class GroupProfileModel {
       createdBy: map['created_by'] as String?,
       creatorName: map['creator_name'] as String?,
       whoCanPost: GroupWhoCanPost.fromDb(map['who_can_post'] as String?),
+      whoCanSend: GroupWhoCanSend.fromDb(map['who_can_send'] as String?),
+      privacy: GroupPrivacy.fromDb(map['privacy'] as String?),
       membersCount: n('members_count'),
       postsCount: n('posts_count'),
       mediaCount: n('media_count'),
@@ -103,6 +113,8 @@ class GroupProfileModel {
     Object? avatarUrl = _unset,
     Object? coverUrl = _unset,
     GroupWhoCanPost? whoCanPost,
+    GroupWhoCanSend? whoCanSend,
+    GroupPrivacy? privacy,
     int? membersCount,
     int? postsCount,
     int? mediaCount,
@@ -126,6 +138,8 @@ class GroupProfileModel {
       createdBy: createdBy,
       creatorName: creatorName,
       whoCanPost: whoCanPost ?? this.whoCanPost,
+      whoCanSend: whoCanSend ?? this.whoCanSend,
+      privacy: privacy ?? this.privacy,
       membersCount: membersCount ?? this.membersCount,
       postsCount: postsCount ?? this.postsCount,
       mediaCount: mediaCount ?? this.mediaCount,
@@ -148,6 +162,12 @@ class GroupProfileModel {
     coverUrl: coverUrl,
     description: description,
     whoCanPost: whoCanPost,
+    whoCanSend: whoCanSend,
+    privacy: privacy,
+    myRole: isMember ? myRole : null,
+    membersCount: membersCount,
+    myRequestStatus:
+        requestStatus == GroupJoinRequestStatus.pending ? 'pending' : null,
   );
 }
 

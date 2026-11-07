@@ -13,6 +13,9 @@ mixin GroupMediaUploadMixin on Cubit<GroupDetailsState> {
   MediaCacheRepository get _mediaCacheRepository;
 
   void _emitLoaded({bool force = false});
+  bool get canSendMessages;
+  bool get isMember;
+  GroupWhoCanSend get whoCanSend;
 
   final Map<String, dio_pkg.CancelToken> _cancelTokens = {};
 
@@ -33,6 +36,14 @@ mixin GroupMediaUploadMixin on Cubit<GroupDetailsState> {
     String? forwardedFromUserName,
     String? forwardedFromUserAvatar,
   }) async {
+    // Defence in depth: the UI hides the input bar, RLS rejects the insert,
+    // and this stops text / media / voice / gif / sticker sends early.
+    if (!canSendMessages) {
+      replyToMessage.value = null;
+      AppToast.info(AppL10n.current.groupMessagingRestrictedToast);
+      return;
+    }
+
     final isOffline = await ConnectivityBannerController.notifyIfOffline();
     if (isOffline) return;
 
@@ -259,36 +270,11 @@ mixin GroupMediaUploadMixin on Cubit<GroupDetailsState> {
           forwardedFromUserAvatar: forwardedFromUserAvatar,
         );
       } catch (e) {
-        _cancelTokens.remove(tempId);
-        uploadProgressMap.remove(tempId);
-
-        // Check for Account Suspension (RLS 42501)
-        if (SuspensionInterceptor.looksLikePermissionRejection(e) ||
-            e.toString().contains('suspension_block_insert')) {
-          cachedMessages = GroupDetailsCubit._reconciler.removeById(
-            cachedMessages,
-            tempId,
-          );
-          (this as GroupDetailsCubit)._protectedKeys.remove(
-            correlationKeyFor(id: tempId, clientMessageId: tempId),
-          );
-          SuspensionInterceptor.onError(e);
-          SystemControlService.instance.refresh(force: true);
-          if (isClosed) return;
-          emit(
-            GroupDetailsError(
-              AppL10n.isArabic
-                  ? "تم إيقاف حسابك، لا يمكنك إرسال رسائل جماعية."
-                  : "Your account is suspended. You cannot send group messages.",
-            ),
-          );
-          emit(GroupDetailsLoaded(messages: List.from(cachedMessages)));
-          return;
-        }
-
         debugPrint(
           'sendGroupMessage: unknown outcome, keeping optimistic message: $e',
         );
+        _cancelTokens.remove(tempId);
+        uploadProgressMap.remove(tempId);
         unawaited(ConnectivityBannerController.notifyIfOffline());
 
         if (isClosed) return;
@@ -298,7 +284,14 @@ mixin GroupMediaUploadMixin on Cubit<GroupDetailsState> {
             "Couldn't confirm your message was sent. It will update automatically once you're back online.",
           ),
         );
-        emit(GroupDetailsLoaded(messages: List.from(cachedMessages)));
+        emit(
+          GroupDetailsLoaded(
+            messages: List.from(cachedMessages),
+            isMember: isMember,
+            canSendMessages: canSendMessages,
+            whoCanSend: whoCanSend,
+          ),
+        );
         return;
       }
 
@@ -392,7 +385,14 @@ mixin GroupMediaUploadMixin on Cubit<GroupDetailsState> {
           emit(GroupDetailsError(SupabaseErrorMapper.toUserMessage(e)));
         }
 
-        emit(GroupDetailsLoaded(messages: List.from(cachedMessages)));
+        emit(
+          GroupDetailsLoaded(
+            messages: List.from(cachedMessages),
+            isMember: isMember,
+            canSendMessages: canSendMessages,
+            whoCanSend: whoCanSend,
+          ),
+        );
       }
     }
   }
@@ -421,7 +421,14 @@ mixin GroupMediaUploadMixin on Cubit<GroupDetailsState> {
         correlationKeyFor(id: tempId, clientMessageId: tempId),
       );
 
-      emit(GroupDetailsLoaded(messages: List.from(cachedMessages)));
+      emit(
+        GroupDetailsLoaded(
+          messages: List.from(cachedMessages),
+          isMember: isMember,
+          canSendMessages: canSendMessages,
+          whoCanSend: whoCanSend,
+        ),
+      );
     }
   }
 

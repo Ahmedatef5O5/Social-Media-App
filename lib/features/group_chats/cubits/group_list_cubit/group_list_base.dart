@@ -48,6 +48,13 @@ abstract class GroupListBase extends Cubit<GroupListState> {
     String? name,
     String? avatarUrl,
   });
+  void applyGroupPolicyInState({
+    required String groupId,
+    GroupWhoCanPost? whoCanPost,
+    GroupWhoCanSend? whoCanSend,
+    GroupPrivacy? privacy,
+  });
+  void applyMyRoleInState(String groupId, GroupMemberRole role);
   void updateGroupInState({
     required String groupId,
     required String lastMessage,

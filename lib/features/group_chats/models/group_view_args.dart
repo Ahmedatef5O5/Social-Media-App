@@ -7,7 +7,19 @@ class GroupViewArgs {
   final String groupId;
   final GroupModel? group;
 
-  const GroupViewArgs({required this.groupId, this.group});
+  /// When true and the viewer can manage requests, GroupView opens the
+  /// pending join-requests sheet once after loading (push / bell deep link).
+  final bool openJoinRequestsOnLoad;
+
+  /// Tab to open on (0 = Posts, 1 = Members, 2 = Details).
+  final int initialTabIndex;
+
+  const GroupViewArgs({
+    required this.groupId,
+    this.group,
+    this.openJoinRequestsOnLoad = false,
+    this.initialTabIndex = 0,
+  });
 
   static GroupViewArgs? from(Object? raw) {
     if (raw is GroupViewArgs) return raw;

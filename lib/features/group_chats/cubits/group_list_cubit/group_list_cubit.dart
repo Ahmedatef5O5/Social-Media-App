@@ -12,6 +12,7 @@ import '../../../../core/supabase/supabase_provider.dart';
 import '../../../../core/utilities/supabase_constants.dart';
 import '../../../auth/handlers/auth_exception_handler.dart';
 import '../../helpers/group_chat_clear_store.dart';
+import '../../helpers/group_role_resolver.dart';
 import '../../models/group_member_model.dart';
 import '../../models/group_model.dart';
 import '../../models/group_presence_entry.dart';

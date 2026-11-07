@@ -7,13 +7,67 @@ const _unset = Object();
 /// Who may publish posts inside a group (`groups.who_can_post`).
 enum GroupWhoCanPost {
   all('all'),
-  adminsOnly('admins_only');
+  adminsOnly('admins_only'),
+
+  /// UI label "No one": implicitly only the group owner can publish.
+  ownerOnly('owner_only');
 
   const GroupWhoCanPost(this.dbValue);
   final String dbValue;
 
-  static GroupWhoCanPost fromDb(String? raw) =>
-      raw == 'admins_only' ? GroupWhoCanPost.adminsOnly : GroupWhoCanPost.all;
+  static GroupWhoCanPost fromDb(String? raw) => switch (raw) {
+    'admins_only' => GroupWhoCanPost.adminsOnly,
+    'owner_only' => GroupWhoCanPost.ownerOnly,
+    _ => GroupWhoCanPost.all,
+  };
+
+  /// Mirrors `can_post_in_group` for an ACTIVE, non-blocked member.
+  bool allows(GroupMemberRole? role) => switch (this) {
+    GroupWhoCanPost.all => role != null,
+    GroupWhoCanPost.adminsOnly =>
+      role == GroupMemberRole.owner || role == GroupMemberRole.admin,
+    GroupWhoCanPost.ownerOnly => role == GroupMemberRole.owner,
+  };
+}
+
+/// Who may send chat messages / start calls (`groups.who_can_send`).
+enum GroupWhoCanSend {
+  all('all'),
+  adminsOnly('admins_only'),
+
+  /// UI label "No one": implicitly only the group owner can send / call.
+  ownerOnly('owner_only');
+
+  const GroupWhoCanSend(this.dbValue);
+  final String dbValue;
+
+  static GroupWhoCanSend fromDb(String? raw) => switch (raw) {
+    'admins_only' => GroupWhoCanSend.adminsOnly,
+    'owner_only' => GroupWhoCanSend.ownerOnly,
+    _ => GroupWhoCanSend.all,
+  };
+
+  /// Mirrors `can_send_in_group` for an ACTIVE, non-blocked member.
+  bool allows(GroupMemberRole? role) => switch (this) {
+    GroupWhoCanSend.all => role != null,
+    GroupWhoCanSend.adminsOnly =>
+      role == GroupMemberRole.owner || role == GroupMemberRole.admin,
+    GroupWhoCanSend.ownerOnly => role == GroupMemberRole.owner,
+  };
+}
+
+/// Group discoverability (`groups.privacy`). Existing groups stay private.
+enum GroupPrivacy {
+  publicGroup('public'),
+  privateGroup('private');
+
+  const GroupPrivacy(this.dbValue);
+  final String dbValue;
+
+  static GroupPrivacy fromDb(String? raw) =>
+      raw == 'public' ? GroupPrivacy.publicGroup : GroupPrivacy.privateGroup;
+
+  bool get isPublic => this == GroupPrivacy.publicGroup;
 }
 
 class GroupModel {
@@ -39,6 +93,17 @@ class GroupModel {
   final String? coverUrl;
   final String? description;
   final GroupWhoCanPost whoCanPost;
+  final GroupWhoCanSend whoCanSend;
+  final GroupPrivacy privacy;
+
+  /// The current user's ACTIVE role in this group (null when not a member).
+  final GroupMemberRole? myRole;
+
+  /// Only filled by discovery / global search rows.
+  final int? membersCount;
+
+  /// 'pending' when the current user already asked to join (discovery rows).
+  final String? myRequestStatus;
 
   const GroupModel({
     required this.id,
@@ -63,8 +128,28 @@ class GroupModel {
     this.coverUrl,
     this.description,
     this.whoCanPost = GroupWhoCanPost.all,
+    this.whoCanSend = GroupWhoCanSend.all,
+    this.privacy = GroupPrivacy.privateGroup,
+    this.myRole,
+    this.membersCount,
+    this.myRequestStatus,
   }) : _lastMessageSenderName = lastMessageSenderName,
        _lastMessageTargetName = lastMessageTargetName;
+  bool get isPublic => privacy.isPublic;
+  bool get hasPendingJoinRequest => myRequestStatus == 'pending';
+
+  /// Whether [currentUserId] may send messages / start calls right now.
+  /// Mirrors `can_send_in_group` on the server (which stays authoritative).
+  bool canSend(String currentUserId) {
+    if (!isMember || isBlocked) return false;
+    final role =
+        myRole ?? (createdBy == currentUserId ? GroupMemberRole.owner : null);
+    // Unknown role of an active member: fail OPEN only for the unrestricted
+    // policy so a stale cache never locks anyone out of an open group.
+    if (role == null) return whoCanSend == GroupWhoCanSend.all;
+    return whoCanSend.allows(role);
+  }
+
   String? get lastMessageSenderName =>
       _lastMessageSenderName?.trim().toLowerCase() == 'deleted account'
           ? AppL10n.current.deletedAccount
@@ -97,6 +182,11 @@ class GroupModel {
     Object? coverUrl = _unset,
     Object? description = _unset,
     GroupWhoCanPost? whoCanPost,
+    GroupWhoCanSend? whoCanSend,
+    GroupPrivacy? privacy,
+    Object? myRole = _unset,
+    Object? membersCount = _unset,
+    Object? myRequestStatus = _unset,
   }) {
     return GroupModel(
       id: id ?? this.id,
@@ -128,8 +218,34 @@ class GroupModel {
               ? this.description
               : description as String?,
       whoCanPost: whoCanPost ?? this.whoCanPost,
+      whoCanSend: whoCanSend ?? this.whoCanSend,
+      privacy: privacy ?? this.privacy,
+      myRole:
+          identical(myRole, _unset) ? this.myRole : myRole as GroupMemberRole?,
+      membersCount:
+          identical(membersCount, _unset)
+              ? this.membersCount
+              : membersCount as int?,
+      myRequestStatus:
+          identical(myRequestStatus, _unset)
+              ? this.myRequestStatus
+              : myRequestStatus as String?,
     );
   }
+
+  static GroupMemberRole? roleFromDb(String? raw) => switch (raw) {
+    'owner' => GroupMemberRole.owner,
+    'admin' => GroupMemberRole.admin,
+    'member' => GroupMemberRole.member,
+    _ => null,
+  };
+
+  static String? roleToDb(GroupMemberRole? r) => switch (r) {
+    GroupMemberRole.owner => 'owner',
+    GroupMemberRole.admin => 'admin',
+    GroupMemberRole.member => 'member',
+    null => null,
+  };
 
   factory GroupModel.fromMap(Map<String, dynamic> map) {
     return GroupModel(
@@ -158,6 +274,11 @@ class GroupModel {
       coverUrl: map['cover_url'] as String?,
       description: map['description'] as String?,
       whoCanPost: GroupWhoCanPost.fromDb(map['who_can_post'] as String?),
+      whoCanSend: GroupWhoCanSend.fromDb(map['who_can_send'] as String?),
+      privacy: GroupPrivacy.fromDb(map['privacy'] as String?),
+      myRole: roleFromDb(map['my_role'] as String?),
+      membersCount: (map['members_count'] as num?)?.toInt(),
+      myRequestStatus: map['my_request_status'] as String?,
     );
   }
 
@@ -190,6 +311,11 @@ class GroupModel {
     'cover_url': coverUrl,
     'description': description,
     'who_can_post': whoCanPost.dbValue,
+    'who_can_send': whoCanSend.dbValue,
+    'privacy': privacy.dbValue,
+    'my_role': roleToDb(myRole),
+    'members_count': membersCount,
+    'my_request_status': myRequestStatus,
   };
 
   factory GroupModel.fromCacheJson(Map<String, dynamic> map) {
@@ -220,6 +346,11 @@ class GroupModel {
       coverUrl: map['cover_url'] as String?,
       description: map['description'] as String?,
       whoCanPost: GroupWhoCanPost.fromDb(map['who_can_post'] as String?),
+      whoCanSend: GroupWhoCanSend.fromDb(map['who_can_send'] as String?),
+      privacy: GroupPrivacy.fromDb(map['privacy'] as String?),
+      myRole: roleFromDb(map['my_role'] as String?),
+      membersCount: (map['members_count'] as num?)?.toInt(),
+      myRequestStatus: map['my_request_status'] as String?,
     );
   }
 }

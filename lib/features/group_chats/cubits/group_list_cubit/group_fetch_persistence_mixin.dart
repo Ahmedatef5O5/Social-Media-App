@@ -161,12 +161,14 @@ mixin GroupFetchPersistenceMixin on GroupListBase {
     String? avatarUrl,
     String? avatarPublicId,
     required List<String> memberIds,
+    GroupPrivacy privacy = GroupPrivacy.privateGroup,
   }) async {
     final group = await services.createGroup(
       name: name,
       avatarUrl: avatarUrl,
       avatarPublicId: avatarPublicId,
       memberIds: memberIds,
+      privacy: privacy,
     );
     if (isClosed) return group;
     await loadGroups(isRefresh: true);

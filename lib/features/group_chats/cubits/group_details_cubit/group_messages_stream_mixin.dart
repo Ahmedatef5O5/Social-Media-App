@@ -28,6 +28,12 @@ mixin GroupMessagesStreamMixin on Cubit<GroupDetailsState> {
   String get currentUserId;
   bool get isMember;
   set isMember(bool value);
+  GroupWhoCanSend get whoCanSend;
+  set whoCanSend(GroupWhoCanSend value);
+  GroupMemberRole? get myRole;
+  set myRole(GroupMemberRole? value);
+  bool get canSendMessages;
+  void _handleSendPermissionChange();
 
   void _emitLoaded({bool force = false});
   void _persistMessagesSnapshot(String key, List<GroupMessageModel> messages);
@@ -37,7 +43,44 @@ mixin GroupMessagesStreamMixin on Cubit<GroupDetailsState> {
   StreamSubscription? _readReceiptsSubscription;
   StreamSubscription? _typingSubscription;
   StreamSubscription? _membershipSubscription;
+  StreamSubscription? _policySubscription;
   Timer? _typingDebounce;
+
+  /// Live `groups` row: the owner flipping who_can_send locks / unlocks the
+  /// input bar and call buttons on every open device.
+  void _listenGroupPolicy() {
+    _policySubscription?.cancel();
+    _policySubscription = SupabaseProvider.client
+        .from(SupabaseConstants.groups)
+        .stream(primaryKey: ['id'])
+        .eq(GroupColumns.id, group.id)
+        .listen(
+          (rows) {
+            if (rows.isEmpty) return;
+            final row = rows.first;
+            final nextSend = GroupWhoCanSend.fromDb(
+              row[GroupColumns.whoCanSend] as String?,
+            );
+            if (nextSend == whoCanSend) return;
+            whoCanSend = nextSend;
+            groupListCubit.applyGroupPolicyInState(
+              groupId: group.id,
+              whoCanSend: nextSend,
+              whoCanPost: GroupWhoCanPost.fromDb(
+                row[GroupColumns.whoCanPost] as String?,
+              ),
+              privacy: GroupPrivacy.fromDb(
+                row[GroupColumns.privacy] as String?,
+              ),
+            );
+            _handleSendPermissionChange();
+            _emitLoaded(force: true);
+          },
+          onError: (error) {
+            debugPrint('[GroupPolicyStream] transient disconnect: $error');
+          },
+        );
+  }
 
   void _listenMembership() {
     _membershipSubscription?.cancel();
@@ -61,7 +104,28 @@ mixin GroupMessagesStreamMixin on Cubit<GroupDetailsState> {
                     ? (state as GroupDetailsLoaded).isMember
                     : null;
 
-            if (lastStateIsMember == newIsMember) return;
+            // Promote / demote while the chat is open.
+            final newRole =
+                myRow.isEmpty
+                    ? null
+                    : GroupModel.roleFromDb(
+                      myRow[GroupMemberColumns.role] as String?,
+                    );
+            final roleChanged =
+                newIsMember && newRole != null && newRole != myRole;
+            if (roleChanged) {
+              myRole = newRole;
+              GroupRoleResolver.invalidate(group.id);
+              groupListCubit.applyMyRoleInState(group.id, newRole);
+            }
+
+            if (lastStateIsMember == newIsMember) {
+              if (roleChanged) {
+                _handleSendPermissionChange();
+                _emitLoaded(force: true);
+              }
+              return;
+            }
 
             isMember = newIsMember;
             _emitLoaded(force: true);
@@ -393,6 +457,7 @@ mixin GroupMessagesStreamMixin on Cubit<GroupDetailsState> {
     _readReceiptsSubscription?.cancel();
     _typingSubscription?.cancel();
     _membershipSubscription?.cancel();
+    _policySubscription?.cancel();
     _typingDebounce?.cancel();
     isAtBottomNotifier.removeListener(_recomputeListVisiblePresence);
     presenceNotifier.dispose();

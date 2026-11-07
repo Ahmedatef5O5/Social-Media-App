@@ -43,6 +43,8 @@ abstract class SupabaseConstants {
   static const String getGroupPostIdsRpc = 'get_group_post_ids';
   static const String getGroupJoinRequestsRpc = 'get_group_join_requests';
   static const String getGroupsMemberCountsRpc = 'get_groups_member_counts';
+  static const String discoverPublicGroupsRpc = 'discover_public_groups';
+  static const String searchGroupsGlobalRpc = 'search_groups_global';
   static const String requestJoinGroupRpc = 'request_join_group';
   static const String reviewJoinRequestRpc = 'review_join_request';
 
@@ -116,6 +118,8 @@ abstract class GroupColumns {
   static const String coverUrl = 'cover_url';
   static const String coverPublicId = 'cover_public_id';
   static const String whoCanPost = 'who_can_post';
+  static const String whoCanSend = 'who_can_send';
+  static const String privacy = 'privacy';
 }
 
 // group_members
@@ -211,6 +215,7 @@ abstract class UserColumns {
   static const String isTypingTo = 'is_typing_to';
   static const String theme = 'theme';
   static const String fcmToken = 'fcm_token';
+  static const String fcmPlatform = 'fcm_platform';
 
   // ── Soft delete / ghost account ──
   static const String isDeleted = 'is_deleted';
@@ -225,6 +230,7 @@ abstract class UserColumns {
 
   // --- Social Links for Users --
   static const String socialLinks = 'social_links';
+  static const String createdAt = 'created_at';
 }
 
 // subClass for stories column table

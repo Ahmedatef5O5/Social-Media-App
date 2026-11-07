@@ -93,6 +93,66 @@ class GroupSocialService {
     if (res.isEmpty) throw Exception('Database update blocked by RLS Policy!');
   }
 
+  Future<void> updateWhoCanSend(String groupId, GroupWhoCanSend value) =>
+      _updateOwnerColumn(groupId, GroupColumns.whoCanSend, value.dbValue);
+
+  Future<void> updatePrivacy(String groupId, GroupPrivacy value) =>
+      _updateOwnerColumn(groupId, GroupColumns.privacy, value.dbValue);
+
+  /// Owner-only columns; the DB trigger rejects everyone else with 42501.
+  Future<void> _updateOwnerColumn(
+    String groupId,
+    String column,
+    String value,
+  ) async {
+    final res =
+        await _supabase
+            .from(SupabaseConstants.groups)
+            .update({column: value})
+            .eq(GroupColumns.id, groupId)
+            .select();
+    if (res.isEmpty) throw Exception('Database update blocked by RLS Policy!');
+  }
+
+  /// Public groups the caller is NOT a member of (and has not blocked).
+  Future<List<GroupModel>> discoverPublicGroups({
+    String query = '',
+    int limit = 20,
+    int offset = 0,
+  }) async {
+    final rows = await _supabase.rpc(
+      SupabaseConstants.discoverPublicGroupsRpc,
+      params: {'p_query': query, 'p_limit': limit, 'p_offset': offset},
+    );
+    return (rows as List?)
+            ?.cast<Map<String, dynamic>>()
+            .map(_discoveredFromRow)
+            .toList() ??
+        const [];
+  }
+
+  /// Caller's own groups + every non-blocked public group matching [query].
+  Future<List<GroupModel>> searchGroupsGlobal({
+    required String query,
+    int limit = 20,
+    int offset = 0,
+  }) async {
+    final rows = await _supabase.rpc(
+      SupabaseConstants.searchGroupsGlobalRpc,
+      params: {'p_query': query, 'p_limit': limit, 'p_offset': offset},
+    );
+    return (rows as List?)
+            ?.cast<Map<String, dynamic>>()
+            .map(_discoveredFromRow)
+            .toList() ??
+        const [];
+  }
+
+  GroupModel _discoveredFromRow(Map<String, dynamic> row) {
+    final isMember = row['is_member'] as bool? ?? false;
+    return GroupModel.fromMap({...row, 'is_member': isMember});
+  }
+
   Future<({String url, String? publicId})> uploadCover(File file) async {
     final r = await _storage.uploadFile(
       file,

@@ -11,6 +11,7 @@ import '../../group_calls/models/group_call_model.dart';
 import '../../group_calls/services/group_call_signaling_service.dart';
 import '../../group_calls/views/outgoing_group_call_screen.dart';
 import '../models/group_model.dart';
+import '../widgets/group_restriction_widgets.dart';
 
 class GroupCallInitiator {
   static Future<void> initiate(
@@ -24,6 +25,8 @@ class GroupCallInitiator {
       );
       return;
     }
+    final uid = SupabaseProvider.idOrNull ?? '';
+    final canStart = group.canSend(uid);
 
     final navigator = Navigator.of(context);
     final signaling = context.read<GroupCallSignalingService>();
@@ -41,6 +44,13 @@ class GroupCallInitiator {
       if (!context.mounted) return;
       if (existingCall != null) {
         await GroupCallJoinHelper.join(context, existingCall);
+        return;
+      }
+
+      // No running call: only senders may START a new one (joining above is
+      // always allowed). The `group_calls` INSERT policy enforces the same.
+      if (!canStart) {
+        showGroupCallRestrictedToast(context, group.whoCanSend);
         return;
       }
 

@@ -31,6 +31,7 @@ class GroupMembershipService {
     String? avatarUrl,
     String? avatarPublicId,
     required List<String> memberIds,
+    GroupPrivacy privacy = GroupPrivacy.privateGroup,
   }) async {
     final row =
         await _supabase
@@ -42,6 +43,7 @@ class GroupMembershipService {
                 'p_avatar_url': avatarUrl,
                 'p_avatar_public_id': avatarPublicId,
                 'p_member_ids': memberIds,
+                'p_privacy': privacy.dbValue,
               },
             )
             .single();

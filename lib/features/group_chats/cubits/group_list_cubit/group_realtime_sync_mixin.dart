@@ -367,6 +367,14 @@ mixin GroupRealtimeSyncMixin on GroupListBase {
             final status = row[GroupMemberColumns.membershipStatus] as String?;
             if (userId != currentUserId || groupId == null) return;
 
+            final newRole = GroupModel.roleFromDb(
+              row[GroupMemberColumns.role] as String?,
+            );
+            if (newRole != null && status == 'active') {
+              applyMyRoleInState(groupId, newRole);
+              GroupRoleResolver.invalidate(groupId);
+            }
+
             if (status == 'left' || status == 'removed') {
               markGroupAsLeft(groupId);
             } else if (status == 'active') {
@@ -411,6 +419,22 @@ mixin GroupRealtimeSyncMixin on GroupListBase {
               name: row['name'] as String?,
               avatarUrl: row['avatar_url'] as String?,
             );
+            applyGroupPolicyInState(
+              groupId: groupId,
+              whoCanPost:
+                  row['who_can_post'] == null
+                      ? null
+                      : GroupWhoCanPost.fromDb(row['who_can_post'] as String?),
+              whoCanSend:
+                  row['who_can_send'] == null
+                      ? null
+                      : GroupWhoCanSend.fromDb(row['who_can_send'] as String?),
+              privacy:
+                  row['privacy'] == null
+                      ? null
+                      : GroupPrivacy.fromDb(row['privacy'] as String?),
+            );
+            GroupRoleResolver.invalidate(groupId);
           },
         )
         .subscribe((status, [error]) {

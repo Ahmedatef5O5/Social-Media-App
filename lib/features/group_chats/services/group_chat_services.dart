@@ -55,11 +55,13 @@ class GroupChatServices {
     String? avatarUrl,
     String? avatarPublicId,
     required List<String> memberIds,
+    GroupPrivacy privacy = GroupPrivacy.privateGroup,
   }) => _membership.createGroup(
     name: name,
     avatarUrl: avatarUrl,
     avatarPublicId: avatarPublicId,
     memberIds: memberIds,
+    privacy: privacy,
   );
 
   Future<List<GroupModel>> getMyGroups() => _membership.getMyGroups();

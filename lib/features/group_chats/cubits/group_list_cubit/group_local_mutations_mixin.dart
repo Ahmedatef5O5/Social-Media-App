@@ -137,6 +137,49 @@ mixin GroupLocalMutationsMixin on GroupListBase {
     emit(GroupListLoaded(newList));
   }
 
+  /// Live policy patch (optimistic owner edit AND realtime `groups` UPDATE).
+  @override
+  void applyGroupPolicyInState({
+    required String groupId,
+    GroupWhoCanPost? whoCanPost,
+    GroupWhoCanSend? whoCanSend,
+    GroupPrivacy? privacy,
+  }) {
+    if (state is! GroupListLoaded) return;
+    final currentState = state as GroupListLoaded;
+    final idx = currentState.groups.indexWhere((g) => g.id == groupId);
+    if (idx == -1) return;
+    final old = currentState.groups[idx];
+    if ((whoCanPost == null || whoCanPost == old.whoCanPost) &&
+        (whoCanSend == null || whoCanSend == old.whoCanSend) &&
+        (privacy == null || privacy == old.privacy)) {
+      return;
+    }
+    final newList = List<GroupModel>.from(currentState.groups);
+    newList[idx] = old.copyWith(
+      whoCanPost: whoCanPost,
+      whoCanSend: whoCanSend,
+      privacy: privacy,
+    );
+    cached = newList;
+    emit(GroupListLoaded(newList));
+    persistGroupsSnapshot(newList);
+  }
+
+  /// Live role patch (promote / demote) so call + input locks flip instantly.
+  @override
+  void applyMyRoleInState(String groupId, GroupMemberRole role) {
+    if (state is! GroupListLoaded) return;
+    final currentState = state as GroupListLoaded;
+    final idx = currentState.groups.indexWhere((g) => g.id == groupId);
+    if (idx == -1 || currentState.groups[idx].myRole == role) return;
+    final newList = List<GroupModel>.from(currentState.groups);
+    newList[idx] = newList[idx].copyWith(myRole: role);
+    cached = newList;
+    emit(GroupListLoaded(newList));
+    persistGroupsSnapshot(newList);
+  }
+
   void updateGroupAvatar({
     required String groupId,
     required String newAvatarUrl,
