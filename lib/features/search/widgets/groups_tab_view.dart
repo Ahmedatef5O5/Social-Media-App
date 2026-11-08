@@ -30,12 +30,19 @@ class _GroupsTabViewState extends State<GroupsTabView>
   void initState() {
     super.initState();
     widget.searchQuery.addListener(_onQueryChanged);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && widget.searchQuery.value.isEmpty) {
+        context.read<SearchGroupsCubit>().loadDiscover();
+      }
+    });
   }
 
   void _onQueryChanged() {
     final query = widget.searchQuery.value;
     if (query.isNotEmpty) {
       context.read<SearchGroupsCubit>().search(query);
+    } else {
+      context.read<SearchGroupsCubit>().search('');
     }
   }
 
@@ -62,13 +69,34 @@ class _GroupsTabViewState extends State<GroupsTabView>
               }
 
               if (groupListState is GroupListLoaded) {
-                final myGroups = groupListState.groups;
+                final myGroups =
+                    groupListState.groups
+                        .where((g) => g.isMember && !g.isBlocked)
+                        .toList();
 
-                if (myGroups.isEmpty) {
-                  return _buildEmptyState(theme, query, isMyGroupsEmpty: true);
-                }
+                return BlocBuilder<SearchGroupsCubit, SearchGroupsState>(
+                  builder: (context, searchState) {
+                    final discovered =
+                        searchState is SearchGroupsInitial
+                            ? searchState.discovered
+                            : const <GroupModel>[];
+                    final loading =
+                        searchState is SearchGroupsInitial &&
+                        searchState.discoverLoading &&
+                        discovered.isEmpty;
 
-                return _buildGroupsList(myGroups);
+                    if (myGroups.isEmpty && discovered.isEmpty) {
+                      return loading
+                          ? const ChatTileSkeletonList()
+                          : _buildEmptyState(
+                            theme,
+                            query,
+                            isMyGroupsEmpty: true,
+                          );
+                    }
+                    return _buildGroupsList(myGroups, discovered: discovered);
+                  },
+                );
               }
 
               return const SizedBox.shrink();
@@ -100,7 +128,39 @@ class _GroupsTabViewState extends State<GroupsTabView>
     );
   }
 
-  Widget _buildGroupsList(List<GroupModel> groups) {
+  Widget _buildGroupsList(
+    List<GroupModel> groups, {
+    List<GroupModel> discovered = const [],
+  }) {
+    if (discovered.isNotEmpty) {
+      final theme = Theme.of(context);
+      return ListView(
+        padding: const EdgeInsets.fromLTRB(
+          SearchViewMetrics.horizontalPadding,
+          SearchViewMetrics.topGap,
+          SearchViewMetrics.horizontalPadding,
+          SearchViewMetrics.bottomGap,
+        ),
+        physics: const ClampingScrollPhysics(),
+        children: [
+          for (final g in groups)
+            GroupSearchResultTile(key: ValueKey(g.id), group: g),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(0, 16, 0, 6),
+            child: Text(
+              context.l10n.discoverPublicGroups,
+              style: theme.textTheme.titleSmall!.copyWith(
+                fontWeight: FontWeight.w800,
+                color: theme.colorScheme.onSurfaceVariant,
+                letterSpacing: context.ls(0),
+              ),
+            ),
+          ),
+          for (final g in discovered)
+            GroupSearchResultTile(key: ValueKey('d_${g.id}'), group: g),
+        ],
+      );
+    }
     return ListView.separated(
       padding: const EdgeInsets.fromLTRB(
         SearchViewMetrics.horizontalPadding,

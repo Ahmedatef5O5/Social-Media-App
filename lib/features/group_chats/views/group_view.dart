@@ -60,6 +60,7 @@ class GroupView extends StatelessWidget {
           return _GroupViewBody(
             key: ValueKey(state.profile.id),
             initial: state.profile,
+            args: args,
           );
         }
         if (state is GroupProfileError) {
@@ -101,7 +102,8 @@ class GroupView extends StatelessWidget {
 
 class _GroupViewBody extends StatefulWidget {
   final GroupProfileModel initial;
-  const _GroupViewBody({super.key, required this.initial});
+  final GroupViewArgs args;
+  const _GroupViewBody({super.key, required this.initial, required this.args});
 
   @override
   State<_GroupViewBody> createState() => _GroupViewBodyState();
@@ -122,6 +124,7 @@ class _GroupViewBodyState extends State<_GroupViewBody>
   bool _uploadingAvatar = false;
   bool _wasInList = false;
   bool _evicted = false;
+  bool _didAutoOpenJoinRequests = false;
 
   String get _myId => SupabaseProvider.id;
 
@@ -129,7 +132,11 @@ class _GroupViewBodyState extends State<_GroupViewBody>
   void initState() {
     super.initState();
     _groupId = widget.initial.id;
-    _tabs = TabController(length: 3, vsync: this);
+    _tabs = TabController(
+      length: 3,
+      vsync: this,
+      initialIndex: widget.args.initialTabIndex.clamp(0, 2),
+    );
     _services = context.read<GroupChatServices>();
     _postsCubit = context.read<PostsCubit>();
     _profileCubit = context.read<GroupProfileCubit>();
@@ -143,6 +150,17 @@ class _GroupViewBodyState extends State<_GroupViewBody>
     _mediaCubit = SharedMediaCubit(
       GroupChatMediaDataSource(services: _services, groupId: _groupId),
     );
+
+    // Deep link from a "join request" push / bell row: open the pending
+    // requests sheet exactly once (never again on later state emissions).
+    if (widget.args.openJoinRequestsOnLoad &&
+        widget.initial.hasAdminPrivileges) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || _didAutoOpenJoinRequests) return;
+        _didAutoOpenJoinRequests = true;
+        _openPendingRequests();
+      });
+    }
   }
 
   @override
@@ -260,7 +278,9 @@ class _GroupViewBodyState extends State<_GroupViewBody>
         _profileCubit.load(silent: true); // member count + pending count
         _membersCubit.refresh();
       },
-    );
+    ).whenComplete(() {
+      if (mounted) _profileCubit.load(silent: true);
+    });
   }
 
   Future<File?> _pickImage({required MediaEditorPreset preset}) async {

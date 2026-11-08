@@ -12,8 +12,7 @@ import '../cubits/group_members_cubit/group_members_cubit.dart';
 import '../cubits/group_profile_cubit/group_profile_cubit.dart';
 import '../../posts/cubits/posts_cubit/posts_cubit.dart';
 import '../helpers/group_role_resolver.dart';
-import '../services/group_social_service.dart';
-import '../widgets/group_posting_policy_section.dart';
+import '../widgets/group_owner_policies_section.dart';
 import '../models/group_member_model.dart';
 import '../models/group_model.dart';
 import '../services/group_chat_services.dart';
@@ -418,11 +417,11 @@ class _GroupSettingsViewState extends State<GroupSettingsView> {
                         ),
                         const SizedBox(height: 32),
                         if (widget.isOwner) ...[
-                          GroupPostingPolicySection(
-                            initial: liveGroup.whoCanPost,
+                          GroupOwnerPoliciesSection(
+                            group: liveGroup,
+                            listCubit: widget.groupListCubit,
                             profileCubit: widget.profileCubit,
-                            groupId: widget.group.id,
-                            service: GroupSocialService(),
+                            detailsCubit: widget.detailsCubit,
                           ),
                           const SizedBox(height: 32),
                         ],

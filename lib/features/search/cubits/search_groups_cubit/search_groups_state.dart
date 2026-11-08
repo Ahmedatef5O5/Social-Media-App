@@ -4,7 +4,14 @@ sealed class SearchGroupsState {
   const SearchGroupsState();
 }
 
-final class SearchGroupsInitial extends SearchGroupsState {}
+final class SearchGroupsInitial extends SearchGroupsState {
+  final List<GroupModel> discovered;
+  final bool discoverLoading;
+  const SearchGroupsInitial({
+    this.discovered = const [],
+    this.discoverLoading = false,
+  });
+}
 
 final class SearchGroupsLoading extends SearchGroupsState {}
 

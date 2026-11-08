@@ -18,10 +18,12 @@ import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/toast/app_toast.dart';
 import '../../../core/widgets/custom_loading_indicator.dart';
 import '../../group_calls/models/group_call_model.dart';
+import '../../group_calls/services/group_call_signaling_service.dart';
 import '../cubits/group_details_cubit/group_details_cubit.dart';
 import '../cubits/group_list_cubit/group_list_cubit.dart';
 import '../cubits/group_members_cubit/group_members_cubit.dart';
 import '../helpers/group_call_initiator.dart';
+import '../helpers/group_profile_navigation.dart';
 import '../helpers/members_list_skeleton.dart';
 import '../models/group_member_model.dart';
 import '../models/group_model.dart';
@@ -62,6 +64,7 @@ class _GroupInfoViewState extends State<GroupInfoView> {
   late final ScrollController _scrollController;
   late final SharedMediaCubit _mediaCubit;
   late final Stream<GroupHeaderStats> _headerStats;
+  late final Stream<GroupCallModel?> _activeCallStream;
   String get _currentUserId => SupabaseProvider.id;
 
   bool get _canShowStarredMessages => widget.detailsCubit != null;
@@ -71,6 +74,9 @@ class _GroupInfoViewState extends State<GroupInfoView> {
     super.initState();
     _services = context.read<GroupChatServices>();
     _headerStats = _services.watchGroupHeaderStats(widget.group.id);
+    _activeCallStream = context
+        .read<GroupCallSignalingService>()
+        .activeCallStream(widget.group.id);
     _membersCubit = GroupMembersCubit(_services, groupId: widget.group.id)
       ..loadMembers();
     _scrollController = ScrollController()..addListener(_onScroll);
@@ -434,23 +440,45 @@ class _GroupInfoViewState extends State<GroupInfoView> {
                           },
                         ),
                         SliverToBoxAdapter(
-                          child: GroupInfoQuickActionsRow(
-                            isMuted: _isMuted,
-                            isMember: isMemberOverride ?? liveGroup.isMember,
-                            onMessage: () => Navigator.of(context).pop(),
-                            onCall:
-                                () => GroupCallInitiator.initiate(
-                                  context,
-                                  liveGroup,
-                                  GroupCallType.audio,
-                                ),
-                            onVideo:
-                                () => GroupCallInitiator.initiate(
-                                  context,
-                                  liveGroup,
-                                  GroupCallType.video,
-                                ),
-                            onToggleMute: _toggleMute,
+                          child: StreamBuilder<GroupCallModel?>(
+                            stream: _activeCallStream,
+                            builder: (context, callSnap) {
+                              final call = callSnap.data;
+                              final hasActiveCall =
+                                  call != null &&
+                                  (call.status == GroupCallStatus.accepted ||
+                                      call.status == GroupCallStatus.ongoing);
+                              return GroupInfoQuickActionsRow(
+                                isMuted: _isMuted,
+                                isMember:
+                                    isMemberOverride ?? liveGroup.isMember,
+                                // Initiator joins a running call first, and only
+                                // shows the polite toast when nothing is running.
+                                isCallRestricted:
+                                    !hasActiveCall &&
+                                    !liveGroup.canSend(_currentUserId),
+                                onPosts:
+                                    () => openGroupProfile(
+                                      context,
+                                      groupId: liveGroup.id,
+                                      group: liveGroup,
+                                    ),
+                                onMessage: () => Navigator.of(context).pop(),
+                                onCall:
+                                    () => GroupCallInitiator.initiate(
+                                      context,
+                                      liveGroup,
+                                      GroupCallType.audio,
+                                    ),
+                                onVideo:
+                                    () => GroupCallInitiator.initiate(
+                                      context,
+                                      liveGroup,
+                                      GroupCallType.video,
+                                    ),
+                                onToggleMute: _toggleMute,
+                              );
+                            },
                           ),
                         ),
                         if (_canShowStarredMessages)

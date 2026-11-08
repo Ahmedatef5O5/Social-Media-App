@@ -42,13 +42,29 @@ class GroupSearchResultTile extends StatelessWidget {
           fontWeight: FontWeight.w700,
         ),
       ),
-      subtitle: Text(
-        group.title?.isNotEmpty == true ? group.title! : context.l10n.group,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: theme.textTheme.bodySmall!.copyWith(
-          color: theme.colorScheme.onSurfaceVariant,
-        ),
+      subtitle: Row(
+        children: [
+          if (!group.isMember && group.isPublic) ...[
+            _DiscoverBadge(pending: group.hasPendingJoinRequest),
+            const SizedBox(width: 6),
+          ],
+          Expanded(
+            child: Text(
+              [
+                if (group.membersCount != null)
+                  context.l10n.membersCountLabel(group.membersCount!),
+                group.title?.isNotEmpty == true
+                    ? group.title!
+                    : context.l10n.group,
+              ].join(' • '),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.bodySmall!.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+        ],
       ),
       onTap:
           () =>
@@ -65,6 +81,44 @@ class GroupSearchResultTile extends StatelessWidget {
                       rootNavigator: true,
                     ).pushNamed(AppRoutes.groupChatRoute, arguments: group),
                   ),
+    );
+  }
+}
+
+class _DiscoverBadge extends StatelessWidget {
+  final bool pending;
+  const _DiscoverBadge({required this.pending});
+
+  @override
+  Widget build(BuildContext context) {
+    final color = pending ? Colors.orange : Theme.of(context).primaryColor;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            pending ? Icons.hourglass_top_rounded : Icons.public_rounded,
+            size: 11,
+            color: color,
+          ),
+          const SizedBox(width: 3),
+          Text(
+            pending
+                ? context.l10n.groupRequested
+                : context.l10n.groupPublicDiscoverBadge,
+            style: TextStyle(
+              color: color,
+              fontSize: 10.5,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

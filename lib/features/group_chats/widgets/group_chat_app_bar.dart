@@ -9,7 +9,9 @@ import '../../../core/router/app_routes.dart';
 import '../../../core/services/active_call/active_call_session_data.dart';
 import '../../../core/services/active_call/cubits/active_call_session_cubit.dart';
 import '../../../core/services/incoming_call_navigation_guard.dart';
+import '../../../core/supabase/supabase_provider.dart';
 import '../../../core/toast/app_toast.dart';
+import 'group_restriction_widgets.dart';
 import '../../../core/widgets/app_image_provider.dart';
 import '../../group_calls/helpers/group_call_join_helper.dart';
 import '../../group_calls/models/group_call_model.dart';
@@ -322,18 +324,24 @@ class _GroupCallActionsSectionState extends State<_GroupCallActionsSection> {
             final isLocalUserBusy =
                 activeSession != null ||
                 IncomingCallNavigationGuard.isUserBusyWithAnotherCall();
+            // Restricted members keep the icons (dimmed + lock badge) but
+            // cannot START a call; joining a running call stays possible.
+            final restricted = !widget.group.canSend(SupabaseProvider.id);
             return Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                IconButton(
+                _CallIconButton(
                   tooltip: context.l10n.voiceCall,
-                  icon: Icon(
-                    Icons.phone_outlined,
-                    color: isLocalUserBusy ? Colors.grey : primary,
-                    size: 22,
-                  ),
+                  icon: Icons.phone_outlined,
+                  color: isLocalUserBusy ? Colors.grey : primary,
+                  restricted: restricted,
                   onPressed:
-                      isLocalUserBusy
+                      restricted
+                          ? () => showGroupCallRestrictedToast(
+                            context,
+                            widget.group.whoCanSend,
+                          )
+                          : isLocalUserBusy
                           ? null
                           : () => GroupCallInitiator.initiate(
                             context,
@@ -341,15 +349,18 @@ class _GroupCallActionsSectionState extends State<_GroupCallActionsSection> {
                             GroupCallType.audio,
                           ),
                 ),
-                IconButton(
+                _CallIconButton(
                   tooltip: context.l10n.videoCall,
-                  icon: Icon(
-                    Icons.videocam_outlined,
-                    color: isLocalUserBusy ? Colors.grey : primary,
-                    size: 22,
-                  ),
+                  icon: Icons.videocam_outlined,
+                  color: isLocalUserBusy ? Colors.grey : primary,
+                  restricted: restricted,
                   onPressed:
-                      isLocalUserBusy
+                      restricted
+                          ? () => showGroupCallRestrictedToast(
+                            context,
+                            widget.group.whoCanSend,
+                          )
+                          : isLocalUserBusy
                           ? null
                           : () => GroupCallInitiator.initiate(
                             context,
@@ -362,6 +373,45 @@ class _GroupCallActionsSectionState extends State<_GroupCallActionsSection> {
           },
         );
       },
+    );
+  }
+}
+
+class _CallIconButton extends StatelessWidget {
+  final String tooltip;
+  final IconData icon;
+  final Color color;
+  final bool restricted;
+  final VoidCallback? onPressed;
+
+  const _CallIconButton({
+    required this.tooltip,
+    required this.icon,
+    required this.color,
+    required this.restricted,
+    required this.onPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      tooltip: tooltip,
+      onPressed: onPressed,
+      icon: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Opacity(
+            opacity: restricted ? 0.42 : 1,
+            child: Icon(icon, color: color, size: 22),
+          ),
+          if (restricted)
+            const PositionedDirectional(
+              bottom: -4,
+              end: -5,
+              child: GroupLockBadge(),
+            ),
+        ],
+      ),
     );
   }
 }

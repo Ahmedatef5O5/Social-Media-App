@@ -7,6 +7,9 @@ import '../../../core/errors/supabase_error_mapper.dart';
 import '../../../core/media_editor/media_editor_service.dart';
 import '../../../core/toast/app_toast.dart';
 import 'package:social_media_app/core/widgets/custom_loading_indicator.dart';
+import '../models/group_model.dart';
+import '../widgets/group_privacy_pill.dart';
+import '../widgets/group_users_shimmer_sliver.dart';
 import 'package:social_media_app/features/social_graph/services/connections_service.dart';
 import '../../../core/chat_shared/helpers/avatar_stack.dart';
 import '../cubits/group_list_cubit/group_list_cubit.dart';
@@ -32,6 +35,9 @@ class _CreateGroupViewState extends State<CreateGroupView> {
   File? _groupImage;
   bool _isCreating = false;
   bool _isLoadingUsers = true;
+
+  // New groups default to PUBLIC; the AppBar pill switches it.
+  GroupPrivacy _privacy = GroupPrivacy.publicGroup;
 
   List<Map<String, dynamic>> _allUsers = [];
   List<Map<String, dynamic>> _filteredUsers = [];
@@ -82,8 +88,11 @@ class _CreateGroupViewState extends State<CreateGroupView> {
     }
   }
 
+  /// Public groups may start empty (nobody is trapped without friends);
+  /// private groups need at least one member to be useful.
   bool get _canCreate =>
-      _nameController.text.trim().isNotEmpty && _selectedUserIds.isNotEmpty;
+      _nameController.text.trim().isNotEmpty &&
+      (_privacy == GroupPrivacy.publicGroup || _selectedUserIds.isNotEmpty);
 
   Future<void> _createGroup() async {
     if (!_canCreate) return;
@@ -107,6 +116,7 @@ class _CreateGroupViewState extends State<CreateGroupView> {
         avatarUrl: avatarUrl,
         avatarPublicId: avatarPublicId,
         memberIds: _selectedUserIds.toList(),
+        privacy: _privacy,
       );
 
       if (mounted) Navigator.pop(context, group);
@@ -115,6 +125,15 @@ class _CreateGroupViewState extends State<CreateGroupView> {
     } finally {
       if (mounted) setState(() => _isCreating = false);
     }
+  }
+
+  String _createLabel(BuildContext context) {
+    final n = _selectedUserIds.length;
+    final l = context.l10n;
+    if (_privacy.isPublic) {
+      return n == 0 ? l.createPublicGroup : l.createPublicGroupCount(n);
+    }
+    return n == 0 ? l.createPrivateGroup : l.createPrivateGroupCount(n);
   }
 
   @override
@@ -328,6 +347,12 @@ class _CreateGroupViewState extends State<CreateGroupView> {
             ),
             onPressed: () => Navigator.pop(context),
           ),
+          actions: [
+            GroupPrivacyPill(
+              value: _privacy,
+              onChanged: (p) => setState(() => _privacy = p),
+            ),
+          ],
         ),
         body: CustomScrollView(
           keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.manual,
@@ -339,6 +364,7 @@ class _CreateGroupViewState extends State<CreateGroupView> {
                 controller: _nameController,
                 primary: primary,
                 isDark: isDark,
+                privacy: _privacy,
               ),
             ),
 
@@ -394,13 +420,14 @@ class _CreateGroupViewState extends State<CreateGroupView> {
             ),
 
             if (_isLoadingUsers)
-              const SliverFillRemaining(
-                child: Center(child: CustomLoadingIndicator()),
-              )
+              const GroupUsersShimmerSliver()
             else if (_filteredUsers.isEmpty)
               SliverFillRemaining(
                 hasScrollBody: false,
-                child: _buildPremiumEmptyState(context),
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: 88),
+                  child: _buildPremiumEmptyState(context),
+                ),
               )
             else
               SliverPadding(
@@ -433,7 +460,7 @@ class _CreateGroupViewState extends State<CreateGroupView> {
 
         floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
         floatingActionButton:
-            isKeyboardOpen || _allUsers.isEmpty
+            isKeyboardOpen || _isLoadingUsers
                 ? null
                 : Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -473,17 +500,26 @@ class _CreateGroupViewState extends State<CreateGroupView> {
                               ? const CustomLoadingIndicator(
                                 color: Colors.white,
                               )
-                              : Text(
-                                _selectedUserIds.isEmpty
-                                    ? context.l10n.createGroup
-                                    : context.l10n.createGroup2(
-                                      _selectedUserIds.length,
+                              : Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(groupPrivacyIcon(_privacy), size: 19),
+                                  const SizedBox(width: 8),
+                                  Flexible(
+                                    child: FittedBox(
+                                      fit: BoxFit.scaleDown,
+                                      child: Text(
+                                        _createLabel(context),
+                                        maxLines: 1,
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w700,
+                                          letterSpacing: context.ls(0.3),
+                                        ),
+                                      ),
                                     ),
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w700,
-                                  letterSpacing: context.ls(0.5),
-                                ),
+                                  ),
+                                ],
                               ),
                     ),
                   ),

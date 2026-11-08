@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -11,6 +12,7 @@ import '../cubits/group_list_cubit/group_list_cubit.dart';
 import '../helpers/group_profile_navigation.dart';
 import '../models/group_model.dart';
 import '../services/group_social_service.dart';
+import '../widgets/discovered_group_tile.dart';
 import '../widgets/group_square_avatar.dart';
 
 /// "Your Groups": every group the user is an active member of. Tapping a tile
@@ -29,17 +31,70 @@ class _YourGroupsViewState extends State<YourGroupsView> {
   Map<String, int> _memberCounts = const {};
   String _countsKey = '';
 
+  // Discover section (public groups I am not part of).
+  Timer? _debounce;
+  List<GroupModel> _discovered = const [];
+  bool _discoverLoading = true;
+  bool _discoverFailed = false;
+  int _discoverRequestId = 0;
+
   @override
   void initState() {
     super.initState();
     final cubit = context.read<GroupListCubit>();
     if (cubit.state is GroupListInitial) cubit.loadGroups();
+    _loadDiscover();
   }
 
   @override
   void dispose() {
+    _debounce?.cancel();
     _searchController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadDiscover({bool silent = false}) async {
+    final id = ++_discoverRequestId;
+    if (!silent && mounted) {
+      setState(() {
+        _discoverLoading = true;
+        _discoverFailed = false;
+      });
+    }
+    try {
+      final rows = await _social.discoverPublicGroups(query: _query.trim());
+      if (!mounted || id != _discoverRequestId) return;
+      setState(() {
+        _discovered = rows;
+        _discoverLoading = false;
+        _discoverFailed = false;
+      });
+    } catch (e) {
+      debugPrint('[YourGroupsView] discover failed: $e');
+      if (!mounted || id != _discoverRequestId) return;
+      setState(() {
+        _discoverLoading = false;
+        _discoverFailed = true;
+      });
+    }
+  }
+
+  void _onQueryChanged(String v) {
+    setState(() => _query = v);
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 300), _loadDiscover);
+  }
+
+  Future<void> _refresh() async {
+    await Future.wait([
+      context.read<GroupListCubit>().loadGroups(isRefresh: true),
+      _loadDiscover(silent: true),
+    ]);
+  }
+
+  Future<void> _openDiscovered(GroupModel g) async {
+    await openGroupProfile(context, groupId: g.id, group: g);
+    if (mounted) _loadDiscover(silent: true); // keep "Requested" in sync
   }
 
   Future<void> _loadCounts(List<GroupModel> groups) async {
@@ -105,10 +160,10 @@ class _YourGroupsViewState extends State<YourGroupsView> {
             padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
             child: TextField(
               controller: _searchController,
-              onChanged: (v) => setState(() => _query = v),
+              onChanged: _onQueryChanged,
               textInputAction: TextInputAction.search,
               decoration: InputDecoration(
-                hintText: context.l10n.searchYourGroups,
+                hintText: context.l10n.searchGroupsOrDiscover,
                 prefixIcon: const Icon(Icons.search_rounded),
                 suffixIcon:
                     _query.isEmpty
@@ -117,7 +172,7 @@ class _YourGroupsViewState extends State<YourGroupsView> {
                           icon: const Icon(Icons.close_rounded),
                           onPressed: () {
                             _searchController.clear();
-                            setState(() => _query = '');
+                            _onQueryChanged('');
                           },
                         ),
                 filled: true,
@@ -156,31 +211,83 @@ class _YourGroupsViewState extends State<YourGroupsView> {
                 if (state is! GroupListLoaded) {
                   return const _YourGroupsShimmer();
                 }
+                final theme = Theme.of(context);
                 final groups = _visible(state.groups);
-                if (groups.isEmpty) return _Empty(isSearch: _query.isNotEmpty);
+                final showDiscoverEmpty =
+                    !_discoverLoading &&
+                    !_discoverFailed &&
+                    _discovered.isEmpty;
+                if (groups.isEmpty && showDiscoverEmpty) {
+                  return _Empty(isSearch: _query.isNotEmpty);
+                }
 
                 return RefreshIndicator(
-                  onRefresh:
-                      () => context.read<GroupListCubit>().loadGroups(
-                        isRefresh: true,
-                      ),
-                  child: ListView.separated(
-                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 96),
-                    itemCount: groups.length,
-                    separatorBuilder: (_, __) => const Gap(8),
-                    itemBuilder: (context, i) {
-                      final g = groups[i];
-                      return _GroupTile(
-                        group: g,
-                        membersCount: _memberCounts[g.id],
-                        onTap:
-                            () => openGroupProfile(
-                              context,
-                              groupId: g.id,
-                              group: g,
+                  onRefresh: _refresh,
+                  child: CustomScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    slivers: [
+                      if (groups.isNotEmpty) ...[
+                        _SectionHeader(title: context.l10n.joinedGroups),
+                        SliverPadding(
+                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                          sliver: SliverList.separated(
+                            itemCount: groups.length,
+                            separatorBuilder: (_, __) => const Gap(8),
+                            itemBuilder: (context, i) {
+                              final g = groups[i];
+                              return _GroupTile(
+                                group: g,
+                                membersCount: _memberCounts[g.id],
+                                onTap:
+                                    () => openGroupProfile(
+                                      context,
+                                      groupId: g.id,
+                                      group: g,
+                                    ),
+                              );
+                            },
+                          ),
+                        ),
+                      ],
+                      _SectionHeader(title: context.l10n.discoverGroups),
+                      if (_discoverLoading)
+                        const SliverToBoxAdapter(child: _DiscoverShimmer())
+                      else if (_discoverFailed)
+                        SliverToBoxAdapter(
+                          child: Center(
+                            child: CupertinoButton(
+                              onPressed: _loadDiscover,
+                              child: Text(context.l10n.retry),
                             ),
-                      );
-                    },
+                          ),
+                        )
+                      else if (_discovered.isEmpty)
+                        SliverToBoxAdapter(
+                          child: Padding(
+                            padding: const EdgeInsets.all(24),
+                            child: Text(
+                              context.l10n.noPublicGroupsToDiscover,
+                              textAlign: TextAlign.center,
+                              style: theme.textTheme.bodyMedium!.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ),
+                        )
+                      else
+                        SliverPadding(
+                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 96),
+                          sliver: SliverList.separated(
+                            itemCount: _discovered.length,
+                            separatorBuilder: (_, __) => const Gap(8),
+                            itemBuilder:
+                                (context, i) => DiscoveredGroupTile(
+                                  group: _discovered[i],
+                                  onTap: () => _openDiscovered(_discovered[i]),
+                                ),
+                          ),
+                        ),
+                    ],
                   ),
                 );
               },
@@ -402,6 +509,57 @@ class _YourGroupsShimmer extends StatelessWidget {
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+class _SectionHeader extends StatelessWidget {
+  final String title;
+  const _SectionHeader({required this.title});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return SliverToBoxAdapter(
+      child: Padding(
+        padding: const EdgeInsetsDirectional.fromSTEB(20, 12, 20, 8),
+        child: Text(
+          title,
+          style: theme.textTheme.titleSmall!.copyWith(
+            fontWeight: FontWeight.w800,
+            color: theme.colorScheme.onSurfaceVariant,
+            letterSpacing: context.ls(0),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DiscoverShimmer extends StatelessWidget {
+  const _DiscoverShimmer();
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Shimmer.fromColors(
+      baseColor: isDark ? Colors.grey[850]! : Colors.grey[300]!,
+      highlightColor: isDark ? Colors.grey[700]! : Colors.grey[100]!,
+      child: Column(
+        children: List.generate(
+          3,
+          (i) => Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+            child: Container(
+              height: 74,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(18),
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }

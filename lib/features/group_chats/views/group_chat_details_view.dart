@@ -15,6 +15,7 @@ import '../models/group_model.dart';
 import '../../group_calls/services/group_call_signaling_service.dart';
 import '../widgets/group_chat_input_bar_section.dart';
 import '../widgets/group_chat_locked_banner.dart';
+import '../widgets/group_restriction_widgets.dart';
 import '../widgets/group_media_preview_screen.dart';
 import '../widgets/group_messages_list.dart';
 import 'package:social_media_app/core/localization/l10n_extension.dart';
@@ -367,7 +368,16 @@ class _GroupChatDetailsBodyState extends State<_GroupChatDetailsBody> {
                             current is GroupDetailsLoaded
                                 ? current.isMember
                                 : true;
-                        return prevMember != currMember;
+                        final prevCanSend =
+                            previous is GroupDetailsLoaded
+                                ? previous.canSendMessages
+                                : true;
+                        final currCanSend =
+                            current is GroupDetailsLoaded
+                                ? current.canSendMessages
+                                : true;
+                        return prevMember != currMember ||
+                            prevCanSend != currCanSend;
                       },
                       builder: (context, state) {
                         final isMember =
@@ -377,6 +387,15 @@ class _GroupChatDetailsBodyState extends State<_GroupChatDetailsBody> {
 
                         if (!isMember) {
                           return const GroupChatLockedBanner();
+                        }
+
+                        // Active but restricted by the owner (who_can_send):
+                        // reactions + joining calls stay available elsewhere.
+                        if (state is GroupDetailsLoaded &&
+                            !state.canSendMessages) {
+                          return GroupChatRestrictedBanner(
+                            policy: state.whoCanSend,
+                          );
                         }
 
                         return GroupChatInputBarSection(

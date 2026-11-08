@@ -509,7 +509,8 @@ class GroupPostingRestrictedBanner extends StatelessWidget {
 }
 
 /// Used by the details tab: current posting policy as a readable label.
-String whoCanPostLabel(BuildContext context, GroupWhoCanPost v) =>
-    v == GroupWhoCanPost.all
-        ? context.l10n.allMembers
-        : context.l10n.adminsOnly;
+String whoCanPostLabel(BuildContext context, GroupWhoCanPost v) => switch (v) {
+  GroupWhoCanPost.all => context.l10n.allMembers,
+  GroupWhoCanPost.adminsOnly => context.l10n.adminsOnly,
+  GroupWhoCanPost.ownerOnly => context.l10n.groupNoOne,
+};
