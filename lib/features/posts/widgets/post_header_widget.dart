@@ -155,20 +155,27 @@ class PostHeaderWidget extends StatelessWidget {
                   ),
                 );
               },
-      title: GestureDetector(
-        onTap: onGroup ? null : openGroup,
-        child: Text(
-          post.groupName?.trim().isNotEmpty == true
-              ? post.groupName!
-              : context.l10n.group,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: theme.textTheme.titleSmall!.copyWith(
-            fontWeight: FontWeight.w700,
-            fontSize: 14,
-            letterSpacing: context.ls(0),
+      title: Row(
+        children: [
+          Flexible(
+            child: GestureDetector(
+              onTap: onGroup ? null : openGroup,
+              child: Text(
+                post.groupName?.trim().isNotEmpty == true
+                    ? post.groupName!
+                    : context.l10n.group,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.titleSmall!.copyWith(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 14,
+                  letterSpacing: context.ls(0),
+                ),
+              ),
+            ),
           ),
-        ),
+          if (post.isSuggestedForYou) _buildSuggestedBadge(context),
+        ],
       ),
       subtitle: Row(
         children: [
@@ -197,8 +204,14 @@ class PostHeaderWidget extends StatelessWidget {
               letterSpacing: context.ls(0),
             ),
           ),
-          // Groups are members-only => lock icon as the privacy marker.
-          Icon(Icons.lock_outline, size: 11, color: muted),
+          // Public groups show a globe, private groups a lock.
+          Icon(
+            post.groupPrivacy == 'public'
+                ? Icons.public_rounded
+                : Icons.lock_outline,
+            size: 11,
+            color: muted,
+          ),
           if (showPinnedBadge) ...[
             const SizedBox(width: 6),
             const PinnedPostBadge(),

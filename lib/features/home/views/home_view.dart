@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 import 'package:persistent_bottom_nav_bar_v2/persistent_bottom_nav_bar_v2.dart';
+import 'package:social_media_app/core/notifications/campaign/campaign_push_payload.dart';
 import 'package:social_media_app/core/notifications/services/notification_prefs_sync_service.dart';
 import 'package:social_media_app/features/settings/services/language_sync_service.dart';
 import 'package:social_media_app/core/utilities/supabase_constants.dart';
@@ -95,7 +96,10 @@ class _HomeViewState extends State<HomeView> {
         if (user != null) {
           await SupabaseProvider.client
               .from(SupabaseConstants.users)
-              .update({UserColumns.fcmToken: token})
+              .update({
+                UserColumns.fcmToken: token,
+                UserColumns.fcmPlatform: currentPushPlatform(),
+              })
               .eq(UserColumns.id, user.id);
 
           debugPrint("✅ My FCM Token updated in Supabase: $token");

@@ -164,7 +164,9 @@ class MessageReactionPreviewHelper {
     final isAr = arReactIdx != -1 && arToIdx != -1;
 
     if (!isEn && !isAr) {
-      final isRtlLocale = AppL10n.current.localeName.toLowerCase().startsWith('ar');
+      final isRtlLocale = AppL10n.current.localeName.toLowerCase().startsWith(
+        'ar',
+      );
       return Text(
         rawPreview,
         maxLines: 1,
@@ -231,14 +233,11 @@ class MessageReactionPreviewHelper {
       );
     }
 
-    // الحالة الإنجليزية
     final actor = rawPreview.substring(0, enReactIdx).trim();
     final emoji = rawPreview.substring(enReactIdx + 12, enToIdx).trim();
     String target = rawPreview.substring(enToIdx + 4).trim();
 
-    if (target.length >= 2 &&
-        target.startsWith('"') &&
-        target.endsWith('"')) {
+    if (target.length >= 2 && target.startsWith('"') && target.endsWith('"')) {
       target = target.substring(1, target.length - 1).trim();
     }
 

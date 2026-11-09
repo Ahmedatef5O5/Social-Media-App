@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../core/notifications/campaign/campaign_push_payload.dart';
 import '../../../core/chat_shared/helpers/message_reaction_preview_helper.dart';
 import '../../../core/helpers/chat_helper.dart';
 import '../../../core/observability/realtime_diagnostics.dart';
@@ -52,7 +53,10 @@ class ChatListService {
     try {
       await _supabase
           .from(SupabaseConstants.users)
-          .update({UserColumns.fcmToken: token})
+          .update({
+            UserColumns.fcmToken: token,
+            UserColumns.fcmPlatform: currentPushPlatform(),
+          })
           .eq(UserColumns.id, userId);
       debugPrint('✅ FCM token saved to Supabase');
     } catch (e) {

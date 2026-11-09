@@ -54,7 +54,11 @@ class PostModel {
   final bool isSavedByMe;
   final int? mediaWidth;
   final int? mediaHeight;
+
+  /// Id of a `PostBackgroundThemeModel` (text-only themed post).
   final String? backgroundTheme;
+
+  /// Giphy CDN url (GIF post). Aspect ratio lives in mediaWidth/mediaHeight.
   final String? gifUrl;
   // ── Shared Post feature ──────────────────────────────────────────────
   final String? sharedPostId;
@@ -76,6 +80,9 @@ class PostModel {
   final String? groupId;
   final String? groupName;
   final String? groupAvatarUrl;
+
+  /// 'public' | 'private' (null for old caches / non-group posts).
+  final String? groupPrivacy;
 
   double get mediaAspectRatio {
     if (mediaWidth != null && mediaHeight != null && mediaHeight! > 0) {
@@ -121,6 +128,7 @@ class PostModel {
     this.groupId,
     this.groupName,
     this.groupAvatarUrl,
+    this.groupPrivacy,
   });
 
   Map<String, dynamic> toMap() {
@@ -245,6 +253,7 @@ class PostModel {
       groupId: map[PostColumns.groupId] as String?,
       groupName: groupData?[GroupColumns.name] as String?,
       groupAvatarUrl: groupData?[GroupColumns.avatarUrl] as String?,
+      groupPrivacy: groupData?[GroupColumns.privacy] as String?,
     );
   }
 
@@ -285,6 +294,7 @@ class PostModel {
     String? groupId,
     String? groupName,
     String? groupAvatarUrl,
+    String? groupPrivacy,
   }) {
     return PostModel(
       id: id ?? this.id,
@@ -323,6 +333,7 @@ class PostModel {
       groupId: groupId ?? this.groupId,
       groupName: groupName ?? this.groupName,
       groupAvatarUrl: groupAvatarUrl ?? this.groupAvatarUrl,
+      groupPrivacy: groupPrivacy ?? this.groupPrivacy,
     );
   }
 
@@ -363,6 +374,7 @@ class PostModel {
     PostColumns.groupId: groupId,
     'group_name': groupName,
     'group_avatar_url': groupAvatarUrl,
+    'group_privacy': groupPrivacy,
   };
 
   factory PostModel.fromCacheJson(Map<String, dynamic> map) {
@@ -429,6 +441,7 @@ class PostModel {
       groupId: map[PostColumns.groupId] as String?,
       groupName: map['group_name'] as String?,
       groupAvatarUrl: map['group_avatar_url'] as String?,
+      groupPrivacy: map['group_privacy'] as String?,
     );
   }
 }

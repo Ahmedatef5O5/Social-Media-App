@@ -202,7 +202,10 @@ Future<void> initializeCoreServices() async {
     // Remote App Control (maintenance / version gate / banner / suspension).
     // `init` is synchronous and starts the first fetch in the background, so an
     // offline cold start is never delayed or blocked; the fetch fails open.
-    await _safely('SystemControl', () async => SystemControlService.instance.init());
+    await _safely(
+      'SystemControl',
+      () async => SystemControlService.instance.init(),
+    );
     await _safely('AuthRecoveryRestore', AuthRecoveryCoordinator.restore);
     await _safely('AuthLinkHandler', AuthLinkHandler.instance.init);
     await _safely(

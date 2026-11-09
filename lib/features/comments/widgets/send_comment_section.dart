@@ -21,6 +21,8 @@ import 'comment_attachment_preview.dart';
 import '../../../core/mentions/mentions.dart';
 import 'comment_voice_recorder_sheet.dart';
 import 'package:social_media_app/core/localization/l10n_extension.dart';
+import '../../group_chats/cubits/group_list_cubit/group_list_cubit.dart';
+import '../../group_chats/helpers/group_profile_navigation.dart';
 
 class SendCommentSection extends StatefulWidget {
   final PostModel post;
@@ -217,8 +219,67 @@ class _SendCommentSectionState extends State<SendCommentSection> {
     }
   }
 
+  /// True when this is a group post and I am NOT an active member of that
+  /// group (e.g. a suggested public-group post in the feed). Unknown state
+  /// fails open: the server (RLS) stays the authority.
+  bool _isNonMemberOfGroupPost(BuildContext context) {
+    final gid = widget.post.groupId;
+    if (gid == null || gid.isEmpty) return false;
+    try {
+      final state = context.watch<GroupListCubit>().state;
+      if (state is! GroupListLoaded) return false;
+      return !state.groups.any(
+        (g) => g.id == gid && g.isMember && !g.isBlocked,
+      );
+    } catch (_) {
+      return false;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    if (_isNonMemberOfGroupPost(context)) {
+      final theme = Theme.of(context);
+      return InkWell(
+        onTap: () => openGroupProfile(context, groupId: widget.post.groupId!),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surfaceContainerHighest.withValues(
+              alpha: 0.6,
+            ),
+            border: Border(top: BorderSide(color: theme.dividerColor)),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.group_add_rounded,
+                size: 18,
+                color: theme.primaryColor,
+              ),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  context.l10n.joinGroupToComment,
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.primaryColor,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: context.ls(0),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+    return _buildInput(context);
+  }
+
+  Widget _buildInput(BuildContext context) {
     final isReplying = widget.replyingToCommentId != null;
 
     return ColoredBox(

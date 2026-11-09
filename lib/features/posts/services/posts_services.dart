@@ -32,7 +32,7 @@ class PostsServices {
   is_post_shared,
   post_mentions(${PostMentionColumns.mentionedUserId},${PostMentionColumns.startIndex},${PostMentionColumns.endIndex}),
   ${SupabaseConstants.users}!posts_author_id_fkey (${UserColumns.name}, ${UserColumns.imageUrl}, ${UserColumns.lastSeen}, ${UserColumns.isDeleted}),
-  ${PostColumns.groupRelation}!posts_group_id_fkey (${GroupColumns.id}, ${GroupColumns.name}, ${GroupColumns.avatarUrl}),
+  ${PostColumns.groupRelation}!posts_group_id_fkey (${GroupColumns.id}, ${GroupColumns.name}, ${GroupColumns.avatarUrl}, ${GroupColumns.privacy}),
   ${SupabaseConstants.reelsCache}!posts_shared_reel_id_fkey (
     ${ReelColumns.id},
     ${ReelColumns.youtubeVideoId},
@@ -483,6 +483,9 @@ class PostsServices {
     return controller.stream;
   }
 
+  /// One keyset page of a group's posts (newest first). The RPC returns only
+  /// ids (and returns nothing to non-members); rows are hydrated like profile
+  /// posts so they can be merged into the shared PostsCubit cache.
   Future<GroupPostsPage> fetchGroupPostsPage(
     String groupId, {
     int pageSize = 15,

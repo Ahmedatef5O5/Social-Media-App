@@ -266,7 +266,8 @@ class ChatItemTile extends StatelessWidget {
       return Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (!isRtl) ...[Icon(icon, size: 16, color: iconColor), const Gap(4)],
+          Icon(icon, size: 16, color: iconColor),
+          const Gap(4),
           Expanded(
             child: Text(
               label,
@@ -278,7 +279,6 @@ class ChatItemTile extends StatelessWidget {
               ),
             ),
           ),
-          if (isRtl) ...[const Gap(4), Icon(icon, size: 16, color: iconColor)],
         ],
       );
     }

@@ -38,11 +38,10 @@ class AppBottomSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     final palette = context.palette;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: palette.isDark ? palette.surfaceElevated : palette.surface,
-        borderRadius: AppRadii.bottomSheet,
-      ),
+    return Material(
+      color: palette.isDark ? palette.surfaceElevated : palette.surface,
+      borderRadius: AppRadii.bottomSheet,
+      clipBehavior: Clip.antiAlias,
       child: SafeArea(
         top: false,
         child: Padding(
