@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
+import '../../../core/helpers/formatted_date.dart';
 import '../../../core/themes/app_colors.dart';
 import '../../auth/data/models/user_data.dart';
 import '../models/social_platform_info.dart';
@@ -69,12 +70,7 @@ class ProfileDetailsWidgetTab extends StatelessWidget {
           context,
         ),
         const Gap(15),
-        _buildInfoRow(
-          CupertinoIcons.calendar,
-          context.l10n.fieldJoined,
-          'March 2026',
-          context,
-        ),
+        _buildJoinedRow(context),
 
         if (populatedSocialLinks.isNotEmpty) ...[
           const Gap(25),
@@ -135,6 +131,90 @@ class ProfileDetailsWidgetTab extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildJoinedRow(BuildContext context) {
+    final createdAt = user.createdAt;
+    final locale = Localizations.localeOf(context).toString();
+    final dateStr =
+        createdAt != null
+            ? FormattedDate.formatJoinedDate(createdAt, locale: locale)
+            : null;
+    final durationBadge =
+        createdAt != null
+            ? FormattedDate.getMembershipDuration(createdAt, locale: locale)
+            : null;
+
+    final primaryColor = Theme.of(context).primaryColor;
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(top: 2),
+          child: Icon(CupertinoIcons.calendar, size: 20, color: primaryColor),
+        ),
+        const Gap(12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                context.l10n.fieldJoined,
+                style: const TextStyle(color: AppColors.grey, fontSize: 12),
+              ),
+              const Gap(2),
+              if (dateStr == null || dateStr.isEmpty)
+                Text(
+                  context.l10n.noProvidedYet(context.l10n.fieldJoined),
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
+                )
+              else
+                Wrap(
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 8,
+                  runSpacing: 4,
+                  children: [
+                    Text(
+                      dateStr,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    if (durationBadge != null && durationBadge.isNotEmpty)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: primaryColor.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: primaryColor.withValues(alpha: 0.2),
+                            width: 0.8,
+                          ),
+                        ),
+                        child: Text(
+                          durationBadge,
+                          style: TextStyle(
+                            color: primaryColor,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
             ],
           ),
         ),

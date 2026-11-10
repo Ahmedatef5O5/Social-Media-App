@@ -20,6 +20,7 @@ class UserData {
   final Map<String, String> socialLinks;
   final bool isDeleted;
   final DateTime? deletedAt;
+  final DateTime? createdAt;
 
   const UserData({
     required this.id,
@@ -40,6 +41,7 @@ class UserData {
     this.socialLinks = const {},
     this.isDeleted = false,
     this.deletedAt,
+    this.createdAt,
   });
 
   Map<String, dynamic> toMap() {
@@ -62,6 +64,7 @@ class UserData {
       UserColumns.socialLinks: socialLinks,
       UserColumns.isDeleted: isDeleted,
       UserColumns.deletedAt: deletedAt?.toIso8601String(),
+      'created_at': createdAt?.toIso8601String(),
     };
   }
 
@@ -105,6 +108,10 @@ class UserData {
           map[UserColumns.deletedAt] != null
               ? DateTime.tryParse(map[UserColumns.deletedAt].toString())
               : null,
+      createdAt:
+          map['created_at'] != null
+              ? DateTime.tryParse(map['created_at'].toString())
+              : null,
     );
   }
 
@@ -127,6 +134,7 @@ class UserData {
     'social_links': socialLinks,
     'is_deleted': isDeleted,
     'deleted_at': deletedAt?.toIso8601String(),
+    'created_at': createdAt?.toIso8601String(),
   };
 
   factory UserData.fromCacheJson(Map<String, dynamic> map) {
@@ -161,6 +169,10 @@ class UserData {
           map['deleted_at'] != null
               ? DateTime.tryParse(map['deleted_at'] as String)
               : null,
+      createdAt:
+          map['created_at'] != null
+              ? DateTime.tryParse(map['created_at'].toString())
+              : null,
     );
   }
 
@@ -183,6 +195,7 @@ class UserData {
     Map<String, String>? socialLinks,
     bool? isDeleted,
     DateTime? deletedAt,
+    DateTime? createdAt,
   }) {
     return UserData(
       id: id ?? this.id,
@@ -204,6 +217,7 @@ class UserData {
       socialLinks: socialLinks ?? this.socialLinks,
       isDeleted: isDeleted ?? this.isDeleted,
       deletedAt: deletedAt ?? this.deletedAt,
+      createdAt: createdAt ?? this.createdAt,
     );
   }
 }

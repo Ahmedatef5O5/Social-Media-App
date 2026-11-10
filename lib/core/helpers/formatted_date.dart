@@ -144,4 +144,67 @@ class FormattedDate {
     );
     return DateFormat.jm(locale).format(date.toLocal());
   }
+
+  static String formatJoinedDate(DateTime? date, {String? locale}) {
+    if (date == null) return '';
+    final loc =
+        locale ?? AppLocale.normalize(SettingsRepository.instance.languageCode);
+    final localDate = date.isUtc ? date.toLocal() : date;
+    return DateFormat.yMMMMd(loc).format(localDate);
+  }
+
+  static String getMembershipDuration(DateTime? date, {String? locale}) {
+    if (date == null) return '';
+    final loc =
+        locale ?? AppLocale.normalize(SettingsRepository.instance.languageCode);
+    final isAr = loc.startsWith('ar');
+    final localDate = date.isUtc ? date.toLocal() : date;
+    final now = DateTime.now();
+    final difference = now.difference(localDate);
+
+    if (difference.isNegative || difference.inDays < 1) {
+      return isAr ? 'عضو جديد' : 'New member';
+    }
+
+    final days = difference.inDays;
+    if (days < 7) {
+      if (isAr) {
+        if (days == 1) return 'منذ يوم';
+        if (days == 2) return 'منذ يومين';
+        if (days <= 10) return 'منذ $days أيام';
+        return 'منذ $days يوماً';
+      }
+      return days == 1 ? '1 day ago' : '$days days ago';
+    }
+
+    final weeks = (days / 7).floor();
+    if (days < 30) {
+      if (isAr) {
+        if (weeks == 1) return 'منذ أسبوع';
+        if (weeks == 2) return 'منذ أسبوعين';
+        return 'منذ $weeks أسابيع';
+      }
+      return weeks == 1 ? '1 week ago' : '$weeks weeks ago';
+    }
+
+    final months = (days / 30.4375).floor();
+    if (days < 365) {
+      if (isAr) {
+        if (months <= 1) return 'منذ شهر';
+        if (months == 2) return 'منذ شهرين';
+        if (months <= 10) return 'منذ $months أشهر';
+        return 'منذ $months شهراً';
+      }
+      return months <= 1 ? '1 month ago' : '$months months ago';
+    }
+
+    final years = (days / 365.25).floor();
+    if (isAr) {
+      if (years <= 1) return 'منذ سنة';
+      if (years == 2) return 'منذ سنتين';
+      if (years <= 10) return 'منذ $years سنوات';
+      return 'منذ $years سنة';
+    }
+    return years <= 1 ? '1 year ago' : '$years years ago';
+  }
 }
