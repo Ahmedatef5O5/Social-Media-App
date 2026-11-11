@@ -8079,6 +8079,192 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Check status'**
   String get systemSuspendedCheckAgain;
+
+  /// No description provided for @groupNoOne.
+  ///
+  /// In en, this message translates to:
+  /// **'No one'**
+  String get groupNoOne;
+
+  /// No description provided for @whoCanPostHelperAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Every member can publish posts in this group'**
+  String get whoCanPostHelperAll;
+
+  /// No description provided for @whoCanPostHelperAdmins.
+  ///
+  /// In en, this message translates to:
+  /// **'Only the owner and admins can publish posts in this group'**
+  String get whoCanPostHelperAdmins;
+
+  /// No description provided for @whoCanPostHelperOwner.
+  ///
+  /// In en, this message translates to:
+  /// **'Only you (the group owner) can publish posts in this group'**
+  String get whoCanPostHelperOwner;
+
+  /// No description provided for @groupWhoCanSend.
+  ///
+  /// In en, this message translates to:
+  /// **'Who can send messages'**
+  String get groupWhoCanSend;
+
+  /// No description provided for @whoCanSendHelperAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Every member can send messages and start calls'**
+  String get whoCanSendHelperAll;
+
+  /// No description provided for @whoCanSendHelperAdmins.
+  ///
+  /// In en, this message translates to:
+  /// **'Only the owner and admins can send messages or start calls'**
+  String get whoCanSendHelperAdmins;
+
+  /// No description provided for @whoCanSendHelperOwner.
+  ///
+  /// In en, this message translates to:
+  /// **'Only the group owner can send messages or start calls'**
+  String get whoCanSendHelperOwner;
+
+  /// No description provided for @groupPrivacyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Group privacy'**
+  String get groupPrivacyTitle;
+
+  /// No description provided for @groupPrivacyPublic.
+  ///
+  /// In en, this message translates to:
+  /// **'Public'**
+  String get groupPrivacyPublic;
+
+  /// No description provided for @groupPrivacyPrivate.
+  ///
+  /// In en, this message translates to:
+  /// **'Private'**
+  String get groupPrivacyPrivate;
+
+  /// No description provided for @groupPrivacyPublicHelper.
+  ///
+  /// In en, this message translates to:
+  /// **'Anyone can discover this group and see selected posts; joining requires approval'**
+  String get groupPrivacyPublicHelper;
+
+  /// No description provided for @groupPrivacyPrivateHelper.
+  ///
+  /// In en, this message translates to:
+  /// **'Only members can find this group and view its posts'**
+  String get groupPrivacyPrivateHelper;
+
+  /// No description provided for @groupPolicyUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Group settings updated'**
+  String get groupPolicyUpdated;
+
+  /// No description provided for @groupChatRestrictedAdminsOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Only admins can send messages in this group'**
+  String get groupChatRestrictedAdminsOnly;
+
+  /// No description provided for @groupChatRestrictedOwnerOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Only the group owner can send messages here'**
+  String get groupChatRestrictedOwnerOnly;
+
+  /// No description provided for @groupCallsRestrictedAdminsOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Only group admins can start calls in this group'**
+  String get groupCallsRestrictedAdminsOnly;
+
+  /// No description provided for @groupCallsRestrictedOwnerOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Calls are restricted — only the group owner can start a call'**
+  String get groupCallsRestrictedOwnerOnly;
+
+  /// No description provided for @groupMessagingRestrictedToast.
+  ///
+  /// In en, this message translates to:
+  /// **'You can\'\'t send messages in this group right now'**
+  String get groupMessagingRestrictedToast;
+
+  /// No description provided for @createPublicGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Create Public Group'**
+  String get createPublicGroup;
+
+  /// No description provided for @createPrivateGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Create Private Group'**
+  String get createPrivateGroup;
+
+  /// No description provided for @createPublicGroupCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Create Public Group ({count})'**
+  String createPublicGroupCount(int count);
+
+  /// No description provided for @createPrivateGroupCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Create Private Group ({count})'**
+  String createPrivateGroupCount(int count);
+
+  /// No description provided for @joinedGroups.
+  ///
+  /// In en, this message translates to:
+  /// **'Your Groups'**
+  String get joinedGroups;
+
+  /// No description provided for @discoverGroups.
+  ///
+  /// In en, this message translates to:
+  /// **'Discover Groups'**
+  String get discoverGroups;
+
+  /// No description provided for @discoverPublicGroups.
+  ///
+  /// In en, this message translates to:
+  /// **'Discover Public Groups'**
+  String get discoverPublicGroups;
+
+  /// No description provided for @searchGroupsOrDiscover.
+  ///
+  /// In en, this message translates to:
+  /// **'Search your groups or discover public groups...'**
+  String get searchGroupsOrDiscover;
+
+  /// No description provided for @groupRequested.
+  ///
+  /// In en, this message translates to:
+  /// **'Requested'**
+  String get groupRequested;
+
+  /// No description provided for @groupPublicDiscoverBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Public • Discover'**
+  String get groupPublicDiscoverBadge;
+
+  /// No description provided for @noPublicGroupsToDiscover.
+  ///
+  /// In en, this message translates to:
+  /// **'No public groups to discover yet'**
+  String get noPublicGroupsToDiscover;
+
+  /// No description provided for @joinGroupToComment.
+  ///
+  /// In en, this message translates to:
+  /// **'Join this group to comment and participate'**
+  String get joinGroupToComment;
 }
 
 class _AppLocalizationsDelegate

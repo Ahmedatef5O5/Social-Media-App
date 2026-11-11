@@ -2678,5 +2678,51 @@
     }
   },
   "systemSuspendedPermanent": "This suspension has no end date.",
-  "systemSuspendedCheckAgain": "Check status"
+  "systemSuspendedCheckAgain": "Check status",
+    "groupNoOne": "No one",
+  "whoCanPostHelperAll": "Every member can publish posts in this group",
+  "whoCanPostHelperAdmins": "Only the owner and admins can publish posts in this group",
+  "whoCanPostHelperOwner": "Only you (the group owner) can publish posts in this group",
+  "groupWhoCanSend": "Who can send messages",
+  "whoCanSendHelperAll": "Every member can send messages and start calls",
+  "whoCanSendHelperAdmins": "Only the owner and admins can send messages or start calls",
+  "whoCanSendHelperOwner": "Only the group owner can send messages or start calls",
+  "groupPrivacyTitle": "Group privacy",
+  "groupPrivacyPublic": "Public",
+  "groupPrivacyPrivate": "Private",
+  "groupPrivacyPublicHelper": "Anyone can discover this group and see selected posts; joining requires approval",
+  "groupPrivacyPrivateHelper": "Only members can find this group and view its posts",
+  "groupPolicyUpdated": "Group settings updated",
+  "groupChatRestrictedAdminsOnly": "Only admins can send messages in this group",
+  "groupChatRestrictedOwnerOnly": "Only the group owner can send messages here",
+  "groupCallsRestrictedAdminsOnly": "Only group admins can start calls in this group",
+  "groupCallsRestrictedOwnerOnly": "Calls are restricted — only the group owner can start a call",
+  "groupMessagingRestrictedToast": "You can''t send messages in this group right now",
+  "createPublicGroup": "Create Public Group",
+  "createPrivateGroup": "Create Private Group",
+  "createPublicGroupCount": "Create Public Group ({count})",
+  "@createPublicGroupCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "createPrivateGroupCount": "Create Private Group ({count})",
+  "@createPrivateGroupCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "joinedGroups": "Your Groups",
+  "discoverGroups": "Discover Groups",
+  "discoverPublicGroups": "Discover Public Groups",
+  "searchGroupsOrDiscover": "Search your groups or discover public groups...",
+  "groupRequested": "Requested",
+  "groupPublicDiscoverBadge": "Public • Discover",
+  "noPublicGroupsToDiscover": "No public groups to discover yet",
+  "joinGroupToComment": "Join this group to comment and participate"
+
 }

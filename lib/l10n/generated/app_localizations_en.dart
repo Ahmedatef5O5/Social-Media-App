@@ -4578,4 +4578,115 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get systemSuspendedCheckAgain => 'Check status';
+
+  @override
+  String get groupNoOne => 'No one';
+
+  @override
+  String get whoCanPostHelperAll =>
+      'Every member can publish posts in this group';
+
+  @override
+  String get whoCanPostHelperAdmins =>
+      'Only the owner and admins can publish posts in this group';
+
+  @override
+  String get whoCanPostHelperOwner =>
+      'Only you (the group owner) can publish posts in this group';
+
+  @override
+  String get groupWhoCanSend => 'Who can send messages';
+
+  @override
+  String get whoCanSendHelperAll =>
+      'Every member can send messages and start calls';
+
+  @override
+  String get whoCanSendHelperAdmins =>
+      'Only the owner and admins can send messages or start calls';
+
+  @override
+  String get whoCanSendHelperOwner =>
+      'Only the group owner can send messages or start calls';
+
+  @override
+  String get groupPrivacyTitle => 'Group privacy';
+
+  @override
+  String get groupPrivacyPublic => 'Public';
+
+  @override
+  String get groupPrivacyPrivate => 'Private';
+
+  @override
+  String get groupPrivacyPublicHelper =>
+      'Anyone can discover this group and see selected posts; joining requires approval';
+
+  @override
+  String get groupPrivacyPrivateHelper =>
+      'Only members can find this group and view its posts';
+
+  @override
+  String get groupPolicyUpdated => 'Group settings updated';
+
+  @override
+  String get groupChatRestrictedAdminsOnly =>
+      'Only admins can send messages in this group';
+
+  @override
+  String get groupChatRestrictedOwnerOnly =>
+      'Only the group owner can send messages here';
+
+  @override
+  String get groupCallsRestrictedAdminsOnly =>
+      'Only group admins can start calls in this group';
+
+  @override
+  String get groupCallsRestrictedOwnerOnly =>
+      'Calls are restricted — only the group owner can start a call';
+
+  @override
+  String get groupMessagingRestrictedToast =>
+      'You can\'t send messages in this group right now';
+
+  @override
+  String get createPublicGroup => 'Create Public Group';
+
+  @override
+  String get createPrivateGroup => 'Create Private Group';
+
+  @override
+  String createPublicGroupCount(int count) {
+    return 'Create Public Group ($count)';
+  }
+
+  @override
+  String createPrivateGroupCount(int count) {
+    return 'Create Private Group ($count)';
+  }
+
+  @override
+  String get joinedGroups => 'Your Groups';
+
+  @override
+  String get discoverGroups => 'Discover Groups';
+
+  @override
+  String get discoverPublicGroups => 'Discover Public Groups';
+
+  @override
+  String get searchGroupsOrDiscover =>
+      'Search your groups or discover public groups...';
+
+  @override
+  String get groupRequested => 'Requested';
+
+  @override
+  String get groupPublicDiscoverBadge => 'Public • Discover';
+
+  @override
+  String get noPublicGroupsToDiscover => 'No public groups to discover yet';
+
+  @override
+  String get joinGroupToComment => 'Join this group to comment and participate';
 }

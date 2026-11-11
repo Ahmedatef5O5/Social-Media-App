@@ -4566,4 +4566,114 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get systemSuspendedCheckAgain => 'التحقق من الحالة';
+
+  @override
+  String get groupNoOne => 'لا أحد';
+
+  @override
+  String get whoCanPostHelperAll => 'يمكن لجميع الأعضاء النشر في هذه المجموعة';
+
+  @override
+  String get whoCanPostHelperAdmins =>
+      'المالك والمشرفون فقط يمكنهم النشر في هذه المجموعة';
+
+  @override
+  String get whoCanPostHelperOwner => 'المالك فقط يمكنه النشر في هذه المجموعة';
+
+  @override
+  String get groupWhoCanSend => 'من يمكنه إرسال الرسائل في المجموعة';
+
+  @override
+  String get whoCanSendHelperAll =>
+      'يمكن لجميع الأعضاء إرسال الرسائل وبدء المكالمات';
+
+  @override
+  String get whoCanSendHelperAdmins =>
+      'المالك والمشرفون فقط يمكنهم إرسال الرسائل وبدء المكالمات';
+
+  @override
+  String get whoCanSendHelperOwner =>
+      'المالك فقط يمكنه إرسال الرسائل أو بدء المكالمات في هذه المجموعة';
+
+  @override
+  String get groupPrivacyTitle => 'خصوصية المجموعة';
+
+  @override
+  String get groupPrivacyPublic => 'عامة';
+
+  @override
+  String get groupPrivacyPrivate => 'خاصة';
+
+  @override
+  String get groupPrivacyPublicHelper =>
+      'يمكن لأي شخص اكتشاف المجموعة ورؤية أبرز منشوراتها وتقديم طلب للانضمام';
+
+  @override
+  String get groupPrivacyPrivateHelper =>
+      'الأعضاء فقط يمكنهم العثور على المجموعة ورؤية منشوراتها';
+
+  @override
+  String get groupPolicyUpdated => 'تم تحديث إعدادات المجموعة';
+
+  @override
+  String get groupChatRestrictedAdminsOnly =>
+      'المشرفون فقط يمكنهم إرسال الرسائل في هذه المجموعة';
+
+  @override
+  String get groupChatRestrictedOwnerOnly =>
+      'لا يمكن إرسال رسائل هنا — المالك فقط يمكنه الإرسال';
+
+  @override
+  String get groupCallsRestrictedAdminsOnly =>
+      'المشرفون فقط يمكنهم بدء المكالمات في هذه المجموعة';
+
+  @override
+  String get groupCallsRestrictedOwnerOnly =>
+      'بدء المكالمات متاح لمالك المجموعة فقط';
+
+  @override
+  String get groupMessagingRestrictedToast =>
+      'لا يمكنك إرسال الرسائل في هذه المجموعة حاليًا';
+
+  @override
+  String get createPublicGroup => 'إنشاء مجموعة عامة';
+
+  @override
+  String get createPrivateGroup => 'إنشاء مجموعة خاصة';
+
+  @override
+  String createPublicGroupCount(int count) {
+    return 'إنشاء مجموعة عامة ($count)';
+  }
+
+  @override
+  String createPrivateGroupCount(int count) {
+    return 'إنشاء مجموعة خاصة ($count)';
+  }
+
+  @override
+  String get joinedGroups => 'مجموعاتك';
+
+  @override
+  String get discoverGroups => 'استكشاف المجموعات';
+
+  @override
+  String get discoverPublicGroups => 'مجموعات عامة مقترحة';
+
+  @override
+  String get searchGroupsOrDiscover =>
+      'ابحث في مجموعاتك أو استكشف مجموعات عامة...';
+
+  @override
+  String get groupRequested => 'طلب معلق';
+
+  @override
+  String get groupPublicDiscoverBadge => 'عامة • استكشاف';
+
+  @override
+  String get noPublicGroupsToDiscover =>
+      'لا توجد مجموعات عامة للاستكشاف حاليًا';
+
+  @override
+  String get joinGroupToComment => 'انضم إلى المجموعة للمشاركة والتعليق';
 }
