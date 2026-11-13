@@ -166,6 +166,18 @@ mixin PostCreationMixin on Cubit<PostsState> {
       );
 
       await _postsServices.addPost(postRequest);
+      // The post is committed: record the user's first-ever post (flags only,
+      // never the text or media URLs).
+      unawaited(
+        AnalyticsClient.instance.trackOnce(
+          AnalyticsEvents.firstPostCreated,
+          onceKey: userId,
+          properties: <String, Object?>{
+            'has_media': hasFileMedia || gifUrl != null,
+            'in_group': groupId != null,
+          },
+        ),
+      );
       if (groupId == null &&
           privacy == ContentPrivacy.private &&
           allowedViewerIds.isNotEmpty) {

@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:social_media_app/core/analytics/analytics_client.dart';
 import 'package:social_media_app/core/services/media_cleanup_service.dart';
 import 'package:social_media_app/features/auth/data/models/user_data.dart';
 import 'package:social_media_app/features/profile/services/edit_profile_services.dart';
@@ -121,12 +123,36 @@ class EditProfileCubit extends Cubit<EditProfileState>
       }
 
       emit(EditProfileSuccess(updatedUser));
+      _trackProfileCompleted(updatedUser);
     } catch (e) {
       if (isClosed) return;
       debugPrint('Error updating profile: $e');
       emit(EditProfileError(SupabaseErrorMapper.toUserMessage(e)));
     }
   }
+
+  /// `profile_completed`: the first time a saved profile has BOTH an avatar and
+  /// a bio (tagline is optional and only reported as a flag). Only booleans
+  /// leave the device - never the bio text or the image URL.
+  void _trackProfileCompleted(UserData user) {
+    final hasAvatar = _hasText(user.imageUrl);
+    final hasBio = _hasText(user.bio);
+    if (!hasAvatar || !hasBio) return;
+    unawaited(
+      AnalyticsClient.instance.trackOnce(
+        AnalyticsEvents.profileCompleted,
+        onceKey: user.id,
+        properties: <String, Object?>{
+          'has_avatar': hasAvatar,
+          'has_bio': hasBio,
+          'has_tagline': _hasText(user.tagline),
+        },
+      ),
+    );
+  }
+
+  static bool _hasText(String? value) =>
+      value != null && value.trim().isNotEmpty;
 
   void _cleanupStaleAssets({
     required UserData oldUser,

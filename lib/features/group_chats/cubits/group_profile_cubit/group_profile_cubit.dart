@@ -2,8 +2,10 @@ import 'dart:async';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/analytics/analytics_client.dart';
 import '../../../../core/errors/supabase_error_mapper.dart';
 import '../../../../core/helpers/safe_emit_mixin.dart';
+import '../../../../core/supabase/supabase_provider.dart';
 import '../../models/group_model.dart';
 import '../../models/group_profile_model.dart';
 import '../../services/group_social_service.dart';
@@ -86,6 +88,17 @@ class GroupProfileCubit extends Cubit<GroupProfileState>
     try {
       final status = await _service.requestToJoin(groupId);
       if (status == GroupJoinRequestStatus.accepted) {
+        // Joined a public group right away (no approval needed).
+        final userId = SupabaseProvider.idOrNull;
+        if (userId != null) {
+          unawaited(
+            AnalyticsClient.instance.trackOnce(
+              AnalyticsEvents.firstGroupJoined,
+              onceKey: userId,
+              properties: <String, Object?>{'is_public': current.isPublic},
+            ),
+          );
+        }
         await load(silent: true);
       } else {
         emit(GroupProfileLoaded(profile ?? current));

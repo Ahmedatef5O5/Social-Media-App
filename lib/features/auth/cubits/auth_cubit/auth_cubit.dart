@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:social_media_app/core/analytics/analytics_client.dart';
 import 'package:social_media_app/core/services/network_status_service.dart';
 import 'package:social_media_app/features/auth/handlers/auth_exception_handler.dart';
 import 'package:social_media_app/features/auth/services/supabase_auth_services.dart';
@@ -47,6 +48,7 @@ class AuthCubit extends Cubit<AuthState> with SafeEmitMixin<AuthState> {
         }
 
         emit(AuthSuccess());
+        _trackAuthenticated(user);
 
         unawaited(
           _authServices.ensureUserExistsInDb(user).catchError((e) {
@@ -56,9 +58,49 @@ class AuthCubit extends Cubit<AuthState> with SafeEmitMixin<AuthState> {
           }),
         );
       } else if (event == AuthChangeEvent.signedOut) {
+        AnalyticsClient.instance.setUserId(null);
         if (!_suppressSignedOutEmit) emit(AuthSignedOut());
       }
     });
+  }
+
+  /// Links the analytics session to the signed-in user and records
+  /// `user_registered` for brand-new accounts.
+  ///
+  /// "New" = the account was created in the last 24 h. This covers email
+  /// sign-up (also when the confirmation link is opened later) and first-time
+  /// Google/Facebook/Microsoft sign-in. Repeats (another device, token refresh)
+  /// are harmless: `trackOnce` derives the event id from the user id, so the
+  /// backend ignores duplicates.
+  void _trackAuthenticated(User user) {
+    final analytics = AnalyticsClient.instance;
+    analytics.setUserId(user.id);
+    final createdAt = DateTime.tryParse(user.createdAt);
+    final isNewAccount =
+        createdAt != null &&
+        DateTime.now().toUtc().difference(createdAt.toUtc()) <
+            const Duration(hours: 24);
+    if (!isNewAccount) return;
+    unawaited(
+      analytics.trackOnce(
+        AnalyticsEvents.userRegistered,
+        onceKey: user.id,
+        properties: <String, Object?>{
+          'auth_provider': _analyticsProvider(user),
+        },
+      ),
+    );
+  }
+
+  static String _analyticsProvider(User user) {
+    final provider = user.appMetadata['provider'];
+    return switch (provider) {
+      'email' => 'email',
+      'google' => 'google',
+      'facebook' => 'facebook',
+      'azure' => 'microsoft',
+      _ => 'other',
+    };
   }
 
   void _handleError(Object e) {

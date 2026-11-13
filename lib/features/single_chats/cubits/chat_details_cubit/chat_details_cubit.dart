@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import 'package:uuid/uuid.dart';
+import '../../../../core/analytics/analytics_client.dart';
 import '../../../../core/audio/voice_recorder/services/audio_compression_service.dart';
 import '../../../../core/cache/repository/media_cache_repository.dart';
 import '../../../../core/cache/services/messages_snapshot_cache.dart';
@@ -969,6 +970,15 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState>
         emit(MessagesSuccessLoaded(messages: cachedMessages));
         return;
       }
+
+      // Server acknowledged the message: record the user's first-ever message.
+      unawaited(
+        AnalyticsClient.instance.trackOnce(
+          AnalyticsEvents.firstMessageSent,
+          onceKey: currentUserId,
+          properties: const <String, Object?>{'chat_type': 'single'},
+        ),
+      );
 
       final newMessageId = sent.id;
       final acknowledged = optimisticMessage.copyWith(

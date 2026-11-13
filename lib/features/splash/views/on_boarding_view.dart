@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:social_media_app/core/analytics/analytics_client.dart';
 import 'package:social_media_app/core/themes/background_theme_widget.dart';
 import 'package:social_media_app/core/widgets/custom_elevated_button.dart';
 import 'package:social_media_app/features/splash/models/on_boarding_model.dart';
@@ -19,7 +22,24 @@ class OnBoardingView extends StatefulWidget {
 class _OnBoardingViewState extends State<OnBoardingView> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
-  void _finishOnboarding() async {
+  final DateTime _openedAt = DateTime.now();
+  bool _finished = false;
+
+  /// [skipped] is true only for the header "Skip" button; "Join Now" and
+  /// "Sign in" at the end of the flow count as a completed onboarding.
+  void _finishOnboarding({required bool skipped}) async {
+    if (_finished) return; // ignore double taps: one event per onboarding
+    _finished = true;
+    unawaited(
+      AnalyticsClient.instance.track(
+        AnalyticsEvents.onboardingCompleted,
+        properties: <String, Object?>{
+          'completed': !skipped,
+          'skipped': skipped,
+          'duration_seconds': DateTime.now().difference(_openedAt).inSeconds,
+        },
+      ),
+    );
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('onboarding_seen', true);
     if (mounted) {
@@ -45,7 +65,7 @@ class _OnBoardingViewState extends State<OnBoardingView> {
               child: Align(
                 alignment: AlignmentDirectional.topEnd,
                 child: TextButton(
-                  onPressed: _finishOnboarding,
+                  onPressed: () => _finishOnboarding(skipped: true),
                   child: Text(
                     context.l10n.skip,
                     style: Theme.of(context).textTheme.titleMedium!.copyWith(
@@ -97,7 +117,7 @@ class _OnBoardingViewState extends State<OnBoardingView> {
                         child: Column(
                           children: [
                             CustomElevatedButton(
-                              onPressed: _finishOnboarding,
+                              onPressed: () => _finishOnboarding(skipped: false),
                               bgColor: Theme.of(context).primaryColor,
                               minimumSize: const Size(double.infinity, 54),
 
@@ -112,7 +132,7 @@ class _OnBoardingViewState extends State<OnBoardingView> {
                             ),
                             const Gap(15),
                             TextButton(
-                              onPressed: _finishOnboarding,
+                              onPressed: () => _finishOnboarding(skipped: false),
                               child: Text(
                                 context.l10n.signIn,
                                 style: TextStyle(

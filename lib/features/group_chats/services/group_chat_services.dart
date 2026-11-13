@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'dart:io';
 
+import 'package:social_media_app/core/analytics/analytics_client.dart';
 import 'package:social_media_app/core/mentions/mentions.dart';
 
 import '../../../core/presence/models/chat_action_type.dart';
@@ -183,8 +185,20 @@ class GroupChatServices {
   Future<GroupInvitePreview> getGroupInvitePreview(String inviteHash) =>
       _invite.getGroupInvitePreview(inviteHash);
 
-  Future<GroupModel> joinGroupViaInvite(String inviteHash) =>
-      _invite.joinGroupViaInvite(inviteHash);
+  Future<GroupModel> joinGroupViaInvite(String inviteHash) async {
+    final group = await _invite.joinGroupViaInvite(inviteHash);
+    final userId = SupabaseProvider.idOrNull;
+    if (userId != null) {
+      unawaited(
+        AnalyticsClient.instance.trackOnce(
+          AnalyticsEvents.firstGroupJoined,
+          onceKey: userId,
+          properties: <String, Object?>{'is_public': group.isPublic},
+        ),
+      );
+    }
+    return group;
+  }
 
   // ── Message content (GroupMessagingService) ────────────────────────
 

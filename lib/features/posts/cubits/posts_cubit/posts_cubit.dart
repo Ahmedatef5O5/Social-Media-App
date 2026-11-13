@@ -14,6 +14,7 @@ import 'package:social_media_app/core/services/file_picker_services.dart';
 import 'package:social_media_app/core/services/network_status_service.dart';
 import 'package:social_media_app/features/auth/data/models/user_data.dart';
 import 'package:uuid/uuid.dart';
+import '../../../../core/analytics/analytics_client.dart';
 import '../../../../core/connectivity/services/connectivity_banner_controller.dart';
 import '../../../../core/errors/supabase_error_mapper.dart';
 import '../../../../core/guards/suspension_interceptor.dart';
