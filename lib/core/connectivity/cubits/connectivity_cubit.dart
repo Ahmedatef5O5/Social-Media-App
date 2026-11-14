@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:social_media_app/core/connectivity/cubits/connectivity_state.dart';
 import '../../helpers/safe_emit_mixin.dart';
+import '../../infrastructure/service_health_coordinator.dart';
 import '../../services/network_status_service.dart';
 
 class ConnectivityCubit extends Cubit<ConnectivityState>
@@ -55,6 +56,7 @@ class ConnectivityCubit extends Cubit<ConnectivityState>
 
       if (state is ConnectivityOffline) {
         debugPrint('[ConnectivityCubit] Restored ✅');
+        ServiceHealthCoordinator.instance.setOnline(true);
         emit(ConnectivityRestored());
         _restoredResetTimer?.cancel();
         _restoredResetTimer = Timer(_restoredBannerDuration, () {
@@ -80,6 +82,8 @@ class ConnectivityCubit extends Cubit<ConnectivityState>
 
     if (shouldDeclareOffline && state is! ConnectivityOffline) {
       debugPrint('[ConnectivityCubit] offline ⛔');
+      // Service-health telemetry: failures while offline are not the service's fault.
+      ServiceHealthCoordinator.instance.setOnline(false);
       emit(ConnectivityOffline());
     }
   }

@@ -2,6 +2,8 @@
 import 'package:hive_flutter/adapters.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:social_media_app/core/cache/constants/hive_box_names.dart';
+import 'package:social_media_app/core/infrastructure/service_health_coordinator.dart';
+import 'package:social_media_app/core/infrastructure/service_health_sample.dart';
 import '../constants/hive_type_ids.dart';
 import '../models/cached_media_model.dart';
 
@@ -24,6 +26,7 @@ class HiveCacheManager {
   }
 
   Future<void> _doInit() async {
+    final healthTimer = Stopwatch()..start();
     try {
       final cacheDirectory = await getApplicationDocumentsDirectory();
       Hive.init('${cacheDirectory.path}/$cacheSubDirectory');
@@ -42,6 +45,12 @@ class HiveCacheManager {
 
       _isInitialized = true;
 
+      // Service-health telemetry: init time + a cheap liveness check so a
+      // quiet-but-healthy cache still produces samples every minute.
+      ServiceHealthCoordinator.instance
+        ..reportHiveInit(success: true, duration: healthTimer.elapsed)
+        ..registerLivenessCheck(HealthServiceKey.hiveCache, _livenessCheck);
+
       debugPrint(
         '[HiveCacheManager] Initialized — '
         '${mediaCacheBox.length} cached media entries, '
@@ -49,8 +58,22 @@ class HiveCacheManager {
       );
     } catch (e) {
       _initFuture = null;
+      ServiceHealthCoordinator.instance.reportHiveInit(
+        success: false,
+        duration: healthTimer.elapsed,
+        error: e,
+      );
       rethrow;
     }
+  }
+
+  /// `null` = not initialised yet (no statement); `false` = a box was closed
+  /// behind our back.
+  bool? _livenessCheck() {
+    if (!_isInitialized) return null;
+    return mediaCacheBox.isOpen &&
+        cacheMetaBox.isOpen &&
+        storyReactionsBox.isOpen;
   }
 
   void _registerAdapters() {
@@ -72,6 +95,8 @@ class HiveCacheManager {
       );
       debugPrintStack(stackTrace: stackTrace);
       await Hive.deleteBoxFromDisk(boxName);
+      // Corruption recovery happened: the cache works again but is degraded.
+      ServiceHealthCoordinator.instance.reportHiveBoxReset(boxName);
       return await Hive.openBox<T>(boxName);
     }
   }
@@ -90,6 +115,9 @@ class HiveCacheManager {
   }
 
   Future<void> closeAll() async {
+    ServiceHealthCoordinator.instance.unregisterLivenessCheck(
+      HealthServiceKey.hiveCache,
+    );
     await Hive.close();
     _isInitialized = false;
     _initFuture = null;

@@ -7,10 +7,12 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:social_media_app/core/analytics/analytics_client.dart';
 import 'package:social_media_app/core/bootstrap/session_data_cleaner.dart';
 import 'package:social_media_app/core/cache/services/hive_cache_manager.dart';
 import 'package:social_media_app/core/cache/services/local_snapshot_store.dart';
 import 'package:social_media_app/core/firebase/firebase_background_handlers.dart';
+import 'package:social_media_app/core/infrastructure/service_health_coordinator.dart';
 import 'package:social_media_app/core/notifications/handlers/tap_action_handler.dart';
 import 'package:social_media_app/core/presence/services/presence_service.dart';
 import 'package:social_media_app/core/router/app_routes.dart';
@@ -39,11 +41,16 @@ import '../observability/realtime_channel_sampler.dart';
 import '../observability/realtime_diagnostics.dart';
 import '../services/active_screen_tracker.dart';
 import '../services/system_control_service.dart';
+import '../services/feature_flags/feature_flag_service.dart';
 import '../session/session_guard.dart';
 import '../session/session_scope.dart';
 import '../share_intent/services/share_intent_service.dart';
 import '../supabase/supabase_provider.dart';
 import '../toast/app_toast.dart';
+import 'package:http/http.dart' as http;
+import 'package:social_media_app/core/performance/interceptors/network_performance_interceptor.dart';
+import 'package:social_media_app/core/performance/performance_tracker.dart';
+import 'package:social_media_app/core/performance/session_manager.dart';
 
 Future<void> initializeCriticalBeforeRunApp() async {
   _configureImageCache();
@@ -88,6 +95,15 @@ Future<void> initializeCriticalBeforeRunApp() async {
     // `initializeCoreServices()` is a no-op.
     _safely('Settings', SettingsRepository.instance.init),
   ]);
+
+  // Infrastructure & Service Health Center: passive, PII-free telemetry.
+  // Started after Supabase + Hive so its first flush can already reach the
+  // backend. Never allowed to prevent the app from starting.
+  try {
+    ServiceHealthCoordinator.instance.start();
+  } catch (e, s) {
+    debugPrint('⚠️ ServiceHealthCoordinator.start failed: $e\n$s');
+  }
 }
 
 /// Bounds Flutter's in-memory cache of DECODED images (bitmaps).
@@ -98,9 +114,6 @@ void _configureImageCache() {
 }
 
 Future<void> _initObservability() async {
-  // Crashlytics + the Operations Control Platform (`incident_report_batch`).
-  // `CrashlyticsReporter()` throws when Firebase failed to initialise; that
-  // must not also take the incident pipeline down, so it is built defensively.
   final reporters = <CrashReporter>[];
   try {
     reporters.add(CrashlyticsReporter());
@@ -110,6 +123,8 @@ Future<void> _initObservability() async {
     );
   }
   reporters.add(IncidentReporter.instance);
+  // Reliability Center: a FATAL report marks the running session as crashed.
+  reporters.add(SessionCrashReporter.instance);
 
   await obs.attachReporter(
     CompositeCrashReporter(reporters),
@@ -123,12 +138,14 @@ Future<void> _initObservability() async {
 
 Completer<void>? _coreServicesCompleter;
 
-Future<void> startCoreServicesBootstrap() {
+Future<void> startCoreServicesBootstrap() async {
   final existing = _coreServicesCompleter;
   if (existing != null) return existing.future;
 
   final completer = Completer<void>();
   _coreServicesCompleter = completer;
+
+  await _safely('PerformanceTelemetry', _initPerformanceTelemetry);
 
   initializeCoreServices().then((_) => completer.complete()).catchError((e, s) {
     debugPrint('⚠️ Critical bootstrap failure: $e\n$s');
@@ -139,6 +156,18 @@ Future<void> startCoreServicesBootstrap() {
   });
 
   return completer.future;
+}
+
+Future<void> _initPerformanceTelemetry() async {
+  SessionManager.instance.onBackground =
+      () => unawaited(PerformanceTracker.instance.flush());
+  await SessionManager.instance.start();
+  try {
+    SupabaseProvider.authChanges.listen((_) {
+      SessionManager.instance.onAuthChanged();
+      unawaited(PerformanceTracker.instance.flush());
+    });
+  } catch (_) {}
 }
 
 Future<void> waitForCoreServicesReady() {
@@ -206,6 +235,7 @@ Future<void> initializeCoreServices() async {
       'SystemControl',
       () async => SystemControlService.instance.init(),
     );
+    await _safely('FeatureFlags', FeatureFlagService.instance.init);
     await _safely('AuthRecoveryRestore', AuthRecoveryCoordinator.restore);
     await _safely('AuthLinkHandler', AuthLinkHandler.instance.init);
     await _safely(
@@ -230,6 +260,16 @@ Future<void> initializeCoreServices() async {
     await _safely('Presence', PresenceService.instance.init);
     RealtimeChannelSampler.instance.start();
     _setupAuthListener();
+  }
+
+  // Product analytics (privacy-first, allow-listed events, offline queue).
+  // Needs the Supabase client for delivery. Cheap (one prefs read + queue
+  // restore) and never throws, so it is awaited: onboarding events that follow
+  // the splash must not be dropped by a not-yet-ready client.
+  if (supabaseReady) {
+    await _safely('Analytics', () async {
+      await AnalyticsClient.initialize();
+    });
   }
 
   unawaited(_requestStartupPermissions());
@@ -288,6 +328,7 @@ Future<void> completeSignInBootstrap() async {
   final userId = session?.user.id;
   if (userId != null) {
     SystemControlService.instance.onAuthChanged();
+    FeatureFlagService.instance.onAuthChanged();
     await obs.setSessionUser(userId);
     await obs.breadcrumb(
       'mfa challenge completed - signed in',
@@ -342,6 +383,7 @@ void _setupAuthListener() {
         }
 
         SystemControlService.instance.onAuthChanged();
+        FeatureFlagService.instance.onAuthChanged();
         await obs.setSessionUser(session.user.id);
         await obs.breadcrumb('signed in', feature: 'auth');
         RealtimeDiagnostics.instance.detectZombies(session.user.id);
@@ -383,6 +425,7 @@ void _setupAuthListener() {
       debugPrint('⚠️ Session expired or signed out. Redirecting to Login...');
       await obs.breadcrumb('signed out ($event)', feature: 'auth');
       SystemControlService.instance.onAuthChanged();
+      FeatureFlagService.instance.onAuthChanged();
       await obs.setSessionUser(null);
       RealtimeChannelSampler.instance.setOwner(null);
       await PresenceService.instance.dispose();
@@ -490,6 +533,7 @@ Future<void> _initSupabase() async {
   await Supabase.initialize(
     url: AppSecrets.supabaseUrl,
     anonKey: AppSecrets.supabaseAnonKey,
+    httpClient: PerformanceHttpClient(http.Client()),
   );
 }
 

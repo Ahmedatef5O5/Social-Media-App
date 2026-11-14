@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../supabase/supabase_provider.dart';
+import '../infrastructure/service_health_sample.dart';
 import 'error_category.dart';
 import 'observability.dart';
 
@@ -68,6 +69,23 @@ class RealtimeDiagnostics {
 
   static final RealtimeDiagnostics instance = RealtimeDiagnostics._();
 
+  /// Service-health hook (Infrastructure & Service Health Center).
+  ///
+  /// Set by `ServiceHealthCoordinator`. Receives only the transition TYPE,
+  /// never the topic (topics embed conversation / user ids). Left untouched by
+  /// [reset] so a sign-out does not silently detach telemetry.
+  RealtimeHealthListener? healthListener;
+
+  void _emitHealth(RealtimeHealthEventType type) {
+    final listener = healthListener;
+    if (listener == null) return;
+    try {
+      listener(type);
+    } catch (_) {
+      // Telemetry must never break channel handling.
+    }
+  }
+
   /// Clears the registry completely upon sign-out so no channels are leaked
   /// to the next account.
   void reset() {
@@ -132,7 +150,8 @@ class RealtimeDiagnostics {
   void onChannelSubscribed(String topic) {
     final record = _channels[topic];
     if (record == null) return;
-    if (record.phase == ChannelPhase.errored) {
+    final wasErrored = record.phase == ChannelPhase.errored;
+    if (wasErrored) {
       record.reconnectCount++;
       obs.breadcrumb(
         'channel recovered: $topic (reconnect #${record.reconnectCount})',
@@ -140,6 +159,11 @@ class RealtimeDiagnostics {
       );
     }
     record.phase = ChannelPhase.subscribed;
+    _emitHealth(
+      wasErrored
+          ? RealtimeHealthEventType.reconnected
+          : RealtimeHealthEventType.subscribed,
+    );
     obs.setContext('realtime_active_channels', activeCount);
   }
 
@@ -162,6 +186,7 @@ class RealtimeDiagnostics {
       return;
     }
 
+    _emitHealth(RealtimeHealthEventType.errored);
     obs.recordError(
       error,
       stack,
@@ -279,6 +304,7 @@ class RealtimeDiagnostics {
       if (record.phase == ChannelPhase.errored &&
           sdkPhase == ChannelPhase.subscribed) {
         record.reconnectCount++;
+        _emitHealth(RealtimeHealthEventType.reconnected);
       }
       record.phase = sdkPhase;
     }
