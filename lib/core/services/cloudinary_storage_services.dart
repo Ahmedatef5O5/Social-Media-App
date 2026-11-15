@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:dio/dio.dart' as dio_pkg;
 import 'package:flutter/foundation.dart';
 import 'package:social_media_app/core/services/cloudinary_upload_result.dart';
+import '../infrastructure/service_health_coordinator.dart';
 import '../secrets/app_secrets.dart';
 import '../errors/exceptions.dart';
 export '../errors/exceptions.dart' show UploadCanceledException;
@@ -123,6 +124,10 @@ class CloudinaryStorageServices {
 
     onProgress?.call(0.0);
 
+    // Service-health telemetry: duration + outcome of the Cloudinary call.
+    // A user cancel or a missing local file is NOT a Cloudinary signal.
+    final healthTimer = Stopwatch()..start();
+
     try {
       dio_pkg.Response<dynamic> response;
       try {
@@ -154,10 +159,19 @@ class CloudinaryStorageServices {
       final secureUrl = data['secure_url'] as String?;
       final publicId = data['public_id'] as String?;
       if (secureUrl == null || publicId == null) {
+        ServiceHealthCoordinator.instance.reportCloudinaryUpload(
+          success: false,
+          duration: healthTimer.elapsed,
+          error: 'missing secure_url/public_id',
+        );
         throw Exception(
           'cloudinary_upload_failed: missing secure_url/public_id',
         );
       }
+      ServiceHealthCoordinator.instance.reportCloudinaryUpload(
+        success: true,
+        duration: healthTimer.elapsed,
+      );
 
       return CloudinaryUploadResult(
         secureUrl:
@@ -182,6 +196,11 @@ class CloudinaryStorageServices {
               ? (e.response?.data['error']?['message'] as String?)
               : null;
       debugPrint('❌ Cloudinary upload error: ${serverMessage ?? e.message}');
+      ServiceHealthCoordinator.instance.reportCloudinaryUpload(
+        success: false,
+        duration: healthTimer.elapsed,
+        error: serverMessage ?? e.type.name,
+      );
       throw Exception(serverMessage ?? 'cloudinary_upload_failed');
     }
   }

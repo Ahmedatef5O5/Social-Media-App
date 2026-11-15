@@ -1,3 +1,4 @@
+import 'package:social_media_app/core/infrastructure/service_health_coordinator.dart';
 import 'package:social_media_app/core/supabase/supabase_provider.dart';
 
 class LiveKitConnectionInfo {
@@ -16,6 +17,7 @@ class LiveKitTokenService {
     required String participantName,
     int effectiveTimeInSeconds = 3600,
   }) async {
+    final healthTimer = Stopwatch()..start();
     try {
       final response = await SupabaseProvider.client.functions.invoke(
         'generate-livekit-token',
@@ -31,12 +33,30 @@ class LiveKitTokenService {
         throw Exception('Failed to generate LiveKit token: empty response');
       }
 
+      ServiceHealthCoordinator.instance.reportLiveKitToken(
+        success: true,
+        duration: healthTimer.elapsed,
+      );
       return LiveKitConnectionInfo(
         token: data['token'] as String,
         url: data['url'] as String,
       );
     } catch (e) {
+      ServiceHealthCoordinator.instance.reportLiveKitToken(
+        success: false,
+        duration: healthTimer.elapsed,
+        error: e,
+      );
       throw Exception('LiveKitTokenService.generateToken failed: $e');
     }
+  }
+
+  /// Service-health hook for call views: call it from the
+  /// `RoomDisconnectedEvent` handler with `event.reason?.name`.
+  /// User-initiated endings are ignored; anything else counts as a drop.
+  void reportConnectionEnded(String? disconnectReasonName) {
+    ServiceHealthCoordinator.instance.reportLiveKitConnectionEnded(
+      disconnectReasonName,
+    );
   }
 }

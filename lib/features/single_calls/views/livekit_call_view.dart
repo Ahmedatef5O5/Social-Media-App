@@ -3,6 +3,8 @@ import 'dart:ui';
 import 'package:flutter/material.dart' hide ConnectionState;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:livekit_client/livekit_client.dart';
+import 'package:social_media_app/core/performance/performance_metric.dart';
+import 'package:social_media_app/core/performance/performance_tracker.dart';
 import '../../../core/services/active_call/call_control_message.dart';
 import '../../../core/services/active_call/call_termination_service.dart';
 import '../../../core/services/active_call/cubits/active_call_session_cubit.dart';
@@ -110,6 +112,13 @@ class _LiveKitCallViewState extends State<LiveKitCallView> {
   }
 
   Future<void> _connectNewRoom() async {
+    // Reliability Center: time from call initiation to the connected state
+    // (token + prepare + connect, retries included). Hang-ups cancel the trace.
+    final perfTrace = PerformanceTracker.instance.startTrace(
+      _isVideo ? 'livekit:video' : 'livekit:audio',
+      MetricCategory.callConnect,
+    );
+
     const maxAttempts = 2;
     int attempt = 0;
     Object? lastError;
@@ -124,7 +133,10 @@ class _LiveKitCallViewState extends State<LiveKitCallView> {
           participantName: widget.currentUserName,
         );
 
-        if (!mounted || _isEnding) return;
+        if (!mounted || _isEnding) {
+          perfTrace.cancel();
+          return;
+        }
 
         room = Room(
           roomOptions: const RoomOptions(adaptiveStream: true, dynacast: true),
@@ -132,6 +144,7 @@ class _LiveKitCallViewState extends State<LiveKitCallView> {
 
         await room.prepareConnection(connection.url, connection.token);
         if (!mounted || _isEnding) {
+          perfTrace.cancel();
           if (!room.isDisposed) await room.dispose();
           return;
         }
@@ -150,6 +163,7 @@ class _LiveKitCallViewState extends State<LiveKitCallView> {
             ),
           ),
         );
+        perfTrace.stop(); // reached the connected state
 
         if (room.connectionState == ConnectionState.reconnecting) {
           final tempListener = room.createListener();
@@ -208,7 +222,11 @@ class _LiveKitCallViewState extends State<LiveKitCallView> {
       }
     }
 
-    if (!mounted || _isEnding) return;
+    if (!mounted || _isEnding) {
+      perfTrace.cancel();
+      return;
+    }
+    perfTrace.stop(success: false, errorCode: 'connect_failed');
 
     debugPrint(
       '❌ LiveKitCallView._connectNewRoom all attempts failed: $lastError',
