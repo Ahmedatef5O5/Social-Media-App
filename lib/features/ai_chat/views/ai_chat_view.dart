@@ -742,9 +742,6 @@ class _AiChatViewState extends State<AiChatView> with TickerProviderStateMixin {
     _attachments.cancelUpload(message.id);
   }
 
-  // ignore: unused_field
-  bool _scrollToBottomScheduled = false;
-
   void _scheduleScrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
@@ -752,11 +749,10 @@ class _AiChatViewState extends State<AiChatView> with TickerProviderStateMixin {
     });
   }
 
-  void _scrollToBottom() => _scrollAnchor.pinToBottom();
-
   void _handleRetry(AiChatMessage message) {
     _chatCubit?.sendMessage(
       text: message.text,
+      isRetry: true,
       replyToMessageId: message.replyToMessageId,
       replyToMessageText: message.replyToText,
       replyToSenderRole: message.replyToSenderRole,

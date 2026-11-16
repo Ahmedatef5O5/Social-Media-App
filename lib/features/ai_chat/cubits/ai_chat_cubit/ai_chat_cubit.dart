@@ -158,6 +158,7 @@ class AiChatCubit extends Cubit<AiChatMessagesState>
     String? replyToSenderRole,
     String? replyToMediaType,
     String? replyToMediaUrl,
+    bool isRetry = false,
   }) async {
     final current = state;
     final existingDomain =
@@ -273,6 +274,9 @@ class AiChatCubit extends Cubit<AiChatMessagesState>
         'history': _historyForPrompt(baseDomain),
         'user_language': styleHint.language.wireValue,
         'user_tone': styleHint.tone.wireValue,
+        if (isRetry) 'is_retry': true,
+        if (mediaType == 'voice' && durationSeconds != null)
+          'duration_seconds': durationSeconds,
         if (targetMediaType != null) 'target_media_type': targetMediaType,
         if (mediaType == 'voice' && mediaUrl != null) 'voice_url': mediaUrl,
         if (mediaType == 'image' && mediaUrl != null) 'image_url': mediaUrl,
