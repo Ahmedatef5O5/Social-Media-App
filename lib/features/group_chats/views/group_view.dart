@@ -34,11 +34,6 @@ import '../widgets/group_view_header.dart';
 import 'add_group_members_view.dart';
 import 'group_settings_view.dart';
 
-/// Group profile (Facebook-Groups style): cover, avatar, stats, quick actions
-/// and Posts / Members / Details tabs. A non-member never sees this screen's
-/// content: they are redirected to [GroupPreviewJoinView].
-///
-/// Requires a [GroupProfileCubit] above it (provided by the router).
 class GroupView extends StatelessWidget {
   final GroupViewArgs args;
   const GroupView({super.key, required this.args});
@@ -389,22 +384,19 @@ class _GroupViewBodyState extends State<_GroupViewBody>
                             ],
                           ),
                         ),
+                        // 1. Inside _GroupViewBodyState.build -> headerSliverBuilder:
                         SliverPersistentHeader(
                           pinned:
                               false, // like ProfileView: tabs scroll with the header
                           delegate: _TabsDelegate(
+                            controller: _tabs,
                             color: theme.scaffoldBackgroundColor,
-                            tabBar: TabBar(
-                              controller: _tabs,
-                              indicatorSize: TabBarIndicatorSize.tab,
-                              indicatorWeight: 3,
-                              dividerColor: theme.dividerColor,
-                              tabs: [
-                                Tab(text: context.l10n.posts),
-                                Tab(text: context.l10n.members),
-                                Tab(text: context.l10n.groupDetailsAndMedia),
-                              ],
-                            ),
+                            dividerColor: theme.dividerColor,
+                            labels: [
+                              context.l10n.posts,
+                              context.l10n.members,
+                              context.l10n.groupDetailsAndMedia,
+                            ],
                           ),
                         ),
                       ],
@@ -443,24 +435,118 @@ class _GroupViewBodyState extends State<_GroupViewBody>
   }
 }
 
+// 2. Replace _TabsDelegate with this production-grade implementation:
 class _TabsDelegate extends SliverPersistentHeaderDelegate {
-  final TabBar tabBar;
+  final TabController controller;
+  final List<String> labels;
   final Color color;
-  _TabsDelegate({required this.tabBar, required this.color});
+  final Color? dividerColor;
+
+  const _TabsDelegate({
+    required this.controller,
+    required this.labels,
+    required this.color,
+    required this.dividerColor,
+  });
+
+  static const double _indicatorWeight = 3.0;
+  static const double _minTabHorizontalPadding = 24.0; // 12px on each side
 
   @override
-  double get minExtent => tabBar.preferredSize.height;
+  double get minExtent => kTextTabBarHeight + _indicatorWeight;
+
   @override
-  double get maxExtent => tabBar.preferredSize.height;
+  double get maxExtent => kTextTabBarHeight + _indicatorWeight;
 
   @override
   Widget build(BuildContext context, double shrinkOffset, bool overlaps) {
-    return Container(color: color, child: tabBar);
+    final theme = Theme.of(context);
+    final textDirection = Directionality.of(context);
+    final textScaler = MediaQuery.textScalerOf(context);
+
+    // Match the exact effective typography used by Material 3 TabBar
+    final baseStyle = DefaultTextStyle.of(context).style
+        .merge(theme.tabBarTheme.labelStyle ?? theme.textTheme.titleSmall)
+        .copyWith(fontWeight: FontWeight.w600);
+
+    return ColoredBox(
+      color: color,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final availableWidth = constraints.maxWidth;
+
+          // Measure intrinsic single-line width of each localized tab label
+          final textWidths =
+              labels.map((label) {
+                final painter = TextPainter(
+                  text: TextSpan(text: label, style: baseStyle),
+                  maxLines: 1,
+                  textDirection: textDirection,
+                  textScaler: textScaler,
+                )..layout();
+                final width = painter.width.ceilToDouble();
+                painter.dispose();
+                return width;
+              }).toList();
+
+          final totalTextWidth = textWidths.fold<double>(
+            0,
+            (sum, w) => sum + w,
+          );
+          final remainingWidth = availableWidth - totalTextWidth;
+          final extraPerTab = remainingWidth / labels.length;
+
+          // If all tabs fit on screen, distribute leftover width equally so the
+          // bar spans 100% of screen width; otherwise keep minimum padding & scroll.
+          final tabWidths =
+              extraPerTab >= _minTabHorizontalPadding
+                  ? textWidths.map((w) => w + extraPerTab).toList()
+                  : textWidths
+                      .map((w) => w + _minTabHorizontalPadding)
+                      .toList();
+
+          return TabBar(
+            controller: controller,
+            isScrollable: true,
+            tabAlignment: TabAlignment.start,
+            labelPadding: EdgeInsets.zero,
+            indicatorSize: TabBarIndicatorSize.tab,
+            indicatorWeight: _indicatorWeight,
+            dividerColor: dividerColor,
+            tabs: [
+              for (int i = 0; i < labels.length; i++)
+                SizedBox(
+                  width: tabWidths[i],
+                  child: Tab(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(labels[i], maxLines: 1),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          );
+        },
+      ),
+    );
   }
 
   @override
-  bool shouldRebuild(_TabsDelegate old) =>
-      old.tabBar != tabBar || old.color != color;
+  bool shouldRebuild(_TabsDelegate old) {
+    if (old.controller != controller ||
+        old.color != color ||
+        old.dividerColor != dividerColor ||
+        old.labels.length != labels.length) {
+      return true;
+    }
+    for (int i = 0; i < labels.length; i++) {
+      if (old.labels[i] != labels[i]) return true;
+    }
+    return false;
+  }
 }
 
 class _GroupViewShimmer extends StatelessWidget {
